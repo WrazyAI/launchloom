@@ -24,7 +24,7 @@ Do not put any credential in a source file or chat message. Revoke the previousl
 | `NETLIFY_PLATFORM_SITE_ID` | Existing Netlify project ID for the LaunchLoom platform itself. |
 | `NETLIFY_ACCOUNT_SLUG` | The Netlify team/account slug that owns client projects. |
 | `OPENROUTER_API_KEY` | Calls GLM 5.3 Flash only in Actions. |
-| `GITHUB_ORG_TOKEN` | Creates and updates private client repositories. |
+| `LAUNCHLOOM_GITHUB_ORG_TOKEN` | Creates and updates private client repositories. GitHub reserves secret names beginning with `GITHUB_`. |
 | `REVIEW_SIGNING_SECRET` | A high-entropy random string shared with the LaunchLoom Netlify project. |
 
 `GITHUB_ORG_TOKEN` must be a WrazyAI fine-grained token with repository Administration, Contents, Pull requests, and Issues set to read/write, and access to current and future organization repositories.

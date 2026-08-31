@@ -11,7 +11,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     env:
-      GITHUB_ORG_TOKEN: ${{ secrets.GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       CLIENT_REPO: ${{ github.event.client_payload.repo }}
     steps:
