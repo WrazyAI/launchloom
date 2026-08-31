@@ -1,0 +1,12 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import OnboardingForm from "../components/OnboardingForm";
+---
+
+<BaseLayout title="Start a new site — LaunchLoom">
+  <main class="onboard-shell">
+    <SiteHeader compact />
+    <OnboardingForm client:load />
+  </main>
+</BaseLayout>

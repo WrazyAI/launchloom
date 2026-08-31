@@ -1,0 +1,29 @@
+{
+  "preset": "wellness",
+  "business": {
+    "name": "Harbor Glow Wellness",
+    "tagline": "Care that makes room for you.",
+    "description": "Thoughtful aesthetic care with a focus on natural, confident results.",
+    "phone": "(512) 555-0142",
+    "email": "hello@harborglow.example",
+    "address": "1200 South Lamar Blvd, Austin, TX 78704",
+    "serviceAreas": ["Austin", "West Lake Hills", "Tarrytown"],
+    "hours": "Mon–Fri 9am–6pm · Sat by appointment",
+    "primaryCta": "Book a consultation",
+    "offer": "Complimentary 30-minute consultation",
+    "domain": "harborglow.example",
+    "leadEmail": "leads@harborglow.example"
+  },
+  "style": { "primaryColor": "#205d51", "tone": "calm" },
+  "services": [
+    { "name": "Skin renewal", "description": "A tailored plan for a clearer, brighter complexion.", "slug": "skin-renewal" },
+    { "name": "Wrinkle smoothing", "description": "Subtle, balanced treatment designed around your features.", "slug": "wrinkle-smoothing" },
+    { "name": "Consultations", "description": "A calm conversation about your goals and the right next step.", "slug": "consultations" }
+  ],
+  "differentiators": ["Physician-led planning", "Natural-looking results", "A thoughtful, no-pressure consult"],
+  "locations": [],
+  "images": {
+    "hero": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1600&q=85",
+    "secondary": "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1200&q=85"
+  }
+}

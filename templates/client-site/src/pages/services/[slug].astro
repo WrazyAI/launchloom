@@ -1,0 +1,14 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import Header from "../../components/Header.astro";
+import LeadForm from "../../components/LeadForm.astro";
+import Footer from "../../components/Footer.astro";
+import site from "../../lib/site";
+
+export function getStaticPaths() {
+  return site.preset === "home-services" ? site.services.map((service) => ({ params: { slug: service.slug }, props: { service } })) : [];
+}
+const { service } = Astro.props;
+---
+
+<SiteLayout title={`${service.name} | ${site.business.name}`} description={service.description}><Header /><main><section class="inner-hero"><div class="wrap"><span class="kicker">{site.business.name}</span><h1>{service.name}</h1><p>{service.description}</p></div></section><section class="section wrap text-content"><h2>A straightforward path to the right fix.</h2><p>{site.business.description} Our team will listen, explain the options, and help you choose the next step with confidence.</p></section><section class="contact-section"><div class="wrap contact-grid"><div><span class="kicker">Get started</span><h2>{site.business.primaryCta}.</h2></div><LeadForm /></div></section></main><Footer /></SiteLayout>

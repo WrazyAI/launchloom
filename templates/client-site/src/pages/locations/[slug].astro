@@ -1,0 +1,16 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import Header from "../../components/Header.astro";
+import LeadForm from "../../components/LeadForm.astro";
+import Footer from "../../components/Footer.astro";
+import site from "../../lib/site";
+
+export function getStaticPaths() {
+  if (site.preset !== "home-services") return [];
+  const locations: { name: string; slug: string; description?: string }[] = site.locations.length ? site.locations : site.business.serviceAreas.map((name) => ({ name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") }));
+  return locations.map((location) => ({ params: { slug: location.slug }, props: { location } }));
+}
+const { location } = Astro.props;
+---
+
+<SiteLayout title={`${location.name} | ${site.business.name}`}><Header /><main><section class="inner-hero"><div class="wrap"><span class="kicker">Serving {location.name}</span><h1>Trusted help in {location.name}.</h1><p>{location.description || `${site.business.name} brings clear communication and dependable service to ${location.name}.`}</p></div></section><section class="section wrap text-content"><h2>Local service, without the wait.</h2><p>{site.business.description}</p></section><section class="contact-section"><div class="wrap contact-grid"><div><span class="kicker">Talk to our team</span><h2>{site.business.primaryCta}.</h2></div><LeadForm /></div></section></main><Footer /></SiteLayout>

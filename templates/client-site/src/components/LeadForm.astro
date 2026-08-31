@@ -1,0 +1,16 @@
+---
+import site from "../lib/site";
+const { id = "lead-form" } = Astro.props;
+---
+
+<form name="lead" method="POST" data-netlify="true" netlify-honeypot="bot-field" class="lead-form" id={id}>
+  <input type="hidden" name="form-name" value="lead" />
+  <p class="honeypot"><label>Don’t fill this out <input name="bot-field" /></label></p>
+  <input type="hidden" name="lead-email" value={site.business.leadEmail} />
+  <label>Your name<input name="name" required autocomplete="name" /></label>
+  <label>Phone number<input name="phone" required type="tel" autocomplete="tel" /></label>
+  <label>Email address<input name="email" required type="email" autocomplete="email" /></label>
+  <label>How can we help?<textarea name="message" required placeholder={`Tell us a little about what you need…`} /></label>
+  <button type="submit">{site.business.primaryCta}</button>
+  <small>By submitting, you agree to be contacted about your request.</small>
+</form>

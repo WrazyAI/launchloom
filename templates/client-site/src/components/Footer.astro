@@ -1,0 +1,5 @@
+---
+import site, { phoneHref } from "../lib/site";
+---
+
+<footer class="footer"><div class="wrap footer-grid"><div><a class="wordmark" href="/">{site.business.name}</a><p>{site.business.description}</p></div><div><strong>Contact</strong><a href={phoneHref(site.business.phone)}>{site.business.phone}</a><a href={`mailto:${site.business.email}`}>{site.business.email}</a></div><div><strong>Visit</strong><p>{site.business.address}</p><p>{site.business.hours}</p></div></div><div class="wrap legal">© {new Date().getFullYear()} {site.business.name}. All rights reserved.</div></footer>

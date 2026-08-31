@@ -1,0 +1,31 @@
+name: Publish approved site
+
+on:
+  repository_dispatch:
+    types: [publish-site]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_ORG_TOKEN: ${{ secrets.GITHUB_ORG_TOKEN }}
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      CLIENT_REPO: ${{ github.event.client_payload.repo }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build and publish merged client site
+        run: |
+          git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
+          cd "$RUNNER_TEMP/client"
+          npm install
+          npm run build
+          SITE_ID=$(node -e "const x=require('./.launchloom-site.json');console.log(x.id)")
+          npx netlify-cli@latest deploy --auth "$NETLIFY_AUTH_TOKEN" --site "$SITE_ID" --dir dist --prod --message "LaunchLoom approved deployment"

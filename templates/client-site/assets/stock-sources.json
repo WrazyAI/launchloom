@@ -1,0 +1,10 @@
+{
+  "wellness": [
+    { "url": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881", "source": "Unsplash", "use": "Hero image", "license": "Unsplash License" },
+    { "url": "https://images.unsplash.com/photo-1515377905703-c4788e51af15", "source": "Unsplash", "use": "Secondary image", "license": "Unsplash License" }
+  ],
+  "home-services": [
+    { "url": "https://images.unsplash.com/photo-1581578731548-c64695cc6952", "source": "Unsplash", "use": "Hero image", "license": "Unsplash License" },
+    { "url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64", "source": "Unsplash", "use": "Secondary image", "license": "Unsplash License" }
+  ]
+}

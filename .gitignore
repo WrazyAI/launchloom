@@ -34,3 +34,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# dependencies and builds
+node_modules/
+dist/
+.astro/
+
+# credentials and machine-specific files
+.env
+.env.*
+!.env.example
+.netlify/

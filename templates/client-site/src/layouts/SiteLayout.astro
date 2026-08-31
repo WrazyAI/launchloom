@@ -1,0 +1,20 @@
+---
+import site from "../lib/site";
+import "../styles/site.css";
+
+const { title = site.business.name, description = site.business.description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={site.style.primaryColor} />
+    <title>{title}</title>
+  </head>
+  <body style={`--brand:${site.style.primaryColor}`}>
+    <slot />
+  </body>
+</html>

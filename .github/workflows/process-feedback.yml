@@ -1,0 +1,61 @@
+name: Process client feedback
+
+on:
+  repository_dispatch:
+    types: [process-feedback]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  revise:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.GITHUB_ORG_TOKEN }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+      LAUNCHLOOM_PUBLIC_URL: ${{ vars.LAUNCHLOOM_PUBLIC_URL }}
+      CLIENT_REPO: ${{ github.event.client_payload.repo }}
+      CLIENT_PR: ${{ github.event.client_payload.pr }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Clone review branch
+        id: branch
+        run: |
+          BRANCH=$(gh pr view "$CLIENT_PR" --repo "$CLIENT_REPO" --json headRefName --jq .headRefName)
+          git clone --branch "$BRANCH" "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
+          echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
+      - name: Apply supported revisions
+        run: CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" node scripts/apply-feedback.mjs
+      - name: Build and deploy revised preview
+        id: deploy
+        run: |
+          CLIENT_DIR="$RUNNER_TEMP/client"
+          cd "$CLIENT_DIR"
+          if git diff --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git config user.name "LaunchLoom"
+          git config user.email "automation@launchloom.app"
+          git add src/site.config.json
+          git commit -m "Apply client feedback"
+          git push origin "${{ steps.branch.outputs.name }}"
+          npm install
+          npm run build
+          SITE_ID=$(node -e "const x=require('./.launchloom-site.json');console.log(x.id)")
+          npx netlify-cli@latest deploy --auth "$NETLIFY_AUTH_TOKEN" --site "$SITE_ID" --dir dist --json > /tmp/revised-deploy.json
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "site_id=$SITE_ID" >> "$GITHUB_OUTPUT"
+          echo "preview=$(node -e "const x=require('/tmp/revised-deploy.json');console.log(x.deploy_url || x.url)")" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Post revised review link
+        if: steps.deploy.outputs.changed == 'true'
+        run: |
+          LINK=$(node scripts/create-review-link.mjs --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.deploy.outputs.site_id }}")
+          gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-revision -->\n## Revised preview\n\nPreview: ${{ steps.deploy.outputs.preview }}\n\nSecure client review: $LINK"

@@ -1,0 +1,16 @@
+{
+  "name": "launchloom-client-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "astro": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest"
+  }
+}

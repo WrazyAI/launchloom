@@ -1,0 +1,25 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import Header from "../components/Header.astro";
+import LeadForm from "../components/LeadForm.astro";
+import Footer from "../components/Footer.astro";
+import site, { phoneHref } from "../lib/site";
+
+const wellness = site.preset === "wellness";
+---
+
+<SiteLayout>
+  <Header />
+  <main>
+    <section class:list={["hero", { wellness }]}>
+      <div class="wrap hero-grid"><div class="hero-copy"><span class="kicker">{wellness ? "Personal care, planned with you" : "Fast, dependable help when it matters"}</span><h1>{site.business.tagline}</h1><p>{site.business.description}</p>{site.business.offer && <div class="offer">{site.business.offer}</div>}<div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a><a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a></div></div><img class="hero-image" src={site.images.hero} alt="" /></div>
+    </section>
+    <section class="proof wrap"><p>{site.differentiators.join(" · ")}</p></section>
+    <section class="section wrap" id="services"><span class="kicker">What we do</span><h2>{wellness ? "Care tailored to your goals." : "The help you need, without the runaround."}</h2><div class="service-grid">{site.services.map((service, index) => <a class="service-card" href={wellness ? "#contact" : `/services/${service.slug}/`}><span>0{index + 1}</span><h3>{service.name}</h3><p>{service.description}</p><b>Learn more →</b></a>)}</div></section>
+    <section class="split-section" id="about"><div class="wrap split-grid"><img src={site.images.secondary} alt="" loading="lazy" /><div><span class="kicker">Why clients choose us</span><h2>{wellness ? "Real expertise. A more personal standard." : "Local people. Straight answers. Work that lasts."}</h2><p>{site.differentiators.join(". ")}.</p><ul>{site.differentiators.map((item) => <li>{item}</li>)}</ul></div></div></section>
+    {site.preset === "home-services" && <section class="section wrap" id="areas"><span class="kicker">Where we work</span><h2>Local help across your area.</h2><div class="area-list">{site.locations.length ? site.locations.map((location) => <a href={`/locations/${location.slug}/`}>{location.name} →</a>) : site.business.serviceAreas.map((area) => <span>{area}</span>)}</div></section>}
+    <section class="contact-section" id="contact"><div class="wrap contact-grid"><div><span class="kicker">Ready when you are</span><h2>{site.business.primaryCta}.</h2><p>{site.business.offer || "Tell us what you need and we’ll get back to you promptly."}</p><p class="contact-detail">{site.business.address}<br />{site.business.hours}</p></div><LeadForm /></div></section>
+  </main>
+  <a class="mobile-call" href={phoneHref(site.business.phone)}>Call now</a>
+  <Footer />
+</SiteLayout>

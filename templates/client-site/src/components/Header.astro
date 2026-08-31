@@ -1,0 +1,9 @@
+---
+import site, { phoneHref } from "../lib/site";
+---
+
+<header class="header wrap">
+  <a class="wordmark" href="/">{site.business.name}</a>
+  <nav aria-label="Main navigation"><a href="/#services">Services</a><a href="/#about">About</a>{site.preset === "home-services" && <a href="/#areas">Areas</a>}<a href="/#contact">Contact</a></nav>
+  <a class="header-call" href={phoneHref(site.business.phone)}>{site.business.phone}</a>
+</header>

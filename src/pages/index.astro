@@ -1,0 +1,31 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+---
+
+<BaseLayout>
+  <main class="platform-shell">
+    <SiteHeader />
+    <section class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">A calmer way to ship client websites</span>
+        <h1>From local listing to a site clients want to launch.</h1>
+        <p>LaunchLoom turns a structured brief into a fast, focused website, then keeps every review and approval in one simple flow.</p>
+        <div class="hero-actions"><a class="button" href="/onboard">Start a new site</a><a class="text-button" href="#how-it-works">See the flow ↓</a></div>
+      </div>
+      <aside class="hero-card">
+        <span class="card-kicker">Today’s production board</span>
+        <div class="board-row"><span class="dot sage"></span><span>Harbor Glow Wellness</span><em>Brief ready</em></div>
+        <div class="board-row"><span class="dot amber"></span><span>Northstar Door Co.</span><em>In review</em></div>
+        <div class="board-row"><span class="dot mint"></span><span>Summit Aesthetics</span><em>Live</em></div>
+        <p>Two focused site systems. One clean handoff.</p>
+      </aside>
+    </section>
+    <section id="how-it-works" class="how-grid">
+      <article><span>01</span><h2>Brief once</h2><p>Import the basics from a Google listing, then confirm the facts that matter.</p></article>
+      <article><span>02</span><h2>Review visually</h2><p>Every site receives a private preview and a plain-language feedback link.</p></article>
+      <article><span>03</span><h2>Launch cleanly</h2><p>Approve one exact version, publish it, and get a clear domain handoff.</p></article>
+    </section>
+    <section class="preset-band"><div><span class="eyebrow">Two starting points</span><h2>Refined care or rapid response.</h2></div><p>Wellness sites lead with calm authority and consultation. Home-service sites lead with speed, proof, and a direct route to help.</p></section>
+  </main>
+</BaseLayout>
