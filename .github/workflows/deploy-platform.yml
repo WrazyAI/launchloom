@@ -1,0 +1,28 @@
+name: Deploy LaunchLoom platform
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ secrets.NETLIFY_AUTH_TOKEN != '' && secrets.NETLIFY_PLATFORM_SITE_ID != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Deploy platform and Netlify Functions
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_PLATFORM_SITE_ID: ${{ secrets.NETLIFY_PLATFORM_SITE_ID }}
+        run: |
+          npx netlify-cli@latest deploy --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID" --dir dist --functions netlify/functions --prod --message "LaunchLoom platform $GITHUB_SHA"

@@ -21,6 +21,7 @@ Do not put any credential in a source file or chat message. Revoke the previousl
 | Secret | Purpose |
 | --- | --- |
 | `NETLIFY_AUTH_TOKEN` | Creates and deploys Netlify projects through the API. |
+| `NETLIFY_PLATFORM_SITE_ID` | Existing Netlify project ID for the LaunchLoom platform itself. |
 | `NETLIFY_ACCOUNT_SLUG` | The Netlify team/account slug that owns client projects. |
 | `OPENROUTER_API_KEY` | Calls GLM 5.3 Flash only in Actions. |
 | `GITHUB_ORG_TOKEN` | Creates and updates private client repositories. |
@@ -39,6 +40,8 @@ Do not put any credential in a source file or chat message. Revoke the previousl
 | `LAUNCHLOOM_PUBLIC_URL` | Public LaunchLoom URL, used to create review links. |
 
 Set `LAUNCHLOOM_PUBLIC_URL` as a GitHub Actions variable too. Enable Netlify Forms after the first platform deploy.
+
+Create one empty Netlify project for LaunchLoom, copy its Project ID into `NETLIFY_PLATFORM_SITE_ID`, then run the **Deploy LaunchLoom platform** workflow. Client projects are created automatically after that.
 
 ## Local development
 
