@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ secrets.NETLIFY_AUTH_TOKEN != '' && secrets.NETLIFY_PLATFORM_SITE_ID != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
