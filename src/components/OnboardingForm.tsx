@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 type Place = {
@@ -33,12 +33,22 @@ async function compressImage(file: File): Promise<File> {
 }
 
 export default function OnboardingForm() {
+  const formRef = useRef<HTMLFormElement>(null);
   const [step, setStep] = useState(0);
   const [place, setPlace] = useState<Place | null>(null);
   const [searching, setSearching] = useState(false);
   const [status, setStatus] = useState<string>("");
   const [error, setError] = useState<string>("");
   const progress = useMemo(() => `${((step + 1) / steps.length) * 100}%`, [step]);
+
+  function advance() {
+    const currentStep = formRef.current?.querySelector<HTMLElement>(`[data-step="${step}"]`);
+    const fields = currentStep?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea") || [];
+    for (const field of fields) {
+      if (!field.disabled && !field.reportValidity()) return;
+    }
+    setStep((value) => Math.min(value + 1, steps.length - 1));
+  }
 
   async function lookupPlace() {
     const query = (document.querySelector<HTMLInputElement>("#place-query")?.value || "").trim();
@@ -109,6 +119,7 @@ export default function OnboardingForm() {
 
   return (
     <form
+      ref={formRef}
       id="onboarding-form"
       className="onboarding-form"
       name="onboarding"
@@ -129,7 +140,7 @@ export default function OnboardingForm() {
         <span>Step {step + 1} of {steps.length} · {steps[step]}</span>
       </div>
 
-      {step === 0 && <section className="form-step">
+      <section className="form-step" data-step="0" hidden={step !== 0} aria-hidden={step !== 0}>
         <span className="eyebrow">Start with the facts</span>
         <h1>Let’s meet the business.</h1>
         <p>Start with a Google Maps listing. You’ll review every imported detail before we use it.</p>
@@ -152,9 +163,9 @@ export default function OnboardingForm() {
           <label className="field">Website, if replacing<input name="website" placeholder="https://" /></label>
           <label className="field">Desired domain<input name="domain" placeholder="yourbusiness.com" /></label>
         </div>
-      </section>}
+      </section>
 
-      {step === 1 && <section className="form-step">
+      <section className="form-step" data-step="1" hidden={step !== 1} aria-hidden={step !== 1}>
         <span className="eyebrow">The conversion brief</span>
         <h1>What should the site make happen?</h1>
         <div className="choice-grid">
@@ -168,9 +179,9 @@ export default function OnboardingForm() {
           <label className="field full">What makes you the obvious choice?<textarea required name="differentiators" placeholder="Experience, guarantees, credentials, response time, outcomes…" /></label>
           <label className="field full">Desired call to action<input required name="primaryCta" defaultValue="Request a consultation" /></label>
         </div>
-      </section>}
+      </section>
 
-      {step === 2 && <section className="form-step">
+      <section className="form-step" data-step="2" hidden={step !== 2} aria-hidden={step !== 2}>
         <span className="eyebrow">Make it feel like you</span>
         <h1>Give us your visual direction.</h1>
         <div className="field-grid">
@@ -183,21 +194,21 @@ export default function OnboardingForm() {
           <label className="field full">Lead notification email<input required type="email" name="leadEmail" placeholder="leads@yourbusiness.com" /></label>
         </div>
         <p className="form-note">Images are compressed in your browser. Keep the combined upload under 7.5 MB.</p>
-      </section>}
+      </section>
 
-      {step === 3 && <section className="form-step">
+      <section className="form-step" data-step="3" hidden={step !== 3} aria-hidden={step !== 3}>
         <span className="eyebrow">One last check</span>
         <h1>You control the facts.</h1>
         <p>We use the details you confirm here to write the site. Google listing data is only used to help you prefill the brief.</p>
         <label className="consent"><input type="checkbox" required name="confirmAccuracy" value="yes" /> <span>I confirm the business details, services, and claims submitted here are accurate and approved for use on my website.</span></label>
         <label className="consent"><input type="checkbox" required name="confirmRights" value="yes" /> <span>I have permission to use any logo, photograph, and testimonial I upload.</span></label>
-      </section>}
+      </section>
 
       {error && <p className="form-message error" role="alert">{error}</p>}
       {status && <p className="form-message success" role="status">{status}</p>}
       <footer className="form-actions">
         {step > 0 && <button type="button" className="text-button" onClick={() => setStep(step - 1)}>Back</button>}
-        {step < steps.length - 1 ? <button type="button" className="button" onClick={() => setStep(step + 1)}>Continue</button> : <button type="submit" className="button">Create my preview</button>}
+        {step < steps.length - 1 ? <button type="button" className="button" onClick={advance}>Continue</button> : <button type="submit" className="button">Create my preview</button>}
       </footer>
     </form>
   );
