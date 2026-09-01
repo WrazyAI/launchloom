@@ -9,10 +9,18 @@ jobs:
     env:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       NETLIFY_PLATFORM_SITE_ID: ${{ secrets.NETLIFY_PLATFORM_SITE_ID }}
+      NETLIFY_ACCOUNT_SLUG: ${{ secrets.NETLIFY_ACCOUNT_SLUG }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
     steps:
       - name: Put email settings in the LaunchLoom function environment
         run: |
-          npx netlify-cli@latest env:set RESEND_API_KEY "$RESEND_API_KEY" --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID"
-          npx netlify-cli@latest env:set LAUNCHLOOM_FROM_EMAIL 'LaunchLoom <info@wrazyos.com>' --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID"
-          npx netlify-cli@latest env:set LAUNCHLOOM_FEEDBACK_EMAIL 'david@maigreeks.com' --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID"
+          set_env () {
+            KEY="$1"
+            VALUE="$2"
+            PAYLOAD=$(node -e 'console.log(JSON.stringify({key:process.argv[1],scopes:["functions"],values:[{value:process.argv[2],context:"all"}],is_secret:true}))' "$KEY" "$VALUE")
+            STATUS=$(curl --silent --show-error --output /tmp/netlify-env.json --write-out '%{http_code}' --request PUT "https://api.netlify.com/api/v1/accounts/$NETLIFY_ACCOUNT_SLUG/env/$KEY?site_id=$NETLIFY_PLATFORM_SITE_ID" --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" --header 'Content-Type: application/json' --data "$PAYLOAD")
+            test "$STATUS" = 200
+          }
+          set_env RESEND_API_KEY "$RESEND_API_KEY"
+          set_env LAUNCHLOOM_FROM_EMAIL 'LaunchLoom <info@wrazyos.com>'
+          set_env LAUNCHLOOM_FEEDBACK_EMAIL 'david@maigreeks.com'
