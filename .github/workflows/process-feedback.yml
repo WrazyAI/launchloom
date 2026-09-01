@@ -61,4 +61,4 @@ jobs:
           EMAIL=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.email)')
           TOKEN=$(node scripts/create-review-link.mjs --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.deploy.outputs.site_id }}" --email "$EMAIL" --token-only true)
           LINK="${{ steps.deploy.outputs.preview }}?review=$TOKEN"
-          gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-revision -->\n## Revised preview\n\nPreview: ${{ steps.deploy.outputs.preview }}\n\nSecure client review: $LINK"
+          gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure client review: %s' '<!-- launchloom-revision -->' '## Revised preview' '${{ steps.deploy.outputs.preview }}' "$LINK")"
