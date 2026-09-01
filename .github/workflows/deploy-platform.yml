@@ -30,4 +30,4 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_PLATFORM_SITE_ID: ${{ secrets.NETLIFY_PLATFORM_SITE_ID }}
         run: |
-          npx netlify-cli@latest deploy --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID" --dir dist --functions netlify/functions --prod --message "LaunchLoom platform $GITHUB_SHA"
+          npx --yes netlify-cli@27.4.2 deploy --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID" --dir dist --functions netlify/functions --prod --message "LaunchLoom platform $GITHUB_SHA"
