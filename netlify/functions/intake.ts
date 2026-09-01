@@ -10,7 +10,10 @@ function clean(value: string | undefined, limit = 8000) {
 const intake: NetlifyFunction = {
   async formSubmitted(event: FormSubmittedEvent) {
     const data = event.data as Intake;
-    if (data["form-name"] !== "onboarding") return;
+    // Netlify provides only the submitted field values to formSubmitted;
+    // it strips the transport-only `form-name` field before invoking us.
+    // This project has one platform form, onboarding, so every verified form
+    // event received here is an onboarding intake.
     const businessName = clean(data.businessName, 120) || "Untitled business";
     const safeData = Object.fromEntries(Object.entries(data).map(([key, value]) => [key, clean(value)]));
     const { owner, repo } = githubRepository();
