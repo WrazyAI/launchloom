@@ -5,6 +5,7 @@ export type ReviewTokenPayload = {
   pr: number;
   headSha: string;
   siteId: string;
+  clientEmail: string;
   expiresAt: number;
 };
 
@@ -37,7 +38,7 @@ export function verifyReviewToken(token: string, secret = process.env.REVIEW_SIG
     throw new Error("Invalid review token.");
   }
   const payload = decode<ReviewTokenPayload>(encoded);
-  if (!payload.repo || !payload.pr || !payload.headSha || !payload.siteId || payload.expiresAt < Date.now()) {
+  if (!payload.repo || !payload.pr || !payload.headSha || !payload.siteId || !payload.clientEmail || payload.expiresAt < Date.now()) {
     throw new Error("Expired or incomplete review token.");
   }
   return payload;

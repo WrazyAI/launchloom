@@ -26,6 +26,7 @@ Do not put any credential in a source file or chat message. Revoke the previousl
 | `OPENROUTER_API_KEY` | Calls GLM 5.3 Flash only in Actions. |
 | `LAUNCHLOOM_GITHUB_ORG_TOKEN` | Creates and updates private client repositories. GitHub reserves secret names beginning with `GITHUB_`. |
 | `REVIEW_SIGNING_SECRET` | A high-entropy random string shared with the LaunchLoom Netlify project. |
+| `RESEND_API_KEY` | Sends one preview-ready email after a public preview is built. |
 
 `GITHUB_ORG_TOKEN` must be a WrazyAI fine-grained token with repository Administration, Contents, Pull requests, and Issues set to read/write, and access to current and future organization repositories.
 
@@ -40,6 +41,15 @@ Do not put any credential in a source file or chat message. Revoke the previousl
 | `LAUNCHLOOM_PUBLIC_URL` | Public LaunchLoom URL, used to create review links. |
 
 Set `LAUNCHLOOM_PUBLIC_URL` as a GitHub Actions variable too. Enable Netlify Forms after the first platform deploy.
+
+### GitHub Actions variables
+
+| Variable | Purpose |
+| --- | --- |
+| `LAUNCHLOOM_PUBLIC_URL` | The public LaunchLoom URL, injected into generated previews for review requests. |
+| `LAUNCHLOOM_FROM_EMAIL` | A Resend-verified sender, for example `LaunchLoom <preview@yourdomain.com>`. |
+
+Email delivery is intentionally one-shot: when a newly created preview responds publicly, the client receives one review link. If Netlify returns a protected response, the client is not emailed; one operational email goes to `zahemen9900@gmail.com` with the exact Netlify visibility page and preview URL. After making it public, run **Notify client preview** with the intake issue number. This avoids repeated reminders and inaccessible links.
 
 Create one empty Netlify project for LaunchLoom, copy its Project ID into `NETLIFY_PLATFORM_SITE_ID`, then run the **Deploy LaunchLoom platform** workflow. Client projects are created automatically after that.
 
@@ -64,7 +74,7 @@ The reusable generated-site template lives in `templates/client-site`. It can be
 
 1. A client submits `/onboard`; Netlify verifies the form and opens a private intake issue.
 2. The intake workflow generates a typed `site.config.json`, creates a private WrazyAI client repo, opens a review pull request, and creates a Netlify draft deploy by API.
-3. The operator shares the secure link posted to the intake issue with the client.
+3. A public preview automatically emails its signed, direct review link to the client. The in-site banner collects email-matched feedback and supports exact-version approval.
 4. Feedback is written to the pull request. The next revision action only modifies supported site configuration fields.
 5. Approval verifies the token’s pull-request SHA before merging and triggers a production Netlify deploy.
 

@@ -1,0 +1,36 @@
+name: Notify client preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: LaunchLoom intake issue number
+        required: true
+        type: string
+
+permissions:
+  issues: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Email the client once the preview is public
+        env:
+          ISSUE: ${{ inputs.issue }}
+        run: |
+          gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
+          gh api "repos/WrazyAI/launchloom/issues/$ISSUE/comments" --paginate --jq '.[] | select(.body | contains("<!-- launchloom-client-ready -->")) | .body' > /tmp/handoffs.txt
+          EMAIL=$(node -e 'const s=require("fs").readFileSync("/tmp/intake.md","utf8"); console.log(JSON.parse(s.match(/```json\n([\s\S]*?)\n```/)[1]).email)')
+          NAME=$(node -e 'const s=require("fs").readFileSync("/tmp/intake.md","utf8"); console.log(JSON.parse(s.match(/```json\n([\s\S]*?)\n```/)[1]).businessName)')
+          REVIEW=$(node -e 'const s=require("fs").readFileSync("/tmp/handoffs.txt","utf8"); const m=s.match(/Review link: (https?:\/\/\S+)/); if (!m) process.exit(1); console.log(m[1])')
+          PREVIEW=$(node -e 'const s=require("fs").readFileSync("/tmp/handoffs.txt","utf8"); const m=s.match(/Preview: (https?:\/\/\S+)/); if (!m) process.exit(1); console.log(m[1])')
+          node scripts/send-preview-email.mjs --to "$EMAIL" --name "$NAME" --preview "$PREVIEW" --review "$REVIEW" --force-client true

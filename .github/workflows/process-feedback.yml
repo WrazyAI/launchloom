@@ -18,6 +18,7 @@ jobs:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       LAUNCHLOOM_PUBLIC_URL: ${{ vars.LAUNCHLOOM_PUBLIC_URL }}
+      PUBLIC_LAUNCHLOOM_URL: ${{ vars.LAUNCHLOOM_PUBLIC_URL }}
       CLIENT_REPO: ${{ github.event.client_payload.repo }}
       CLIENT_PR: ${{ github.event.client_payload.pr }}
     steps:
@@ -57,5 +58,7 @@ jobs:
       - name: Post revised review link
         if: steps.deploy.outputs.changed == 'true'
         run: |
-          LINK=$(node scripts/create-review-link.mjs --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.deploy.outputs.site_id }}")
+          EMAIL=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.email)')
+          TOKEN=$(node scripts/create-review-link.mjs --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.deploy.outputs.site_id }}" --email "$EMAIL" --token-only true)
+          LINK="${{ steps.deploy.outputs.preview }}?review=$TOKEN"
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-revision -->\n## Revised preview\n\nPreview: ${{ steps.deploy.outputs.preview }}\n\nSecure client review: $LINK"

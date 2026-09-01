@@ -24,7 +24,11 @@ jobs:
       NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       NETLIFY_ACCOUNT_SLUG: ${{ secrets.NETLIFY_ACCOUNT_SLUG }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       LAUNCHLOOM_PUBLIC_URL: ${{ vars.LAUNCHLOOM_PUBLIC_URL }}
+      PUBLIC_LAUNCHLOOM_URL: ${{ vars.LAUNCHLOOM_PUBLIC_URL }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+      LAUNCHLOOM_DEV_EMAIL: zahemen9900@gmail.com
       LAUNCHLOOM_GITHUB_REPOSITORY: WrazyAI/launchloom
     steps:
       - uses: actions/checkout@v5
@@ -44,6 +48,8 @@ jobs:
           test -n "$SLUG"
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
+          echo "business_name=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.name)')" >> "$GITHUB_OUTPUT"
+          echo "email=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.email)')" >> "$GITHUB_OUTPUT"
       - name: Create client repository and review PR
         id: client
         run: |
@@ -92,9 +98,12 @@ jobs:
         run: |
           CLIENT_DIR="${{ steps.client.outputs.dir }}"
           SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
-          LINK=$(node scripts/create-review-link.mjs --repo "${{ steps.client.outputs.repo }}" --pr "${{ steps.client.outputs.pr }}" --sha "$SHA" --site "${{ steps.deploy.outputs.site_id }}")
+          TOKEN=$(node scripts/create-review-link.mjs --repo "${{ steps.client.outputs.repo }}" --pr "${{ steps.client.outputs.pr }}" --sha "$SHA" --site "${{ steps.deploy.outputs.site_id }}" --email "${{ steps.intake.outputs.email }}" --token-only true)
+          LINK="${{ steps.deploy.outputs.preview }}?review=$TOKEN"
           echo "link=$LINK" >> "$GITHUB_OUTPUT"
       - name: Post handoff links
         run: |
           gh pr comment "${{ steps.client.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --body "<!-- launchloom-revision -->\n## Initial preview\n\nPreview: ${{ steps.deploy.outputs.preview }}\n\nSecure client review: ${{ steps.review.outputs.link }}"
-          gh issue comment "${{ steps.intake.outputs.issue }}" --repo WrazyAI/launchloom --body "## Client site ready\n\nRepository: ${{ steps.client.outputs.repo }}\nPreview: ${{ steps.deploy.outputs.preview }}\nReview link: ${{ steps.review.outputs.link }}"
+          gh issue comment "${{ steps.intake.outputs.issue }}" --repo WrazyAI/launchloom --body "<!-- launchloom-client-ready -->\n## Client site ready\n\nRepository: ${{ steps.client.outputs.repo }}\nPreview: ${{ steps.deploy.outputs.preview }}\nReview link: ${{ steps.review.outputs.link }}"
+      - name: Notify the client, or request one visibility action
+        run: node scripts/send-preview-email.mjs --to "${{ steps.intake.outputs.email }}" --name "${{ steps.intake.outputs.business_name }}" --preview "${{ steps.deploy.outputs.preview }}" --review "${{ steps.review.outputs.link }}" --project "https://app.netlify.com/projects/${{ steps.intake.outputs.slug }}/configuration/general/#project-visibility"

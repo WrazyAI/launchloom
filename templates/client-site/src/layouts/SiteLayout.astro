@@ -1,5 +1,6 @@
 ---
 import site from "../lib/site";
+import ReviewBanner from "../components/ReviewBanner.astro";
 import "../styles/site.css";
 
 const { title = site.business.name, description = site.business.description } = Astro.props;
@@ -15,6 +16,7 @@ const { title = site.business.name, description = site.business.description } = 
     <title>{title}</title>
   </head>
   <body style={`--brand:${site.style.primaryColor}`}>
+    <ReviewBanner />
     <slot />
   </body>
 </html>
