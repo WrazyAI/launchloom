@@ -22,6 +22,7 @@ export default function OnboardingForm() {
   const [step, setStep] = useState(0);
   const [place, setPlace] = useState<Place | null>(null);
   const [showLookup, setShowLookup] = useState(true);
+  const [submissionId, setSubmissionId] = useState(() => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
   const [searching, setSearching] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -58,13 +59,17 @@ export default function OnboardingForm() {
     try {
       const response = await fetch("/", { method: "POST", body: data });
       if (!response.ok) throw new Error("Submission failed. Please try once more.");
+      const intake = Object.fromEntries([...data.entries()].filter(([, value]) => typeof value === "string")) as Record<string, string>;
+      const handoff = await fetch("/api/intake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(intake) });
+      const handoffResult = await handoff.json().catch(() => ({}));
+      if (!handoff.ok) throw new Error(handoffResult.error || "We couldn’t start your preview. Please try once more.");
       setStatus("Received. We’ll email your preview link as soon as it’s ready.");
-      form.reset(); setStep(0); setPlace(null); setShowLookup(true);
+      form.reset(); setStep(0); setPlace(null); setShowLookup(true); setSubmissionId(globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Submission failed."); setStatus(""); }
   }
 
   return <form ref={formRef} id="onboarding-form" className="onboarding-form" name="onboarding" method="POST" action="/" data-netlify="true" data-netlify-honeypot="bot-field" encType="multipart/form-data" onSubmit={submit}>
-    <input type="hidden" name="form-name" value="onboarding" /><input type="hidden" name="placeId" /><input type="hidden" name="googleMapsUrl" /><input type="hidden" name="gmbSkipped" value={showLookup ? "no" : "yes"} /><p className="sr-only"><label>Don’t fill this out <input name="bot-field" /></label></p>
+    <input type="hidden" name="form-name" value="onboarding" /><input type="hidden" name="submissionId" value={submissionId} /><input type="hidden" name="placeId" /><input type="hidden" name="googleMapsUrl" /><input type="hidden" name="gmbSkipped" value={showLookup ? "no" : "yes"} /><p className="sr-only"><label>Don’t fill this out <input name="bot-field" /></label></p>
     <div className="stepper" aria-label={`Step ${step + 1} of ${steps.length}`}><div className="stepper-track"><span style={{ width: progress }} /></div><span>Step {step + 1} of {steps.length} · {steps[step]}</span></div>
     <section className="form-step" data-step="0" hidden={step !== 0} aria-hidden={step !== 0}>
       <span className="eyebrow">Start with the facts</span><h1>Let’s meet the business.</h1><p>Google is optional. Use it to prefill details, or enter everything yourself below.</p>
