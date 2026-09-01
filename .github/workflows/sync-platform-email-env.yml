@@ -20,10 +20,10 @@ jobs:
             BASE="https://api.netlify.com/api/v1/accounts/$NETLIFY_ACCOUNT_SLUG/env/$KEY?site_id=$NETLIFY_PLATFORM_SITE_ID"
             EXISTS=$(curl --silent --output /dev/null --write-out '%{http_code}' --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "$BASE")
             if [ "$EXISTS" = 200 ]; then
-              PAYLOAD=$(node -e 'console.log(JSON.stringify({value:process.argv[1],context:"all"}))' "$VALUE")
+              PAYLOAD=$(node -e 'console.log(JSON.stringify({value:process.argv[1],context:"production"}))' "$VALUE")
               STATUS=$(curl --silent --show-error --output /tmp/netlify-env.json --write-out '%{http_code}' --request PATCH "$BASE" --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" --header 'Content-Type: application/json' --data "$PAYLOAD")
             else
-              PAYLOAD=$(node -e 'console.log(JSON.stringify([{key:process.argv[1],scopes:["builds","functions","runtime","post-processing"],values:[{value:process.argv[2],context:"all"}]}]))' "$KEY" "$VALUE")
+              PAYLOAD=$(node -e 'console.log(JSON.stringify([{key:process.argv[1],scopes:["builds","functions","runtime","post-processing"],values:[{value:process.argv[2],context:"production"}]}]))' "$KEY" "$VALUE")
               STATUS=$(curl --silent --show-error --output /tmp/netlify-env.json --write-out '%{http_code}' --request POST "https://api.netlify.com/api/v1/accounts/$NETLIFY_ACCOUNT_SLUG/env?site_id=$NETLIFY_PLATFORM_SITE_ID" --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" --header 'Content-Type: application/json' --data "$PAYLOAD")
             fi
             echo "$KEY synced ($STATUS)"
