@@ -16,7 +16,7 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$
       <h2 id="ll-review-title">What would you like changed?</h2>
       <p>Tap what applies, then leave a clear note. We’ll group your requests into one focused revision.</p>
       <div class="ll-categories" aria-label="Feedback category">
-        <button type="button" data-category="Logo">Logo</button><button type="button" data-category="Phone number">Phone number</button><button type="button" data-category="Hero image">Hero image</button><button type="button" data-category="Wording">Wording</button><button type="button" data-category="Colors">Colors</button><button type="button" data-category="Services">Services</button><button type="button" data-category="Photos">Photos</button>
+        <button type="button" data-category="Logo" aria-pressed="false">Logo</button><button type="button" data-category="Phone number" aria-pressed="false">Phone number</button><button type="button" data-category="Hero image" aria-pressed="false">Hero image</button><button type="button" data-category="Wording" aria-pressed="false">Wording</button><button type="button" data-category="Colors" aria-pressed="false">Colors</button><button type="button" data-category="Services" aria-pressed="false">Services</button><button type="button" data-category="Photos" aria-pressed="false">Photos</button>
       </div>
       <form class="ll-feedback-form">
         <label>Your review email<input type="email" name="email" required autocomplete="email" placeholder="The email we sent this preview to" /></label>
@@ -42,25 +42,48 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$
     const approve = root.querySelector(".ll-approve");
     const form = root.querySelector(".ll-feedback-form");
     const status = root.querySelector(".ll-feedback-status");
-    let category = "";
+    const invitedEmail = (() => {
+      try {
+        const encoded = token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
+        const padded = encoded.padEnd(encoded.length + ((4 - encoded.length % 4) % 4), "=");
+        return JSON.parse(atob(padded)).clientEmail?.toLowerCase() || "";
+      } catch { return ""; }
+    })();
+    const emailInput = form.querySelector('input[name="email"]');
+    const selectedCategories = new Set();
     const setModal = (visible) => modal.toggleAttribute("hidden", !visible);
     open.addEventListener("click", () => setModal(true));
     close.addEventListener("click", () => setModal(false));
     cancel.addEventListener("click", () => setModal(false));
     root.querySelectorAll("[data-category]").forEach((button) => button.addEventListener("click", () => {
-      category = button.dataset.category || "";
-      root.querySelectorAll("[data-category]").forEach((item) => item.classList.toggle("is-active", item === button));
+      const value = button.dataset.category || "";
+      if (selectedCategories.has(value)) selectedCategories.delete(value);
+      else selectedCategories.add(value);
+      const selected = selectedCategories.has(value);
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-pressed", String(selected));
     }));
+    emailInput.addEventListener("input", () => emailInput.setCustomValidity(""));
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const data = new FormData(form);
+      const submittedEmail = String(data.get("email") || "").trim().toLowerCase();
+      if (invitedEmail && submittedEmail !== invitedEmail) {
+        const message = "Use the same email address that received this preview invitation.";
+        emailInput.setCustomValidity(message);
+        emailInput.reportValidity();
+        status.textContent = message;
+        return;
+      }
       status.textContent = "Sending…";
       try {
-        const response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: data.get("email"), comment: data.get("comment"), category, pageUrl: window.location.href }) });
+        const response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: data.get("email"), comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href }) });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");
         status.textContent = "Received — we’ll turn this into the next revision.";
         form.reset();
+        selectedCategories.clear();
+        root.querySelectorAll("[data-category]").forEach((button) => { button.classList.remove("is-active"); button.setAttribute("aria-pressed", "false"); });
       } catch (error) { status.textContent = error instanceof Error ? error.message : "Feedback could not be sent."; }
     });
     approve.addEventListener("click", async () => {

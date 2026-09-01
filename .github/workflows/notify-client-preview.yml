@@ -9,7 +9,7 @@ on:
         type: string
 
 permissions:
-  issues: read
+  issues: write
 
 jobs:
   notify:
@@ -28,9 +28,15 @@ jobs:
           ISSUE: ${{ inputs.issue }}
         run: |
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
-          gh api "repos/WrazyAI/launchloom/issues/$ISSUE/comments" --paginate --jq '.[] | select(.body | contains("<!-- launchloom-client-ready -->")) | .body' > /tmp/handoffs.txt
+          gh api "repos/WrazyAI/launchloom/issues/$ISSUE/comments" --paginate --jq '.[].body' > /tmp/comments.txt
+          if grep -Fq '<!-- launchloom-client-notified -->' /tmp/comments.txt; then
+            echo "The client has already been notified for this intake."
+            exit 0
+          fi
+          grep -F '<!-- launchloom-client-ready -->' -A 8 /tmp/comments.txt > /tmp/handoffs.txt || true
           EMAIL=$(node -e 'const s=require("fs").readFileSync("/tmp/intake.md","utf8"); console.log(JSON.parse(s.match(/```json\n([\s\S]*?)\n```/)[1]).email)')
           NAME=$(node -e 'const s=require("fs").readFileSync("/tmp/intake.md","utf8"); console.log(JSON.parse(s.match(/```json\n([\s\S]*?)\n```/)[1]).businessName)')
           REVIEW=$(node -e 'const s=require("fs").readFileSync("/tmp/handoffs.txt","utf8"); const m=s.match(/Review link: (https?:\/\/[^\s\\]+)/); if (!m) process.exit(1); console.log(m[1])')
           PREVIEW=$(node -e 'const s=require("fs").readFileSync("/tmp/handoffs.txt","utf8"); const m=s.match(/Preview: (https?:\/\/[^\s\\]+)/); if (!m) process.exit(1); console.log(m[1])')
           node scripts/send-preview-email.mjs --to "$EMAIL" --name "$NAME" --preview "$PREVIEW" --review "$REVIEW" --force-client true
+          gh issue comment "$ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s' '<!-- launchloom-client-notified -->' 'Preview-ready email sent manually.')"
