@@ -2,6 +2,30 @@ import type { Config, Context } from "@netlify/functions";
 import { dispatch, github } from "./_shared/github";
 import { verifyReviewToken } from "./_shared/review-token";
 
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character] || character);
+}
+
+async function notifyOperator(input: { email: string; note: string; category: string; repo: string; pageUrl: string }) {
+  const key = process.env.RESEND_API_KEY;
+  const from = process.env.LAUNCHLOOM_FROM_EMAIL;
+  const to = process.env.LAUNCHLOOM_FEEDBACK_EMAIL;
+  if (!key || !from || !to) return;
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      reply_to: input.email,
+      subject: `Client feedback · ${input.repo.split("/")[1]}${input.category ? ` · ${input.category}` : ""}`,
+      html: `<p><strong>From:</strong> ${escapeHtml(input.email)}</p><p><strong>Feedback:</strong></p><p>${escapeHtml(input.note).replace(/\n/g, "<br>")}</p><p><a href="${escapeHtml(input.pageUrl)}">Open the reviewed page</a></p>`,
+      tags: [{ name: "launchloom_kind", value: "client-feedback" }],
+    }),
+  });
+  if (!response.ok) console.error("Feedback notification failed", response.status, (await response.text()).slice(0, 300));
+}
+
 export default async function feedback(request: Request, _context: Context) {
   const cors = {
     "Access-Control-Allow-Origin": "*",
@@ -27,6 +51,7 @@ export default async function feedback(request: Request, _context: Context) {
       }),
     });
     await dispatch("process-feedback", { repo: payload.repo, pr: payload.pr, siteId: payload.siteId });
+    await notifyOperator({ email: submittedEmail, note, category: String(category || "").slice(0, 80), repo: payload.repo, pageUrl: String(pageUrl || "").slice(0, 1000) });
     return Response.json({ ok: true }, { headers: cors });
   } catch (error) {
     console.error("Feedback failed", error);

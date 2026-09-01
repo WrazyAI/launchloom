@@ -47,9 +47,9 @@ Set `LAUNCHLOOM_PUBLIC_URL` as a GitHub Actions variable too. Enable Netlify For
 | Variable | Purpose |
 | --- | --- |
 | `LAUNCHLOOM_PUBLIC_URL` | The public LaunchLoom URL, injected into generated previews for review requests. |
-| `LAUNCHLOOM_FROM_EMAIL` | A Resend-verified sender, for example `LaunchLoom <preview@yourdomain.com>`. |
+| `LAUNCHLOOM_FROM_EMAIL` | A Resend-verified sender. This project uses `LaunchLoom <info@wrazyos.com>`. |
 
-Email delivery is intentionally one-shot: when a newly created preview responds publicly, the client receives one review link. If Netlify returns a protected response, the client is not emailed; one operational email goes to `zahemen9900@gmail.com` with the exact Netlify visibility page and preview URL. After making it public, run **Notify client preview** with the intake issue number. This avoids repeated reminders and inaccessible links.
+Email delivery is intentionally one-shot: when a newly created preview responds publicly, the client receives one review link from `info@wrazyos.com`. If Netlify returns a protected response, the client is not emailed; one operational email goes to `zahemen9900@gmail.com` with the exact Netlify visibility page and preview URL. After making it public, run **Notify client preview** with the intake issue number. Each accepted client feedback item also emails `david@maigreeks.com` with the client as Reply-To, while the pull-request comment remains the durable source of truth.
 
 Create one empty Netlify project for LaunchLoom, copy its Project ID into `NETLIFY_PLATFORM_SITE_ID`, then run the **Deploy LaunchLoom platform** workflow. Client projects are created automatically after that.
 

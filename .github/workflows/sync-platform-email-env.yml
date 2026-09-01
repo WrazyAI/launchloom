@@ -1,0 +1,18 @@
+name: Sync platform email environment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_PLATFORM_SITE_ID: ${{ secrets.NETLIFY_PLATFORM_SITE_ID }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+    steps:
+      - name: Put email settings in the LaunchLoom function environment
+        run: |
+          npx netlify-cli@latest env:set RESEND_API_KEY "$RESEND_API_KEY" --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID"
+          npx netlify-cli@latest env:set LAUNCHLOOM_FROM_EMAIL 'LaunchLoom <info@wrazyos.com>' --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID"
+          npx netlify-cli@latest env:set LAUNCHLOOM_FEEDBACK_EMAIL 'david@maigreeks.com' --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID"
