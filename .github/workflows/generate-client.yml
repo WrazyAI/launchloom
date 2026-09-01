@@ -40,8 +40,10 @@ jobs:
         run: |
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
           node scripts/generate-site-config.mjs --source /tmp/intake.md --out /tmp/site.config.json
+          SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,60))')
+          test -n "$SLUG"
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
-          echo "slug=$(node -e "const x=require('/tmp/site.config.json'); console.log(x.business.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'').slice(0,60))")" >> "$GITHUB_OUTPUT"
+          echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
       - name: Create client repository and review PR
         id: client
         run: |
