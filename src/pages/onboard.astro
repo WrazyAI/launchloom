@@ -7,6 +7,39 @@ import OnboardingForm from "../components/OnboardingForm";
 <BaseLayout title="Start a new site — LaunchLoom">
   <main class="onboard-shell">
     <SiteHeader compact />
+    <!--
+      Netlify scans static HTML at deploy time. Keep this complete blueprint outside
+      the React island so form detection remains reliable if the island rendering
+      changes. The visible React form submits the same named fields.
+    -->
+    <form name="onboarding" method="POST" action="/" data-netlify="true" data-netlify-honeypot="bot-field" hidden aria-hidden="true">
+      <input type="hidden" name="form-name" value="onboarding" />
+      <input name="bot-field" />
+      <input name="placeId" />
+      <input name="googleMapsUrl" />
+      <input name="businessName" />
+      <input name="contactName" />
+      <input name="email" />
+      <input name="phone" />
+      <input name="address" />
+      <input name="website" />
+      <input name="domain" />
+      <input name="preset" />
+      <textarea name="services"></textarea>
+      <textarea name="offer"></textarea>
+      <textarea name="serviceAreas"></textarea>
+      <textarea name="differentiators"></textarea>
+      <input name="primaryCta" />
+      <input name="primaryColor" />
+      <input name="tone" />
+      <textarea name="avoid"></textarea>
+      <input name="logo" type="file" />
+      <input name="photoOne" type="file" />
+      <input name="photoTwo" type="file" />
+      <input name="leadEmail" />
+      <input name="confirmAccuracy" />
+      <input name="confirmRights" />
+    </form>
     <OnboardingForm client:load />
   </main>
 </BaseLayout>

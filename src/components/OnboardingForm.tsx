@@ -113,6 +113,7 @@ export default function OnboardingForm() {
       className="onboarding-form"
       name="onboarding"
       method="POST"
+      action="/"
       data-netlify="true"
       data-netlify-honeypot="bot-field"
       encType="multipart/form-data"
