@@ -40,7 +40,7 @@ jobs:
         run: |
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
           node scripts/generate-site-config.mjs --source /tmp/intake.md --out /tmp/site.config.json
-          SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,60))')
+          SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,60) || "client-site")')
           test -n "$SLUG"
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"

@@ -56,6 +56,10 @@ function normalise(candidate, intake) {
     slug: slugify(service.slug || service.name || `service-${index + 1}`),
   }));
   const business = { ...base.business, ...(value.business || {}) };
+  // A model can legitimately omit a field or return null. Preserve the
+  // verified intake values instead of allowing that to produce an invalid
+  // configuration (or an unusable repository slug) downstream.
+  business.name = String(business.name || base.business.name).trim().slice(0, 120) || base.business.name;
   business.serviceAreas = Array.isArray(business.serviceAreas) ? business.serviceAreas.map(String).slice(0, 24) : base.business.serviceAreas;
   business.primaryCta = String(business.primaryCta).slice(0, 60);
   const different = Array.isArray(value.differentiators) ? value.differentiators.map(String).slice(0, 5) : base.differentiators;
