@@ -21,13 +21,13 @@ jobs:
       - run: npm run build
       - name: Verify Netlify deployment access
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_DEPLOY_TOKEN }}
           NETLIFY_PLATFORM_SITE_ID: ${{ secrets.NETLIFY_PLATFORM_SITE_ID }}
         run: |
           curl --fail --silent --show-error --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/$NETLIFY_PLATFORM_SITE_ID" | node -e 'let body=""; process.stdin.on("data", chunk => body += chunk); process.stdin.on("end", () => { const site = JSON.parse(body); if (!site.id || !site.name) process.exit(1); console.log(`Authenticated for Netlify site: ${site.name}`); })'
       - name: Deploy platform and Netlify Functions
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_DEPLOY_TOKEN }}
           NETLIFY_PLATFORM_SITE_ID: ${{ secrets.NETLIFY_PLATFORM_SITE_ID }}
         run: |
           npx --yes netlify-cli@27.4.2 deploy --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID" --dir dist --functions netlify/functions --prod --message "LaunchLoom platform $GITHUB_SHA"
