@@ -27,7 +27,7 @@ jobs:
               STATUS=$(curl --silent --show-error --output /tmp/netlify-env.json --write-out '%{http_code}' --request POST "https://api.netlify.com/api/v1/accounts/$NETLIFY_ACCOUNT_SLUG/env?site_id=$NETLIFY_PLATFORM_SITE_ID" --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" --header 'Content-Type: application/json' --data "$PAYLOAD")
             fi
             echo "$KEY synced ($STATUS)"
-            if [ "$STATUS" != 201 ]; then
+            if [ "$STATUS" != 200 ] && [ "$STATUS" != 201 ]; then
               node -e 'try { const x=require("/tmp/netlify-env.json"); console.error(x.message || x.error || `Netlify API status ${process.argv[1]}`); } catch { console.error(`Netlify API status ${process.argv[1]}`); }' "$STATUS"
               exit 1
             fi
