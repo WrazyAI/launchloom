@@ -17,9 +17,17 @@ jobs:
           set_env () {
             KEY="$1"
             VALUE="$2"
-            PAYLOAD=$(node -e 'console.log(JSON.stringify({key:process.argv[1],scopes:["functions"],values:[{value:process.argv[2],context:"all"}],is_secret:true}))' "$KEY" "$VALUE")
-            STATUS=$(curl --silent --show-error --output /tmp/netlify-env.json --write-out '%{http_code}' --request PUT "https://api.netlify.com/api/v1/accounts/$NETLIFY_ACCOUNT_SLUG/env/$KEY?site_id=$NETLIFY_PLATFORM_SITE_ID" --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" --header 'Content-Type: application/json' --data "$PAYLOAD")
-            test "$STATUS" = 200
+            BASE="https://api.netlify.com/api/v1/accounts/$NETLIFY_ACCOUNT_SLUG/env/$KEY?site_id=$NETLIFY_PLATFORM_SITE_ID"
+            EXISTS=$(curl --silent --output /dev/null --write-out '%{http_code}' --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "$BASE")
+            if [ "$EXISTS" = 200 ]; then
+              PAYLOAD=$(node -e 'console.log(JSON.stringify({value:process.argv[1],context:"all"}))' "$VALUE")
+              STATUS=$(curl --silent --show-error --output /tmp/netlify-env.json --write-out '%{http_code}' --request PATCH "$BASE" --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" --header 'Content-Type: application/json' --data "$PAYLOAD")
+            else
+              PAYLOAD=$(node -e 'console.log(JSON.stringify([{key:process.argv[1],values:[{value:process.argv[2],context:"all"}],is_secret:true}]))' "$KEY" "$VALUE")
+              STATUS=$(curl --silent --show-error --output /tmp/netlify-env.json --write-out '%{http_code}' --request POST "https://api.netlify.com/api/v1/accounts/$NETLIFY_ACCOUNT_SLUG/env?site_id=$NETLIFY_PLATFORM_SITE_ID" --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" --header 'Content-Type: application/json' --data "$PAYLOAD")
+            fi
+            echo "$KEY synced ($STATUS)"
+            test "$STATUS" = 201
           }
           set_env RESEND_API_KEY "$RESEND_API_KEY"
           set_env LAUNCHLOOM_FROM_EMAIL 'LaunchLoom <info@wrazyos.com>'
