@@ -14,6 +14,8 @@ There is deliberately no database, separate backend host, login system, Redis, G
 
 Generated Pages-project names are capped at 39 characters. This is intentional: the internal preview address adds the `review-initial.` branch alias, and the shorter project label keeps preview TLS reliable in this Cloudflare account.
 
+Each new Pages project first receives a neutral, `noindex` preparation page on its production hostname. It exists solely to provision the Pages preview certificate; no client content is deployed there or emailed before developer approval.
+
 ## Required configuration
 
 GitHub Actions secrets in `WrazyAI/launchloom`:
