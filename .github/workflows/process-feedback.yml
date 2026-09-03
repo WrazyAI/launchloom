@@ -15,18 +15,18 @@ jobs:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
-      LAUNCHLOOM_PUBLIC_URL: ${{ vars.LAUNCHLOOM_PUBLIC_URL }}
-      PUBLIC_LAUNCHLOOM_URL: ${{ vars.LAUNCHLOOM_PUBLIC_URL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+      LAUNCHLOOM_DEV_EMAIL: zahemen9900@gmail.com
       CLIENT_REPO: ${{ github.event.client_payload.repo }}
       CLIENT_PR: ${{ github.event.client_payload.pr }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
+        with: { node-version: 22, cache: npm }
       - run: npm ci
       - name: Clone review branch
         id: branch
@@ -36,29 +36,29 @@ jobs:
           echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
       - name: Apply supported revisions
         run: CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" node scripts/apply-feedback.mjs
-      - name: Build and deploy revised preview
+      - name: Build and direct-upload revised preview
         id: deploy
         run: |
           CLIENT_DIR="$RUNNER_TEMP/client"
           cd "$CLIENT_DIR"
           if git diff --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
-          git config user.name "LaunchLoom"
-          git config user.email "automation@launchloom.app"
-          git add src/site.config.json
-          git commit -m "Apply client feedback"
-          git push origin "${{ steps.branch.outputs.name }}"
-          npm install
-          npm run build
-          SITE_ID=$(node -e "const x=require('./.launchloom-site.json');console.log(x.id)")
-          npx netlify-cli@latest deploy --auth "$NETLIFY_AUTH_TOKEN" --site "$SITE_ID" --dir dist --json > /tmp/revised-deploy.json
+          git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
+          git add src/site.config.json; git commit -m "Apply client feedback"; git push origin "${{ steps.branch.outputs.name }}"
+          PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
+          npm ci
+          PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
+          BRANCH_SAFE=$(echo "${{ steps.branch.outputs.name }}" | tr '/' '-')
+          npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "LaunchLoom revision"
           echo "changed=true" >> "$GITHUB_OUTPUT"
-          echo "site_id=$SITE_ID" >> "$GITHUB_OUTPUT"
-          echo "preview=$(node -e "const x=require('/tmp/revised-deploy.json');console.log(x.deploy_url || x.url)")" >> "$GITHUB_OUTPUT"
+          echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
+          echo "preview=https://$BRANCH_SAFE.$PROJECT.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Post revised review link
+      - name: Post and email revised review link
         if: steps.deploy.outputs.changed == 'true'
         run: |
           EMAIL=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.email)')
-          TOKEN=$(node scripts/create-review-link.mjs --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.deploy.outputs.site_id }}" --email "$EMAIL" --token-only true)
+          ORIGINS="${{ steps.deploy.outputs.preview }},https://${{ steps.deploy.outputs.project }}.pages.dev"
+          TOKEN=$(node scripts/create-review-link.mjs --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.deploy.outputs.project }}" --email "$EMAIL" --origins "$ORIGINS" --token-only true)
           LINK="${{ steps.deploy.outputs.preview }}?review=$TOKEN"
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure client review: %s' '<!-- launchloom-revision -->' '## Revised preview' '${{ steps.deploy.outputs.preview }}' "$LINK")"
+          node scripts/send-preview-email.mjs --to "$EMAIL" --name "$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision

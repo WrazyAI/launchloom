@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "launchloom-api",
+  "main": "worker/src/index.ts",
+  "compatibility_date": "2026-09-03",
+  "workers_dev": true,
+  "routes": [
+    { "pattern": "api.launchloom.wrazyos.com", "custom_domain": true },
+  ],
+  "r2_buckets": [{ "binding": "ASSETS", "bucket_name": "launchloom-assets" }],
+  "vars": {
+    "ASSET_BASE_URL": "https://assets.launchloom.wrazyos.com",
+    "PLATFORM_ORIGINS": "https://launchloom-bhl.pages.dev,https://launchloom.wrazyos.com",
+  },
+}

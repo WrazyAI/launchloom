@@ -63,6 +63,10 @@ function normalise(candidate, intake) {
   business.serviceAreas = Array.isArray(business.serviceAreas) ? business.serviceAreas.map(String).slice(0, 24) : base.business.serviceAreas;
   business.primaryCta = String(business.primaryCta).slice(0, 60);
   const different = Array.isArray(value.differentiators) ? value.differentiators.map(String).slice(0, 5) : base.differentiators;
+  const assets = intake.assets && typeof intake.assets === "object" ? intake.assets : undefined;
+  const images = { ...base.images };
+  if (typeof assets?.photoOne === "string") images.hero = assets.photoOne;
+  if (typeof assets?.photoTwo === "string") images.secondary = assets.photoTwo;
   return {
     preset,
     business,
@@ -70,7 +74,9 @@ function normalise(candidate, intake) {
     services: services.length ? services : base.services,
     differentiators: different.length ? different : base.differentiators,
     locations: preset === "home-services" ? business.serviceAreas.map((name) => ({ name, slug: slugify(name) })) : [],
-    images: base.images,
+    images,
+    ...(assets ? { assets } : {}),
+    ...(intake.lead && typeof intake.lead === "object" ? { lead: intake.lead } : {}),
   };
 }
 

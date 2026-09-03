@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@astrojs/react": "latest",
-    "@netlify/functions": "latest",
     "astro": "latest",
     "openai": "latest",
     "react": "latest",
@@ -23,6 +22,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "latest",
+    "@cloudflare/workers-types": "^5.20260903.1",
     "@tailwindcss/vite": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
@@ -30,6 +30,7 @@
     "prettier": "latest",
     "tailwindcss": "latest",
     "typescript": "latest",
-    "vitest": "latest"
+    "vitest": "latest",
+    "wrangler": "^4.129.0"
   }
 }

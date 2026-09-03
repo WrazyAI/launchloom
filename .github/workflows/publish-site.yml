@@ -12,20 +12,18 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      CLIENT_REPO: ${{ github.event.client_payload.repo }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
-      - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Build and publish merged client site
+        with: { node-version: 22 }
+      - name: Build and direct-upload approved client site
+        env:
+          CLIENT_REPO: ${{ github.event.client_payload.repo }}
         run: |
           git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
           cd "$RUNNER_TEMP/client"
-          npm install
-          npm run build
-          SITE_ID=$(node -e "const x=require('./.launchloom-site.json');console.log(x.id)")
-          npx netlify-cli@latest deploy --auth "$NETLIFY_AUTH_TOKEN" --site "$SITE_ID" --dir dist --prod --message "LaunchLoom approved deployment"
+          PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
+          npm ci
+          PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
+          npx wrangler pages deploy dist --project-name "$PROJECT" --commit-hash "$(git rev-parse HEAD)" --commit-message "LaunchLoom approved deployment"

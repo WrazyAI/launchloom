@@ -10,6 +10,8 @@ export type SiteConfig = {
   differentiators: string[];
   locations: Location[];
   images: { hero: string; secondary: string };
+  assets?: { logo?: string; photoOne?: string; photoTwo?: string; photoThree?: string; teamPhoto?: string };
+  lead?: { apiUrl: string; token: string };
 };
 
 export default config as SiteConfig;

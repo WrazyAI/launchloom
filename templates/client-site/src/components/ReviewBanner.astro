@@ -1,5 +1,5 @@
 ---
-const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$/, "");
+const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$/, "");
 ---
 
 <aside class="ll-review" id="ll-review" hidden aria-label="LaunchLoom website review">
@@ -91,7 +91,7 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$
       approve.disabled = true;
       approve.textContent = "Approving…";
       try {
-        const response = await fetch(`${launchloomUrl}/api/approval`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) });
+        const response = await fetch(`${launchloomUrl}/api/approval`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, pageUrl: window.location.href }) });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "Approval could not be recorded.");
         approve.textContent = "Approved ✓";

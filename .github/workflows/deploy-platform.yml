@@ -11,6 +11,17 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+      LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
+      GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+      LAUNCHLOOM_FEEDBACK_EMAIL: ${{ secrets.LAUNCHLOOM_FEEDBACK_EMAIL }}
+      PUBLIC_LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -18,16 +29,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
-      - name: Verify Netlify deployment access
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_DEPLOY_TOKEN }}
-          NETLIFY_PLATFORM_SITE_ID: ${{ secrets.NETLIFY_PLATFORM_SITE_ID }}
+      - name: Verify required Cloudflare and application secrets
         run: |
-          curl --fail --silent --show-error --header "Authorization: Bearer $NETLIFY_AUTH_TOKEN" "https://api.netlify.com/api/v1/sites/$NETLIFY_PLATFORM_SITE_ID" | node -e 'let body=""; process.stdin.on("data", chunk => body += chunk); process.stdin.on("end", () => { const site = JSON.parse(body); if (!site.id || !site.name) process.exit(1); console.log(`Authenticated for Netlify site: ${site.name}`); })'
-      - name: Deploy platform and Netlify Functions
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_DEPLOY_TOKEN }}
-          NETLIFY_PLATFORM_SITE_ID: ${{ secrets.NETLIFY_PLATFORM_SITE_ID }}
+          for key in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL; do
+            test -n "${!key}" || { echo "Missing required secret or variable: $key"; exit 1; }
+          done
+      - name: Configure Worker secrets
         run: |
-          npx --yes netlify-cli@27.4.2 deploy --auth "$NETLIFY_AUTH_TOKEN" --site "$NETLIFY_PLATFORM_SITE_ID" --dir dist --functions netlify/functions --prod --message "LaunchLoom platform $GITHUB_SHA"
+          for key in GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL; do
+            printf '%s' "${!key}" | npx wrangler secret put "$key"
+          done
+      - name: Deploy the LaunchLoom API Worker
+        run: npx wrangler deploy
+      - name: Build platform
+        run: npm run build
+      - name: Direct-upload platform files to Cloudflare Pages
+        run: npx wrangler pages deploy dist --project-name launchloom --commit-hash "$GITHUB_SHA" --commit-message "LaunchLoom platform $GITHUB_SHA"

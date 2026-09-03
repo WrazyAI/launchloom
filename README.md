@@ -1,81 +1,61 @@
 # LaunchLoom
 
-LaunchLoom is a private website-production app for local businesses. It creates a client-specific private GitHub repository and Netlify preview from a verified onboarding brief, then accepts login-free feedback and approval links.
+LaunchLoom creates private, config-driven Astro websites for local businesses. The operator platform, API, and generated client sites deploy to Cloudflare; GitHub Actions remains the private automation control plane.
 
-## What ships now
+## Architecture
 
-- A custom Astro/Tailwind operator experience and multi-step Netlify onboarding form.
-- Google Places API prefill with explicit client confirmation before generation.
-- Two config-driven website presets: a single-page wellness funnel and a multi-page home-services site.
-- OpenRouter generation using `z-ai/glm-5.3-flash` with structured JSON output, low-effort first pass, and one high-effort retry.
-- Netlify event functions for verified intake, Places lookup, feedback, and exact-commit approval.
-- Central GitHub Actions workflows that create private client repositories, deploy Netlify previews through the API, apply supported revisions, and publish approved sites.
-- Netlify Forms for onboarding and generated-site lead collection.
+- **Cloudflare Pages Direct Upload** serves the Astro platform and every generated static client site. Cloudflare never reads the private GitHub repositories.
+- **One Cloudflare Worker** at `api.launchloom.wrazyos.com` handles onboarding intake, Google Places lookup, R2 uploads, review feedback, exact-commit approval, and client lead forms.
+- **R2** stores customer-uploaded logos and photos under an opaque submission prefix. Generated sites use `assets.launchloom.wrazyos.com` URLs.
+- **GitHub Actions** runs OpenRouter generation, creates a private WrazyAI repository and review pull request, uploads built files to Pages, processes feedback, and publishes after approval.
+- **Resend** sends every successful public preview to the client and developer from `LaunchLoom <info@wrazyos.com>`. Feedback notifications go to `david@maigreeks.com` with the client as Reply-To.
 
-## One-time setup
+There is deliberately no database, separate backend host, login system, Redis, GHL workflow, or Cloudflare Git integration.
 
-Do not put any credential in a source file or chat message. Revoke the previously exposed credentials and add replacements directly to GitHub/Netlify.
+## Required configuration
 
-### GitHub Actions secrets in `WrazyAI/launchloom`
+GitHub Actions secrets in `WrazyAI/launchloom`:
 
 | Secret | Purpose |
 | --- | --- |
-| `NETLIFY_AUTH_TOKEN` | Creates and deploys Netlify projects through the API. |
-| `NETLIFY_PLATFORM_SITE_ID` | Existing Netlify project ID for the LaunchLoom platform itself. |
-| `NETLIFY_ACCOUNT_SLUG` | The Netlify team/account slug that owns client projects. |
-| `OPENROUTER_API_KEY` | Calls GLM 5.3 Flash only in Actions. |
-| `LAUNCHLOOM_GITHUB_ORG_TOKEN` | Creates and updates private client repositories. GitHub reserves secret names beginning with `GITHUB_`. |
-| `REVIEW_SIGNING_SECRET` | A high-entropy random string shared with the LaunchLoom Netlify project. |
-| `RESEND_API_KEY` | Sends one preview-ready email after a public preview is built. |
+| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | Direct Pages deploys, Worker deploy, and R2 binding. |
+| `LAUNCHLOOM_GITHUB_ORG_TOKEN` | Private client repositories, issues, pull requests, and dispatches. |
+| `OPENROUTER_API_KEY` | GLM 5.3 Flash generation in Actions only. |
+| `GOOGLE_PLACES_API_KEY` | Places API (New) lookup in the Worker. |
+| `REVIEW_SIGNING_SECRET` | HMAC review and approval links; exactly the Worker value. |
+| `LEAD_SIGNING_SECRET` | HMAC client lead-form claims; exactly the Worker value. |
+| `RESEND_API_KEY` | Preview, feedback, and lead email delivery. |
+| `LAUNCHLOOM_FEEDBACK_EMAIL` | `david@maigreeks.com`. |
 
-`GITHUB_ORG_TOKEN` must be a WrazyAI fine-grained token with repository Administration, Contents, Pull requests, and Issues set to read/write, and access to current and future organization repositories.
+GitHub Actions variable:
 
-### Netlify environment variables for the LaunchLoom project
-
-| Variable | Purpose |
+| Variable | Value |
 | --- | --- |
-| `GOOGLE_PLACES_API_KEY` | Server-side Places API (New) lookups. Restrict this key to Places API and set a quota. |
-| `GITHUB_ORG_TOKEN` | Creates the private intake issue and dispatches the central workflows. |
-| `REVIEW_SIGNING_SECRET` | Must exactly match the Actions secret. |
-| `LAUNCHLOOM_GITHUB_REPOSITORY` | `WrazyAI/launchloom` |
-| `LAUNCHLOOM_PUBLIC_URL` | Public LaunchLoom URL, used to create review links. |
+| `LAUNCHLOOM_FROM_EMAIL` | `LaunchLoom <info@wrazyos.com>` |
 
-Set `LAUNCHLOOM_PUBLIC_URL` as a GitHub Actions variable too. Enable Netlify Forms after the first platform deploy.
+The Cloudflare token must be scoped to the account and permit Workers Scripts edit, Pages edit, and R2 edit. Because `wrangler.jsonc` attaches the ready API Worker to `api.launchloom.wrazyos.com`, it also needs Workers Routes edit and Zone DNS edit for `wrazyos.com` on the first deployment.
 
-### GitHub Actions variables
+## Deploy order
 
-| Variable | Purpose |
-| --- | --- |
-| `LAUNCHLOOM_PUBLIC_URL` | The public LaunchLoom URL, injected into generated previews for review requests. |
-| `LAUNCHLOOM_FROM_EMAIL` | A Resend-verified sender. This project uses `LaunchLoom <info@wrazyos.com>`. |
+1. Confirm the Pages platform and R2 custom domains are active, and add the seven application secrets above.
+2. Run **Deploy LaunchLoom platform**. It writes Worker secrets, deploys `launchloom-api`, attaches the API custom domain, then direct-uploads the platform to the existing `launchloom` Pages project.
+3. Confirm `https://launchloom.wrazyos.com/onboard/` can call `https://api.launchloom.wrazyos.com/api/places` and submit an intake.
+4. Use a fictional intake first. The generation action creates a private client repository and a private-source / public-URL Pages project, deploys `review-initial.<project>.pages.dev`, then immediately emails both client and developer.
 
-Email delivery is intentionally one-shot: when a newly created preview responds publicly, the client receives one review link from `info@wrazyos.com`. If Netlify returns a protected response, the client is not emailed; one operational email goes to `zahemen9900@gmail.com` with the exact Netlify visibility page and preview URL. After making it public, run **Notify client preview** with the intake issue number. Each accepted client feedback item also emails `david@maigreeks.com` with the client as Reply-To, while the pull-request comment remains the durable source of truth.
+Existing Netlify sites are intentionally untouched during this migration. Keep them live until the fictional wellness and home-services flows pass: onboarding, R2 image upload, generation, preview email, feedback, revision, approval, production deploy, and a lead-form email.
 
-Create one empty Netlify project for LaunchLoom, copy its Project ID into `NETLIFY_PLATFORM_SITE_ID`, then run the **Deploy LaunchLoom platform** workflow. Client projects are created automatically after that.
+## Security model
+
+The Worker only accepts platform-origin intake/upload/Places calls. Review and lead requests use signed, expiring claims and must be sent from an origin embedded in the claim; review feedback additionally requires the exact invited email. Both forms include honeypots and strict request/data limits. Add a Turnstile site key and `TURNSTILE_SECRET_KEY` when ready—the Worker already verifies Turnstile when that secret is present. Use the single free-plan WAF rate rule for `/api/*` as an account-wide baseline.
 
 ## Local development
 
 ```sh
 npm install
-npm run dev
-```
-
-Validate the platform with:
-
-```sh
 npm run check
 npm test
-npm run build
+PUBLIC_LAUNCHLOOM_API_URL=http://localhost:8787 npm run dev
+npx wrangler dev
 ```
 
-The reusable generated-site template lives in `templates/client-site`. It can be validated independently with `npm install`, `npm run check`, and `npm run build` from that directory.
-
-## Operating flow
-
-1. A client submits `/onboard`; Netlify verifies the form and opens a private intake issue.
-2. The intake workflow generates a typed `site.config.json`, creates a private WrazyAI client repo, opens a review pull request, and creates a Netlify draft deploy by API.
-3. A public preview automatically emails its signed, direct review link to the client. The in-site banner collects email-matched feedback and supports exact-version approval.
-4. Feedback is written to the pull request. The next revision action only modifies supported site configuration fields.
-5. Approval verifies the token’s pull-request SHA before merging and triggers a production Netlify deploy.
-
-Custom domains remain an operator handoff in this MVP; see [custom-domain-handoff.md](docs/custom-domain-handoff.md). GHL work is intentionally deferred in [ghl-integration.md](docs/ghl-integration.md).
+The generated template lives in `templates/client-site`; validate it independently with `npm ci && npm run check && npm run build` there. Client custom-domain steps are in [custom-domain-handoff.md](docs/custom-domain-handoff.md). GHL remains deferred in [ghl-integration.md](docs/ghl-integration.md).
