@@ -12,6 +12,8 @@ LaunchLoom creates private, config-driven Astro websites for local businesses. T
 
 There is deliberately no database, separate backend host, login system, Redis, GHL workflow, or Cloudflare Git integration.
 
+Generated Pages-project names are capped at 39 characters. This is intentional: the internal preview address adds the `review-initial.` branch alias, and the shorter project label keeps preview TLS reliable in this Cloudflare account.
+
 ## Required configuration
 
 GitHub Actions secrets in `WrazyAI/launchloom`:
