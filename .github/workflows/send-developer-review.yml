@@ -1,0 +1,40 @@
+name: Send developer review link
+
+on:
+  repository_dispatch:
+    types: [send-developer-review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
+      CLIENT_REPO: ${{ github.event.client_payload.repo }}
+      CLIENT_PR: ${{ github.event.client_payload.pr }}
+      CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}
+      FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
+      PROJECT: ${{ github.event.client_payload.project }}
+      PREVIEW: ${{ github.event.client_payload.preview }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      - name: Mint and send the exact developer review link
+        run: |
+          test -n "$CLIENT_REPO" && test -n "$CLIENT_PR" && test -n "$CLIENT_EMAIL" && test -n "$FEEDBACK_ISSUE" && test -n "$PROJECT" && test -n "$PREVIEW" && test -n "$LAUNCHLOOM_DEVELOPER_EMAIL"
+          SHA=$(gh pr view "$CLIENT_PR" --repo "$CLIENT_REPO" --json headRefOid --jq .headRefOid)
+          NAME=$(gh api "repos/$CLIENT_REPO/contents/src/site.config.json?ref=$SHA" --jq .content | base64 --decode | node -e 'let raw=""; process.stdin.on("data", (value) => raw += value).on("end", () => console.log(JSON.parse(raw).business.name))')
+          ORIGINS="$PREVIEW,https://$PROJECT.pages.dev"
+          TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "$SHA" --site "$PROJECT" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$ORIGINS" --token-only true)
+          LINK="$PREVIEW?review=$TOKEN"
+          gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Refreshed developer preview' "$PREVIEW" "$LINK")"
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$PREVIEW" --review "$LINK" --kind revision --audience developer
