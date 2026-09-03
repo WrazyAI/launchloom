@@ -30,8 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with: { node-version: 22, cache: npm }
-      - run: npm ci
+        with: { node-version: 22 }
       - name: Create or reuse the active client revision PR
         id: revision
         run: |

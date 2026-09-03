@@ -26,8 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
-        with: { node-version: 22, cache: npm }
-      - run: npm ci
+        with: { node-version: 22 }
       - name: Clone review branch
         id: branch
         run: |
