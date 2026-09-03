@@ -64,10 +64,7 @@ export default function ReviewPanel() {
   }
 
   async function approve() {
-    if (!token || !email.trim()) {
-      setState("Enter the developer email that received this link to approve.");
-      return;
-    }
+    if (!token) return;
     if (
       !window.confirm("Approve this exact preview and send it to the client?")
     )
@@ -76,7 +73,11 @@ export default function ReviewPanel() {
     const response = await fetch(`${apiBase}/api/approval`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, email, pageUrl: window.location.href }),
+      body: JSON.stringify({
+        token,
+        email: claims.reviewerEmail || "",
+        pageUrl: window.location.href,
+      }),
     });
     const data = (await response.json().catch(() => ({}))) as {
       error?: string;

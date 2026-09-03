@@ -87,12 +87,12 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
       } catch (error) { status.textContent = error instanceof Error ? error.message : "Feedback could not be sent."; }
     });
     approve.addEventListener("click", async () => {
-      const submittedEmail = String(emailInput.value || "").trim().toLowerCase();
-      if (!verifyEmail(submittedEmail)) { setModal(true); return; }
       if (!window.confirm("Approve this exact version, publish it, and send the client their review link?")) return;
       approve.disabled = true; approve.textContent = "Publishing…";
       try {
-        const response = await fetch(`${launchloomUrl}/api/approval`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: submittedEmail, pageUrl: window.location.href }) });
+        // The developer identity is already bound to this signed link. Unlike
+        // feedback, approval should not force the developer through the form.
+        const response = await fetch(`${launchloomUrl}/api/approval`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: String(claims.reviewerEmail || ""), pageUrl: window.location.href }) });
         const result = await response.json(); if (!response.ok) throw new Error(result.error || "Approval could not be recorded.");
         approve.textContent = "Approved ✓";
       } catch (error) { approve.disabled = false; approve.textContent = error instanceof Error ? error.message : "Approve & send to client"; }

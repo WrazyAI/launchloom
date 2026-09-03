@@ -41,10 +41,13 @@ jobs:
         id: deploy
         run: |
           CLIENT_DIR="$RUNNER_TEMP/client"
+          # Generated repositories intentionally stay standalone, so keep the
+          # small review island aligned when a developer preview is refreshed.
+          cp "$GITHUB_WORKSPACE/templates/client-site/src/components/ReviewBanner.astro" "$CLIENT_DIR/src/components/ReviewBanner.astro"
           cd "$CLIENT_DIR"
           if git diff --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
-          git add src/site.config.json; git commit -m "Apply client feedback"; git push origin "${{ steps.branch.outputs.name }}"
+          git add src/site.config.json src/components/ReviewBanner.astro; git commit -m "Apply developer feedback"; git push origin "${{ steps.branch.outputs.name }}"
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
           npm ci
           PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build

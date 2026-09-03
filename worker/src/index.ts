@@ -92,7 +92,12 @@ function isPagesOrigin(origin: string | null) {
   try {
     return Boolean(
       origin &&
-      /^https:\/\/[a-z0-9-]+\.pages\.dev$/i.test(new URL(origin).origin),
+      // Preview hosts have two labels: branch.project.pages.dev. The OPTIONS
+      // request has no signed token to inspect, so allow Pages preview origins
+      // here; the following POST still requires the exact signed origin.
+      /^https:\/\/(?:[a-z0-9-]+\.)+[a-z0-9-]+\.pages\.dev$/i.test(
+        new URL(origin).origin,
+      ),
     );
   } catch {
     return false;
