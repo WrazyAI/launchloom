@@ -19,11 +19,14 @@ export interface Env {
 }
 
 type ReviewClaims = {
+  stage: "developer" | "client";
   repo: string;
-  pr: number;
-  headSha: string;
   siteId: string;
+  reviewerEmail: string;
   clientEmail: string;
+  pr?: number;
+  headSha?: string;
+  feedbackIssue?: number;
   expiresAt: number;
   allowedOrigins?: string[];
 };
@@ -222,6 +225,19 @@ async function sendEmail(
   });
   if (!response.ok)
     throw new Error(`Email delivery failed: ${response.status}`);
+}
+
+async function currentReviewPr(env: Env, claims: ReviewClaims) {
+  if (!claims.pr || !claims.headSha)
+    throw new Error("Invalid developer review link.");
+  return github(env, `/repos/${claims.repo}/pulls/${claims.pr}`).then(
+    (response) =>
+      response.json() as Promise<{
+        head: { sha: string };
+        state: string;
+        draft: boolean;
+      }>,
+  );
 }
 
 async function intake(request: Request, env: Env) {
@@ -448,7 +464,9 @@ async function feedback(request: Request, env: Env) {
       env.REVIEW_SIGNING_SECRET,
     );
     if (
+      !claims.stage ||
       !claims.repo.startsWith("WrazyAI/") ||
+      !claims.reviewerEmail ||
       !claims.clientEmail ||
       claims.expiresAt < Date.now() ||
       !claims.allowedOrigins?.length
@@ -463,7 +481,10 @@ async function feedback(request: Request, env: Env) {
         400,
         cors(request, claims.allowedOrigins),
       );
-    if (!submittedEmail || submittedEmail !== claims.clientEmail.toLowerCase())
+    if (
+      !submittedEmail ||
+      submittedEmail !== claims.reviewerEmail.toLowerCase()
+    )
       return json(
         {
           error:
@@ -472,26 +493,58 @@ async function feedback(request: Request, env: Env) {
         403,
         cors(request, claims.allowedOrigins),
       );
-    await github(env, `/repos/${claims.repo}/issues/${claims.pr}/comments`, {
+    if (claims.stage === "developer") {
+      const current = await currentReviewPr(env, claims);
+      if (
+        current.state !== "open" ||
+        current.draft ||
+        current.head.sha !== claims.headSha
+      )
+        return json(
+          {
+            error:
+              "This preview has changed. Use the latest developer review link.",
+          },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+    } else if (!claims.feedbackIssue) {
+      throw new Error("Invalid client review link.");
+    }
+    const issueNumber =
+      claims.stage === "developer" ? claims.pr : claims.feedbackIssue;
+    await github(env, `/repos/${claims.repo}/issues/${issueNumber}/comments`, {
       method: "POST",
       body: JSON.stringify({
-        body: `<!-- launchloom-feedback -->\n**Client feedback${category ? ` · ${clean(category, 80)}` : ""}**\n\n${note}\n\n_Page: ${clean(pageUrl, 1000)}_`,
+        body: `<!-- launchloom-feedback:${claims.stage} -->\n**${claims.stage === "developer" ? "Developer" : "Client"} feedback${category ? ` · ${clean(category, 80)}` : ""}**\n\n${note}\n\n_Page: ${clean(pageUrl, 1000)}_`,
       }),
     });
-    await dispatch(env, "process-feedback", {
-      repo: claims.repo,
-      pr: claims.pr,
-      siteId: claims.siteId,
-    });
-    if (env.LAUNCHLOOM_FEEDBACK_EMAIL)
+    await dispatch(
+      env,
+      claims.stage === "developer"
+        ? "process-developer-feedback"
+        : "process-client-feedback",
+      {
+        repo: claims.repo,
+        pr: claims.pr,
+        feedbackIssue: claims.feedbackIssue,
+        siteId: claims.siteId,
+        clientEmail: claims.clientEmail,
+      },
+    );
+    if (claims.stage === "client" && env.LAUNCHLOOM_FEEDBACK_EMAIL)
       await sendEmail(env, {
         to: env.LAUNCHLOOM_FEEDBACK_EMAIL,
         replyTo: submittedEmail,
-        subject: `Client feedback · ${claims.repo.split("/")[1]}${category ? ` · ${clean(category, 80)}` : ""}`,
+        subject: `Client feedback awaiting developer review · ${claims.repo.split("/")[1]}${category ? ` · ${clean(category, 80)}` : ""}`,
         html: `<p><strong>From:</strong> ${submittedEmail}</p><p>${note.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>")}</p>`,
         tag: "client-feedback",
       });
-    return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
+    return json(
+      { ok: true, stage: claims.stage },
+      200,
+      cors(request, claims.allowedOrigins),
+    );
   } catch (error) {
     console.error("Feedback failed", error);
     return json(
@@ -514,7 +567,7 @@ async function approval(request: Request, env: Env) {
   if (request.method !== "POST")
     return new Response("Method not allowed", { status: 405, headers });
   try {
-    const { token, pageUrl } = (await request.json()) as Record<
+    const { token, pageUrl, email } = (await request.json()) as Record<
       string,
       unknown
     >;
@@ -523,23 +576,22 @@ async function approval(request: Request, env: Env) {
       env.REVIEW_SIGNING_SECRET,
     );
     if (
+      claims.stage !== "developer" ||
       !claims.repo.startsWith("WrazyAI/") ||
+      !claims.reviewerEmail ||
+      !claims.clientEmail ||
       claims.expiresAt < Date.now() ||
       !claims.allowedOrigins?.length
     )
       throw new Error("Invalid review link.");
     assertClaimOrigin(request, claims.allowedOrigins, String(pageUrl || ""));
-    const current = await github(
-      env,
-      `/repos/${claims.repo}/pulls/${claims.pr}`,
-    ).then(
-      (response) =>
-        response.json() as Promise<{
-          head: { sha: string };
-          state: string;
-          draft: boolean;
-        }>,
-    );
+    if (clean(email, 240).toLowerCase() !== claims.reviewerEmail.toLowerCase())
+      return json(
+        { error: "Use the developer email that received this review link." },
+        403,
+        cors(request, claims.allowedOrigins),
+      );
+    const current = await currentReviewPr(env, claims);
     if (
       current.state !== "open" ||
       current.draft ||
@@ -550,10 +602,10 @@ async function approval(request: Request, env: Env) {
         409,
         cors(request, claims.allowedOrigins),
       );
-    await github(env, `/repos/${claims.repo}/pulls/${claims.pr}/merge`, {
+    await github(env, `/repos/${claims.repo}/pulls/${claims.pr!}/merge`, {
       method: "PUT",
       body: JSON.stringify({
-        sha: claims.headSha,
+        sha: claims.headSha!,
         merge_method: "squash",
         commit_title: "LaunchLoom approved site",
       }),
@@ -561,6 +613,8 @@ async function approval(request: Request, env: Env) {
     await dispatch(env, "publish-site", {
       repo: claims.repo,
       siteId: claims.siteId,
+      clientEmail: claims.clientEmail,
+      feedbackIssue: claims.feedbackIssue,
     });
     return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
   } catch (error) {

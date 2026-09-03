@@ -8,7 +8,7 @@ LaunchLoom creates private, config-driven Astro websites for local businesses. T
 - **One Cloudflare Worker** at `api.launchloom.wrazyos.com` handles onboarding intake, Google Places lookup, R2 uploads, review feedback, exact-commit approval, and client lead forms.
 - **R2** stores customer-uploaded logos and photos under an opaque submission prefix. Generated sites use `assets.launchloom.wrazyos.com` URLs.
 - **GitHub Actions** runs OpenRouter generation, creates a private WrazyAI repository and review pull request, uploads built files to Pages, processes feedback, and publishes after approval.
-- **Resend** sends every successful public preview to the client and developer from `LaunchLoom <info@wrazyos.com>`. Feedback notifications go to `david@maigreeks.com` with the client as Reply-To.
+- **Resend** sends initial and revised preview links only to the developer. Once the developer approves an exact commit, it sends the client a production review link from `LaunchLoom <info@wrazyos.com>`. Client-feedback notifications go to `david@maigreeks.com` with the client as Reply-To.
 
 There is deliberately no database, separate backend host, login system, Redis, GHL workflow, or Cloudflare Git integration.
 
@@ -16,22 +16,23 @@ There is deliberately no database, separate backend host, login system, Redis, G
 
 GitHub Actions secrets in `WrazyAI/launchloom`:
 
-| Secret | Purpose |
-| --- | --- |
-| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | Direct Pages deploys, Worker deploy, and R2 binding. |
-| `LAUNCHLOOM_GITHUB_ORG_TOKEN` | Private client repositories, issues, pull requests, and dispatches. |
-| `OPENROUTER_API_KEY` | GLM 5.3 Flash generation in Actions only. |
-| `GOOGLE_PLACES_API_KEY` | Places API (New) lookup in the Worker. |
-| `REVIEW_SIGNING_SECRET` | HMAC review and approval links; exactly the Worker value. |
-| `LEAD_SIGNING_SECRET` | HMAC client lead-form claims; exactly the Worker value. |
-| `RESEND_API_KEY` | Preview, feedback, and lead email delivery. |
-| `LAUNCHLOOM_FEEDBACK_EMAIL` | `david@maigreeks.com`. |
+| Secret                                           | Purpose                                                             |
+| ------------------------------------------------ | ------------------------------------------------------------------- |
+| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | Direct Pages deploys, Worker deploy, and R2 binding.                |
+| `LAUNCHLOOM_GITHUB_ORG_TOKEN`                    | Private client repositories, issues, pull requests, and dispatches. |
+| `OPENROUTER_API_KEY`                             | GLM 5.3 Flash generation in Actions only.                           |
+| `GOOGLE_PLACES_API_KEY`                          | Places API (New) lookup in the Worker.                              |
+| `REVIEW_SIGNING_SECRET`                          | HMAC review and approval links; exactly the Worker value.           |
+| `LEAD_SIGNING_SECRET`                            | HMAC client lead-form claims; exactly the Worker value.             |
+| `RESEND_API_KEY`                                 | Preview, feedback, and lead email delivery.                         |
+| `LAUNCHLOOM_FEEDBACK_EMAIL`                      | `david@maigreeks.com`.                                              |
 
 GitHub Actions variable:
 
-| Variable | Value |
-| --- | --- |
-| `LAUNCHLOOM_FROM_EMAIL` | `LaunchLoom <info@wrazyos.com>` |
+| Variable                     | Value                           |
+| ---------------------------- | ------------------------------- |
+| `LAUNCHLOOM_FROM_EMAIL`      | `LaunchLoom <info@wrazyos.com>` |
+| `LAUNCHLOOM_DEVELOPER_EMAIL` | `david@maigreeks.com`           |
 
 The Cloudflare token must be scoped to the account and permit Workers Scripts edit, Pages edit, and R2 edit. Because `wrangler.jsonc` attaches the ready API Worker to `api.launchloom.wrazyos.com`, it also needs Workers Routes edit and Zone DNS edit for `wrazyos.com` on the first deployment.
 
@@ -40,7 +41,7 @@ The Cloudflare token must be scoped to the account and permit Workers Scripts ed
 1. Confirm the Pages platform and R2 custom domains are active, and add the seven application secrets above.
 2. Run **Deploy LaunchLoom platform**. It writes Worker secrets, deploys `launchloom-api`, attaches the API custom domain, then direct-uploads the platform to the existing `launchloom` Pages project.
 3. Confirm `https://launchloom.wrazyos.com/onboard/` can call `https://api.launchloom.wrazyos.com/api/places` and submit an intake.
-4. Use a fictional intake first. The generation action creates a private client repository and a private-source / public-URL Pages project, deploys `review-initial.<project>.pages.dev`, then immediately emails both client and developer.
+4. Use a fictional intake first. The generation action creates a private client repository and a private-source / public-URL Pages project, deploys `review-initial.<project>.pages.dev`, then emails only the developer. Developer approval merges and publishes that exact commit before the client is invited. Client feedback creates another internal developer preview; only a further developer approval can update production.
 
 Existing Netlify sites are intentionally untouched during this migration. Keep them live until the fictional wellness and home-services flows pass: onboarding, R2 image upload, generation, preview email, feedback, revision, approval, production deploy, and a lead-form email.
 

@@ -1,0 +1,84 @@
+name: Process client feedback for developer review
+
+on:
+  repository_dispatch:
+    types: [process-client-feedback]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  revise:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: client-revision-${{ github.event.client_payload.repo }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
+      CLIENT_REPO: ${{ github.event.client_payload.repo }}
+      FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Create or reuse the active client revision PR
+        id: revision
+        run: |
+          test -n "$CLIENT_REPO" && test -n "$FEEDBACK_ISSUE" && test -n "$LAUNCHLOOM_DEVELOPER_EMAIL"
+          OPEN=$(gh pr list --repo "$CLIENT_REPO" --state open --label launchloom-client-revision --json number,headRefName --jq '.[0]')
+          if [ -n "$OPEN" ]; then
+            PR=$(printf '%s' "$OPEN" | jq -r .number)
+            BRANCH=$(printf '%s' "$OPEN" | jq -r .headRefName)
+          else
+            BRANCH=review/client-revision
+            gh label create launchloom-client-revision --repo "$CLIENT_REPO" --color 1D76DB --description "LaunchLoom client revision awaiting developer approval" --force
+            git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
+            cd "$RUNNER_TEMP/client"
+            git switch -c "$BRANCH" origin/main
+            git push --set-upstream origin "$BRANCH"
+            PR=$(gh pr create --repo "$CLIENT_REPO" --base main --head "$BRANCH" --title "Client-requested website revision" --body "Client feedback is awaiting internal developer approval.\n\n<!-- launchloom-feedback-inbox:$FEEDBACK_ISSUE -->")
+            PR=${PR##*/}
+            gh pr edit "$PR" --repo "$CLIENT_REPO" --add-label launchloom-client-revision
+          fi
+          if [ ! -d "$RUNNER_TEMP/client/.git" ]; then git clone --branch "$BRANCH" "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"; fi
+          echo "pr=$PR" >> "$GITHUB_OUTPUT"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+      - name: Apply pending client feedback
+        run: CLIENT_PR="${{ steps.revision.outputs.pr }}" CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" FEEDBACK_ISSUE="$FEEDBACK_ISSUE" FEEDBACK_STAGE=client node scripts/apply-feedback.mjs
+      - name: Build and direct-upload developer preview
+        id: deploy
+        run: |
+          cd "$RUNNER_TEMP/client"
+          if git diff --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
+          git add src/site.config.json; git commit -m "Apply client feedback for developer review"; git push origin "${{ steps.revision.outputs.branch }}"
+          PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
+          npm ci
+          PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
+          BRANCH_SAFE=$(echo "${{ steps.revision.outputs.branch }}" | tr '/' '-')
+          npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "Client feedback developer preview"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
+          echo "preview=https://$BRANCH_SAFE.$PROJECT.pages.dev" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Send the revised preview to the developer
+        if: steps.deploy.outputs.changed == 'true'
+        run: |
+          CLIENT_EMAIL=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.email)')
+          ORIGINS="${{ steps.deploy.outputs.preview }},https://${{ steps.deploy.outputs.project }}.pages.dev"
+          TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "$CLIENT_REPO" --pr "${{ steps.revision.outputs.pr }}" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.deploy.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$ORIGINS" --token-only true)
+          LINK="${{ steps.deploy.outputs.preview }}?review=$TOKEN"
+          gh pr comment "${{ steps.revision.outputs.pr }}" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Client-feedback developer preview' '${{ steps.deploy.outputs.preview }}' "$LINK")"
+          gh issue comment "$FEEDBACK_ISSUE" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s' '<!-- launchloom-revision:client -->' 'Client feedback has been incorporated into an internal developer preview.')"
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision --audience developer

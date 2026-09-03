@@ -4,9 +4,9 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
 
 <aside class="ll-review" id="ll-review" hidden aria-label="LaunchLoom website review">
   <div class="ll-review__bar">
-    <p><span aria-hidden="true">▣</span> This is a draft of your new website — does it look right?</p>
+    <p class="ll-review__summary"><span aria-hidden="true">▣</span> Review this website</p>
     <div class="ll-review__actions">
-      <button class="ll-approve" type="button">✓ Approve</button>
+      <button class="ll-approve" type="button" hidden>✓ Approve &amp; send to client</button>
       <button class="ll-feedback-open" type="button">⌁ Provide feedback</button>
     </div>
   </div>
@@ -14,12 +14,12 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
     <div class="ll-review__dialog">
       <button class="ll-close" type="button" aria-label="Close feedback form">×</button>
       <h2 id="ll-review-title">What would you like changed?</h2>
-      <p>Tap what applies, then leave a clear note. We’ll group your requests into one focused revision.</p>
+      <p class="ll-review__intro">Tap what applies, then leave a clear note.</p>
       <div class="ll-categories" aria-label="Feedback category">
         <button type="button" data-category="Logo" aria-pressed="false">Logo</button><button type="button" data-category="Phone number" aria-pressed="false">Phone number</button><button type="button" data-category="Hero image" aria-pressed="false">Hero image</button><button type="button" data-category="Wording" aria-pressed="false">Wording</button><button type="button" data-category="Colors" aria-pressed="false">Colors</button><button type="button" data-category="Services" aria-pressed="false">Services</button><button type="button" data-category="Photos" aria-pressed="false">Photos</button>
       </div>
       <form class="ll-feedback-form">
-        <label>Your review email<input type="email" name="email" required autocomplete="email" placeholder="The email we sent this preview to" /></label>
+        <label>Your review email<input type="email" name="email" required autocomplete="email" placeholder="The email we sent this link to" /></label>
         <label>What should change?<textarea name="comment" required maxlength="5000" placeholder="For example: Make the main headline more direct and use a warmer hero photo."></textarea></label>
         <p class="ll-feedback-status" role="status"></p>
         <div class="ll-modal-actions"><button class="ll-cancel" type="button">Back</button><button class="ll-send" type="submit">Send feedback</button></div>
@@ -31,10 +31,17 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
 <script is:inline define:vars={{ launchloomUrl }}>
   const root = document.querySelector("#ll-review");
   const token = new URLSearchParams(window.location.search).get("review");
-  if (!root || !token || !launchloomUrl) {
+  const claims = (() => {
+    try {
+      const encoded = token?.split(".")[0]?.replace(/-/g, "+").replace(/_/g, "/") || "";
+      return JSON.parse(atob(encoded.padEnd(encoded.length + ((4 - encoded.length % 4) % 4), "=")));
+    } catch { return null; }
+  })();
+  if (!root || !token || !launchloomUrl || !["developer", "client"].includes(claims?.stage)) {
     root?.setAttribute("hidden", "");
   } else {
     root.removeAttribute("hidden");
+    const developer = claims.stage === "developer";
     const modal = root.querySelector(".ll-review__modal");
     const open = root.querySelector(".ll-feedback-open");
     const close = root.querySelector(".ll-close");
@@ -42,60 +49,53 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
     const approve = root.querySelector(".ll-approve");
     const form = root.querySelector(".ll-feedback-form");
     const status = root.querySelector(".ll-feedback-status");
-    const invitedEmail = (() => {
-      try {
-        const encoded = token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
-        const padded = encoded.padEnd(encoded.length + ((4 - encoded.length % 4) % 4), "=");
-        return JSON.parse(atob(padded)).clientEmail?.toLowerCase() || "";
-      } catch { return ""; }
-    })();
     const emailInput = form.querySelector('input[name="email"]');
     const selectedCategories = new Set();
+    root.querySelector(".ll-review__summary").innerHTML = developer
+      ? "<span aria-hidden=\"true\">▣</span> Internal developer review — approve before the client sees this"
+      : "<span aria-hidden=\"true\">▣</span> Your website is live — tell us what you would like changed";
+    root.querySelector(".ll-review__intro").textContent = developer
+      ? "Leave clear internal notes, or approve this exact version to publish and invite the client."
+      : "Tap what applies, then leave a clear note. We will review it before publishing an update.";
+    approve.toggleAttribute("hidden", !developer);
     const setModal = (visible) => modal.toggleAttribute("hidden", !visible);
     open.addEventListener("click", () => setModal(true));
     close.addEventListener("click", () => setModal(false));
     cancel.addEventListener("click", () => setModal(false));
     root.querySelectorAll("[data-category]").forEach((button) => button.addEventListener("click", () => {
       const value = button.dataset.category || "";
-      if (selectedCategories.has(value)) selectedCategories.delete(value);
-      else selectedCategories.add(value);
-      const selected = selectedCategories.has(value);
-      button.classList.toggle("is-active", selected);
-      button.setAttribute("aria-pressed", String(selected));
+      if (selectedCategories.has(value)) selectedCategories.delete(value); else selectedCategories.add(value);
+      button.classList.toggle("is-active", selectedCategories.has(value));
+      button.setAttribute("aria-pressed", String(selectedCategories.has(value)));
     }));
     emailInput.addEventListener("input", () => emailInput.setCustomValidity(""));
+    const verifyEmail = (submittedEmail) => {
+      if (submittedEmail === String(claims.reviewerEmail || "").toLowerCase()) return true;
+      const message = "Use the same email address that received this review link.";
+      emailInput.setCustomValidity(message); emailInput.reportValidity(); status.textContent = message; return false;
+    };
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const data = new FormData(form);
-      const submittedEmail = String(data.get("email") || "").trim().toLowerCase();
-      if (invitedEmail && submittedEmail !== invitedEmail) {
-        const message = "Use the same email address that received this preview invitation.";
-        emailInput.setCustomValidity(message);
-        emailInput.reportValidity();
-        status.textContent = message;
-        return;
-      }
+      const data = new FormData(form); const submittedEmail = String(data.get("email") || "").trim().toLowerCase();
+      if (!verifyEmail(submittedEmail)) return;
       status.textContent = "Sending…";
       try {
-        const response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: data.get("email"), comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href }) });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");
-        status.textContent = "Received — we’ll turn this into the next revision.";
-        form.reset();
-        selectedCategories.clear();
-        root.querySelectorAll("[data-category]").forEach((button) => { button.classList.remove("is-active"); button.setAttribute("aria-pressed", "false"); });
+        const response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href }) });
+        const result = await response.json(); if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");
+        status.textContent = developer ? "Received — a revised developer preview will be sent shortly." : "Received — we will review your request before publishing an update.";
+        form.reset(); selectedCategories.clear(); root.querySelectorAll("[data-category]").forEach((button) => { button.classList.remove("is-active"); button.setAttribute("aria-pressed", "false"); });
       } catch (error) { status.textContent = error instanceof Error ? error.message : "Feedback could not be sent."; }
     });
     approve.addEventListener("click", async () => {
-      if (!window.confirm("Approve this exact version for publishing? A newer revision will need a new approval.")) return;
-      approve.disabled = true;
-      approve.textContent = "Approving…";
+      const submittedEmail = String(emailInput.value || "").trim().toLowerCase();
+      if (!verifyEmail(submittedEmail)) { setModal(true); return; }
+      if (!window.confirm("Approve this exact version, publish it, and send the client their review link?")) return;
+      approve.disabled = true; approve.textContent = "Publishing…";
       try {
-        const response = await fetch(`${launchloomUrl}/api/approval`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, pageUrl: window.location.href }) });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "Approval could not be recorded.");
+        const response = await fetch(`${launchloomUrl}/api/approval`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: submittedEmail, pageUrl: window.location.href }) });
+        const result = await response.json(); if (!response.ok) throw new Error(result.error || "Approval could not be recorded.");
         approve.textContent = "Approved ✓";
-      } catch (error) { approve.disabled = false; approve.textContent = error instanceof Error ? error.message : "Approve"; }
+      } catch (error) { approve.disabled = false; approve.textContent = error instanceof Error ? error.message : "Approve & send to client"; }
     });
   }
 </script>
