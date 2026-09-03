@@ -11,12 +11,14 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
     steps:
       # The signed-link and mail scripts live in the private LaunchLoom control
       # repository, not in the generated client repository cloned below.
@@ -38,4 +40,10 @@ jobs:
           test -n "$CLIENT_EMAIL" && test -n "$FEEDBACK_ISSUE"
           PRODUCTION="https://$PROJECT.pages.dev"
           TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage client --repo "$CLIENT_REPO" --site "$PROJECT" --email "$CLIENT_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$PRODUCTION" --token-only true)
-          node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$CLIENT_EMAIL" --name "$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')" --preview "$PRODUCTION" --review "$PRODUCTION?review=$TOKEN" --kind published --audience client
+          NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"
+          REVIEW_URL="$PRODUCTION?review=$TOKEN"
+          if ! node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$CLIENT_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience client; then
+            gh issue comment "$FEEDBACK_ISSUE" --repo "$CLIENT_REPO" --body "<!-- launchloom-client-delivery-failed -->\n\nProduction deployed, but client email delivery failed. The developer has been notified to verify the recipient and send the production review link manually."
+            node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience delivery-failure || true
+            exit 1
+          fi
