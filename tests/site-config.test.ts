@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalise } from "../scripts/generate-site-config.mjs";
+import { evaluateDraft, normalise } from "../scripts/generate-site-config.mjs";
 
 describe("site configuration", () => {
   it("uses client photos and logo metadata without substituting an unrelated stock image", () => {
@@ -121,5 +121,39 @@ describe("site configuration", () => {
       "Get a clear recommendation",
     ]);
     expect(config.conversion.process).not.toContain("[object Object]");
+  });
+
+  it("keeps submitted service names and flags shallow conversion drafts", () => {
+    const config = normalise(
+      {
+        services: [
+          {
+            name: "Invented service",
+            description: "A service tailored to your needs.",
+          },
+        ],
+        copy: { heroKicker: "Next level support", servicesHeading: "Help" },
+        conversion: { process: ["Call us"], faqs: [] },
+      },
+      {
+        businessName: "Northside Roofing",
+        services: "Roof repair\nRoof replacement",
+        primaryCta: "Request an inspection",
+        industry: "home-services",
+        preset: "home-services",
+      },
+    );
+
+    expect(config.services.map((service: { name: string }) => service.name)).toEqual([
+      "Roof repair",
+      "Roof replacement",
+    ]);
+    expect(evaluateDraft(config).issues).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/opening message/i),
+        expect.stringMatching(/primary headings/i),
+        expect.stringMatching(/visitor journey/i),
+      ]),
+    );
   });
 });

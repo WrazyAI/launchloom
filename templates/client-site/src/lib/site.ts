@@ -59,6 +59,11 @@ export type SiteConfig = {
     used: Array<{ asset: string; placement: string; source: string }>;
     skipped: Array<{ asset: string; reason: string }>;
   };
+  qualityReport?: {
+    score: number;
+    issues: string[];
+    refined: boolean;
+  };
   lead?: { apiUrl: string; token: string };
 };
 

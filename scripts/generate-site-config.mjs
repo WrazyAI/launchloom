@@ -220,6 +220,66 @@ function defaultFaq(industry, cta) {
   ];
 }
 
+const GENERIC_COPY =
+  /tailored to your needs|personalized support|quality you can trust|when it matters|next level|we are here for you|your trusted partner|one[- ]stop/i;
+
+export function evaluateDraft(config) {
+  const issues = [];
+  const businessName = text(config.business?.name, 100);
+  const services = Array.isArray(config.services) ? config.services : [];
+  const process = config.conversion?.process || [];
+  const faqs = config.conversion?.faqs || [];
+  const copy = config.copy || {};
+
+  if (!businessName || /^your business$/i.test(businessName))
+    issues.push("The verified business name is missing or looks like a placeholder.");
+  if (!services.length) issues.push("There is no clear service offer on the site.");
+  if (
+    services.some(
+      (service) =>
+        text(service.name, 80).length < 3 ||
+        text(service.description, 200).length < 45 ||
+        GENERIC_COPY.test(String(service.description || "")),
+    )
+  )
+    issues.push(
+      "At least one service card lacks a specific, customer-useful outcome.",
+    );
+  if (
+    text(copy.heroKicker, 160).length < 8 ||
+    text(copy.servicesHeading, 160).length < 12
+  )
+    issues.push("The opening message lacks a clear, specific value proposition.");
+  if (
+    GENERIC_COPY.test(
+      `${copy.heroKicker || ""} ${copy.servicesHeading || ""} ${copy.aboutHeading || ""}`,
+    )
+  )
+    issues.push("The primary headings use generic marketing language.");
+  if (text(config.business?.primaryCta, 80).length < 4)
+    issues.push("The primary conversion action is unclear.");
+  if (process.length < 3 || process.some((step) => text(step, 120).length < 10))
+    issues.push("The visitor journey needs at least three clear next steps.");
+  if (
+    faqs.length < 2 ||
+    faqs.some(
+      (faq) =>
+        text(faq.question, 160).length < 8 || text(faq.answer, 360).length < 40,
+    )
+  )
+    issues.push("The FAQ section lacks enough useful decision support.");
+  if (
+    config.images?.hero &&
+    !config.assets?.photoOne &&
+    !Object.values(STOCK_PACKS)
+      .flatMap(Object.values)
+      .includes(config.images.hero)
+  )
+    issues.push("The hero image is not from an approved contextual asset pack.");
+
+  return { score: Math.max(0, 100 - issues.length * 12), issues };
+}
+
 function fallback(intake) {
   const preset =
     intake.preset === "home-services" ? "home-services" : "wellness";
@@ -297,9 +357,20 @@ export function normalise(candidate, intake) {
   const value = candidate && typeof candidate === "object" ? candidate : {};
   const preset =
     value.preset === "home-services" ? "home-services" : base.preset;
-  const serviceInput = Array.isArray(value.services)
-    ? value.services
-    : base.services;
+  const submittedServiceNames = lines(intake.services);
+  // The model can improve descriptions, but it cannot rename, replace, or
+  // invent the services the client says it sells.
+  const serviceInput = submittedServiceNames.length
+    ? submittedServiceNames.map((name, index) => ({
+        name,
+        slug: slugify(name),
+        description: Array.isArray(value.services)
+          ? value.services[index]?.description
+          : undefined,
+      }))
+    : Array.isArray(value.services)
+      ? value.services
+      : base.services;
   const services = serviceInput.slice(0, 8).map((service, index) => ({
     name: String(
       service.name || base.services[index]?.name || "Our service",
@@ -411,7 +482,7 @@ export function normalise(candidate, intake) {
     preset,
     industry: base.industry,
     business,
-    style: { ...base.style, ...(value.style || {}) },
+    style: { ...(value.style || {}), ...base.style },
     services: services.length ? services : base.services,
     differentiators: different.length ? different : base.differentiators,
     locations:
@@ -468,17 +539,86 @@ async function askModel(intake, effort) {
   return JSON.parse(content);
 }
 
+async function refineDraft(intake, draft, report) {
+  const response = await fetch(
+    "https://openrouter.ai/api/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "X-OpenRouter-Title": "LaunchLoom quality refinement",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        reasoning_effort: "low",
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Fix only the listed quality issues. Preserve every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, or claims. Do not return HTML, CSS, code, explanations, or markdown.",
+          },
+          {
+            role: "user",
+            content: `Verified intake facts:\n${JSON.stringify(intake)}\n\nCurrent draft:\n${JSON.stringify(draft)}\n\nQuality issues to fix:\n${report.issues.map((issue, index) => `${index + 1}. ${issue}`).join("\n")}`,
+          },
+        ],
+      }),
+    },
+  );
+  if (!response.ok)
+    throw new Error(
+      `OpenRouter refinement returned ${response.status}: ${(await response.text()).slice(0, 500)}`,
+    );
+  const result = await response.json();
+  const content = result.choices?.[0]?.message?.content;
+  if (!content) throw new Error("OpenRouter refinement returned no content.");
+  return JSON.parse(content);
+}
+
 export async function generateSiteConfig(intake) {
   if (!process.env.OPENROUTER_API_KEY)
     throw new Error("OPENROUTER_API_KEY is required to generate client copy.");
+  let draft;
   try {
-    return normalise(await askModel(intake, "low"), intake);
+    draft = normalise(await askModel(intake, "low"), intake);
   } catch (firstError) {
     console.warn(
       "Low-effort generation failed; retrying once with high effort.",
       firstError.message,
     );
-    return normalise(await askModel(intake, "high"), intake);
+    draft = normalise(await askModel(intake, "high"), intake);
+  }
+  const initialReport = evaluateDraft(draft);
+  if (!initialReport.issues.length)
+    return {
+      ...draft,
+      qualityReport: { ...initialReport, refined: false },
+    };
+
+  try {
+    const refined = normalise(
+      await refineDraft(intake, draft, initialReport),
+      intake,
+    );
+    const finalReport = evaluateDraft(refined);
+    const selected =
+      finalReport.score >= initialReport.score ? refined : draft;
+    return {
+      ...selected,
+      qualityReport: {
+        ...(selected === refined ? finalReport : initialReport),
+        refined: selected === refined,
+      },
+    };
+  } catch (error) {
+    console.warn(
+      "Quality refinement failed; keeping validated initial draft.",
+      error instanceof Error ? error.message : error,
+    );
+    return { ...draft, qualityReport: { ...initialReport, refined: false } };
   }
 }
 
