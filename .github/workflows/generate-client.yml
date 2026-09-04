@@ -116,6 +116,8 @@ jobs:
           npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "Initial LaunchLoom preview"
           echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Wait for secure preview URL
+        run: node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}"
       - name: Create secure review link
         id: review
         run: |

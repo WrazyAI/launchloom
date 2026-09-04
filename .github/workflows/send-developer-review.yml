@@ -31,6 +31,7 @@ jobs:
       - name: Mint and send the exact developer review link
         run: |
           test -n "$CLIENT_REPO" && test -n "$CLIENT_PR" && test -n "$CLIENT_EMAIL" && test -n "$FEEDBACK_ISSUE" && test -n "$PROJECT" && test -n "$PREVIEW" && test -n "$LAUNCHLOOM_DEVELOPER_EMAIL"
+          node scripts/wait-for-pages-preview.mjs --url "$PREVIEW"
           SHA=$(gh pr view "$CLIENT_PR" --repo "$CLIENT_REPO" --json headRefOid --jq .headRefOid)
           NAME=$(gh api "repos/$CLIENT_REPO/contents/src/site.config.json?ref=$SHA" --jq .content | base64 --decode | node -e 'let raw=""; process.stdin.on("data", (value) => raw += value).on("end", () => console.log(JSON.parse(raw).business.name))')
           ORIGINS="$PREVIEW,https://$PROJECT.pages.dev"
