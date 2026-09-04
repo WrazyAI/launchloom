@@ -289,11 +289,19 @@ export function normalise(candidate, intake) {
   );
   const rawConversion = value.conversion && typeof value.conversion === "object" ? value.conversion : {};
   const proposedFaqs = Array.isArray(rawConversion.faqs) ? rawConversion.faqs : base.conversion.faqs;
+  const proposedProcess = (Array.isArray(rawConversion.process) ? rawConversion.process : base.conversion.process)
+    .map((item) => text(item, 120))
+    .filter(Boolean)
+    .slice(0, 4);
+  const validatedFaqs = proposedFaqs
+    .map((faq) => ({ question: text(faq?.question, 160), answer: text(faq?.answer, 360) }))
+    .filter((faq) => faq.question && faq.answer)
+    .slice(0, 5);
   const conversion = {
     layout: layoutFor(base.industry, preset),
     qualification: base.conversion.qualification,
-    process: (Array.isArray(rawConversion.process) ? rawConversion.process : base.conversion.process).map((item) => text(item, 120)).filter(Boolean).slice(0, 4),
-    faqs: proposedFaqs.map((faq) => ({ question: text(faq?.question, 160), answer: text(faq?.answer, 360) })).filter((faq) => faq.question && faq.answer).slice(0, 5),
+    process: proposedProcess.length ? proposedProcess : base.conversion.process,
+    faqs: validatedFaqs.length ? validatedFaqs : base.conversion.faqs,
   };
   return {
     preset,
