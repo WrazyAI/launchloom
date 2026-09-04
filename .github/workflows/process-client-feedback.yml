@@ -44,7 +44,17 @@ jobs:
             gh label create launchloom-client-revision --repo "$CLIENT_REPO" --color 1D76DB --description "LaunchLoom client revision awaiting developer approval" --force
             git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
             cd "$RUNNER_TEMP/client"
-            git switch -c "$BRANCH" origin/main
+            if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+              git switch --track "origin/$BRANCH"
+            else
+              git switch -c "$BRANCH" origin/main
+            fi
+            git config user.name "LaunchLoom"
+            git config user.email "automation@launchloom.app"
+            # GitHub requires a real comparison before a PR can be opened.
+            # This marker commit is intentionally content-free; the next
+            # commit contains the validated client revision.
+            git commit --allow-empty -m "Start client-requested revision"
             git push --set-upstream origin "$BRANCH"
             PR=$(gh pr create --repo "$CLIENT_REPO" --base main --head "$BRANCH" --title "Client-requested website revision" --body "Client feedback is awaiting internal developer approval.\n\n<!-- launchloom-feedback-inbox:$FEEDBACK_ISSUE -->")
             PR=${PR##*/}
@@ -54,9 +64,10 @@ jobs:
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
       - name: Apply pending client feedback
+        id: apply_feedback
         run: CLIENT_PR="${{ steps.revision.outputs.pr }}" CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" FEEDBACK_ISSUE="$FEEDBACK_ISSUE" FEEDBACK_STAGE=client FEEDBACK_SUMMARY_PATH="$RUNNER_TEMP/client-feedback.txt" FEEDBACK_OUTCOME_PATH="$RUNNER_TEMP/revision-outcome.txt" node scripts/apply-feedback.mjs
       - name: Flag feedback that needs manual attention
-        if: failure()
+        if: failure() && steps.apply_feedback.outcome == 'failure'
         run: |
           gh pr comment "${{ steps.revision.outputs.pr }}" --repo "$CLIENT_REPO" --body "<!-- launchloom-manual-attention:client -->
 

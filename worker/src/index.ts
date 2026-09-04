@@ -636,14 +636,6 @@ async function feedback(request: Request, env: Env) {
         clientEmail: claims.clientEmail,
       },
     );
-    if (claims.stage === "client" && env.LAUNCHLOOM_FEEDBACK_EMAIL)
-      await sendEmail(env, {
-        to: env.LAUNCHLOOM_FEEDBACK_EMAIL,
-        replyTo: submittedEmail,
-        subject: `Client feedback awaiting developer review · ${claims.repo.split("/")[1]}${category ? ` · ${clean(category, 80)}` : ""}`,
-        html: `<p><strong>From:</strong> ${submittedEmail}</p><p>${note.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>")}</p>`,
-        tag: "client-feedback",
-      });
     return json(
       { ok: true, stage: claims.stage },
       200,
