@@ -53,6 +53,8 @@ jobs:
           echo "email=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.email)')" >> "$GITHUB_OUTPUT"
           echo "lead_email=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.leadEmail)')" >> "$GITHUB_OUTPUT"
           echo "assets=$(node -e 'const x=require("/tmp/site.config.json"); console.log(JSON.stringify(x.assets || {}))')" >> "$GITHUB_OUTPUT"
+          echo "layout=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.layout || "editorial-authority")')" >> "$GITHUB_OUTPUT"
+          echo "asset_summary=$(node -e 'const x=require("/tmp/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " → " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')" >> "$GITHUB_OUTPUT"
       - name: Create private repository and Cloudflare Pages project
         id: client
         run: |
@@ -123,7 +125,7 @@ jobs:
           echo "link=$PREVIEW?review=$TOKEN" >> "$GITHUB_OUTPUT"
       - name: Post handoff links
         run: |
-          gh pr comment "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Initial developer preview' '${{ steps.deploy.outputs.preview }}' '${{ steps.review.outputs.link }}')"
+          gh pr comment "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Initial developer preview' '${{ steps.intake.outputs.layout }}' '${{ steps.intake.outputs.asset_summary }}' '${{ steps.deploy.outputs.preview }}' '${{ steps.review.outputs.link }}')"
           gh issue comment "${{ steps.intake.outputs.issue }}" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' '## Awaiting developer approval' '${{ steps.client.outputs.repo }}' '${{ steps.client.outputs.project }}' '${{ steps.deploy.outputs.preview }}')"
       - name: Send developer preview email
         run: |

@@ -2,6 +2,20 @@ import fs from "node:fs/promises";
 
 const MODEL = "z-ai/glm-5.3-flash";
 
+const STOCK_PACKS = {
+  wellness: {
+    hero: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1600&q=85",
+    secondary: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1200&q=85",
+  },
+  "home-services": {
+    hero: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=85",
+    secondary: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1200&q=85",
+  },
+  "professional-services": {
+    hero: "/images/packs/professional-services-advisory-v1.png",
+  },
+};
+
 function slugify(value) {
   return (
     value
@@ -24,6 +38,13 @@ function text(value, limit = 240) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, limit);
+}
+
+function usefulServiceDescription(value, serviceName) {
+  const candidate = text(value, 180);
+  const generic = /tailored to your needs|personalized support|quality you can trust|when it matters|next level/i;
+  if (candidate.length >= 28 && !generic.test(candidate)) return candidate;
+  return `Talk through your needs for ${serviceName} and leave with a clear next step.`;
 }
 
 function industryFor(intake) {
@@ -68,22 +89,32 @@ function industryFor(intake) {
 }
 
 function stockImages(industry) {
-  // Never show a "close enough" stock image. For industries without a
-  // curated pack, the template renders a strong brand panel until the client
-  // supplies photos.
-  if (industry === "wellness")
-    return {
-      hero: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1600&q=85",
-      secondary:
-        "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1200&q=85",
-    };
+  // These are reviewed packs, not a live keyword search. If the pack does not
+  // describe the business, the template intentionally renders brand art.
+  return { ...(STOCK_PACKS[industry] || {}) };
+}
+
+function layoutFor(industry, preset) {
+  if (industry === "home-services" || preset === "home-services")
+    return "local-proof";
+  if (industry === "technology") return "product-clarity";
+  return "editorial-authority";
+}
+
+function qualificationFor(industry) {
   if (industry === "home-services")
-    return {
-      hero: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=85",
-      secondary:
-        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1200&q=85",
-    };
-  return {};
+    return [
+      { name: "service", label: "What do you need help with?", placeholder: "Select a service", options: ["Repair", "Installation", "Maintenance", "Not sure yet"] },
+      { name: "timing", label: "When do you need help?", placeholder: "Select timing", options: ["As soon as possible", "This week", "Planning ahead"] },
+    ];
+  if (industry === "wellness")
+    return [
+      { name: "interest", label: "What are you interested in?", placeholder: "Select an option", options: ["A consultation", "A specific treatment", "Advice on options", "Not sure yet"] },
+      { name: "timing", label: "When would you like to come in?", placeholder: "Select timing", options: ["This week", "Next week", "Just exploring"] },
+    ];
+  return [
+    { name: "interest", label: "What would you like to discuss?", placeholder: "Select an option", options: ["A new project", "Improving an existing service", "A consultation", "Not sure yet"] },
+  ];
 }
 
 function defaultCopy(business, industry) {
@@ -94,13 +125,31 @@ function defaultCopy(business, industry) {
         ? "advice"
         : "service";
   return {
-    heroKicker: `Built around your next step`,
+    heroKicker: "Built around your next step",
     servicesHeading: `Practical ${subject}, shaped around what you need.`,
     aboutKicker: "Why people choose us",
     aboutHeading: `A clearer, more personal way to move forward.`,
     contactKicker: "Start the conversation",
     contactHeading: business.primaryCta || "Talk with our team",
+    processKicker: "A clear process",
+    processHeading: "Know what happens next.",
+    faqKicker: "Questions, answered",
+    faqHeading: "A few useful details before you reach out.",
+    formIntro: "A few quick details help us point you in the right direction.",
   };
+}
+
+function defaultFaq(industry, cta) {
+  const action = cta || "get in touch";
+  if (industry === "home-services")
+    return [
+      { question: "How quickly can you help?", answer: "Tell us what is happening and your timing. We will confirm the next available step directly." },
+      { question: "Can I request help for my area?", answer: "Send your address and service needs and we will confirm coverage before scheduling." },
+    ];
+  return [
+    { question: "What happens after I reach out?", answer: `Share a few details and our team will follow up with the most useful next step.` },
+    { question: "Is there any obligation?", answer: `No pressure. ${action} to discuss your needs and decide whether we are a fit.` },
+  ];
 }
 
 function fallback(intake) {
@@ -113,7 +162,7 @@ function fallback(intake) {
     .map((name) => ({
       name,
       slug: slugify(name),
-      description: `${name} tailored to your needs.`,
+      description: usefulServiceDescription("", name),
     }));
   const businessName = intake.businessName || "Your business";
   return {
@@ -161,6 +210,13 @@ function fallback(intake) {
     industry,
     images: stockImages(industry),
     copy: defaultCopy({ primaryCta: intake.primaryCta }, industry),
+    conversion: {
+      layout: layoutFor(industry, preset),
+      qualification: qualificationFor(industry),
+      process: ["Tell us what you need", "Get clear next steps", "Move forward with confidence"],
+      faqs: defaultFaq(industry, intake.primaryCta),
+    },
+    assetReport: { used: [], skipped: [] },
   };
 }
 
@@ -177,10 +233,11 @@ export function normalise(candidate, intake) {
       service.name || base.services[index]?.name || "Our service",
     ).slice(0, 80),
     description: String(
-      service.description ||
-        base.services[index]?.description ||
-        "Personalized service from a local team.",
-    ).slice(0, 180),
+      usefulServiceDescription(
+        service.description || base.services[index]?.description,
+        service.name || base.services[index]?.name || "this service",
+      ),
+    ),
     slug: slugify(service.slug || service.name || `service-${index + 1}`),
   }));
   // Only model-authored marketing copy may change. Contact details, offers,
@@ -203,12 +260,23 @@ export function normalise(candidate, intake) {
       ? intake.assets
       : undefined;
   const images = { ...base.images };
-  if (typeof assets?.photoOne === "string") images.hero = assets.photoOne;
-  if (typeof assets?.photoTwo === "string") images.secondary = assets.photoTwo;
-  else if (typeof assets?.photoThree === "string")
+  const assetReport = { used: [], skipped: [] };
+  if (typeof assets?.photoOne === "string") {
+    images.hero = assets.photoOne;
+    assetReport.used.push({ asset: "photoOne", placement: "hero", source: "client" });
+  }
+  if (typeof assets?.photoTwo === "string") {
+    images.secondary = assets.photoTwo;
+    assetReport.used.push({ asset: "photoTwo", placement: "story", source: "client" });
+  } else if (typeof assets?.photoThree === "string") {
     images.secondary = assets.photoThree;
-  else if (typeof assets?.teamPhoto === "string")
+    assetReport.used.push({ asset: "photoThree", placement: "story", source: "client" });
+  } else if (typeof assets?.teamPhoto === "string") {
     images.secondary = assets.teamPhoto;
+    assetReport.used.push({ asset: "teamPhoto", placement: "story", source: "client" });
+  }
+  if (typeof assets?.logo === "string")
+    assetReport.used.push({ asset: "logo", placement: "brand", source: "client" });
   const suppliedCopy =
     value.copy && typeof value.copy === "object" ? value.copy : {};
   const copy = Object.fromEntries(
@@ -219,6 +287,14 @@ export function normalise(candidate, intake) {
       ],
     ),
   );
+  const rawConversion = value.conversion && typeof value.conversion === "object" ? value.conversion : {};
+  const proposedFaqs = Array.isArray(rawConversion.faqs) ? rawConversion.faqs : base.conversion.faqs;
+  const conversion = {
+    layout: layoutFor(base.industry, preset),
+    qualification: base.conversion.qualification,
+    process: (Array.isArray(rawConversion.process) ? rawConversion.process : base.conversion.process).map((item) => text(item, 120)).filter(Boolean).slice(0, 4),
+    faqs: proposedFaqs.map((faq) => ({ question: text(faq?.question, 160), answer: text(faq?.answer, 360) })).filter((faq) => faq.question && faq.answer).slice(0, 5),
+  };
   return {
     preset,
     industry: base.industry,
@@ -232,6 +308,8 @@ export function normalise(candidate, intake) {
         : [],
     images,
     copy,
+    conversion,
+    assetReport,
     ...(assets ? { assets } : {}),
     ...(intake.lead && typeof intake.lead === "object"
       ? { lead: intake.lead }
@@ -258,11 +336,11 @@ async function askModel(intake, effort) {
           {
             role: "system",
             content:
-              "You are LaunchLoom's senior conversion copywriter for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, or results. Never replace submitted contact facts. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', or 'next level'. Make every service description distinct and concrete.",
+              "You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. Build a credible path from visitor problem to action: a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, or results. Never replace submitted contact facts. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.",
           },
           {
             role: "user",
-            content: `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, copy. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. services is an array of {name, description, slug}. copy must include heroKicker, servicesHeading, aboutKicker, aboutHeading, contactKicker, contactHeading. The tagline is a concise, differentiated promise; description is a 2–3 sentence customer-facing introduction; service descriptions explain a distinct outcome or approach. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`,
+            content: `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, copy, conversion. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. services is an array of {name, description, slug}. copy must include heroKicker, servicesHeading, aboutKicker, aboutHeading, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. conversion must include process (2–4 concise steps) and faqs (2–5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2–3 sentence customer-facing introduction; service descriptions explain a distinct outcome or approach. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`,
           },
         ],
       }),

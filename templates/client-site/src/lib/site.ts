@@ -38,6 +38,26 @@ export type SiteConfig = {
     aboutHeading?: string;
     contactKicker?: string;
     contactHeading?: string;
+    processKicker?: string;
+    processHeading?: string;
+    faqKicker?: string;
+    faqHeading?: string;
+    formIntro?: string;
+  };
+  conversion?: {
+    layout: "editorial-authority" | "local-proof" | "product-clarity";
+    qualification?: Array<{
+      name: string;
+      label: string;
+      placeholder: string;
+      options: string[];
+    }>;
+    process?: string[];
+    faqs?: Array<{ question: string; answer: string }>;
+  };
+  assetReport?: {
+    used: Array<{ asset: string; placement: string; source: string }>;
+    skipped: Array<{ asset: string; reason: string }>;
   };
   lead?: { apiUrl: string; token: string };
 };

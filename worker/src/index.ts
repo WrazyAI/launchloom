@@ -82,6 +82,14 @@ function clean(value: unknown, limit = 8000) {
     .slice(0, limit);
 }
 
+function cleanQualification(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+  return Object.entries(value as Record<string, unknown>)
+    .map(([key, answer]) => [clean(key, 80), clean(answer, 240)] as const)
+    .filter(([key, answer]) => key && answer)
+    .slice(0, 6);
+}
+
 function platformOrigins(env: Env) {
   return env.PLATFORM_ORIGINS.split(",")
     .map((origin) => origin.trim())
@@ -663,6 +671,7 @@ async function lead(request: Request, env: Env) {
     const phone = clean(body.phone, 80);
     const email = clean(body.email, 240);
     const message = clean(body.message, 4000);
+    const qualification = cleanQualification(body.qualification);
     if (!name || !phone || !email || !message)
       return json(
         { error: "Please complete every required field." },
@@ -673,7 +682,7 @@ async function lead(request: Request, env: Env) {
       to: claims.recipient,
       replyTo: email,
       subject: `New website lead · ${name}`,
-      html: `<p><strong>Name:</strong> ${name}</p><p><strong>Phone:</strong> ${phone}</p><p><strong>Email:</strong> ${email}</p><p>${message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>")}</p>`,
+      html: `<p><strong>Name:</strong> ${name}</p><p><strong>Phone:</strong> ${phone}</p><p><strong>Email:</strong> ${email}</p>${qualification.length ? `<p><strong>Request details:</strong></p><ul>${qualification.map(([key, answer]) => `<li><strong>${key.replace(/&/g, "&amp;").replace(/</g, "&lt;")}:</strong> ${answer.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</li>`).join("")}</ul>` : ""}<p>${message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>")}</p>`,
       tag: "client-lead",
     });
     return json({ ok: true }, 200, cors(request, claims.allowedOrigins));

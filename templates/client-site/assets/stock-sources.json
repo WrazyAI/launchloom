@@ -6,5 +6,8 @@
   "home-services": [
     { "url": "https://images.unsplash.com/photo-1581578731548-c64695cc6952", "source": "Unsplash", "use": "Hero image", "license": "Unsplash License" },
     { "url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64", "source": "Unsplash", "use": "Secondary image", "license": "Unsplash License" }
+  ],
+  "professional-services": [
+    { "url": "/images/packs/professional-services-advisory-v1.png", "source": "LaunchLoom generated asset", "use": "Hero image", "license": "LaunchLoom-owned generated fallback; do not imply pictured people are client staff" }
   ]
 }

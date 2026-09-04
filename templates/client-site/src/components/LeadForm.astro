@@ -1,35 +1,39 @@
 ---
 import site from "../lib/site";
 const { id = "lead-form" } = Astro.props;
+const questions = site.conversion?.qualification || [];
 ---
 
-<form class="lead-form" id={id}>
+<form class="lead-form" id={id} data-qualification={JSON.stringify(questions.map((question) => question.name))}>
   <input type="hidden" name="lead-token" value={site.lead?.token || ""} />
   <p class="honeypot"><label>Don’t fill this out <input name="bot-field" /></label></p>
   <input type="hidden" name="lead-email" value={site.business.leadEmail} />
   <label>Your name<input name="name" required autocomplete="name" /></label>
   <label>Phone number<input name="phone" required type="tel" autocomplete="tel" /></label>
   <label>Email address<input name="email" required type="email" autocomplete="email" /></label>
+  {questions.map((question) => <label>{question.label}<select name={question.name} required><option value="" disabled selected>{question.placeholder}</option>{question.options.map((option) => <option value={option}>{option}</option>)}</select></label>)}
   <label>How can we help?<textarea name="message" required placeholder={`Tell us a little about what you need…`} /></label>
   <button type="submit">{site.business.primaryCta}</button>
-  <small>By submitting, you agree to be contacted about your request.</small>
+  <small role="status">{site.copy?.formIntro || "By submitting, you agree to be contacted about your request."}</small>
 </form>
 
 <script is:inline define:vars={{ apiUrl: site.lead?.apiUrl || "" }}>
   for (const form of document.querySelectorAll(".lead-form")) {
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const status = form.querySelector("small");
-      const data = new FormData(form);
+        const status = form.querySelector("small");
+        const data = new FormData(form);
+        const qualificationNames = JSON.parse(form.dataset.qualification || "[]");
       if (!apiUrl || !data.get("lead-token")) {
         status.textContent = "This form is not configured yet. Please call us instead.";
         return;
       }
       status.textContent = "Sending your request…";
       try {
+        const qualification = Object.fromEntries(qualificationNames.map((name) => [name, data.get(name)]).filter(([, value]) => value));
         const response = await fetch(`${apiUrl.replace(/\/$/, "")}/api/lead`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
           token: data.get("lead-token"), name: data.get("name"), phone: data.get("phone"), email: data.get("email"),
-          message: data.get("message"), "bot-field": data.get("bot-field"), pageUrl: window.location.href,
+          message: data.get("message"), qualification, "bot-field": data.get("bot-field"), pageUrl: window.location.href,
         }) });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "We couldn’t send your request.");
