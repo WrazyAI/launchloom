@@ -47,6 +47,17 @@ function usefulServiceDescription(value, serviceName) {
   return `Talk through your needs for ${serviceName} and leave with a clear next step.`;
 }
 
+function processStepText(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const step = value;
+    return text(
+      step.title || step.label || step.name || step.step || step.text || step.description,
+      120,
+    );
+  }
+  return text(value, 120);
+}
+
 function industryFor(intake) {
   const selected = text(intake.industry, 80).toLowerCase();
   if (
@@ -290,7 +301,7 @@ export function normalise(candidate, intake) {
   const rawConversion = value.conversion && typeof value.conversion === "object" ? value.conversion : {};
   const proposedFaqs = Array.isArray(rawConversion.faqs) ? rawConversion.faqs : base.conversion.faqs;
   const proposedProcess = (Array.isArray(rawConversion.process) ? rawConversion.process : base.conversion.process)
-    .map((item) => text(item, 120))
+    .map(processStepText)
     .filter(Boolean)
     .slice(0, 4);
   const validatedFaqs = proposedFaqs

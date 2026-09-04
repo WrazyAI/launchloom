@@ -102,4 +102,24 @@ describe("site configuration", () => {
     expect(config.services[0].description).toContain("clear next step");
     expect(config.services[0].description).not.toMatch(/tailored to your needs/i);
   });
+
+  it("extracts usable process copy from model step objects", () => {
+    const config = normalise(
+      {
+        conversion: {
+          process: [
+            { title: "Share what your family needs", description: "Extra detail" },
+            { label: "Get a clear recommendation" },
+          ],
+        },
+      },
+      { businessName: "Daley Hope", services: "Home care", industry: "wellness" },
+    );
+
+    expect(config.conversion.process).toEqual([
+      "Share what your family needs",
+      "Get a clear recommendation",
+    ]);
+    expect(config.conversion.process).not.toContain("[object Object]");
+  });
 });
