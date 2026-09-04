@@ -434,6 +434,20 @@ export default function OnboardingForm() {
               placeholder="Experience, credentials, response time, guarantees, approach, results…"
             />
           </label>
+          <label className="field">
+            Business category
+            <select name="industry" defaultValue="other">
+              <option value="wellness">Wellness, health, or care</option>
+              <option value="home-services">Home services or trades</option>
+              <option value="technology">Technology or software</option>
+              <option value="professional-services">
+                Professional services
+              </option>
+              <option value="hospitality">Hospitality or food</option>
+              <option value="real-estate">Real estate or property</option>
+              <option value="other">Another kind of business</option>
+            </select>
+          </label>
         </div>
         <fieldset className="cta-options">
           <legend>What should the primary button do?</legend>

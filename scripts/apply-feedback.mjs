@@ -61,10 +61,11 @@ const intake = {
   differentiators: config.differentiators.join("\n"),
   primaryColor: config.style.primaryColor,
   tone: config.style.tone,
+  industry: config.industry,
+  assets: config.assets,
   feedback: feedback.join("\n\n"),
 };
 const revised = await generateSiteConfig(intake);
-if (config.assets) revised.assets = config.assets;
 if (config.lead) revised.lead = config.lead;
 await fs.writeFile(configPath, `${JSON.stringify(revised, null, 2)}\n`);
 console.log(`Applied ${feedback.length} feedback item(s) to ${configPath}.`);
