@@ -37,6 +37,7 @@ function lines(value) {
 
 function text(value, limit = 240) {
   return String(value || "")
+    .replace(/—/g, "-")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, limit);
@@ -405,7 +406,7 @@ export function normalise(candidate, intake) {
     ),
   };
   const different = Array.isArray(value.differentiators)
-    ? value.differentiators.map(String).slice(0, 5)
+    ? value.differentiators.map((item) => text(item, 160)).filter(Boolean).slice(0, 5)
     : base.differentiators;
   const assets =
     intake.assets && typeof intake.assets === "object"
@@ -487,7 +488,7 @@ export function normalise(candidate, intake) {
     process: proposedProcess.length ? proposedProcess : base.conversion.process,
     faqs: validatedFaqs.length ? validatedFaqs : base.conversion.faqs,
   };
-  return {
+  return removeEmDashes({
     preset,
     industry: base.industry,
     business,
@@ -506,7 +507,17 @@ export function normalise(candidate, intake) {
     ...(intake.lead && typeof intake.lead === "object"
       ? { lead: intake.lead }
       : {}),
-  };
+  });
+}
+
+export function removeEmDashes(value) {
+  if (typeof value === "string") return value.replace(/—/g, "-");
+  if (Array.isArray(value)) return value.map(removeEmDashes);
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, removeEmDashes(item)]),
+    );
+  return value;
 }
 
 async function askModel(intake, effort, model = MODEL) {
@@ -528,7 +539,7 @@ async function askModel(intake, effort, model = MODEL) {
           {
             role: "system",
             content:
-              "You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. Build a credible path from visitor problem to action: a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, or results. Never replace submitted contact facts. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning rather than rewriting the entire site. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.",
+              "You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. Build a credible path from visitor problem to action: a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, or results. Never replace submitted contact facts. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning rather than rewriting the entire site. Do not use em dashes. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.",
           },
           {
             role: "user",
@@ -567,7 +578,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
           {
             role: "system",
             content:
-              "You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Fix only the listed quality issues. Preserve every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, or claims. Do not return HTML, CSS, code, explanations, or markdown.",
+              "You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Fix only the listed quality issues. Preserve every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, or claims. Do not use em dashes. Do not return HTML, CSS, code, explanations, or markdown.",
           },
           {
             role: "user",

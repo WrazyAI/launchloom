@@ -5,6 +5,7 @@ import {
   deterministicOperations,
   expectedArtifacts,
   modelOperations,
+  removeEmDashes,
 } from "./revision-engine.mjs";
 
 const [repo, pr, configPath] = [
@@ -68,6 +69,7 @@ if (!appliedOperations.length)
   throw new Error(
     "This feedback needs manual attention; no supported, verifiable revision operation was available.",
   );
+Object.assign(config, removeEmDashes(config));
 config.revisionReport = {
   feedback,
   operations: appliedOperations,

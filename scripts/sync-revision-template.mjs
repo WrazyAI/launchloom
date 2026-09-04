@@ -24,6 +24,7 @@ const template = path.join(repository, "templates/client-site/src");
 const files = new Set();
 if (kinds.has("set_social_proof")) {
   files.add("components/SocialProof.astro");
+  files.add("components/ReviewBanner.astro");
   files.add("pages/index.astro");
   files.add("styles/site.css");
   files.add("lib/site.ts");

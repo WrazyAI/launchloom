@@ -44,6 +44,8 @@ const faqs = conversion?.faqs || [];
       <div class="service-grid">{site.services.map((service, index) => <a class="service-card" href={wellness ? "#contact" : `/services/${service.slug}/`}><span>0{index + 1}</span><h3>{service.name}</h3><p>{service.description}</p><b>{wellness ? "Ask about this →" : "Explore service →"}</b></a>)}</div>
     </section>
 
+    <SocialProof />
+
     <section class="split-section" id="about">
       <div class="wrap split-grid">
         {site.images.secondary ? <img src={site.images.secondary} alt={`${site.business.name} ${site.assets?.photoTwo ? "client-provided team or work" : "team or service"}`} loading="lazy" /> : <div class="split-art" aria-hidden="true" />}
@@ -61,8 +63,6 @@ const faqs = conversion?.faqs || [];
       <h2>{copy.processHeading || "Know what happens next."}</h2>
       <ol class="process-grid">{process.map((step, index) => <li><span>0{index + 1}</span><p>{step}</p></li>)}</ol>
     </section>
-
-    <SocialProof />
 
     {galleryImages.length > 0 && <section class="section wrap image-gallery" aria-label={`${site.business.name} photos`}>{galleryImages.map((image, index) => <img src={image} alt={`${site.business.name} ${index === 0 ? "at work" : "team"}`} loading="lazy" />)}</section>}
 

@@ -6,7 +6,7 @@ const fallback = proof?.fallback || proof;
 
 {proof && fallback && <section class="section social-proof" id="social-proof" data-source={proof.source}>
   <div class="wrap">
-    <span class="kicker">{proof.source === "google_reviews" ? "Google Maps reviews" : "Why people choose us"}</span>
+    <span class="kicker">{proof.source === "google_reviews" ? "Testimonials and Google Maps reviews" : "Why people choose us"}</span>
     <h2>{proof.heading}</h2>
     <p class="social-proof__intro">{proof.intro}</p>
     {proof.source === "google_reviews" && proof.google ? (

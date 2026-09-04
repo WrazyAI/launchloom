@@ -530,7 +530,16 @@ async function googleReviews(request: Request, env: Env) {
         authorUrl: clean(review.authorAttribution?.uri, 1_000),
         mapsUrl: clean(review.googleMapsUri || place.googleMapsUri, 1_000),
       }))
-      .filter((review) => review.text && review.author && review.mapsUrl)
+      // Do not rewrite third-party review text. If a live review conflicts
+      // with the product's typography rule, omit it and retain the verified
+      // on-page proof fallback instead.
+      .filter(
+        (review) =>
+          review.text &&
+          review.author &&
+          review.mapsUrl &&
+          !review.text.includes("—"),
+      )
       .slice(0, 3);
     return json({ reviews }, 200, { ...headers, "Cache-Control": "no-store" });
   } catch (error) {

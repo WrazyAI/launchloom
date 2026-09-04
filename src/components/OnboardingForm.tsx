@@ -324,7 +324,7 @@ export default function OnboardingForm() {
                 setPlace(null);
               }}
             >
-              I don’t have a Google Business Profile — enter details manually
+              I don’t have a Google Business Profile. Enter details manually
             </button>
             {place && (
               <aside className="place-card">
@@ -347,7 +347,7 @@ export default function OnboardingForm() {
             <div>
               <strong>Manual details</strong>
               <span>
-                No Google profile needed — we’ll use the facts you enter below.
+                No Google profile needed. We’ll use the facts you enter below.
               </span>
             </div>
             <button
@@ -478,7 +478,7 @@ export default function OnboardingForm() {
             <textarea
               required
               name="serviceAreas"
-              placeholder="Cities, neighborhoods, regions — or ‘remote / nationwide’"
+              placeholder="Cities, neighborhoods, regions, or ‘remote / nationwide’"
             />
           </label>
           <label className="field full">

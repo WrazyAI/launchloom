@@ -35,7 +35,7 @@ if (
 ) {
   config.socialProof = {
     source: "google_reviews",
-    heading: "Reviews from people we serve",
+    heading: "What families say on Google Maps",
     intro: "Read recent feedback directly from Google Maps.",
     points: [],
     fallback: {

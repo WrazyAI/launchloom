@@ -3,6 +3,7 @@ import {
   applyOperation,
   deterministicOperations,
   expectedArtifacts,
+  removeEmDashes,
   verifyRevision,
 } from "../scripts/revision-engine.mjs";
 
@@ -70,5 +71,14 @@ describe("revision operations", () => {
       }),
     ).toBe(false);
     expect(draft.business.name).toBe("Daley Hope");
+  });
+
+  it("removes em dashes from rendered configuration content", () => {
+    const draft = removeEmDashes({
+      copy: { heroKicker: "Clear care — at home" },
+      services: ["Support — when needed"],
+    });
+    expect(JSON.stringify(draft)).not.toContain("—");
+    expect(draft.copy.heroKicker).toBe("Clear care - at home");
   });
 });

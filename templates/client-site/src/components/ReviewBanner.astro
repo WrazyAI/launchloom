@@ -52,8 +52,8 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
     const emailInput = form.querySelector('input[name="email"]');
     const selectedCategories = new Set();
     root.querySelector(".ll-review__summary").innerHTML = developer
-      ? "<span aria-hidden=\"true\">▣</span> Internal developer review — approve before the client sees this"
-      : "<span aria-hidden=\"true\">▣</span> Your website is live — tell us what you would like changed";
+      ? "<span aria-hidden=\"true\">▣</span> Internal developer review. Approve before the client sees this."
+      : "<span aria-hidden=\"true\">▣</span> Your website is live. Tell us what you would like changed.";
     root.querySelector(".ll-review__intro").textContent = developer
       ? "Leave clear internal notes, or approve this exact version to publish and invite the client."
       : "Tap what applies, then leave a clear note. We will review it before publishing an update.";
@@ -82,7 +82,7 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
       try {
         const response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href }) });
         const result = await response.json(); if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");
-        status.textContent = developer ? "Received — a revised developer preview will be sent shortly." : "Received — we will review your request before publishing an update.";
+        status.textContent = developer ? "Received. A revised developer preview will be sent shortly." : "Received. We will review your request before publishing an update.";
         form.reset(); selectedCategories.clear(); root.querySelectorAll("[data-category]").forEach((button) => { button.classList.remove("is-active"); button.setAttribute("aria-pressed", "false"); });
       } catch (error) { status.textContent = error instanceof Error ? error.message : "Feedback could not be sent."; }
     });

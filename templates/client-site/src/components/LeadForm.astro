@@ -38,7 +38,7 @@ const questions = site.conversion?.qualification || [];
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "We couldn’t send your request.");
         form.reset();
-        status.textContent = "Thank you — we’ll be in touch shortly.";
+        status.textContent = "Thank you. We’ll be in touch shortly.";
       } catch (error) {
         status.textContent = error instanceof Error ? error.message : "We couldn’t send your request. Please try again.";
       }

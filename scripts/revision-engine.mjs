@@ -19,6 +19,7 @@ const brandNameRequest =
 
 function clean(value, limit = 360) {
   return String(value || "")
+    .replace(/—/g, "-")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, limit);
@@ -45,7 +46,7 @@ export function socialProofOperation(config) {
     return {
       kind: "set_social_proof",
       source: "google_reviews",
-      heading: `Reviews from families we serve`,
+      heading: "What families say on Google Maps",
       fallback: proofFallback(config),
     };
   }
@@ -139,6 +140,16 @@ export function applyOperation(config, operation) {
   return false;
 }
 
+export function removeEmDashes(value) {
+  if (typeof value === "string") return value.replace(/—/g, "-");
+  if (Array.isArray(value)) return value.map(removeEmDashes);
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, removeEmDashes(item)]),
+    );
+  return value;
+}
+
 export function expectedArtifacts(operations) {
   return operations.flatMap((operation) => {
     if (operation.kind === "set_social_proof")
@@ -169,6 +180,7 @@ export function verifyRevision(config, report, html = "") {
     !clean(config.business?.placeId)
   )
     failures.push("Google reviews were selected without a Place ID.");
+  if (html.includes("—")) failures.push("Rendered page contains an em dash.");
   return { ok: failures.length === 0, failures };
 }
 

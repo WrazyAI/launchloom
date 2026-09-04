@@ -119,6 +119,7 @@ jobs:
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
           PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
+          if rg -F "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
           npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "Initial LaunchLoom preview"
           echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
