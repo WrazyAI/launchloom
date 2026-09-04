@@ -3,6 +3,7 @@ import SiteLayout from "../layouts/SiteLayout.astro";
 import Header from "../components/Header.astro";
 import LeadForm from "../components/LeadForm.astro";
 import Footer from "../components/Footer.astro";
+import SocialProof from "../components/SocialProof.astro";
 import site, { phoneHref } from "../lib/site";
 
 const wellness = site.preset === "wellness";
@@ -60,6 +61,8 @@ const faqs = conversion?.faqs || [];
       <h2>{copy.processHeading || "Know what happens next."}</h2>
       <ol class="process-grid">{process.map((step, index) => <li><span>0{index + 1}</span><p>{step}</p></li>)}</ol>
     </section>
+
+    <SocialProof />
 
     {galleryImages.length > 0 && <section class="section wrap image-gallery" aria-label={`${site.business.name} photos`}>{galleryImages.map((image, index) => <img src={image} alt={`${site.business.name} ${index === 0 ? "at work" : "team"}`} loading="lazy" />)}</section>}
 

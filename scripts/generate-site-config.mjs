@@ -232,8 +232,11 @@ export function evaluateDraft(config) {
   const copy = config.copy || {};
 
   if (!businessName || /^your business$/i.test(businessName))
-    issues.push("The verified business name is missing or looks like a placeholder.");
-  if (!services.length) issues.push("There is no clear service offer on the site.");
+    issues.push(
+      "The verified business name is missing or looks like a placeholder.",
+    );
+  if (!services.length)
+    issues.push("There is no clear service offer on the site.");
   if (
     services.some(
       (service) =>
@@ -249,7 +252,9 @@ export function evaluateDraft(config) {
     text(copy.heroKicker, 160).length < 8 ||
     text(copy.servicesHeading, 160).length < 12
   )
-    issues.push("The opening message lacks a clear, specific value proposition.");
+    issues.push(
+      "The opening message lacks a clear, specific value proposition.",
+    );
   if (
     GENERIC_COPY.test(
       `${copy.heroKicker || ""} ${copy.servicesHeading || ""} ${copy.aboutHeading || ""}`,
@@ -275,7 +280,9 @@ export function evaluateDraft(config) {
       .flatMap(Object.values)
       .includes(config.images.hero)
   )
-    issues.push("The hero image is not from an approved contextual asset pack.");
+    issues.push(
+      "The hero image is not from an approved contextual asset pack.",
+    );
 
   return { score: Math.max(0, 100 - issues.length * 12), issues };
 }
@@ -315,6 +322,8 @@ function fallback(intake) {
       offer: intake.offer || "",
       domain: intake.domain || "",
       leadEmail: intake.leadEmail || intake.email || "",
+      placeId: intake.placeId || "",
+      googleMapsUrl: intake.googleMapsUrl || "",
     },
     style: {
       primaryColor:
@@ -500,7 +509,7 @@ export function normalise(candidate, intake) {
   };
 }
 
-async function askModel(intake, effort) {
+async function askModel(intake, effort, model = MODEL) {
   const response = await fetch(
     "https://openrouter.ai/api/v1/chat/completions",
     {
@@ -511,7 +520,7 @@ async function askModel(intake, effort) {
         "X-OpenRouter-Title": "LaunchLoom",
       },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         reasoning_effort: effort,
         temperature: 0.3,
         response_format: { type: "json_object" },
@@ -539,7 +548,7 @@ async function askModel(intake, effort) {
   return JSON.parse(content);
 }
 
-async function refineDraft(intake, draft, report) {
+async function refineDraft(intake, draft, report, model = MODEL) {
   const response = await fetch(
     "https://openrouter.ai/api/v1/chat/completions",
     {
@@ -550,7 +559,7 @@ async function refineDraft(intake, draft, report) {
         "X-OpenRouter-Title": "LaunchLoom quality refinement",
       },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         reasoning_effort: "low",
         temperature: 0.2,
         response_format: { type: "json_object" },
@@ -578,18 +587,18 @@ async function refineDraft(intake, draft, report) {
   return JSON.parse(content);
 }
 
-export async function generateSiteConfig(intake) {
+export async function generateSiteConfigWithModel(intake, model = MODEL) {
   if (!process.env.OPENROUTER_API_KEY)
     throw new Error("OPENROUTER_API_KEY is required to generate client copy.");
   let draft;
   try {
-    draft = normalise(await askModel(intake, "low"), intake);
+    draft = normalise(await askModel(intake, "low", model), intake);
   } catch (firstError) {
     console.warn(
       "Low-effort generation failed; retrying once with high effort.",
       firstError.message,
     );
-    draft = normalise(await askModel(intake, "high"), intake);
+    draft = normalise(await askModel(intake, "high", model), intake);
   }
   const initialReport = evaluateDraft(draft);
   if (!initialReport.issues.length)
@@ -600,12 +609,11 @@ export async function generateSiteConfig(intake) {
 
   try {
     const refined = normalise(
-      await refineDraft(intake, draft, initialReport),
+      await refineDraft(intake, draft, initialReport, model),
       intake,
     );
     const finalReport = evaluateDraft(refined);
-    const selected =
-      finalReport.score >= initialReport.score ? refined : draft;
+    const selected = finalReport.score >= initialReport.score ? refined : draft;
     return {
       ...selected,
       qualityReport: {
@@ -621,6 +629,8 @@ export async function generateSiteConfig(intake) {
     return { ...draft, qualityReport: { ...initialReport, refined: false } };
   }
 }
+
+export const generateSiteConfig = (intake) => generateSiteConfigWithModel(intake);
 
 function extractIntake(body) {
   const match = body.match(/```json\s*([\s\S]*?)\s*```/i);

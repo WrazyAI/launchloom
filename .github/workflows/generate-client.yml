@@ -87,7 +87,13 @@ jobs:
           PRODUCTION="https://$PROJECT.pages.dev"
           ORIGINS="$PREVIEW,$PRODUCTION"
           LEAD_TOKEN=$(node scripts/create-lead-token.mjs --project "$PROJECT" --recipient "${{ steps.intake.outputs.lead_email }}" --origins "$ORIGINS")
-          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN"
+          PLACE_ID=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.placeId || "")')
+          REVIEW_ARGS=()
+          if [ -n "$PLACE_ID" ]; then
+            REVIEWS_TOKEN=$(node scripts/create-google-reviews-token.mjs --project "$PROJECT" --placeId "$PLACE_ID" --origins "$ORIGINS")
+            REVIEW_ARGS=(--reviewsToken "$REVIEWS_TOKEN")
+          fi
+          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}"
           cp -R templates/client-site "$CLIENT_DIR"
           cd "$CLIENT_DIR"
           rm -f netlify.toml

@@ -1,0 +1,27 @@
+name: Evaluate website-generation models
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run evaluate:models -- --out artifacts/model-evaluation.json
+      - name: Upload blinded evaluation packet
+        uses: actions/upload-artifact@v4
+        with:
+          name: launchloom-model-evaluation
+          path: |
+            artifacts/model-evaluation.json
+            artifacts/model-evaluation.json.md
+          retention-days: 14

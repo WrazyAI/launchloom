@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "test": "vitest run",
+    "evaluate:models": "node scripts/evaluate-models.mjs",
     "test:watch": "vitest",
     "format": "prettier --write ."
   },

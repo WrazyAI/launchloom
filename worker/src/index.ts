@@ -36,6 +36,12 @@ type LeadClaims = {
   allowedOrigins: string[];
   issuedAt: number;
 };
+type GoogleReviewsClaims = {
+  project: string;
+  placeId: string;
+  allowedOrigins: string[];
+  expiresAt: number;
+};
 type Intake = Record<string, unknown>;
 
 const json = (value: unknown, status = 200, headers: HeadersInit = {}) =>
@@ -464,6 +470,77 @@ async function places(request: Request, env: Env) {
   }
 }
 
+async function googleReviews(request: Request, env: Env) {
+  const token = new URL(request.url).searchParams.get("token") || "";
+  try {
+    const claims = await verifyHmac<GoogleReviewsClaims>(
+      token,
+      env.REVIEW_SIGNING_SECRET,
+    );
+    const headers = cors(request, claims.allowedOrigins || []);
+    if (request.method === "OPTIONS")
+      return new Response(null, { status: 204, headers });
+    if (request.method !== "GET")
+      return new Response("Method not allowed", { status: 405, headers });
+    if (
+      !claims.project ||
+      !claims.placeId ||
+      claims.expiresAt < Date.now() ||
+      !Array.isArray(claims.allowedOrigins)
+    )
+      throw new Error("Invalid reviews token.");
+    assertClaimOrigin(request, claims.allowedOrigins);
+    if (!env.GOOGLE_PLACES_API_KEY)
+      return json({ reviews: [] }, 503, {
+        ...headers,
+        "Cache-Control": "no-store",
+      });
+    const response = await fetch(
+      `https://places.googleapis.com/v1/places/${encodeURIComponent(claims.placeId)}`,
+      {
+        headers: {
+          "X-Goog-Api-Key": env.GOOGLE_PLACES_API_KEY,
+          "X-Goog-FieldMask": "reviews,googleMapsUri,attributions",
+        },
+      },
+    );
+    if (!response.ok)
+      return json({ reviews: [] }, 502, {
+        ...headers,
+        "Cache-Control": "no-store",
+      });
+    const place = (await response.json()) as {
+      googleMapsUri?: string;
+      reviews?: Array<{
+        text?: { text?: string };
+        originalText?: { text?: string };
+        rating?: number;
+        relativePublishTimeDescription?: string;
+        publishTime?: string;
+        googleMapsUri?: string;
+        authorAttribution?: { displayName?: string; uri?: string };
+      }>;
+    };
+    const reviews = (place.reviews || [])
+      .map((review) => ({
+        text: clean(review.text?.text || review.originalText?.text, 1_500),
+        rating: Number(review.rating || 0),
+        relativeTime: clean(review.relativePublishTimeDescription, 80),
+        author: clean(review.authorAttribution?.displayName, 160),
+        authorUrl: clean(review.authorAttribution?.uri, 1_000),
+        mapsUrl: clean(review.googleMapsUri || place.googleMapsUri, 1_000),
+      }))
+      .filter((review) => review.text && review.author && review.mapsUrl)
+      .slice(0, 3);
+    return json({ reviews }, 200, { ...headers, "Cache-Control": "no-store" });
+  } catch (error) {
+    return json({ error: "Google reviews are unavailable." }, 403, {
+      ...cors(request, []),
+      "Cache-Control": "no-store",
+    });
+  }
+}
+
 async function feedback(request: Request, env: Env) {
   const headers = cors(request, platformOrigins(env));
   if (request.method === "OPTIONS")
@@ -711,6 +788,7 @@ export default {
     if (path === "/api/intake") return intake(request, env);
     if (path === "/api/upload") return upload(request, env);
     if (path === "/api/places") return places(request, env);
+    if (path === "/api/google-reviews") return googleReviews(request, env);
     if (path === "/api/feedback") return feedback(request, env);
     if (path === "/api/approval") return approval(request, env);
     if (path === "/api/lead") return lead(request, env);

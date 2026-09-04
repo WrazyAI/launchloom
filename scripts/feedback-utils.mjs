@@ -25,6 +25,8 @@ export function revisionIntakeFromConfig(config, feedback) {
     offer: config.business?.offer || "",
     domain: config.business?.domain || "",
     leadEmail: config.business?.leadEmail || config.business?.email || "",
+    placeId: config.business?.placeId || "",
+    googleMapsUrl: config.business?.googleMapsUrl || "",
     preset: config.preset,
     industry: config.industry,
     services: (config.services || []).map((service) => service.name).join("\n"),

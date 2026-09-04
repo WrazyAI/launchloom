@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
-import { generateSiteConfig } from "./generate-site-config.mjs";
+import { feedbackTextFromComment } from "./feedback-utils.mjs";
 import {
-  feedbackTextFromComment,
-  revisionIntakeFromConfig,
-} from "./feedback-utils.mjs";
+  applyOperation,
+  deterministicOperations,
+  expectedArtifacts,
+  modelOperations,
+} from "./revision-engine.mjs";
 
 const [repo, pr, configPath] = [
   process.env.CLIENT_REPO,
@@ -53,18 +55,49 @@ if (!feedback.length) {
 }
 
 const config = JSON.parse(await fs.readFile(configPath, "utf8"));
-const intake = revisionIntakeFromConfig(config, feedback.join("\n\n"));
-const revised = await generateSiteConfig(intake);
-if (config.lead) revised.lead = config.lead;
-// Revision generation may improve copy, but it must not erase brand settings
-// that were already accepted or supplied by the client.
-revised.style = { ...revised.style, ...config.style };
-if (config.assets) revised.assets = config.assets;
-await fs.writeFile(configPath, `${JSON.stringify(revised, null, 2)}\n`);
+const joinedFeedback = feedback.join("\n\n");
+// Keep revisions narrow. Structural requests are deterministic; copy changes
+// are allowed only through a small, validated patch surface.
+let operations = deterministicOperations(joinedFeedback, config);
+if (!operations.length)
+  operations = await modelOperations(joinedFeedback, config);
+const appliedOperations = operations.filter((operation) =>
+  applyOperation(config, operation),
+);
+if (!appliedOperations.length)
+  throw new Error(
+    "This feedback needs manual attention; no supported, verifiable revision operation was available.",
+  );
+config.revisionReport = {
+  feedback,
+  operations: appliedOperations,
+  expectedArtifacts: expectedArtifacts(appliedOperations),
+  requestedSocialProof:
+    /\b(testimonials?|testimony|testimonies|review section|google reviews?|customer reviews?|client reviews?)\b/i.test(
+      joinedFeedback,
+    ),
+};
+await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
 if (process.env.FEEDBACK_SUMMARY_PATH)
   await fs.writeFile(
     process.env.FEEDBACK_SUMMARY_PATH,
     feedback.join("\n\n").slice(0, 12_000),
+    "utf8",
+  );
+if (process.env.FEEDBACK_OUTCOME_PATH)
+  await fs.writeFile(
+    process.env.FEEDBACK_OUTCOME_PATH,
+    appliedOperations
+      .map((operation) =>
+        operation.kind === "set_social_proof"
+          ? operation.source === "google_reviews"
+            ? "Added a live, attributed Google Maps reviews section."
+            : "Added a verified proof section because no Google reviews are available."
+          : operation.kind === "show_brand_name"
+            ? "Ensured the business name is visible beside the logo."
+            : `Updated ${operation.field}.`,
+      )
+      .join(" "),
     "utf8",
   );
 console.log(`Applied ${feedback.length} feedback item(s) to ${configPath}.`);

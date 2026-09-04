@@ -18,8 +18,10 @@ export type SiteConfig = {
     offer?: string;
     domain?: string;
     leadEmail: string;
+    placeId?: string;
+    googleMapsUrl?: string;
   };
-  style: { primaryColor: string; tone: string };
+  style: { primaryColor: string; tone: string; showBrandName?: boolean };
   services: Service[];
   differentiators: string[];
   locations: Location[];
@@ -63,6 +65,25 @@ export type SiteConfig = {
     score: number;
     issues: string[];
     refined: boolean;
+  };
+  socialProof?: {
+    source: "google_reviews" | "verified_differentiators";
+    heading: string;
+    intro: string;
+    points: string[];
+    fallback?: {
+      source: "verified_differentiators";
+      heading: string;
+      intro: string;
+      points: string[];
+    };
+    google?: { apiUrl: string; token: string };
+  };
+  revisionReport?: {
+    feedback: string[];
+    operations: Array<{ kind: string }>;
+    expectedArtifacts: Array<{ type: string; marker?: string; field?: string }>;
+    requestedSocialProof?: boolean;
   };
   lead?: { apiUrl: string; token: string };
 };

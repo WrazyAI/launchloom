@@ -35,16 +35,30 @@ jobs:
           echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
           echo "feedback_issue=$(gh pr view "$CLIENT_PR" --repo "$CLIENT_REPO" --json body --jq '.body | capture("launchloom-feedback-inbox:(?<id>[0-9]+)").id')" >> "$GITHUB_OUTPUT"
       - name: Apply supported revisions
-        run: CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" FEEDBACK_ISSUE="$CLIENT_PR" FEEDBACK_STAGE=developer FEEDBACK_SUMMARY_PATH="$RUNNER_TEMP/developer-feedback.txt" node scripts/apply-feedback.mjs
+        run: CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" FEEDBACK_ISSUE="$CLIENT_PR" FEEDBACK_STAGE=developer FEEDBACK_SUMMARY_PATH="$RUNNER_TEMP/developer-feedback.txt" FEEDBACK_OUTCOME_PATH="$RUNNER_TEMP/revision-outcome.txt" node scripts/apply-feedback.mjs
+      - name: Flag feedback that needs manual attention
+        if: failure()
+        run: |
+          gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-manual-attention:developer -->
+
+          ## Manual attention needed
+
+          The requested feedback could not be applied as a safe, verifiable minimal revision. No unrelated content or design was changed."
+      - name: Configure live Google review proof
+        run: |
+          PROJECT=$(node -e "console.log(require('$RUNNER_TEMP/client/.launchloom-deployment.json').project)")
+          PLACE_ID=$(node -e "const x=require('$RUNNER_TEMP/client/src/site.config.json'); console.log(x.socialProof?.source === 'google_reviews' ? x.business.placeId || '' : '')")
+          if [ -n "$PLACE_ID" ]; then
+            BRANCH_SAFE=$(echo "${{ steps.branch.outputs.name }}" | tr '/' '-')
+            ORIGINS="https://$BRANCH_SAFE.$PROJECT.pages.dev,https://$PROJECT.pages.dev"
+            REVIEWS_TOKEN=$(node scripts/create-google-reviews-token.mjs --project "$PROJECT" --placeId "$PLACE_ID" --origins "$ORIGINS")
+            node scripts/enrich-site-config.mjs --file "$RUNNER_TEMP/client/src/site.config.json" --api https://api.launchloom.wrazyos.com --reviewsToken "$REVIEWS_TOKEN"
+          fi
       - name: Build and direct-upload revised preview
         id: deploy
         run: |
           CLIENT_DIR="$RUNNER_TEMP/client"
-          # Generated repositories stay standalone, but template improvements
-          # (asset rendering, accessibility, and review UI) should reach the
-          # next revision without overwriting approved client content.
-          rsync -a --exclude site.config.json "$GITHUB_WORKSPACE/templates/client-site/src/" "$CLIENT_DIR/src/"
-          rsync -a "$GITHUB_WORKSPACE/templates/client-site/public/" "$CLIENT_DIR/public/"
+          node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$CLIENT_DIR"
           cd "$CLIENT_DIR"
           if git diff --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
@@ -52,6 +66,7 @@ jobs:
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
           npm ci
           PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
+          node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --html dist/index.html
           BRANCH_SAFE=$(echo "${{ steps.branch.outputs.name }}" | tr '/' '-')
           npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "LaunchLoom revision"
           echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -67,4 +82,4 @@ jobs:
           TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.deploy.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "${{ steps.branch.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
           LINK="${{ steps.deploy.outputs.preview }}?review=$TOKEN"
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Revised developer preview' '${{ steps.deploy.outputs.preview }}' "$LINK")"
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision --audience developer --feedback-file "$RUNNER_TEMP/developer-feedback.txt"
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision --audience developer --feedback-file "$RUNNER_TEMP/developer-feedback.txt" --outcome-file "$RUNNER_TEMP/revision-outcome.txt"

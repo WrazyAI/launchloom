@@ -1,0 +1,72 @@
+---
+import site from "../lib/site";
+const proof = site.socialProof;
+const fallback = proof?.fallback || proof;
+---
+
+{proof && fallback && <section class="section social-proof" id="social-proof" data-source={proof.source}>
+  <div class="wrap">
+    <span class="kicker">{proof.source === "google_reviews" ? "Google Maps reviews" : "Why people choose us"}</span>
+    <h2>{proof.heading}</h2>
+    <p class="social-proof__intro">{proof.intro}</p>
+    {proof.source === "google_reviews" && proof.google ? (
+      <div class="google-reviews" data-api={proof.google.apiUrl} data-token={proof.google.token} aria-live="polite">
+        <p class="google-reviews__loading">Loading recent Google Maps reviews…</p>
+      </div>
+    ) : null}
+    <div class:list={["proof-points", { "proof-points--fallback": proof.source === "google_reviews" }]}>
+      {fallback.points.map((point) => <p>{point}</p>)}
+    </div>
+  </div>
+</section>}
+
+<script is:inline>
+  for (const root of document.querySelectorAll(".google-reviews")) {
+    const api = root.dataset.api;
+    const token = root.dataset.token;
+    if (!api || !token) continue;
+    fetch(`${api.replace(/\/$/, "")}/api/google-reviews?token=${encodeURIComponent(token)}`, {
+      headers: { Accept: "application/json" },
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Reviews are unavailable.");
+        return response.json();
+      })
+      .then(({ reviews }) => {
+        if (!Array.isArray(reviews) || !reviews.length) throw new Error("No reviews available.");
+        root.innerHTML = "";
+        const list = document.createElement("div");
+        list.className = "google-reviews__list";
+        for (const review of reviews.slice(0, 3)) {
+          const article = document.createElement("article");
+          article.className = "google-review";
+          const author = document.createElement("a");
+          author.className = "google-review__author";
+          author.href = review.authorUrl || review.mapsUrl || "#social-proof";
+          author.target = "_blank";
+          author.rel = "noreferrer";
+          author.textContent = review.author || "Google Maps reviewer";
+          const rating = document.createElement("p");
+          rating.className = "google-review__rating";
+          rating.textContent = `${"★".repeat(Math.max(0, Math.min(5, Number(review.rating) || 0)))} ${review.relativeTime || ""}`;
+          const text = document.createElement("p");
+          text.textContent = review.text;
+          const source = document.createElement("a");
+          source.className = "google-review__source";
+          source.href = review.mapsUrl || "#social-proof";
+          source.target = "_blank";
+          source.rel = "noreferrer";
+          source.textContent = "Read on Google Maps ↗";
+          article.append(author, rating, text, source);
+          list.append(article);
+        }
+        const attribution = document.createElement("p");
+        attribution.className = "google-reviews__attribution";
+        attribution.textContent = "Google Maps";
+        root.append(list, attribution);
+      })
+      .catch(() => {
+        root.remove();
+      });
+  }
+</script>
