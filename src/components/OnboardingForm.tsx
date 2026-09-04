@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 type Place = {
@@ -38,6 +38,7 @@ async function compressImage(file: File): Promise<File> {
 
 export default function OnboardingForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  const draftRef = useRef<Record<string, string>>({});
   const [step, setStep] = useState(0);
   const [place, setPlace] = useState<Place | null>(null);
   const [showLookup, setShowLookup] = useState(true);
@@ -52,6 +53,55 @@ export default function OnboardingForm() {
     [step],
   );
 
+  function captureDraft() {
+    const form = formRef.current;
+    if (!form) return;
+    const next: Record<string, string> = {};
+    for (const field of form.querySelectorAll<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >("input, select, textarea")) {
+      if (!field.name || field.type === "file") continue;
+      if (field instanceof HTMLInputElement && field.type === "radio") {
+        if (field.checked) next[field.name] = field.value;
+        continue;
+      }
+      if (field instanceof HTMLInputElement && field.type === "checkbox") {
+        if (field.checked) next[field.name] = field.value || "yes";
+        continue;
+      }
+      next[field.name] = field.value;
+    }
+    const placeQuery = form.querySelector<HTMLInputElement>("#place-query");
+    if (placeQuery) next.placeQuery = placeQuery.value;
+    draftRef.current = next;
+  }
+
+  function restoreDraft() {
+    const form = formRef.current;
+    if (!form) return;
+    for (const field of form.querySelectorAll<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >("input, select, textarea")) {
+      if (!field.name || field.type === "file") continue;
+      const value = draftRef.current[field.name];
+      if (value === undefined) continue;
+      if (field instanceof HTMLInputElement && field.type === "radio") {
+        field.checked = field.value === value;
+      } else if (field instanceof HTMLInputElement && field.type === "checkbox") {
+        field.checked = field.value === value;
+      } else {
+        field.value = value;
+      }
+    }
+    const placeQuery = form.querySelector<HTMLInputElement>("#place-query");
+    if (placeQuery && draftRef.current.placeQuery !== undefined)
+      placeQuery.value = draftRef.current.placeQuery;
+  }
+
+  useEffect(() => {
+    restoreDraft();
+  }, [step]);
+
   function advance() {
     const current = formRef.current?.querySelector<HTMLElement>(
       `[data-step="${step}"]`,
@@ -60,6 +110,7 @@ export default function OnboardingForm() {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >("input, select, textarea") || [])
       if (!field.disabled && !field.reportValidity()) return;
+    captureDraft();
     setStep((value) => Math.min(value + 1, steps.length - 1));
   }
 
@@ -93,7 +144,10 @@ export default function OnboardingForm() {
         const input = formRef.current?.elements.namedItem(
           name,
         ) as HTMLInputElement | null;
-        if (input && value) input.value = value;
+        if (input && value) {
+          input.value = value;
+          draftRef.current[name] = value;
+        }
       };
       set("businessName", result.place.name);
       set("address", result.place.address);
@@ -186,6 +240,7 @@ export default function OnboardingForm() {
         "Received. We’ll email your preview link as soon as it’s ready.",
       );
       form.reset();
+      draftRef.current = {};
       setStep(0);
       setPlace(null);
       setShowLookup(true);
@@ -626,7 +681,10 @@ export default function OnboardingForm() {
           <button
             type="button"
             className="text-button"
-            onClick={() => setStep(step - 1)}
+            onClick={() => {
+              captureDraft();
+              setStep(step - 1);
+            }}
           >
             Back
           </button>
