@@ -68,4 +68,10 @@ const intake = {
 const revised = await generateSiteConfig(intake);
 if (config.lead) revised.lead = config.lead;
 await fs.writeFile(configPath, `${JSON.stringify(revised, null, 2)}\n`);
+if (process.env.FEEDBACK_SUMMARY_PATH)
+  await fs.writeFile(
+    process.env.FEEDBACK_SUMMARY_PATH,
+    feedback.join("\n\n").slice(0, 12_000),
+    "utf8",
+  );
 console.log(`Applied ${feedback.length} feedback item(s) to ${configPath}.`);

@@ -54,7 +54,7 @@ jobs:
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
       - name: Apply pending client feedback
-        run: CLIENT_PR="${{ steps.revision.outputs.pr }}" CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" FEEDBACK_ISSUE="$FEEDBACK_ISSUE" FEEDBACK_STAGE=client node scripts/apply-feedback.mjs
+        run: CLIENT_PR="${{ steps.revision.outputs.pr }}" CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" FEEDBACK_ISSUE="$FEEDBACK_ISSUE" FEEDBACK_STAGE=client FEEDBACK_SUMMARY_PATH="$RUNNER_TEMP/client-feedback.txt" node scripts/apply-feedback.mjs
       - name: Build and direct-upload developer preview
         id: deploy
         run: |
@@ -82,4 +82,4 @@ jobs:
           LINK="${{ steps.deploy.outputs.preview }}?review=$TOKEN"
           gh pr comment "${{ steps.revision.outputs.pr }}" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Client-feedback developer preview' '${{ steps.deploy.outputs.preview }}' "$LINK")"
           gh issue comment "$FEEDBACK_ISSUE" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s' '<!-- launchloom-revision:client -->' 'Client feedback has been incorporated into an internal developer preview.')"
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision --audience developer
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision --audience developer --feedback-file "$RUNNER_TEMP/client-feedback.txt"
