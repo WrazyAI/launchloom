@@ -39,6 +39,11 @@ if (kinds.has("show_brand_name")) {
   files.add("components/Footer.astro");
   files.add("styles/site.css");
 }
+if (kinds.has("set_color_palette")) {
+  files.add("layouts/SiteLayout.astro");
+  files.add("styles/site.css");
+  files.add("lib/site.ts");
+}
 for (const relative of files) {
   const source = path.join(template, relative);
   const destination = path.join(client, "src", relative);

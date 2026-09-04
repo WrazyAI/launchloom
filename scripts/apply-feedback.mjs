@@ -97,6 +97,8 @@ if (process.env.FEEDBACK_OUTCOME_PATH)
             : "Added a verified proof section because no Google reviews are available."
           : operation.kind === "show_brand_name"
             ? "Ensured the business name is visible beside the logo."
+            : operation.kind === "set_color_palette"
+              ? "Updated the site with a cohesive, higher-contrast color palette."
             : `Updated ${operation.field}.`,
       )
       .join(" "),

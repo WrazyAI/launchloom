@@ -66,7 +66,7 @@ a {
   background: var(--cream);
 }
 .hero.wellness {
-  background: #e8eee5;
+  background: var(--hero-surface);
 }
 .hero-grid {
   display: grid;
@@ -435,7 +435,7 @@ h2 {
 .layout-local-proof .service-card {
   border-top: 4px solid var(--brand);
 }
-.social-proof { background: #eef2ec; }
+.social-proof { background: var(--hero-surface); }
 .social-proof__intro { max-width: 670px; color: var(--muted); line-height: 1.65; }
 .proof-points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 34px; }
 .proof-points p { margin: 0; padding: 20px; background: #fff; border-left: 3px solid var(--brand); line-height: 1.55; }

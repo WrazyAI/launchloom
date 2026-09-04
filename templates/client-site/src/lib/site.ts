@@ -21,7 +21,16 @@ export type SiteConfig = {
     placeId?: string;
     googleMapsUrl?: string;
   };
-  style: { primaryColor: string; tone: string; showBrandName?: boolean };
+  style: {
+    primaryColor: string;
+    tone: string;
+    showBrandName?: boolean;
+    surfaceColor?: string;
+    heroColor?: string;
+    inkColor?: string;
+    mutedColor?: string;
+    lineColor?: string;
+  };
   services: Service[];
   differentiators: string[];
   locations: Location[];

@@ -46,6 +46,20 @@ describe("revision operations", () => {
     });
   });
 
+  it("turns a color request into a bounded accessible palette revision", () => {
+    const draft = config();
+    const [operation] = deterministicOperations(
+      "I do not like the colors on the site.",
+      draft,
+    );
+    expect(operation).toMatchObject({ kind: "set_color_palette" });
+    expect(applyOperation(draft, operation)).toBe(true);
+    expect(draft.style).toMatchObject({
+      primaryColor: "#28566b",
+      surfaceColor: "#f7faf9",
+    });
+  });
+
   it("requires the expected rendered artifact before a revision can send", () => {
     const draft = config();
     const [operation] = deterministicOperations("Add testimonials", draft);

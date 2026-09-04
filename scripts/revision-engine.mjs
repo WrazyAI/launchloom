@@ -16,6 +16,8 @@ const socialProofRequest =
   /\b(testimonials?|testimony|testimonies|review section|google reviews?|customer reviews?|client reviews?)\b/i;
 const brandNameRequest =
   /\b(company|business|brand) name\b.{0,80}\b(nav|header|logo|navbar)\b|\b(nav|header|logo|navbar)\b.{0,80}\b(company|business|brand) name\b/i;
+const colorRequest =
+  /\b(colou?rs?|color palette|palette|branding|brand colors?)\b/i;
 
 function clean(value, limit = 360) {
   return String(value || "")
@@ -53,10 +55,41 @@ export function socialProofOperation(config) {
   return { kind: "set_social_proof", ...proofFallback(config) };
 }
 
+function paletteFor(config) {
+  if (config.preset === "home-services" || config.industry === "home-services")
+    return {
+      primaryColor: "#9a4a2d",
+      surfaceColor: "#fbf6f0",
+      heroColor: "#f3e4d6",
+      inkColor: "#2c1b14",
+      mutedColor: "#6f5b50",
+      lineColor: "#e4d2c4",
+    };
+  if (config.industry === "technology")
+    return {
+      primaryColor: "#245a7a",
+      surfaceColor: "#f5f8fb",
+      heroColor: "#e1edf4",
+      inkColor: "#142a38",
+      mutedColor: "#536b79",
+      lineColor: "#d1e0e8",
+    };
+  return {
+    primaryColor: "#28566b",
+    surfaceColor: "#f7faf9",
+    heroColor: "#e1eef0",
+    inkColor: "#142b34",
+    mutedColor: "#566d75",
+    lineColor: "#cfdee1",
+  };
+}
+
 export function deterministicOperations(feedback, config) {
   const operations = [];
   if (socialProofRequest.test(feedback))
     operations.push(socialProofOperation(config));
+  if (colorRequest.test(feedback))
+    operations.push({ kind: "set_color_palette", palette: paletteFor(config) });
   if (brandNameRequest.test(feedback))
     operations.push({ kind: "show_brand_name" });
   return operations;
@@ -128,6 +161,28 @@ export function applyOperation(config, operation) {
     config.style = { ...(config.style || {}), showBrandName: true };
     return true;
   }
+  if (operation.kind === "set_color_palette") {
+    const palette = operation.palette;
+    const keys = [
+      "primaryColor",
+      "surfaceColor",
+      "heroColor",
+      "inkColor",
+      "mutedColor",
+      "lineColor",
+    ];
+    if (
+      !palette ||
+      typeof palette !== "object" ||
+      keys.some((key) => !/^#[0-9a-f]{6}$/i.test(String(palette[key] || "")))
+    )
+      return false;
+    config.style = {
+      ...(config.style || {}),
+      ...Object.fromEntries(keys.map((key) => [key, palette[key]])),
+    };
+    return true;
+  }
   if (operation.kind === "set_copy" && COPY_FIELDS.has(operation.field)) {
     const value = clean(
       operation.value,
@@ -156,6 +211,8 @@ export function expectedArtifacts(operations) {
       return [{ type: "html", marker: 'id="social-proof"' }];
     if (operation.kind === "show_brand_name")
       return [{ type: "html", marker: 'class="wordmark__name"' }];
+    if (operation.kind === "set_color_palette")
+      return [{ type: "config", field: "style.primaryColor" }];
     if (operation.kind === "set_copy")
       return [{ type: "config", field: `copy.${operation.field}` }];
     return [];
