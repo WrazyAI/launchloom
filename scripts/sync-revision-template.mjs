@@ -21,10 +21,15 @@ const operations = config.revisionReport?.operations || [];
 const kinds = new Set(operations.map((operation) => operation.kind));
 const repository = path.resolve(new URL("..", import.meta.url).pathname);
 const template = path.join(repository, "templates/client-site/src");
-const files = new Set();
+// These two components carry globally enforced visitor-facing wording. They
+// are safe to refresh on every revision and keep legacy client repositories
+// inside the no-em-dash content gate.
+const files = new Set([
+  "components/LeadForm.astro",
+  "components/ReviewBanner.astro",
+]);
 if (kinds.has("set_social_proof")) {
   files.add("components/SocialProof.astro");
-  files.add("components/ReviewBanner.astro");
   files.add("pages/index.astro");
   files.add("styles/site.css");
   files.add("lib/site.ts");
