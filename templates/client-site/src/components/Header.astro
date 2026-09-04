@@ -4,7 +4,8 @@ import site, { phoneHref } from "../lib/site";
 
 <header class="header wrap">
   <a class:list={["wordmark", { "wordmark--logo": Boolean(site.assets?.logo) }]} href="/">
-    {site.assets?.logo ? <img src={site.assets.logo} alt={site.business.name} /> : site.business.name}
+    {site.assets?.logo && <img src={site.assets.logo} alt="" />}
+    <span class="wordmark__name">{site.business.name}</span>
   </a>
   <nav aria-label="Main navigation"><a href="/#services">Services</a><a href="/#about">About</a>{site.preset === "home-services" && <a href="/#areas">Areas</a>}<a href="/#contact">Contact</a></nav>
   <a class="header-call" href={phoneHref(site.business.phone)}>{site.business.phone}</a>

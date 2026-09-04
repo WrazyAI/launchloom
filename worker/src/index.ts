@@ -527,10 +527,14 @@ async function feedback(request: Request, env: Env) {
     }
     const issueNumber =
       claims.stage === "developer" ? claims.pr : claims.feedbackIssue;
+    // Feedback comments are durable GitHub records. Keep only the reviewed
+    // page's public origin/path there; never retain the signed query token.
+    const reviewedPage =
+      new URL(String(pageUrl)).origin + new URL(String(pageUrl)).pathname;
     await github(env, `/repos/${claims.repo}/issues/${issueNumber}/comments`, {
       method: "POST",
       body: JSON.stringify({
-        body: `<!-- launchloom-feedback:${claims.stage} -->\n**${claims.stage === "developer" ? "Developer" : "Client"} feedback${category ? ` · ${clean(category, 80)}` : ""}**\n\n${note}\n\n_Page: ${clean(pageUrl, 1000)}_`,
+        body: `<!-- launchloom-feedback:${claims.stage} -->\n**${claims.stage === "developer" ? "Developer" : "Client"} feedback${category ? ` · ${clean(category, 80)}` : ""}**\n\n${note}\n\n_Page: ${clean(reviewedPage, 1000)}_`,
       }),
     });
     await dispatch(

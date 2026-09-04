@@ -1,5 +1,9 @@
 import fs from "node:fs/promises";
 import { generateSiteConfig } from "./generate-site-config.mjs";
+import {
+  feedbackTextFromComment,
+  revisionIntakeFromConfig,
+} from "./feedback-utils.mjs";
 
 const [repo, pr, configPath] = [
   process.env.CLIENT_REPO,
@@ -41,32 +45,21 @@ const feedback = comments
       (!latestRevision ||
         new Date(comment.created_at) > new Date(latestRevision)),
   )
-  .map((comment) =>
-    comment.body
-      .replace(/<!--[\s\S]*?-->/, "")
-      .replace(/\*_Page:[\s\S]*/, "")
-      .trim(),
-  );
+  .map((comment) => feedbackTextFromComment(comment.body))
+  .filter(Boolean);
 if (!feedback.length) {
   console.log("No pending LaunchLoom feedback.");
   process.exit(0);
 }
 
 const config = JSON.parse(await fs.readFile(configPath, "utf8"));
-const intake = {
-  ...config.business,
-  preset: config.preset,
-  services: config.services.map((service) => service.name).join("\n"),
-  serviceAreas: config.business.serviceAreas.join("\n"),
-  differentiators: config.differentiators.join("\n"),
-  primaryColor: config.style.primaryColor,
-  tone: config.style.tone,
-  industry: config.industry,
-  assets: config.assets,
-  feedback: feedback.join("\n\n"),
-};
+const intake = revisionIntakeFromConfig(config, feedback.join("\n\n"));
 const revised = await generateSiteConfig(intake);
 if (config.lead) revised.lead = config.lead;
+// Revision generation may improve copy, but it must not erase brand settings
+// that were already accepted or supplied by the client.
+revised.style = { ...revised.style, ...config.style };
+if (config.assets) revised.assets = config.assets;
 await fs.writeFile(configPath, `${JSON.stringify(revised, null, 2)}\n`);
 if (process.env.FEEDBACK_SUMMARY_PATH)
   await fs.writeFile(

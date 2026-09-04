@@ -5,11 +5,13 @@ const MODEL = "z-ai/glm-5.3-flash";
 const STOCK_PACKS = {
   wellness: {
     hero: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1600&q=85",
-    secondary: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1200&q=85",
+    secondary:
+      "https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1200&q=85",
   },
   "home-services": {
     hero: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1600&q=85",
-    secondary: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1200&q=85",
+    secondary:
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=1200&q=85",
   },
   "professional-services": {
     hero: "/images/packs/professional-services-advisory-v1.png",
@@ -42,7 +44,8 @@ function text(value, limit = 240) {
 
 function usefulServiceDescription(value, serviceName) {
   const candidate = text(value, 180);
-  const generic = /tailored to your needs|personalized support|quality you can trust|when it matters|next level/i;
+  const generic =
+    /tailored to your needs|personalized support|quality you can trust|when it matters|next level/i;
   if (candidate.length >= 28 && !generic.test(candidate)) return candidate;
   return `Talk through your needs for ${serviceName} and leave with a clear next step.`;
 }
@@ -51,7 +54,12 @@ function processStepText(value) {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const step = value;
     return text(
-      step.title || step.label || step.name || step.step || step.text || step.description,
+      step.title ||
+        step.label ||
+        step.name ||
+        step.step ||
+        step.text ||
+        step.description,
       120,
     );
   }
@@ -115,16 +123,51 @@ function layoutFor(industry, preset) {
 function qualificationFor(industry) {
   if (industry === "home-services")
     return [
-      { name: "service", label: "What do you need help with?", placeholder: "Select a service", options: ["Repair", "Installation", "Maintenance", "Not sure yet"] },
-      { name: "timing", label: "When do you need help?", placeholder: "Select timing", options: ["As soon as possible", "This week", "Planning ahead"] },
+      {
+        name: "service",
+        label: "What do you need help with?",
+        placeholder: "Select a service",
+        options: ["Repair", "Installation", "Maintenance", "Not sure yet"],
+      },
+      {
+        name: "timing",
+        label: "When do you need help?",
+        placeholder: "Select timing",
+        options: ["As soon as possible", "This week", "Planning ahead"],
+      },
     ];
   if (industry === "wellness")
     return [
-      { name: "interest", label: "What are you interested in?", placeholder: "Select an option", options: ["A consultation", "A specific treatment", "Advice on options", "Not sure yet"] },
-      { name: "timing", label: "When would you like to come in?", placeholder: "Select timing", options: ["This week", "Next week", "Just exploring"] },
+      {
+        name: "interest",
+        label: "What are you interested in?",
+        placeholder: "Select an option",
+        options: [
+          "A consultation",
+          "A specific treatment",
+          "Advice on options",
+          "Not sure yet",
+        ],
+      },
+      {
+        name: "timing",
+        label: "When would you like to come in?",
+        placeholder: "Select timing",
+        options: ["This week", "Next week", "Just exploring"],
+      },
     ];
   return [
-    { name: "interest", label: "What would you like to discuss?", placeholder: "Select an option", options: ["A new project", "Improving an existing service", "A consultation", "Not sure yet"] },
+    {
+      name: "interest",
+      label: "What would you like to discuss?",
+      placeholder: "Select an option",
+      options: [
+        "A new project",
+        "Improving an existing service",
+        "A consultation",
+        "Not sure yet",
+      ],
+    },
   ];
 }
 
@@ -154,12 +197,26 @@ function defaultFaq(industry, cta) {
   const action = cta || "get in touch";
   if (industry === "home-services")
     return [
-      { question: "How quickly can you help?", answer: "Tell us what is happening and your timing. We will confirm the next available step directly." },
-      { question: "Can I request help for my area?", answer: "Send your address and service needs and we will confirm coverage before scheduling." },
+      {
+        question: "How quickly can you help?",
+        answer:
+          "Tell us what is happening and your timing. We will confirm the next available step directly.",
+      },
+      {
+        question: "Can I request help for my area?",
+        answer:
+          "Send your address and service needs and we will confirm coverage before scheduling.",
+      },
     ];
   return [
-    { question: "What happens after I reach out?", answer: `Share a few details and our team will follow up with the most useful next step.` },
-    { question: "Is there any obligation?", answer: `No pressure. ${action} to discuss your needs and decide whether we are a fit.` },
+    {
+      question: "What happens after I reach out?",
+      answer: `Share a few details and our team will follow up with the most useful next step.`,
+    },
+    {
+      question: "Is there any obligation?",
+      answer: `No pressure. ${action} to discuss your needs and decide whether we are a fit.`,
+    },
   ];
 }
 
@@ -224,7 +281,11 @@ function fallback(intake) {
     conversion: {
       layout: layoutFor(industry, preset),
       qualification: qualificationFor(industry),
-      process: ["Tell us what you need", "Get clear next steps", "Move forward with confidence"],
+      process: [
+        "Tell us what you need",
+        "Get clear next steps",
+        "Move forward with confidence",
+      ],
       faqs: defaultFaq(industry, intake.primaryCta),
     },
     assetReport: { used: [], skipped: [] },
@@ -274,20 +335,40 @@ export function normalise(candidate, intake) {
   const assetReport = { used: [], skipped: [] };
   if (typeof assets?.photoOne === "string") {
     images.hero = assets.photoOne;
-    assetReport.used.push({ asset: "photoOne", placement: "hero", source: "client" });
+    assetReport.used.push({
+      asset: "photoOne",
+      placement: "hero",
+      source: "client",
+    });
   }
   if (typeof assets?.photoTwo === "string") {
     images.secondary = assets.photoTwo;
-    assetReport.used.push({ asset: "photoTwo", placement: "story", source: "client" });
+    assetReport.used.push({
+      asset: "photoTwo",
+      placement: "story",
+      source: "client",
+    });
   } else if (typeof assets?.photoThree === "string") {
     images.secondary = assets.photoThree;
-    assetReport.used.push({ asset: "photoThree", placement: "story", source: "client" });
+    assetReport.used.push({
+      asset: "photoThree",
+      placement: "story",
+      source: "client",
+    });
   } else if (typeof assets?.teamPhoto === "string") {
     images.secondary = assets.teamPhoto;
-    assetReport.used.push({ asset: "teamPhoto", placement: "story", source: "client" });
+    assetReport.used.push({
+      asset: "teamPhoto",
+      placement: "story",
+      source: "client",
+    });
   }
   if (typeof assets?.logo === "string")
-    assetReport.used.push({ asset: "logo", placement: "brand", source: "client" });
+    assetReport.used.push({
+      asset: "logo",
+      placement: "brand",
+      source: "client",
+    });
   const suppliedCopy =
     value.copy && typeof value.copy === "object" ? value.copy : {};
   const copy = Object.fromEntries(
@@ -298,14 +379,26 @@ export function normalise(candidate, intake) {
       ],
     ),
   );
-  const rawConversion = value.conversion && typeof value.conversion === "object" ? value.conversion : {};
-  const proposedFaqs = Array.isArray(rawConversion.faqs) ? rawConversion.faqs : base.conversion.faqs;
-  const proposedProcess = (Array.isArray(rawConversion.process) ? rawConversion.process : base.conversion.process)
+  const rawConversion =
+    value.conversion && typeof value.conversion === "object"
+      ? value.conversion
+      : {};
+  const proposedFaqs = Array.isArray(rawConversion.faqs)
+    ? rawConversion.faqs
+    : base.conversion.faqs;
+  const proposedProcess = (
+    Array.isArray(rawConversion.process)
+      ? rawConversion.process
+      : base.conversion.process
+  )
     .map(processStepText)
     .filter(Boolean)
     .slice(0, 4);
   const validatedFaqs = proposedFaqs
-    .map((faq) => ({ question: text(faq?.question, 160), answer: text(faq?.answer, 360) }))
+    .map((faq) => ({
+      question: text(faq?.question, 160),
+      answer: text(faq?.answer, 360),
+    }))
     .filter((faq) => faq.question && faq.answer)
     .slice(0, 5);
   const conversion = {
@@ -355,7 +448,7 @@ async function askModel(intake, effort) {
           {
             role: "system",
             content:
-              "You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. Build a credible path from visitor problem to action: a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, or results. Never replace submitted contact facts. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.",
+              "You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. Build a credible path from visitor problem to action: a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, or results. Never replace submitted contact facts. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning rather than rewriting the entire site. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.",
           },
           {
             role: "user",
