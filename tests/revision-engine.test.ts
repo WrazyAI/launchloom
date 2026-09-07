@@ -216,6 +216,12 @@ describe("revision operations", () => {
       async () => [
         {
           feedbackIndex: 0,
+          kind: "set_section_enabled",
+          sectionType: "social-proof",
+          enabled: false,
+        },
+        {
+          feedbackIndex: 0,
           kind: "set_copy",
           field: "heroKicker",
           value: "Care shaped around your routines",
@@ -231,6 +237,112 @@ describe("revision operations", () => {
       "Care shaped around your routines",
     );
     expect(planned.config.style.primaryColor).toBe("#17324d");
+  });
+
+  it("lets an explicit broad layout request use bounded recipe operations", async () => {
+    const planned = await planRevision(
+      ["Substantially improve the page layout and visual hierarchy."],
+      config(),
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "set_section_enabled",
+          sectionType: "social-proof",
+          enabled: false,
+        },
+        {
+          feedbackIndex: 0,
+          kind: "set_section_variant",
+          sectionType: "hero",
+          variant: "centered",
+        },
+        {
+          feedbackIndex: 0,
+          kind: "reorder_section",
+          sectionType: "process",
+          relativeTo: "services",
+          position: "after",
+        },
+        {
+          feedbackIndex: 0,
+          kind: "set_design_treatment",
+          density: "spacious",
+          typography: "editorial",
+        },
+      ],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "fulfilled",
+      fulfilled: ["layout"],
+    });
+    expect(planned.config.design.treatment).toEqual({
+      density: "spacious",
+      typography: "editorial",
+    });
+    expect(
+      planned.config.design.sections.find(
+        (section: any) => section.type === "hero",
+      ).variant,
+    ).toBe("centered");
+    expect(
+      planned.config.design.sections.some(
+        (section: any) => section.type === "social-proof",
+      ),
+    ).toBe(true);
+  });
+
+  it("does not count unchanged structural operations as applied work", () => {
+    const draft = {
+      ...config(),
+      design: {
+        recipe: "general-editorial",
+        sections: [
+          { id: "opening", type: "hero", variant: "editorial" },
+          { id: "services", type: "services", variant: "editorial" },
+          { id: "process", type: "process", variant: "guided" },
+          { id: "contact", type: "contact", variant: "consultation" },
+        ],
+      },
+    };
+    expect(
+      applyOperation(draft, {
+        kind: "set_section_variant",
+        sectionType: "hero",
+        variant: "editorial",
+      }),
+    ).toBe(false);
+    expect(
+      applyOperation(draft, {
+        kind: "set_section_enabled",
+        sectionType: "process",
+        enabled: true,
+      }),
+    ).toBe(false);
+    expect(
+      applyOperation(draft, {
+        kind: "reorder_section",
+        sectionType: "process",
+        relativeTo: "services",
+        position: "after",
+      }),
+    ).toBe(false);
+  });
+
+  it("interprets requested brand and background colors without requiring the word palette", () => {
+    const operations = deterministicOperations(
+      "Use navy for the brand and cream for the background.",
+      config(),
+    );
+    expect(operations).toHaveLength(1);
+    expect(operations[0]).toMatchObject({
+      kind: "set_color_palette",
+      palette: {
+        primaryColor: "#17324d",
+        surfaceColor: "#fbf6ed",
+      },
+    });
   });
 
   it("reports partial mixed feedback instead of claiming the batch was addressed", async () => {
@@ -266,6 +378,13 @@ describe("revision operations", () => {
         kind: "set_section_variant",
         sectionType: "hero",
         variant: "anything-goes",
+      }),
+    ).toBe(false);
+    expect(
+      applyOperation(draft, {
+        kind: "set_section_variant",
+        sectionType: "hero",
+        variant: "trades-split",
       }),
     ).toBe(false);
     expect(

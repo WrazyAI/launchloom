@@ -109,12 +109,21 @@ const DEFAULT_SECTIONS = {
     ["contact", "contact", "consultation"],
   ],
 };
+const SHARED_RECIPE_VARIANTS = {
+  hero: ["centered"],
+  services: ["featured"],
+  about: ["compact"],
+  process: ["compact"],
+  contact: ["compact"],
+};
 
 const socialProofRequest =
   /\b(testimonials?|testimony|testimonies|review section|google reviews?|customer reviews?|client reviews?|social proof)\b/i;
 const brandNameRequest =
   /\b(company|business|brand) name\b.{0,80}\b(nav|header|logo|navbar)\b|\b(nav|header|logo|navbar)\b.{0,80}\b(company|business|brand) name\b/i;
 const colorRequest = /\b(colou?rs?|color palette|palette|brand colors?)\b/i;
+const broadLayoutRequest =
+  /\b(?:redesign|rework|refresh|improve|change|update|revise|strengthen)\b.{0,60}\b(?:layout|page structure|visual hierarchy|composition)\b|\b(?:layout|page structure|visual hierarchy|composition)\b.{0,60}\b(?:redesign|rework|refresh|improve|change|update|revise|strengthen)\b/i;
 const layoutRequest =
   /\b(layout|reorder|move|above|below|before|after|hide|remove|show|add|section|spacing|spacious|compact|density|typography|font|modern|editorial|bold|immersive|center(?:ed)?)\b/i;
 const contentRequest =
@@ -142,6 +151,14 @@ function defaultSection(config, type) {
   return found
     ? { id: found[0], type: found[1], variant: found[2] }
     : undefined;
+}
+function allowedVariants(config) {
+  return Object.fromEntries(
+    DEFAULT_SECTIONS[recipeFor(config)].map(([, type, variant]) => [
+      type,
+      [...new Set([variant, ...(SHARED_RECIPE_VARIANTS[type] || [])])],
+    ]),
+  );
 }
 function currentSections(config) {
   const requested = config.design?.sections;
@@ -258,6 +275,16 @@ function requestedColors(feedback) {
       values.push(value);
   }
   return values;
+}
+function requestsColorChange(feedback) {
+  if (colorRequest.test(feedback)) return true;
+  const colors = requestedColors(feedback);
+  if (!colors.length) return false;
+  const roleRequest =
+    /\b(primary|brand|accent|background|surface|page)\b.{0,35}(?:#[0-9a-f]{6}\b|navy|blue|teal|green|sage|terracotta|orange|red|burgundy|purple|gold|black|charcoal|cream|ivory|white|gr[ae]y)\b|(?:#[0-9a-f]{6}\b|navy|blue|teal|green|sage|terracotta|orange|red|burgundy|purple|gold|black|charcoal|cream|ivory|white|gr[ae]y)\b.{0,35}\b(primary|brand|accent|background|surface|page)\b/i;
+  const selectionRequest =
+    /\b(?:use|switch|change|update|make|set|prefer|try)\b.{0,70}(?:#[0-9a-f]{6}\b|navy|blue|teal|green|sage|terracotta|orange|red|burgundy|purple|gold|black|charcoal|cream|ivory|white|gr[ae]y)\b/i;
+  return roleRequest.test(feedback) || selectionRequest.test(feedback);
 }
 function colorForRole(feedback, rolePattern) {
   const names = Object.keys(NAMED_COLORS).join("|");
@@ -439,7 +466,7 @@ export function deterministicOperations(feedback, config) {
     /\b(?:move|put|place|reorder)\b/i.test(feedback);
   if (socialProofRequest.test(feedback) && !movingExistingProof)
     operations.push(socialProofOperation(config));
-  if (colorRequest.test(feedback))
+  if (requestsColorChange(feedback))
     operations.push({
       kind: "set_color_palette",
       palette: paletteFor(config, feedback),
@@ -468,12 +495,13 @@ export function deterministicOperations(feedback, config) {
 function intentsFor(feedback, config) {
   const intents = [];
   if (socialProofRequest.test(feedback)) intents.push("social-proof");
-  if (colorRequest.test(feedback)) intents.push("color");
+  if (requestsColorChange(feedback)) intents.push("color");
   if (brandNameRequest.test(feedback)) intents.push("brand-name");
   const structural = layoutRequest.test(feedback)
     ? structuralOperations(feedback, config)
     : [];
   if (
+    broadLayoutRequest.test(feedback) ||
     structural.some(
       (operation) =>
         !(
@@ -515,7 +543,7 @@ export async function modelOperations(
           },
           {
             role: "user",
-            content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config) })}`,
+            content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
           },
         ],
       }),
@@ -638,18 +666,23 @@ export function applyOperation(config, operation) {
     return true;
   }
   if (operation.kind === "set_design_treatment") {
+    const previousDensity = config.design?.treatment?.density || "balanced";
+    const previousTypography =
+      config.design?.treatment?.typography ||
+      (recipeFor(config) === "local-trades" ? "strong" : "editorial");
     const density = ["compact", "balanced", "spacious"].includes(
       operation.density,
     )
       ? operation.density
-      : config.design?.treatment?.density || "balanced";
+      : previousDensity;
     const typography = ["editorial", "sans", "strong"].includes(
       operation.typography,
     )
       ? operation.typography
-      : config.design?.treatment?.typography ||
-        (recipeFor(config) === "local-trades" ? "strong" : "editorial");
+      : previousTypography;
     if (!operation.density && !operation.typography) return false;
+    if (density === previousDensity && typography === previousTypography)
+      return false;
     config.design = {
       ...(config.design || {}),
       recipe: recipeFor(config),
@@ -666,6 +699,7 @@ export function applyOperation(config, operation) {
     const type = operation.sectionType;
     if (!SECTION_VARIANTS[type]) return false;
     const sections = currentSections(config);
+    const previousSections = JSON.stringify(sections);
     if (operation.kind === "set_section_enabled") {
       if (
         operation.enabled === false &&
@@ -688,7 +722,7 @@ export function applyOperation(config, operation) {
           0,
           section,
         );
-      }
+      } else return false;
     } else if (operation.kind === "reorder_section") {
       const from = sections.findIndex((section) => section.type === type);
       const target = sections.findIndex(
@@ -712,10 +746,16 @@ export function applyOperation(config, operation) {
       );
     } else {
       const section = sections.find((item) => item.type === type);
-      if (!section || !SECTION_VARIANTS[type].has(operation.variant))
+      if (
+        !section ||
+        !SECTION_VARIANTS[type].has(operation.variant) ||
+        !allowedVariants(config)[type]?.includes(operation.variant)
+      )
         return false;
+      if (section.variant === operation.variant) return false;
       section.variant = operation.variant;
     }
+    if (JSON.stringify(sections) === previousSections) return false;
     config.design = {
       ...(config.design || {}),
       recipe: recipeFor(config),
@@ -786,9 +826,11 @@ export async function planRevision(
       ].includes(operation.kind)
     )
       if (intents.includes("layout")) {
+        const broadLayout = broadLayoutRequest.test(feedback);
         if (operation.kind === "set_design_treatment") {
           if (
             operation.density &&
+            !broadLayout &&
             !/\b(spacing|spacious|compact|density|breathing room|tighter)\b/i.test(
               feedback,
             )
@@ -796,6 +838,7 @@ export async function planRevision(
             return false;
           if (
             operation.typography &&
+            !broadLayout &&
             !/\b(typography|font|editorial|serif|sans|modern|bold|stronger)\b/i.test(
               feedback,
             )
@@ -804,6 +847,7 @@ export async function planRevision(
         }
         if (
           operation.kind === "reorder_section" &&
+          !broadLayout &&
           !/\b(move|reorder|above|below|before|after|place|put)\b/i.test(
             feedback,
           )
