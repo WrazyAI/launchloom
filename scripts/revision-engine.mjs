@@ -3,6 +3,7 @@ const COPY_FIELDS = new Set([
   "servicesHeading",
   "aboutKicker",
   "aboutHeading",
+  "aboutBody",
   "contactKicker",
   "contactHeading",
   "processKicker",
@@ -12,12 +13,112 @@ const COPY_FIELDS = new Set([
   "formIntro",
 ]);
 
+const PALETTE_KEYS = [
+  "primaryColor",
+  "surfaceColor",
+  "heroColor",
+  "inkColor",
+  "mutedColor",
+  "lineColor",
+];
+const MODEL_OPERATION_KINDS = new Set([
+  "set_copy",
+  "set_service_copy",
+  "set_process",
+  "set_faqs",
+  "set_section_enabled",
+  "reorder_section",
+  "set_section_variant",
+  "set_design_treatment",
+]);
+const SECTION_VARIANTS = {
+  hero: new Set(["care-portrait", "trades-split", "editorial", "centered"]),
+  trust: new Set(["quiet", "bold"]),
+  services: new Set(["editorial", "problem-led", "featured"]),
+  about: new Set(["immersive", "compact"]),
+  process: new Set(["guided", "numbered", "compact"]),
+  "social-proof": new Set(["editorial", "cards"]),
+  gallery: new Set(["editorial", "work"]),
+  coverage: new Set(["local"]),
+  faq: new Set(["editorial", "practical"]),
+  contact: new Set(["consultation", "quote", "compact"]),
+};
+const SECTION_ALIASES = new Map([
+  ["hero", "hero"],
+  ["opening", "hero"],
+  ["banner", "hero"],
+  ["trust", "trust"],
+  ["proof", "trust"],
+  ["benefits", "trust"],
+  ["services", "services"],
+  ["service", "services"],
+  ["about", "about"],
+  ["story", "about"],
+  ["team", "about"],
+  ["process", "process"],
+  ["steps", "process"],
+  ["how it works", "process"],
+  ["testimonials", "social-proof"],
+  ["reviews", "social-proof"],
+  ["social proof", "social-proof"],
+  ["gallery", "gallery"],
+  ["photos", "gallery"],
+  ["recent work", "gallery"],
+  ["coverage", "coverage"],
+  ["service area", "coverage"],
+  ["locations", "coverage"],
+  ["faq", "faq"],
+  ["faqs", "faq"],
+  ["questions", "faq"],
+  ["contact", "contact"],
+  ["form", "contact"],
+  ["quote", "contact"],
+  ["consultation", "contact"],
+]);
+const DEFAULT_SECTIONS = {
+  "care-editorial": [
+    ["opening", "hero", "care-portrait"],
+    ["reassurance", "trust", "quiet"],
+    ["care-options", "services", "editorial"],
+    ["care-story", "about", "immersive"],
+    ["care-process", "process", "guided"],
+    ["family-voices", "social-proof", "editorial"],
+    ["care-gallery", "gallery", "editorial"],
+    ["care-questions", "faq", "editorial"],
+    ["care-consultation", "contact", "consultation"],
+  ],
+  "local-trades": [
+    ["service-opening", "hero", "trades-split"],
+    ["service-proof", "trust", "bold"],
+    ["repair-options", "services", "problem-led"],
+    ["service-process", "process", "numbered"],
+    ["customer-proof", "social-proof", "cards"],
+    ["recent-work", "gallery", "work"],
+    ["service-area", "coverage", "local"],
+    ["service-questions", "faq", "practical"],
+    ["request-service", "contact", "quote"],
+  ],
+  "general-editorial": [
+    ["opening", "hero", "editorial"],
+    ["proof", "trust", "quiet"],
+    ["services", "services", "editorial"],
+    ["story", "about", "immersive"],
+    ["process", "process", "guided"],
+    ["social-proof", "social-proof", "editorial"],
+    ["questions", "faq", "editorial"],
+    ["contact", "contact", "consultation"],
+  ],
+};
+
 const socialProofRequest =
-  /\b(testimonials?|testimony|testimonies|review section|google reviews?|customer reviews?|client reviews?)\b/i;
+  /\b(testimonials?|testimony|testimonies|review section|google reviews?|customer reviews?|client reviews?|social proof)\b/i;
 const brandNameRequest =
   /\b(company|business|brand) name\b.{0,80}\b(nav|header|logo|navbar)\b|\b(nav|header|logo|navbar)\b.{0,80}\b(company|business|brand) name\b/i;
-const colorRequest =
-  /\b(colou?rs?|color palette|palette|branding|brand colors?)\b/i;
+const colorRequest = /\b(colou?rs?|color palette|palette|brand colors?)\b/i;
+const layoutRequest =
+  /\b(layout|reorder|move|above|below|before|after|hide|remove|show|add|section|spacing|spacious|compact|density|typography|font|modern|editorial|bold|immersive|center(?:ed)?)\b/i;
+const contentRequest =
+  /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten).{0,50}\b(faq|question|answer|process|step)\b|\b(faq|question|answer|process|step)\b.{0,50}(?:say|read|explain|mention)\b/i;
 
 function clean(value, limit = 360) {
   return String(value || "")
@@ -26,7 +127,34 @@ function clean(value, limit = 360) {
     .trim()
     .slice(0, limit);
 }
-
+function recipeFor(config) {
+  const recipe = config.design?.recipe;
+  if (DEFAULT_SECTIONS[recipe]) return recipe;
+  if (config.preset === "home-services" || config.industry === "home-services")
+    return "local-trades";
+  if (config.industry === "wellness") return "care-editorial";
+  return "general-editorial";
+}
+function defaultSection(config, type) {
+  const found = DEFAULT_SECTIONS[recipeFor(config)].find(
+    ([, itemType]) => itemType === type,
+  );
+  return found
+    ? { id: found[0], type: found[1], variant: found[2] }
+    : undefined;
+}
+function currentSections(config) {
+  const requested = config.design?.sections;
+  const base =
+    Array.isArray(requested) && requested.length
+      ? requested
+      : DEFAULT_SECTIONS[recipeFor(config)].map(([id, type, variant]) => ({
+          id,
+          type,
+          variant,
+        }));
+  return base.map((section) => ({ ...section }));
+}
 function proofFallback(config) {
   const points = (config.differentiators || [])
     .map((value) => clean(value, 140))
@@ -34,28 +162,146 @@ function proofFallback(config) {
     .slice(0, 4);
   return {
     source: "verified_differentiators",
-    heading: `Why families choose ${config.business.name}`,
-    intro:
-      "A clear, personal path forward starts with the details that matter most.",
+    heading: `Why people choose ${clean(config.business?.name, 100)}`,
+    intro: "A clear path forward starts with the details that matter most.",
     points: points.length
       ? points
       : ["A conversation focused on your needs and the next right step."],
   };
 }
-
 export function socialProofOperation(config) {
-  if (clean(config.business?.placeId, 200)) {
+  if (clean(config.business?.placeId, 200))
     return {
       kind: "set_social_proof",
       source: "google_reviews",
-      heading: "What families say on Google Maps",
+      heading: "What customers say on Google Maps",
       fallback: proofFallback(config),
     };
-  }
   return { kind: "set_social_proof", ...proofFallback(config) };
 }
-
-function paletteFor(config) {
+function hexToRgb(hex) {
+  const value = String(hex).replace("#", "");
+  return /^[0-9a-f]{6}$/i.test(value)
+    ? [0, 2, 4].map((index) =>
+        Number.parseInt(value.slice(index, index + 2), 16),
+      )
+    : undefined;
+}
+function rgbToHex(rgb) {
+  return `#${rgb
+    .map((value) =>
+      Math.max(0, Math.min(255, Math.round(value)))
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+}
+function mix(a, b, amount) {
+  const left = hexToRgb(a);
+  const right = hexToRgb(b);
+  return !left || !right
+    ? a
+    : rgbToHex(
+        left.map(
+          (value, index) => value * (1 - amount) + right[index] * amount,
+        ),
+      );
+}
+function relativeLuminance(hex) {
+  const values = hexToRgb(hex);
+  if (!values) return 0;
+  return values
+    .map((value) => value / 255)
+    .map((value) =>
+      value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4,
+    )
+    .reduce(
+      (total, value, index) => total + value * [0.2126, 0.7152, 0.0722][index],
+      0,
+    );
+}
+function readableOn(hex) {
+  const luminance = relativeLuminance(hex);
+  const whiteContrast = 1.05 / (luminance + 0.05);
+  const blackContrast = (luminance + 0.05) / 0.05;
+  return whiteContrast >= blackContrast ? "#ffffff" : "#000000";
+}
+const NAMED_COLORS = {
+  navy: "#17324d",
+  blue: "#245a7a",
+  teal: "#24636b",
+  green: "#285f4d",
+  sage: "#66806f",
+  terracotta: "#9a4a2d",
+  orange: "#a94719",
+  red: "#8f3535",
+  burgundy: "#713743",
+  purple: "#5b456f",
+  gold: "#80631d",
+  black: "#171a19",
+  charcoal: "#293330",
+  cream: "#fbf6ed",
+  ivory: "#fffaf0",
+  white: "#ffffff",
+  gray: "#66706d",
+  grey: "#66706d",
+};
+function requestedColors(feedback) {
+  const values = [...String(feedback).matchAll(/#[0-9a-f]{6}\b/gi)].map(
+    (match) => match[0].toLowerCase(),
+  );
+  for (const [name, value] of Object.entries(NAMED_COLORS)) {
+    if (
+      new RegExp(`\\b${name}\\b`, "i").test(feedback) &&
+      !values.includes(value)
+    )
+      values.push(value);
+  }
+  return values;
+}
+function colorForRole(feedback, rolePattern) {
+  const names = Object.keys(NAMED_COLORS).join("|");
+  const colorPattern = `#[0-9a-f]{6}|${names}`;
+  const after = String(feedback).match(
+    new RegExp(
+      `(?:${rolePattern})\\s*(?:color|colour)?\\s*(?:to|as|:|=|is|be)?\\s*(${colorPattern})`,
+      "i",
+    ),
+  );
+  const before = String(feedback).match(
+    new RegExp(
+      `(${colorPattern})\\s*(?:for|as)?\\s*(?:the\\s*)?(?:${rolePattern})`,
+      "i",
+    ),
+  );
+  const value = after?.[1] || before?.[1];
+  if (!value) return undefined;
+  return value.startsWith("#")
+    ? value.toLowerCase()
+    : NAMED_COLORS[value.toLowerCase()];
+}
+function paletteFor(config, feedback = "") {
+  const requested = requestedColors(feedback);
+  if (requested.length) {
+    const primary =
+      colorForRole(feedback, "primary|brand|accent") ||
+      requested.find(
+        (color) => !["#fbf6ed", "#fffaf0", "#ffffff"].includes(color),
+      ) ||
+      requested[0];
+    const surface =
+      colorForRole(feedback, "background|surface|page") ||
+      requested.find((color) => color !== primary) ||
+      mix(primary, "#ffffff", 0.94);
+    return {
+      primaryColor: primary,
+      surfaceColor: surface,
+      heroColor: requested[2] || mix(primary, surface, 0.87),
+      inkColor: requested[3] || mix(primary, "#000000", 0.72),
+      mutedColor: requested[4] || mix(primary, "#777777", 0.67),
+      lineColor: requested[5] || mix(primary, surface, 0.8),
+    };
+  }
   if (config.preset === "home-services" || config.industry === "home-services")
     return {
       primaryColor: "#9a4a2d",
@@ -83,24 +329,171 @@ function paletteFor(config) {
     lineColor: "#cfdee1",
   };
 }
-
+function mentionedSection(text) {
+  const lowered = text.toLowerCase();
+  return [...SECTION_ALIASES.entries()]
+    .sort((a, b) => b[0].length - a[0].length)
+    .find(([alias]) =>
+      new RegExp(`\\b${alias.replace(" ", "\\s+")}s?\\b`).test(lowered),
+    )?.[1];
+}
+function structuralOperations(feedback, config) {
+  const text = clean(feedback, 1200).toLowerCase();
+  const operations = [];
+  const sections = currentSections(config);
+  const hide = text.match(
+    /\b(?:hide|remove|drop|disable)\s+(?:the\s+)?([a-z -]+?)(?:\s+section)?(?:[.,]|$)/i,
+  );
+  const show = text.match(
+    /\b(?:show|add|include|enable)\s+(?:a\s+|the\s+)?([a-z -]+?)(?:\s+section)?(?:[.,]|$)/i,
+  );
+  const move = text.match(
+    /\b(?:move|put|place)\s+(?:the\s+)?([a-z -]+?)\s+(above|below|before|after)\s+(?:the\s+)?([a-z -]+?)(?:\s+section)?(?:[.,]|$)/i,
+  );
+  if (hide) {
+    const type = mentionedSection(hide[1]);
+    if (type && !["hero", "services", "contact"].includes(type))
+      operations.push({
+        kind: "set_section_enabled",
+        sectionType: type,
+        enabled: false,
+      });
+  }
+  if (show) {
+    const type = mentionedSection(show[1]);
+    if (type)
+      operations.push({
+        kind: "set_section_enabled",
+        sectionType: type,
+        enabled: true,
+      });
+  }
+  if (move) {
+    const moving = mentionedSection(move[1]);
+    const target = mentionedSection(move[3]);
+    if (moving && target && moving !== target)
+      operations.push({
+        kind: "reorder_section",
+        sectionType: moving,
+        relativeTo: target,
+        position: ["above", "before"].includes(move[2]) ? "before" : "after",
+      });
+  }
+  if (
+    /\b(more spacious|more breathing room|increase (?:the )?spacing|generous spacing)\b/i.test(
+      text,
+    )
+  )
+    operations.push({ kind: "set_design_treatment", density: "spacious" });
+  if (
+    /\b(more compact|less spacing|tighter|reduce (?:the )?spacing)\b/i.test(
+      text,
+    )
+  )
+    operations.push({ kind: "set_design_treatment", density: "compact" });
+  if (
+    /\b(editorial|serif)\b/i.test(text) &&
+    /\b(font|typography|look|style|layout)\b/i.test(text)
+  )
+    operations.push({ kind: "set_design_treatment", typography: "editorial" });
+  if (
+    /\b(modern|sans(?: serif)?|cleaner)\b/i.test(text) &&
+    /\b(font|typography|look|style|layout)\b/i.test(text)
+  )
+    operations.push({ kind: "set_design_treatment", typography: "sans" });
+  if (
+    /\b(bold|stronger)\b/i.test(text) &&
+    /\b(font|typography|look|style|layout|visual)\b/i.test(text)
+  )
+    operations.push({ kind: "set_design_treatment", typography: "strong" });
+  if (
+    /\b(centered|centre(?:d)?)\b/i.test(text) &&
+    /\b(hero|opening)\b/i.test(text)
+  )
+    operations.push({
+      kind: "set_section_variant",
+      sectionType: "hero",
+      variant: "centered",
+    });
+  if (/\b(featured|feature)\b/i.test(text) && /\bservices?\b/i.test(text))
+    operations.push({
+      kind: "set_section_variant",
+      sectionType: "services",
+      variant: "featured",
+    });
+  return operations.filter(
+    (operation, index, all) =>
+      index ===
+        all.findIndex(
+          (candidate) =>
+            JSON.stringify(candidate) === JSON.stringify(operation),
+        ) &&
+      (operation.kind !== "reorder_section" ||
+        sections.some((section) => section.type === operation.relativeTo)),
+  );
+}
 export function deterministicOperations(feedback, config) {
   const operations = [];
-  if (socialProofRequest.test(feedback))
+  const movingExistingProof =
+    Boolean(config.socialProof) &&
+    /\b(?:move|put|place|reorder)\b/i.test(feedback);
+  if (socialProofRequest.test(feedback) && !movingExistingProof)
     operations.push(socialProofOperation(config));
   if (colorRequest.test(feedback))
-    operations.push({ kind: "set_color_palette", palette: paletteFor(config) });
+    operations.push({
+      kind: "set_color_palette",
+      palette: paletteFor(config, feedback),
+      requestedColors: requestedColors(feedback),
+    });
   if (brandNameRequest.test(feedback))
     operations.push({ kind: "show_brand_name" });
+  const structural = layoutRequest.test(feedback)
+    ? structuralOperations(feedback, config)
+    : [];
+  const proofAlreadyEnabled = currentSections(config).some(
+    (section) => section.type === "social-proof",
+  );
+  const onlyEnablesRequestedProof =
+    proofAlreadyEnabled &&
+    socialProofRequest.test(feedback) &&
+    structural.length > 0 &&
+    structural.every(
+      (operation) =>
+        operation.kind === "set_section_enabled" &&
+        operation.sectionType === "social-proof",
+    );
+  if (!onlyEnablesRequestedProof) operations.push(...structural);
   return operations;
 }
-
+function intentsFor(feedback, config) {
+  const intents = [];
+  if (socialProofRequest.test(feedback)) intents.push("social-proof");
+  if (colorRequest.test(feedback)) intents.push("color");
+  if (brandNameRequest.test(feedback)) intents.push("brand-name");
+  const structural = layoutRequest.test(feedback)
+    ? structuralOperations(feedback, config)
+    : [];
+  if (
+    structural.some(
+      (operation) =>
+        !(
+          socialProofRequest.test(feedback) &&
+          operation.kind === "set_section_enabled" &&
+          operation.sectionType === "social-proof"
+        ),
+    )
+  )
+    intents.push("layout");
+  if (contentRequest.test(feedback)) intents.push("content");
+  return intents.length ? [...new Set(intents)] : ["unknown"];
+}
 export async function modelOperations(
-  feedback,
+  feedbackItems,
   config,
   model = "z-ai/glm-5.3-flash",
 ) {
   if (!process.env.OPENROUTER_API_KEY) return [];
+  const items = Array.isArray(feedbackItems) ? feedbackItems : [feedbackItems];
   const response = await fetch(
     "https://openrouter.ai/api/v1/chat/completions",
     {
@@ -118,25 +511,44 @@ export async function modelOperations(
         messages: [
           {
             role: "system",
-            content:
-              "Return JSON only: {operations:[...]}. You are planning a strictly minimal website revision. Preserve the site's approved page recipe and design language. Care sites remain calm, editorial, reassuring, and family-aware. Local-trades sites remain direct, problem-led, coverage-aware, and action-oriented. Allowed operations are only {kind:'set_copy',field,value} using these copy fields: heroKicker, servicesHeading, aboutKicker, aboutHeading, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep unrelated copy unchanged. Do not add sections, invent testimonials, alter business facts, services, assets, colors, layout, claims, locations, staff, or unrelated copy. Do not use em dashes. If feedback cannot be fulfilled by this allowlist, return an empty operations array.",
+            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
           },
           {
             role: "user",
-            content: `Feedback:\n${feedback}\n\nApproved design context:\n${JSON.stringify({ recipe: config.design?.recipe || config.conversion?.layout || config.preset, industry: config.industry, businessKind: config.businessKind, businessName: config.business?.name, services: (config.services || []).slice(0, 8).map((service) => service.name) })}\n\nCurrent approved copy:\n${JSON.stringify(config.copy || {})}`,
+            content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config) })}`,
           },
         ],
       }),
     },
   );
   if (!response.ok) return [];
-  const result = await response.json();
-  const content = result.choices?.[0]?.message?.content;
-  if (!content) return [];
-  const parsed = JSON.parse(content);
-  return Array.isArray(parsed.operations) ? parsed.operations.slice(0, 3) : [];
+  try {
+    const content = (await response.json()).choices?.[0]?.message?.content;
+    const parsed = JSON.parse(content || "{}");
+    return (Array.isArray(parsed.plans) ? parsed.plans : []).flatMap((plan) =>
+      Array.isArray(plan.operations)
+        ? plan.operations.slice(0, 8).map((operation) => ({
+            ...operation,
+            feedbackIndex: Number(plan.feedbackIndex),
+          }))
+        : [],
+    );
+  } catch {
+    return [];
+  }
 }
-
+function safeContent(value, limit) {
+  const text = clean(value, limit);
+  if (
+    !text ||
+    /\b(?:guaranteed?|certified|licensed|award-winning|number one|#1)\b/i.test(
+      text,
+    ) ||
+    /(?:[$€£]\s?\d|\b\d+\s*(?:minutes?|hours?|days?|years?)\b)/i.test(text)
+  )
+    return "";
+  return text;
+}
 export function applyOperation(config, operation) {
   if (!operation || typeof operation !== "object") return false;
   if (operation.kind === "set_social_proof") {
@@ -163,38 +575,316 @@ export function applyOperation(config, operation) {
   }
   if (operation.kind === "set_color_palette") {
     const palette = operation.palette;
-    const keys = [
-      "primaryColor",
-      "surfaceColor",
-      "heroColor",
-      "inkColor",
-      "mutedColor",
-      "lineColor",
-    ];
     if (
       !palette ||
       typeof palette !== "object" ||
-      keys.some((key) => !/^#[0-9a-f]{6}$/i.test(String(palette[key] || "")))
+      PALETTE_KEYS.some(
+        (key) => !/^#[0-9a-f]{6}$/i.test(String(palette[key] || "")),
+      )
     )
       return false;
     config.style = {
       ...(config.style || {}),
-      ...Object.fromEntries(keys.map((key) => [key, palette[key]])),
+      ...Object.fromEntries(
+        PALETTE_KEYS.map((key) => [key, palette[key].toLowerCase()]),
+      ),
+      contrastColor: readableOn(palette.primaryColor),
     };
     return true;
   }
   if (operation.kind === "set_copy" && COPY_FIELDS.has(operation.field)) {
-    const value = clean(
+    const value = safeContent(
       operation.value,
-      operation.field === "formIntro" ? 260 : 180,
+      operation.field === "aboutBody" || operation.field === "formIntro"
+        ? 360
+        : 180,
     );
     if (!value) return false;
     config.copy = { ...(config.copy || {}), [operation.field]: value };
     return true;
   }
+  if (operation.kind === "set_service_copy") {
+    const service = (config.services || []).find(
+      (item) => item.slug === operation.serviceSlug,
+    );
+    const description = safeContent(operation.description, 320);
+    if (!service || !description) return false;
+    service.description = description;
+    return true;
+  }
+  if (operation.kind === "set_process") {
+    const steps = Array.isArray(operation.steps)
+      ? operation.steps
+          .map((step) => safeContent(step, 180))
+          .filter(Boolean)
+          .slice(0, 4)
+      : [];
+    if (steps.length < 2) return false;
+    config.conversion = { ...(config.conversion || {}), process: steps };
+    return true;
+  }
+  if (operation.kind === "set_faqs") {
+    const faqs = Array.isArray(operation.faqs)
+      ? operation.faqs
+          .map((faq) => ({
+            question: safeContent(faq?.question, 160),
+            answer: safeContent(faq?.answer, 360),
+          }))
+          .filter((faq) => faq.question && faq.answer)
+          .slice(0, 5)
+      : [];
+    if (!faqs.length) return false;
+    config.conversion = { ...(config.conversion || {}), faqs };
+    return true;
+  }
+  if (operation.kind === "set_design_treatment") {
+    const density = ["compact", "balanced", "spacious"].includes(
+      operation.density,
+    )
+      ? operation.density
+      : config.design?.treatment?.density || "balanced";
+    const typography = ["editorial", "sans", "strong"].includes(
+      operation.typography,
+    )
+      ? operation.typography
+      : config.design?.treatment?.typography ||
+        (recipeFor(config) === "local-trades" ? "strong" : "editorial");
+    if (!operation.density && !operation.typography) return false;
+    config.design = {
+      ...(config.design || {}),
+      recipe: recipeFor(config),
+      sections: currentSections(config),
+      treatment: { density, typography },
+    };
+    return true;
+  }
+  if (
+    ["set_section_enabled", "reorder_section", "set_section_variant"].includes(
+      operation.kind,
+    )
+  ) {
+    const type = operation.sectionType;
+    if (!SECTION_VARIANTS[type]) return false;
+    const sections = currentSections(config);
+    if (operation.kind === "set_section_enabled") {
+      if (
+        operation.enabled === false &&
+        ["hero", "services", "contact"].includes(type)
+      )
+        return false;
+      const index = sections.findIndex((section) => section.type === type);
+      if (operation.enabled === false) {
+        if (index < 0) return false;
+        operation.sectionId = sections[index].id;
+        sections.splice(index, 1);
+      } else if (index < 0) {
+        const section = defaultSection(config, type);
+        if (!section) return false;
+        const contactIndex = sections.findIndex(
+          (item) => item.type === "contact",
+        );
+        sections.splice(
+          contactIndex < 0 ? sections.length : contactIndex,
+          0,
+          section,
+        );
+      }
+    } else if (operation.kind === "reorder_section") {
+      const from = sections.findIndex((section) => section.type === type);
+      const target = sections.findIndex(
+        (section) => section.type === operation.relativeTo,
+      );
+      if (
+        from < 0 ||
+        target < 0 ||
+        from === target ||
+        !["before", "after"].includes(operation.position)
+      )
+        return false;
+      const [section] = sections.splice(from, 1);
+      const nextTarget = sections.findIndex(
+        (item) => item.type === operation.relativeTo,
+      );
+      sections.splice(
+        nextTarget + (operation.position === "after" ? 1 : 0),
+        0,
+        section,
+      );
+    } else {
+      const section = sections.find((item) => item.type === type);
+      if (!section || !SECTION_VARIANTS[type].has(operation.variant))
+        return false;
+      section.variant = operation.variant;
+    }
+    config.design = {
+      ...(config.design || {}),
+      recipe: recipeFor(config),
+      sections,
+    };
+    return true;
+  }
   return false;
 }
-
+function intentSatisfied(intent, operations) {
+  if (intent === "social-proof")
+    return operations.some(
+      (operation) =>
+        operation.kind === "set_social_proof" ||
+        ([
+          "set_section_enabled",
+          "reorder_section",
+          "set_section_variant",
+        ].includes(operation.kind) &&
+          operation.sectionType === "social-proof"),
+    );
+  if (intent === "color")
+    return operations.some(
+      (operation) => operation.kind === "set_color_palette",
+    );
+  if (intent === "brand-name")
+    return operations.some((operation) => operation.kind === "show_brand_name");
+  if (intent === "layout")
+    return operations.some((operation) =>
+      [
+        "set_section_enabled",
+        "reorder_section",
+        "set_section_variant",
+        "set_design_treatment",
+      ].includes(operation.kind),
+    );
+  if (intent === "content")
+    return operations.some((operation) =>
+      ["set_copy", "set_service_copy", "set_process", "set_faqs"].includes(
+        operation.kind,
+      ),
+    );
+  return false;
+}
+export async function planRevision(
+  feedbackItems,
+  config,
+  planner = modelOperations,
+) {
+  const items = feedbackItems.map((item) => clean(item, 4000)).filter(Boolean);
+  const deterministic = items.flatMap((feedback, feedbackIndex) =>
+    deterministicOperations(feedback, config).map((operation) => ({
+      ...operation,
+      feedbackIndex,
+    })),
+  );
+  const modeled = (await planner(items, config)).filter((operation) => {
+    if (!MODEL_OPERATION_KINDS.has(operation.kind)) return false;
+    const feedback = items[operation.feedbackIndex];
+    if (!feedback) return false;
+    const intents = intentsFor(feedback, config);
+    if (
+      [
+        "set_section_enabled",
+        "reorder_section",
+        "set_section_variant",
+        "set_design_treatment",
+      ].includes(operation.kind)
+    )
+      if (intents.includes("layout")) {
+        if (operation.kind === "set_design_treatment") {
+          if (
+            operation.density &&
+            !/\b(spacing|spacious|compact|density|breathing room|tighter)\b/i.test(
+              feedback,
+            )
+          )
+            return false;
+          if (
+            operation.typography &&
+            !/\b(typography|font|editorial|serif|sans|modern|bold|stronger)\b/i.test(
+              feedback,
+            )
+          )
+            return false;
+        }
+        if (
+          operation.kind === "reorder_section" &&
+          !/\b(move|reorder|above|below|before|after|place|put)\b/i.test(
+            feedback,
+          )
+        )
+          return false;
+        if (
+          operation.kind === "set_section_enabled" &&
+          !/\b(add|show|include|enable|hide|remove|drop|disable)\b/i.test(
+            feedback,
+          )
+        )
+          return false;
+        return true;
+      } else return false;
+    return intents.includes("content");
+  });
+  const candidates = [...deterministic, ...modeled]
+    .filter(
+      (operation) =>
+        Number.isInteger(operation.feedbackIndex) &&
+        operation.feedbackIndex >= 0 &&
+        operation.feedbackIndex < items.length,
+    )
+    .filter((operation, index, all) => {
+      const signature = JSON.stringify(
+        Object.fromEntries(
+          Object.entries(operation).filter(([key]) => key !== "feedbackIndex"),
+        ),
+      );
+      return (
+        index ===
+        all.findIndex(
+          (candidate) =>
+            candidate.feedbackIndex === operation.feedbackIndex &&
+            JSON.stringify(
+              Object.fromEntries(
+                Object.entries(candidate).filter(
+                  ([key]) => key !== "feedbackIndex",
+                ),
+              ),
+            ) === signature,
+        )
+      );
+    });
+  const draft = structuredClone(config);
+  const applied = [];
+  for (const operation of candidates)
+    if (applyOperation(draft, operation)) applied.push(operation);
+  const results = items.map((feedback, feedbackIndex) => {
+    const intents = intentsFor(feedback, config);
+    const operations = applied.filter(
+      (operation) => operation.feedbackIndex === feedbackIndex,
+    );
+    const fulfilled = intents.filter((intent) =>
+      intentSatisfied(intent, operations),
+    );
+    const status =
+      fulfilled.length === intents.length
+        ? "fulfilled"
+        : fulfilled.length
+          ? "partial"
+          : "manual";
+    return {
+      feedbackIndex,
+      feedback,
+      intents,
+      status,
+      fulfilled,
+      unresolved: intents.filter((intent) => !fulfilled.includes(intent)),
+      operationKinds: operations.map((operation) => operation.kind),
+    };
+  });
+  return {
+    config: draft,
+    operations: applied,
+    results,
+    ok:
+      results.length > 0 &&
+      results.every((result) => result.status === "fulfilled"),
+  };
+}
 export function removeEmDashes(value) {
   if (typeof value === "string") return value.replace(/—/g, "-");
   if (Array.isArray(value)) return value.map(removeEmDashes);
@@ -204,34 +894,177 @@ export function removeEmDashes(value) {
     );
   return value;
 }
-
-export function expectedArtifacts(operations) {
+export function ensureLegacySocialProofMarkup(source) {
+  let output = String(source || "");
+  if (output.includes("<PageSections") || output.includes("<SocialProof"))
+    return output;
+  const importAnchor = /import Header from [^;]+;\s*/;
+  if (!importAnchor.test(output)) return output;
+  output = output.replace(
+    importAnchor,
+    (match) =>
+      `${match}import SocialProof from "../components/SocialProof.astro";\n`,
+  );
+  const servicesStart = output.search(
+    /<section\b[^>]*id=["']services["'][^>]*>/i,
+  );
+  if (servicesStart < 0) return source;
+  const servicesEnd = output.indexOf("</section>", servicesStart);
+  if (servicesEnd < 0) return source;
+  const insertAt = servicesEnd + "</section>".length;
+  return `${output.slice(0, insertAt)}\n\n    <SocialProof />${output.slice(insertAt)}`;
+}
+export function expectedArtifacts(operations, config) {
   return operations.flatMap((operation) => {
     if (operation.kind === "set_social_proof")
-      return [{ type: "html", marker: 'id="social-proof"' }];
+      return [
+        {
+          type: "section-type",
+          sectionType: "social-proof",
+          text: clean(operation.heading),
+        },
+      ];
     if (operation.kind === "show_brand_name")
       return [{ type: "html", marker: 'class="wordmark__name"' }];
     if (operation.kind === "set_color_palette")
-      return [{ type: "config", field: "style.primaryColor" }];
+      return PALETTE_KEYS.map((field) => ({
+        type: "style",
+        field,
+        value: operation.palette[field].toLowerCase(),
+      }));
     if (operation.kind === "set_copy")
-      return [{ type: "config", field: `copy.${operation.field}` }];
+      return [{ type: "text", value: clean(operation.value) }];
+    if (operation.kind === "set_service_copy")
+      return [{ type: "text", value: clean(operation.description) }];
+    if (operation.kind === "set_process")
+      return operation.steps.map((value) => ({
+        type: "text",
+        value: clean(value),
+      }));
+    if (operation.kind === "set_faqs")
+      return operation.faqs.flatMap((faq) => [
+        { type: "text", value: clean(faq.question) },
+        { type: "text", value: clean(faq.answer) },
+      ]);
+    if (operation.kind === "set_section_enabled" && operation.enabled) {
+      const section = currentSections(config).find(
+        (item) => item.type === operation.sectionType,
+      );
+      return section ? [{ type: "section", id: section.id }] : [];
+    }
+    if (operation.kind === "set_section_enabled" && !operation.enabled)
+      return [
+        {
+          type: "absent-section-type",
+          sectionType: operation.sectionType,
+          id: operation.sectionId,
+        },
+      ];
+    if (operation.kind === "reorder_section")
+      return [
+        {
+          type: "order",
+          before:
+            operation.position === "before"
+              ? operation.sectionType
+              : operation.relativeTo,
+          after:
+            operation.position === "before"
+              ? operation.relativeTo
+              : operation.sectionType,
+        },
+      ];
+    if (operation.kind === "set_section_variant")
+      return [
+        {
+          type: "variant",
+          sectionType: operation.sectionType,
+          value: operation.variant,
+        },
+      ];
+    if (operation.kind === "set_design_treatment")
+      return [
+        {
+          type: "class",
+          marker: `density-${operation.density || config.design?.treatment?.density || "balanced"}`,
+        },
+        {
+          type: "class",
+          marker: `type-${operation.typography || config.design?.treatment?.typography || "editorial"}`,
+        },
+      ];
     return [];
   });
 }
-
+function sectionIdFor(config, type) {
+  if (!config.design?.sections && type === "social-proof")
+    return "social-proof";
+  return currentSections(config).find((section) => section.type === type)?.id;
+}
 export function verifyRevision(config, report, html = "") {
   const failures = [];
+  if (!Array.isArray(report.results) || !report.results.length)
+    failures.push("Revision has no per-feedback results.");
+  for (const result of report.results || [])
+    if (result.status !== "fulfilled")
+      failures.push(
+        `Feedback item ${result.feedbackIndex + 1} is ${result.status}: ${result.unresolved?.join(", ") || "unresolved"}.`,
+      );
   for (const artifact of report.expectedArtifacts || []) {
     if (artifact.type === "html" && !html.includes(artifact.marker))
       failures.push(`Missing rendered artifact: ${artifact.marker}`);
-    if (artifact.type === "config") {
-      const [group, field] = artifact.field.split(".");
-      if (!clean(config[group]?.[field]))
-        failures.push(`Missing config value: ${artifact.field}`);
+    if (
+      artifact.type === "section" &&
+      !new RegExp(`<section[^>]+id=["']${artifact.id}["']`).test(html)
+    )
+      failures.push(`Missing rendered section: ${artifact.id}`);
+    if (artifact.type === "section-type") {
+      const id = sectionIdFor(config, artifact.sectionType);
+      if (!id || !new RegExp(`<section[^>]+id=["']${id}["']`).test(html))
+        failures.push(`Missing rendered section type: ${artifact.sectionType}`);
+      if (artifact.text && !html.includes(artifact.text))
+        failures.push(`Missing rendered section heading: ${artifact.text}`);
+    }
+    if (artifact.type === "absent-section-type") {
+      const defaults = DEFAULT_SECTIONS[recipeFor(config)];
+      const id =
+        artifact.id ||
+        defaults.find(([, type]) => type === artifact.sectionType)?.[0];
+      if (id && new RegExp(`<section[^>]+id=["']${id}["']`).test(html))
+        failures.push(`Section should be absent: ${artifact.sectionType}`);
+    }
+    if (
+      artifact.type === "text" &&
+      !html.includes(artifact.value.replace(/&/g, "&amp;"))
+    )
+      failures.push(`Missing rendered text: ${artifact.value.slice(0, 80)}`);
+    if (
+      artifact.type === "style" &&
+      !html.toLowerCase().includes(artifact.value)
+    )
+      failures.push(
+        `Missing rendered color: ${artifact.field}=${artifact.value}`,
+      );
+    if (
+      artifact.type === "variant" &&
+      !html.includes(`variant-${artifact.value}`)
+    )
+      failures.push(`Missing rendered variant: ${artifact.value}`);
+    if (artifact.type === "class" && !html.includes(artifact.marker))
+      failures.push(`Missing rendered treatment: ${artifact.marker}`);
+    if (artifact.type === "order") {
+      const before = sectionIdFor(config, artifact.before);
+      const after = sectionIdFor(config, artifact.after);
+      if (
+        !before ||
+        !after ||
+        html.indexOf(`id="${before}"`) > html.indexOf(`id="${after}"`)
+      )
+        failures.push(
+          `Rendered section order is wrong: ${artifact.before} before ${artifact.after}`,
+        );
     }
   }
-  if (report.requestedSocialProof && !config.socialProof)
-    failures.push("Requested social proof was not configured.");
   if (
     config.socialProof?.source === "google_reviews" &&
     !clean(config.business?.placeId)
@@ -240,5 +1073,4 @@ export function verifyRevision(config, report, html = "") {
   if (html.includes("—")) failures.push("Rendered page contains an em dash.");
   return { ok: failures.length === 0, failures };
 }
-
-export { COPY_FIELDS };
+export { COPY_FIELDS, SECTION_VARIANTS };

@@ -36,6 +36,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Install rendered acceptance browser
+        run: npx playwright install --with-deps chromium
       - name: Verify required secrets
         run: |
           for key in GITHUB_ORG_TOKEN OPENROUTER_API_KEY REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_DEVELOPER_EMAIL; do test -n "${!key}" || { echo "Missing: $key"; exit 1; }; done
@@ -120,10 +122,17 @@ jobs:
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
           PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
+          node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
           if rg -F "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
           npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "Initial LaunchLoom preview"
           echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Upload rendered initial evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: initial-site-screenshots
+          path: ${{ runner.temp }}/initial-screenshots
+          retention-days: 14
       - name: Wait for secure preview URL
         run: node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}"
       - name: Create secure review link

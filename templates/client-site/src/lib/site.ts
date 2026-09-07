@@ -63,6 +63,7 @@ export type SiteConfig = {
     inkColor?: string;
     mutedColor?: string;
     lineColor?: string;
+    contrastColor?: string;
   };
   services: Service[];
   differentiators: string[];
@@ -103,6 +104,10 @@ export type SiteConfig = {
   design?: {
     recipe: PageRecipe;
     sections: PageSection[];
+    treatment?: {
+      density?: "compact" | "balanced" | "spacious";
+      typography?: "editorial" | "sans" | "strong";
+    };
   };
   assetReport?: {
     used: Array<{
@@ -139,7 +144,12 @@ export type SiteConfig = {
     feedback: string[];
     operations: Array<{ kind: string }>;
     expectedArtifacts: Array<{ type: string; marker?: string; field?: string }>;
-    requestedSocialProof?: boolean;
+    results?: Array<{
+      feedbackIndex: number;
+      status: "fulfilled" | "partial" | "manual";
+      unresolved: string[];
+      operationKinds: string[];
+    }>;
   };
   lead?: { apiUrl: string; token: string };
 };

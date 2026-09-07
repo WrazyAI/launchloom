@@ -45,4 +45,4 @@ New sites receive a controlled page recipe with stable section IDs and variants.
 
 Legacy revisions continue to synchronize only the files required by the approved revision operation. They do not opt an existing client site into the new recipe layout.
 
-Quality acceptance: distinctive business-appropriate design; useful non-repeated copy; contextual imagery; verified claims; visible requested sections; functional calls/forms; readable contrast; stable mobile controls; no em dashes; and no unrelated visual regression during revision. These are proposed gates, not claims of completed implementation.
+Quality acceptance: distinctive business-appropriate design; useful non-repeated copy; contextual imagery; verified claims; visible requested sections; functional calls/forms; readable contrast; stable mobile controls; no em dashes; and no unrelated visual regression during revision. Revision workflows now enforce requested artifacts against built HTML and browser renders at 1440px and 390px, and retain both screenshots as workflow evidence. Human visual review remains part of developer approval.

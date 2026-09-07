@@ -41,6 +41,18 @@ const sectionTypes = new Set(
     .concat(recipes["general-editorial"])
     .map((section) => section.type),
 );
+const variantsByType: Record<PageSection["type"], Set<string>> = {
+  hero: new Set(["care-portrait", "trades-split", "editorial", "centered"]),
+  trust: new Set(["quiet", "bold"]),
+  services: new Set(["editorial", "problem-led", "featured"]),
+  about: new Set(["immersive", "compact"]),
+  process: new Set(["guided", "numbered", "compact"]),
+  "social-proof": new Set(["editorial", "cards"]),
+  gallery: new Set(["editorial", "work"]),
+  coverage: new Set(["local"]),
+  faq: new Set(["editorial", "practical"]),
+  contact: new Set(["consultation", "quote", "compact"]),
+};
 
 export function defaultRecipe(site: SiteConfig): PageRecipe {
   if (site.preset === "home-services" || site.industry === "home-services")
@@ -59,6 +71,7 @@ export function resolvePageRecipe(site: SiteConfig): {
       : defaultRecipe(site);
   const requested = site.design?.sections;
   const usedIds = new Set<string>();
+  const usedTypes = new Set<string>();
   const sections = Array.isArray(requested)
     ? requested.filter((section) => {
         const valid = Boolean(
@@ -66,9 +79,14 @@ export function resolvePageRecipe(site: SiteConfig): {
           /^[a-z][a-z0-9-]{0,63}$/.test(section.id) &&
           section.variant &&
           sectionTypes.has(section.type) &&
-          !usedIds.has(section.id),
+          variantsByType[section.type]?.has(section.variant) &&
+          !usedIds.has(section.id) &&
+          !usedTypes.has(section.type),
         );
-        if (valid) usedIds.add(section.id);
+        if (valid) {
+          usedIds.add(section.id);
+          usedTypes.add(section.type);
+        }
         return valid;
       })
     : [];

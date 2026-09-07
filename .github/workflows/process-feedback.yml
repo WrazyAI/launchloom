@@ -27,6 +27,10 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
+      - name: Install revision verifier
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
       - name: Clone review branch
         id: branch
         run: |
@@ -35,15 +39,13 @@ jobs:
           echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
           echo "feedback_issue=$(gh pr view "$CLIENT_PR" --repo "$CLIENT_REPO" --json body --jq '.body | capture("launchloom-feedback-inbox:(?<id>[0-9]+)").id')" >> "$GITHUB_OUTPUT"
       - name: Apply supported revisions
+        id: apply_feedback
         run: CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" FEEDBACK_ISSUE="$CLIENT_PR" FEEDBACK_STAGE=developer FEEDBACK_SUMMARY_PATH="$RUNNER_TEMP/developer-feedback.txt" FEEDBACK_OUTCOME_PATH="$RUNNER_TEMP/revision-outcome.txt" node scripts/apply-feedback.mjs
       - name: Flag feedback that needs manual attention
-        if: failure()
+        if: failure() && steps.apply_feedback.outcome == 'failure'
         run: |
-          gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-manual-attention:developer -->
-
-          ## Manual attention needed
-
-          The requested feedback could not be applied as a safe, verifiable minimal revision. No unrelated content or design was changed."
+          DETAILS=$(test -f "$RUNNER_TEMP/revision-outcome.txt" && sed -n '1,80p' "$RUNNER_TEMP/revision-outcome.txt" || printf '%s' 'No supported revision result was produced.')
+          gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-manual-attention:developer -->' '## Manual attention needed' 'The requested feedback was not fully fulfilled, so no revised preview or completion email was sent.' "$DETAILS")"
       - name: Configure live Google review proof
         run: |
           PROJECT=$(node -e "console.log(require('$RUNNER_TEMP/client/.launchloom-deployment.json').project)")
@@ -67,6 +69,7 @@ jobs:
           npm ci
           PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
           node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --html dist/index.html
+          node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
           if rg -F "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
           BRANCH_SAFE=$(echo "${{ steps.branch.outputs.name }}" | tr '/' '-')
           npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "LaunchLoom revision"
@@ -74,6 +77,13 @@ jobs:
           echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
           echo "preview=https://$BRANCH_SAFE.$PROJECT.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Upload rendered revision evidence
+        if: steps.deploy.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: developer-revision-screenshots
+          path: ${{ runner.temp }}/revision-screenshots
+          retention-days: 14
       - name: Post and email revised review link
         if: steps.deploy.outputs.changed == 'true'
         run: |

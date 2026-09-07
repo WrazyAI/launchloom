@@ -57,4 +57,24 @@ describe("page recipes", () => {
     expect(page.sections[0].id).toBe("service-opening");
     expect(page.sections.at(-1)?.type).toBe("contact");
   });
+
+  it("rejects unknown variants and duplicate section types", () => {
+    const page = resolvePageRecipe({
+      ...site,
+      design: {
+        recipe: "local-trades",
+        sections: [
+          { id: "opening", type: "hero", variant: "anything" },
+          { id: "work", type: "services", variant: "problem-led" },
+          { id: "work-again", type: "services", variant: "featured" },
+          { id: "request", type: "contact", variant: "quote" },
+        ],
+      },
+    });
+
+    expect(page.sections[0].id).toBe("service-opening");
+    expect(
+      page.sections.filter((section) => section.type === "services"),
+    ).toHaveLength(1);
+  });
 });

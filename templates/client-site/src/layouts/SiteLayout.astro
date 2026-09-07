@@ -33,7 +33,7 @@ const structuredDataJson = JSON.stringify(structuredData).replace(/</g, "\\u003c
     <script is:inline type="application/ld+json" set:html={structuredDataJson} />
     <title>{title}</title>
   </head>
-  <body style={`--brand:${site.style.primaryColor};--cream:${site.style.surfaceColor || "#f8f6f0"};--hero-surface:${site.style.heroColor || "#e8eee5"};--ink:${site.style.inkColor || "#14201d"};--muted:${site.style.mutedColor || "#5e6b66"};--line:${site.style.lineColor || "#d8ded7"}`}>
+  <body style={`--brand:${site.style.primaryColor};--on-brand:${site.style.contrastColor || "#ffffff"};--cream:${site.style.surfaceColor || "#f8f6f0"};--hero-surface:${site.style.heroColor || "#e8eee5"};--ink:${site.style.inkColor || "#14201d"};--muted:${site.style.mutedColor || "#5e6b66"};--line:${site.style.lineColor || "#d8ded7"}`}>
     <ReviewBanner />
     <slot />
   </body>

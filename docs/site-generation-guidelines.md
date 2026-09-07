@@ -101,6 +101,27 @@ palette must map to a supported operation and a rendered acceptance check. If
 the request cannot be fulfilled safely by the operation set, flag it for manual
 attention instead of pretending it was completed.
 
+Plan every submitted feedback item independently, including mixed batches.
+Deterministic proof, brand, palette, and layout operations do not suppress
+model planning for a copy request in the same item. Record each item as
+fulfilled, partial, or manual. A partial or manual item blocks preview
+deployment and the completion email.
+
+Supported structural revisions may enable or disable optional sections,
+reorder existing sections without changing their stable IDs, select an
+allowlisted section variant, or choose bounded spacing and typography
+treatments. Apply these operations only when layout or section feedback asks
+for them. A minor copy, color, or brand request must not opt a legacy site into
+a new page recipe. Explicit requested colors take precedence over a generic
+preset palette, with readable action text selected for the resulting brand
+color.
+
+Revision acceptance checks both the built HTML and a real browser render at
+desktop and mobile widths. The requested section, order, variant, treatment,
+copy, and colors must be visible; calls and fragment links must work; primary
+actions must retain readable contrast; and the page must not overflow
+horizontally. Keep the resulting screenshots with the workflow evidence.
+
 ## Acceptance checklist
 
 - The opening identifies the service, intended customer, location when
