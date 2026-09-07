@@ -67,6 +67,9 @@ const response = await fetch("https://api.resend.com/emails", {
   headers: {
     Authorization: `Bearer ${resendKey}`,
     "Content-Type": "application/json",
+    ...(args["idempotency-key"]
+      ? { "Idempotency-Key": String(args["idempotency-key"]) }
+      : {}),
   },
   body: JSON.stringify({
     from,
