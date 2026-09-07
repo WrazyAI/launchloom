@@ -4,6 +4,19 @@ import ReviewBanner from "../components/ReviewBanner.astro";
 import "../styles/site.css";
 
 const { title = site.business.name, description = site.business.description } = Astro.props;
+const canonical = site.business.domain ? `https://${site.business.domain.replace(/^https?:\/\//, "").replace(/\/$/, "")}${Astro.url.pathname}` : undefined;
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": site.preset === "home-services" ? "HomeAndConstructionBusiness" : "LocalBusiness",
+  name: site.business.name,
+  description,
+  telephone: site.business.phone || undefined,
+  email: site.business.email || undefined,
+  address: site.business.address || undefined,
+  areaServed: site.business.serviceAreas.length ? site.business.serviceAreas : undefined,
+  url: canonical,
+};
+const structuredDataJson = JSON.stringify(structuredData).replace(/</g, "\\u003c");
 ---
 
 <!doctype html>
@@ -13,6 +26,11 @@ const { title = site.business.name, description = site.business.description } = 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="theme-color" content={site.style.primaryColor} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <script is:inline type="application/ld+json" set:html={structuredDataJson} />
     <title>{title}</title>
   </head>
   <body style={`--brand:${site.style.primaryColor};--cream:${site.style.surfaceColor || "#f8f6f0"};--hero-surface:${site.style.heroColor || "#e8eee5"};--ink:${site.style.inkColor || "#14201d"};--muted:${site.style.mutedColor || "#5e6b66"};--line:${site.style.lineColor || "#d8ded7"}`}>

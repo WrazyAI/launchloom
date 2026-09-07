@@ -1,0 +1,166 @@
+{
+  "preset": "wellness",
+  "industry": "wellness",
+  "businessKind": "home-care",
+  "business": {
+    "name": "Willow & Hearth Home Care",
+    "tagline": "More good days, in the place that feels like home.",
+    "description": "Willow & Hearth helps older adults keep familiar routines with personal care, companionship, and practical support at home. Families begin with a conversation about what is needed now and what may change next.",
+    "phone": "(215) 555-0148",
+    "email": "hello@willowhearth.example",
+    "address": "18 Linden Avenue, Ardmore, PA 19003",
+    "serviceAreas": ["Ardmore", "Bryn Mawr", "Haverford"],
+    "hours": "Office hours Monday to Friday, 8am to 6pm",
+    "primaryCta": "Request a care conversation",
+    "offer": "A complimentary first care conversation",
+    "domain": "willowhearth.example",
+    "leadEmail": "care@willowhearth.example"
+  },
+  "style": {
+    "primaryColor": "#47685d",
+    "surfaceColor": "#f7f3ea",
+    "heroColor": "#e9eee7",
+    "inkColor": "#1b2c27",
+    "mutedColor": "#607069",
+    "lineColor": "#d7ded7",
+    "tone": "warm"
+  },
+  "services": [
+    {
+      "name": "Personal care",
+      "slug": "personal-care",
+      "description": "Respectful help with everyday routines such as dressing, grooming, mobility, and meal preparation, based on the support a family requests.",
+      "decisionSupport": {
+        "scope": "Ask how personal care can support dressing, grooming, mobility, and meal routines while respecting the person's preferences.",
+        "nextStep": "Begin with a care conversation so the family and team can discuss the current routine before a plan is proposed.",
+        "preparation": "Note which routines are difficult now, when support may be needed, and who should join the conversation."
+      }
+    },
+    {
+      "name": "Companion care",
+      "slug": "companion-care",
+      "description": "Conversation, shared activities, errands, and a steady presence that helps the day feel connected and manageable.",
+      "decisionSupport": {
+        "scope": "Discuss the activities, errands, and parts of the day where companionship would be most helpful.",
+        "nextStep": "The first conversation helps clarify interests, routines, and the type of presence the family is looking for.",
+        "preparation": "Bring a short picture of a typical day, favorite activities, transportation needs, and preferred timing."
+      }
+    },
+    {
+      "name": "Respite for families",
+      "slug": "respite-care",
+      "description": "Planned support that gives family caregivers time to rest, attend appointments, or handle other responsibilities.",
+      "decisionSupport": {
+        "scope": "Explain the routines a respite caregiver would need to support while the family caregiver is away.",
+        "nextStep": "Talk through timing, responsibilities, and the person's preferences before arranging coverage.",
+        "preparation": "Note medications or clinical needs that require a qualified provider, plus routines and emergency contacts."
+      }
+    }
+  ],
+  "differentiators": [
+    "Care plans begin with the family's priorities",
+    "Support is discussed before scheduling",
+    "One clear contact for family questions",
+    "Changes in routine can be reviewed together"
+  ],
+  "locations": [],
+  "images": {
+    "hero": "https://images.unsplash.com/photo-1543333995-a78aea2eee50?auto=format&fit=crop&w=1600&q=85",
+    "secondary": "https://images.unsplash.com/photo-1762955911431-4c44c7c3f408?auto=format&fit=crop&w=1200&q=85"
+  },
+  "copy": {
+    "heroKicker": "Home care in the Main Line",
+    "servicesHeading": "Support for the routines that make home feel like home.",
+    "aboutKicker": "Care starts with listening",
+    "aboutHeading": "A plan shaped around the person, the family, and the day ahead.",
+    "aboutBody": "The first conversation covers familiar routines, personal preferences, family concerns, and the support being considered. Those details guide the next discussion without asking a family to choose a care plan alone.",
+    "processKicker": "Starting care",
+    "processHeading": "A calm path from first call to a practical plan.",
+    "faqKicker": "For families considering care",
+    "faqHeading": "Questions worth asking before support begins.",
+    "contactKicker": "Tell us what your family needs",
+    "contactHeading": "Start with a care conversation",
+    "formIntro": "Share only what you are comfortable sharing. The team will follow up to discuss next steps."
+  },
+  "conversion": {
+    "layout": "editorial-authority",
+    "qualification": [
+      {
+        "name": "careNeed",
+        "label": "What kind of support are you exploring?",
+        "placeholder": "Select an option",
+        "options": [
+          "Personal care",
+          "Companionship",
+          "Respite for family",
+          "Not sure yet"
+        ]
+      },
+      {
+        "name": "timing",
+        "label": "When might support be needed?",
+        "placeholder": "Select timing",
+        "options": [
+          "As soon as possible",
+          "Within a few weeks",
+          "Planning ahead"
+        ]
+      }
+    ],
+    "process": [
+      "Share what daily life looks like now",
+      "Talk through priorities and practical needs",
+      "Review the proposed care plan together"
+    ],
+    "faqs": [
+      {
+        "question": "How do we know which type of support to request?",
+        "answer": "You do not need to decide alone. Describe the routines that are difficult now, and the team can explain which available services may fit."
+      },
+      {
+        "question": "Can our family's priorities be part of the care conversation?",
+        "answer": "Yes. The first discussion is designed to include the person's preferences and the family's practical concerns before a plan is proposed."
+      },
+      {
+        "question": "What should we prepare before the first call?",
+        "answer": "A short list of daily routines, current concerns, preferred timing, and the people involved in decisions is a useful place to start."
+      }
+    ]
+  },
+  "socialProof": {
+    "source": "verified_differentiators",
+    "heading": "What families can expect from the first conversation.",
+    "intro": "These are process commitments supplied for this fictional demonstration. They are not customer reviews.",
+    "points": [
+      "Care plans begin with the family's priorities",
+      "Support is discussed before scheduling",
+      "One clear contact for family questions"
+    ]
+  },
+  "design": { "recipe": "care-editorial", "sections": [] },
+  "assetReport": {
+    "used": [
+      {
+        "asset": "hero",
+        "placement": "hero",
+        "source": "stock-pack",
+        "provider": "Unsplash",
+        "creator": "Dominik Lange",
+        "sourceUrl": "https://unsplash.com/photos/VUOiQW4OeLI",
+        "license": "Unsplash License",
+        "subject": "caregiver walking outdoors with an older adult"
+      },
+      {
+        "asset": "secondary",
+        "placement": "secondary",
+        "source": "stock-pack",
+        "provider": "Unsplash",
+        "creator": "Age Cymru",
+        "sourceUrl": "https://unsplash.com/photos/bSXk1lOp8T0",
+        "license": "Unsplash License",
+        "subject": "care worker supporting older adults during an activity"
+      }
+    ],
+    "skipped": []
+  }
+}

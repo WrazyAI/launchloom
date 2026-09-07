@@ -3,12 +3,35 @@ import SiteLayout from "../../layouts/SiteLayout.astro";
 import Header from "../../components/Header.astro";
 import LeadForm from "../../components/LeadForm.astro";
 import Footer from "../../components/Footer.astro";
-import site from "../../lib/site";
+import site, { phoneHref, type Service } from "../../lib/site";
+import { resolvePageRecipe } from "../../lib/page-recipe";
 
 export function getStaticPaths() {
-  return site.preset === "home-services" ? site.services.map((service) => ({ params: { slug: service.slug }, props: { service } })) : [];
+  return site.services.map((service) => ({ params: { slug: service.slug }, props: { service } }));
 }
-const { service } = Astro.props;
+const { service } = Astro.props as { service: Service };
+const { recipe } = resolvePageRecipe(site);
+const trades = recipe === "local-trades";
+const related = site.services.filter((item) => item.slug !== service.slug).slice(0, 3);
+const process = site.conversion?.process?.slice(0, 4) || [];
+const faqs = site.conversion?.faqs?.slice(0, 4) || [];
+const support = service.decisionSupport;
 ---
 
-<SiteLayout title={`${service.name} | ${site.business.name}`} description={service.description}><Header /><main><section class="inner-hero"><div class="wrap"><span class="kicker">{site.business.name}</span><h1>{service.name}</h1><p>{service.description}</p></div></section><section class="section wrap text-content"><h2>A straightforward path to the right fix.</h2><p>{site.business.description} Our team will listen, explain the options, and help you choose the next step with confidence.</p></section><section class="contact-section"><div class="wrap contact-grid"><div><span class="kicker">Get started</span><h2>{site.business.primaryCta}.</h2></div><LeadForm /></div></section></main><Footer /></SiteLayout>
+<SiteLayout title={`${service.name} | ${site.business.name}`} description={service.description}>
+  <Header />
+  <main class:list={["inner-page", `recipe-${recipe}`]}>
+    <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home / Services</a><span class="kicker">{trades ? "Service details" : "Care option"}</span><h1>{service.name}</h1><p>{service.description}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{site.images.secondary && <img src={site.images.secondary} alt={`${site.business.name} service context`} />}</div></section>
+
+    <section class="section wrap service-decision"><div class="section-heading"><span class="kicker">A useful place to start</span><h2>{trades ? "Understand the problem, then choose the right service." : "Talk through the support that fits your situation."}</h2></div><div class="decision-grid"><div><h3>What to ask about</h3><p>{support?.scope || service.description}</p></div><div><h3>What happens next</h3><p>{support?.nextStep || (trades ? "Describe the issue, share your location, and the team will confirm the appropriate next step before scheduling." : "Share what support you are considering. The team will listen, answer questions, and help you decide whether this option is suitable.")}</p></div><div><h3>What to prepare</h3><p>{support?.preparation || site.business.offer || `Contact ${site.business.name} for details that apply to your needs.`}</p></div></div></section>
+
+    {process.length > 0 && <section class="inner-band"><div class="wrap"><div class="section-heading"><span class="kicker">The process</span><h2>Clear steps from first contact.</h2></div><ol class="process-grid">{process.map((step, index) => <li><span>0{index + 1}</span><p>{step}</p></li>)}</ol></div></section>}
+
+    {related.length > 0 && <section class="section wrap related-services"><div class="section-heading"><span class="kicker">Other ways we can help</span><h2>Explore related services.</h2></div><div class="service-grid">{related.map((item) => <a class="service-card" href={`/services/${item.slug}/`}><h3>{item.name}</h3><p>{item.description}</p><b>View service details <i aria-hidden="true">↗</i></b></a>)}</div></section>}
+
+    {faqs.length > 0 && <section class="section wrap faq-section"><div class="section-heading"><span class="kicker">Before you reach out</span><h2>Practical questions, answered.</h2></div><div class="faq-list">{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
+
+    <section class="contact-section" id="contact"><div class="wrap contact-grid"><div class="contact-copy"><span class="kicker">Ask about {service.name}</span><h2>{site.business.primaryCta}</h2><p>Tell us what you need and we will follow up with the most useful next step.</p>{site.business.phone && <a class="contact-phone" href={phoneHref(site.business.phone)}>{site.business.phone}</a>}</div><LeadForm id={`service-${service.slug}`} /></div></section>
+  </main>
+  <Footer />
+</SiteLayout>

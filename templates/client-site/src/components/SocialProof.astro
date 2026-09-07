@@ -1,10 +1,11 @@
 ---
 import site from "../lib/site";
+const { id = "social-proof" } = Astro.props;
 const proof = site.socialProof;
 const fallback = proof?.fallback || proof;
 ---
 
-{proof && fallback && <section class="section social-proof" id="social-proof" data-source={proof.source}>
+{proof && fallback && <section class="section social-proof" id={id} data-source={proof.source}>
   <div class="wrap">
     <span class="kicker">{proof.source === "google_reviews" ? "Testimonials and Google Maps reviews" : "Why people choose us"}</span>
     <h2>{proof.heading}</h2>

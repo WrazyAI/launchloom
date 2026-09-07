@@ -111,7 +111,7 @@ export async function modelOperations(
         "X-OpenRouter-Title": "LaunchLoom revision operations",
       },
       body: JSON.stringify({
-      model,
+        model,
         reasoning_effort: "low",
         temperature: 0.1,
         response_format: { type: "json_object" },
@@ -119,11 +119,11 @@ export async function modelOperations(
           {
             role: "system",
             content:
-              "Return JSON only: {operations:[...]}. You are planning a strictly minimal website revision. Allowed operations are only {kind:'set_copy',field,value} using these copy fields: heroKicker, servicesHeading, aboutKicker, aboutHeading, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Do not add sections, invent testimonials, alter business facts, services, assets, colors, layout, claims, or unrelated copy. If feedback cannot be fulfilled by this allowlist, return an empty operations array.",
+              "Return JSON only: {operations:[...]}. You are planning a strictly minimal website revision. Preserve the site's approved page recipe and design language. Care sites remain calm, editorial, reassuring, and family-aware. Local-trades sites remain direct, problem-led, coverage-aware, and action-oriented. Allowed operations are only {kind:'set_copy',field,value} using these copy fields: heroKicker, servicesHeading, aboutKicker, aboutHeading, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep unrelated copy unchanged. Do not add sections, invent testimonials, alter business facts, services, assets, colors, layout, claims, locations, staff, or unrelated copy. Do not use em dashes. If feedback cannot be fulfilled by this allowlist, return an empty operations array.",
           },
           {
             role: "user",
-            content: `Feedback:\n${feedback}\n\nCurrent approved copy:\n${JSON.stringify(config.copy || {})}`,
+            content: `Feedback:\n${feedback}\n\nApproved design context:\n${JSON.stringify({ recipe: config.design?.recipe || config.conversion?.layout || config.preset, industry: config.industry, businessKind: config.businessKind, businessName: config.business?.name, services: (config.services || []).slice(0, 8).map((service) => service.name) })}\n\nCurrent approved copy:\n${JSON.stringify(config.copy || {})}`,
           },
         ],
       }),

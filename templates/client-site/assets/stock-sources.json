@@ -1,4 +1,44 @@
 {
+  "home-care": [
+    {
+      "url": "https://images.unsplash.com/photo-1543333995-a78aea2eee50",
+      "source": "Unsplash",
+      "creator": "Dominik Lange",
+      "sourcePage": "https://unsplash.com/photos/VUOiQW4OeLI",
+      "subject": "Caregiver walking outdoors with an older adult",
+      "use": "Hero image",
+      "license": "Unsplash License"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1762955911431-4c44c7c3f408",
+      "source": "Unsplash",
+      "creator": "Age Cymru",
+      "sourcePage": "https://unsplash.com/photos/bSXk1lOp8T0",
+      "subject": "Care worker supporting older adults during an activity",
+      "use": "Secondary image",
+      "license": "Unsplash License"
+    }
+  ],
+  "garage-door": [
+    {
+      "url": "https://images.unsplash.com/photo-1770756051811-1612ac8bedfa",
+      "source": "Unsplash",
+      "creator": "GoodLifeConstruction",
+      "sourcePage": "https://unsplash.com/photos/3qRx6B4cT6g",
+      "subject": "Modern residential garage doors",
+      "use": "Hero image",
+      "license": "Unsplash License"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1571189437635-473398e910c1",
+      "source": "Unsplash",
+      "creator": "Vincent Wachowiak",
+      "sourcePage": "https://unsplash.com/photos/11DIVFs4kKE",
+      "subject": "Residential gray garage door",
+      "use": "Secondary image",
+      "license": "Unsplash License"
+    }
+  ],
   "wellness": [
     { "url": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881", "source": "Unsplash", "use": "Hero image", "license": "Unsplash License" },
     { "url": "https://images.unsplash.com/photo-1515377905703-c4788e51af15", "source": "Unsplash", "use": "Secondary image", "license": "Unsplash License" }

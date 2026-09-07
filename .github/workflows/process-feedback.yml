@@ -62,7 +62,7 @@ jobs:
           cd "$CLIENT_DIR"
           if git diff --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
-          git add src public; git commit -m "Apply developer feedback"; git push origin "${{ steps.branch.outputs.name }}"
+          git add src public AGENTS.md docs/site-generation-guidelines.md; git commit -m "Apply developer feedback"; git push origin "${{ steps.branch.outputs.name }}"
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
           npm ci
           PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build

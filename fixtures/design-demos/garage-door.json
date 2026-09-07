@@ -1,0 +1,176 @@
+{
+  "preset": "home-services",
+  "industry": "home-services",
+  "businessKind": "garage-door",
+  "business": {
+    "name": "Northline Garage Door Co.",
+    "tagline": "Get your garage door moving safely again.",
+    "description": "Northline helps homeowners diagnose garage door problems, compare repair and replacement options, and schedule the right service for the property. Tell us what the door is doing and where you are located to begin.",
+    "phone": "(510) 555-0186",
+    "email": "service@northline.example",
+    "address": "4240 Thornton Avenue, Fremont, CA 94536",
+    "serviceAreas": ["Fremont", "Newark", "Union City"],
+    "hours": "Monday to Saturday, 7am to 6pm",
+    "primaryCta": "Request garage door service",
+    "offer": "Request an inspection and a clear explanation of available options",
+    "domain": "northline.example",
+    "leadEmail": "dispatch@northline.example"
+  },
+  "style": {
+    "primaryColor": "#e46f32",
+    "surfaceColor": "#f7f5ef",
+    "heroColor": "#e9efed",
+    "inkColor": "#152521",
+    "mutedColor": "#60706b",
+    "lineColor": "#d9dfdc",
+    "tone": "direct"
+  },
+  "services": [
+    {
+      "name": "Garage door repair",
+      "slug": "garage-door-repair",
+      "description": "Diagnosis and repair options for doors that are stuck, noisy, uneven, slow, or unable to open and close normally.",
+      "decisionSupport": {
+        "scope": "Describe whether the door is stuck, uneven, noisy, slow, or unable to open and close normally.",
+        "nextStep": "Share the service address and symptoms so the team can confirm coverage and the appropriate repair request.",
+        "preparation": "Note whether the door is open or closed and avoid handling springs, cables, or a door that appears unstable."
+      }
+    },
+    {
+      "name": "Opener service",
+      "slug": "garage-door-opener-service",
+      "description": "Troubleshooting for opener, remote, sensor, and connectivity problems, with the next step explained before work is scheduled.",
+      "decisionSupport": {
+        "scope": "Share which wall controls, remotes, sensors, lights, or connected features are not behaving as expected.",
+        "nextStep": "The team can use the symptoms and opener details to identify the right service request before scheduling.",
+        "preparation": "If it is safe to do so, note the opener brand, indicator lights, and whether the door moves by hand."
+      }
+    },
+    {
+      "name": "Door replacement",
+      "slug": "garage-door-replacement",
+      "description": "Help comparing replacement approaches when a door is damaged, worn, or no longer suited to the home.",
+      "decisionSupport": {
+        "scope": "Discuss the current door's condition, size, appearance, insulation priorities, and opener compatibility.",
+        "nextStep": "Share the address and project goals so available replacement approaches can be discussed for the property.",
+        "preparation": "Photos of the existing door and a short list of practical or appearance priorities make the first conversation more useful."
+      }
+    }
+  ],
+  "differentiators": [
+    "The problem is discussed before scheduling",
+    "Service areas are confirmed by address",
+    "Repair and replacement options are explained",
+    "Homeowners receive a clear next step"
+  ],
+  "locations": [
+    {
+      "name": "Fremont",
+      "slug": "fremont",
+      "description": "Garage door repair, opener service, and replacement consultations are available by request for Fremont addresses.",
+      "localNote": "Fremont coverage is confirmed using the service address and the type of garage door help requested."
+    },
+    {
+      "name": "Newark",
+      "slug": "newark",
+      "description": "Northline accepts garage door service requests from Newark homeowners and confirms availability by address.",
+      "localNote": "Share the Newark property address and the symptom you are seeing so the team can confirm the next available step."
+    },
+    {
+      "name": "Union City",
+      "slug": "union-city",
+      "description": "Union City homeowners can request garage door repair, opener troubleshooting, and replacement information.",
+      "localNote": "Coverage and timing are confirmed after the team receives the property address and service need."
+    }
+  ],
+  "images": {
+    "hero": "https://images.unsplash.com/photo-1770756051811-1612ac8bedfa?auto=format&fit=crop&w=1600&q=85",
+    "secondary": "https://images.unsplash.com/photo-1571189437635-473398e910c1?auto=format&fit=crop&w=1200&q=85"
+  },
+  "copy": {
+    "heroKicker": "Garage door service in the Tri-City area",
+    "servicesHeading": "Start with the symptom. Find the service that fits.",
+    "aboutKicker": "A clearer service call",
+    "aboutHeading": "Describe the problem before scheduling the next step.",
+    "aboutBody": "Northline starts with the door symptoms, property address, and the homeowner's priorities. That information helps the team confirm coverage and identify the service request that fits the problem.",
+    "processKicker": "What happens next",
+    "processHeading": "A direct route from a stuck door to a clear plan.",
+    "faqKicker": "Practical answers",
+    "faqHeading": "What to know before requesting service.",
+    "contactKicker": "Tell us what the door is doing",
+    "contactHeading": "Request garage door service",
+    "formIntro": "Include the service address and a short description of the issue so the team can confirm coverage."
+  },
+  "conversion": {
+    "layout": "local-proof",
+    "qualification": [
+      {
+        "name": "service",
+        "label": "What do you need help with?",
+        "placeholder": "Select a service",
+        "options": ["Repair", "Opener issue", "Replacement", "Not sure yet"]
+      },
+      {
+        "name": "timing",
+        "label": "When do you need help?",
+        "placeholder": "Select timing",
+        "options": ["As soon as possible", "This week", "Planning ahead"]
+      }
+    ],
+    "process": [
+      "Describe the door, symptom, and address",
+      "Confirm coverage and the appropriate service",
+      "Review the available next step before scheduling"
+    ],
+    "faqs": [
+      {
+        "question": "What details help with a service request?",
+        "answer": "Share whether the door is open or closed, what you hear or see, the opener type if known, and the property address."
+      },
+      {
+        "question": "Should I try to move a door with a damaged spring or cable?",
+        "answer": "Avoid operating or lifting a door that appears unstable or has damaged spring or cable hardware. Describe the issue and wait for qualified help."
+      },
+      {
+        "question": "How is service-area coverage confirmed?",
+        "answer": "Provide the full property address. The team will confirm current coverage and availability before scheduling."
+      }
+    ]
+  },
+  "socialProof": {
+    "source": "verified_differentiators",
+    "heading": "A service request built around useful details.",
+    "intro": "These are process commitments supplied for this fictional demonstration. They are not customer reviews.",
+    "points": [
+      "The problem is discussed before scheduling",
+      "Service areas are confirmed by address",
+      "Repair and replacement options are explained"
+    ]
+  },
+  "design": { "recipe": "local-trades", "sections": [] },
+  "assetReport": {
+    "used": [
+      {
+        "asset": "hero",
+        "placement": "hero",
+        "source": "stock-pack",
+        "provider": "Unsplash",
+        "creator": "GoodLifeConstruction",
+        "sourceUrl": "https://unsplash.com/photos/3qRx6B4cT6g",
+        "license": "Unsplash License",
+        "subject": "modern residential garage doors"
+      },
+      {
+        "asset": "secondary",
+        "placement": "secondary",
+        "source": "stock-pack",
+        "provider": "Unsplash",
+        "creator": "Vincent Wachowiak",
+        "sourceUrl": "https://unsplash.com/photos/11DIVFs4kKE",
+        "license": "Unsplash License",
+        "subject": "residential gray garage door"
+      }
+    ],
+    "skipped": []
+  }
+}

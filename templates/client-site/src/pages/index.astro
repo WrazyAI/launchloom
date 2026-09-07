@@ -1,87 +1,18 @@
 ---
 import SiteLayout from "../layouts/SiteLayout.astro";
 import Header from "../components/Header.astro";
-import LeadForm from "../components/LeadForm.astro";
+import PageSections from "../components/PageSections.astro";
 import Footer from "../components/Footer.astro";
-import SocialProof from "../components/SocialProof.astro";
-import site, { phoneHref } from "../lib/site";
+import site from "../lib/site";
+import { resolvePageRecipe } from "../lib/page-recipe";
 
-const wellness = site.preset === "wellness";
-const copy = site.copy || {};
-const conversion = site.conversion;
-const layout = conversion?.layout || (wellness ? "editorial-authority" : "local-proof");
-const galleryImages = [site.assets?.photoThree, site.assets?.teamPhoto].filter((image): image is string => Boolean(image));
-const proofPoints = site.differentiators.filter(Boolean).slice(0, 4);
-const process = conversion?.process?.length ? conversion.process : ["Tell us what you need", "Get clear next steps", "Move forward with confidence"];
-const faqs = conversion?.faqs || [];
+const page = resolvePageRecipe(site);
 ---
 
 <SiteLayout>
   <Header />
-  <main class:list={["site-main", `layout-${layout}`]}>
-    <section class:list={["hero", { wellness }]}>
-      <div class="wrap hero-grid">
-        <div class="hero-copy">
-          <span class="kicker">{copy.heroKicker || "A more useful next step"}</span>
-          <h1>{site.business.tagline}</h1>
-          <p>{site.business.description}</p>
-          {site.business.offer && <div class="offer">{site.business.offer}</div>}
-          <div class="hero-actions">
-            <a class="cta" href="#contact">{site.business.primaryCta}</a>
-            {site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}
-          </div>
-          {proofPoints.length > 0 && <ul class="hero-proof">{proofPoints.slice(0, 3).map((point) => <li>{point}</li>)}</ul>}
-        </div>
-        {site.images.hero ? <img class="hero-image" src={site.images.hero} alt={`${site.business.name} ${site.assets?.photoOne ? "client-provided work" : "service"}`} /> : <div class="hero-art" aria-label={site.business.name}><span>{site.assets?.logo ? <img src={site.assets.logo} alt={site.business.name} /> : site.business.name}</span></div>}
-      </div>
-    </section>
-
-    {proofPoints.length > 0 && <section class="proof" aria-label="Why choose us"><div class="wrap">{proofPoints.map((point) => <span>{point}</span>)}</div></section>}
-
-    <section class="section wrap" id="services">
-      <span class="kicker">What we do</span>
-      <h2>{copy.servicesHeading || "Clear help for the work in front of you."}</h2>
-      <div class="service-grid">{site.services.map((service, index) => <a class="service-card" href={wellness ? "#contact" : `/services/${service.slug}/`}><span>0{index + 1}</span><h3>{service.name}</h3><p>{service.description}</p><b>{wellness ? "Ask about this →" : "Explore service →"}</b></a>)}</div>
-    </section>
-
-    <SocialProof />
-
-    <section class="split-section" id="about">
-      <div class="wrap split-grid">
-        {site.images.secondary ? <img src={site.images.secondary} alt={`${site.business.name} ${site.assets?.photoTwo ? "client-provided team or work" : "team or service"}`} loading="lazy" /> : <div class="split-art" aria-hidden="true" />}
-        <div>
-          <span class="kicker">{copy.aboutKicker || "Why clients choose us"}</span>
-          <h2>{copy.aboutHeading || "A more straightforward way to get help."}</h2>
-          <p>{proofPoints.length ? proofPoints.join(". ") + "." : "Tell us what matters to you. We will help you understand the best next step."}</p>
-          {proofPoints.length > 0 && <ul>{proofPoints.map((item) => <li>{item}</li>)}</ul>}
-        </div>
-      </div>
-    </section>
-
-    <section class="section wrap process-section">
-      <span class="kicker">{copy.processKicker || "A clear process"}</span>
-      <h2>{copy.processHeading || "Know what happens next."}</h2>
-      <ol class="process-grid">{process.map((step, index) => <li><span>0{index + 1}</span><p>{step}</p></li>)}</ol>
-    </section>
-
-    {galleryImages.length > 0 && <section class="section wrap image-gallery" aria-label={`${site.business.name} photos`}>{galleryImages.map((image, index) => <img src={image} alt={`${site.business.name} ${index === 0 ? "at work" : "team"}`} loading="lazy" />)}</section>}
-
-    {site.preset === "home-services" && <section class="section wrap" id="areas"><span class="kicker">Where we work</span><h2>Local help across your area.</h2><div class="area-list">{site.locations.length ? site.locations.map((location) => <a href={`/locations/${location.slug}/`}>{location.name} →</a>) : site.business.serviceAreas.map((area) => <span>{area}</span>)}</div></section>}
-
-    {faqs.length > 0 && <section class="section wrap faq-section"><span class="kicker">{copy.faqKicker || "Questions, answered"}</span><h2>{copy.faqHeading || "A few useful details before you reach out."}</h2><div class="faq-list">{faqs.map((faq) => <details><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</div></section>}
-
-    <section class="contact-section" id="contact">
-      <div class="wrap contact-grid">
-        <div>
-          <span class="kicker">{copy.contactKicker || "Start the conversation"}</span>
-          <h2>{copy.contactHeading || site.business.primaryCta}.</h2>
-          <p>{site.business.offer || "Share a few details and we will follow up with the most useful next step."}</p>
-          {(site.business.address || site.business.hours) && <p class="contact-detail">{site.business.address}<br />{site.business.hours}</p>}
-        </div>
-        <LeadForm />
-      </div>
-    </section>
+  <main class:list={["site-main", `recipe-${page.recipe}`, `layout-${site.conversion?.layout || "editorial-authority"}`]}>
+    <PageSections page={page} />
   </main>
-  {site.business.phone && <a class="mobile-call" href={phoneHref(site.business.phone)}>Call now</a>}
   <Footer />
 </SiteLayout>

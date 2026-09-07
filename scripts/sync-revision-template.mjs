@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { syncClientGuidelines } from "./sync-client-guidelines.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -17,6 +18,7 @@ if (!client) throw new Error("--client is required.");
 const config = JSON.parse(
   await fs.readFile(path.join(client, "src/site.config.json"), "utf8"),
 );
+await syncClientGuidelines(client);
 const operations = config.revisionReport?.operations || [];
 const kinds = new Set(operations.map((operation) => operation.kind));
 const repository = path.resolve(new URL("..", import.meta.url).pathname);
@@ -30,7 +32,6 @@ const files = new Set([
 ]);
 if (kinds.has("set_social_proof")) {
   files.add("components/SocialProof.astro");
-  files.add("pages/index.astro");
   files.add("styles/site.css");
   files.add("lib/site.ts");
 }
@@ -38,6 +39,7 @@ if (kinds.has("show_brand_name")) {
   files.add("components/Header.astro");
   files.add("components/Footer.astro");
   files.add("styles/site.css");
+  files.add("lib/site.ts");
 }
 if (kinds.has("set_color_palette")) {
   files.add("layouts/SiteLayout.astro");

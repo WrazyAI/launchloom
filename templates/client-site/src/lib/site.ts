@@ -1,10 +1,43 @@
 import config from "../site.config.json";
 
-export type Service = { name: string; description: string; slug: string };
-export type Location = { name: string; slug: string; description?: string };
+export type Service = {
+  name: string;
+  description: string;
+  slug: string;
+  decisionSupport?: {
+    scope?: string;
+    nextStep?: string;
+    preparation?: string;
+  };
+};
+export type Location = {
+  name: string;
+  slug: string;
+  description?: string;
+  localNote?: string;
+};
+export type PageSectionType =
+  | "hero"
+  | "trust"
+  | "services"
+  | "about"
+  | "process"
+  | "social-proof"
+  | "gallery"
+  | "coverage"
+  | "faq"
+  | "contact";
+export type PageSection = {
+  id: string;
+  type: PageSectionType;
+  variant: string;
+};
+export type PageRecipe =
+  "care-editorial" | "local-trades" | "general-editorial";
 export type SiteConfig = {
   preset: "wellness" | "home-services";
   industry?: string;
+  businessKind?: string;
   business: {
     name: string;
     tagline: string;
@@ -47,6 +80,7 @@ export type SiteConfig = {
     servicesHeading?: string;
     aboutKicker?: string;
     aboutHeading?: string;
+    aboutBody?: string;
     contactKicker?: string;
     contactHeading?: string;
     processKicker?: string;
@@ -66,8 +100,21 @@ export type SiteConfig = {
     process?: string[];
     faqs?: Array<{ question: string; answer: string }>;
   };
+  design?: {
+    recipe: PageRecipe;
+    sections: PageSection[];
+  };
   assetReport?: {
-    used: Array<{ asset: string; placement: string; source: string }>;
+    used: Array<{
+      asset: string;
+      placement: string;
+      source: string;
+      provider?: string;
+      creator?: string;
+      sourceUrl?: string;
+      license?: string;
+      subject?: string;
+    }>;
     skipped: Array<{ asset: string; reason: string }>;
   };
   qualityReport?: {

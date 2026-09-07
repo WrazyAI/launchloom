@@ -1,0 +1,44 @@
+---
+import site, { phoneHref, type PageRecipe, type PageSection } from "../lib/site";
+import LeadForm from "./LeadForm.astro";
+import SocialProof from "./SocialProof.astro";
+
+interface Props { page: { recipe: PageRecipe; sections: PageSection[] } }
+const { page } = Astro.props;
+const copy = site.copy || {};
+const proofPoints = site.differentiators.filter(Boolean).slice(0, 4);
+const process = site.conversion?.process?.length ? site.conversion.process : ["Tell us what you need", "Get clear next steps", "Move forward with confidence"];
+const faqs = site.conversion?.faqs || [];
+const galleryImages = [site.assets?.photoThree, site.assets?.teamPhoto].filter((image): image is string => Boolean(image));
+const care = page.recipe === "care-editorial";
+const trades = page.recipe === "local-trades";
+const garage = site.businessKind === "garage-door";
+const contactId = page.sections.find((section) => section.type === "contact")?.id || "contact";
+const stockContext = care ? "care setting" : trades ? "local service setting" : "business setting";
+---
+
+{page.sections.map((section) => (
+  <Fragment>
+    {section.type === "hero" && <section id={section.id} class:list={["hero", "recipe-hero", `variant-${section.variant}`]}><div class="wrap hero-grid"><div class="hero-copy"><span class="kicker">{copy.heroKicker || (garage ? "Local garage door service" : trades ? "Local property service" : care ? "Care with a clear next step" : "A clearer next step")}</span><h1>{site.business.tagline}</h1><p>{site.business.description}</p>{site.business.offer && <div class="offer">{site.business.offer}</div>}<div class="hero-actions"><a class="cta" href={`#${contactId}`}>{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div><div class="hero-visual">{site.images.hero ? <img class="hero-image" src={site.images.hero} alt={`${site.business.name} ${site.assets?.photoOne ? "client-provided service photo" : care ? "care setting" : "service context"}`} /> : <div class="hero-art" aria-label={site.business.name}><span>{site.assets?.logo ? <img src={site.assets.logo} alt={site.business.name} /> : site.business.name}</span></div>}{trades && site.business.phone && <a class="hero-phone-card" href={phoneHref(site.business.phone)}><span>{garage ? "Need help with a door?" : "Need local service?"}</span><strong>{site.business.phone}</strong></a>}</div></div></section>}
+
+    {section.type === "trust" && proofPoints.length > 0 && <section id={section.id} class:list={["trust-strip", `variant-${section.variant}`]} aria-label="Why choose us"><div class="wrap trust-grid">{proofPoints.map((point, index) => <div><span>0{index + 1}</span><p>{point}</p></div>)}</div></section>}
+
+    {section.type === "services" && <section id={section.id} class:list={["section", "wrap", "services-section", `variant-${section.variant}`]}><div class="section-heading"><span class="kicker">{garage ? "What we repair and install" : trades ? "Services for your property" : "How we can help"}</span><h2>{copy.servicesHeading || "Support built around the decision in front of you."}</h2><p>{trades ? "Start with the service need you are seeing. Each page explains the next practical step." : care ? "Explore the care options available, then talk with us about the right fit for your needs." : "Explore the available services and find the most useful next step."}</p></div><div class="service-grid">{site.services.map((service, index) => <a class="service-card" href={`/services/${service.slug}/`}><span>0{index + 1}</span><h3>{service.name}</h3><p>{service.description}</p><b>{care ? "Explore this care option" : "View service details"}<i aria-hidden="true">↗</i></b></a>)}</div></section>}
+
+    {section.type === "about" && <section id={section.id} class:list={["split-section", `variant-${section.variant}`]}><div class="wrap split-grid">{site.images.secondary ? <img src={site.images.secondary} alt={`${site.business.name} ${site.assets?.photoTwo ? "client-provided team or service photo" : stockContext}`} loading="lazy" /> : <div class="split-art" aria-hidden="true" />}<div class="about-copy"><span class="kicker">{copy.aboutKicker || "A thoughtful approach"}</span><h2>{copy.aboutHeading || "Start with what matters to you."}</h2><p>{copy.aboutBody || site.business.description}</p><a class="text-link" href={`#${contactId}`}>Talk with our team <span aria-hidden="true">↗</span></a></div></div></section>}
+
+    {section.type === "process" && <section id={section.id} class:list={["section", "wrap", "process-section", `variant-${section.variant}`]}><div class="section-heading"><span class="kicker">{copy.processKicker || "A clear process"}</span><h2>{copy.processHeading || "Know what happens next."}</h2></div><ol class="process-grid">{process.map((step, index) => <li><span>0{index + 1}</span><p>{step}</p></li>)}</ol></section>}
+
+    {section.type === "social-proof" && <SocialProof id={section.id} />}
+
+    {section.type === "gallery" && galleryImages.length > 0 && <section id={section.id} class:list={["section", "wrap", "gallery-section", `variant-${section.variant}`]}><div class="section-heading"><span class="kicker">{trades ? "A closer look" : "A familiar setting"}</span><h2>{trades ? "Work you can see before you call." : "Care should feel personal from the start."}</h2></div><div class="image-gallery">{galleryImages.map((image, index) => <img src={image} alt={`${site.business.name} ${index === 0 ? "service work" : "team"}`} loading="lazy" />)}</div></section>}
+
+    {section.type === "coverage" && <section id={section.id} class:list={["coverage-section", `variant-${section.variant}`]}><div class="wrap coverage-grid"><div><span class="kicker">Where we work</span><h2>Local service across the communities we know.</h2><p>Choose your area for service information, or send your address and we will confirm coverage.</p></div><div class="area-list">{site.locations.length ? site.locations.map((location) => <a href={`/locations/${location.slug}/`}>{location.name}<span aria-hidden="true">↗</span></a>) : site.business.serviceAreas.map((area) => <span>{area}</span>)}</div></div></section>}
+
+    {section.type === "faq" && faqs.length > 0 && <section id={section.id} class:list={["section", "wrap", "faq-section", `variant-${section.variant}`]}><div class="section-heading"><span class="kicker">{copy.faqKicker || "Questions, answered"}</span><h2>{copy.faqHeading || "Useful details before you reach out."}</h2></div><div class="faq-list">{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
+
+    {section.type === "contact" && <section class:list={["contact-section", `variant-${section.variant}`]} id={section.id}><div class="wrap contact-grid"><div class="contact-copy"><span class="kicker">{copy.contactKicker || "Start the conversation"}</span><h2>{copy.contactHeading || site.business.primaryCta}</h2><p>{site.business.offer || (garage ? "Tell us what the door is doing and where you are located. We will follow up with the next available step." : trades ? "Tell us what service you need and where you are located. We will follow up with the next available step." : "Share what you are looking for and we will help you understand the next step.")}</p>{(site.business.address || site.business.hours) && <p class="contact-detail">{site.business.address}<br />{site.business.hours}</p>}{site.business.phone && <a class="contact-phone" href={phoneHref(site.business.phone)}>{site.business.phone}</a>}</div><LeadForm /></div></section>}
+  </Fragment>
+))}
+
+{site.business.phone && <a class="mobile-call" href={phoneHref(site.business.phone)}>{trades ? "Call for service" : "Call us"}</a>}

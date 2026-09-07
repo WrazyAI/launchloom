@@ -3,14 +3,31 @@ import SiteLayout from "../../layouts/SiteLayout.astro";
 import Header from "../../components/Header.astro";
 import LeadForm from "../../components/LeadForm.astro";
 import Footer from "../../components/Footer.astro";
-import site from "../../lib/site";
+import site, { phoneHref, type Location } from "../../lib/site";
 
 export function getStaticPaths() {
   if (site.preset !== "home-services") return [];
-  const locations: { name: string; slug: string; description?: string }[] = site.locations.length ? site.locations : site.business.serviceAreas.map((name) => ({ name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") }));
+  const locations: Location[] = site.locations.length ? site.locations : site.business.serviceAreas.map((name) => ({ name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") }));
   return locations.map((location) => ({ params: { slug: location.slug }, props: { location } }));
 }
-const { location } = Astro.props;
+const { location } = Astro.props as { location: Location };
+const otherAreas = site.locations.filter((area) => area.slug !== location.slug).slice(0, 6);
+const garage = site.businessKind === "garage-door";
+const serviceLabel = garage ? "Garage door help" : `${site.services[0]?.name || "Local service"}`;
 ---
 
-<SiteLayout title={`${location.name} | ${site.business.name}`}><Header /><main><section class="inner-hero"><div class="wrap"><span class="kicker">Serving {location.name}</span><h1>Trusted help in {location.name}.</h1><p>{location.description || `${site.business.name} brings clear communication and dependable service to ${location.name}.`}</p></div></section><section class="section wrap text-content"><h2>Local service, without the wait.</h2><p>{site.business.description}</p></section><section class="contact-section"><div class="wrap contact-grid"><div><span class="kicker">Talk to our team</span><h2>{site.business.primaryCta}.</h2></div><LeadForm /></div></section></main><Footer /></SiteLayout>
+<SiteLayout title={`${site.services[0]?.name || "Local service"} in ${location.name} | ${site.business.name}`} description={location.description || `${site.business.name} serves customers in ${location.name}. Contact the team to confirm availability for your address.`}>
+  <Header />
+  <main class="inner-page recipe-local-trades">
+    <section class="inner-hero location-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home / Service areas</a><span class="kicker">Serving {location.name}</span><h1>{serviceLabel} in {location.name}.</h1><p>{location.description || `${site.business.name} serves ${location.name}. Tell us what service you need and we will confirm coverage and the next available step for your address.`}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{site.images.hero && <img src={site.images.hero} alt={`${serviceLabel} context for ${location.name}`} />}</div></section>
+
+    <section class="section wrap location-services"><div class="section-heading"><span class="kicker">Services available by request</span><h2>Start with the issue you are seeing.</h2><p>{location.localNote || "Availability varies by address and service need. Contact the team to confirm coverage before scheduling."}</p></div><div class="service-grid">{site.services.map((service) => <a class="service-card" href={`/services/${service.slug}/`}><h3>{service.name}</h3><p>{service.description}</p><b>View service details <i aria-hidden="true">↗</i></b></a>)}</div></section>
+
+    <section class="inner-band locality-band"><div class="wrap coverage-grid"><div><span class="kicker">Local coverage</span><h2>One clear way to check your address.</h2><p>Send the property address and a short description of the problem. The team will confirm whether the requested service is available in {location.name}.</p></div>{otherAreas.length > 0 && <div><strong>Other listed service areas</strong><div class="area-list">{otherAreas.map((area) => <a href={`/locations/${area.slug}/`}>{area.name}<span aria-hidden="true">↗</span></a>)}</div></div>}</div></section>
+
+    <section class="section wrap service-decision"><div class="section-heading"><span class="kicker">Before scheduling</span><h2>Details that help the team prepare.</h2></div><div class="decision-grid"><div><h3>{garage ? "Describe the symptom" : "Describe the service need"}</h3><p>{garage ? "Share what you hear, see, or cannot operate. Avoid handling springs, cables, or a door that appears unstable." : "Share what you need help with and any details that affect the requested service."}</p></div><div><h3>Share the address</h3><p>The exact address lets the team confirm that your property is within the current service area.</p></div><div><h3>Choose your timing</h3><p>Tell the team when you would like help. They will respond with current availability rather than an unverified promise.</p></div></div></section>
+
+    <section class="contact-section" id="contact"><div class="wrap contact-grid"><div class="contact-copy"><span class="kicker">Service in {location.name}</span><h2>{site.business.primaryCta}</h2><p>Share your address and service need so the team can confirm coverage.</p>{site.business.phone && <a class="contact-phone" href={phoneHref(site.business.phone)}>{site.business.phone}</a>}</div><LeadForm id={`location-${location.slug}`} /></div></section>
+  </main>
+  <Footer />
+</SiteLayout>

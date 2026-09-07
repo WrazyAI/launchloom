@@ -95,6 +95,7 @@ jobs:
           fi
           node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}"
           cp -R templates/client-site "$CLIENT_DIR"
+          node scripts/sync-client-guidelines.mjs "$CLIENT_DIR"
           cd "$CLIENT_DIR"
           rm -f netlify.toml
           git init --initial-branch=main

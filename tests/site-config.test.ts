@@ -46,10 +46,12 @@ describe("site configuration", () => {
     expect(config.business.phone).toBe("555-0100");
     expect(config.copy.heroKicker).toBe("Operations, simplified");
     expect(config.conversion.layout).toBe("product-clarity");
-    expect(config.assetReport.used).toEqual(expect.arrayContaining([
-      expect.objectContaining({ asset: "logo", placement: "brand" }),
-      expect.objectContaining({ asset: "photoOne", placement: "hero" }),
-    ]));
+    expect(config.assetReport.used).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ asset: "logo", placement: "brand" }),
+        expect.objectContaining({ asset: "photoOne", placement: "hero" }),
+      ]),
+    );
   });
 
   it("selects only an approved contextual fallback and adds conversion content", () => {
@@ -93,14 +95,89 @@ describe("site configuration", () => {
     expect(config.conversion.layout).toBe("product-clarity");
   });
 
+  it("selects the home-care recipe, care questions, and licensed contextual assets", () => {
+    const config = normalise(
+      {
+        services: [
+          {
+            name: "Companion care",
+            description:
+              "Conversation, shared activities, and practical support for familiar routines at home.",
+            decisionSupport: {
+              scope: "Discuss the routines where companionship would help.",
+              nextStep: "Begin with a family care conversation.",
+              preparation: "Bring a picture of a typical day.",
+            },
+          },
+        ],
+      },
+      {
+        businessName: "Willow Home Care",
+        services: "Companion care",
+        industry: "wellness",
+        preset: "wellness",
+      },
+    );
+
+    expect(config.businessKind).toBe("home-care");
+    expect(config.design.recipe).toBe("care-editorial");
+    expect(config.conversion.qualification[0].name).toBe("careNeed");
+    expect(config.services[0].decisionSupport.scope).toContain("routines");
+    expect(config.assetReport.used).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          placement: "hero",
+          source: "stock-pack",
+          provider: "Unsplash",
+          license: "Unsplash License",
+        }),
+      ]),
+    );
+  });
+
+  it("replaces stock attribution when a client image owns the placement", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Willow Home Care",
+        services: "Home care",
+        industry: "wellness",
+        preset: "wellness",
+        assets: { photoOne: "https://assets.example/client-hero.jpg" },
+      },
+    );
+
+    expect(
+      config.assetReport.used.filter(
+        (item: { placement: string }) => item.placement === "hero",
+      ),
+    ).toEqual([
+      expect.objectContaining({ source: "client", asset: "photoOne" }),
+    ]);
+  });
+
   it("does not allow generic model service copy through to the site", () => {
     const config = normalise(
-      { services: [{ name: "Roof repair", description: "Roof repair tailored to your needs." }] },
-      { businessName: "Northside Roofing", services: "Roof repair", industry: "home-services", preset: "home-services" },
+      {
+        services: [
+          {
+            name: "Roof repair",
+            description: "Roof repair tailored to your needs.",
+          },
+        ],
+      },
+      {
+        businessName: "Northside Roofing",
+        services: "Roof repair",
+        industry: "home-services",
+        preset: "home-services",
+      },
     );
 
     expect(config.services[0].description).toContain("clear next step");
-    expect(config.services[0].description).not.toMatch(/tailored to your needs/i);
+    expect(config.services[0].description).not.toMatch(
+      /tailored to your needs/i,
+    );
   });
 
   it("extracts usable process copy from model step objects", () => {
@@ -108,12 +185,19 @@ describe("site configuration", () => {
       {
         conversion: {
           process: [
-            { title: "Share what your family needs", description: "Extra detail" },
+            {
+              title: "Share what your family needs",
+              description: "Extra detail",
+            },
             { label: "Get a clear recommendation" },
           ],
         },
       },
-      { businessName: "Daley Hope", services: "Home care", industry: "wellness" },
+      {
+        businessName: "Daley Hope",
+        services: "Home care",
+        industry: "wellness",
+      },
     );
 
     expect(config.conversion.process).toEqual([
@@ -144,10 +228,9 @@ describe("site configuration", () => {
       },
     );
 
-    expect(config.services.map((service: { name: string }) => service.name)).toEqual([
-      "Roof repair",
-      "Roof replacement",
-    ]);
+    expect(
+      config.services.map((service: { name: string }) => service.name),
+    ).toEqual(["Roof repair", "Roof replacement"]);
     expect(evaluateDraft(config).issues).toEqual(
       expect.arrayContaining([
         expect.stringMatching(/opening message/i),

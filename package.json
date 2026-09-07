@@ -10,6 +10,7 @@
     "check": "astro check",
     "test": "vitest run",
     "evaluate:models": "node scripts/evaluate-models.mjs",
+    "build:design-demos": "node scripts/build-design-demos.mjs",
     "test:watch": "vitest",
     "format": "prettier --write ."
   },

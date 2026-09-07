@@ -1,5 +1,10 @@
 # LaunchLoom
 
+Generated client sites follow the design, conversion, asset, and local SEO
+rules in [the site generation guidelines](docs/site-generation-guidelines.md).
+The reference-site research and implemented recipe direction are recorded in
+[the local-business design direction](docs/local-business-design-direction.md).
+
 LaunchLoom creates private, config-driven Astro websites for local businesses. The operator platform, API, and generated client sites deploy to Cloudflare; GitHub Actions remains the private automation control plane.
 
 ## Architecture
