@@ -47,6 +47,7 @@ export default function OnboardingForm() {
   );
   const [searching, setSearching] = useState(false);
   const [status, setStatus] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState("");
   const progress = useMemo(
     () => `${((step + 1) / steps.length) * 100}%`,
@@ -87,7 +88,10 @@ export default function OnboardingForm() {
       if (value === undefined) continue;
       if (field instanceof HTMLInputElement && field.type === "radio") {
         field.checked = field.value === value;
-      } else if (field instanceof HTMLInputElement && field.type === "checkbox") {
+      } else if (
+        field instanceof HTMLInputElement &&
+        field.type === "checkbox"
+      ) {
         field.checked = field.value === value;
       } else {
         field.value = value;
@@ -186,6 +190,7 @@ export default function OnboardingForm() {
         "Your images are still too large. Keep the total below 7.5 MB and try again.",
       );
     setStatus("Uploading your brief…");
+    setSuccessMessage("");
     setError("");
     try {
       if (!apiBase)
@@ -236,7 +241,8 @@ export default function OnboardingForm() {
           handoffResult.error ||
             "We couldn’t start your preview. Please try once more.",
         );
-      setStatus(
+      setStatus("");
+      setSuccessMessage(
         "Received. We’ll email your preview link as soon as it’s ready.",
       );
       form.reset();
@@ -671,10 +677,30 @@ export default function OnboardingForm() {
           {error}
         </p>
       )}
-      {status && (
-        <p className="form-message success" role="status">
-          {status}
-        </p>
+      {status && <p className="form-message progress">{status}</p>}
+      {successMessage && (
+        <aside
+          className="submission-toast"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <span className="submission-toast-icon" aria-hidden="true">
+            ✓
+          </span>
+          <div>
+            <strong>Brief received</strong>
+            <p>{successMessage}</p>
+          </div>
+          <button
+            type="button"
+            className="submission-toast-close"
+            aria-label="Dismiss confirmation"
+            onClick={() => setSuccessMessage("")}
+          >
+            ×
+          </button>
+        </aside>
       )}
       <footer className="form-actions">
         {step > 0 && (

@@ -1,3 +1,5 @@
+import { renderLeadEmail } from "../../emails/render-email.mjs";
+
 export interface Env {
   ASSETS: {
     put(
@@ -224,6 +226,7 @@ async function sendEmail(
     replyTo?: string;
     subject: string;
     html: string;
+    text: string;
     tag: string;
   },
 ) {
@@ -240,6 +243,7 @@ async function sendEmail(
       reply_to: input.replyTo,
       subject: input.subject,
       html: input.html,
+      text: input.text,
       tags: [{ name: "launchloom_kind", value: input.tag }],
     }),
   });
@@ -760,11 +764,19 @@ async function lead(request: Request, env: Env) {
         400,
         cors(request, claims.allowedOrigins),
       );
+    const leadEmail = renderLeadEmail({
+      name,
+      phone,
+      email,
+      message,
+      project: claims.project,
+      pageUrl: clean(body.pageUrl, 4_000),
+      qualification,
+    });
     await sendEmail(env, {
       to: claims.recipient,
       replyTo: email,
-      subject: `New website lead · ${name}`,
-      html: `<p><strong>Name:</strong> ${name}</p><p><strong>Phone:</strong> ${phone}</p><p><strong>Email:</strong> ${email}</p>${qualification.length ? `<p><strong>Request details:</strong></p><ul>${qualification.map(([key, answer]) => `<li><strong>${key.replace(/&/g, "&amp;").replace(/</g, "&lt;")}:</strong> ${answer.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</li>`).join("")}</ul>` : ""}<p>${message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>")}</p>`,
+      ...leadEmail,
       tag: "client-lead",
     });
     return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
