@@ -24,6 +24,8 @@ jobs:
       FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
       PROJECT: ${{ github.event.client_payload.project }}
       PREVIEW: ${{ github.event.client_payload.preview }}
+      REVISION_FEEDBACK: ${{ github.event.client_payload.feedback }}
+      REVISION_OUTCOME: ${{ github.event.client_payload.outcome }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -38,4 +40,7 @@ jobs:
           TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "$SHA" --site "$PROJECT" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$ORIGINS" --token-only true)
           LINK="$PREVIEW?review=$TOKEN"
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Refreshed developer preview' "$PREVIEW" "$LINK")"
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$PREVIEW" --review "$LINK" --kind revision --audience developer
+          ARGS=(--to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$PREVIEW" --review "$LINK" --kind revision --audience developer)
+          if [ -n "$REVISION_FEEDBACK" ]; then printf '%s\n' "$REVISION_FEEDBACK" > "$RUNNER_TEMP/revision-feedback.txt"; ARGS+=(--feedback-file "$RUNNER_TEMP/revision-feedback.txt"); fi
+          if [ -n "$REVISION_OUTCOME" ]; then printf '%s\n' "$REVISION_OUTCOME" > "$RUNNER_TEMP/revision-outcome.txt"; ARGS+=(--outcome-file "$RUNNER_TEMP/revision-outcome.txt"); fi
+          node scripts/send-preview-email.mjs "${ARGS[@]}"
