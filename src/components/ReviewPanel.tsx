@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import type { SyntheticEvent } from "react";
 
 const apiBase = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || "").replace(
   /\/$/,
@@ -36,7 +36,9 @@ export default function ReviewPanel() {
   const isClient = claims.stage === "client";
   const invitedEmail = claims.reviewerEmail || "the invited reviewer";
 
-  async function submitFeedback(event: FormEvent) {
+  async function submitFeedback(
+    event: SyntheticEvent<HTMLFormElement, SubmitEvent>,
+  ) {
     event.preventDefault();
     if (!token || !comment.trim() || !email.trim()) return;
     setState("Sending your note…");

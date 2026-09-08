@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import type { SyntheticEvent } from "react";
 
 type Place = {
   id: string;
@@ -34,6 +34,148 @@ async function compressImage(file: File): Promise<File> {
         type: "image/webp",
       })
     : file;
+}
+
+type ImagePreview = {
+  url: string;
+  name: string;
+  size: number;
+  width?: number;
+  height?: number;
+};
+
+function imageSize(bytes: number) {
+  return bytes >= 1_000_000
+    ? `${(bytes / 1_000_000).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1_000))} KB`;
+}
+
+function ImageUploadField({
+  name,
+  label,
+  optional = false,
+}: {
+  name: string;
+  label: string;
+  optional?: boolean;
+}) {
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const previewUrlRef = useRef<string | null>(null);
+  const [preview, setPreview] = useState<ImagePreview | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  function clearPreview() {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
+    setPreview(null);
+  }
+
+  function previewFile(file?: File) {
+    if (!file?.type.startsWith("image/")) return;
+    clearPreview();
+    const url = URL.createObjectURL(file);
+    previewUrlRef.current = url;
+    setPreview({ url, name: file.name, size: file.size });
+  }
+
+  useEffect(() => {
+    const input = inputRef.current;
+    const form = input?.form;
+    const reset = () => clearPreview();
+    form?.addEventListener("reset", reset);
+    return () => {
+      form?.removeEventListener("reset", reset);
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
+
+  function removeFile() {
+    if (inputRef.current) inputRef.current.value = "";
+    clearPreview();
+  }
+
+  function acceptDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDragging(false);
+    const file = event.dataTransfer.files[0];
+    if (!file?.type.startsWith("image/") || !inputRef.current) return;
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    inputRef.current.files = transfer.files;
+    previewFile(file);
+  }
+
+  return (
+    <div
+      className={`field image-upload${dragging ? " is-dragging" : ""}`}
+      onDragEnter={(event) => {
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragOver={(event) => event.preventDefault()}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node))
+          setDragging(false);
+      }}
+      onDrop={acceptDrop}
+    >
+      <div className="image-upload-label">
+        <label htmlFor={inputId}>{label}</label>
+        {optional && <span>Optional</span>}
+      </div>
+      <input
+        ref={inputRef}
+        className="image-upload-input"
+        id={inputId}
+        name={name}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        onChange={(event) => previewFile(event.currentTarget.files?.[0])}
+      />
+      {preview ? (
+        <figure className="image-preview-card">
+          <img
+            src={preview.url}
+            alt={`Preview of ${label.toLowerCase()}`}
+            onLoad={(event) => {
+              const image = event.currentTarget;
+              setPreview((current) =>
+                current?.url === preview.url
+                  ? {
+                      ...current,
+                      width: image.naturalWidth,
+                      height: image.naturalHeight,
+                    }
+                  : current,
+              );
+            }}
+          />
+          <figcaption>
+            <strong title={preview.name}>{preview.name}</strong>
+            <span>
+              {preview.width && preview.height
+                ? `${preview.width} × ${preview.height} · `
+                : ""}
+              {imageSize(preview.size)}
+            </span>
+            <div className="image-preview-actions">
+              <label htmlFor={inputId}>Replace</label>
+              <button type="button" onClick={removeFile}>
+                Remove
+              </button>
+            </div>
+          </figcaption>
+        </figure>
+      ) : (
+        <label className="image-upload-empty" htmlFor={inputId}>
+          <span aria-hidden="true">＋</span>
+          <strong>Choose an image</strong>
+          <small>PNG, JPEG, or WebP. You can also drop it here.</small>
+        </label>
+      )}
+    </div>
+  );
 }
 
 export default function OnboardingForm() {
@@ -166,7 +308,7 @@ export default function OnboardingForm() {
     }
   }
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
@@ -322,16 +464,19 @@ export default function OnboardingForm() {
                 {searching ? "Finding…" : "Find listing"}
               </button>
             </div>
-            <button
-              className="text-button"
-              type="button"
-              onClick={() => {
-                setShowLookup(false);
-                setPlace(null);
-              }}
-            >
-              I don’t have a Google Business Profile. Enter details manually
-            </button>
+            <div className="manual-entry">
+              <span>I don’t have a Google Business Profile</span>
+              <button
+                className="button manual-entry-button"
+                type="button"
+                onClick={() => {
+                  setShowLookup(false);
+                  setPlace(null);
+                }}
+              >
+                Enter details manually
+              </button>
+            </div>
             {place && (
               <aside className="place-card">
                 <div>
@@ -582,46 +727,19 @@ export default function OnboardingForm() {
               placeholder="Colors or fonts you love (or hate), competitors to avoid resembling, words we should use or avoid…"
             />
           </label>
-          <label className="field">
-            Logo
-            <input
-              name="logo"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-            />
-          </label>
-          <label className="field">
-            Business photo 1
-            <input
-              name="photoOne"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-            />
-          </label>
-          <label className="field">
-            Business photo 2
-            <input
-              name="photoTwo"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-            />
-          </label>
-          <label className="field">
-            Business photo 3
-            <input
-              name="photoThree"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-            />
-          </label>
-          <label className="field">
-            Owner/team photo (optional)
-            <input
-              name="teamPhoto"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-            />
-          </label>
+          <ImageUploadField name="logo" label="Logo" optional />
+          <ImageUploadField name="photoOne" label="Business photo 1" optional />
+          <ImageUploadField name="photoTwo" label="Business photo 2" optional />
+          <ImageUploadField
+            name="photoThree"
+            label="Business photo 3"
+            optional
+          />
+          <ImageUploadField
+            name="teamPhoto"
+            label="Owner or team photo"
+            optional
+          />
           <label className="field full">
             Social links (optional)
             <input
