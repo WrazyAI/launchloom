@@ -301,6 +301,61 @@ try {
     });
     await page.close();
   }
+
+  const reviewPage = await browser.newPage({
+    viewport: { width: 1440, height: 1000 },
+    deviceScaleFactor: 1,
+  });
+  const reviewClaims = Buffer.from(
+    JSON.stringify({
+      stage: "developer",
+      reviewerEmail: "developer@example.com",
+    }),
+  ).toString("base64url");
+  await reviewPage.goto(`${url}?review=${reviewClaims}.test-signature`, {
+    waitUntil: "networkidle",
+  });
+  const reviewRoot = reviewPage.locator("#ll-review");
+  if (await reviewRoot.isVisible()) {
+    await reviewRoot.locator(".ll-feedback-open").click();
+    const closeTip = reviewRoot.locator(".ll-close-tip");
+    if (await closeTip.isVisible())
+      failures.push("review: empty feedback form shows the draft hint.");
+    await reviewRoot
+      .locator('input[name="email"]')
+      .fill("developer@example.com");
+    await reviewRoot.locator(".ll-close").hover();
+    if (await closeTip.isVisible())
+      failures.push("review: reviewer email alone shows the feedback draft hint.");
+    const comment = reviewRoot.locator('textarea[name="comment"]');
+    await comment.fill("Please refine the opening headline.");
+    await reviewRoot.locator(".ll-close").hover();
+    await reviewPage.waitForTimeout(180);
+    if (!(await closeTip.isVisible())) {
+      const hintState = await closeTip.evaluate((element) => ({
+        hidden: element.hasAttribute("hidden"),
+        describedBy:
+          element.parentElement
+            ?.querySelector(".ll-close")
+            ?.getAttribute("aria-describedby") || "",
+        display: getComputedStyle(element).display,
+        visibility: getComputedStyle(element).visibility,
+        opacity: getComputedStyle(element).opacity,
+        parentHovered: element.parentElement?.matches(":hover") || false,
+      }));
+      failures.push(
+        `review: feedback draft hint did not appear on close hover: ${JSON.stringify(hintState)}.`,
+      );
+    }
+    await reviewPage.screenshot({
+      path: path.join(screenshotDir, "developer-feedback-draft.png"),
+    });
+    await reviewRoot.locator(".ll-close").click();
+    await reviewRoot.locator(".ll-feedback-open").click();
+    if ((await comment.inputValue()) !== "Please refine the opening headline.")
+      failures.push("review: feedback draft was lost after closing the modal.");
+  }
+  await reviewPage.close();
 } finally {
   await browser.close();
   server.close();

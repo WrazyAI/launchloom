@@ -12,7 +12,10 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
   </div>
   <div class="ll-review__modal" hidden role="dialog" aria-modal="true" aria-labelledby="ll-review-title">
     <div class="ll-review__dialog">
-      <button class="ll-close" type="button" aria-label="Close feedback form">×</button>
+      <div class="ll-close-control">
+        <button class="ll-close" type="button" aria-label="Close feedback form">×</button>
+        <span class="ll-close-tip" id="ll-close-draft-tip" role="tooltip" hidden>Draft stays here when closed.</span>
+      </div>
       <h2 id="ll-review-title">What would you like changed?</h2>
       <p class="ll-review__intro">Tap what applies, then leave a clear note.</p>
       <div class="ll-categories" aria-label="Feedback category">
@@ -27,6 +30,58 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
     </div>
   </div>
 </aside>
+
+<style>
+  .ll-close-control {
+    position: absolute;
+    right: 14px;
+    top: 10px;
+    z-index: 2;
+  }
+
+  .ll-close-control .ll-close {
+    position: static;
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+  }
+
+  .ll-close-tip {
+    position: absolute;
+    top: calc(100% + 7px);
+    right: 0;
+    width: max-content;
+    max-width: min(230px, calc(100vw - 56px));
+    padding: 8px 10px;
+    border-radius: 5px;
+    background: #18251f;
+    color: #fff;
+    box-shadow: 0 8px 24px #0003;
+    font-size: 0.72rem;
+    font-weight: 650;
+    line-height: 1.35;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-3px);
+    transition:
+      opacity 120ms ease,
+      transform 120ms ease,
+      visibility 120ms ease;
+  }
+
+  .ll-close-tip[hidden] {
+    display: none;
+  }
+
+  .ll-close-control:hover .ll-close-tip,
+  .ll-close-control:focus-within .ll-close-tip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+</style>
 
 <script is:inline define:vars={{ launchloomUrl }}>
   const root = document.querySelector("#ll-review");
@@ -45,12 +100,23 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
     const modal = root.querySelector(".ll-review__modal");
     const open = root.querySelector(".ll-feedback-open");
     const close = root.querySelector(".ll-close");
+    const closeTip = root.querySelector(".ll-close-tip");
     const cancel = root.querySelector(".ll-cancel");
     const approve = root.querySelector(".ll-approve");
     const form = root.querySelector(".ll-feedback-form");
     const status = root.querySelector(".ll-feedback-status");
     const emailInput = form.querySelector('input[name="email"]');
+    const commentInput = form.querySelector('textarea[name="comment"]');
     const selectedCategories = new Set();
+    const updateDraftHint = () => {
+      const hasDraft = Boolean(
+        selectedCategories.size ||
+        commentInput.value.trim()
+      );
+      closeTip.toggleAttribute("hidden", !hasDraft);
+      if (hasDraft) close.setAttribute("aria-describedby", "ll-close-draft-tip");
+      else close.removeAttribute("aria-describedby");
+    };
     root.querySelector(".ll-review__summary").innerHTML = developer
       ? "<span aria-hidden=\"true\">▣</span> Internal developer review. Approve before the client sees this."
       : "<span aria-hidden=\"true\">▣</span> Your website is live. Tell us what you would like changed.";
@@ -73,8 +139,10 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
       if (selectedCategories.has(value)) selectedCategories.delete(value); else selectedCategories.add(value);
       button.classList.toggle("is-active", selectedCategories.has(value));
       button.setAttribute("aria-pressed", String(selectedCategories.has(value)));
+      updateDraftHint();
     }));
-    emailInput.addEventListener("input", () => emailInput.setCustomValidity(""));
+    emailInput.addEventListener("input", () => { emailInput.setCustomValidity(""); updateDraftHint(); });
+    commentInput.addEventListener("input", updateDraftHint);
     const verifyEmail = (submittedEmail) => {
       if (submittedEmail === String(claims.reviewerEmail || "").toLowerCase()) return true;
       const message = "Use the same email address that received this review link.";
@@ -89,7 +157,7 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
         const response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href }) });
         const result = await response.json(); if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");
         status.textContent = developer ? "Received. A revised developer preview will be sent shortly." : "Received. We will review your request before publishing an update.";
-        form.reset(); selectedCategories.clear(); root.querySelectorAll("[data-category]").forEach((button) => { button.classList.remove("is-active"); button.setAttribute("aria-pressed", "false"); });
+        form.reset(); selectedCategories.clear(); root.querySelectorAll("[data-category]").forEach((button) => { button.classList.remove("is-active"); button.setAttribute("aria-pressed", "false"); }); updateDraftHint();
       } catch (error) { status.textContent = error instanceof Error ? error.message : "Feedback could not be sent."; }
     });
     approve.addEventListener("click", async () => {
