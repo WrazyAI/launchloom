@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
 
 const apiBase = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || "").replace(
@@ -24,6 +24,8 @@ export default function ReviewPanel() {
   const [comment, setComment] = useState("");
   const [email, setEmail] = useState("");
   const [state, setState] = useState("");
+  const [sending, setSending] = useState(false);
+  const submissionId = useRef("");
 
   useEffect(() => {
     const value =
@@ -41,28 +43,43 @@ export default function ReviewPanel() {
   ) {
     event.preventDefault();
     if (!token || !comment.trim() || !email.trim()) return;
+    submissionId.current ||= crypto.randomUUID();
+    setSending(true);
     setState("Sending your note…");
-    const response = await fetch(`${apiBase}/api/feedback`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token,
-        comment,
-        email,
-        pageUrl: window.location.href,
-      }),
-    });
-    const data = (await response.json().catch(() => ({}))) as {
-      error?: string;
-    };
-    setState(
-      response.ok
-        ? isDeveloper
-          ? "Feedback sent. A fresh internal preview will follow."
-          : "Feedback received. We’ll review it before publishing an update."
-        : data.error || "We couldn’t save that note. Please try again.",
-    );
-    if (response.ok) setComment("");
+    try {
+      const response = await fetch(`${apiBase}/api/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          comment,
+          email,
+          pageUrl: window.location.href,
+          submissionId: submissionId.current,
+        }),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        queueStatus?: "started" | "queued" | "duplicate";
+      };
+      setState(
+        response.ok
+          ? data.queueStatus === "queued"
+            ? "Queued. Your request will start after the current revision."
+            : isDeveloper
+              ? "Feedback sent. A fresh internal preview will follow."
+              : "Feedback received. We’ll review it before publishing an update."
+          : data.error || "We couldn’t save that note. Please try again.",
+      );
+      if (response.ok) {
+        setComment("");
+        submissionId.current = "";
+      }
+    } catch {
+      setState("We couldn’t save that note. Please try again.");
+    } finally {
+      setSending(false);
+    }
   }
 
   async function approve() {
@@ -134,7 +151,7 @@ export default function ReviewPanel() {
               placeholder="For example: Make the main headline more direct and make the phone number more prominent."
             />
           </label>
-          <button className="button" type="submit">
+          <button className="button" type="submit" disabled={sending}>
             Send feedback
           </button>
         </form>

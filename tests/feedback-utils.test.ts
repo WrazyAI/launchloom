@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   feedbackTextFromComment,
+  pendingFeedbackFromComments,
   revisionIntakeFromConfig,
 } from "../scripts/feedback-utils.mjs";
 
@@ -40,5 +41,23 @@ describe("revision feedback", () => {
     expect(intake.businessName).toBe("Daley Hope Health Care");
     expect(intake.services).toBe("Home care");
     expect(intake.assets.logo).toBe("https://assets.example/logo.png");
+  });
+
+  it("applies only the exact queued feedback comment when requested", () => {
+    const comments = [
+      {
+        created_at: "2026-09-08T10:00:00Z",
+        body: "<!-- launchloom-revision:developer -->\nFirst revision",
+      },
+      {
+        created_at: "2026-09-08T09:00:00Z",
+        body: "<!-- launchloom-feedback:developer -->\n**Developer feedback**\n\nOlder note",
+      },
+    ];
+
+    expect(pendingFeedbackFromComments(comments, "developer")).toEqual([]);
+    expect(
+      pendingFeedbackFromComments([comments[1]], "developer", true),
+    ).toEqual(["Older note"]);
   });
 });

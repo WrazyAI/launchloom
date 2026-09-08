@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { feedbackTextFromComment } from "./feedback-utils.mjs";
+import { pendingFeedbackFromComments } from "./feedback-utils.mjs";
 import {
   expectedArtifacts,
   planRevision,
@@ -17,8 +17,13 @@ if (!repo || !pr || !feedbackIssue)
 if (!process.env.GITHUB_ORG_TOKEN)
   throw new Error("GITHUB_ORG_TOKEN is required.");
 
+const exactComment = String(process.env.FEEDBACK_COMMENT_ID || "").trim();
+if (exactComment && !/^\d+$/.test(exactComment))
+  throw new Error("FEEDBACK_COMMENT_ID must be a GitHub issue comment ID.");
 const response = await fetch(
-  `https://api.github.com/repos/${repo}/issues/${feedbackIssue}/comments`,
+  exactComment
+    ? `https://api.github.com/repos/${repo}/issues/comments/${exactComment}`
+    : `https://api.github.com/repos/${repo}/issues/${feedbackIssue}/comments`,
   {
     headers: {
       Authorization: `Bearer ${process.env.GITHUB_ORG_TOKEN}`,
@@ -30,24 +35,14 @@ const response = await fetch(
 );
 if (!response.ok)
   throw new Error(`Could not fetch feedback: ${response.status}`);
-const comments = await response.json();
+const payload = await response.json();
+const comments = exactComment ? [payload] : payload;
 const stage = process.env.FEEDBACK_STAGE === "client" ? "client" : "developer";
-const latestRevision = comments
-  .filter((comment) =>
-    comment.body?.includes(`<!-- launchloom-revision:${stage} -->`),
-  )
-  .sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at),
-  )[0]?.created_at;
-const feedback = comments
-  .filter(
-    (comment) =>
-      comment.body?.includes(`<!-- launchloom-feedback:${stage} -->`) &&
-      (!latestRevision ||
-        new Date(comment.created_at) > new Date(latestRevision)),
-  )
-  .map((comment) => feedbackTextFromComment(comment.body))
-  .filter(Boolean);
+const feedback = pendingFeedbackFromComments(
+  comments,
+  stage,
+  Boolean(exactComment),
+);
 if (!feedback.length) {
   console.log("No pending LaunchLoom feedback.");
   process.exit(0);

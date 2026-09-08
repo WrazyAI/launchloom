@@ -6,6 +6,8 @@ export type LifecycleEmailInput = {
   reviewUrl?: string;
   clientFeedback?: string;
   revisionOutcome?: string;
+  queuedFeedback?: string;
+  queuedStage?: "developer" | "client";
 };
 
 export type LeadEmailInput = {

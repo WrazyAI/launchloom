@@ -1,0 +1,32 @@
+name: Recover paused revision queue
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: Client repository, for example WrazyAI/launchloom-12-example
+        required: true
+        type: string
+      request_id:
+        description: Failed revision request ID from the developer alert
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  resume:
+    runs-on: ubuntu-latest
+    env:
+      CLIENT_REPO: ${{ inputs.repo }}
+      REVISION_REQUEST_ID: ${{ inputs.request_id }}
+      REVISION_QUEUE_ACTION: resume
+      REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
+      LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22 }
+      - name: Resume failed request
+        run: node scripts/revision-queue-client.mjs

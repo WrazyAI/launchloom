@@ -1,4 +1,10 @@
 import { renderLeadEmail } from "../../emails/render-email.mjs";
+import {
+  RevisionCoordinator,
+  type RevisionRequestInput,
+} from "./revision-coordinator";
+
+export { RevisionCoordinator } from "./revision-coordinator";
 
 export interface Env {
   ASSETS: {
@@ -17,6 +23,8 @@ export interface Env {
   RESEND_API_KEY?: string;
   LAUNCHLOOM_FROM_EMAIL?: string;
   LAUNCHLOOM_FEEDBACK_EMAIL?: string;
+  REVISION_COORDINATOR_SECRET: string;
+  REVISION_COORDINATOR: DurableObjectNamespace<RevisionCoordinator>;
   TURNSTILE_SECRET_KEY?: string;
 }
 
@@ -53,6 +61,26 @@ const json = (value: unknown, status = 200, headers: HeadersInit = {}) =>
   });
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
+
+async function digest(value: string) {
+  return Array.from(
+    new Uint8Array(
+      await crypto.subtle.digest("SHA-256", encoder.encode(value)),
+    ),
+  )
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function constantTimeEqual(left: string, right: string) {
+  const a = encoder.encode(left);
+  const b = encoder.encode(right);
+  let difference = a.length ^ b.length;
+  const length = Math.max(a.length, b.length);
+  for (let index = 0; index < length; index += 1)
+    difference |= (a[index] || 0) ^ (b[index] || 0);
+  return difference === 0;
+}
 
 function fromBase64url(value: string) {
   const padded = value
@@ -561,7 +589,7 @@ async function feedback(request: Request, env: Env) {
   if (request.method !== "POST")
     return new Response("Method not allowed", { status: 405, headers });
   try {
-    const { token, comment, pageUrl, email, category } =
+    const { token, comment, pageUrl, email, category, submissionId } =
       (await request.json()) as Record<string, unknown>;
     const claims = await verifyHmac<ReviewClaims>(
       String(token || ""),
@@ -615,34 +643,54 @@ async function feedback(request: Request, env: Env) {
     } else if (!claims.feedbackIssue) {
       throw new Error("Invalid client review link.");
     }
-    const issueNumber =
-      claims.stage === "developer" ? claims.pr : claims.feedbackIssue;
     // Feedback comments are durable GitHub records. Keep only the reviewed
     // page's public origin/path there; never retain the signed query token.
     const reviewedPage =
       new URL(String(pageUrl)).origin + new URL(String(pageUrl)).pathname;
-    await github(env, `/repos/${claims.repo}/issues/${issueNumber}/comments`, {
-      method: "POST",
-      body: JSON.stringify({
-        body: `<!-- launchloom-feedback:${claims.stage} -->\n**${claims.stage === "developer" ? "Developer" : "Client"} feedback${category ? ` · ${clean(category, 80)}` : ""}**\n\n${note}\n\n_Page: ${clean(reviewedPage, 1000)}_`,
-      }),
-    });
-    await dispatch(
-      env,
-      claims.stage === "developer"
-        ? "process-developer-feedback"
-        : "process-client-feedback",
-      {
-        repo: claims.repo,
-        pr: claims.pr,
-        feedbackIssue: claims.feedbackIssue,
-        siteId: claims.siteId,
-        clientEmail: claims.clientEmail,
-      },
+    const suppliedId = clean(submissionId, 100);
+    const requestId = /^[a-z0-9-]{12,100}$/i.test(suppliedId)
+      ? suppliedId
+      : crypto.randomUUID();
+    const fingerprint = await digest(
+      suppliedId
+        ? `submission:${requestId}`
+        : [
+            claims.stage,
+            claims.repo,
+            note,
+            clean(category, 80),
+            reviewedPage,
+          ].join("\n"),
     );
+    const queued = await env.REVISION_COORDINATOR.getByName(
+      claims.repo.toLowerCase(),
+    ).enqueue({
+      requestId,
+      fingerprint,
+      stage: claims.stage,
+      repo: claims.repo,
+      pr: claims.pr,
+      feedbackIssue: claims.feedbackIssue,
+      siteId: claims.siteId,
+      clientEmail: claims.clientEmail,
+      reviewedPage: clean(reviewedPage, 1000),
+      category: clean(category, 80),
+      feedback: note,
+    } satisfies RevisionRequestInput);
+    if (!queued.ok)
+      return json(
+        { error: queued.error, code: queued.code },
+        409,
+        cors(request, claims.allowedOrigins),
+      );
     return json(
-      { ok: true, stage: claims.stage },
-      200,
+      {
+        ok: true,
+        stage: claims.stage,
+        requestId: queued.requestId,
+        queueStatus: queued.queueStatus,
+      },
+      queued.queueStatus === "duplicate" ? 200 : 202,
       cors(request, claims.allowedOrigins),
     );
   } catch (error) {
@@ -657,6 +705,44 @@ async function feedback(request: Request, env: Env) {
       403,
       headers,
     );
+  }
+}
+
+async function revisionCoordinator(request: Request, env: Env) {
+  if (request.method !== "POST")
+    return json({ error: "Method not allowed" }, 405);
+  const authorization = request.headers.get("Authorization") || "";
+  const supplied = authorization.startsWith("Bearer ")
+    ? authorization.slice(7)
+    : "";
+  if (
+    !env.REVISION_COORDINATOR_SECRET ||
+    !constantTimeEqual(supplied, env.REVISION_COORDINATOR_SECRET)
+  )
+    return json({ error: "Unauthorized" }, 401);
+  try {
+    const body = (await request.json()) as Record<string, unknown>;
+    const repo = clean(body.repo, 240);
+    const requestId = clean(body.requestId, 100);
+    const action = clean(body.action, 30);
+    if (!repo.startsWith("WrazyAI/") || !requestId)
+      return json({ error: "Invalid revision request." }, 400);
+    const coordinator = env.REVISION_COORDINATOR.getByName(repo.toLowerCase());
+    if (action === "claim") return json(await coordinator.claim(requestId));
+    if (action === "complete")
+      return json(await coordinator.complete(requestId));
+    if (action === "fail")
+      return json(
+        await coordinator.fail(
+          requestId,
+          clean(body.reason, 500) || "Revision workflow failed.",
+        ),
+      );
+    if (action === "resume") return json(await coordinator.resume(requestId));
+    return json({ error: "Unsupported revision action." }, 400);
+  } catch (error) {
+    console.error("Revision coordinator failed", error);
+    return json({ error: "Revision coordination failed." }, 500);
   }
 }
 
@@ -699,6 +785,21 @@ async function approval(request: Request, env: Env) {
     )
       return json(
         { error: "This preview has changed. Ask for a fresh approval link." },
+        409,
+        cors(request, claims.allowedOrigins),
+      );
+    const queue = await env.REVISION_COORDINATOR.getByName(
+      claims.repo.toLowerCase(),
+    ).approvalState();
+    if (!queue.allowed)
+      return json(
+        {
+          code: queue.code,
+          error:
+            queue.code === "revision_queue_halted"
+              ? "Revision processing is paused after a failure. Resolve it before publishing."
+              : "A website revision is still in progress. Review the final revision before publishing.",
+        },
         409,
         cors(request, claims.allowedOrigins),
       );
@@ -803,6 +904,8 @@ export default {
     if (path === "/api/places") return places(request, env);
     if (path === "/api/google-reviews") return googleReviews(request, env);
     if (path === "/api/feedback") return feedback(request, env);
+    if (path === "/api/internal/revisions")
+      return revisionCoordinator(request, env);
     if (path === "/api/approval") return approval(request, env);
     if (path === "/api/lead") return lead(request, env);
     return new Response("Not found", { status: 404 });

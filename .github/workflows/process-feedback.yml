@@ -11,6 +11,10 @@ permissions:
 jobs:
   revise:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: site-revision-${{ github.event.client_payload.repo }}
+      cancel-in-progress: false
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
@@ -21,17 +25,28 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
+      LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+      REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
+      REVISION_REQUEST_ID: ${{ github.event.client_payload.requestId }}
+      FEEDBACK_COMMENT_ID: ${{ github.event.client_payload.feedbackComment }}
       CLIENT_REPO: ${{ github.event.client_payload.repo }}
       CLIENT_PR: ${{ github.event.client_payload.pr }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
+      - name: Claim exact revision request
+        id: claim
+        env:
+          REVISION_QUEUE_ACTION: claim
+        run: node scripts/revision-queue-client.mjs
       - name: Install revision verifier
+        if: steps.claim.outputs.run == 'true'
         run: |
           npm ci
           npx playwright install --with-deps chromium
       - name: Clone review branch
+        if: steps.claim.outputs.run == 'true'
         id: branch
         run: |
           BRANCH=$(gh pr view "$CLIENT_PR" --repo "$CLIENT_REPO" --json headRefName --jq .headRefName)
@@ -39,14 +54,16 @@ jobs:
           echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
           echo "feedback_issue=$(gh pr view "$CLIENT_PR" --repo "$CLIENT_REPO" --json body --jq '.body | capture("launchloom-feedback-inbox:(?<id>[0-9]+)").id')" >> "$GITHUB_OUTPUT"
       - name: Apply supported revisions
+        if: steps.claim.outputs.run == 'true'
         id: apply_feedback
         run: CLIENT_CONFIG_PATH="$RUNNER_TEMP/client/src/site.config.json" FEEDBACK_ISSUE="$CLIENT_PR" FEEDBACK_STAGE=developer FEEDBACK_SUMMARY_PATH="$RUNNER_TEMP/developer-feedback.txt" FEEDBACK_OUTCOME_PATH="$RUNNER_TEMP/revision-outcome.txt" node scripts/apply-feedback.mjs
       - name: Flag feedback that needs manual attention
-        if: failure() && steps.apply_feedback.outcome == 'failure'
+        if: steps.claim.outputs.run == 'true' && failure() && steps.apply_feedback.outcome == 'failure'
         run: |
           DETAILS=$(test -f "$RUNNER_TEMP/revision-outcome.txt" && sed -n '1,80p' "$RUNNER_TEMP/revision-outcome.txt" || printf '%s' 'No supported revision result was produced.')
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-manual-attention:developer -->' '## Manual attention needed' 'The requested feedback was not fully fulfilled, so no revised preview or completion email was sent.' "$DETAILS")"
       - name: Configure live Google review proof
+        if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
         run: |
           PROJECT=$(node -e "console.log(require('$RUNNER_TEMP/client/.launchloom-deployment.json').project)")
           PLACE_ID=$(node -e "const x=require('$RUNNER_TEMP/client/src/site.config.json'); console.log(x.socialProof?.source === 'google_reviews' ? x.business.placeId || '' : '')")
@@ -57,12 +74,13 @@ jobs:
             node scripts/enrich-site-config.mjs --file "$RUNNER_TEMP/client/src/site.config.json" --api https://api.launchloom.wrazyos.com --reviewsToken "$REVIEWS_TOKEN"
           fi
       - name: Build and direct-upload revised preview
+        if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
         id: deploy
         run: |
           CLIENT_DIR="$RUNNER_TEMP/client"
           node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$CLIENT_DIR"
           cd "$CLIENT_DIR"
-          if git diff --quiet; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if git diff --quiet; then echo "Feedback produced no reviewable site change." >&2; exit 1; fi
           git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
           git add src public AGENTS.md docs/site-generation-guidelines.md; git commit -m "Apply developer feedback"; git push origin "${{ steps.branch.outputs.name }}"
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
@@ -84,6 +102,13 @@ jobs:
           name: developer-revision-screenshots
           path: ${{ runner.temp }}/revision-screenshots
           retention-days: 14
+      - name: Complete request and start queued revision
+        id: complete
+        if: steps.claim.outputs.run == 'true' && steps.deploy.outcome == 'success'
+        env:
+          REVISION_QUEUE_ACTION: complete
+          QUEUED_FEEDBACK_PATH: ${{ runner.temp }}/queued-feedback.txt
+        run: node scripts/revision-queue-client.mjs
       - name: Post and email revised review link
         if: steps.deploy.outputs.changed == 'true'
         run: |
@@ -93,4 +118,12 @@ jobs:
           TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.deploy.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "${{ steps.branch.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
           LINK="${{ steps.deploy.outputs.preview }}?review=$TOKEN"
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Revised developer preview' '${{ steps.deploy.outputs.preview }}' "$LINK")"
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision --audience developer --feedback-file "$RUNNER_TEMP/developer-feedback.txt" --outcome-file "$RUNNER_TEMP/revision-outcome.txt"
+          ARGS=(--to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision --audience developer --feedback-file "$RUNNER_TEMP/developer-feedback.txt" --outcome-file "$RUNNER_TEMP/revision-outcome.txt" --idempotency-key "developer-revision-$REVISION_REQUEST_ID")
+          if [ -s "$RUNNER_TEMP/queued-feedback.txt" ]; then ARGS+=(--queued-feedback-file "$RUNNER_TEMP/queued-feedback.txt" --queued-stage "${{ steps.complete.outputs.queued_stage }}"); fi
+          node scripts/send-preview-email.mjs "${ARGS[@]}"
+      - name: Pause revision queue after workflow failure
+        if: always() && steps.claim.outputs.run == 'true' && steps.complete.outcome != 'success'
+        env:
+          REVISION_QUEUE_ACTION: fail
+          REVISION_FAILURE_REASON: Developer revision workflow failed. Inspect GitHub Actions run ${{ github.run_id }}.
+        run: node scripts/revision-queue-client.mjs

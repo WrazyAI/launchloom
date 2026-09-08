@@ -77,6 +77,24 @@ describe("LaunchLoom lifecycle emails", () => {
     expect(email.text).toContain("Applied both supported changes");
     expect(email.text.length).toBeLessThan(14_000);
   });
+
+  it("shows the promoted queued request in the developer revision email", () => {
+    const email = renderLifecycleEmail({
+      audience: "developer",
+      kind: "revision",
+      clientName: "North Shore Care",
+      previewUrl: "https://north-shore-care.pages.dev",
+      reviewUrl: signedReviewUrl,
+      clientFeedback: "[Wording] Tighten the headline.",
+      queuedFeedback: "[Photos] Replace the team photo.",
+      queuedStage: "developer",
+    });
+
+    expect(email.html).toContain("Your queued request is now in progress");
+    expect(email.html).toContain("Replace the team photo.");
+    expect(email.text).toContain("YOUR QUEUED REQUEST IS NOW IN PROGRESS");
+    expect(email.html).not.toContain("—");
+  });
 });
 
 describe("LaunchLoom lead emails", () => {

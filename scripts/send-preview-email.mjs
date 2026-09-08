@@ -29,6 +29,7 @@ const audience = ["developer", "client", "delivery-failure"].includes(
   : "client";
 const feedbackFile = String(args["feedback-file"] || "").trim();
 const outcomeFile = String(args["outcome-file"] || "").trim();
+const queuedFeedbackFile = String(args["queued-feedback-file"] || "").trim();
 const clientFeedback = feedbackFile
   ? (await fs.readFile(feedbackFile, "utf8"))
       .replace(/\u0000/g, "")
@@ -41,6 +42,12 @@ const revisionOutcome = outcomeFile
       .trim()
       .slice(0, 1_000)
   : "";
+const queuedFeedback = queuedFeedbackFile
+  ? (await fs.readFile(queuedFeedbackFile, "utf8"))
+      .replace(/\u0000/g, "")
+      .trim()
+      .slice(0, 12_000)
+  : "";
 if (!previewUrl) throw new Error("--preview is required.");
 
 if (!recipient) throw new Error("--to is required.");
@@ -52,6 +59,8 @@ const { subject, html, text } = renderLifecycleEmail({
   reviewUrl,
   clientFeedback,
   revisionOutcome,
+  queuedFeedback,
+  queuedStage: String(args["queued-stage"] || "developer"),
 });
 
 if (!resendKey || !from) {
@@ -62,7 +71,7 @@ if (!resendKey || !from) {
   process.exit(0);
 }
 
-const response = await fetch("https://api.resend.com/emails", {
+const request = {
   method: "POST",
   headers: {
     Authorization: `Bearer ${resendKey}`,
@@ -79,7 +88,27 @@ const response = await fetch("https://api.resend.com/emails", {
     text,
     tags: [{ name: "launchloom_kind", value: `${audience}-${kind}` }],
   }),
-});
+};
+let response;
+let lastError;
+for (let attempt = 1; attempt <= 3; attempt += 1) {
+  try {
+    response = await fetch("https://api.resend.com/emails", {
+      ...request,
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (response.ok || ![429, 500, 502, 503, 504].includes(response.status))
+      break;
+  } catch (error) {
+    lastError = error;
+  }
+  if (attempt < 3)
+    await new Promise((resolve) => setTimeout(resolve, attempt * 1_000));
+}
+if (!response)
+  throw new Error(
+    `Email delivery failed after 3 attempts: ${lastError instanceof Error ? lastError.message : "network error"}`,
+  );
 if (!response.ok)
   throw new Error(
     `Resend rejected email: ${response.status} ${(await response.text()).slice(0, 300)}`,

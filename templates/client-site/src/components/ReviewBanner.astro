@@ -107,7 +107,9 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
     const status = root.querySelector(".ll-feedback-status");
     const emailInput = form.querySelector('input[name="email"]');
     const commentInput = form.querySelector('textarea[name="comment"]');
+    const send = form.querySelector(".ll-send");
     const selectedCategories = new Set();
+    let feedbackSubmissionId = "";
     const updateDraftHint = () => {
       const hasDraft = Boolean(
         selectedCategories.size ||
@@ -152,13 +154,19 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
       event.preventDefault();
       const data = new FormData(form); const submittedEmail = String(data.get("email") || "").trim().toLowerCase();
       if (!verifyEmail(submittedEmail)) return;
+      feedbackSubmissionId ||= crypto.randomUUID();
+      send.disabled = true;
       status.textContent = "Sending…";
       try {
-        const response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href }) });
+        const response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href, submissionId: feedbackSubmissionId }) });
         const result = await response.json(); if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");
-        status.textContent = developer ? "Received. A revised developer preview will be sent shortly." : "Received. We will review your request before publishing an update.";
+        status.textContent = result.queueStatus === "queued"
+          ? "Queued. Your request will start after the current revision."
+          : developer ? "Received. A revised developer preview will be sent shortly." : "Received. We will review your request before publishing an update.";
+        feedbackSubmissionId = "";
         form.reset(); selectedCategories.clear(); root.querySelectorAll("[data-category]").forEach((button) => { button.classList.remove("is-active"); button.setAttribute("aria-pressed", "false"); }); updateDraftHint();
       } catch (error) { status.textContent = error instanceof Error ? error.message : "Feedback could not be sent."; }
+      finally { send.disabled = false; }
     });
     approve.addEventListener("click", async () => {
       if (!window.confirm("Approve this exact version, publish it, and send the client their review link?")) return;

@@ -13,6 +13,29 @@ export function feedbackTextFromComment(body) {
   return category ? `[${category}] ${note}` : note;
 }
 
+export function pendingFeedbackFromComments(comments, stage, exact = false) {
+  const safeStage = stage === "client" ? "client" : "developer";
+  const records = Array.isArray(comments) ? comments : [];
+  const latestRevision = exact
+    ? null
+    : records
+        .filter((comment) =>
+          comment.body?.includes(`<!-- launchloom-revision:${safeStage} -->`),
+        )
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0]
+        ?.created_at;
+  return records
+    .filter(
+      (comment) =>
+        comment.body?.includes(`<!-- launchloom-feedback:${safeStage} -->`) &&
+        (exact ||
+          !latestRevision ||
+          new Date(comment.created_at) > new Date(latestRevision)),
+    )
+    .map((comment) => feedbackTextFromComment(comment.body))
+    .filter(Boolean);
+}
+
 export function revisionIntakeFromConfig(config, feedback) {
   return {
     businessName: config.business?.name || "Your business",

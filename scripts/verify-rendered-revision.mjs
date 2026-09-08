@@ -312,6 +312,30 @@ try {
       reviewerEmail: "developer@example.com",
     }),
   ).toString("base64url");
+  const submittedIds = [];
+  let feedbackAttempt = 0;
+  await reviewPage.route("**/api/feedback", async (route) => {
+    const payload = JSON.parse(route.request().postData() || "{}");
+    submittedIds.push(payload.submissionId);
+    feedbackAttempt += 1;
+    const rejected = feedbackAttempt === 1;
+    await route.fulfill({
+      status: rejected ? 409 : 202,
+      contentType: "application/json",
+      headers: {
+        "Access-Control-Allow-Origin": new URL(url).origin,
+      },
+      body: JSON.stringify(
+        rejected
+          ? {
+              code: "revision_queue_full",
+              error:
+                "One request is already waiting. Try again when it starts.",
+            }
+          : { ok: true, queueStatus: "queued" },
+      ),
+    });
+  });
   await reviewPage.goto(`${url}?review=${reviewClaims}.test-signature`, {
     waitUntil: "networkidle",
   });
@@ -326,7 +350,9 @@ try {
       .fill("developer@example.com");
     await reviewRoot.locator(".ll-close").hover();
     if (await closeTip.isVisible())
-      failures.push("review: reviewer email alone shows the feedback draft hint.");
+      failures.push(
+        "review: reviewer email alone shows the feedback draft hint.",
+      );
     const comment = reviewRoot.locator('textarea[name="comment"]');
     await comment.fill("Please refine the opening headline.");
     await reviewRoot.locator(".ll-close").hover();
@@ -354,6 +380,30 @@ try {
     await reviewRoot.locator(".ll-feedback-open").click();
     if ((await comment.inputValue()) !== "Please refine the opening headline.")
       failures.push("review: feedback draft was lost after closing the modal.");
+    await reviewRoot.locator(".ll-send").click();
+    await reviewRoot
+      .locator(".ll-feedback-status")
+      .getByText("One request is already waiting. Try again when it starts.")
+      .waitFor();
+    if ((await comment.inputValue()) !== "Please refine the opening headline.")
+      failures.push("review: queue rejection cleared the feedback draft.");
+    await reviewRoot.locator(".ll-send").click();
+    await reviewRoot
+      .locator(".ll-feedback-status")
+      .getByText("Queued. Your request will start after the current revision.")
+      .waitFor();
+    if ((await comment.inputValue()) !== "")
+      failures.push(
+        "review: accepted queued feedback did not clear the draft.",
+      );
+    if (
+      submittedIds.length !== 2 ||
+      !submittedIds[0] ||
+      submittedIds[0] !== submittedIds[1]
+    )
+      failures.push(
+        "review: queue-full retry did not retain its idempotent submission ID.",
+      );
   }
   await reviewPage.close();
 } finally {

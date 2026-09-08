@@ -8,7 +8,9 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "test": "vitest run",
+    "check:worker": "tsc -p worker/tsconfig.json && tsc -p worker/test/tsconfig.json",
+    "test": "vitest run tests",
+    "test:worker": "vitest run --config vitest.worker.config.ts",
     "evaluate:models": "node scripts/evaluate-models.mjs",
     "build:design-demos": "node scripts/build-design-demos.mjs",
     "verify:onboarding-ui": "npm run build && node scripts/verify-onboarding-ui.mjs",
@@ -25,16 +27,19 @@
   },
   "devDependencies": {
     "@astrojs/check": "latest",
-    "@cloudflare/workers-types": "^5.20260903.1",
+    "@cloudflare/vitest-plugin": "^1.1.6",
+    "@cloudflare/workers-types": "^5.20260908.1",
+    "@msw/cloudflare": "^0.0.1",
     "@tailwindcss/vite": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "msw": "^2.15.0",
     "playwright": "^1.63.0",
     "prettier": "latest",
     "tailwindcss": "latest",
     "typescript": "latest",
     "vitest": "latest",
-    "wrangler": "^4.129.0"
+    "wrangler": "^4.130.0"
   }
 }

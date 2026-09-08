@@ -103,6 +103,8 @@ export function renderLifecycleEmail(input) {
   const previewUrl = cleanEmailText(input.previewUrl, 4_000);
   const feedback = cleanEmailText(input.clientFeedback, 12_000);
   const outcome = cleanEmailText(input.revisionOutcome, 1_000);
+  const queuedFeedback = cleanEmailText(input.queuedFeedback, 12_000);
+  const queuedStage = input.queuedStage === "client" ? "client" : "developer";
   const copy = lifecycleCopy({ audience, kind, clientName });
   let rows = "";
   let textSections = [];
@@ -114,6 +116,15 @@ export function renderLifecycleEmail(input) {
       rows += textBlock("Revision outcome", outcome);
       textSections.push(`REVISION OUTCOME\n${outcome}`);
     }
+  }
+
+  if (audience === "developer" && queuedFeedback) {
+    const queuedLabel =
+      queuedStage === "client"
+        ? "The next queued client request is now in progress"
+        : "Your queued request is now in progress";
+    rows += textBlock(queuedLabel, queuedFeedback);
+    textSections.push(`${queuedLabel.toUpperCase()}\n${queuedFeedback}`);
   }
 
   if (audience === "delivery-failure") {
