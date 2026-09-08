@@ -44,6 +44,21 @@ compact mobile actions, and accessible forms. Avoid stacked popups, overlapping
 sticky controls, placeholder links, horizontal overflow, and text embedded in
 images. Never use em dashes in generated or rendered content.
 
+## Conversion tools
+
+New sites receive a guided qualifier, a scripted quick-answer assistant, and,
+only when the client supplied a real offer, a restrained desktop exit offer.
+These are typed configuration features rather than unrestricted scripts.
+Qualification options must match the business kind, answers must persist while
+moving backward and forward, and failed submissions must never be shown as
+successful.
+
+Quick answers may use only the site's verified FAQs, services, hours, offer,
+and next-step language. Never describe the scripted assistant as a live person.
+Exit offers appear at most once per browser session after meaningful
+engagement. Suppress conversion overlays after a lead starts, on small screens,
+and during developer or client review. Only one overlay may be open at a time.
+
 ## Care and consultation language
 
 The `care-editorial` recipe is calm, reassuring, and personal. Use expressive

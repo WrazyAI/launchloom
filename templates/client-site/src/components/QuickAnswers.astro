@@ -1,0 +1,64 @@
+---
+import site from "../lib/site";
+import { resolvePageRecipe } from "../lib/page-recipe";
+const feature = site.conversion?.quickAnswers;
+const items = (feature?.items?.length ? feature.items : site.conversion?.faqs || []).slice(0, 5);
+const enabled = feature?.enabled !== false && items.length > 0;
+const contactId = Astro.url.pathname === "/"
+  ? resolvePageRecipe(site).sections.find((section) => section.type === "contact")?.id || "contact"
+  : "contact";
+---
+
+{enabled && (
+  <aside class="quick-answers" data-conversion-feature="quick-answers">
+    <button class="quick-answers__launcher" type="button" aria-expanded="false" aria-controls="quick-answers-panel">
+      <span aria-hidden="true">?</span>{feature?.label || "Quick answers"}
+    </button>
+    <section id="quick-answers-panel" class="quick-answers__panel" hidden aria-labelledby="quick-answers-title">
+      <header>
+        <div><span class="kicker">Website assistant</span><h2 id="quick-answers-title">{feature?.label || "Quick answers"}</h2></div>
+        <button class="quick-answers__close" type="button" aria-label="Close quick answers">×</button>
+      </header>
+      <p class="quick-answers__greeting">{feature?.greeting || `Welcome to ${site.business.name}. How can we help?`}</p>
+      <div class="quick-answers__choices" aria-label="Common questions">
+        {items.map((item) => <button type="button" data-answer={item.answer} aria-pressed="false"><span>{item.question}</span><span aria-hidden="true">→</span></button>)}
+      </div>
+      <div class="quick-answers__answer" hidden aria-live="polite"><p></p><a class="cta" href={`#${contactId}`}>{feature?.ctaLabel || site.business.primaryCta}</a></div>
+    </section>
+  </aside>
+)}
+
+<script>
+  for (const root of document.querySelectorAll(".quick-answers")) {
+    const launcher = root.querySelector<HTMLButtonElement>(".quick-answers__launcher");
+    const panel = root.querySelector<HTMLElement>(".quick-answers__panel");
+    const close = root.querySelector<HTMLButtonElement>(".quick-answers__close");
+    const answer = root.querySelector<HTMLElement>(".quick-answers__answer");
+    const answerText = answer?.querySelector<HTMLParagraphElement>("p");
+    if (new URLSearchParams(window.location.search).has("review")) root.setAttribute("hidden", "");
+    const setOpen = (open: boolean) => {
+      const wasOpen = !panel?.hasAttribute("hidden");
+      panel?.toggleAttribute("hidden", !open);
+      launcher?.setAttribute("aria-expanded", String(open));
+      if (open) {
+        window.dispatchEvent(new CustomEvent("launchloom:overlay-open", { detail: { id: "quick-answers" } }));
+        close?.focus();
+      } else if (wasOpen) launcher?.focus();
+    };
+    launcher?.addEventListener("click", () => setOpen(Boolean(panel?.hasAttribute("hidden"))));
+    close?.addEventListener("click", () => setOpen(false));
+    root.querySelectorAll<HTMLButtonElement>("[data-answer]").forEach((button) => button.addEventListener("click", () => {
+      root.querySelectorAll("[data-answer]").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+      if (answerText) answerText.textContent = button.dataset.answer || "";
+      answer?.removeAttribute("hidden");
+    }));
+    answer?.querySelector("a")?.addEventListener("click", () => setOpen(false));
+    window.addEventListener("launchloom:overlay-open", (event) => {
+      const detail = (event as CustomEvent<{ id?: string }>).detail;
+      if (detail?.id !== "quick-answers") setOpen(false);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !panel?.hasAttribute("hidden")) setOpen(false);
+    });
+  }
+</script>

@@ -92,6 +92,84 @@ try {
       deviceScaleFactor: 1,
     });
     await page.goto(url, { waitUntil: "networkidle" });
+    if (viewport.name === "desktop") {
+      const exitOffer = page.locator('[data-conversion-feature="exit-offer"]');
+      if (await exitOffer.count()) {
+        await page.evaluate(() => {
+          window.scrollTo(0, 700);
+        });
+        await page.waitForTimeout(100);
+        await page.evaluate(() => {
+          document.dispatchEvent(
+            new MouseEvent("mouseout", {
+              bubbles: true,
+              clientY: 0,
+              relatedTarget: null,
+            }),
+          );
+        });
+        await page.waitForTimeout(100);
+        const exitOpened = await exitOffer.evaluate((element) => element.open);
+        if (!exitOpened)
+          failures.push("desktop: eligible exit offer did not open.");
+        else {
+          await page.screenshot({
+            path: path.join(screenshotDir, "desktop-exit-offer.png"),
+          });
+          await exitOffer.locator(".exit-offer__close").click();
+        }
+      }
+
+      const quickAnswers = page.locator(
+        '[data-conversion-feature="quick-answers"]',
+      );
+      if (await quickAnswers.count()) {
+        const panel = quickAnswers.locator(".quick-answers__panel");
+        if (await panel.isVisible())
+          failures.push(
+            "desktop: quick answers opened without visitor action.",
+          );
+        await quickAnswers.locator(".quick-answers__launcher").click();
+        if (!(await panel.isVisible()))
+          failures.push("desktop: quick answers did not open.");
+        const choice = quickAnswers.locator("[data-answer]").first();
+        await choice.click();
+        if (!(await quickAnswers.locator(".quick-answers__answer").isVisible()))
+          failures.push(
+            "desktop: quick answer content did not become visible.",
+          );
+        else
+          await page.screenshot({
+            path: path.join(screenshotDir, "desktop-quick-answers.png"),
+          });
+        await page.keyboard.press("Escape");
+        if (await panel.isVisible())
+          failures.push("desktop: Escape did not close quick answers.");
+      }
+
+      const qualifier = page
+        .locator('[data-conversion-feature="guided-qualifier"]')
+        .first();
+      if (await qualifier.count()) {
+        const firstOption = qualifier
+          .locator('[data-lead-step="0"] input[type="radio"]')
+          .first();
+        await firstOption.check();
+        await page.waitForTimeout(180);
+        await qualifier.locator("[data-back]").first().click();
+        if (!(await firstOption.isChecked()))
+          failures.push("desktop: qualifier answer was lost after going back.");
+      }
+    } else {
+      const exitOffer = page.locator('[data-conversion-feature="exit-offer"]');
+      if (
+        (await exitOffer.count()) &&
+        (await exitOffer.evaluate(
+          (element) => getComputedStyle(element).display !== "none",
+        ))
+      )
+        failures.push("mobile: desktop exit offer is not suppressed.");
+    }
     const state = await page.evaluate(() => {
       const visible = (element) => {
         const rect = element.getBoundingClientRect();

@@ -58,10 +58,16 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
       ? "Leave clear internal notes, or approve this exact version to publish and invite the client."
       : "Tap what applies, then leave a clear note. We will review it before publishing an update.";
     approve.toggleAttribute("hidden", !developer);
-    const setModal = (visible) => modal.toggleAttribute("hidden", !visible);
+    const setModal = (visible) => {
+      modal.toggleAttribute("hidden", !visible);
+      if (visible) window.dispatchEvent(new CustomEvent("launchloom:overlay-open", { detail: { id: "review" } }));
+    };
     open.addEventListener("click", () => setModal(true));
     close.addEventListener("click", () => setModal(false));
     cancel.addEventListener("click", () => setModal(false));
+    window.addEventListener("launchloom:overlay-open", (event) => {
+      if (event.detail?.id !== "review") setModal(false);
+    });
     root.querySelectorAll("[data-category]").forEach((button) => button.addEventListener("click", () => {
       const value = button.dataset.category || "";
       if (selectedCategories.has(value)) selectedCategories.delete(value); else selectedCategories.add(value);

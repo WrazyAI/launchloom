@@ -2,33 +2,104 @@
 import site from "../lib/site";
 const { id = "lead-form" } = Astro.props;
 const questions = site.conversion?.qualification || [];
+const qualifier = site.conversion?.guidedQualifier;
+const guided = questions.length > 0 && qualifier?.enabled !== false;
+const stepCount = guided ? questions.length + 1 : 1;
 ---
 
-<form class="lead-form" id={id} data-qualification={JSON.stringify(questions.map((question) => question.name))}>
+<form
+  class:list={["lead-form", guided && "lead-form--guided"]}
+  id={id}
+  data-guided={String(guided)}
+  data-conversion-feature={guided ? "guided-qualifier" : undefined}
+  data-step-count={String(stepCount)}
+  data-qualification={JSON.stringify(questions.map((question) => question.name))}
+>
   <input type="hidden" name="lead-token" value={site.lead?.token || ""} />
-  <p class="honeypot"><label>Don’t fill this out <input name="bot-field" /></label></p>
+  <p class="honeypot"><label>Do not fill this out <input name="bot-field" tabindex="-1" autocomplete="off" /></label></p>
   <input type="hidden" name="lead-email" value={site.business.leadEmail} />
-  <label>Your name<input name="name" required autocomplete="name" /></label>
-  <label>Phone number<input name="phone" required type="tel" autocomplete="tel" /></label>
-  <label>Email address<input name="email" required type="email" autocomplete="email" /></label>
-  {questions.map((question) => <label>{question.label}<select name={question.name} required><option value="" disabled selected>{question.placeholder}</option>{question.options.map((option) => <option value={option}>{option}</option>)}</select></label>)}
-  <label>How can we help?<textarea name="message" required placeholder={`Tell us a little about what you need…`} /></label>
-  <button type="submit">{site.business.primaryCta}</button>
-  <small role="status">{site.copy?.formIntro || "By submitting, you agree to be contacted about your request."}</small>
+
+  {guided && (
+    <header class="qualifier-heading">
+      <span class="kicker">A better first conversation</span>
+      <h3>{qualifier?.heading || "A few quick questions"}</h3>
+      <p>{qualifier?.intro || "Choose the closest options so we can understand what you need."}</p>
+      <div class="qualifier-progress" aria-hidden="true"><span></span></div>
+      <p class="qualifier-progress-label" aria-live="polite"></p>
+    </header>
+  )}
+
+  {guided && questions.map((question, questionIndex) => (
+    <fieldset class="qualifier-step" data-lead-step={String(questionIndex)} hidden={questionIndex !== 0}>
+      <legend tabindex="-1">{question.label}</legend>
+      <div class="qualifier-options">
+        {question.options.map((option, optionIndex) => {
+          const optionId = `${id}-${question.name}-${optionIndex}`;
+          return <label for={optionId} class="qualifier-option"><input id={optionId} type="radio" name={question.name} value={option} required /><span>{option}</span></label>;
+        })}
+      </div>
+      <div class="qualifier-actions">
+        {questionIndex > 0 && <button class="qualifier-back" type="button" data-back>Back</button>}
+      </div>
+    </fieldset>
+  ))}
+
+  <fieldset class:list={["qualifier-step", !guided && "qualifier-step--plain"]} data-lead-step={String(stepCount - 1)} hidden={guided}>
+    {guided && <legend tabindex="-1">Where should we send the next step?</legend>}
+    <div class="lead-contact-fields">
+      <label>Your name<input name="name" required autocomplete="name" /></label>
+      <label>Phone number<input name="phone" required type="tel" autocomplete="tel" /></label>
+      <label>Email address<input name="email" required type="email" autocomplete="email" /></label>
+      {!guided && questions.map((question) => <label>{question.label}<select name={question.name} required><option value="" disabled selected>{question.placeholder}</option>{question.options.map((option) => <option value={option}>{option}</option>)}</select></label>)}
+      <label>How can we help?<textarea name="message" required placeholder="Tell us a little about what you need." /></label>
+    </div>
+    <div class="qualifier-actions">
+      {guided && <button class="qualifier-back" type="button" data-back>Back</button>}
+      <button class="lead-submit" type="submit">{site.business.primaryCta}</button>
+    </div>
+  </fieldset>
+  <small class="lead-status" role="status">{site.copy?.formIntro || "By submitting, you agree to be contacted about your request."}</small>
 </form>
 
 <script is:inline define:vars={{ apiUrl: site.lead?.apiUrl || "" }}>
   for (const form of document.querySelectorAll(".lead-form")) {
+    const guided = form.dataset.guided === "true";
+    const steps = [...form.querySelectorAll("[data-lead-step]")];
+    const progress = form.querySelector(".qualifier-progress span");
+    const progressLabel = form.querySelector(".qualifier-progress-label");
+    const status = form.querySelector(".lead-status");
+    let activeStep = 0;
+    let started = false;
+
+    const showStep = (index, focus = true) => {
+      activeStep = Math.max(0, Math.min(index, steps.length - 1));
+      steps.forEach((step, stepIndex) => step.toggleAttribute("hidden", stepIndex !== activeStep));
+      if (progress) progress.style.width = `${((activeStep + 1) / steps.length) * 100}%`;
+      if (progressLabel) progressLabel.textContent = `Step ${activeStep + 1} of ${steps.length}`;
+      if (focus) steps[activeStep]?.querySelector("legend, input, textarea")?.focus();
+    };
+    if (guided) showStep(0, false);
+
+    form.addEventListener("input", () => {
+      if (!started) {
+        started = true;
+        window.dispatchEvent(new CustomEvent("launchloom:lead-started"));
+      }
+    });
+    form.querySelectorAll('.qualifier-option input[type="radio"]').forEach((input) => {
+      input.addEventListener("change", () => window.setTimeout(() => showStep(activeStep + 1), 120));
+    });
+    form.querySelectorAll("[data-back]").forEach((button) => button.addEventListener("click", () => showStep(activeStep - 1)));
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-        const status = form.querySelector("small");
-        const data = new FormData(form);
-        const qualificationNames = JSON.parse(form.dataset.qualification || "[]");
+      const data = new FormData(form);
+      const qualificationNames = JSON.parse(form.dataset.qualification || "[]");
       if (!apiUrl || !data.get("lead-token")) {
         status.textContent = "This form is not configured yet. Please call us instead.";
         return;
       }
-      status.textContent = "Sending your request…";
+      status.textContent = "Sending your request...";
       try {
         const qualification = Object.fromEntries(qualificationNames.map((name) => [name, data.get(name)]).filter(([, value]) => value));
         const response = await fetch(`${apiUrl.replace(/\/$/, "")}/api/lead`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
@@ -36,11 +107,14 @@ const questions = site.conversion?.qualification || [];
           message: data.get("message"), qualification, "bot-field": data.get("bot-field"), pageUrl: window.location.href,
         }) });
         const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.error || "We couldn’t send your request.");
+        if (!response.ok) throw new Error(result.error || "We could not send your request.");
         form.reset();
-        status.textContent = "Thank you. We’ll be in touch shortly.";
+        started = false;
+        if (guided) showStep(0, false);
+        status.textContent = "Thank you. We will be in touch shortly.";
+        window.dispatchEvent(new CustomEvent("launchloom:lead-submitted"));
       } catch (error) {
-        status.textContent = error instanceof Error ? error.message : "We couldn’t send your request. Please try again.";
+        status.textContent = error instanceof Error ? error.message : "We could not send your request. Please try again.";
       }
     });
   }

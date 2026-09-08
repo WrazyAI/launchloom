@@ -47,6 +47,14 @@ if (kinds.has("set_color_palette")) {
   files.add("styles/site.css");
   files.add("lib/site.ts");
 }
+if (kinds.has("set_conversion_feature")) {
+  files.add("components/QuickAnswers.astro");
+  files.add("components/ExitOffer.astro");
+  files.add("layouts/SiteLayout.astro");
+  files.add("lib/page-recipe.ts");
+  files.add("lib/site.ts");
+  files.add("styles/site.css");
+}
 if (
   [...kinds].some((kind) =>
     [

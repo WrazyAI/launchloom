@@ -77,6 +77,117 @@ describe("revision operations", () => {
     });
   });
 
+  it("supports explicit conversion feature changes without inventing an offer", () => {
+    const draft = {
+      ...config(),
+      business: {
+        ...config().business,
+        name: "Daley Hope",
+        primaryCta: "Request a conversation",
+        offer: "A complimentary first conversation",
+      },
+      conversion: {
+        qualification: [
+          { name: "need", label: "What do you need?", options: ["Help"] },
+        ],
+        faqs: [
+          {
+            question: "How do we begin?",
+            answer: "Start with a conversation.",
+          },
+        ],
+      },
+    };
+    const operations = deterministicOperations(
+      "Add quick answers and enable the exit popup.",
+      draft,
+    );
+    expect(operations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "set_conversion_feature",
+          feature: "quickAnswers",
+          enabled: true,
+        }),
+        expect.objectContaining({
+          kind: "set_conversion_feature",
+          feature: "exitOffer",
+          enabled: true,
+        }),
+      ]),
+    );
+    const exitOperation = operations.find(
+      (item: any) => item.feature === "exitOffer",
+    );
+    expect(applyOperation(draft, exitOperation)).toBe(true);
+    expect(draft.conversion.exitOffer.heading).toBe(
+      "A complimentary first conversation",
+    );
+    const report = {
+      results: [{ feedbackIndex: 0, status: "fulfilled", unresolved: [] }],
+      expectedArtifacts: expectedArtifacts(
+        operations.filter((item: any) => item.feature === "exitOffer"),
+        draft,
+      ),
+    };
+    expect(
+      verifyRevision(
+        draft,
+        report,
+        '<dialog data-conversion-feature="exit-offer"></dialog>',
+      ).ok,
+    ).toBe(true);
+
+    const withoutOffer = {
+      ...config(),
+      business: { ...config().business, primaryCta: "Contact us" },
+      conversion: { faqs: [], qualification: [] },
+    };
+    expect(
+      applyOperation(withoutOffer, {
+        kind: "set_conversion_feature",
+        feature: "exitOffer",
+        enabled: true,
+      }),
+    ).toBe(false);
+  });
+
+  it("fulfills a conversion package request without misclassifying it as a page-layout change", async () => {
+    const draft = {
+      ...config(),
+      business: {
+        ...config().business,
+        primaryCta: "Request a conversation",
+        offer: "A complimentary first conversation",
+      },
+      conversion: {
+        qualification: [
+          { name: "need", label: "What do you need?", options: ["Help"] },
+        ],
+        faqs: [
+          {
+            question: "How do we begin?",
+            answer: "Start with a conversation.",
+          },
+        ],
+      },
+    };
+    const planned = await planRevision(
+      ["Add quick answers and enable the exit popup."],
+      draft,
+      async () => [],
+    );
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "fulfilled",
+      intents: ["conversion-feature"],
+    });
+    expect(planned.operations.map((item) => item.kind)).toEqual([
+      "set_conversion_feature",
+      "set_conversion_feature",
+    ]);
+  });
+
   it("requires the expected rendered artifact before a revision can send", () => {
     const draft = config();
     const [operation] = deterministicOperations("Add testimonials", draft);

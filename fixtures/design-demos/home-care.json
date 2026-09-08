@@ -125,7 +125,28 @@
         "question": "What should we prepare before the first call?",
         "answer": "A short list of daily routines, current concerns, preferred timing, and the people involved in decisions is a useful place to start."
       }
-    ]
+    ],
+    "guidedQualifier": {
+      "enabled": true,
+      "heading": "A few quick questions",
+      "intro": "Choose the closest options so the first conversation can focus on what matters to your family."
+    },
+    "quickAnswers": {
+      "enabled": true,
+      "label": "Quick answers",
+      "greeting": "Welcome to Willow & Hearth Home Care. How can we help?",
+      "items": [],
+      "ctaLabel": "Request a care conversation",
+      "ctaTarget": "#contact"
+    },
+    "exitOffer": {
+      "enabled": true,
+      "eyebrow": "Before you go",
+      "heading": "A complimentary first care conversation",
+      "body": "Share what your family needs and the team will follow up with a useful next step.",
+      "ctaLabel": "Request a care conversation",
+      "ctaTarget": "#contact"
+    }
   },
   "socialProof": {
     "source": "verified_differentiators",

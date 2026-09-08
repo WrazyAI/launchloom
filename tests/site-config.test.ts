@@ -77,6 +77,36 @@ describe("site configuration", () => {
     expect(config.conversion.layout).toBe("editorial-authority");
     expect(config.conversion.qualification).toHaveLength(1);
     expect(config.conversion.faqs.length).toBeGreaterThan(0);
+    expect(config.conversion.guidedQualifier).toMatchObject({ enabled: true });
+    expect(config.conversion.quickAnswers).toMatchObject({
+      enabled: true,
+      label: "Quick answers",
+    });
+    expect(config.conversion.quickAnswers.items).toEqual(
+      config.conversion.faqs,
+    );
+    expect(config.conversion.exitOffer.enabled).toBe(false);
+  });
+
+  it("enables a restrained exit offer only when the client supplied a real offer", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Willow Home Care",
+        services: "Companion care",
+        primaryCta: "Request a care conversation",
+        offer: "A complimentary first care conversation",
+        industry: "wellness",
+        preset: "wellness",
+      },
+    );
+
+    expect(config.conversion.exitOffer).toMatchObject({
+      enabled: true,
+      heading: "A complimentary first care conversation",
+      ctaLabel: "Request a care conversation",
+    });
+    expect(JSON.stringify(config.conversion)).not.toContain("—");
   });
 
   it("does not substitute stock imagery for an unsupported industry", () => {

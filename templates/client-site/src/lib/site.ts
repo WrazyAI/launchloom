@@ -100,6 +100,27 @@ export type SiteConfig = {
     }>;
     process?: string[];
     faqs?: Array<{ question: string; answer: string }>;
+    guidedQualifier?: {
+      enabled: boolean;
+      heading: string;
+      intro: string;
+    };
+    quickAnswers?: {
+      enabled: boolean;
+      label: string;
+      greeting: string;
+      items: Array<{ question: string; answer: string }>;
+      ctaLabel: string;
+      ctaTarget: string;
+    };
+    exitOffer?: {
+      enabled: boolean;
+      eyebrow: string;
+      heading: string;
+      body: string;
+      ctaLabel: string;
+      ctaTarget: string;
+    };
   };
   design?: {
     recipe: PageRecipe;

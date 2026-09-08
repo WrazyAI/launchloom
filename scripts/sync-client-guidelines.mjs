@@ -12,7 +12,7 @@ export async function syncClientGuidelines(client) {
     path.join(client, "docs/site-generation-guidelines.md"),
   );
   const instructions =
-    "# Client website instructions\n\nRead docs/site-generation-guidelines.md before editing this website.\nPreserve the approved design recipe and business facts in src/site.config.json.\nApply feedback only to the requested sections; do not invent reviews or claims.\nNever use em dashes. Verify desktop and mobile output before reporting success.\nKeep review and lead-form integrations intact.\n";
+    "# Client website instructions\n\nRead docs/site-generation-guidelines.md before editing this website.\nPreserve the approved design recipe and business facts in src/site.config.json.\nApply feedback only to the requested sections; do not invent reviews or claims.\nNever use em dashes. Verify desktop and mobile output before reporting success.\nKeep review, conversion-tool, and lead-form integrations intact.\n";
   // Respect any client-specific instructions already present.
   try {
     await fs.writeFile(path.join(client, "AGENTS.md"), instructions, {

@@ -359,6 +359,48 @@ function qualificationFor(industry, kind = industry) {
   ];
 }
 
+function conversionFeaturesFor({
+  industry,
+  businessKind,
+  business,
+  qualification,
+  faqs,
+}) {
+  const guidedHeading =
+    businessKind === "home-care" || industry === "wellness"
+      ? "A few quick questions"
+      : industry === "home-services"
+        ? "Tell us what needs attention"
+        : "Find the right next step";
+  const guidedIntro =
+    industry === "home-services"
+      ? "Choose the closest options so the team can understand your request before following up."
+      : "Choose the closest options so the first conversation can focus on what matters to you.";
+  return {
+    guidedQualifier: {
+      enabled: qualification.length > 0,
+      heading: guidedHeading,
+      intro: guidedIntro,
+    },
+    quickAnswers: {
+      enabled: faqs.length > 0,
+      label: "Quick answers",
+      greeting: `Welcome to ${business.name}. How can we help?`,
+      items: faqs.slice(0, 5),
+      ctaLabel: business.primaryCta,
+      ctaTarget: "#contact",
+    },
+    exitOffer: {
+      enabled: Boolean(business.offer),
+      eyebrow: "Before you go",
+      heading: business.offer || business.primaryCta,
+      body: "Share what you need and the team will follow up with a useful next step.",
+      ctaLabel: business.primaryCta,
+      ctaTarget: "#contact",
+    },
+  };
+}
+
 function defaultCopy(business, industry, kind = industry) {
   if (kind === "home-care")
     return {
@@ -770,11 +812,20 @@ export function normalise(candidate, intake) {
     }))
     .filter((faq) => faq.question && faq.answer)
     .slice(0, 5);
+  const qualification = base.conversion.qualification;
+  const featureConfig = conversionFeaturesFor({
+    industry: base.industry,
+    businessKind: base.businessKind,
+    business,
+    qualification,
+    faqs: validatedFaqs.length ? validatedFaqs : base.conversion.faqs,
+  });
   const conversion = {
     layout: layoutFor(base.industry, preset),
-    qualification: base.conversion.qualification,
+    qualification,
     process: proposedProcess.length ? proposedProcess : base.conversion.process,
     faqs: validatedFaqs.length ? validatedFaqs : base.conversion.faqs,
+    ...featureConfig,
   };
   return removeEmDashes({
     preset,

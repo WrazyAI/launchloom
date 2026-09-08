@@ -135,7 +135,28 @@
         "question": "How is service-area coverage confirmed?",
         "answer": "Provide the full property address. The team will confirm current coverage and availability before scheduling."
       }
-    ]
+    ],
+    "guidedQualifier": {
+      "enabled": true,
+      "heading": "Tell us what needs attention",
+      "intro": "Choose the closest options so the team can understand the service request before following up."
+    },
+    "quickAnswers": {
+      "enabled": true,
+      "label": "Quick answers",
+      "greeting": "Welcome to Northline Garage Door Co. How can we help?",
+      "items": [],
+      "ctaLabel": "Request garage door service",
+      "ctaTarget": "#contact"
+    },
+    "exitOffer": {
+      "enabled": true,
+      "eyebrow": "Before you go",
+      "heading": "Request an inspection and a clear explanation of available options",
+      "body": "Share the door problem and service address so the team can confirm the next step.",
+      "ctaLabel": "Request garage door service",
+      "ctaTarget": "#contact"
+    }
   },
   "socialProof": {
     "source": "verified_differentiators",

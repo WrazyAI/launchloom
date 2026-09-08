@@ -30,6 +30,12 @@ const MODEL_OPERATION_KINDS = new Set([
   "reorder_section",
   "set_section_variant",
   "set_design_treatment",
+  "set_conversion_feature",
+]);
+const CONVERSION_FEATURES = new Set([
+  "guidedQualifier",
+  "quickAnswers",
+  "exitOffer",
 ]);
 const SECTION_VARIANTS = {
   hero: new Set(["care-portrait", "trades-split", "editorial", "centered"]),
@@ -128,6 +134,8 @@ const layoutRequest =
   /\b(layout|reorder|move|above|below|before|after|hide|remove|show|add|section|spacing|spacious|compact|density|typography|font|modern|editorial|bold|immersive|center(?:ed)?)\b/i;
 const contentRequest =
   /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten).{0,50}\b(faq|question|answer|process|step)\b|\b(faq|question|answer|process|step)\b.{0,50}(?:say|read|explain|mention)\b/i;
+const conversionFeatureRequest =
+  /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant)|chat(?:bot)?|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
 
 function clean(value, limit = 360) {
   return String(value || "")
@@ -459,6 +467,43 @@ function structuralOperations(feedback, config) {
         sections.some((section) => section.type === operation.relativeTo)),
   );
 }
+function conversionFeatureFor(feedback) {
+  if (
+    /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go)\b/i.test(feedback)
+  )
+    return "exitOffer";
+  if (
+    /\b(quick answers?|website assistant|faq (?:widget|assistant)|chat(?:bot)?)\b/i.test(
+      feedback,
+    )
+  )
+    return "quickAnswers";
+  if (
+    /\b(guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i.test(
+      feedback,
+    )
+  )
+    return "guidedQualifier";
+  return null;
+}
+function conversionFeatureOperations(feedback) {
+  const segments = clean(feedback, 4000).split(/\s*(?:,|\.|\band\b)\s*/i);
+  return segments.flatMap((segment) => {
+    const feature = conversionFeatureFor(segment);
+    if (!feature) return [];
+    if (/\b(remove|hide|disable|turn off|do not show)\b/i.test(segment))
+      return [{ kind: "set_conversion_feature", feature, enabled: false }];
+    if (/\b(add|show|enable|include|use|turn on|bring back)\b/i.test(segment))
+      return [{ kind: "set_conversion_feature", feature, enabled: true }];
+    return [];
+  });
+}
+function feedbackWithoutConversionFeatures(feedback) {
+  return clean(feedback, 4000)
+    .split(/\s*(?:,|\.|\band\b)\s*/i)
+    .filter((segment) => !conversionFeatureRequest.test(segment))
+    .join(". ");
+}
 export function deterministicOperations(feedback, config) {
   const operations = [];
   const movingExistingProof =
@@ -474,8 +519,9 @@ export function deterministicOperations(feedback, config) {
     });
   if (brandNameRequest.test(feedback))
     operations.push({ kind: "show_brand_name" });
-  const structural = layoutRequest.test(feedback)
-    ? structuralOperations(feedback, config)
+  const structuralFeedback = feedbackWithoutConversionFeatures(feedback);
+  const structural = layoutRequest.test(structuralFeedback)
+    ? structuralOperations(structuralFeedback, config)
     : [];
   const proofAlreadyEnabled = currentSections(config).some(
     (section) => section.type === "social-proof",
@@ -490,6 +536,7 @@ export function deterministicOperations(feedback, config) {
         operation.sectionType === "social-proof",
     );
   if (!onlyEnablesRequestedProof) operations.push(...structural);
+  operations.push(...conversionFeatureOperations(feedback));
   return operations;
 }
 function intentsFor(feedback, config) {
@@ -497,8 +544,9 @@ function intentsFor(feedback, config) {
   if (socialProofRequest.test(feedback)) intents.push("social-proof");
   if (requestsColorChange(feedback)) intents.push("color");
   if (brandNameRequest.test(feedback)) intents.push("brand-name");
-  const structural = layoutRequest.test(feedback)
-    ? structuralOperations(feedback, config)
+  const structuralFeedback = feedbackWithoutConversionFeatures(feedback);
+  const structural = layoutRequest.test(structuralFeedback)
+    ? structuralOperations(structuralFeedback, config)
     : [];
   if (
     broadLayoutRequest.test(feedback) ||
@@ -513,6 +561,8 @@ function intentsFor(feedback, config) {
   )
     intents.push("layout");
   if (contentRequest.test(feedback)) intents.push("content");
+  if (conversionFeatureRequest.test(feedback))
+    intents.push("conversion-feature");
   return intents.length ? [...new Set(intents)] : ["unknown"];
 }
 export async function modelOperations(
@@ -539,7 +589,7 @@ export async function modelOperations(
         messages: [
           {
             role: "system",
-            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
+            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'exitOffer',enabled:boolean}. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
           },
           {
             role: "user",
@@ -662,7 +712,75 @@ export function applyOperation(config, operation) {
           .slice(0, 5)
       : [];
     if (!faqs.length) return false;
-    config.conversion = { ...(config.conversion || {}), faqs };
+    config.conversion = {
+      ...(config.conversion || {}),
+      faqs,
+      ...(config.conversion?.quickAnswers
+        ? {
+            quickAnswers: {
+              ...config.conversion.quickAnswers,
+              items: faqs,
+            },
+          }
+        : {}),
+    };
+    return true;
+  }
+  if (operation.kind === "set_conversion_feature") {
+    if (
+      !CONVERSION_FEATURES.has(operation.feature) ||
+      typeof operation.enabled !== "boolean"
+    )
+      return false;
+    const conversion = { ...(config.conversion || {}) };
+    const existing = conversion[operation.feature] || {};
+    if (existing.enabled === operation.enabled) return false;
+    if (
+      operation.enabled &&
+      operation.feature === "exitOffer" &&
+      !clean(config.business?.offer)
+    )
+      return false;
+    if (
+      operation.enabled &&
+      operation.feature === "quickAnswers" &&
+      !(conversion.faqs || []).length
+    )
+      return false;
+    if (
+      operation.enabled &&
+      operation.feature === "guidedQualifier" &&
+      !(conversion.qualification || []).length
+    )
+      return false;
+    const defaults =
+      operation.feature === "guidedQualifier"
+        ? {
+            heading: "A few quick questions",
+            intro:
+              "Choose the closest options so we can understand what you need.",
+          }
+        : operation.feature === "quickAnswers"
+          ? {
+              label: "Quick answers",
+              greeting: `Welcome to ${clean(config.business?.name, 100)}. How can we help?`,
+              items: (conversion.faqs || []).slice(0, 5),
+              ctaLabel: clean(config.business?.primaryCta, 100),
+              ctaTarget: "#contact",
+            }
+          : {
+              eyebrow: "Before you go",
+              heading: clean(config.business?.offer, 180),
+              body: "Share what you need and the team will follow up with a useful next step.",
+              ctaLabel: clean(config.business?.primaryCta, 100),
+              ctaTarget: "#contact",
+            };
+    conversion[operation.feature] = {
+      ...defaults,
+      ...existing,
+      enabled: operation.enabled,
+    };
+    config.conversion = conversion;
     return true;
   }
   if (operation.kind === "set_design_treatment") {
@@ -798,6 +916,10 @@ function intentSatisfied(intent, operations) {
         operation.kind,
       ),
     );
+  if (intent === "conversion-feature")
+    return operations.some(
+      (operation) => operation.kind === "set_conversion_feature",
+    );
   return false;
 }
 export async function planRevision(
@@ -862,6 +984,8 @@ export async function planRevision(
           return false;
         return true;
       } else return false;
+    if (operation.kind === "set_conversion_feature")
+      return intents.includes("conversion-feature");
     return intents.includes("content");
   });
   const candidates = [...deterministic, ...modeled]
@@ -1037,6 +1161,13 @@ export function expectedArtifacts(operations, config) {
           marker: `type-${operation.typography || config.design?.treatment?.typography || "editorial"}`,
         },
       ];
+    if (operation.kind === "set_conversion_feature")
+      return [
+        {
+          type: operation.enabled ? "html" : "absent-html",
+          marker: `data-conversion-feature="${operation.feature.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}"`,
+        },
+      ];
     return [];
   });
 }
@@ -1057,6 +1188,8 @@ export function verifyRevision(config, report, html = "") {
   for (const artifact of report.expectedArtifacts || []) {
     if (artifact.type === "html" && !html.includes(artifact.marker))
       failures.push(`Missing rendered artifact: ${artifact.marker}`);
+    if (artifact.type === "absent-html" && html.includes(artifact.marker))
+      failures.push(`Rendered artifact should be absent: ${artifact.marker}`);
     if (
       artifact.type === "section" &&
       !new RegExp(`<section[^>]+id=["']${artifact.id}["']`).test(html)

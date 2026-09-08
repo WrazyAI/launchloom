@@ -1,0 +1,59 @@
+---
+import site from "../lib/site";
+import { resolvePageRecipe } from "../lib/page-recipe";
+const feature = site.conversion?.exitOffer;
+const enabled = feature?.enabled === true && Boolean(site.business.offer);
+const contactId = Astro.url.pathname === "/"
+  ? resolvePageRecipe(site).sections.find((section) => section.type === "contact")?.id || "contact"
+  : "contact";
+---
+
+{enabled && (
+  <dialog class="exit-offer" data-conversion-feature="exit-offer" aria-labelledby="exit-offer-title">
+    <div class="exit-offer__frame">
+      <button class="exit-offer__close" type="button" aria-label="Close offer">×</button>
+      <span class="kicker">{feature?.eyebrow || "Before you go"}</span>
+      <h2 id="exit-offer-title">{feature?.heading || site.business.offer}</h2>
+      <p>{feature?.body || "Share what you need and the team will follow up with a useful next step."}</p>
+      <a class="cta" href={`#${contactId}`}>{feature?.ctaLabel || site.business.primaryCta}</a>
+    </div>
+  </dialog>
+)}
+
+<script>
+  for (const dialog of document.querySelectorAll<HTMLDialogElement>(".exit-offer")) {
+    const storageKey = "launchloom-exit-offer-shown";
+    let engaged = false;
+    let leadStarted = false;
+    let alreadyShown = false;
+    try { alreadyShown = sessionStorage.getItem(storageKey) === "true"; } catch {}
+    const reviewMode = new URLSearchParams(window.location.search).has("review");
+    const eligible = () => !reviewMode && !leadStarted && !alreadyShown && window.matchMedia("(min-width: 761px)").matches && !document.querySelector("dialog[open]");
+    const show = () => {
+      if (!engaged || !eligible()) return;
+      alreadyShown = true;
+      try { sessionStorage.setItem(storageKey, "true"); } catch {}
+      window.dispatchEvent(new CustomEvent("launchloom:overlay-open", { detail: { id: "exit-offer" } }));
+      dialog.showModal();
+    };
+    const engagementTimer = window.setTimeout(() => { engaged = true; }, 8000);
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > Math.min(500, document.documentElement.scrollHeight * 0.25)) engaged = true;
+    }, { passive: true });
+    document.addEventListener("mouseout", (event) => {
+      if (!event.relatedTarget && event.clientY <= 8) show();
+    });
+    window.addEventListener("launchloom:lead-started", () => { leadStarted = true; });
+    window.addEventListener("launchloom:lead-submitted", () => { leadStarted = true; if (dialog.open) dialog.close(); });
+    window.addEventListener("launchloom:overlay-open", (event) => {
+      const detail = (event as CustomEvent<{ id?: string }>).detail;
+      if (detail?.id !== "exit-offer" && dialog.open) dialog.close();
+    });
+    dialog.querySelector(".exit-offer__close")?.addEventListener("click", () => dialog.close());
+    dialog.querySelector("a")?.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    window.addEventListener("pagehide", () => window.clearTimeout(engagementTimer), { once: true });
+  }
+</script>

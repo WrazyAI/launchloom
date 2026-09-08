@@ -1,6 +1,8 @@
 ---
 import site from "../lib/site";
 import ReviewBanner from "../components/ReviewBanner.astro";
+import QuickAnswers from "../components/QuickAnswers.astro";
+import ExitOffer from "../components/ExitOffer.astro";
 import "../styles/site.css";
 
 const { title = site.business.name, description = site.business.description } = Astro.props;
@@ -36,5 +38,7 @@ const structuredDataJson = JSON.stringify(structuredData).replace(/</g, "\\u003c
   <body style={`--brand:${site.style.primaryColor};--on-brand:${site.style.contrastColor || "#ffffff"};--cream:${site.style.surfaceColor || "#f8f6f0"};--hero-surface:${site.style.heroColor || "#e8eee5"};--ink:${site.style.inkColor || "#14201d"};--muted:${site.style.mutedColor || "#5e6b66"};--line:${site.style.lineColor || "#d8ded7"}`}>
     <ReviewBanner />
     <slot />
+    <QuickAnswers />
+    <ExitOffer />
   </body>
 </html>
