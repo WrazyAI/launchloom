@@ -520,17 +520,34 @@ function approvedHeroShortening(feedback, config) {
     config.copy?.heroBody || config.business?.description,
     1000,
   );
-  if (!description) return [];
+  const heading = clean(
+    config.copy?.heroHeading || config.business?.tagline,
+    400,
+  );
   const firstSentence =
     description.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim() || description;
-  if (firstSentence.length >= description.length) return [];
+  const firstHeadingClause = heading.split(/[,;:]/)[0]?.trim();
   return [
-    {
-      kind: "set_copy",
-      field: "heroBody",
-      value: firstSentence,
-      provenance: "approved_business_description",
-    },
+    ...(firstHeadingClause && firstHeadingClause.length < heading.length
+      ? [
+          {
+            kind: "set_copy",
+            field: "heroHeading",
+            value: firstHeadingClause,
+            provenance: "approved_business_tagline",
+          },
+        ]
+      : []),
+    ...(firstSentence && firstSentence.length < description.length
+      ? [
+          {
+            kind: "set_copy",
+            field: "heroBody",
+            value: firstSentence,
+            provenance: "approved_business_description",
+          },
+        ]
+      : []),
   ];
 }
 export function deterministicOperations(feedback, config) {
@@ -711,19 +728,27 @@ export function applyOperation(config, operation) {
       config.copy?.heroBody || config.business?.description,
       1000,
     );
+    const approvedHeroHeading = clean(
+      config.copy?.heroHeading || config.business?.tagline,
+      400,
+    );
     const value =
-      operation.field === "heroBody" &&
-      operation.provenance === "approved_business_description" &&
-      approvedHeroBody.includes(clean(operation.value, 180))
+      operation.field === "heroHeading" &&
+      operation.provenance === "approved_business_tagline" &&
+      approvedHeroHeading.includes(clean(operation.value, 180))
         ? clean(operation.value, 180)
-        : safeContent(
-            operation.value,
-            operation.field === "aboutBody" ||
-              operation.field === "formIntro" ||
-              operation.field === "heroBody"
-              ? 360
-              : 180,
-          );
+        : operation.field === "heroBody" &&
+            operation.provenance === "approved_business_description" &&
+            approvedHeroBody.includes(clean(operation.value, 180))
+          ? clean(operation.value, 180)
+          : safeContent(
+              operation.value,
+              operation.field === "aboutBody" ||
+                operation.field === "formIntro" ||
+                operation.field === "heroBody"
+                ? 360
+                : 180,
+            );
     if (!value) return false;
     config.copy = { ...(config.copy || {}), [operation.field]: value };
     return true;

@@ -493,8 +493,11 @@ describe("revision operations", () => {
     expect(planned.results[0]).toMatchObject({
       status: "fulfilled",
       fulfilled: ["content"],
-      operationKinds: ["set_copy"],
+      operationKinds: ["set_copy", "set_copy"],
     });
+    expect(planned.config.copy.heroHeading).toBe(
+      "Family-owned Tallahassee plumbers",
+    );
     expect(planned.config.copy.heroBody).toBe(
       "Mike Seeders Plumbing Inc serves homes and businesses across Tallahassee and the Big Bend.",
     );
