@@ -1,13 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   applyOperation,
   deterministicOperations,
   expectedArtifacts,
   ensureLegacySocialProofMarkup,
+  modelOperations,
   planRevision,
   removeEmDashes,
   verifyRevision,
 } from "../scripts/revision-engine.mjs";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
 
 const config = (): any => ({
   business: { name: "Daley Hope", placeId: "" },
@@ -468,6 +474,73 @@ describe("revision operations", () => {
       fulfilled: ["color"],
       unresolved: ["content"],
     });
+  });
+
+  it("safely shortens a bloated hero even when the model returns no operation", async () => {
+    const draft = config();
+    draft.business.tagline =
+      "Family-owned Tallahassee plumbers, dependably done right for over 25 years.";
+    draft.business.description =
+      "Mike Seeders Plumbing Inc serves homes and businesses across Tallahassee and the Big Bend. We handle repairs, replacements, and installation work. Call us to discuss the problem and arrange the next step.";
+
+    const planned = await planRevision(
+      ["The hero section is too bloated; can we shorten it?"],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "fulfilled",
+      fulfilled: ["content"],
+      operationKinds: ["set_copy"],
+    });
+    expect(planned.config.copy.heroBody).toBe(
+      "Mike Seeders Plumbing Inc serves homes and businesses across Tallahassee and the Big Bend.",
+    );
+    expect(planned.config.copy.heroBody.length).toBeLessThan(
+      draft.business.description.length,
+    );
+  });
+
+  it("retries an empty model plan once at higher reasoning effort", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({ choices: [{ message: { content: '{"plans":[]}' } }] }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          choices: [
+            {
+              message: {
+                content:
+                  '{"plans":[{"feedbackIndex":0,"operations":[{"kind":"set_copy","field":"heroBody","value":"Local plumbing help across Tallahassee."}]}]}',
+              },
+            },
+          ],
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const operations = await modelOperations(
+      ["Please rewrite the hero body."],
+      config(),
+      "test-model",
+    );
+
+    expect(operations).toEqual([
+      expect.objectContaining({
+        feedbackIndex: 0,
+        kind: "set_copy",
+        field: "heroBody",
+      }),
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).reasoning_effort).toBe(
+      "high",
+    );
   });
 
   it("does not opt a legacy site into a new recipe for minor palette feedback", async () => {

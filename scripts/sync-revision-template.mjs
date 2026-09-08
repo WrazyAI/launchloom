@@ -56,6 +56,16 @@ if (kinds.has("set_conversion_feature")) {
   files.add("styles/site.css");
 }
 if (
+  operations.some(
+    (operation) =>
+      operation.kind === "set_copy" &&
+      ["heroHeading", "heroBody"].includes(operation.field),
+  )
+) {
+  files.add("components/PageSections.astro");
+  files.add("lib/site.ts");
+}
+if (
   [...kinds].some((kind) =>
     [
       "set_section_enabled",

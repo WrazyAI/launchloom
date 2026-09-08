@@ -78,6 +78,8 @@ export type SiteConfig = {
   };
   copy?: {
     heroKicker?: string;
+    heroHeading?: string;
+    heroBody?: string;
     servicesHeading?: string;
     aboutKicker?: string;
     aboutHeading?: string;

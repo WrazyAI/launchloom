@@ -2,6 +2,8 @@ import { parseModelJson } from "./model-json.mjs";
 
 const COPY_FIELDS = new Set([
   "heroKicker",
+  "heroHeading",
+  "heroBody",
   "servicesHeading",
   "aboutKicker",
   "aboutHeading",
@@ -135,7 +137,7 @@ const broadLayoutRequest =
 const layoutRequest =
   /\b(layout|reorder|move|above|below|before|after|hide|remove|show|add|section|spacing|spacious|compact|density|typography|font|modern|editorial|bold|immersive|center(?:ed)?)\b/i;
 const contentRequest =
-  /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten).{0,50}\b(faq|question|answer|process|step)\b|\b(faq|question|answer|process|step)\b.{0,50}(?:say|read|explain|mention)\b/i;
+  /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten|simplify|condense).{0,50}\b(faq|question|answer|process|step|hero|opening)\b|\b(faq|question|answer|process|step|hero|opening)\b.{0,50}(?:say|read|explain|mention|shorter|simpler|concise|bloated|too long)\b/i;
 const conversionFeatureRequest =
   /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant)|chat(?:bot)?|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
 
@@ -506,6 +508,31 @@ function feedbackWithoutConversionFeatures(feedback) {
     .filter((segment) => !conversionFeatureRequest.test(segment))
     .join(". ");
 }
+function approvedHeroShortening(feedback, config) {
+  if (
+    !/\b(hero|opening)\b/i.test(feedback) ||
+    !/\b(shorten|shorter|simplify|simpler|condense|concise|bloated|too long)\b/i.test(
+      feedback,
+    )
+  )
+    return [];
+  const description = clean(
+    config.copy?.heroBody || config.business?.description,
+    1000,
+  );
+  if (!description) return [];
+  const firstSentence =
+    description.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim() || description;
+  if (firstSentence.length >= description.length) return [];
+  return [
+    {
+      kind: "set_copy",
+      field: "heroBody",
+      value: firstSentence,
+      provenance: "approved_business_description",
+    },
+  ];
+}
 export function deterministicOperations(feedback, config) {
   const operations = [];
   const movingExistingProof =
@@ -539,6 +566,7 @@ export function deterministicOperations(feedback, config) {
     );
   if (!onlyEnablesRequestedProof) operations.push(...structural);
   operations.push(...conversionFeatureOperations(feedback));
+  operations.push(...approvedHeroShortening(feedback, config));
   return operations;
 }
 function intentsFor(feedback, config) {
@@ -574,48 +602,54 @@ export async function modelOperations(
 ) {
   if (!process.env.OPENROUTER_API_KEY) return [];
   const items = Array.isArray(feedbackItems) ? feedbackItems : [feedbackItems];
-  const response = await fetch(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "X-OpenRouter-Title": "LaunchLoom revision operations",
+  for (const reasoningEffort of ["low", "high"]) {
+    const response = await fetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "X-OpenRouter-Title": "LaunchLoom revision operations",
+        },
+        body: JSON.stringify({
+          model,
+          reasoning_effort: reasoningEffort,
+          temperature: 0.1,
+          response_format: { type: "json_object" },
+          messages: [
+            {
+              role: "system",
+              content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
+            },
+            {
+              role: "user",
+              content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
+            },
+          ],
+        }),
       },
-      body: JSON.stringify({
-        model,
-        reasoning_effort: "low",
-        temperature: 0.1,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'exitOffer',enabled:boolean}. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
-          },
-          {
-            role: "user",
-            content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
-          },
-        ],
-      }),
-    },
-  );
-  if (!response.ok) return [];
-  try {
-    const content = (await response.json()).choices?.[0]?.message?.content;
-    const parsed = parseModelJson(content);
-    return (Array.isArray(parsed.plans) ? parsed.plans : []).flatMap((plan) =>
-      Array.isArray(plan.operations)
-        ? plan.operations.slice(0, 8).map((operation) => ({
-            ...operation,
-            feedbackIndex: Number(plan.feedbackIndex),
-          }))
-        : [],
     );
-  } catch {
-    return [];
+    if (!response.ok) continue;
+    try {
+      const content = (await response.json()).choices?.[0]?.message?.content;
+      const parsed = parseModelJson(content);
+      const operations = (
+        Array.isArray(parsed.plans) ? parsed.plans : []
+      ).flatMap((plan) =>
+        Array.isArray(plan.operations)
+          ? plan.operations.slice(0, 8).map((operation) => ({
+              ...operation,
+              feedbackIndex: Number(plan.feedbackIndex),
+            }))
+          : [],
+      );
+      if (operations.length) return operations;
+    } catch {
+      // Retry once with higher reasoning effort. Validation still happens below.
+    }
   }
+  return [];
 }
 function safeContent(value, limit) {
   const text = clean(value, limit);
@@ -673,12 +707,23 @@ export function applyOperation(config, operation) {
     return true;
   }
   if (operation.kind === "set_copy" && COPY_FIELDS.has(operation.field)) {
-    const value = safeContent(
-      operation.value,
-      operation.field === "aboutBody" || operation.field === "formIntro"
-        ? 360
-        : 180,
+    const approvedHeroBody = clean(
+      config.copy?.heroBody || config.business?.description,
+      1000,
     );
+    const value =
+      operation.field === "heroBody" &&
+      operation.provenance === "approved_business_description" &&
+      approvedHeroBody.includes(clean(operation.value, 180))
+        ? clean(operation.value, 180)
+        : safeContent(
+            operation.value,
+            operation.field === "aboutBody" ||
+              operation.field === "formIntro" ||
+              operation.field === "heroBody"
+              ? 360
+              : 180,
+          );
     if (!value) return false;
     config.copy = { ...(config.copy || {}), [operation.field]: value };
     return true;
