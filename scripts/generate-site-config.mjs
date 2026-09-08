@@ -124,6 +124,7 @@ function lines(value) {
 function text(value, limit = 240) {
   return String(value || "")
     .replace(/—/g, "-")
+    .replace(/\[([^\]]+)\]\(https?:\/\/[^\s)]+\)/g, "$1")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, limit);

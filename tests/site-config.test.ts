@@ -210,6 +210,27 @@ describe("site configuration", () => {
     );
   });
 
+  it("renders submitted Markdown links as readable proof text", () => {
+    const config = normalise(
+      {
+        differentiators: [
+          "[Mike Seeders Plumbing](https://example.com/) provides residential plumbing across Leon County.",
+        ],
+      },
+      {
+        businessName: "Mike Seeders Plumbing",
+        services: "Plumbing repair",
+        differentiators: "Local plumbing support",
+        industry: "home-services",
+        preset: "home-services",
+      },
+    );
+
+    expect(config.differentiators).toEqual([
+      "Mike Seeders Plumbing provides residential plumbing across Leon County.",
+    ]);
+  });
+
   it("extracts usable process copy from model step objects", () => {
     const config = normalise(
       {
