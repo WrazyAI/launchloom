@@ -7,6 +7,7 @@ import { network } from "./network";
 
 let commentId = 100;
 let dispatchCount = 0;
+let failureEmails: Array<Record<string, unknown>> = [];
 
 function request(
   requestId: string,
@@ -32,6 +33,7 @@ describe("RevisionCoordinator", () => {
   beforeEach(() => {
     commentId = 100;
     dispatchCount = 0;
+    failureEmails = [];
     network.use(
       http.get(
         "https://api.github.com/repos/:owner/:repo/issues/:issue/comments",
@@ -48,6 +50,10 @@ describe("RevisionCoordinator", () => {
           return new HttpResponse(null, { status: 204 });
         },
       ),
+      http.post("https://api.resend.com/emails", async ({ request }) => {
+        failureEmails.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ id: "email-1" });
+      }),
     );
   });
 
@@ -123,6 +129,13 @@ describe("RevisionCoordinator", () => {
     await coordinator.enqueue(request("request-3002", "Add an FAQ."));
     await coordinator.claim("request-3001");
     await coordinator.fail("request-3001", "Build failed.");
+
+    expect(failureEmails).toHaveLength(1);
+    expect(failureEmails[0]).toMatchObject({
+      to: ["developer@example.com"],
+      subject: expect.stringContaining("Revision needs attention"),
+      text: expect.stringContaining("Update the offer."),
+    });
 
     await expect(coordinator.approvalState()).resolves.toEqual({
       allowed: false,

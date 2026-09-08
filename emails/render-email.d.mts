@@ -1,5 +1,5 @@
 export type LifecycleEmailInput = {
-  audience: "developer" | "client" | "delivery-failure";
+  audience: "developer" | "client" | "delivery-failure" | "manual-attention";
   kind?: string;
   clientName: string;
   previewUrl: string;

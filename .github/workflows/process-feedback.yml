@@ -125,5 +125,7 @@ jobs:
         if: always() && steps.claim.outputs.run == 'true' && steps.complete.outcome != 'success'
         env:
           REVISION_QUEUE_ACTION: fail
-          REVISION_FAILURE_REASON: Developer revision workflow failed. Inspect GitHub Actions run ${{ github.run_id }}.
-        run: node scripts/revision-queue-client.mjs
+        run: |
+          DETAILS=$(test -f "$RUNNER_TEMP/revision-outcome.txt" && tr '\n' ' ' < "$RUNNER_TEMP/revision-outcome.txt" || printf '%s' 'No validated revision outcome was produced.')
+          export REVISION_FAILURE_REASON="Developer revision workflow failed. $DETAILS Inspect GitHub Actions run ${{ github.run_id }}."
+          node scripts/revision-queue-client.mjs

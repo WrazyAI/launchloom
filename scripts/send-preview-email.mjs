@@ -22,9 +22,12 @@ const reviewUrl = String(args.review || previewUrl);
 const recipient = String(args.to || "").trim();
 const clientName = cleanEmailText(args.name || "your new site", 160);
 const kind = String(args.kind || "preview");
-const audience = ["developer", "client", "delivery-failure"].includes(
-  args.audience,
-)
+const audience = [
+  "developer",
+  "client",
+  "delivery-failure",
+  "manual-attention",
+].includes(args.audience)
   ? args.audience
   : "client";
 const feedbackFile = String(args["feedback-file"] || "").trim();

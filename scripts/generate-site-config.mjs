@@ -1,4 +1,7 @@
 import fs from "node:fs/promises";
+import { parseModelJson } from "./model-json.mjs";
+
+export { parseModelJson } from "./model-json.mjs";
 
 const MODEL = "z-ai/glm-5.3-flash";
 
@@ -916,7 +919,7 @@ async function askModel(intake, effort, model = MODEL) {
   const result = await response.json();
   const content = result.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenRouter returned no content.");
-  return JSON.parse(content);
+  return parseModelJson(content);
 }
 
 async function refineDraft(intake, draft, report, model = MODEL) {
@@ -954,7 +957,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
   const result = await response.json();
   const content = result.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenRouter refinement returned no content.");
-  return JSON.parse(content);
+  return parseModelJson(content);
 }
 
 export async function generateSiteConfigWithModel(intake, model = MODEL) {

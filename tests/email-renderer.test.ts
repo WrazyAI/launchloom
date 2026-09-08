@@ -13,6 +13,7 @@ describe("LaunchLoom lifecycle emails", () => {
     ["developer", "revision", "Review developer preview"],
     ["client", "published", "Review your website"],
     ["delivery-failure", "published", "Open production website"],
+    ["manual-attention", "revision-failed", "Review failed request"],
   ] as const)(
     "renders the %s %s stage with HTML and text",
     (audience, kind, label) => {
@@ -35,6 +36,24 @@ describe("LaunchLoom lifecycle emails", () => {
       expect(email.text).not.toContain("—");
     },
   );
+
+  it("includes preserved feedback and the failure reason in manual-attention email", () => {
+    const email = renderLifecycleEmail({
+      audience: "manual-attention",
+      kind: "revision-failed",
+      clientName: "North Shore Care",
+      previewUrl: "https://github.com/WrazyAI/example/pull/2",
+      reviewUrl: "https://github.com/WrazyAI/example/pull/2",
+      clientFeedback: "Simplify the hero and add a chatbot.",
+      revisionOutcome: "The chatbot request needs manual implementation.",
+    });
+
+    expect(email.subject).toContain("Revision needs attention");
+    expect(email.html).toContain("Feedback that needs attention");
+    expect(email.text).toContain("Simplify the hero");
+    expect(email.text).toContain("needs manual implementation");
+    expect(email.html).not.toContain("—");
+  });
 
   it("preserves the exact signed review destination in the CTA", () => {
     const email = renderLifecycleEmail({

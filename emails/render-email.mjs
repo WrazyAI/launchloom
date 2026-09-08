@@ -73,6 +73,15 @@ function lifecycleCopy({ audience, kind, clientName }) {
       intro: `${clientName} is live, but Resend rejected the client delivery email. The website itself deployed successfully.`,
     };
   }
+  if (audience === "manual-attention") {
+    return {
+      subject: `Revision needs attention: ${clientName}`,
+      preheader: `A requested website revision could not be completed automatically.`,
+      eyebrow: "Revision attention",
+      title: `This revision needs your review`,
+      intro: `LaunchLoom preserved the feedback for ${clientName}, but could not safely complete every requested change. No completion email was sent to the client.`,
+    };
+  }
   if (audience === "developer") {
     return {
       subject: `Developer review required: ${clientName}`,
@@ -92,9 +101,12 @@ function lifecycleCopy({ audience, kind, clientName }) {
 }
 
 export function renderLifecycleEmail(input) {
-  const audience = ["developer", "client", "delivery-failure"].includes(
-    input.audience,
-  )
+  const audience = [
+    "developer",
+    "client",
+    "delivery-failure",
+    "manual-attention",
+  ].includes(input.audience)
     ? input.audience
     : "client";
   const kind = cleanEmailLine(input.kind, 40) || "preview";
@@ -109,12 +121,28 @@ export function renderLifecycleEmail(input) {
   let rows = "";
   let textSections = [];
 
-  if (audience === "developer" && feedback) {
-    rows += textBlock("Feedback that informed this revision", feedback);
-    textSections.push(`FEEDBACK THAT INFORMED THIS REVISION\n${feedback}`);
+  if (["developer", "manual-attention"].includes(audience) && feedback) {
+    const label =
+      audience === "manual-attention"
+        ? "Feedback that needs attention"
+        : "Feedback that informed this revision";
+    rows += textBlock(
+      label,
+      feedback,
+      audience === "manual-attention" ? "warning" : "default",
+    );
+    textSections.push(`${label.toUpperCase()}\n${feedback}`);
     if (outcome) {
-      rows += textBlock("Revision outcome", outcome);
-      textSections.push(`REVISION OUTCOME\n${outcome}`);
+      const outcomeLabel =
+        audience === "manual-attention"
+          ? "Why processing stopped"
+          : "Revision outcome";
+      rows += textBlock(
+        outcomeLabel,
+        outcome,
+        audience === "manual-attention" ? "warning" : "default",
+      );
+      textSections.push(`${outcomeLabel.toUpperCase()}\n${outcome}`);
     }
   }
 
@@ -127,7 +155,13 @@ export function renderLifecycleEmail(input) {
     textSections.push(`${queuedLabel.toUpperCase()}\n${queuedFeedback}`);
   }
 
-  if (audience === "delivery-failure") {
+  if (audience === "manual-attention") {
+    rows += action(
+      reviewUrl || previewUrl,
+      "Review failed request",
+      "The feedback remains preserved. Resolve it, then use the revision queue recovery workflow.",
+    );
+  } else if (audience === "delivery-failure") {
     rows += textBlock(
       "Next step",
       "Confirm or correct the client email address, then send the production website link manually.",
@@ -156,12 +190,14 @@ export function renderLifecycleEmail(input) {
   }
 
   const actionLabel =
-    audience === "delivery-failure"
-      ? "Open production website"
-      : audience === "developer"
-        ? "Review developer preview"
-        : "Review your website";
-  const text = `${copy.eyebrow.toUpperCase()}\n\n${copy.title}\n\n${copy.intro}${textSections.length ? `\n\n${textSections.join("\n\n")}` : ""}\n\n${actionLabel}: ${audience === "delivery-failure" ? previewUrl || reviewUrl : reviewUrl}\n\nSent by LaunchLoom for this website project.`;
+    audience === "manual-attention"
+      ? "Review failed request"
+      : audience === "delivery-failure"
+        ? "Open production website"
+        : audience === "developer"
+          ? "Review developer preview"
+          : "Review your website";
+  const text = `${copy.eyebrow.toUpperCase()}\n\n${copy.title}\n\n${copy.intro}${textSections.length ? `\n\n${textSections.join("\n\n")}` : ""}\n\n${actionLabel}: ${audience === "delivery-failure" ? previewUrl || reviewUrl : reviewUrl || previewUrl}\n\nSent by LaunchLoom for this website project.`;
   return {
     subject: copy.subject,
     html: shell({ ...copy, rows }),

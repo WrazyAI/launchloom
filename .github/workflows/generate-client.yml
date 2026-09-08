@@ -155,3 +155,12 @@ jobs:
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "${{ steps.intake.outputs.business_name }}" --preview "${{ steps.deploy.outputs.preview }}" --review "${{ steps.review.outputs.link }}" --kind initial --audience developer --idempotency-key "initial-${{ steps.client.outputs.project }}-${{ steps.deploy.outputs.sha }}"
           gh pr comment "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --body '<!-- launchloom-initial-email:${{ steps.deploy.outputs.sha }} -->'
           gh pr edit "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --remove-label launchloom-delivery-pending
+      - name: Notify developer when generation stops
+        if: failure()
+        env:
+          ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
+        run: |
+          NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
+          printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$RUNNER_TEMP/generation-failure-feedback.txt"
+          printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/WrazyAI/launchloom/issues/$ISSUE" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$ISSUE-${{ github.run_id }}"

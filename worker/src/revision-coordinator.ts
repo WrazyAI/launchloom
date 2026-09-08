@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { renderLifecycleEmail } from "../../emails/render-email.mjs";
 
 export type RevisionStage = "developer" | "client";
 export type QueueStatus =
@@ -47,6 +48,12 @@ type RevisionRow = {
   failure: string | null;
 };
 
+type FailureNotice = {
+  requestId: string;
+  reason: string;
+  attempts: number;
+};
+
 export type EnqueueResult =
   | {
       ok: true;
@@ -75,6 +82,7 @@ const ACTIVE = "('dispatching','dispatched','running')";
 const DISPATCH_RETRY_MS = 15 * 60_000;
 const RUN_TIMEOUT_MS = 50 * 60_000;
 const RETENTION_MS = 30 * 24 * 60 * 60_000;
+const FAILURE_NOTICE_KEY = "pending-failure-notice";
 
 function cleanError(error: unknown) {
   return (
@@ -117,25 +125,38 @@ async function notifyFailure(
     !env.LAUNCHLOOM_FROM_EMAIL ||
     !env.LAUNCHLOOM_FEEDBACK_EMAIL
   )
-    return;
-  const escapedRepo = row.repo.replace(/[<>&"']/g, "");
-  const escapedReason = reason.replace(/[<>&"']/g, "");
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-      "Idempotency-Key": `revision-failed-${row.request_id}`,
-    },
-    body: JSON.stringify({
-      from: env.LAUNCHLOOM_FROM_EMAIL,
-      to: [env.LAUNCHLOOM_FEEDBACK_EMAIL],
-      subject: `Revision queue paused: ${row.site_id}`,
-      html: `<p>A website revision failed and its queue has been paused.</p><p><strong>Repository:</strong> ${escapedRepo}</p><p><strong>Request:</strong> ${row.request_id}</p><p><strong>Reason:</strong> ${escapedReason}</p><p>The queued request, if any, has been preserved. Run the LaunchLoom revision queue recovery workflow after resolving the failure.</p>`,
-      text: `A website revision failed and its queue has been paused.\n\nRepository: ${row.repo}\nRequest: ${row.request_id}\nReason: ${reason}\n\nThe queued request, if any, has been preserved. Run the LaunchLoom revision queue recovery workflow after resolving the failure.`,
-      tags: [{ name: "launchloom_kind", value: "revision-queue-failed" }],
-    }),
+    return true;
+  const target = row.pr
+    ? `https://github.com/${row.repo}/pull/${row.pr}`
+    : `https://github.com/${row.repo}/issues/${row.feedback_issue}`;
+  const rendered = renderLifecycleEmail({
+    audience: "manual-attention",
+    kind: "revision-failed",
+    clientName: row.site_id,
+    previewUrl: target,
+    reviewUrl: target,
+    clientFeedback: `${row.category ? `[${row.category}] ` : ""}${row.feedback}`,
+    revisionOutcome: `${reason}\n\nRequest ID: ${row.request_id}`,
   });
+  let response;
+  try {
+    response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `revision-failed-${row.request_id}`,
+      },
+      body: JSON.stringify({
+        from: env.LAUNCHLOOM_FROM_EMAIL,
+        to: [env.LAUNCHLOOM_FEEDBACK_EMAIL],
+        ...rendered,
+        tags: [{ name: "launchloom_kind", value: "revision-queue-failed" }],
+      }),
+    });
+  } catch {
+    return false;
+  }
   if (!response.ok)
     console.error(
       JSON.stringify({
@@ -145,6 +166,7 @@ async function notifyFailure(
         status: response.status,
       }),
     );
+  return response.ok;
 }
 
 export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
@@ -259,7 +281,6 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       Date.now(),
       row.request_id,
     );
-    await this.ctx.storage.deleteAlarm();
     console.error(
       JSON.stringify({
         event: "revision.failed",
@@ -268,7 +289,17 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         reason,
       }),
     );
-    await notifyFailure(this.env, row, reason);
+    if (await notifyFailure(this.env, row, reason)) {
+      await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
+      await this.ctx.storage.deleteAlarm();
+    } else {
+      await this.ctx.storage.put<FailureNotice>(FAILURE_NOTICE_KEY, {
+        requestId: row.request_id,
+        reason,
+        attempts: 1,
+      });
+      await this.ctx.storage.setAlarm(Date.now() + 5 * 60_000);
+    }
   }
 
   async enqueue(input: RevisionRequestInput): Promise<EnqueueResult> {
@@ -465,6 +496,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     let failed = this.row(requestId);
     if (!failed || failed.status !== "failed")
       return { ok: true, requestId: null };
+    await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
     this.ctx.storage.sql.exec(
       "UPDATE revision_requests SET status = 'dispatching', failure = NULL WHERE request_id = ?",
       failed.request_id,
@@ -508,6 +540,25 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   async alarm() {
+    const notice =
+      await this.ctx.storage.get<FailureNotice>(FAILURE_NOTICE_KEY);
+    if (notice) {
+      const failed = this.row(notice.requestId);
+      if (!failed || (await notifyFailure(this.env, failed, notice.reason))) {
+        await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
+        await this.ctx.storage.deleteAlarm();
+      } else {
+        const attempts = notice.attempts + 1;
+        await this.ctx.storage.put<FailureNotice>(FAILURE_NOTICE_KEY, {
+          ...notice,
+          attempts,
+        });
+        await this.ctx.storage.setAlarm(
+          Date.now() + Math.min(60, 5 * 2 ** (attempts - 1)) * 60_000,
+        );
+      }
+      return;
+    }
     const active = this.ctx.storage.sql
       .exec<RevisionRow>(
         `SELECT * FROM revision_requests WHERE status IN ${ACTIVE} ORDER BY created_at LIMIT 1`,

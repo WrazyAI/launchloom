@@ -1,3 +1,5 @@
+import { parseModelJson } from "./model-json.mjs";
+
 const COPY_FIELDS = new Set([
   "heroKicker",
   "servicesHeading",
@@ -602,7 +604,7 @@ export async function modelOperations(
   if (!response.ok) return [];
   try {
     const content = (await response.json()).choices?.[0]?.message?.content;
-    const parsed = JSON.parse(content || "{}");
+    const parsed = parseModelJson(content);
     return (Array.isArray(parsed.plans) ? parsed.plans : []).flatMap((plan) =>
       Array.isArray(plan.operations)
         ? plan.operations.slice(0, 8).map((operation) => ({

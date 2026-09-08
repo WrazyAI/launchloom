@@ -9,6 +9,9 @@ export default defineConfig({
         bindings: {
           GITHUB_ORG_TOKEN: "test-github-token",
           REVISION_COORDINATOR_SECRET: "test-coordinator-secret",
+          RESEND_API_KEY: "test-resend-key",
+          LAUNCHLOOM_FROM_EMAIL: "LaunchLoom <info@example.com>",
+          LAUNCHLOOM_FEEDBACK_EMAIL: "developer@example.com",
         },
       },
     }),
