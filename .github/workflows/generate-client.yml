@@ -112,7 +112,11 @@ jobs:
           fi
           node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
           REMOTE="https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git"
-          REMOTE_REFS=$(git ls-remote --heads "$REMOTE")
+          # A newly-created private repository can be available through the
+          # REST API several seconds before GitHub's Smart HTTP endpoint. Use
+          # the already-authorized REST API for branch discovery so an empty
+          # repository is not mistaken for a failed clone.
+          REMOTE_REFS=$(gh api --paginate "repos/$CLIENT_REPO/branches?per_page=100" --jq '.[] | [.commit.sha, ("refs/heads/" + .name)] | @tsv')
           BOOTSTRAP=$(printf '%s\n' "$REMOTE_REFS" | node scripts/client-repository-bootstrap.mjs)
           if [ "$BOOTSTRAP" = review ]; then
             gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch review/initial
@@ -128,6 +132,14 @@ jobs:
           fi
           node scripts/sync-client-guidelines.mjs "$CLIENT_DIR"
           cd "$CLIENT_DIR"
+          git_push_with_retry() {
+            local attempt
+            for attempt in 1 2 3 4 5; do
+              if git push "$@"; then return 0; fi
+              if [ "$attempt" -eq 5 ]; then return 1; fi
+              sleep $((attempt * 2))
+            done
+          }
           rm -f netlify.toml
           printf '{"provider":"cloudflare-pages","project":"%s"}\n' "$PROJECT" > .launchloom-deployment.json
           if [ ! -d .git ]; then
@@ -137,7 +149,7 @@ jobs:
             git add .
             git commit -m "Add LaunchLoom site foundation"
             git remote add origin "$REMOTE"
-            git push origin main
+            git_push_with_retry origin main
             git switch -c review/initial
           else
             git config user.name "LaunchLoom"
@@ -147,7 +159,7 @@ jobs:
           cp /tmp/site.config.json src/site.config.json
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
-          git push --set-upstream origin review/initial
+          git_push_with_retry --set-upstream origin review/initial
           PR=$(gh pr list --repo "$CLIENT_REPO" --state open --head review/initial --json url --jq '.[0].url // ""')
           if [ -z "$PR" ]; then
             PR=$(gh pr create --repo "$CLIENT_REPO" --base main --head review/initial --title "Initial LaunchLoom site" --body "Private developer preview generated from the verified intake.\n\n<!-- launchloom-feedback-inbox:${{ steps.client.outputs.feedback_issue }} -->")
