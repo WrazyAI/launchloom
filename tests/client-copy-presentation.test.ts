@@ -19,4 +19,13 @@ describe("client copy presentation", () => {
     expect(component).not.toMatch(/service-card[^\n]+0\{index \+ 1\}/);
     expect(component).not.toMatch(/trust-grid[^\n]+0\{index \+ 1\}/);
   });
+
+  it("balances three trust points and four real process steps", async () => {
+    const styles = await fs.readFile(
+      "templates/client-site/src/styles/site.css",
+      "utf8",
+    );
+    expect(styles).toContain(".trust-grid:has(> div:nth-child(3):last-child)");
+    expect(styles).toContain(".process-grid:has(> li:nth-child(4):last-child)");
+  });
 });

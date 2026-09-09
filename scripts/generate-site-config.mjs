@@ -1014,6 +1014,12 @@ export function normalise(candidate, intake) {
     145,
     22,
   );
+  copy.aboutBody = conciseSentence(
+    suppliedCopy.aboutBody || copy.aboutBody || business.description,
+    business.description,
+    180,
+    28,
+  );
   if (
     isDirectionsCta(business) &&
     text(copy.contactHeading, 180).toLowerCase() === "get directions"

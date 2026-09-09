@@ -206,6 +206,29 @@ describe("site configuration", () => {
     expect(config.copy.servicesIntro).toContain("celebration cakes");
   });
 
+  it("finishes long about copy at a word boundary with punctuation", () => {
+    const config = normalise(
+      {
+        copy: {
+          aboutBody:
+            "Lumiere was built around a simple conviction: bread and pastry deserve time. Our bakers ferment every sourdough for 48 hours on wild yeast, work exclusively with organic heirloom grains, laminate pastry by hand, and bake each morning for the neighborhood.",
+        },
+      },
+      {
+        businessName: "Lumiere Artisan Bakery and Cafe",
+        services: "Sourdough bread",
+        industry: "hospitality",
+        preset: "home-services",
+      },
+    );
+
+    expect(config.copy.aboutBody.length).toBeLessThanOrEqual(180);
+    expect(config.copy.aboutBody).toMatch(/[.!?]$/);
+    expect(config.copy.aboutBody).toBe(
+      "Lumiere was built around a simple conviction: bread and pastry deserve time.",
+    );
+  });
+
   it("does not substitute stock imagery for an unsupported industry", () => {
     const config = normalise(
       {},

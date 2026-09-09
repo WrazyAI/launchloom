@@ -277,6 +277,14 @@ h2 {
   padding: 0;
   list-style: none;
 }
+@media (min-width: 761px) {
+  .process-grid:has(> li:nth-child(2):last-child) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .process-grid:has(> li:nth-child(4):last-child) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
 .process-grid li {
   padding: 27px;
   background: #edf1eb;
@@ -916,6 +924,17 @@ h2 {
 .trust-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+}
+@media (min-width: 761px) {
+  .trust-grid:has(> div:only-child) {
+    grid-template-columns: 1fr;
+  }
+  .trust-grid:has(> div:nth-child(2):last-child) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .trust-grid:has(> div:nth-child(3):last-child) {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 .trust-grid > div {
   min-width: 0;
