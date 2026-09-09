@@ -1,0 +1,28 @@
+[
+  {
+    "id": "mike-seeders-plumbing",
+    "name": "Mike Seeders Plumbing, Inc.",
+    "industry": "local plumbing and home services",
+    "url": "https://review-initial.launchloom-16-mike-seeders-plumbing-inc.pages.dev/",
+    "reviewFocus": [
+      "repetitive numbered service-card composition",
+      "headings that wrap awkwardly or dominate their cards",
+      "service descriptions ending mid-word or mid-sentence",
+      "weak differentiation, storytelling, or proof",
+      "conversion controls obscuring content"
+    ]
+  },
+  {
+    "id": "lumiere-artisan-bakery",
+    "name": "Lumière Artisan Bakery & Café",
+    "industry": "artisan bakery, café, cakes, and catering",
+    "url": "https://review-initial.launchloom-17-lumi-re-artisan-bakery-ca.pages.dev/",
+    "reviewFocus": [
+      "healthcare language such as care options on a bakery website",
+      "service descriptions attached to the wrong product or service",
+      "service descriptions ending mid-word or mid-sentence",
+      "repetitive numbered service-card composition",
+      "calls to action that do not match bakery visitor intent"
+    ]
+  }
+]

@@ -122,12 +122,22 @@ function lines(value) {
 }
 
 function text(value, limit = 240) {
-  return String(value || "")
+  const cleaned = String(value || "")
     .replace(/—/g, "-")
     .replace(/\[([^\]]+)\]\(https?:\/\/[^\s)]+\)/g, "$1")
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, limit);
+    .trim();
+  if (cleaned.length <= limit) return cleaned;
+  const excerpt = cleaned.slice(0, limit + 1);
+  const sentenceEnd = Math.max(
+    excerpt.lastIndexOf(". "),
+    excerpt.lastIndexOf("! "),
+    excerpt.lastIndexOf("? "),
+  );
+  if (sentenceEnd >= Math.floor(limit * 0.55))
+    return excerpt.slice(0, sentenceEnd + 1).trim();
+  const wordEnd = excerpt.lastIndexOf(" ", limit);
+  return excerpt.slice(0, wordEnd > 0 ? wordEnd : limit).trim();
 }
 
 function safeHex(value, fallback) {
@@ -701,18 +711,25 @@ export function normalise(candidate, intake) {
   const preset =
     value.preset === "home-services" ? "home-services" : base.preset;
   const submittedServiceNames = lines(intake.services);
+  const proposedServices = Array.isArray(value.services) ? value.services : [];
+  const proposedServiceBySlug = new Map(
+    proposedServices
+      .filter((service) => service && typeof service === "object")
+      .map((service) => [
+        slugify(String(service.slug || service.name || "")),
+        service,
+      ])
+      .filter(([slug]) => slug !== "client-site"),
+  );
   // The model can improve descriptions, but it cannot rename, replace, or
   // invent the services the client says it sells.
   const serviceInput = submittedServiceNames.length
-    ? submittedServiceNames.map((name, index) => ({
+    ? submittedServiceNames.map((name) => ({
         name,
         slug: slugify(name),
-        description: Array.isArray(value.services)
-          ? value.services[index]?.description
-          : undefined,
-        decisionSupport: Array.isArray(value.services)
-          ? value.services[index]?.decisionSupport
-          : undefined,
+        description: proposedServiceBySlug.get(slugify(name))?.description,
+        decisionSupport: proposedServiceBySlug.get(slugify(name))
+          ?.decisionSupport,
       }))
     : Array.isArray(value.services)
       ? value.services

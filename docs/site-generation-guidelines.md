@@ -137,6 +137,21 @@ copy, and colors must be visible; calls and fragment links must work; primary
 actions must retain readable contrast; and the page must not overflow
 horizontally. Keep the resulting screenshots with the workflow evidence.
 
+Every initial preview and every developer or client revision must also pass the
+GLM visual quality gate before deployment. Give the gate only a redacted public
+content manifest plus the desktop and mobile screenshots. It may automatically
+apply at most three allowlisted layout operations: section variant, section
+order, and density or typography treatment. It must never rewrite facts, copy,
+contact details, assets, reviews, claims, or credentials.
+
+When the gate applies a safe correction, rebuild once and run both deterministic
+render verification and the GLM verification pass again. An unresolved critical
+content-integrity, industry-fit, imagery, conversion, overflow, or obstruction
+defect blocks deployment and email delivery. Preserve both gate reports and the
+screenshots as workflow evidence. Major aesthetic recommendations that cannot be
+safely expressed by the operation set remain visible in the report rather than
+being converted into invented content or unrestricted code changes.
+
 ## Acceptance checklist
 
 - The opening identifies the service, intended customer, location when

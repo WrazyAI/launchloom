@@ -12,6 +12,8 @@
     "test": "vitest run tests",
     "test:worker": "vitest run --config vitest.worker.config.ts",
     "evaluate:models": "node scripts/evaluate-models.mjs",
+    "evaluate:visual-models": "node scripts/evaluate-visual-models.mjs",
+    "quality:visual": "node scripts/visual-quality-gate.mjs",
     "build:design-demos": "node scripts/build-design-demos.mjs",
     "verify:onboarding-ui": "npm run build && node scripts/verify-onboarding-ui.mjs",
     "test:watch": "vitest",

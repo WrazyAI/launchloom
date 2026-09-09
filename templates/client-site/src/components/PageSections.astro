@@ -10,8 +10,10 @@ const proofPoints = site.differentiators.filter(Boolean).slice(0, 4);
 const process = site.conversion?.process?.length ? site.conversion.process : ["Tell us what you need", "Get clear next steps", "Move forward with confidence"];
 const faqs = site.conversion?.faqs || [];
 const galleryImages = [site.assets?.photoThree, site.assets?.teamPhoto].filter((image): image is string => Boolean(image));
-const care = page.recipe === "care-editorial";
-const trades = page.recipe === "local-trades";
+// A visual recipe may be reused, but industry-specific language must be based
+// on verified business context rather than the selected visual recipe.
+const care = site.businessKind === "home-care" || site.industry === "wellness";
+const trades = site.preset === "home-services" || site.industry === "home-services";
 const garage = site.businessKind === "garage-door";
 const contactId = page.sections.find((section) => section.type === "contact")?.id || "contact";
 const stockContext = care ? "care setting" : trades ? "local service setting" : "business setting";

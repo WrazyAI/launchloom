@@ -341,4 +341,50 @@ describe("site configuration", () => {
       ]),
     );
   });
+
+  it("matches generated service copy by service identity instead of array position", () => {
+    const config = normalise(
+      {
+        services: [
+          {
+            name: "Water heater repair",
+            description:
+              "Diagnose inconsistent hot water and explain the repair options.",
+          },
+          {
+            name: "Drain cleaning",
+            description:
+              "Clear recurring kitchen and bathroom drain blockages.",
+          },
+        ],
+      },
+      {
+        businessName: "Example Plumbing",
+        services: "Drain cleaning\nWater heater repair",
+        industry: "home-services",
+        preset: "home-services",
+      },
+    );
+
+    expect(config.services[0].description).toContain("drain blockages");
+    expect(config.services[1].description).toContain("hot water");
+  });
+
+  it("does not cut generated copy through the middle of a word", () => {
+    const config = normalise(
+      {
+        business: {
+          description: `${"Useful complete sentence. ".repeat(30)}unfinishedword`,
+        },
+      },
+      {
+        businessName: "Example Business",
+        services: "Consultation",
+        industry: "professional-services",
+      },
+    );
+
+    expect(config.business.description).toMatch(/[.!?]$/);
+    expect(config.business.description.length).toBeLessThanOrEqual(520);
+  });
 });

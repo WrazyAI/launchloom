@@ -1,0 +1,81 @@
+import { describe, expect, it } from "vitest";
+import {
+  applySafeVisualOperations,
+  blockingFindings,
+  buildSafeVisualManifest,
+  validateVisualAudit,
+} from "../scripts/visual-quality-gate-lib.mjs";
+
+const config: any = {
+  preset: "premium-wellness",
+  industry: "hospitality",
+  businessKind: "bakery",
+  business: {
+    name: "Lumiere",
+    email: "private@example.com",
+    primaryCta: "Order",
+    serviceAreas: ["Charleston"],
+    phone: "555",
+  },
+  services: [
+    { name: "Bread", slug: "bread", description: "Slow-fermented bread" },
+  ],
+  copy: { heroHeading: "Bread made slowly" },
+  design: {
+    recipe: "general-editorial",
+    sections: [
+      { id: "opening", type: "hero", variant: "editorial" },
+      { id: "services", type: "services", variant: "editorial" },
+      { id: "contact", type: "contact", variant: "consultation" },
+    ],
+  },
+  assets: { logo: "https://secret.example/logo?token=secret", photoOne: "x" },
+  lead: { token: "lead-secret" },
+  review: { token: "review-secret" },
+  conversion: {
+    aiChat: { enabled: true, token: "chat-secret", apiUrl: "https://api" },
+  },
+};
+
+describe("GLM visual quality gate", () => {
+  it("builds a bounded manifest without private delivery fields", () => {
+    const serialized = JSON.stringify(buildSafeVisualManifest(config));
+    expect(serialized).toContain("Bread made slowly");
+    expect(serialized).not.toContain("private@example.com");
+    expect(serialized).not.toContain("secret");
+    expect(serialized).not.toContain("apiUrl");
+  });
+
+  it("applies only bounded layout operations", () => {
+    const next = structuredClone(config);
+    const applied = applySafeVisualOperations(next, [
+      { kind: "set_copy", field: "heroHeading", value: "Unsafe rewrite" },
+      { kind: "set_section_variant", sectionType: "hero", variant: "centered" },
+      {
+        kind: "set_design_treatment",
+        density: "spacious",
+        typography: "editorial",
+      },
+    ] as any);
+    expect(applied).toHaveLength(2);
+    expect(next.copy.heroHeading).toBe("Bread made slowly");
+    expect(next.design.sections[0].variant).toBe("centered");
+  });
+
+  it("caps findings and identifies critical blockers", () => {
+    const audit = validateVisualAudit({
+      summary: "Broken copy",
+      verdict: "block",
+      findings: Array.from({ length: 10 }, (_, index) => ({
+        category: "content-integrity",
+        severity: index === 0 ? "critical" : "minor",
+        viewport: "both",
+        evidence: "A sentence is clipped",
+        recommendation: "Repair the source copy",
+      })),
+      operations: [],
+    });
+    expect(audit.findings).toHaveLength(8);
+    expect(blockingFindings(audit)).toHaveLength(1);
+  });
+});
