@@ -878,7 +878,7 @@ h2 {
 .recipe-local-trades .lead-form button,
 .recipe-local-trades .mobile-call {
   color: var(--on-brand, #fff);
-  background: color-mix(in srgb, var(--brand) 72%, #000);
+  background: var(--brand);
 }
 .recipe-local-trades .contact-phone {
   color: color-mix(in srgb, var(--brand) 72%, #000);

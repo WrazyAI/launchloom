@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { chromium } from "playwright";
+import { contrast, parseCssColor } from "./color-contrast.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -68,26 +69,6 @@ const expectsLocationMap =
     /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(
       String(config.business?.address || ""),
     ));
-
-function rgb(value) {
-  const match = String(value).match(/[\d.]+/g);
-  return match ? match.slice(0, 3).map(Number) : [];
-}
-function luminance(color) {
-  return rgb(color)
-    .map((value) => value / 255)
-    .map((value) =>
-      value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4,
-    )
-    .reduce(
-      (sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index],
-      0,
-    );
-}
-function contrast(first, second) {
-  const values = [luminance(first), luminance(second)].sort((a, b) => b - a);
-  return (values[0] + 0.05) / (values[1] + 0.05);
-}
 
 try {
   await fs.mkdir(screenshotDir, { recursive: true });
@@ -322,8 +303,8 @@ try {
       );
     for (const action of state.actions)
       if (
-        rgb(action.color).length &&
-        rgb(action.background).length &&
+        parseCssColor(action.color).length &&
+        parseCssColor(action.background).length &&
         contrast(action.color, action.background) < 4.5
       )
         failures.push(

@@ -112,9 +112,17 @@ jobs:
           fi
           node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
           REMOTE="https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git"
-          if gh api "repos/$CLIENT_REPO/git/ref/heads/review/initial" >/dev/null 2>&1; then
+          REMOTE_REFS=$(git ls-remote --heads "$REMOTE")
+          BOOTSTRAP=$(printf '%s\n' "$REMOTE_REFS" | node scripts/client-repository-bootstrap.mjs)
+          if [ "$BOOTSTRAP" = review ]; then
             gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch review/initial
             cp -R templates/client-site/. "$CLIENT_DIR/"
+          elif [ "$BOOTSTRAP" = main ]; then
+            gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch main
+            cp -R templates/client-site/. "$CLIENT_DIR/"
+            cd "$CLIENT_DIR"
+            git switch -c review/initial
+            cd "$GITHUB_WORKSPACE"
           else
             cp -R templates/client-site "$CLIENT_DIR"
           fi
