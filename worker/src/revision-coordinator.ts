@@ -62,7 +62,7 @@ export type EnqueueResult =
     }
   | {
       ok: false;
-      code: "revision_queue_full" | "revision_queue_halted";
+      code: "revision_queue_full";
       error: string;
     };
 
@@ -166,6 +166,19 @@ async function notifyFailure(
         status: response.status,
       }),
     );
+  else {
+    const receipt = (await response.json().catch(() => ({}))) as {
+      id?: string;
+    };
+    console.log(
+      JSON.stringify({
+        event: "revision.failure_email_sent",
+        repo: row.repo,
+        requestId: row.request_id,
+        emailId: receipt.id || null,
+      }),
+    );
+  }
   return response.ok;
 }
 
@@ -197,6 +210,11 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         );
         CREATE INDEX IF NOT EXISTS revision_requests_status ON revision_requests(status, created_at);
         CREATE INDEX IF NOT EXISTS revision_requests_fingerprint ON revision_requests(fingerprint, created_at);
+        CREATE TABLE IF NOT EXISTS ai_chat_limits (
+          visitor_key TEXT PRIMARY KEY,
+          window_started_at INTEGER NOT NULL,
+          request_count INTEGER NOT NULL
+        );
       `);
     });
   }
@@ -208,6 +226,66 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         requestId,
       )
       .toArray()[0];
+  }
+
+  async allowAiChat(
+    visitorKey: string,
+    now = Date.now(),
+  ): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+    const windowMs = 10 * 60_000;
+    const limit = 12;
+    const key = visitorKey.slice(0, 160);
+    const existing = this.ctx.storage.sql
+      .exec<{
+        window_started_at: number;
+        request_count: number;
+      }>(
+        "SELECT window_started_at, request_count FROM ai_chat_limits WHERE visitor_key = ?",
+        key,
+      )
+      .toArray()[0];
+    if (!existing || now - existing.window_started_at >= windowMs) {
+      this.ctx.storage.sql.exec(
+        "INSERT INTO ai_chat_limits (visitor_key, window_started_at, request_count) VALUES (?, ?, 1) ON CONFLICT(visitor_key) DO UPDATE SET window_started_at = excluded.window_started_at, request_count = 1",
+        key,
+        now,
+      );
+      return { allowed: true, retryAfterSeconds: 0 };
+    }
+    if (existing.request_count >= limit)
+      return {
+        allowed: false,
+        retryAfterSeconds: Math.max(
+          1,
+          Math.ceil((windowMs - (now - existing.window_started_at)) / 1000),
+        ),
+      };
+    this.ctx.storage.sql.exec(
+      "UPDATE ai_chat_limits SET request_count = request_count + 1 WHERE visitor_key = ?",
+      key,
+    );
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  private async promoteQueued(): Promise<RevisionRow | undefined> {
+    const promoted = this.ctx.storage.sql
+      .exec<RevisionRow>(
+        "SELECT * FROM revision_requests WHERE status = 'queued' ORDER BY created_at LIMIT 1",
+      )
+      .toArray()[0];
+    if (!promoted) return undefined;
+    this.ctx.storage.sql.exec(
+      "UPDATE revision_requests SET status = 'dispatching' WHERE request_id = ?",
+      promoted.request_id,
+    );
+    const next = this.row(promoted.request_id)!;
+    try {
+      await this.dispatchRow(next);
+      return this.row(promoted.request_id)!;
+    } catch (error) {
+      await this.markFailed(next, error);
+      return undefined;
+    }
   }
 
   private async createFeedbackComment(row: RevisionRow) {
@@ -316,19 +394,6 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         ok: true,
         requestId: duplicate.request_id,
         queueStatus: "duplicate",
-      };
-
-    const halted = this.ctx.storage.sql
-      .exec<RevisionRow>(
-        "SELECT * FROM revision_requests WHERE status = 'failed' ORDER BY created_at DESC LIMIT 1",
-      )
-      .toArray()[0];
-    if (halted)
-      return {
-        ok: false,
-        code: "revision_queue_halted",
-        error:
-          "Revision processing is paused after a failure. The developer has been notified.",
       };
 
     const active = this.ctx.storage.sql
@@ -487,6 +552,38 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     if (!row || row.status === "completed" || row.status === "failed")
       return { ok: true };
     await this.markFailed(row, reason || "Revision workflow failed.");
+    await this.promoteQueued();
+    return { ok: true };
+  }
+
+  async dismiss(requestId: string, reason: string): Promise<{ ok: true }> {
+    const row = this.row(requestId);
+    if (!row || row.status === "completed") return { ok: true };
+    if (row.status !== "failed")
+      throw new Error("Only a failed revision request can be dismissed.");
+    const notice =
+      await this.ctx.storage.get<FailureNotice>(FAILURE_NOTICE_KEY);
+    if (notice?.requestId === requestId)
+      await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
+    this.ctx.storage.sql.exec(
+      "UPDATE revision_requests SET status = 'completed', completed_at = ?, failure = ? WHERE request_id = ?",
+      Date.now(),
+      `Manually resolved: ${cleanError(reason || "No resolution note supplied.")}`,
+      requestId,
+    );
+    const active = this.ctx.storage.sql
+      .exec(
+        `SELECT request_id FROM revision_requests WHERE status IN ${ACTIVE} LIMIT 1`,
+      )
+      .toArray()[0];
+    if (!active) await this.promoteQueued();
+    console.log(
+      JSON.stringify({
+        event: "revision.dismissed",
+        repo: row.repo,
+        requestId,
+      }),
+    );
     return { ok: true };
   }
 
@@ -496,6 +593,25 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     let failed = this.row(requestId);
     if (!failed || failed.status !== "failed")
       return { ok: true, requestId: null };
+    const active = this.ctx.storage.sql
+      .exec(
+        `SELECT request_id FROM revision_requests WHERE status IN ${ACTIVE} LIMIT 1`,
+      )
+      .toArray()[0];
+    if (active) {
+      const queued = this.ctx.storage.sql
+        .exec(
+          "SELECT request_id FROM revision_requests WHERE status = 'queued' LIMIT 1",
+        )
+        .toArray()[0];
+      if (queued)
+        throw new Error("The revision queue already has one waiting request.");
+      this.ctx.storage.sql.exec(
+        "UPDATE revision_requests SET status = 'queued', failure = NULL, completed_at = NULL WHERE request_id = ?",
+        failed.request_id,
+      );
+      return { ok: true, requestId: failed.request_id };
+    }
     await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
     this.ctx.storage.sql.exec(
       "UPDATE revision_requests SET status = 'dispatching', failure = NULL WHERE request_id = ?",

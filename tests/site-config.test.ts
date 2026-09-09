@@ -109,6 +109,38 @@ describe("site configuration", () => {
     expect(JSON.stringify(config.conversion)).not.toContain("—");
   });
 
+  it("enables AI answers only when the client explicitly selects it", () => {
+    const enabled = normalise(
+      {},
+      {
+        businessName: "Example Plumbing",
+        services: "Drain cleaning",
+        primaryCta: "Request service",
+        industry: "home-services",
+        preset: "home-services",
+        conversionAiChat: "yes",
+      },
+    );
+    const defaultConfig = normalise(
+      {},
+      {
+        businessName: "Example Plumbing",
+        services: "Drain cleaning",
+        primaryCta: "Request service",
+        industry: "home-services",
+        preset: "home-services",
+      },
+    );
+
+    expect(enabled.conversion.aiChat).toMatchObject({
+      enabled: true,
+      label: "AI answers",
+      apiUrl: "",
+      token: "",
+    });
+    expect(defaultConfig.conversion.aiChat.enabled).toBe(false);
+  });
+
   it("does not substitute stock imagery for an unsupported industry", () => {
     const config = normalise(
       {},

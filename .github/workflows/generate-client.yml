@@ -95,7 +95,13 @@ jobs:
             REVIEWS_TOKEN=$(node scripts/create-google-reviews-token.mjs --project "$PROJECT" --placeId "$PLACE_ID" --origins "$ORIGINS")
             REVIEW_ARGS=(--reviewsToken "$REVIEWS_TOKEN")
           fi
-          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}"
+          CHAT_ARGS=()
+          CHAT_ENABLED=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.aiChat?.enabled ? "true" : "false")')
+          if [ "$CHAT_ENABLED" = true ]; then
+            CHAT_TOKEN=$(node scripts/create-ai-chat-token.mjs --project "$PROJECT" --file /tmp/site.config.json --origins "$ORIGINS")
+            CHAT_ARGS=(--chatToken "$CHAT_TOKEN")
+          fi
+          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
           cp -R templates/client-site "$CLIENT_DIR"
           node scripts/sync-client-guidelines.mjs "$CLIENT_DIR"
           cd "$CLIENT_DIR"

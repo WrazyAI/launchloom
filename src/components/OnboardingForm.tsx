@@ -678,6 +678,17 @@ export default function OnboardingForm() {
             directions
           </label>
         </fieldset>
+        <fieldset className="cta-options">
+          <legend>Optional website assistant</legend>
+          <label>
+            <input type="checkbox" name="conversionAiChat" value="yes" /> Add an
+            AI answers widget
+          </label>
+          <p className="form-note">
+            It answers from approved website facts and sends visitors to your
+            primary next step when the site does not contain the answer.
+          </p>
+        </fieldset>
       </section>
       <section
         className="form-step"

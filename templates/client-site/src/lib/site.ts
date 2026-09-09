@@ -115,6 +115,14 @@ export type SiteConfig = {
       ctaLabel: string;
       ctaTarget: string;
     };
+    aiChat?: {
+      enabled: boolean;
+      label: string;
+      greeting: string;
+      disclaimer: string;
+      apiUrl: string;
+      token: string;
+    };
     exitOffer?: {
       enabled: boolean;
       eyebrow: string;

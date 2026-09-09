@@ -158,6 +158,42 @@ describe("revision operations", () => {
     ).toBe(false);
   });
 
+  it("supports an AI FAQ chat request without treating its category label as copy feedback", async () => {
+    const draft = {
+      ...config(),
+      business: {
+        ...config().business,
+        name: "Mike Seeders Plumbing Inc",
+        primaryCta: "Book a consultation",
+      },
+      conversion: {
+        faqs: [
+          {
+            question: "What areas do you serve?",
+            answer: "We serve Tallahassee and the Big Bend region.",
+          },
+        ],
+      },
+    };
+
+    const planned = await planRevision(
+      ["[Wording, Services] Can we also have an AI FAQ chat?"],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      intents: ["conversion-feature"],
+      status: "fulfilled",
+      operationKinds: ["set_conversion_feature"],
+    });
+    expect(planned.config.conversion.aiChat).toMatchObject({
+      enabled: true,
+      label: "AI answers",
+    });
+  });
+
   it("fulfills a conversion package request without misclassifying it as a page-layout change", async () => {
     const draft = {
       ...config(),

@@ -116,4 +116,6 @@ if (!response.ok)
   throw new Error(
     `Resend rejected email: ${response.status} ${(await response.text()).slice(0, 300)}`,
   );
+const receipt = await response.json().catch(() => ({}));
 console.log(`notification=${audience}`);
+if (receipt?.id) console.log(`email_id=${cleanEmailText(receipt.id, 160)}`);

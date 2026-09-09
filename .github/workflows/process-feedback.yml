@@ -20,6 +20,7 @@ jobs:
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+      LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -62,7 +63,12 @@ jobs:
         run: |
           DETAILS=$(test -f "$RUNNER_TEMP/revision-outcome.txt" && sed -n '1,80p' "$RUNNER_TEMP/revision-outcome.txt" || printf '%s' 'No supported revision result was produced.')
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-manual-attention:developer -->' '## Manual attention needed' 'The requested feedback was not fully fulfilled, so no revised preview or completion email was sent.' "$DETAILS")"
-      - name: Configure live Google review proof
+      - name: Ensure failed revision email is delivered
+        if: steps.claim.outputs.run == 'true' && failure() && steps.apply_feedback.outcome == 'failure'
+        run: |
+          NAME=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/$CLIENT_REPO/pull/$CLIENT_PR" --review "https://github.com/$CLIENT_REPO/pull/$CLIENT_PR" --kind revision-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/developer-feedback.txt" --outcome-file "$RUNNER_TEMP/revision-outcome.txt" --idempotency-key "revision-failed-$REVISION_REQUEST_ID"
+      - name: Configure live site integrations
         if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
         run: |
           PROJECT=$(node -e "console.log(require('$RUNNER_TEMP/client/.launchloom-deployment.json').project)")
@@ -72,6 +78,13 @@ jobs:
             ORIGINS="https://$BRANCH_SAFE.$PROJECT.pages.dev,https://$PROJECT.pages.dev"
             REVIEWS_TOKEN=$(node scripts/create-google-reviews-token.mjs --project "$PROJECT" --placeId "$PLACE_ID" --origins "$ORIGINS")
             node scripts/enrich-site-config.mjs --file "$RUNNER_TEMP/client/src/site.config.json" --api https://api.launchloom.wrazyos.com --reviewsToken "$REVIEWS_TOKEN"
+          fi
+          CHAT_ENABLED=$(node -e "const x=require('$RUNNER_TEMP/client/src/site.config.json'); console.log(x.conversion?.aiChat?.enabled ? 'true' : 'false')")
+          if [ "$CHAT_ENABLED" = true ]; then
+            BRANCH_SAFE=$(echo "${{ steps.branch.outputs.name }}" | tr '/' '-')
+            ORIGINS="https://$BRANCH_SAFE.$PROJECT.pages.dev,https://$PROJECT.pages.dev"
+            CHAT_TOKEN=$(node scripts/create-ai-chat-token.mjs --project "$PROJECT" --file "$RUNNER_TEMP/client/src/site.config.json" --origins "$ORIGINS")
+            node scripts/enrich-site-config.mjs --file "$RUNNER_TEMP/client/src/site.config.json" --api https://api.launchloom.wrazyos.com --chatToken "$CHAT_TOKEN"
           fi
       - name: Build and direct-upload revised preview
         if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'

@@ -147,6 +147,27 @@ try {
           failures.push("desktop: Escape did not close quick answers.");
       }
 
+      const aiChat = page.locator('[data-conversion-feature="ai-chat"]');
+      if (await aiChat.count()) {
+        const panel = aiChat.locator(".quick-answers__panel");
+        if (await panel.isVisible())
+          failures.push("desktop: AI chat opened without visitor action.");
+        await aiChat.locator(".quick-answers__launcher").click();
+        if (!(await panel.isVisible()))
+          failures.push("desktop: AI chat did not open.");
+        if (!(await aiChat.locator(".quick-answers__form").isVisible()))
+          failures.push("desktop: AI chat question form is missing.");
+        if (!(await aiChat.locator(".quick-answers__form small").isVisible()))
+          failures.push("desktop: AI disclosure is missing.");
+        else
+          await page.screenshot({
+            path: path.join(screenshotDir, "desktop-ai-chat.png"),
+          });
+        await page.keyboard.press("Escape");
+        if (await panel.isVisible())
+          failures.push("desktop: Escape did not close AI chat.");
+      }
+
       const qualifier = page
         .locator('[data-conversion-feature="guided-qualifier"]')
         .first();

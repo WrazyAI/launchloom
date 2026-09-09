@@ -369,6 +369,7 @@ function conversionFeaturesFor({
   business,
   qualification,
   faqs,
+  aiChatEnabled,
 }) {
   const guidedHeading =
     businessKind === "home-care" || industry === "wellness"
@@ -393,6 +394,15 @@ function conversionFeaturesFor({
       items: faqs.slice(0, 5),
       ctaLabel: business.primaryCta,
       ctaTarget: "#contact",
+    },
+    aiChat: {
+      enabled: Boolean(aiChatEnabled),
+      label: "AI answers",
+      greeting: `Ask about ${business.name} services, coverage, or the next step.`,
+      disclaimer:
+        "AI-generated answers use this website's verified information and may be incomplete.",
+      apiUrl: "",
+      token: "",
     },
     exitOffer: {
       enabled: Boolean(business.offer),
@@ -823,6 +833,8 @@ export function normalise(candidate, intake) {
     business,
     qualification,
     faqs: validatedFaqs.length ? validatedFaqs : base.conversion.faqs,
+    aiChatEnabled:
+      String(intake.conversionAiChat || "").toLowerCase() === "yes",
   });
   const conversion = {
     layout: layoutFor(base.industry, preset),

@@ -27,6 +27,13 @@ if (assets && typeof assets === "object") {
 }
 if (args.api && args.leadToken)
   config.lead = { apiUrl: args.api.replace(/\/$/, ""), token: args.leadToken };
+if (args.api && args.chatToken && config.conversion?.aiChat?.enabled) {
+  config.conversion.aiChat = {
+    ...config.conversion.aiChat,
+    apiUrl: args.api.replace(/\/$/, ""),
+    token: args.chatToken,
+  };
+}
 if (
   args.api &&
   args.reviewsToken &&

@@ -2,39 +2,56 @@
 import site from "../lib/site";
 import { resolvePageRecipe } from "../lib/page-recipe";
 const feature = site.conversion?.quickAnswers;
+const ai = site.conversion?.aiChat;
 const items = (feature?.items?.length ? feature.items : site.conversion?.faqs || []).slice(0, 5);
-const enabled = feature?.enabled !== false && items.length > 0;
+const aiEnabled = Boolean(ai?.enabled && ai.apiUrl && ai.token);
+const enabled = aiEnabled || (feature?.enabled !== false && items.length > 0);
 const contactId = Astro.url.pathname === "/"
   ? resolvePageRecipe(site).sections.find((section) => section.type === "contact")?.id || "contact"
   : "contact";
 ---
 
 {enabled && (
-  <aside class="quick-answers" data-conversion-feature="quick-answers">
+  <aside class="quick-answers" data-conversion-feature={aiEnabled ? "ai-chat" : "quick-answers"} data-ai-api={aiEnabled ? ai?.apiUrl : undefined} data-ai-token={aiEnabled ? ai?.token : undefined}>
     <button class="quick-answers__launcher" type="button" aria-expanded="false" aria-controls="quick-answers-panel">
-      <span aria-hidden="true">?</span>{feature?.label || "Quick answers"}
+      <span aria-hidden="true">?</span>{aiEnabled ? ai?.label || "AI answers" : feature?.label || "Quick answers"}
     </button>
     <section id="quick-answers-panel" class="quick-answers__panel" hidden aria-labelledby="quick-answers-title">
       <header>
-        <div><span class="kicker">Website assistant</span><h2 id="quick-answers-title">{feature?.label || "Quick answers"}</h2></div>
-        <button class="quick-answers__close" type="button" aria-label="Close quick answers">×</button>
+        <div><span class="kicker">{aiEnabled ? "AI website assistant" : "Website assistant"}</span><h2 id="quick-answers-title">{aiEnabled ? ai?.label || "AI answers" : feature?.label || "Quick answers"}</h2></div>
+        <button class="quick-answers__close" type="button" aria-label="Close website assistant">×</button>
       </header>
-      <p class="quick-answers__greeting">{feature?.greeting || `Welcome to ${site.business.name}. How can we help?`}</p>
+      <p class="quick-answers__greeting">{aiEnabled ? ai?.greeting : feature?.greeting || `Welcome to ${site.business.name}. How can we help?`}</p>
+      <div class="quick-answers__messages" aria-live="polite" hidden></div>
       <div class="quick-answers__choices" aria-label="Common questions">
-        {items.map((item) => <button type="button" data-answer={item.answer} aria-pressed="false"><span>{item.question}</span><span aria-hidden="true">→</span></button>)}
+        {items.map((item) => <button type="button" data-question={item.question} data-answer={item.answer} aria-pressed="false"><span>{item.question}</span><span aria-hidden="true">→</span></button>)}
       </div>
+      {aiEnabled && (
+        <form class="quick-answers__form">
+          <label for="ai-chat-question">Ask a question</label>
+          <div><input id="ai-chat-question" name="question" required maxlength="500" autocomplete="off" placeholder="What would you like to know?" /><button type="submit">Ask</button></div>
+          <input class="honeypot" type="text" name="companyWebsite" tabindex="-1" autocomplete="off" />
+          <small>{ai?.disclaimer || "AI-generated answers use verified website information and may be incomplete."}</small>
+        </form>
+      )}
       <div class="quick-answers__answer" hidden aria-live="polite"><p></p><a class="cta" href={`#${contactId}`}>{feature?.ctaLabel || site.business.primaryCta}</a></div>
     </section>
   </aside>
 )}
 
 <script>
-  for (const root of document.querySelectorAll(".quick-answers")) {
+  for (const root of document.querySelectorAll<HTMLElement>(".quick-answers")) {
     const launcher = root.querySelector<HTMLButtonElement>(".quick-answers__launcher");
     const panel = root.querySelector<HTMLElement>(".quick-answers__panel");
     const close = root.querySelector<HTMLButtonElement>(".quick-answers__close");
     const answer = root.querySelector<HTMLElement>(".quick-answers__answer");
     const answerText = answer?.querySelector<HTMLParagraphElement>("p");
+    const messages = root.querySelector<HTMLElement>(".quick-answers__messages");
+    const form = root.querySelector<HTMLFormElement>(".quick-answers__form");
+    const input = form?.querySelector<HTMLInputElement>('input[name="question"]');
+    const submit = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const aiApi = root.dataset.aiApi || "";
+    const aiToken = root.dataset.aiToken || "";
     if (new URLSearchParams(window.location.search).has("review")) root.setAttribute("hidden", "");
     const setOpen = (open: boolean) => {
       const wasOpen = !panel?.hasAttribute("hidden");
@@ -45,13 +62,61 @@ const contactId = Astro.url.pathname === "/"
         close?.focus();
       } else if (wasOpen) launcher?.focus();
     };
+    const showMessage = (question: string, response: string, error = false) => {
+      if (!messages) return;
+      messages.hidden = false;
+      const item = document.createElement("div");
+      item.className = `quick-answers__message${error ? " is-error" : ""}`;
+      const asked = document.createElement("strong");
+      asked.textContent = question;
+      const reply = document.createElement("p");
+      reply.textContent = response;
+      item.append(asked, reply);
+      messages.append(item);
+      messages.scrollTop = messages.scrollHeight;
+    };
+    const askAi = async (question: string) => {
+      if (!aiApi || !aiToken || !question.trim()) return;
+      if (submit) submit.disabled = true;
+      showMessage(question, "Thinking...");
+      const pending = messages?.lastElementChild?.querySelector("p");
+      try {
+        const honeypot = form?.elements.namedItem("companyWebsite");
+        const response = await fetch(`${aiApi}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: aiToken, question, pageUrl: window.location.href, companyWebsite: honeypot instanceof HTMLInputElement ? honeypot.value : "" }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "The AI assistant is unavailable.");
+        if (pending) pending.textContent = result.answer;
+      } catch (error) {
+        if (pending) {
+          pending.textContent = error instanceof Error ? error.message : "The AI assistant is unavailable.";
+          pending.parentElement?.classList.add("is-error");
+        }
+      } finally {
+        if (submit) submit.disabled = false;
+      }
+    };
     launcher?.addEventListener("click", () => setOpen(Boolean(panel?.hasAttribute("hidden"))));
     close?.addEventListener("click", () => setOpen(false));
     root.querySelectorAll<HTMLButtonElement>("[data-answer]").forEach((button) => button.addEventListener("click", () => {
       root.querySelectorAll("[data-answer]").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
-      if (answerText) answerText.textContent = button.dataset.answer || "";
-      answer?.removeAttribute("hidden");
+      const question = button.dataset.question || "Question";
+      if (aiApi && aiToken) void askAi(question);
+      else {
+        if (answerText) answerText.textContent = button.dataset.answer || "";
+        answer?.removeAttribute("hidden");
+      }
     }));
+    form?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const question = input?.value.trim() || "";
+      if (!question) return;
+      if (input) input.value = "";
+      void askAi(question);
+    });
     answer?.querySelector("a")?.addEventListener("click", () => setOpen(false));
     window.addEventListener("launchloom:overlay-open", (event) => {
       const detail = (event as CustomEvent<{ id?: string }>).detail;

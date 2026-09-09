@@ -39,6 +39,7 @@ const MODEL_OPERATION_KINDS = new Set([
 const CONVERSION_FEATURES = new Set([
   "guidedQualifier",
   "quickAnswers",
+  "aiChat",
   "exitOffer",
 ]);
 const SECTION_VARIANTS = {
@@ -139,7 +140,7 @@ const layoutRequest =
 const contentRequest =
   /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten|simplify|condense).{0,50}\b(faq|question|answer|process|step|hero|opening)\b|\b(faq|question|answer|process|step|hero|opening)\b.{0,50}(?:say|read|explain|mention|shorter|simpler|concise|bloated|too long)\b/i;
 const conversionFeatureRequest =
-  /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant)|chat(?:bot)?|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
+  /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant|chat)|ai (?:faq )?(?:chat|assistant|chatbot)|chatbot|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
 
 function clean(value, limit = 360) {
   return String(value || "")
@@ -477,6 +478,12 @@ function conversionFeatureFor(feedback) {
   )
     return "exitOffer";
   if (
+    /\b(?:ai (?:faq )?(?:chat|assistant|chatbot)|faq chat|chatbot)\b/i.test(
+      feedback,
+    )
+  )
+    return "aiChat";
+  if (
     /\b(quick answers?|website assistant|faq (?:widget|assistant)|chat(?:bot)?)\b/i.test(
       feedback,
     )
@@ -497,7 +504,9 @@ function conversionFeatureOperations(feedback) {
     if (!feature) return [];
     if (/\b(remove|hide|disable|turn off|do not show)\b/i.test(segment))
       return [{ kind: "set_conversion_feature", feature, enabled: false }];
-    if (/\b(add|show|enable|include|use|turn on|bring back)\b/i.test(segment))
+    if (
+      /\b(add|show|enable|include|use|turn on|bring back|have)\b/i.test(segment)
+    )
       return [{ kind: "set_conversion_feature", feature, enabled: true }];
     return [];
   });
@@ -607,7 +616,8 @@ function intentsFor(feedback, config) {
     )
   )
     intents.push("layout");
-  if (contentRequest.test(feedback)) intents.push("content");
+  if (contentRequest.test(feedback.replace(/^\s*\[[^\]]+\]\s*/, "")))
+    intents.push("content");
   if (conversionFeatureRequest.test(feedback))
     intents.push("conversion-feature");
   return intents.length ? [...new Set(intents)] : ["unknown"];
@@ -637,7 +647,7 @@ export async function modelOperations(
           messages: [
             {
               role: "system",
-              content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
+              content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
             },
             {
               role: "user",
@@ -825,6 +835,13 @@ export function applyOperation(config, operation) {
       !(conversion.qualification || []).length
     )
       return false;
+    if (
+      operation.enabled &&
+      operation.feature === "aiChat" &&
+      !(conversion.faqs || []).length &&
+      !(config.services || []).length
+    )
+      return false;
     const defaults =
       operation.feature === "guidedQualifier"
         ? {
@@ -840,13 +857,22 @@ export function applyOperation(config, operation) {
               ctaLabel: clean(config.business?.primaryCta, 100),
               ctaTarget: "#contact",
             }
-          : {
-              eyebrow: "Before you go",
-              heading: clean(config.business?.offer, 180),
-              body: "Share what you need and the team will follow up with a useful next step.",
-              ctaLabel: clean(config.business?.primaryCta, 100),
-              ctaTarget: "#contact",
-            };
+          : operation.feature === "aiChat"
+            ? {
+                label: "AI answers",
+                greeting: `Ask about ${clean(config.business?.name, 100)} services, coverage, or the next step.`,
+                disclaimer:
+                  "AI-generated answers use this website's verified information and may be incomplete.",
+                apiUrl: "",
+                token: "",
+              }
+            : {
+                eyebrow: "Before you go",
+                heading: clean(config.business?.offer, 180),
+                body: "Share what you need and the team will follow up with a useful next step.",
+                ctaLabel: clean(config.business?.primaryCta, 100),
+                ctaTarget: "#contact",
+              };
     conversion[operation.feature] = {
       ...defaults,
       ...existing,

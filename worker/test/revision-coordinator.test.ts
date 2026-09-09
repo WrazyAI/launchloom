@@ -123,7 +123,23 @@ describe("RevisionCoordinator", () => {
     expect(dispatchCount).toBe(1);
   });
 
-  it("halts after failure while preserving the queued request", async () => {
+  it("rate limits AI chat per visitor and resets the window", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("ai-rate-test");
+    for (let count = 0; count < 12; count += 1)
+      await expect(coordinator.allowAiChat("visitor", 1_000)).resolves.toEqual({
+        allowed: true,
+        retryAfterSeconds: 0,
+      });
+    await expect(coordinator.allowAiChat("visitor", 1_000)).resolves.toEqual({
+      allowed: false,
+      retryAfterSeconds: 600,
+    });
+    await expect(
+      coordinator.allowAiChat("visitor", 10 * 60_000 + 1_000),
+    ).resolves.toEqual({ allowed: true, retryAfterSeconds: 0 });
+  });
+
+  it("preserves failures without blocking the next queued request", async () => {
     const coordinator = env.REVISION_COORDINATOR.getByName("failure-test");
     await coordinator.enqueue(request("request-3001", "Update the offer."));
     await coordinator.enqueue(request("request-3002", "Add an FAQ."));
@@ -137,34 +153,44 @@ describe("RevisionCoordinator", () => {
       text: expect.stringContaining("Update the offer."),
     });
 
-    await expect(coordinator.approvalState()).resolves.toEqual({
-      allowed: false,
-      code: "revision_queue_halted",
+    expect(dispatchCount).toBe(2);
+    await expect(coordinator.claim("request-3002")).resolves.toEqual({
+      run: true,
+      status: "running",
     });
     await expect(
       coordinator.enqueue(request("request-3003", "Change the CTA.")),
     ).resolves.toMatchObject({
-      ok: false,
-      code: "revision_queue_halted",
+      ok: true,
+      queueStatus: "queued",
     });
     await runInDurableObject(coordinator, async (_instance, state) => {
-      const queued = state.storage.sql
-        .exec<{ status: string }>(
-          "SELECT status FROM revision_requests WHERE request_id = ?",
+      const rows = state.storage.sql
+        .exec<{ request_id: string; status: string }>(
+          "SELECT request_id, status FROM revision_requests WHERE request_id IN (?, ?, ?) ORDER BY request_id",
+          "request-3001",
           "request-3002",
+          "request-3003",
         )
-        .one();
-      expect(queued.status).toBe("queued");
+        .toArray();
+      expect(rows).toEqual([
+        { request_id: "request-3001", status: "failed" },
+        { request_id: "request-3002", status: "running" },
+        { request_id: "request-3003", status: "queued" },
+      ]);
     });
 
-    await expect(coordinator.resume("request-3001")).resolves.toEqual({
+    await expect(
+      coordinator.dismiss("request-3001", "Handled manually."),
+    ).resolves.toEqual({
       ok: true,
-      requestId: "request-3001",
     });
-    await expect(coordinator.claim("request-3001")).resolves.toEqual({
-      run: true,
-      status: "running",
+    await expect(coordinator.approvalState()).resolves.toEqual({
+      allowed: false,
+      code: "revision_in_progress",
     });
-    expect(dispatchCount).toBe(2);
+    const completed = await coordinator.complete("request-3002");
+    expect(completed.promoted).toMatchObject({ requestId: "request-3003" });
+    expect(dispatchCount).toBe(3);
   });
 });
