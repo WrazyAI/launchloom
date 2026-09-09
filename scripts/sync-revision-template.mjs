@@ -31,6 +31,19 @@ const files = new Set([
   "components/LeadForm.astro",
   "components/ReviewBanner.astro",
 ]);
+if (
+  String(config.business?.primaryCta || "")
+    .trim()
+    .toLowerCase() === "get directions"
+) {
+  files.add("components/LocationMap.astro");
+  files.add("components/PageSections.astro");
+  files.add("components/QuickAnswers.astro");
+  files.add("components/ExitOffer.astro");
+  files.add("components/Footer.astro");
+  files.add("lib/site.ts");
+  files.add("styles/site.css");
+}
 if (kinds.has("set_social_proof")) {
   files.add("components/SocialProof.astro");
   files.add("styles/site.css");

@@ -387,4 +387,33 @@ describe("site configuration", () => {
     expect(config.business.description).toMatch(/[.!?]$/);
     expect(config.business.description.length).toBeLessThanOrEqual(520);
   });
+
+  it("routes a directions CTA to a map only for an exact location", () => {
+    const exact = normalise(
+      { copy: { contactHeading: "Get directions" } },
+      {
+        businessName: "Harbor Bakery",
+        address: "10 Harbor Road, Charleston, SC 29401",
+        placeId: "ChIJ-harbor",
+        services: "Bread and pastries",
+        primaryCta: "Get directions",
+        industry: "hospitality",
+      },
+    );
+    const broad = normalise(
+      {},
+      {
+        businessName: "Remote Bakery",
+        address: "Charleston, SC",
+        services: "Bread and pastries",
+        primaryCta: "Get directions",
+        industry: "hospitality",
+      },
+    );
+
+    expect(exact.conversion.quickAnswers.ctaTarget).toBe("#location");
+    expect(exact.conversion.exitOffer.ctaTarget).toBe("#location");
+    expect(exact.copy.contactHeading).toBe("Contact Harbor Bakery");
+    expect(broad.conversion.quickAnswers.ctaTarget).toBe("#contact");
+  });
 });

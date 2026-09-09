@@ -1,0 +1,34 @@
+---
+import site, { directionsHref, mapEmbedHref, shouldShowLocationMap } from "../lib/site";
+
+const visible = shouldShowLocationMap();
+const locationLabel = site.business.address || site.business.name;
+const locationHeading = /[.!?]$/.test(site.business.name)
+  ? `Find ${site.business.name}`
+  : `Find ${site.business.name}.`;
+---
+
+{visible && (
+  <section class="location-map-section" id="location" data-conversion-feature="location-map">
+    <div class="wrap location-map-grid">
+      <div class="location-map-copy">
+        <span class="kicker">Visit us</span>
+        <h2>{locationHeading}</h2>
+        {site.business.address && <p>{site.business.address}</p>}
+        {site.business.hours && <p class="location-map-hours">{site.business.hours}</p>}
+        <a class="cta" href={directionsHref()} target="_blank" rel="noopener noreferrer">
+          Open in Google Maps <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+      <div class="location-map-frame">
+        <iframe
+          src={mapEmbedHref()}
+          title={`Map showing ${site.business.name} at ${locationLabel}`}
+          loading="eager"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen
+        />
+      </div>
+    </div>
+  </section>
+)}

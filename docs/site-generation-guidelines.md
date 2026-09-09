@@ -104,6 +104,13 @@ must remain out of search indexing. Public sites need descriptive titles,
 canonical URLs, internal links, a sitemap, and accurate LocalBusiness data
 where the required facts exist.
 
+When the submitted primary action is `Get directions`, add a dedicated map
+section only if the verified intake contains a retained Place ID or a
+street-level address. The primary action should move the visitor to that
+section, and the section must include a separate Google Maps directions link.
+Do not embed a map for a city, service area, remote business, or inferred
+location. A map is location context, not evidence of a storefront.
+
 ## Initial generation and revisions
 
 Initial generation selects one recipe and keeps its section order, typography,

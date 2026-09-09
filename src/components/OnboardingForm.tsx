@@ -677,6 +677,10 @@ export default function OnboardingForm() {
             <input type="radio" name="primaryCta" value="Get directions" /> Get
             directions
           </label>
+          <p className="form-note">
+            We will add an interactive map when your exact business address or
+            confirmed Google listing is available.
+          </p>
         </fieldset>
         <fieldset className="cta-options">
           <legend>Optional website assistant</legend>

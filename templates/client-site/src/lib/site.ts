@@ -185,7 +185,48 @@ export type SiteConfig = {
   lead?: { apiUrl: string; token: string };
 };
 
-export default config as SiteConfig;
+const site = config as SiteConfig;
+
+export default site;
 
 export const phoneHref = (phone: string) =>
   `tel:${phone.replace(/[^+\d]/g, "")}`;
+
+export const isDirectionsPrimary = () =>
+  site.business.primaryCta.trim().toLowerCase() === "get directions";
+
+export const hasExactStreetAddress = (address: string) =>
+  /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(address.trim());
+
+export const hasExactBusinessLocation = () =>
+  Boolean(site.business.placeId?.trim()) ||
+  hasExactStreetAddress(site.business.address);
+
+export const shouldShowLocationMap = () =>
+  isDirectionsPrimary() && hasExactBusinessLocation();
+
+export const primaryCtaHref = (pathname = "/") => {
+  if (shouldShowLocationMap())
+    return pathname === "/" ? "#location" : "/#location";
+  if (isDirectionsPrimary() && site.business.address.trim())
+    return directionsHref();
+  return pathname === "/" ? "#contact" : "/#contact";
+};
+
+export const directionsHref = () => {
+  const params = new URLSearchParams({
+    api: "1",
+    query:
+      site.business.address.trim() || site.business.name.trim() || "business",
+  });
+  if (site.business.placeId?.trim())
+    params.set("query_place_id", site.business.placeId.trim());
+  return `https://www.google.com/maps/search/?${params.toString()}`;
+};
+
+export const mapEmbedHref = () => {
+  const query =
+    site.business.address.trim() ||
+    `place_id:${site.business.placeId?.trim() || ""}`;
+  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+};

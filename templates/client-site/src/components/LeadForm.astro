@@ -55,7 +55,7 @@ const stepCount = guided ? questions.length + 1 : 1;
     </div>
     <div class="qualifier-actions">
       {guided && <button class="qualifier-back" type="button" data-back>Back</button>}
-      <button class="lead-submit" type="submit">{site.business.primaryCta}</button>
+      <button class="lead-submit" type="submit">{site.business.primaryCta.trim().toLowerCase() === "get directions" ? "Send request" : site.business.primaryCta}</button>
     </div>
   </fieldset>
   <small class="lead-status" role="status">{site.copy?.formIntro || "By submitting, you agree to be contacted about your request."}</small>

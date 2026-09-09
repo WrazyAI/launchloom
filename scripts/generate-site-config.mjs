@@ -173,6 +173,29 @@ function usefulServiceDescription(value, serviceName) {
   return `Talk through your needs for ${serviceName} and leave with a clear next step.`;
 }
 
+function hasExactLocation(business) {
+  return (
+    Boolean(text(business?.placeId, 200)) ||
+    /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(text(business?.address, 300))
+  );
+}
+
+function isDirectionsCta(business) {
+  return text(business?.primaryCta, 80).toLowerCase() === "get directions";
+}
+
+function primaryCtaTarget(business) {
+  return isDirectionsCta(business) && hasExactLocation(business)
+    ? "#location"
+    : "#contact";
+}
+
+function contactHeadingFor(business, fallback) {
+  return isDirectionsCta(business)
+    ? `Contact ${text(business?.name, 100)}`
+    : business.primaryCta || fallback;
+}
+
 function processStepText(value) {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     const step = value;
@@ -428,7 +451,7 @@ function conversionFeaturesFor({
       greeting: `Welcome to ${business.name}. How can we help?`,
       items: faqs.slice(0, 5),
       ctaLabel: business.primaryCta,
-      ctaTarget: "#contact",
+      ctaTarget: primaryCtaTarget(business),
     },
     aiChat: {
       enabled: Boolean(aiChatEnabled),
@@ -445,7 +468,7 @@ function conversionFeaturesFor({
       heading: business.offer || business.primaryCta,
       body: "Share what you need and the team will follow up with a useful next step.",
       ctaLabel: business.primaryCta,
-      ctaTarget: "#contact",
+      ctaTarget: primaryCtaTarget(business),
     },
   };
 }
@@ -460,7 +483,7 @@ function defaultCopy(business, industry, kind = industry) {
       aboutBody:
         "Talk through current routines, practical concerns, and the support being considered before deciding on a next step.",
       contactKicker: "Start the conversation",
-      contactHeading: business.primaryCta || "Talk with the care team",
+      contactHeading: contactHeadingFor(business, "Talk with the care team"),
       processKicker: "Starting care",
       processHeading: "A calm path from first call to a practical plan.",
       faqKicker: "Questions from families",
@@ -477,7 +500,10 @@ function defaultCopy(business, industry, kind = industry) {
       aboutBody:
         "Share what the door is doing and the property address so the team can confirm coverage and the appropriate service.",
       contactKicker: "Tell us what the door is doing",
-      contactHeading: business.primaryCta || "Request garage door service",
+      contactHeading: contactHeadingFor(
+        business,
+        "Request garage door service",
+      ),
       processKicker: "What happens next",
       processHeading: "A direct route from a door problem to a clear plan.",
       faqKicker: "Practical answers",
@@ -499,7 +525,7 @@ function defaultCopy(business, industry, kind = industry) {
     aboutBody:
       "Share the goal, constraints, and questions behind your decision so the team can recommend a useful next step.",
     contactKicker: "Start the conversation",
-    contactHeading: business.primaryCta || "Talk with our team",
+    contactHeading: contactHeadingFor(business, "Talk with our team"),
     processKicker: "A clear process",
     processHeading: "Know what happens next.",
     faqKicker: "Questions, answered",
@@ -850,6 +876,11 @@ export function normalise(candidate, intake) {
       ],
     ),
   );
+  if (
+    isDirectionsCta(business) &&
+    text(copy.contactHeading, 180).toLowerCase() === "get directions"
+  )
+    copy.contactHeading = contactHeadingFor(business, "Contact our team");
   const rawConversion =
     value.conversion && typeof value.conversion === "object"
       ? value.conversion
@@ -961,7 +992,7 @@ async function askModel(intake, effort, model = MODEL) {
         messages: [
           {
             role: "system",
-            content: `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`,
+            content: `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`,
           },
           {
             role: "user",

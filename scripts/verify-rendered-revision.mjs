@@ -60,6 +60,14 @@ const address = server.address();
 const url = `http://127.0.0.1:${address.port}/`;
 const browser = await chromium.launch({ headless: true });
 const failures = [];
+const expectsLocationMap =
+  String(config.business?.primaryCta || "")
+    .trim()
+    .toLowerCase() === "get directions" &&
+  (Boolean(String(config.business?.placeId || "").trim()) ||
+    /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(
+      String(config.business?.address || ""),
+    ));
 
 function rgb(value) {
   const match = String(value).match(/[\d.]+/g);
@@ -191,6 +199,15 @@ try {
       )
         failures.push("mobile: desktop exit offer is not suppressed.");
     }
+    if (expectsLocationMap) {
+      const locationMap = page.locator(
+        '[data-conversion-feature="location-map"]',
+      );
+      if (await locationMap.count()) {
+        await locationMap.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(1200);
+      }
+    }
     const state = await page.evaluate(() => {
       const visible = (element) => {
         const rect = element.getBoundingClientRect();
@@ -243,6 +260,13 @@ try {
             (href?.startsWith("#") && !document.querySelector(href)),
         );
       const main = document.querySelector("main");
+      const locationMap = document.querySelector(
+        '[data-conversion-feature="location-map"]',
+      );
+      const mapFrame = locationMap?.querySelector("iframe");
+      const directionsLink = locationMap?.querySelector(
+        'a[href*="google.com/maps"]',
+      );
       return {
         sections,
         actions,
@@ -255,6 +279,14 @@ try {
             document.body.scrollWidth,
           ) - innerWidth,
         css: getComputedStyle(document.body).cssText,
+        locationMap: locationMap
+          ? {
+              visible: visible(locationMap),
+              frameVisible: mapFrame ? visible(mapFrame) : false,
+              frameSource: mapFrame?.getAttribute("src") || "",
+              directionsHref: directionsLink?.getAttribute("href") || "",
+            }
+          : null,
       };
     });
     if (state.overflow > 1)
@@ -264,6 +296,22 @@ try {
     if (state.brokenLinks.length)
       failures.push(
         `${viewport.name}: broken fragment links ${state.brokenLinks.join(", ")}.`,
+      );
+    if (expectsLocationMap) {
+      if (!state.locationMap?.visible || !state.locationMap.frameVisible)
+        failures.push(
+          `${viewport.name}: Get directions is missing its visible location map.`,
+        );
+      if (
+        !state.locationMap?.frameSource.includes("google.com/maps") ||
+        !state.locationMap?.directionsHref.includes("google.com/maps")
+      )
+        failures.push(
+          `${viewport.name}: location map or directions link is invalid.`,
+        );
+    } else if (state.locationMap)
+      failures.push(
+        `${viewport.name}: location map rendered without an exact requested location.`,
       );
     if (
       !state.sections.length ||

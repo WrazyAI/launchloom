@@ -1,14 +1,11 @@
 ---
-import site from "../lib/site";
-import { resolvePageRecipe } from "../lib/page-recipe";
+import site, { primaryCtaHref } from "../lib/site";
 const feature = site.conversion?.quickAnswers;
 const ai = site.conversion?.aiChat;
 const items = (feature?.items?.length ? feature.items : site.conversion?.faqs || []).slice(0, 5);
 const aiEnabled = Boolean(ai?.enabled && ai.apiUrl && ai.token);
 const enabled = aiEnabled || (feature?.enabled !== false && items.length > 0);
-const contactId = Astro.url.pathname === "/"
-  ? resolvePageRecipe(site).sections.find((section) => section.type === "contact")?.id || "contact"
-  : "contact";
+const ctaHref = primaryCtaHref(Astro.url.pathname);
 ---
 
 {enabled && (
@@ -34,7 +31,7 @@ const contactId = Astro.url.pathname === "/"
           <small>{ai?.disclaimer || "AI-generated answers use verified website information and may be incomplete."}</small>
         </form>
       )}
-      <div class="quick-answers__answer" hidden aria-live="polite"><p></p><a class="cta" href={`#${contactId}`}>{feature?.ctaLabel || site.business.primaryCta}</a></div>
+      <div class="quick-answers__answer" hidden aria-live="polite"><p></p><a class="cta" href={ctaHref}>{feature?.ctaLabel || site.business.primaryCta}</a></div>
     </section>
   </aside>
 )}
@@ -125,5 +122,19 @@ const contactId = Astro.url.pathname === "/"
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && !panel?.hasAttribute("hidden")) setOpen(false);
     });
+    const collisionZones = document.querySelectorAll(".contact-section, .footer");
+    if (collisionZones.length && "IntersectionObserver" in window) {
+      const visibleZones = new Set<Element>();
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) visibleZones.add(entry.target);
+          else visibleZones.delete(entry.target);
+        }
+        const suppressed = visibleZones.size > 0;
+        root.classList.toggle("is-suppressed", suppressed);
+        if (suppressed) setOpen(false);
+      }, { threshold: 0.05 });
+      collisionZones.forEach((zone) => observer.observe(zone));
+    }
   }
 </script>

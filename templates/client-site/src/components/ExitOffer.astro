@@ -1,11 +1,8 @@
 ---
-import site from "../lib/site";
-import { resolvePageRecipe } from "../lib/page-recipe";
+import site, { primaryCtaHref } from "../lib/site";
 const feature = site.conversion?.exitOffer;
 const enabled = feature?.enabled === true && Boolean(site.business.offer);
-const contactId = Astro.url.pathname === "/"
-  ? resolvePageRecipe(site).sections.find((section) => section.type === "contact")?.id || "contact"
-  : "contact";
+const ctaHref = primaryCtaHref(Astro.url.pathname);
 ---
 
 {enabled && (
@@ -15,7 +12,7 @@ const contactId = Astro.url.pathname === "/"
       <span class="kicker">{feature?.eyebrow || "Before you go"}</span>
       <h2 id="exit-offer-title">{feature?.heading || site.business.offer}</h2>
       <p>{feature?.body || "Share what you need and the team will follow up with a useful next step."}</p>
-      <a class="cta" href={`#${contactId}`}>{feature?.ctaLabel || site.business.primaryCta}</a>
+      <a class="cta" href={ctaHref}>{feature?.ctaLabel || site.business.primaryCta}</a>
     </div>
   </dialog>
 )}
