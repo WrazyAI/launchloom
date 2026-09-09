@@ -55,10 +55,7 @@ const variantsByType: Record<PageSection["type"], Set<string>> = {
 };
 
 export function defaultRecipe(site: SiteConfig): PageRecipe {
-  if (
-    site.businessKind === "garage-door" ||
-    site.industry === "home-services"
-  )
+  if (site.businessKind === "garage-door" || site.industry === "home-services")
     return "local-trades";
   if (site.businessKind === "home-care" || site.industry === "wellness")
     return "care-editorial";
@@ -98,7 +95,13 @@ export function resolvePageRecipe(site: SiteConfig): {
   const complete = [...required].every((type) =>
     sections.some((section) => section.type === type),
   );
-  return { recipe, sections: complete ? sections : recipes[recipe] };
+  const selected = complete ? sections : recipes[recipe];
+  return {
+    recipe,
+    sections: selected.filter(
+      (section) => section.type !== "social-proof" || Boolean(site.socialProof),
+    ),
+  };
 }
 
 export const recipeSections = recipes;

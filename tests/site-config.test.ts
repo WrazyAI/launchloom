@@ -191,6 +191,9 @@ describe("site configuration", () => {
     );
 
     expect(config.design.recipe).toBe("general-editorial");
+    expect(
+      config.design.sections.map((section: { type: string }) => section.type),
+    ).not.toContain("social-proof");
     expect(config.conversion.layout).toBe("editorial-authority");
     expect(config.locations).toEqual([]);
     expect(config.business.tagline.split(/\s+/)).toHaveLength(5);

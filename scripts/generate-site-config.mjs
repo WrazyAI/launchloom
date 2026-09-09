@@ -401,11 +401,13 @@ function designFor(kind, industry) {
         : "general-editorial";
   return {
     recipe,
-    sections: DESIGN_RECIPES[recipe].map(([id, type, variant]) => ({
-      id,
-      type,
-      variant,
-    })),
+    sections: DESIGN_RECIPES[recipe]
+      .filter(([, type]) => type !== "social-proof")
+      .map(([id, type, variant]) => ({
+        id,
+        type,
+        variant,
+      })),
   };
 }
 

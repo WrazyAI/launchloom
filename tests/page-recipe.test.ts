@@ -23,6 +23,13 @@ describe("page recipes", () => {
       } as Parameters<typeof defaultRecipe>[0]),
     ).toBe("general-editorial");
   });
+
+  it("does not declare social proof until verified proof is configured", () => {
+    const page = resolvePageRecipe(site);
+    expect(page.sections.map((section) => section.type)).not.toContain(
+      "social-proof",
+    );
+  });
   it("uses the complete trades recipe for older or incomplete configurations", () => {
     const page = resolvePageRecipe(site);
 

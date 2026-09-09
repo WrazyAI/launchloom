@@ -932,7 +932,7 @@ h2 {
   font-weight: 900;
 }
 .trust-grid p {
-  margin: 13px 0 0;
+  margin: 0;
   overflow-wrap: anywhere;
   font:
     650 0.94rem/1.35 Inter,
@@ -954,7 +954,26 @@ h2 {
 .services-section .service-card {
   grid-column: span 4;
 }
-.services-section .service-card:nth-child(n + 4) {
+.services-section .service-grid:has(> .service-card:only-child) .service-card {
+  grid-column: span 12;
+}
+.services-section
+  .service-grid:has(> .service-card:nth-child(2):last-child)
+  .service-card,
+.services-section
+  .service-grid:has(> .service-card:nth-child(4):last-child)
+  .service-card {
+  grid-column: span 6;
+}
+.services-section
+  .service-grid:has(> .service-card:nth-child(5):last-child)
+  .service-card:nth-child(n + 4),
+.services-section
+  .service-grid:has(> .service-card:nth-child(7):last-child)
+  .service-card:nth-child(n + 4),
+.services-section
+  .service-grid:has(> .service-card:nth-child(8):last-child)
+  .service-card:nth-child(n + 7) {
   grid-column: span 6;
 }
 .recipe-care-editorial .service-card {
@@ -1639,9 +1658,9 @@ h2 {
     bottom: 14px;
   }
   .trust-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
-  .trust-grid > div:nth-child(even) {
+  .trust-grid > div {
     border-right: 1px solid var(--line);
   }
   .services-section .service-grid {
