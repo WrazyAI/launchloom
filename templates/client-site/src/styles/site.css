@@ -1485,7 +1485,7 @@ h2 {
     bottom: 16px;
     padding: 14px 18px;
     background: var(--brand);
-    color: #fff;
+    color: var(--on-brand, #fff);
     z-index: 2;
     font-weight: 800;
     box-shadow: 0 8px 28px #0004;

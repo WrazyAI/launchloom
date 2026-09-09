@@ -215,11 +215,26 @@ try {
         ...document.querySelectorAll(".cta, .lead-form button, .mobile-call"),
       ]
         .filter(visible)
-        .map((element) => ({
-          text: element.textContent?.trim(),
-          color: getComputedStyle(element).color,
-          background: getComputedStyle(element).backgroundColor,
-        }));
+        .map((element) => {
+          const effectiveBackground = (startingElement) => {
+            let current = startingElement;
+            while (current) {
+              const background = getComputedStyle(current).backgroundColor;
+              const alpha = background.match(
+                /rgba?\([^)]*[,/]\s*([\d.]+)\s*\)$/,
+              )?.[1];
+              if (!background.startsWith("rgba") || Number(alpha) > 0)
+                return background;
+              current = current.parentElement;
+            }
+            return "rgb(255, 255, 255)";
+          };
+          return {
+            text: element.textContent?.trim(),
+            color: getComputedStyle(element).color,
+            background: effectiveBackground(element),
+          };
+        });
       const brokenLinks = [...document.querySelectorAll("a[href]")]
         .map((element) => element.getAttribute("href"))
         .filter(

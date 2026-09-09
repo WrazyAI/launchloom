@@ -130,6 +130,31 @@ function text(value, limit = 240) {
     .slice(0, limit);
 }
 
+function safeHex(value, fallback) {
+  const candidate = String(value || "")
+    .trim()
+    .toLowerCase();
+  return /^#[0-9a-f]{6}$/.test(candidate) ? candidate : fallback;
+}
+
+function readableOn(hex) {
+  const channels = [1, 3, 5].map((index) =>
+    Number.parseInt(hex.slice(index, index + 2), 16),
+  );
+  const luminance = channels
+    .map((value) => value / 255)
+    .map((value) =>
+      value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4,
+    )
+    .reduce(
+      (total, value, index) => total + value * [0.2126, 0.7152, 0.0722][index],
+      0,
+    );
+  const whiteContrast = 1.05 / (luminance + 0.05);
+  const blackContrast = (luminance + 0.05) / 0.05;
+  return whiteContrast >= blackContrast ? "#ffffff" : "#000000";
+}
+
 function usefulServiceDescription(value, serviceName) {
   const candidate = text(value, 180);
   const generic =
@@ -595,6 +620,10 @@ function fallback(intake) {
       decisionSupport: decisionSupportFor(businessKind, name),
     }));
   const businessName = intake.businessName || "Your business";
+  const primaryColor = safeHex(
+    intake.primaryColor,
+    preset === "wellness" ? "#205d51" : "#bd552d",
+  );
   return {
     preset,
     business: {
@@ -621,8 +650,8 @@ function fallback(intake) {
       googleMapsUrl: intake.googleMapsUrl || "",
     },
     style: {
-      primaryColor:
-        intake.primaryColor || (preset === "wellness" ? "#205d51" : "#bd552d"),
+      primaryColor,
+      contrastColor: readableOn(primaryColor),
       tone: intake.tone || "confident",
     },
     services: services.length

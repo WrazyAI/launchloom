@@ -141,6 +141,25 @@ describe("site configuration", () => {
     expect(defaultConfig.conversion.aiChat.enabled).toBe(false);
   });
 
+  it("selects readable action text for the submitted Lumiere terracotta", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Lumiere Artisan Bakery and Cafe",
+        services: "Artisan bread",
+        primaryCta: "Request a quote",
+        primaryColor: "#c86d51",
+        industry: "hospitality",
+        preset: "home-services",
+      },
+    );
+
+    expect(config.style).toMatchObject({
+      primaryColor: "#c86d51",
+      contrastColor: "#000000",
+    });
+  });
+
   it("does not substitute stock imagery for an unsupported industry", () => {
     const config = normalise(
       {},

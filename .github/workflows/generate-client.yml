@@ -75,7 +75,10 @@ jobs:
           # immediately without publishing client content.
           npx wrangler pages deploy "$GITHUB_WORKSPACE/templates/preview-placeholder" --project-name "$PROJECT" --commit-hash "$GITHUB_SHA" --commit-message "Prepare LaunchLoom preview certificate"
           gh label create launchloom-client-feedback --repo "$CLIENT_REPO" --color 1d76db --description "LaunchLoom client feedback inbox" --force
-          INBOX=$(gh issue create --repo "$CLIENT_REPO" --title "LaunchLoom client feedback inbox" --label launchloom-client-feedback --body "Durable inbox for client-requested changes. Client feedback is reviewed internally before publishing.")
+          INBOX=$(gh issue list --repo "$CLIENT_REPO" --state open --label launchloom-client-feedback --limit 1 --json url --jq '.[0].url // ""')
+          if [ -z "$INBOX" ]; then
+            INBOX=$(gh issue create --repo "$CLIENT_REPO" --title "LaunchLoom client feedback inbox" --label launchloom-client-feedback --body "Durable inbox for client-requested changes. Client feedback is reviewed internally before publishing.")
+          fi
           echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
           echo "repo=$CLIENT_REPO" >> "$GITHUB_OUTPUT"
           echo "feedback_issue=${INBOX##*/}" >> "$GITHUB_OUTPUT"
@@ -102,24 +105,39 @@ jobs:
             CHAT_ARGS=(--chatToken "$CHAT_TOKEN")
           fi
           node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
-          cp -R templates/client-site "$CLIENT_DIR"
+          REMOTE="https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git"
+          if git ls-remote --exit-code --heads "$REMOTE" review/initial >/dev/null 2>&1; then
+            gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch review/initial
+            cp -R templates/client-site/. "$CLIENT_DIR/"
+          else
+            cp -R templates/client-site "$CLIENT_DIR"
+          fi
           node scripts/sync-client-guidelines.mjs "$CLIENT_DIR"
           cd "$CLIENT_DIR"
           rm -f netlify.toml
-          git init --initial-branch=main
-          git config user.name "LaunchLoom"
-          git config user.email "automation@launchloom.app"
           printf '{"provider":"cloudflare-pages","project":"%s"}\n' "$PROJECT" > .launchloom-deployment.json
-          git add .
-          git commit -m "Add LaunchLoom site foundation"
-          git remote add origin "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git"
-          git push origin main
-          git switch -c review/initial
+          if [ ! -d .git ]; then
+            git init --initial-branch=main
+            git config user.name "LaunchLoom"
+            git config user.email "automation@launchloom.app"
+            git add .
+            git commit -m "Add LaunchLoom site foundation"
+            git remote add origin "$REMOTE"
+            git push origin main
+            git switch -c review/initial
+          else
+            git config user.name "LaunchLoom"
+            git config user.email "automation@launchloom.app"
+            git remote set-url origin "$REMOTE"
+          fi
           cp /tmp/site.config.json src/site.config.json
-          git add src/site.config.json
-          git commit -m "Create client site configuration"
+          git add .
+          if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
           git push --set-upstream origin review/initial
-          PR=$(gh pr create --repo "$CLIENT_REPO" --base main --head review/initial --title "Initial LaunchLoom site" --body "Private developer preview generated from the verified intake.\n\n<!-- launchloom-feedback-inbox:${{ steps.client.outputs.feedback_issue }} -->")
+          PR=$(gh pr list --repo "$CLIENT_REPO" --state open --head review/initial --json url --jq '.[0].url // ""')
+          if [ -z "$PR" ]; then
+            PR=$(gh pr create --repo "$CLIENT_REPO" --base main --head review/initial --title "Initial LaunchLoom site" --body "Private developer preview generated from the verified intake.\n\n<!-- launchloom-feedback-inbox:${{ steps.client.outputs.feedback_issue }} -->")
+          fi
           echo "dir=$CLIENT_DIR" >> "$GITHUB_OUTPUT"
           echo "pr=${PR##*/}" >> "$GITHUB_OUTPUT"
       - name: Build and direct-upload public preview
