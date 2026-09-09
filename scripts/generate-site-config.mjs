@@ -6,7 +6,7 @@ export { parseModelJson } from "./model-json.mjs";
 const MODEL = "z-ai/glm-5.3-flash";
 
 const SHARED_CREATIVE_DIRECTION =
-  "Build a specific local-business decision journey. Near the opening, make clear who the business helps, what it provides, where it operates when location matters, and the next action. Give each section a distinct job; do not repeat one claim across the hero, proof, services, and About copy. Use one primary action and one useful secondary action. Prefer client assets. Mention no person in a stock image as an employee, customer, patient, or client. Treat an area served as coverage, not a physical office. Do not use em dashes.";
+  "Build a specific local-business decision journey. Near the opening, make clear who the business helps, what it provides, where it operates when location matters, and the next action. The hero headline must be a memorable 4-10 word promise, not a list of services. The hero body must be one useful sentence under 28 words. Service-card descriptions must be one distinct sentence under 22 words. Give each section a distinct job; do not repeat one claim across the hero, proof, services, and About copy. Use one primary action and one useful secondary action. Prefer client assets. Mention no person in a stock image as an employee, customer, patient, or client. Treat an area served as coverage, not a physical office. Do not use em dashes.";
 
 const RECIPE_CREATIVE_DIRECTION =
   "For home care and care businesses, write for the person and family making a trust-sensitive decision: calm editorial language, routines and concerns, a clear first conversation, practical preparation, and reassurance without medical promises. Keep home care language distinct from treatment or aesthetics language. For local trades, use direct problem-led language: identify recognizable symptoms, coverage, what the customer should prepare, and the next service step. Do not promise price, arrival time, warranty, or availability unless supplied.";
@@ -114,6 +114,28 @@ function slugify(value) {
   );
 }
 
+function serviceIdentity(value) {
+  return new Set(
+    String(value || "")
+      .toLowerCase()
+      .replace(/&/g, " and ")
+      .split(/[^a-z0-9]+/)
+      .filter(
+        (token) =>
+          token.length > 2 &&
+          !["and", "the", "for", "service", "services"].includes(token),
+      ),
+  );
+}
+
+function serviceMatchScore(first, second) {
+  const left = serviceIdentity(first);
+  const right = serviceIdentity(second);
+  if (!left.size || !right.size) return 0;
+  const shared = [...left].filter((token) => right.has(token)).length;
+  return shared / Math.max(left.size, right.size);
+}
+
 function lines(value) {
   return String(value || "")
     .split(/[\n,]/)
@@ -138,6 +160,54 @@ function text(value, limit = 240) {
     return excerpt.slice(0, sentenceEnd + 1).trim();
   const wordEnd = excerpt.lastIndexOf(" ", limit);
   return excerpt.slice(0, wordEnd > 0 ? wordEnd : limit).trim();
+}
+
+function wordCount(value) {
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
+function conciseHeadline(value, fallback = "", charLimit = 72, wordLimit = 10) {
+  const cleaned = text(value || fallback, 180).replace(/[.!?]+$/, "");
+  if (cleaned.length <= charLimit && wordCount(cleaned) <= wordLimit)
+    return cleaned;
+  const firstClause = cleaned.split(/[,;:]/)[0]?.trim();
+  if (
+    firstClause &&
+    wordCount(firstClause) >= 3 &&
+    firstClause.length <= charLimit &&
+    wordCount(firstClause) <= wordLimit
+  )
+    return firstClause;
+  return cleaned
+    .split(/\s+/)
+    .slice(0, wordLimit)
+    .join(" ")
+    .slice(0, charLimit)
+    .trim();
+}
+
+function conciseSentence(
+  value,
+  fallback = "",
+  charLimit = 150,
+  wordLimit = 22,
+) {
+  const cleaned = text(value || fallback, 360);
+  const firstSentence = cleaned.match(/^.*?[.!?](?:\s|$)/)?.[0]?.trim();
+  const source =
+    firstSentence && firstSentence.length >= 35 ? firstSentence : cleaned;
+  const words = source.split(/\s+/).filter(Boolean);
+  let result = words.slice(0, wordLimit).join(" ");
+  if (result.length > charLimit) {
+    const wordEnd = result.lastIndexOf(" ", charLimit);
+    result = result.slice(0, wordEnd > 0 ? wordEnd : charLimit);
+  }
+  result = result.replace(/[,;:]$/, "").trim();
+  if (result && !/[.!?]$/.test(result)) result += ".";
+  return result;
 }
 
 function safeHex(value, fallback) {
@@ -166,7 +236,7 @@ function readableOn(hex) {
 }
 
 function usefulServiceDescription(value, serviceName) {
-  const candidate = text(value, 180);
+  const candidate = conciseSentence(value, "", 125, 20);
   const generic =
     /tailored to your needs|personalized support|quality you can trust|when it matters|next level/i;
   if (candidate.length >= 28 && !generic.test(candidate)) return candidate;
@@ -322,11 +392,11 @@ function decisionSupportFor(kind, serviceName) {
   };
 }
 
-function designFor(kind, industry, preset) {
+function designFor(kind, industry) {
   const recipe =
     kind === "home-care" || industry === "wellness"
       ? "care-editorial"
-      : industry === "home-services" || preset === "home-services"
+      : industry === "home-services"
         ? "local-trades"
         : "general-editorial";
   return {
@@ -339,9 +409,8 @@ function designFor(kind, industry, preset) {
   };
 }
 
-function layoutFor(industry, preset) {
-  if (industry === "home-services" || preset === "home-services")
-    return "local-proof";
+function layoutFor(industry) {
+  if (industry === "home-services") return "local-proof";
   if (industry === "technology") return "product-clarity";
   return "editorial-authority";
 }
@@ -455,7 +524,7 @@ function conversionFeaturesFor({
     },
     aiChat: {
       enabled: Boolean(aiChatEnabled),
-      label: "AI answers",
+      label: "Got questions?",
       greeting: `Ask about ${business.name} services, coverage, or the next step.`,
       disclaimer:
         "AI-generated answers use this website's verified information and may be incomplete.",
@@ -477,7 +546,13 @@ function defaultCopy(business, industry, kind = industry) {
   if (kind === "home-care")
     return {
       heroKicker: "Care that starts with listening",
+      heroHeading: business.tagline || "Care that makes room for you",
+      heroBody:
+        business.description ||
+        "Start with a conversation about the support that would help most.",
       servicesHeading: "Support for the routines that matter at home.",
+      servicesIntro:
+        "Explore the available care options, then choose the most useful place to begin.",
       aboutKicker: "A thoughtful approach",
       aboutHeading: "Begin with the person, the family, and the day ahead.",
       aboutBody:
@@ -494,7 +569,13 @@ function defaultCopy(business, industry, kind = industry) {
   if (kind === "garage-door")
     return {
       heroKicker: "Local garage door service",
+      heroHeading: business.tagline || "Get your door moving safely again",
+      heroBody:
+        business.description ||
+        "Describe the problem and location so the team can confirm the right next step.",
       servicesHeading: "Start with the symptom. Find the service that fits.",
+      servicesIntro:
+        "Choose the problem you are seeing to understand the most practical next step.",
       aboutKicker: "A clearer service call",
       aboutHeading: "Describe the issue before scheduling the next step.",
       aboutBody:
@@ -519,7 +600,13 @@ function defaultCopy(business, industry, kind = industry) {
         : "service";
   return {
     heroKicker: "Built around your next step",
+    heroHeading: business.tagline || "A clearer way to move forward",
+    heroBody:
+      business.description ||
+      "Explore what is available and choose the next step that fits.",
     servicesHeading: `Practical ${subject}, shaped around what you need.`,
+    servicesIntro:
+      "Explore what is available, then choose the option that best fits your needs.",
     aboutKicker: "Why people choose us",
     aboutHeading: `A clearer, more personal way to move forward.`,
     aboutBody:
@@ -575,7 +662,7 @@ function defaultFaq(industry, cta, kind = industry) {
 }
 
 const GENERIC_COPY =
-  /tailored to your needs|personalized support|quality you can trust|when it matters|next level|we are here for you|your trusted partner|one[- ]stop/i;
+  /tailored to your needs|talk through your needs|personalized support|quality you can trust|when it matters|next level|we are here for you|your trusted partner|one[- ]stop/i;
 
 export function evaluateDraft(config) {
   const issues = [];
@@ -615,10 +702,23 @@ export function evaluateDraft(config) {
     )
   )
     issues.push("The primary headings use generic marketing language.");
+  if (
+    wordCount(copy.heroHeading || config.business?.tagline) > 10 ||
+    text(copy.heroHeading || config.business?.tagline, 200).length > 72 ||
+    wordCount(copy.heroBody || config.business?.description) > 28 ||
+    services.some(
+      (service) =>
+        wordCount(service.description) > 20 ||
+        text(service.description, 200).length > 125,
+    )
+  )
+    issues.push(
+      "The opening or service cards are too verbose to scan quickly.",
+    );
   if (text(config.business?.primaryCta, 80).length < 4)
     issues.push("The primary conversion action is unclear.");
-  if (process.length < 3 || process.some((step) => text(step, 120).length < 10))
-    issues.push("The visitor journey needs at least three clear next steps.");
+  if (process.length < 2 || process.some((step) => text(step, 120).length < 10))
+    issues.push("The visitor journey needs at least two clear next steps.");
   if (
     faqs.length < 2 ||
     faqs.some(
@@ -702,7 +802,7 @@ function fallback(intake) {
         ],
     differentiators: lines(intake.differentiators).slice(0, 4),
     locations:
-      preset === "home-services"
+      industry === "home-services"
         ? areas.map((name) => ({ name, slug: slugify(name) }))
         : [],
     industry,
@@ -714,7 +814,7 @@ function fallback(intake) {
       businessKind,
     ),
     conversion: {
-      layout: layoutFor(industry, preset),
+      layout: layoutFor(industry),
       qualification: qualificationFor(industry, businessKind),
       process: [
         "Tell us what you need",
@@ -723,7 +823,7 @@ function fallback(intake) {
       ],
       faqs: defaultFaq(industry, intake.primaryCta, businessKind),
     },
-    design: designFor(businessKind, industry, preset),
+    design: designFor(businessKind, industry),
     assetReport: {
       used: stockAssetReport(businessKind, stockImages(businessKind)),
       skipped: [],
@@ -747,15 +847,26 @@ export function normalise(candidate, intake) {
       ])
       .filter(([slug]) => slug !== "client-site"),
   );
+  const proposedServiceFor = (name) => {
+    const exact = proposedServiceBySlug.get(slugify(name));
+    if (exact) return exact;
+    const ranked = proposedServices
+      .filter((service) => service && typeof service === "object")
+      .map((service) => ({
+        service,
+        score: serviceMatchScore(name, service.name),
+      }))
+      .sort((a, b) => b.score - a.score);
+    return ranked[0]?.score >= 0.65 ? ranked[0].service : undefined;
+  };
   // The model can improve descriptions, but it cannot rename, replace, or
   // invent the services the client says it sells.
   const serviceInput = submittedServiceNames.length
     ? submittedServiceNames.map((name) => ({
         name,
         slug: slugify(name),
-        description: proposedServiceBySlug.get(slugify(name))?.description,
-        decisionSupport: proposedServiceBySlug.get(slugify(name))
-          ?.decisionSupport,
+        description: proposedServiceFor(name)?.description,
+        decisionSupport: proposedServiceFor(name)?.decisionSupport,
       }))
     : Array.isArray(value.services)
       ? value.services
@@ -797,7 +908,10 @@ export function normalise(candidate, intake) {
     value.business && typeof value.business === "object" ? value.business : {};
   const business = {
     ...base.business,
-    tagline: text(proposedBusiness.tagline || base.business.tagline, 130),
+    tagline: conciseHeadline(
+      proposedBusiness.tagline || base.business.tagline,
+      base.business.tagline,
+    ),
     description: text(
       proposedBusiness.description || base.business.description,
       520,
@@ -876,6 +990,28 @@ export function normalise(candidate, intake) {
       ],
     ),
   );
+  copy.heroHeading = conciseHeadline(
+    suppliedCopy.heroHeading || copy.heroHeading || business.tagline,
+    business.tagline,
+  );
+  copy.heroBody = conciseSentence(
+    suppliedCopy.heroBody || copy.heroBody || business.description,
+    business.description,
+    170,
+    28,
+  );
+  copy.servicesHeading = conciseHeadline(
+    suppliedCopy.servicesHeading || copy.servicesHeading,
+    copy.servicesHeading,
+    76,
+    10,
+  );
+  copy.servicesIntro = conciseSentence(
+    suppliedCopy.servicesIntro || copy.servicesIntro,
+    copy.servicesIntro,
+    145,
+    22,
+  );
   if (
     isDirectionsCta(business) &&
     text(copy.contactHeading, 180).toLowerCase() === "get directions"
@@ -914,7 +1050,7 @@ export function normalise(candidate, intake) {
       String(intake.conversionAiChat || "").toLowerCase() === "yes",
   });
   const conversion = {
-    layout: layoutFor(base.industry, preset),
+    layout: layoutFor(base.industry),
     qualification,
     process: proposedProcess.length ? proposedProcess : base.conversion.process,
     faqs: validatedFaqs.length ? validatedFaqs : base.conversion.faqs,
@@ -929,7 +1065,7 @@ export function normalise(candidate, intake) {
     services: services.length ? services : base.services,
     differentiators: different.length ? different : base.differentiators,
     locations:
-      preset === "home-services"
+      base.industry === "home-services"
         ? business.serviceAreas.map((name, index) => {
             const proposed = Array.isArray(value.locations)
               ? value.locations.find(
@@ -955,7 +1091,7 @@ export function normalise(candidate, intake) {
     images,
     copy,
     conversion,
-    design: designFor(base.businessKind, base.industry, preset),
+    design: designFor(base.businessKind, base.industry),
     assetReport,
     ...(assets ? { assets } : {}),
     ...(intake.lead && typeof intake.lead === "object"
@@ -996,7 +1132,7 @@ async function askModel(intake, effort, model = MODEL) {
           },
           {
             role: "user",
-            content: `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, locations, copy, conversion. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. services is an array of {name, description, slug, decisionSupport:{scope,nextStep,preparation}}. Keep every submitted service name exactly as provided. Each decisionSupport field must answer a different practical buying question using only supported facts and cautious next-step language. locations is an array of {name, description, localNote}; include only submitted service areas, distinguish serving an area from having a physical office there, and avoid interchangeable city-swap copy. copy must include heroKicker, servicesHeading, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. aboutBody adds useful context instead of repeating the hero description or proof points. conversion must include process (2–4 concise steps) and faqs (2–5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2–3 sentence customer-facing introduction; service descriptions explain a distinct outcome or approach. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`,
+            content: `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, locations, copy, conversion. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. services is an array of {name, description, slug, decisionSupport:{scope,nextStep,preparation}}. Keep every submitted service name exactly as provided. Each service description is one concrete sentence under 22 words. Each decisionSupport field must answer a different practical buying question using only supported facts and cautious next-step language. locations is an array of {name, description, localNote}; include only submitted service areas, distinguish serving an area from having a physical office there, and avoid interchangeable city-swap copy. copy must include heroKicker, heroHeading, heroBody, servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. heroHeading is a catchy 4-10 word customer promise, not a service inventory. heroBody is one sentence under 28 words. servicesHeading is a short, memorable section promise and servicesIntro is one sentence. aboutBody adds useful context instead of repeating the hero description or proof points. conversion must include process (2–4 concise steps) and faqs (2–5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2–3 sentence customer-facing introduction. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`,
           },
         ],
       }),
@@ -1024,7 +1160,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
       },
       body: JSON.stringify({
         model,
-        reasoning_effort: "low",
+        reasoning_effort: "medium",
         temperature: 0.2,
         response_format: { type: "json_object" },
         messages: [
@@ -1055,7 +1191,7 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
     throw new Error("OPENROUTER_API_KEY is required to generate client copy.");
   let draft;
   try {
-    draft = normalise(await askModel(intake, "low", model), intake);
+    draft = normalise(await askModel(intake, "medium", model), intake);
   } catch (firstError) {
     console.warn(
       "Low-effort generation failed; retrying once with high effort.",

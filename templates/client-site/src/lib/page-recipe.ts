@@ -55,9 +55,13 @@ const variantsByType: Record<PageSection["type"], Set<string>> = {
 };
 
 export function defaultRecipe(site: SiteConfig): PageRecipe {
-  if (site.preset === "home-services" || site.industry === "home-services")
+  if (
+    site.businessKind === "garage-door" ||
+    site.industry === "home-services"
+  )
     return "local-trades";
-  if (site.industry === "wellness") return "care-editorial";
+  if (site.businessKind === "home-care" || site.industry === "wellness")
+    return "care-editorial";
   return "general-editorial";
 }
 

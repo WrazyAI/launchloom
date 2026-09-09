@@ -109,7 +109,7 @@ describe("site configuration", () => {
     expect(JSON.stringify(config.conversion)).not.toContain("—");
   });
 
-  it("enables AI answers only when the client explicitly selects it", () => {
+  it("enables the Got questions assistant only when the client explicitly selects it", () => {
     const enabled = normalise(
       {},
       {
@@ -134,7 +134,7 @@ describe("site configuration", () => {
 
     expect(enabled.conversion.aiChat).toMatchObject({
       enabled: true,
-      label: "AI answers",
+      label: "Got questions?",
       apiUrl: "",
       token: "",
     });
@@ -158,6 +158,49 @@ describe("site configuration", () => {
       primaryColor: "#c86d51",
       contrastColor: "#000000",
     });
+  });
+
+  it("does not give a hospitality business trades framing from its preset", () => {
+    const config = normalise(
+      {
+        business: {
+          tagline:
+            "Charleston's home of 48-hour sourdough, laminated pastry, and slow mornings on King Street.",
+          description:
+            "Lumiere bakes slow-fermented sourdough, handcrafted French viennoiserie, and bespoke event cakes from its King Street bakery. Guests can also stop in for espresso and seasonal drinks.",
+        },
+        services: [
+          {
+            name: "Slow-Fermented Organic Sourdough and Specialty Breads",
+            description:
+              "Loaves built on a 48-hour wild-yeast fermentation with organic heirloom grains, baked daily for the cafe counter and special orders.",
+          },
+        ],
+        copy: {
+          servicesHeading: "Baked Slow, Served Beautifully",
+          servicesIntro:
+            "From daily bread to celebration cakes, choose what brings you in.",
+        },
+      },
+      {
+        businessName: "Lumiere Artisan Bakery and Cafe",
+        services: "Slow-Fermented Organic Sourdough & Specialty Breads",
+        industry: "hospitality",
+        preset: "home-services",
+      },
+    );
+
+    expect(config.design.recipe).toBe("general-editorial");
+    expect(config.conversion.layout).toBe("editorial-authority");
+    expect(config.locations).toEqual([]);
+    expect(config.business.tagline.split(/\s+/)).toHaveLength(5);
+    expect(config.business.tagline).toBe(
+      "Charleston's home of 48-hour sourdough",
+    );
+    expect(config.copy.heroBody.length).toBeLessThanOrEqual(170);
+    expect(config.services[0].description.length).toBeLessThanOrEqual(125);
+    expect(config.services[0].description).toContain("Loaves built");
+    expect(config.copy.servicesIntro).toContain("celebration cakes");
   });
 
   it("does not substitute stock imagery for an unsupported industry", () => {

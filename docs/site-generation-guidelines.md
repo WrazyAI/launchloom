@@ -44,6 +44,12 @@ compact mobile actions, and accessible forms. Avoid stacked popups, overlapping
 sticky controls, placeholder links, horizontal overflow, and text embedded in
 images. Never use em dashes in generated or rendered content.
 
+Treat the opening as a hook, not an inventory. Keep the hero heading to roughly
+4-10 memorable words, the hero body to one useful sentence, and service-card
+descriptions to one distinct sentence. Put supporting detail on the service
+page. Do not add decorative ordinal numbers to service or proof cards. Reserve
+numbering for a sequence where the order communicates a real process.
+
 ## Conversion tools
 
 New sites receive a guided qualifier, a scripted quick-answer assistant, and,

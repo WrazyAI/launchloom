@@ -9,7 +9,7 @@ const { title = site.business.name, description = site.business.description } = 
 const canonical = site.business.domain ? `https://${site.business.domain.replace(/^https?:\/\//, "").replace(/\/$/, "")}${Astro.url.pathname}` : undefined;
 const structuredData = {
   "@context": "https://schema.org",
-  "@type": site.preset === "home-services" ? "HomeAndConstructionBusiness" : "LocalBusiness",
+  "@type": site.industry === "home-services" ? "HomeAndConstructionBusiness" : "LocalBusiness",
   name: site.business.name,
   description,
   telephone: site.business.phone || undefined,

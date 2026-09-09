@@ -5,6 +5,7 @@ const COPY_FIELDS = new Set([
   "heroHeading",
   "heroBody",
   "servicesHeading",
+  "servicesIntro",
   "aboutKicker",
   "aboutHeading",
   "aboutBody",
@@ -152,9 +153,13 @@ function clean(value, limit = 360) {
 function recipeFor(config) {
   const recipe = config.design?.recipe;
   if (DEFAULT_SECTIONS[recipe]) return recipe;
-  if (config.preset === "home-services" || config.industry === "home-services")
+  if (
+    config.businessKind === "garage-door" ||
+    config.industry === "home-services"
+  )
     return "local-trades";
-  if (config.industry === "wellness") return "care-editorial";
+  if (config.businessKind === "home-care" || config.industry === "wellness")
+    return "care-editorial";
   return "general-editorial";
 }
 function defaultSection(config, type) {
@@ -342,7 +347,7 @@ function paletteFor(config, feedback = "") {
       lineColor: requested[5] || mix(primary, surface, 0.8),
     };
   }
-  if (config.preset === "home-services" || config.industry === "home-services")
+  if (config.industry === "home-services")
     return {
       primaryColor: "#9a4a2d",
       surfaceColor: "#fbf6f0",
@@ -647,7 +652,7 @@ export async function modelOperations(
           messages: [
             {
               role: "system",
-              content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
+              content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
             },
             {
               role: "user",
@@ -689,6 +694,31 @@ function safeContent(value, limit) {
   )
     return "";
   return text;
+}
+function conciseRevisionContent(value, field) {
+  const rules = {
+    heroHeading: [72, 10],
+    heroBody: [170, 28],
+    servicesHeading: [76, 10],
+    servicesIntro: [145, 22],
+    serviceDescription: [125, 20],
+  };
+  const [charLimit, wordLimit] = rules[field] || [180, 40];
+  const cleaned = clean(value, 400);
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  let result = words.slice(0, wordLimit).join(" ");
+  if (result.length > charLimit) {
+    const wordEnd = result.lastIndexOf(" ", charLimit);
+    result = result.slice(0, wordEnd > 0 ? wordEnd : charLimit);
+  }
+  result = result.replace(/[,;:]$/, "");
+  if (
+    ["heroBody", "servicesIntro"].includes(field) &&
+    result &&
+    !/[.!?]$/.test(result)
+  )
+    result += ".";
+  return result;
 }
 export function applyOperation(config, operation) {
   if (!operation || typeof operation !== "object") return false;
@@ -760,14 +790,20 @@ export function applyOperation(config, operation) {
                 : 180,
             );
     if (!value) return false;
-    config.copy = { ...(config.copy || {}), [operation.field]: value };
+    config.copy = {
+      ...(config.copy || {}),
+      [operation.field]: conciseRevisionContent(value, operation.field),
+    };
     return true;
   }
   if (operation.kind === "set_service_copy") {
     const service = (config.services || []).find(
       (item) => item.slug === operation.serviceSlug,
     );
-    const description = safeContent(operation.description, 320);
+    const description = conciseRevisionContent(
+      safeContent(operation.description, 125),
+      "serviceDescription",
+    );
     if (!service || !description) return false;
     service.description = description;
     return true;
@@ -859,7 +895,7 @@ export function applyOperation(config, operation) {
             }
           : operation.feature === "aiChat"
             ? {
-                label: "AI answers",
+                label: "Got questions?",
                 greeting: `Ask about ${clean(config.business?.name, 100)} services, coverage, or the next step.`,
                 disclaimer:
                   "AI-generated answers use this website's verified information and may be incomplete.",

@@ -54,6 +54,7 @@ export function buildSafeVisualManifest(config) {
         "heroHeading",
         "heroBody",
         "servicesHeading",
+        "servicesIntro",
         "aboutKicker",
         "aboutHeading",
         "aboutBody",

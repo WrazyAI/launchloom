@@ -190,7 +190,7 @@ describe("revision operations", () => {
     });
     expect(planned.config.conversion.aiChat).toMatchObject({
       enabled: true,
-      label: "AI answers",
+      label: "Got questions?",
     });
   });
 

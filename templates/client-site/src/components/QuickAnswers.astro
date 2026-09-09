@@ -6,16 +6,17 @@ const items = (feature?.items?.length ? feature.items : site.conversion?.faqs ||
 const aiEnabled = Boolean(ai?.enabled && ai.apiUrl && ai.token);
 const enabled = aiEnabled || (feature?.enabled !== false && items.length > 0);
 const ctaHref = primaryCtaHref(Astro.url.pathname);
+const assistantLabel = "Got questions?";
 ---
 
 {enabled && (
   <aside class="quick-answers" data-conversion-feature={aiEnabled ? "ai-chat" : "quick-answers"} data-ai-api={aiEnabled ? ai?.apiUrl : undefined} data-ai-token={aiEnabled ? ai?.token : undefined}>
     <button class="quick-answers__launcher" type="button" aria-expanded="false" aria-controls="quick-answers-panel">
-      <span aria-hidden="true">?</span>{aiEnabled ? ai?.label || "AI answers" : feature?.label || "Quick answers"}
+      <span aria-hidden="true">?</span>{assistantLabel}
     </button>
     <section id="quick-answers-panel" class="quick-answers__panel" hidden aria-labelledby="quick-answers-title">
       <header>
-        <div><span class="kicker">{aiEnabled ? "AI website assistant" : "Website assistant"}</span><h2 id="quick-answers-title">{aiEnabled ? ai?.label || "AI answers" : feature?.label || "Quick answers"}</h2></div>
+        <div><span class="kicker">{aiEnabled ? "AI website assistant" : "Website assistant"}</span><h2 id="quick-answers-title">{assistantLabel}</h2></div>
         <button class="quick-answers__close" type="button" aria-label="Close website assistant">×</button>
       </header>
       <p class="quick-answers__greeting">{aiEnabled ? ai?.greeting : feature?.greeting || `Welcome to ${site.business.name}. How can we help?`}</p>

@@ -1,12 +1,13 @@
 ---
 import site, { phoneHref } from "../lib/site";
+import { defaultRecipe } from "../lib/page-recipe";
 const sections = site.design?.sections || [];
-const recipe = site.design?.recipe || (site.preset === "home-services" ? "local-trades" : "care-editorial");
+const recipe = site.design?.recipe || defaultRecipe(site);
 const sectionId = (type: string, fallback?: string) =>
   sections.find((section) => section.type === type)?.id || fallback;
 const servicesId = sectionId("services", "services");
 const aboutId = sectionId("about", "about");
-const coverageId = sectionId("coverage", site.preset === "home-services" ? "areas" : undefined);
+const coverageId = sectionId("coverage");
 const contactId = sectionId("contact", "contact");
 ---
 

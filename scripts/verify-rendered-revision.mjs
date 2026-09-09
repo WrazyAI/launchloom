@@ -248,6 +248,14 @@ try {
       const directionsLink = locationMap?.querySelector(
         'a[href*="google.com/maps"]',
       );
+      const serviceOrdinals = [
+        ...document.querySelectorAll(".service-card > span"),
+      ]
+        .map((element) => element.textContent?.trim() || "")
+        .filter((value) => /^0?\d+$/.test(value));
+      const assistantLabels = [
+        ...document.querySelectorAll(".quick-answers__launcher"),
+      ].map((element) => element.textContent?.replace(/\s+/g, " ").trim() || "");
       return {
         sections,
         actions,
@@ -268,6 +276,8 @@ try {
               directionsHref: directionsLink?.getAttribute("href") || "",
             }
           : null,
+        serviceOrdinals,
+        assistantLabels,
       };
     });
     if (state.overflow > 1)
@@ -277,6 +287,17 @@ try {
     if (state.brokenLinks.length)
       failures.push(
         `${viewport.name}: broken fragment links ${state.brokenLinks.join(", ")}.`,
+      );
+    if (state.serviceOrdinals.length)
+      failures.push(
+        `${viewport.name}: service cards use decorative ordinal numbers.`,
+      );
+    if (
+      state.assistantLabels.length &&
+      state.assistantLabels.some((label) => !label.includes("Got questions?"))
+    )
+      failures.push(
+        `${viewport.name}: assistant launcher is not labeled Got questions?.`,
       );
     if (expectsLocationMap) {
       if (!state.locationMap?.visible || !state.locationMap.frameVisible)

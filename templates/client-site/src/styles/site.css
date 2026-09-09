@@ -227,7 +227,6 @@ h2 {
   background: #e6efe5;
   transform: translateY(-3px);
 }
-.service-card > span,
 .process-grid span {
   font-size: 0.75rem;
   color: var(--brand);
@@ -238,7 +237,7 @@ h2 {
     500 1.65rem/1 Georgia,
     serif;
   letter-spacing: -0.04em;
-  margin: 46px 0 10px;
+  margin: 8px 0 10px;
 }
 .service-card p {
   color: var(--muted);
@@ -865,7 +864,6 @@ h2 {
 }
 .recipe-local-trades .kicker,
 .recipe-local-trades .trust-grid span,
-.recipe-local-trades .service-card > span,
 .recipe-local-trades .process-grid span {
   color: color-mix(in srgb, var(--brand) 72%, #000);
 }

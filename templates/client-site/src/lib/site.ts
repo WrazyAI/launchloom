@@ -81,6 +81,7 @@ export type SiteConfig = {
     heroHeading?: string;
     heroBody?: string;
     servicesHeading?: string;
+    servicesIntro?: string;
     aboutKicker?: string;
     aboutHeading?: string;
     aboutBody?: string;

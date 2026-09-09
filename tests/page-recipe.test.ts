@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolvePageRecipe } from "../templates/client-site/src/lib/page-recipe";
+import {
+  defaultRecipe,
+  resolvePageRecipe,
+} from "../templates/client-site/src/lib/page-recipe";
 
 const site = {
   preset: "home-services",
@@ -11,6 +14,15 @@ const site = {
 } as unknown as Parameters<typeof resolvePageRecipe>[0];
 
 describe("page recipes", () => {
+  it("does not infer trades framing from a presentation preset", () => {
+    expect(
+      defaultRecipe({
+        preset: "home-services",
+        industry: "hospitality",
+        businessKind: "hospitality",
+      } as Parameters<typeof defaultRecipe>[0]),
+    ).toBe("general-editorial");
+  });
   it("uses the complete trades recipe for older or incomplete configurations", () => {
     const page = resolvePageRecipe(site);
 
