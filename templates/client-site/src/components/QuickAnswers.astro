@@ -52,7 +52,7 @@ const contactId = Astro.url.pathname === "/"
     const submit = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
     const aiApi = root.dataset.aiApi || "";
     const aiToken = root.dataset.aiToken || "";
-    if (new URLSearchParams(window.location.search).has("review")) root.setAttribute("hidden", "");
+    if (new URLSearchParams(window.location.search).has("review") && !aiApi) root.setAttribute("hidden", "");
     const setOpen = (open: boolean) => {
       const wasOpen = !panel?.hasAttribute("hidden");
       panel?.toggleAttribute("hidden", !open);
