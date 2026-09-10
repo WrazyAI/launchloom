@@ -344,6 +344,12 @@ function businessKindFor(intake, industry) {
     return "home-care";
   if (/garage door|overhead door|door opener|torsion spring/.test(facts))
     return "garage-door";
+  if (
+    /athletic club|fitness|gym|strength training|personal training|sports performance|recovery club/.test(
+      facts,
+    )
+  )
+    return "fitness";
   return industry;
 }
 
@@ -413,7 +419,7 @@ function requestedTypography(intake, fallback) {
 
 function designFor(kind, industry, intake = {}) {
   const recipe =
-    kind === "home-care" || industry === "wellness"
+    kind === "home-care" || (industry === "wellness" && kind !== "fitness")
       ? "care-editorial"
       : industry === "home-services"
         ? "local-trades"

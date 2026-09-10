@@ -13,7 +13,7 @@ const faqs = site.conversion?.faqs || [];
 const galleryImages = [site.assets?.photoThree, site.assets?.teamPhoto].filter((image): image is string => Boolean(image));
 // A visual recipe may be reused, but industry-specific language must be based
 // on verified business context rather than the selected visual recipe.
-const care = site.businessKind === "home-care" || site.industry === "wellness";
+const care = site.businessKind === "home-care" || (site.industry === "wellness" && site.businessKind !== "fitness");
 const trades = site.businessKind === "garage-door" || site.industry === "home-services";
 const garage = site.businessKind === "garage-door";
 const hospitality = site.industry === "hospitality";

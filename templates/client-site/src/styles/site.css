@@ -1527,6 +1527,99 @@ h2 {
   grid-column: span 8;
   background: var(--hero-surface);
 }
+
+/* Named directions add art direction on top of reusable compositions. */
+.design-care-private-practice .recipe-hero {
+  background: color-mix(in srgb, var(--hero-surface) 88%, white);
+}
+.design-care-private-practice .hero-copy h1 {
+  max-width: 560px;
+}
+.design-care-private-practice .hero-image {
+  border-radius: 48% 48% 3px 3px;
+}
+.design-care-private-practice .services-section .service-card {
+  border-top: 0;
+  border-bottom-width: 1px;
+  background: transparent;
+}
+
+.design-trades-emergency-line .recipe-hero {
+  min-height: 720px;
+  background: #081517;
+}
+.design-trades-emergency-line .hero-copy h1 {
+  max-width: 610px;
+  font-size: clamp(4rem, 7vw, 7.8rem);
+}
+.design-trades-emergency-line .services-section .service-card {
+  border-top: 7px solid var(--brand);
+  box-shadow: none;
+}
+
+.design-general-editorial-house .recipe-hero {
+  background: var(--cream);
+}
+.design-general-editorial-house .hero-grid {
+  grid-template-columns: minmax(0, 1.24fr) minmax(310px, 0.76fr);
+}
+.design-general-editorial-house .hero-image {
+  border-radius: 48% 48% 2px 2px;
+}
+.design-general-editorial-house .services-section .service-grid {
+  display: block;
+  border-top: 1px solid var(--line);
+}
+.design-general-editorial-house .services-section .service-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(280px, 1fr) auto;
+  gap: 32px;
+  align-items: start;
+  min-height: 0;
+  border-width: 0 0 1px;
+}
+
+.design-general-product-studio .recipe-hero {
+  color: var(--on-brand-surface);
+  background: var(--brand-surface);
+}
+.design-general-product-studio .recipe-hero .kicker {
+  color: color-mix(in srgb, var(--on-brand-surface) 78%, var(--brand));
+}
+.design-general-product-studio .recipe-hero p {
+  color: color-mix(in srgb, var(--on-brand-surface) 82%, transparent);
+}
+.design-general-product-studio .hero-image {
+  border-radius: 0;
+  clip-path: polygon(9% 0, 100% 0, 100% 100%, 0 100%, 0 9%);
+  border-bottom: 10px solid var(--brand);
+}
+.design-general-product-studio .services-section .service-card {
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--hero-surface) 30%, var(--cream));
+}
+
+.design-trades-craftsman .recipe-hero {
+  margin: 22px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  background: var(--cream);
+}
+.design-trades-craftsman .recipe-hero .kicker,
+.design-trades-craftsman .recipe-hero p {
+  color: var(--brand-ink);
+}
+.design-trades-craftsman .services-section .service-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.design-trades-craftsman .services-section .service-card {
+  grid-column: auto;
+  min-height: 280px;
+  box-shadow: none;
+}
+.design-trades-craftsman .services-section .service-card:nth-child(3n) {
+  grid-column: 2;
+}
 .split-section.variant-compact,
 .contact-section.variant-compact {
   padding-top: 62px;
@@ -1733,8 +1826,18 @@ h2 {
   }
   .composition-magazine .section-heading,
   .composition-sidebar .services-section,
-  .services-section.variant-list .service-card {
+  .services-section.variant-list .service-card,
+  .design-general-editorial-house .services-section .service-card {
     display: block;
+  }
+  .design-trades-craftsman .services-section .service-grid {
+    grid-template-columns: 1fr;
+  }
+  .design-trades-craftsman .services-section .service-card:nth-child(3n) {
+    grid-column: auto;
+  }
+  .design-trades-craftsman .recipe-hero {
+    margin: 8px;
   }
   .composition-framed .recipe-hero {
     margin: 10px;

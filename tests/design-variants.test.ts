@@ -45,4 +45,23 @@ describe("design variant registry", () => {
     );
     expect(selected.size).toBeGreaterThanOrEqual(7);
   });
+
+  it("makes every registered direction reachable from intake-specific seeds", () => {
+    for (const recipe of [
+      "care-editorial",
+      "local-trades",
+      "general-editorial",
+    ] as const) {
+      const reachable = new Set(
+        Array.from(
+          { length: 200 },
+          (_, index) =>
+            selectDesignVariant(recipe, `intake-${index}|fixture`).id,
+        ),
+      );
+      expect(reachable).toEqual(
+        new Set(listDesignVariants(recipe).map((variant) => variant.id)),
+      );
+    }
+  });
 });

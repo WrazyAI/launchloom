@@ -179,7 +179,9 @@ describe("site configuration", () => {
     expect(config.style.brandSurfaceTextColor).toMatch(/^#[0-9a-f]{6}$/);
     expect(config.style.brandTextColor).toMatch(/^#[0-9a-f]{6}$/);
     expect(config.design.treatment.typography).toBe("geometric");
-    expect(config.design.variantId).toMatch(/^care-/);
+    expect(config.businessKind).toBe("fitness");
+    expect(config.design.recipe).toBe("general-editorial");
+    expect(config.design.variantId).toMatch(/^general-/);
   });
 
   it("selects a stable but intake-specific complete design variant", () => {
