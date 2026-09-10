@@ -1,4 +1,5 @@
 import type { PageRecipe, PageSection, SiteConfig } from "./site";
+import { variantForSite } from "./design-variants";
 
 const recipes: Record<PageRecipe, PageSection[]> = {
   "care-editorial": [
@@ -42,9 +43,27 @@ const sectionTypes = new Set(
     .map((section) => section.type),
 );
 const variantsByType: Record<PageSection["type"], Set<string>> = {
-  hero: new Set(["care-portrait", "trades-split", "editorial", "centered"]),
+  hero: new Set([
+    "care-portrait",
+    "trades-split",
+    "editorial",
+    "centered",
+    "offset",
+    "framed",
+    "full-bleed",
+    "compact",
+    "stacked",
+    "mosaic",
+  ]),
   trust: new Set(["quiet", "bold"]),
-  services: new Set(["editorial", "problem-led", "featured"]),
+  services: new Set([
+    "editorial",
+    "problem-led",
+    "featured",
+    "sidebar",
+    "list",
+    "mosaic",
+  ]),
   about: new Set(["immersive", "compact"]),
   process: new Set(["guided", "numbered", "compact"]),
   "social-proof": new Set(["editorial", "cards"]),
@@ -65,32 +84,42 @@ export function defaultRecipe(site: SiteConfig): PageRecipe {
 export function resolvePageRecipe(site: SiteConfig): {
   recipe: PageRecipe;
   sections: PageSection[];
+  variantId: string | null;
+  composition: import("./site").DesignComposition;
+  treatment: {
+    density: "compact" | "balanced" | "spacious";
+    typography: import("./site").DesignTypography;
+  };
 } {
   const recipe =
     site.design?.recipe && recipes[site.design.recipe]
       ? site.design.recipe
       : defaultRecipe(site);
   const requested = site.design?.sections;
+  const designVariant = variantForSite(site, recipe);
   const usedIds = new Set<string>();
   const usedTypes = new Set<string>();
-  const sections = Array.isArray(requested)
-    ? requested.filter((section) => {
-        const valid = Boolean(
-          section &&
-          /^[a-z][a-z0-9-]{0,63}$/.test(section.id) &&
-          section.variant &&
-          sectionTypes.has(section.type) &&
-          variantsByType[section.type]?.has(section.variant) &&
-          !usedIds.has(section.id) &&
-          !usedTypes.has(section.type),
-        );
-        if (valid) {
-          usedIds.add(section.id);
-          usedTypes.add(section.type);
-        }
-        return valid;
-      })
-    : [];
+  const sections =
+    Array.isArray(requested) && requested.length
+      ? requested.filter((section) => {
+          const valid = Boolean(
+            section &&
+            /^[a-z][a-z0-9-]{0,63}$/.test(section.id) &&
+            section.variant &&
+            sectionTypes.has(section.type) &&
+            variantsByType[section.type]?.has(section.variant) &&
+            !usedIds.has(section.id) &&
+            !usedTypes.has(section.type),
+          );
+          if (valid) {
+            usedIds.add(section.id);
+            usedTypes.add(section.type);
+          }
+          return valid;
+        })
+      : designVariant
+        ? [...designVariant.sections]
+        : [];
   const required = new Set(["hero", "services", "contact"]);
   const complete = [...required].every((type) =>
     sections.some((section) => section.type === type),
@@ -98,6 +127,16 @@ export function resolvePageRecipe(site: SiteConfig): {
   const selected = complete ? sections : recipes[recipe];
   return {
     recipe,
+    variantId: designVariant?.id || null,
+    composition: designVariant?.composition || "split",
+    treatment: {
+      density:
+        site.design?.treatment?.density || designVariant?.density || "balanced",
+      typography:
+        site.design?.treatment?.typography ||
+        designVariant?.typography ||
+        (recipe === "local-trades" ? "strong" : "editorial"),
+    },
     sections: selected.filter(
       (section) => section.type !== "social-proof" || Boolean(site.socialProof),
     ),

@@ -7,13 +7,12 @@ import site from "../lib/site";
 import { resolvePageRecipe } from "../lib/page-recipe";
 
 const page = resolvePageRecipe(site);
-const density = site.design?.treatment?.density || "balanced";
-const typography = site.design?.treatment?.typography || (page.recipe === "local-trades" ? "strong" : "editorial");
+const { density, typography } = page.treatment;
 ---
 
 <SiteLayout>
   <Header />
-  <main class:list={["site-main", `recipe-${page.recipe}`, `layout-${site.conversion?.layout || "editorial-authority"}`, `density-${density}`, `type-${typography}`]}>
+  <main class:list={["site-main", `recipe-${page.recipe}`, `layout-${site.conversion?.layout || "editorial-authority"}`, `density-${density}`, `type-${typography}`, `composition-${page.composition}`, page.variantId && `design-${page.variantId}`]}>
     <PageSections page={page} />
   </main>
   <Footer />

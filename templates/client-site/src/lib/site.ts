@@ -34,6 +34,28 @@ export type PageSection = {
 };
 export type PageRecipe =
   "care-editorial" | "local-trades" | "general-editorial";
+export type DesignComposition =
+  | "split"
+  | "asymmetric"
+  | "centered"
+  | "full-bleed"
+  | "magazine"
+  | "framed"
+  | "stacked"
+  | "sidebar"
+  | "mosaic";
+export type DesignTypography =
+  | "editorial"
+  | "sans"
+  | "strong"
+  | "refined-serif"
+  | "humanist"
+  | "geometric"
+  | "heritage"
+  | "modern-serif"
+  | "industrial"
+  | "condensed"
+  | "soft-sans";
 export type SiteConfig = {
   preset: "wellness" | "home-services";
   industry?: string;
@@ -64,6 +86,9 @@ export type SiteConfig = {
     mutedColor?: string;
     lineColor?: string;
     contrastColor?: string;
+    brandTextColor?: string;
+    brandSurfaceColor?: string;
+    brandSurfaceTextColor?: string;
   };
   services: Service[];
   differentiators: string[];
@@ -135,10 +160,11 @@ export type SiteConfig = {
   };
   design?: {
     recipe: PageRecipe;
+    variantId?: string;
     sections: PageSection[];
     treatment?: {
       density?: "compact" | "balanced" | "spacious";
-      typography?: "editorial" | "sans" | "strong";
+      typography?: DesignTypography;
     };
   };
   assetReport?: {

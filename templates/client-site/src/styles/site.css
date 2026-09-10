@@ -84,7 +84,7 @@ a {
   letter-spacing: 0.14em;
   font-size: 0.7rem;
   font-weight: 800;
-  color: var(--brand);
+  color: var(--brand-ink, var(--brand));
 }
 h1,
 h2,
@@ -150,7 +150,7 @@ h2 {
   padding: 10px 13px;
   border: 1px solid var(--brand);
   font-size: 0.83rem;
-  color: var(--brand);
+  color: var(--brand-ink, var(--brand));
   font-weight: 700;
 }
 .hero-actions {
@@ -248,8 +248,8 @@ h2 {
   font-size: 0.85rem;
 }
 .split-section {
-  background: var(--brand);
-  color: #fff;
+  background: var(--brand-surface, var(--brand));
+  color: var(--on-brand-surface, #fff);
   padding: 86px 0;
 }
 .split-grid {
@@ -264,14 +264,12 @@ h2 {
   object-fit: cover;
 }
 .split-grid .kicker {
-  color: #cae4d1;
+  color: color-mix(in srgb, var(--on-brand-surface, #fff) 82%, transparent);
 }
-.split-grid p {
-  color: #e1eee6;
-}
+.split-grid p,
 .split-grid li {
   margin: 12px 0;
-  color: #d4e6da;
+  color: color-mix(in srgb, var(--on-brand-surface, #fff) 88%, transparent);
 }
 .process-grid {
   padding: 0;
@@ -1316,6 +1314,53 @@ h2 {
 .type-editorial h3 {
   font-family: Georgia, serif;
 }
+.type-refined-serif h1,
+.type-refined-serif h2,
+.type-refined-serif h3 {
+  font-family: Didot, "Bodoni MT", Georgia, serif;
+  font-weight: 500;
+}
+.type-humanist h1,
+.type-humanist h2,
+.type-humanist h3 {
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  letter-spacing: -0.045em;
+}
+.type-geometric h1,
+.type-geometric h2,
+.type-geometric h3 {
+  font-family: Futura, "Century Gothic", Arial, sans-serif;
+  font-weight: 700;
+}
+.type-heritage h1,
+.type-heritage h2,
+.type-heritage h3 {
+  font-family: Garamond, "Palatino Linotype", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+}
+.type-modern-serif h1,
+.type-modern-serif h2,
+.type-modern-serif h3 {
+  font-family: Charter, Cambria, Georgia, serif;
+}
+.type-industrial h1,
+.type-industrial h2,
+.type-industrial h3,
+.type-condensed h1,
+.type-condensed h2,
+.type-condensed h3 {
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.type-soft-sans h1,
+.type-soft-sans h2,
+.type-soft-sans h3 {
+  font-family: Avenir, "Segoe UI", Arial, sans-serif;
+  font-weight: 650;
+  letter-spacing: -0.045em;
+}
 .variant-centered .hero-grid {
   display: block;
   min-height: auto;
@@ -1335,6 +1380,148 @@ h2 {
 .variant-centered .hero-visual {
   max-width: 960px;
   margin: 35px auto 0;
+}
+.composition-asymmetric .hero-grid,
+.variant-offset .hero-grid {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  align-items: end;
+}
+.composition-asymmetric .hero-copy {
+  align-self: start;
+}
+.composition-asymmetric .hero-image,
+.variant-offset .hero-image {
+  height: 470px;
+  margin-bottom: -42px;
+}
+.composition-full-bleed .recipe-hero,
+.variant-full-bleed.recipe-hero {
+  position: relative;
+  min-height: 720px;
+  color: #fff;
+  background: #101915;
+}
+.composition-full-bleed .hero-grid,
+.variant-full-bleed .hero-grid {
+  display: block;
+}
+.composition-full-bleed .hero-copy,
+.variant-full-bleed .hero-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 710px;
+  padding: 120px 0;
+}
+.composition-full-bleed .hero-copy p,
+.variant-full-bleed .hero-copy p {
+  color: #eef3ee;
+}
+.composition-full-bleed .hero-visual,
+.variant-full-bleed .hero-visual {
+  position: absolute;
+  inset: 0 0 0 48%;
+}
+.composition-full-bleed .hero-image,
+.variant-full-bleed .hero-image {
+  height: 100%;
+  border-radius: 0;
+  opacity: 0.78;
+}
+.composition-magazine .section-heading {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.9fr) minmax(300px, 1.1fr);
+  gap: 55px;
+  max-width: none;
+  align-items: end;
+}
+.composition-magazine .section-heading .kicker {
+  grid-column: 1 / -1;
+}
+.composition-magazine .section-heading h2,
+.composition-magazine .section-heading p {
+  margin-bottom: 0;
+}
+.composition-framed .recipe-hero {
+  margin: 24px;
+  border: 1px solid var(--line);
+}
+.composition-framed .hero-grid,
+.variant-framed .hero-grid {
+  min-height: 620px;
+  padding: 28px;
+  border: 1px solid var(--line);
+}
+.composition-stacked .hero-grid,
+.variant-stacked .hero-grid {
+  grid-template-columns: 1fr;
+  gap: 0;
+  padding-top: 42px;
+}
+.composition-stacked .hero-copy,
+.variant-stacked .hero-copy {
+  max-width: 880px;
+}
+.composition-stacked .hero-image,
+.variant-stacked .hero-image {
+  height: min(58vw, 620px);
+}
+.composition-sidebar .services-section {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.36fr) minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+.composition-sidebar .services-section .service-grid,
+.services-section.variant-sidebar .service-grid {
+  grid-template-columns: 1fr;
+  margin-top: 0;
+}
+.composition-sidebar .services-section .service-card,
+.services-section.variant-sidebar .service-card {
+  grid-column: 1 / -1;
+  min-height: 0;
+}
+.services-section.variant-list .service-grid {
+  display: block;
+  border-top: 1px solid var(--line);
+}
+.services-section.variant-list .service-card {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.7fr) minmax(260px, 1fr) auto;
+  gap: 32px;
+  align-items: start;
+  min-height: 0;
+  border-width: 0 0 1px;
+}
+.services-section.variant-list .service-card h3,
+.services-section.variant-list .service-card p,
+.services-section.variant-list .service-card b {
+  margin: 0;
+}
+.composition-mosaic .hero-grid,
+.variant-mosaic .hero-grid {
+  grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+}
+.composition-mosaic .hero-visual:after,
+.variant-mosaic .hero-visual:after {
+  content: "";
+  position: absolute;
+  right: -24px;
+  bottom: -24px;
+  width: 42%;
+  height: 42%;
+  border: 18px solid var(--brand);
+  pointer-events: none;
+}
+.services-section.variant-mosaic .service-card:nth-child(3n + 1) {
+  grid-column: span 7;
+}
+.services-section.variant-mosaic .service-card:nth-child(3n + 2) {
+  grid-column: span 5;
+}
+.services-section.variant-mosaic .service-card:nth-child(3n) {
+  grid-column: span 12;
+  min-height: 210px;
 }
 .services-section.variant-featured .service-card:first-child {
   grid-column: span 8;
@@ -1534,6 +1721,24 @@ h2 {
     grid-template-columns: 1fr;
     gap: 30px;
   }
+  .composition-full-bleed .hero-visual,
+  .variant-full-bleed .hero-visual {
+    position: relative;
+    inset: auto;
+    min-height: 360px;
+  }
+  .composition-full-bleed .hero-copy,
+  .variant-full-bleed .hero-copy {
+    padding: 70px 0 34px;
+  }
+  .composition-magazine .section-heading,
+  .composition-sidebar .services-section,
+  .services-section.variant-list .service-card {
+    display: block;
+  }
+  .composition-framed .recipe-hero {
+    margin: 10px;
+  }
   .hero-copy {
     padding: 45px 0 0;
   }
@@ -1726,4 +1931,8 @@ h2 {
     bottom: 14px;
     right: 14px;
   }
+}
+.split-grid p,
+.split-grid li {
+  color: color-mix(in srgb, var(--on-brand-surface, #fff) 88%, transparent);
 }

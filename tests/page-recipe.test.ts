@@ -30,6 +30,26 @@ describe("page recipes", () => {
       "social-proof",
     );
   });
+
+  it("resolves a configured design variant through the registry", () => {
+    const page = resolvePageRecipe({
+      ...site,
+      design: {
+        recipe: "local-trades",
+        variantId: "trades-field-report",
+        sections: [],
+      },
+    });
+
+    expect(page.variantId).toBe("trades-field-report");
+    expect(page.composition).toBe("magazine");
+    expect(page.treatment.typography).toBe("condensed");
+    expect(page.sections.map((section) => section.type).slice(0, 3)).toEqual([
+      "hero",
+      "services",
+      "gallery",
+    ]);
+  });
   it("uses the complete trades recipe for older or incomplete configurations", () => {
     const page = resolvePageRecipe(site);
 

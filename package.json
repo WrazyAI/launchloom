@@ -15,6 +15,7 @@
     "evaluate:visual-models": "node scripts/evaluate-visual-models.mjs",
     "quality:visual": "node scripts/visual-quality-gate.mjs",
     "build:design-demos": "node scripts/build-design-demos.mjs",
+    "build:template-gallery": "node scripts/build-template-variant-gallery.mjs",
     "verify:onboarding-ui": "npm run build && node scripts/verify-onboarding-ui.mjs",
     "test:watch": "vitest",
     "format": "prettier --write ."
