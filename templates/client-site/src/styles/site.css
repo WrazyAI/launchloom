@@ -1688,9 +1688,8 @@ h2 {
   .related-services .service-grid {
     grid-template-columns: 1fr;
   }
-  .services-section .service-card,
-  .services-section .service-card:nth-child(n + 4) {
-    grid-column: auto;
+  .services-section .service-grid > .service-card {
+    grid-column: 1 / -1 !important;
   }
   .coverage-section .area-list,
   .decision-grid {

@@ -28,4 +28,14 @@ describe("client copy presentation", () => {
     expect(styles).toContain(".trust-grid:has(> div:nth-child(3):last-child)");
     expect(styles).toContain(".process-grid:has(> li:nth-child(4):last-child)");
   });
+
+  it("neutralizes count-aware service spans on mobile", async () => {
+    const styles = await fs.readFile(
+      "templates/client-site/src/styles/site.css",
+      "utf8",
+    );
+    expect(styles).toMatch(
+      /@media \(max-width: 760px\)[\s\S]*?\.services-section \.service-grid > \.service-card \{[\s\S]*?grid-column: 1 \/ -1 !important;/,
+    );
+  });
 });
