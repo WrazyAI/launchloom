@@ -1,4 +1,5 @@
 import { parseModelJson } from "./model-json.mjs";
+import { resolvePalette } from "./palette-policy.mjs";
 
 const COPY_FIELDS = new Set([
   "heroKicker",
@@ -241,25 +242,6 @@ function mix(a, b, amount) {
           (value, index) => value * (1 - amount) + right[index] * amount,
         ),
       );
-}
-function relativeLuminance(hex) {
-  const values = hexToRgb(hex);
-  if (!values) return 0;
-  return values
-    .map((value) => value / 255)
-    .map((value) =>
-      value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4,
-    )
-    .reduce(
-      (total, value, index) => total + value * [0.2126, 0.7152, 0.0722][index],
-      0,
-    );
-}
-function readableOn(hex) {
-  const luminance = relativeLuminance(hex);
-  const whiteContrast = 1.05 / (luminance + 0.05);
-  const blackContrast = (luminance + 0.05) / 0.05;
-  return whiteContrast >= blackContrast ? "#ffffff" : "#000000";
 }
 const NAMED_COLORS = {
   navy: "#17324d",
@@ -756,10 +738,11 @@ export function applyOperation(config, operation) {
       return false;
     config.style = {
       ...(config.style || {}),
-      ...Object.fromEntries(
-        PALETTE_KEYS.map((key) => [key, palette[key].toLowerCase()]),
+      ...resolvePalette(
+        Object.fromEntries(
+          PALETTE_KEYS.map((key) => [key, palette[key].toLowerCase()]),
+        ),
       ),
-      contrastColor: readableOn(palette.primaryColor),
     };
     return true;
   }

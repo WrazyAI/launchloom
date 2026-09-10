@@ -344,6 +344,54 @@ button {
   min-height: 100px;
   resize: vertical;
 }
+.brand-color-control {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  min-height: 64px;
+  overflow: hidden;
+  border: 1px solid #cfd8cf;
+  border-radius: 12px;
+  background: #fff;
+}
+.field .brand-color-control input[type="color"] {
+  width: 76px;
+  height: 64px;
+  padding: 5px;
+  border: 0;
+  border-right: 1px solid #cfd8cf;
+  border-radius: 0;
+  cursor: pointer;
+}
+.field .brand-color-control input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.field .brand-color-control input[type="color"]::-webkit-color-swatch {
+  border: 0;
+  border-radius: 7px;
+}
+.field .brand-color-control input[type="color"]::-moz-color-swatch {
+  border: 0;
+  border-radius: 7px;
+}
+.brand-color-value {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 14px;
+}
+.brand-color-value strong {
+  color: var(--ink);
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+}
+.brand-color-value small,
+.brand-color-note {
+  color: #61776e;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
 .field input:focus,
 .field textarea:focus,
 .field select:focus {

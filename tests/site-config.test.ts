@@ -160,6 +160,55 @@ describe("site configuration", () => {
     });
   });
 
+  it("creates a comfortable full-section palette for a neon athletic accent", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Pulse Athletic Club",
+        services: "Strength coaching",
+        primaryColor: "#d4ff00",
+        industry: "wellness",
+        brandNotes:
+          "Ultra-modern dark mode with a deep matte charcoal background (#111315) and bold geometric headers.",
+      },
+    );
+
+    expect(config.style.primaryColor).toBe("#d4ff00");
+    expect(config.style.surfaceColor).toBe("#111315");
+    expect(config.style.brandSurfaceColor).not.toBe("#d4ff00");
+    expect(config.style.brandSurfaceTextColor).toMatch(/^#[0-9a-f]{6}$/);
+    expect(config.style.brandTextColor).toMatch(/^#[0-9a-f]{6}$/);
+    expect(config.design.treatment.typography).toBe("geometric");
+    expect(config.design.variantId).toMatch(/^care-/);
+  });
+
+  it("selects a stable but intake-specific complete design variant", () => {
+    const previous = process.env.LAUNCHLOOM_INTAKE_ID;
+    process.env.LAUNCHLOOM_INTAKE_ID = "20";
+    const first = normalise(
+      {},
+      {
+        businessName: "Pulse Athletic Club",
+        services: "Strength coaching",
+        industry: "wellness",
+      },
+    );
+    const repeated = normalise(
+      {},
+      {
+        businessName: "Pulse Athletic Club",
+        services: "Strength coaching",
+        industry: "wellness",
+      },
+    );
+    if (previous === undefined) delete process.env.LAUNCHLOOM_INTAKE_ID;
+    else process.env.LAUNCHLOOM_INTAKE_ID = previous;
+
+    expect(repeated.design.variantId).toBe(first.design.variantId);
+    expect(first.design.sections.length).toBeGreaterThanOrEqual(6);
+    expect(first.design.treatment.typography).toBeTruthy();
+  });
+
   it("does not give a hospitality business trades framing from its preset", () => {
     const config = normalise(
       {

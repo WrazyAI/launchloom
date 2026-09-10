@@ -50,6 +50,33 @@ function imageSize(bytes: number) {
     : `${Math.max(1, Math.round(bytes / 1_000))} KB`;
 }
 
+function BrandColorField() {
+  const [color, setColor] = useState("#205d51");
+
+  return (
+    <label className="field brand-color-field">
+      Primary color
+      <span className="brand-color-control">
+        <input
+          aria-label="Choose primary brand color"
+          name="primaryColor"
+          type="color"
+          defaultValue={color}
+          onInput={(event) => setColor(event.currentTarget.value)}
+        />
+        <span className="brand-color-value">
+          <strong>{color.toUpperCase()}</strong>
+          <small>Choose color</small>
+        </span>
+      </span>
+      <small className="brand-color-note">
+        Very bright colors stay focused on buttons and accents, not large page
+        backgrounds.
+      </small>
+    </label>
+  );
+}
+
 function ImageUploadField({
   name,
   label,
@@ -237,6 +264,8 @@ export default function OnboardingForm() {
         field.checked = field.value === value;
       } else {
         field.value = value;
+        if (field instanceof HTMLInputElement && field.type === "color")
+          field.dispatchEvent(new Event("input", { bubbles: true }));
       }
     }
     const placeQuery = form.querySelector<HTMLInputElement>("#place-query");
@@ -723,10 +752,7 @@ export default function OnboardingForm() {
           </label>
         </fieldset>
         <div className="field-grid">
-          <label className="field">
-            Primary color
-            <input name="primaryColor" type="color" defaultValue="#205d51" />
-          </label>
+          <BrandColorField />
           <label className="field">
             Tone
             <select name="tone" defaultValue="confident">

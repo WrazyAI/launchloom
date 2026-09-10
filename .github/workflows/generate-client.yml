@@ -45,6 +45,7 @@ jobs:
         id: intake
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
+          LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
         run: |
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
           node scripts/generate-site-config.mjs --source /tmp/intake.md --out /tmp/site.config.json

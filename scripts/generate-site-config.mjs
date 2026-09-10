@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
 import { parseModelJson } from "./model-json.mjs";
+import { resolvePalette } from "./palette-policy.mjs";
+import { selectDesignVariant } from "../templates/client-site/src/lib/design-variants.ts";
 
 export { parseModelJson } from "./model-json.mjs";
 
@@ -67,41 +69,6 @@ const STOCK_PACKS = {
   "professional-services": {
     hero: "/images/packs/professional-services-advisory-v1.png",
   },
-};
-
-const DESIGN_RECIPES = {
-  "care-editorial": [
-    ["opening", "hero", "care-portrait"],
-    ["reassurance", "trust", "quiet"],
-    ["care-options", "services", "editorial"],
-    ["care-story", "about", "immersive"],
-    ["care-process", "process", "guided"],
-    ["family-voices", "social-proof", "editorial"],
-    ["care-gallery", "gallery", "editorial"],
-    ["care-questions", "faq", "editorial"],
-    ["care-consultation", "contact", "consultation"],
-  ],
-  "local-trades": [
-    ["service-opening", "hero", "trades-split"],
-    ["service-proof", "trust", "bold"],
-    ["repair-options", "services", "problem-led"],
-    ["service-process", "process", "numbered"],
-    ["customer-proof", "social-proof", "cards"],
-    ["recent-work", "gallery", "work"],
-    ["service-area", "coverage", "local"],
-    ["service-questions", "faq", "practical"],
-    ["request-service", "contact", "quote"],
-  ],
-  "general-editorial": [
-    ["opening", "hero", "editorial"],
-    ["proof", "trust", "quiet"],
-    ["services", "services", "editorial"],
-    ["story", "about", "immersive"],
-    ["process", "process", "guided"],
-    ["social-proof", "social-proof", "editorial"],
-    ["questions", "faq", "editorial"],
-    ["contact", "contact", "consultation"],
-  ],
 };
 
 function slugify(value) {
@@ -257,22 +224,19 @@ function safeHex(value, fallback) {
   return /^#[0-9a-f]{6}$/.test(candidate) ? candidate : fallback;
 }
 
-function readableOn(hex) {
-  const channels = [1, 3, 5].map((index) =>
-    Number.parseInt(hex.slice(index, index + 2), 16),
-  );
-  const luminance = channels
-    .map((value) => value / 255)
-    .map((value) =>
-      value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4,
-    )
-    .reduce(
-      (total, value, index) => total + value * [0.2126, 0.7152, 0.0722][index],
-      0,
-    );
-  const whiteContrast = 1.05 / (luminance + 0.05);
-  const blackContrast = (luminance + 0.05) / 0.05;
-  return whiteContrast >= blackContrast ? "#ffffff" : "#000000";
+function paletteHintsFromIntake(intake, primaryColor) {
+  const notes = text(intake.brandNotes, 1200);
+  const background = notes.match(
+    /(?:background|page|surface)\s*(?:color)?\s*[:=(]?\s*(#[0-9a-f]{6})/i,
+  )?.[1];
+  const ink = notes.match(
+    /(?:text|typography|copy)\s*(?:color)?\s*[:=(]?\s*(#[0-9a-f]{6})/i,
+  )?.[1];
+  return resolvePalette({
+    primaryColor,
+    ...(background ? { surfaceColor: background } : {}),
+    ...(ink ? { inkColor: ink } : {}),
+  });
 }
 
 function usefulServiceDescription(value, serviceName) {
@@ -432,22 +396,45 @@ function decisionSupportFor(kind, serviceName) {
   };
 }
 
-function designFor(kind, industry) {
+function requestedTypography(intake, fallback) {
+  const notes = text(intake.brandNotes, 1000).toLowerCase();
+  if (/condensed|narrow type/.test(notes)) return "condensed";
+  if (/industrial|utilitarian/.test(notes)) return "industrial";
+  if (/geometric|bold geometric/.test(notes)) return "geometric";
+  if (/humanist/.test(notes)) return "humanist";
+  if (/soft[- ]sans|rounded sans/.test(notes)) return "soft-sans";
+  if (/modern serif/.test(notes)) return "modern-serif";
+  if (/refined serif|high contrast serif/.test(notes)) return "refined-serif";
+  if (/heritage|traditional serif/.test(notes)) return "heritage";
+  if (/sans[- ]serif|sans serif/.test(notes)) return "sans";
+  if (/serif/.test(notes)) return "editorial";
+  return fallback;
+}
+
+function designFor(kind, industry, intake = {}) {
   const recipe =
     kind === "home-care" || industry === "wellness"
       ? "care-editorial"
       : industry === "home-services"
         ? "local-trades"
         : "general-editorial";
+  const seed = [
+    process.env.LAUNCHLOOM_INTAKE_ID || intake.submissionId || "intake",
+    intake.businessName || "business",
+    intake.stylePreference || "",
+    intake.primaryColor || "",
+  ].join("|");
+  const selected = selectDesignVariant(recipe, seed);
   return {
     recipe,
-    sections: DESIGN_RECIPES[recipe]
-      .filter(([, type]) => type !== "social-proof")
-      .map(([id, type, variant]) => ({
-        id,
-        type,
-        variant,
-      })),
+    variantId: selected.id,
+    sections: selected.sections
+      .filter(({ type }) => type !== "social-proof")
+      .map((section) => ({ ...section })),
+    treatment: {
+      density: selected.density,
+      typography: requestedTypography(intake, selected.typography),
+    },
   };
 }
 
@@ -832,8 +819,7 @@ function fallback(intake) {
         : intake.googleMapsUrl || "",
     },
     style: {
-      primaryColor,
-      contrastColor: readableOn(primaryColor),
+      ...paletteHintsFromIntake(intake, primaryColor),
       tone: intake.tone || "confident",
     },
     services: services.length
@@ -869,7 +855,7 @@ function fallback(intake) {
       ],
       faqs: defaultFaq(industry, intake.primaryCta, businessKind),
     },
-    design: designFor(businessKind, industry),
+    design: designFor(businessKind, industry, intake),
     assetReport: {
       used: stockAssetReport(businessKind, stockImages(businessKind)),
       skipped: [],
@@ -1120,7 +1106,10 @@ export function normalise(candidate, intake) {
     industry: base.industry,
     businessKind: base.businessKind,
     business,
-    style: { ...(value.style || {}), ...base.style },
+    style: {
+      ...resolvePalette({ ...(value.style || {}), ...base.style }),
+      tone: base.style.tone,
+    },
     services: services.length ? services : base.services,
     differentiators: different.length ? different : base.differentiators,
     locations:
@@ -1150,7 +1139,7 @@ export function normalise(candidate, intake) {
     images,
     copy,
     conversion,
-    design: designFor(base.businessKind, base.industry),
+    design: designFor(base.businessKind, base.industry, intake),
     assetReport,
     ...(assets ? { assets } : {}),
     ...(intake.lead && typeof intake.lead === "object"

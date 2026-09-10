@@ -96,6 +96,16 @@ try {
     .fill("Clear strategy and careful execution");
   await page.getByRole("button", { name: "Continue" }).click();
 
+  const colorInput = page.locator('[name="primaryColor"]');
+  if (!(await colorInput.isVisible()))
+    failures.push("Primary color picker is not visibly usable.");
+  const pickerBox = await colorInput.boundingBox();
+  if (!pickerBox || pickerBox.width < 60 || pickerBox.height < 50)
+    failures.push("Primary color picker still renders as a small line.");
+  await colorInput.fill("#d4ff00");
+  if (!(await page.getByText("#D4FF00", { exact: true }).isVisible()))
+    failures.push("Primary color picker does not show its selected value.");
+
   const logoInput = page.locator('input[name="logo"]');
   await logoInput.setInputFiles(uploadFixture);
   const preview = page.locator(".image-preview-card").first();
@@ -110,6 +120,8 @@ try {
 
   await page.getByRole("button", { name: "Back" }).click();
   await page.getByRole("button", { name: "Continue" }).click();
+  if ((await colorInput.inputValue()) !== "#d4ff00")
+    failures.push("Primary color was lost after returning to an earlier step.");
   if (!(await preview.isVisible()))
     failures.push("Image preview was lost after returning to an earlier step.");
 

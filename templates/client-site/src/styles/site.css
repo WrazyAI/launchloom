@@ -1932,7 +1932,3 @@ h2 {
     right: 14px;
   }
 }
-.split-grid p,
-.split-grid li {
-  color: color-mix(in srgb, var(--on-brand-surface, #fff) 88%, transparent);
-}

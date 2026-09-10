@@ -224,30 +224,45 @@ try {
           visible: visible(element),
         }),
       );
+      const effectiveBackground = (startingElement) => {
+        let current = startingElement;
+        while (current) {
+          const background = getComputedStyle(current).backgroundColor;
+          const alpha = background.match(
+            /rgba?\([^)]*[,/]\s*([\d.]+)\s*\)$/,
+          )?.[1];
+          if (!background.startsWith("rgba") || Number(alpha) > 0)
+            return background;
+          current = current.parentElement;
+        }
+        return "rgb(255, 255, 255)";
+      };
+      const contrastDetails = (element) => {
+        const style = getComputedStyle(element);
+        const fontSize = Number.parseFloat(style.fontSize);
+        const fontWeight = Number.parseInt(style.fontWeight, 10) || 400;
+        return {
+          text: element.textContent?.trim(),
+          color: style.color,
+          background: effectiveBackground(element),
+          minimum:
+            fontSize >= 24 || (fontSize >= 18.66 && fontWeight >= 700)
+              ? 3
+              : 4.5,
+        };
+      };
       const actions = [
         ...document.querySelectorAll(".cta, .lead-form button, .mobile-call"),
       ]
         .filter(visible)
-        .map((element) => {
-          const effectiveBackground = (startingElement) => {
-            let current = startingElement;
-            while (current) {
-              const background = getComputedStyle(current).backgroundColor;
-              const alpha = background.match(
-                /rgba?\([^)]*[,/]\s*([\d.]+)\s*\)$/,
-              )?.[1];
-              if (!background.startsWith("rgba") || Number(alpha) > 0)
-                return background;
-              current = current.parentElement;
-            }
-            return "rgb(255, 255, 255)";
-          };
-          return {
-            text: element.textContent?.trim(),
-            color: getComputedStyle(element).color,
-            background: effectiveBackground(element),
-          };
-        });
+        .map(contrastDetails);
+      const contrastTargets = [
+        ...document.querySelectorAll(
+          ".kicker, .offer, .contact-phone, .split-section h2, .split-section p, .split-section li",
+        ),
+      ]
+        .filter(visible)
+        .map(contrastDetails);
       const brokenLinks = [...document.querySelectorAll("a[href]")]
         .map((element) => element.getAttribute("href"))
         .filter(
@@ -276,6 +291,7 @@ try {
       return {
         sections,
         actions,
+        contrastTargets,
         brokenLinks,
         mainClasses: main?.className || "",
         bodyText: document.body.textContent?.replace(/\s+/g, " ").trim() || "",
@@ -343,10 +359,19 @@ try {
       if (
         parseCssColor(action.color).length &&
         parseCssColor(action.background).length &&
-        contrast(action.color, action.background) < 4.5
+        contrast(action.color, action.background) < action.minimum
       )
         failures.push(
-          `${viewport.name}: action contrast below 4.5 for ${action.text}.`,
+          `${viewport.name}: action contrast below ${action.minimum} for ${action.text}.`,
+        );
+    for (const target of state.contrastTargets)
+      if (
+        parseCssColor(target.color).length &&
+        parseCssColor(target.background).length &&
+        contrast(target.color, target.background) < target.minimum
+      )
+        failures.push(
+          `${viewport.name}: text contrast below ${target.minimum} for ${target.text}.`,
         );
     for (const artifact of config.revisionReport?.expectedArtifacts || []) {
       if (artifact.type === "text" && !state.bodyText.includes(artifact.value))

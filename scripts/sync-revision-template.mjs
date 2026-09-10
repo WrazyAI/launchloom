@@ -65,6 +65,7 @@ if (kinds.has("set_conversion_feature")) {
   files.add("components/ExitOffer.astro");
   files.add("layouts/SiteLayout.astro");
   files.add("lib/page-recipe.ts");
+  files.add("lib/design-variants.ts");
   files.add("lib/site.ts");
   files.add("styles/site.css");
 }
@@ -92,6 +93,7 @@ if (
   files.add("components/SocialProof.astro");
   files.add("pages/index.astro");
   files.add("lib/page-recipe.ts");
+  files.add("lib/design-variants.ts");
   files.add("lib/site.ts");
   files.add("styles/site.css");
 }

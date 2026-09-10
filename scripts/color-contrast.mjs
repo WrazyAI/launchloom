@@ -8,6 +8,8 @@ export function parseCssColor(value) {
   const input = String(value || "")
     .trim()
     .toLowerCase();
+  const hex = input.match(/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/);
+  if (hex) return hex.slice(1).map((channel) => Number.parseInt(channel, 16));
   const srgb = input.match(
     /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/[^)]+)?\)$/,
   );
