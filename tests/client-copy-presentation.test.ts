@@ -38,4 +38,13 @@ describe("client copy presentation", () => {
       /@media \(max-width: 760px\)[\s\S]*?\.services-section \.service-grid > \.service-card \{[\s\S]*?grid-column: 1 \/ -1 !important;/,
     );
   });
+
+  it("targets the configured contact section instead of a hard-coded fragment", async () => {
+    const siteModule = await fs.readFile(
+      "templates/client-site/src/lib/site.ts",
+      "utf8",
+    );
+    expect(siteModule).toContain("export const contactSectionHref");
+    expect(siteModule).toContain("return contactSectionHref(pathname)");
+  });
 });

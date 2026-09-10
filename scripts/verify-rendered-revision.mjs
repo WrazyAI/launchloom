@@ -180,6 +180,21 @@ try {
       )
         failures.push("mobile: desktop exit offer is not suppressed.");
     }
+    await page.evaluate(async () => {
+      const step = Math.max(320, Math.floor(innerHeight * 0.75));
+      for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
+        window.scrollTo(0, y);
+        await new Promise((resolve) => setTimeout(resolve, 45));
+      }
+      window.scrollTo(0, 0);
+    });
+    await page
+      .waitForFunction(
+        () => [...document.images].every((image) => image.complete),
+        null,
+        { timeout: 5000 },
+      )
+      .catch(() => {});
     if (expectsLocationMap) {
       const locationMap = page.locator(
         '[data-conversion-feature="location-map"]',
@@ -255,7 +270,9 @@ try {
         .filter((value) => /^0?\d+$/.test(value));
       const assistantLabels = [
         ...document.querySelectorAll(".quick-answers__launcher"),
-      ].map((element) => element.textContent?.replace(/\s+/g, " ").trim() || "");
+      ].map(
+        (element) => element.textContent?.replace(/\s+/g, " ").trim() || "",
+      );
       return {
         sections,
         actions,
@@ -384,6 +401,10 @@ try {
     await page.screenshot({
       path: path.join(screenshotDir, `${viewport.name}.png`),
       fullPage: true,
+      // Layout QA uses clean page captures. Floating conversion controls are
+      // exercised and captured separately above, so they must not obscure
+      // arbitrary page copy in the stitched full-page screenshots.
+      style: ".quick-answers, .mobile-call { visibility: hidden !important; }",
     });
     await page.close();
   }

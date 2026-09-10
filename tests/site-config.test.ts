@@ -378,6 +378,77 @@ describe("site configuration", () => {
     expect(config.conversion.process).not.toContain("[object Object]");
   });
 
+  it("preserves newline-delimited service groups with internal commas", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Daily Hope Healthcare Services",
+        services:
+          "Personal Care Assistance (Hygiene, Bathing, Grooming, Mobility Support)\nCompanionship & Emotional Support (Social Engagement, Activities, Mental Wellness)\nMeal Preparation, Nutrition & Grocery Shopping\nRespite Care for Family Caregivers",
+        industry: "wellness",
+        preset: "wellness",
+      },
+    );
+
+    expect(
+      config.services.map((service: { name: string }) => service.name),
+    ).toEqual([
+      "Personal Care Assistance (Hygiene, Bathing, Grooming, Mobility Support)",
+      "Companionship & Emotional Support (Social Engagement, Activities, Mental Wellness)",
+      "Meal Preparation, Nutrition & Grocery Shopping",
+      "Respite Care for Family Caregivers",
+    ]);
+  });
+
+  it("uses complete submitted proof statements instead of comma fragments", () => {
+    const config = normalise(
+      {
+        differentiators: [
+          "We deliver a complete spectrum of flexible",
+          "non-medical home care from a few hours a week",
+        ],
+      },
+      {
+        businessName: "Daily Hope Healthcare Services",
+        services: "Personal care",
+        differentiators:
+          "We are locally owned and clients deal directly with agency leadership. Our caregivers live in the communities they serve, providing dependable arrival times and neighborly care. We deliver flexible non-medical home care focused on dignity, independence, and peace of mind.",
+        industry: "wellness",
+        preset: "wellness",
+      },
+    );
+
+    expect(config.differentiators).toHaveLength(3);
+    expect(
+      config.differentiators.every((item: string) => /[.!?]$/.test(item)),
+    ).toBe(true);
+    expect(config.differentiators).not.toContain(
+      "We deliver a complete spectrum of flexible",
+    );
+  });
+
+  it("suppresses an unverified address that conflicts with a stated business base", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Daily Hope Healthcare Services",
+        address: "2101 N Country Club Rd Suite 102, Tucson, AZ 85716, USA",
+        placeId: "",
+        serviceAreas: "Bala Cynwyd, Montgomery County, Philadelphia County",
+        services: "Personal care",
+        differentiators:
+          "We are a locally owned agency based in Bala Cynwyd where clients deal directly with agency leadership.",
+        primaryCta: "Get directions",
+        industry: "wellness",
+        preset: "wellness",
+      },
+    );
+
+    expect(config.business.address).toBe("");
+    expect(config.business.googleMapsUrl).toBe("");
+    expect(config.business.primaryCta).toBe("Contact us");
+  });
+
   it("keeps submitted service names and flags shallow conversion drafts", () => {
     const config = normalise(
       {

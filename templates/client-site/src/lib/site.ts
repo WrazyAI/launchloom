@@ -206,12 +206,19 @@ export const hasExactBusinessLocation = () =>
 export const shouldShowLocationMap = () =>
   isDirectionsPrimary() && hasExactBusinessLocation();
 
+export const contactSectionHref = (pathname = "/") => {
+  const id =
+    site.design?.sections.find((section) => section.type === "contact")?.id ||
+    "contact";
+  return pathname === "/" ? `#${id}` : `/#${id}`;
+};
+
 export const primaryCtaHref = (pathname = "/") => {
   if (shouldShowLocationMap())
     return pathname === "/" ? "#location" : "/#location";
   if (isDirectionsPrimary() && site.business.address.trim())
     return directionsHref();
-  return pathname === "/" ? "#contact" : "/#contact";
+  return contactSectionHref(pathname);
 };
 
 export const directionsHref = () => {

@@ -137,10 +137,26 @@ function serviceMatchScore(first, second) {
 }
 
 function lines(value) {
-  return String(value || "")
-    .split(/[\n,]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const input = String(value || "");
+  const splitCommas = !input.includes("\n");
+  const items = [];
+  let current = "";
+  let parenthesisDepth = 0;
+  for (const character of input) {
+    if (character === "(") parenthesisDepth += 1;
+    if (character === ")") parenthesisDepth = Math.max(0, parenthesisDepth - 1);
+    if (
+      character === "\n" ||
+      (splitCommas && character === "," && parenthesisDepth === 0)
+    ) {
+      if (current.trim()) items.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += character;
+  }
+  if (current.trim()) items.push(current.trim());
+  return items;
 }
 
 function text(value, limit = 240) {
@@ -208,6 +224,30 @@ function conciseSentence(
   result = result.replace(/[,;:]$/, "").trim();
   if (result && !/[.!?]$/.test(result)) result += ".";
   return result;
+}
+
+function proofStatements(value) {
+  const cleaned = text(value, 2000);
+  return (cleaned.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [])
+    .map((statement) => conciseSentence(statement, statement, 190, 26))
+    .filter(Boolean);
+}
+
+function hasConflictingUnverifiedAddress(intake) {
+  if (text(intake.placeId, 200) || !text(intake.address, 400)) return false;
+  const context = text(intake.differentiators, 2000);
+  const claimedBase = context.match(
+    /\b(?:based|located|headquartered)\s+in\s+([a-z][a-z .'-]{1,60}?)(?=\s+(?:where|with|and)\b|[,.;]|$)/i,
+  )?.[1];
+  if (!claimedBase) return false;
+  const normalizeLocation = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  return !normalizeLocation(intake.address).includes(
+    normalizeLocation(claimedBase),
+  );
 }
 
 function safeHex(value, fallback) {
@@ -762,6 +802,7 @@ function fallback(intake) {
     intake.primaryColor,
     preset === "wellness" ? "#205d51" : "#bd552d",
   );
+  const suppressUnverifiedLocation = hasConflictingUnverifiedAddress(intake);
   return {
     preset,
     business: {
@@ -775,17 +816,20 @@ function fallback(intake) {
         `${businessName} offers thoughtful, local service.`,
       phone: intake.phone || "",
       email: intake.email || "",
-      address: intake.address || "",
+      address: suppressUnverifiedLocation ? "" : intake.address || "",
       serviceAreas: areas,
       hours: "Hours available on request",
-      primaryCta:
-        intake.primaryCta ||
-        (preset === "wellness" ? "Book a consultation" : "Request service"),
+      primaryCta: suppressUnverifiedLocation
+        ? "Contact us"
+        : intake.primaryCta ||
+          (preset === "wellness" ? "Book a consultation" : "Request service"),
       offer: intake.offer || "",
       domain: intake.domain || "",
       leadEmail: intake.leadEmail || intake.email || "",
       placeId: intake.placeId || "",
-      googleMapsUrl: intake.googleMapsUrl || "",
+      googleMapsUrl: suppressUnverifiedLocation
+        ? ""
+        : intake.googleMapsUrl || "",
     },
     style: {
       primaryColor,
@@ -802,7 +846,7 @@ function fallback(intake) {
             decisionSupport: decisionSupportFor(businessKind, "our services"),
           },
         ],
-    differentiators: lines(intake.differentiators).slice(0, 4),
+    differentiators: proofStatements(intake.differentiators).slice(0, 4),
     locations:
       industry === "home-services"
         ? areas.map((name) => ({ name, slug: slugify(name) }))
@@ -876,7 +920,7 @@ export function normalise(candidate, intake) {
   const services = serviceInput.slice(0, 8).map((service, index) => {
     const name = String(
       service.name || base.services[index]?.name || "Our service",
-    ).slice(0, 80);
+    ).slice(0, 120);
     const proposedSupport =
       service.decisionSupport && typeof service.decisionSupport === "object"
         ? service.decisionSupport
@@ -919,12 +963,19 @@ export function normalise(candidate, intake) {
       520,
     ),
   };
-  const different = Array.isArray(value.differentiators)
-    ? value.differentiators
-        .map((item) => text(item, 160))
-        .filter(Boolean)
-        .slice(0, 5)
-    : base.differentiators;
+  const rawProposedDifferentiators = Array.isArray(value.differentiators)
+    ? value.differentiators.map((item) => text(item, 500)).filter(Boolean)
+    : [];
+  const proposedDifferentiators = rawProposedDifferentiators
+    .flatMap(proofStatements)
+    .slice(0, 5);
+  const proposedProofIsComplete = rawProposedDifferentiators.every((item) =>
+    /[.!?]$/.test(item),
+  );
+  const different =
+    proposedDifferentiators.length && proposedProofIsComplete
+      ? proposedDifferentiators
+      : base.differentiators;
   const assets =
     intake.assets && typeof intake.assets === "object"
       ? intake.assets
