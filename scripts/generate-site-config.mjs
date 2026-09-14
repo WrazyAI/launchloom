@@ -107,6 +107,12 @@ function slugify(value) {
   );
 }
 
+export function argumentValue(argv, flag) {
+  const index = argv.indexOf(flag);
+  const value = index >= 0 ? argv[index + 1] : "";
+  return value && !value.startsWith("--") ? value : "";
+}
+
 function serviceIdentity(value) {
   return new Set(
     String(value || "")
@@ -1175,12 +1181,12 @@ export function normalise(candidate, intake) {
     ? new Set(
         seoResearch.pageDecisions
           .filter((decision) => decision?.type === "location")
-          .map((decision) => String(decision.title || "").toLowerCase()),
+          .map((decision) => slugify(String(decision.title || ""))),
       )
     : null;
   const locationNames = researchedLocations
     ? business.serviceAreas.filter((name) =>
-        researchedLocations.has(name.toLowerCase()),
+        researchedLocations.has(slugify(name)),
       )
     : business.serviceAreas;
   return removeEmDashes({
@@ -1370,9 +1376,9 @@ function extractIntake(body) {
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
-  const source = process.argv[process.argv.indexOf("--source") + 1];
-  const destination = process.argv[process.argv.indexOf("--out") + 1];
-  const researchFile = process.argv[process.argv.indexOf("--research") + 1];
+  const source = argumentValue(process.argv, "--source");
+  const destination = argumentValue(process.argv, "--out");
+  const researchFile = argumentValue(process.argv, "--research");
   if (!source || !destination)
     throw new Error(
       "Usage: node generate-site-config.mjs --source intake.md --out site.config.json",

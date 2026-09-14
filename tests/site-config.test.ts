@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { evaluateDraft, normalise } from "../scripts/generate-site-config.mjs";
+import {
+  argumentValue,
+  evaluateDraft,
+  normalise,
+} from "../scripts/generate-site-config.mjs";
 
 describe("site configuration", () => {
   it("keeps the validated SEO dossier attached to generated content", () => {
@@ -50,14 +54,14 @@ describe("site configuration", () => {
       {
         businessName: "Harbor Plumbing",
         services: "Drain cleaning",
-        serviceAreas: "Tacoma\nLakewood",
+        serviceAreas: "Tacoma, WA\nLakewood, WA",
         industry: "home-services",
         seoResearch: {
           mode: "researched",
           pageDecisions: [
             {
               type: "location",
-              title: "Tacoma",
+              title: "Tacoma WA",
               provenance: "research_strategy",
             },
           ],
@@ -68,7 +72,20 @@ describe("site configuration", () => {
 
     expect(
       config.locations.map((location: { name: string }) => location.name),
-    ).toEqual(["Tacoma"]);
+    ).toEqual(["Tacoma, WA"]);
+  });
+
+  it("does not invent an argument value when an optional flag is absent", () => {
+    expect(argumentValue(["node", "script.mjs"], "--research")).toBe("");
+    expect(
+      argumentValue(
+        ["node", "script.mjs", "--research", "dossier.json"],
+        "--research",
+      ),
+    ).toBe("dossier.json");
+    expect(
+      argumentValue(["node", "script.mjs", "--research"], "--research"),
+    ).toBe("");
   });
 
   it("uses client photos and logo metadata without substituting an unrelated stock image", () => {

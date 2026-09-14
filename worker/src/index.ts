@@ -3,7 +3,10 @@ import {
   RevisionCoordinator,
   type RevisionRequestInput,
 } from "./revision-coordinator";
-import { seoResearchReadiness } from "./seo-readiness";
+import {
+  isAffirmativeConfirmation,
+  seoResearchReadiness,
+} from "./seo-readiness";
 
 export { RevisionCoordinator } from "./revision-coordinator";
 
@@ -341,9 +344,9 @@ async function intake(request: Request, env: Env) {
     if (
       !businessName ||
       !email ||
-      !clean(raw.confirmAccuracy, 10) ||
-      !clean(raw.confirmRights, 10) ||
-      !clean(raw.confirmSeoResearch, 10)
+      !isAffirmativeConfirmation(raw.confirmAccuracy) ||
+      !isAffirmativeConfirmation(raw.confirmRights) ||
+      !isAffirmativeConfirmation(raw.confirmSeoResearch)
     )
       return json(
         { error: "Please complete the required business details." },

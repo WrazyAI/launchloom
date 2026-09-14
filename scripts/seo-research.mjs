@@ -213,7 +213,6 @@ export async function researchSiteContext(intake, options = {}) {
   try {
     overview = await options.dataForSeo.keywordOverview({
       keywords: seeds,
-      location: seo.priorityLocations[0] || "United States",
       languageCode: "en",
     });
   } catch (error) {
@@ -253,7 +252,6 @@ export async function researchSiteContext(intake, options = {}) {
         keyword: seo.priorityLocations[0]
           ? `${priorityQuery} ${seo.priorityLocations[0]}`
           : priorityQuery,
-        location: seo.priorityLocations[0] || "United States",
         languageCode: "en",
       });
       serpCost = roundCost(serp?.cost);

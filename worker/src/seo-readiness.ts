@@ -7,14 +7,22 @@ export type SeoResearchReadiness =
       error: string;
     };
 
+export function isAffirmativeConfirmation(value: unknown): boolean {
+  return value === true || value === "yes" || value === "on";
+}
+
 export function seoResearchReadiness(
   config: Record<string, unknown>,
 ): SeoResearchReadiness {
   const research = config.seoResearch;
   if (!research || typeof research !== "object")
     return { allowed: true, mode: "legacy" };
-  const mode = (research as { mode?: unknown }).mode;
-  if (mode === "researched") return { allowed: true, mode };
+  const { mode, publishReady } = research as {
+    mode?: unknown;
+    publishReady?: unknown;
+  };
+  if (mode === "researched" && publishReady === true)
+    return { allowed: true, mode };
   return {
     allowed: false,
     mode: mode === "context-only" ? "context-only" : "baseline",
