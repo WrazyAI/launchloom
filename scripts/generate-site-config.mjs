@@ -417,6 +417,39 @@ function requestedTypography(intake, fallback) {
   return fallback;
 }
 
+function requestedDesignFamily(intake) {
+  const notes = [
+    intake.stylePreference,
+    intake.brandNotes,
+    intake.websiteGoals,
+    intake.additionalNotes,
+  ]
+    .map((value) => text(value, 1200))
+    .join(" ")
+    .toLowerCase();
+  if (
+    /masked cards?|shared image|image mosaic|mosaic|clinical portal/.test(notes)
+  )
+    return "image-mosaic";
+  if (
+    /cinematic|full-screen video|fullscreen video|luxury|premium jet/.test(
+      notes,
+    )
+  )
+    return "cinematic-premium";
+  if (/liquid glass|glassmorphism|atmospheric|cinematic editorial/.test(notes))
+    return "atmospheric-editorial";
+  if (
+    /project[- ]led|portfolio|case studies|project showcase|before and after/.test(
+      notes,
+    )
+  )
+    return "project-showcase";
+  if (/minimal|restrained|narrow column|clean white|studio minimal/.test(notes))
+    return "studio-minimal";
+  return undefined;
+}
+
 function designFor(kind, industry, intake = {}) {
   const recipe =
     kind === "home-care" || (industry === "wellness" && kind !== "fitness")
@@ -430,7 +463,11 @@ function designFor(kind, industry, intake = {}) {
     intake.stylePreference || "",
     intake.primaryColor || "",
   ].join("|");
-  const selected = selectDesignVariant(recipe, seed);
+  const selected = selectDesignVariant(
+    recipe,
+    seed,
+    requestedDesignFamily(intake),
+  );
   return {
     recipe,
     variantId: selected.id,

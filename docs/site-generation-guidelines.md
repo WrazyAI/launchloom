@@ -123,6 +123,23 @@ Initial generation selects one recipe and keeps its section order, typography,
 palette, imagery, and conversion path coherent. The model writes within the
 typed site configuration; it does not generate unrestricted application code.
 
+Visual variation is expressed through five design families behind the shared
+Astro rendering interface. `image-mosaic` uses coordinated image windows and
+modular service panels. `cinematic-premium` uses a media-led opening and a
+restrained premium conversion path. `atmospheric-editorial` uses immersive
+imagery, editorial typography, and bounded glass surfaces. `project-showcase`
+uses oversized identity and project-led proof. `studio-minimal` uses a narrow,
+content-led composition with restrained interaction. Family selection must be
+compatible with the submitted assets and business journey. Never compensate
+for missing media by inventing proof or importing a reference site's assets.
+
+Treat reference prompts as design evidence, not application architecture.
+LaunchLoom keeps Astro, shared SEO rendering, shared forms, provenance, review
+controls, and verification. It does not reproduce reference brands, exact
+copy, proprietary fonts, hotlinked media, unsupported statistics, or customer
+logos. Avoid splash screens that delay useful content, autoplay media without
+a fallback, excessive motion, and effects that obscure text or actions.
+
 Revisions preserve approved content and composition outside the feedback. A
 request such as adding testimonials, showing the brand name, or changing the
 palette must map to a supported operation and a rendered acceptance check. If

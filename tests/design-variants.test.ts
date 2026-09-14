@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  designFamilyForVariant,
   getDesignVariant,
   listDesignVariants,
   selectDesignVariant,
@@ -62,6 +63,26 @@ describe("design variant registry", () => {
       expect(reachable).toEqual(
         new Set(listDesignVariants(recipe).map((variant) => variant.id)),
       );
+    }
+  });
+
+  it("routes explicit visual-family requests without crossing recipe families", () => {
+    for (const recipe of [
+      "care-editorial",
+      "local-trades",
+      "general-editorial",
+    ] as const) {
+      for (const family of [
+        "image-mosaic",
+        "cinematic-premium",
+        "atmospheric-editorial",
+        "project-showcase",
+        "studio-minimal",
+      ] as const) {
+        const selected = selectDesignVariant(recipe, "fixed intake", family);
+        expect(selected.recipe).toBe(recipe);
+        expect(designFamilyForVariant(selected.id)).toBe(family);
+      }
     }
   });
 });

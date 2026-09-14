@@ -1,10 +1,16 @@
 ---
-import site, { phoneHref, primaryCtaHref, isDirectionsPrimary, type PageRecipe, type PageSection } from "../lib/site";
+import site, {
+  phoneHref,
+  primaryCtaHref,
+  isDirectionsPrimary,
+} from "../lib/site";
 import LeadForm from "./LeadForm.astro";
 import SocialProof from "./SocialProof.astro";
 import LocationMap from "./LocationMap.astro";
+import DesignFamilySections from "./DesignFamilySections.astro";
+import type { ResolvedPageRecipe } from "../lib/page-recipe";
 
-interface Props { page: { recipe: PageRecipe; sections: PageSection[] } }
+interface Props { page: ResolvedPageRecipe }
 const { page } = Astro.props;
 const copy = site.copy || {};
 const proofPoints = site.differentiators.filter(Boolean).slice(0, 4);
@@ -25,7 +31,7 @@ const contactHeading = directionsPrimary && (!copy.contactHeading || copy.contac
   : copy.contactHeading || site.business.primaryCta;
 ---
 
-{page.sections.map((section) => (
+{page.family !== "classic" ? <DesignFamilySections page={page} /> : page.sections.map((section) => (
   <Fragment>
     {section.type === "hero" && <section id={section.id} class:list={["hero", "recipe-hero", `variant-${section.variant}`]}><div class="wrap hero-grid"><div class="hero-copy"><span class="kicker">{copy.heroKicker || (garage ? "Local garage door service" : trades ? "Local property service" : care ? "Care with a clear next step" : "A clearer next step")}</span><h1>{copy.heroHeading || site.business.tagline}</h1><p>{copy.heroBody || site.business.description}</p>{site.business.offer && <div class="offer">{site.business.offer}</div>}<div class="hero-actions"><a class="cta" href={primaryCtaHref(Astro.url.pathname)}>{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div><div class="hero-visual">{site.images.hero ? <img class="hero-image" src={site.images.hero} alt={`${site.business.name} ${site.assets?.photoOne ? "client-provided service photo" : care ? "care setting" : "service context"}`} /> : <div class="hero-art" aria-label={site.business.name}><span>{site.assets?.logo ? <img src={site.assets.logo} alt={site.business.name} /> : site.business.name}</span></div>}{trades && site.business.phone && <a class="hero-phone-card" href={phoneHref(site.business.phone)}><span>{garage ? "Need help with a door?" : "Need local service?"}</span><strong>{site.business.phone}</strong></a>}</div></div></section>}
 
@@ -45,7 +51,7 @@ const contactHeading = directionsPrimary && (!copy.contactHeading || copy.contac
 
     {section.type === "faq" && faqs.length > 0 && <section id={section.id} class:list={["section", "wrap", "faq-section", `variant-${section.variant}`]}><div class="section-heading"><span class="kicker">{copy.faqKicker || "Questions, answered"}</span><h2>{copy.faqHeading || "Useful details before you reach out."}</h2></div><div class="faq-list">{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
 
-    {section.type === "contact" && <Fragment><LocationMap /><section class:list={["contact-section", `variant-${section.variant}`]} id={section.id}><div class="wrap contact-grid"><div class="contact-copy"><span class="kicker">{copy.contactKicker || "Start the conversation"}</span><h2>{contactHeading}</h2><p>{site.business.offer || (garage ? "Tell us what the door is doing and where you are located. We will follow up with the next available step." : trades ? "Tell us what service you need and where you are located. We will follow up with the next available step." : "Share what you are looking for and we will help you understand the next step.")}</p>{(site.business.address || site.business.hours) && <p class="contact-detail">{site.business.address}<br />{site.business.hours}</p>}{site.business.phone && <a class="contact-phone" href={phoneHref(site.business.phone)}>{site.business.phone}</a>}</div><LeadForm /></div></section></Fragment>}
+    {section.type === "contact" && <Fragment>{section.id !== "contact" && <span id="contact" class="anchor-alias" aria-hidden="true" />}<LocationMap /><section class:list={["contact-section", `variant-${section.variant}`]} id={section.id}><div class="wrap contact-grid"><div class="contact-copy"><span class="kicker">{copy.contactKicker || "Start the conversation"}</span><h2>{contactHeading}</h2><p>{site.business.offer || (garage ? "Tell us what the door is doing and where you are located. We will follow up with the next available step." : trades ? "Tell us what service you need and where you are located. We will follow up with the next available step." : "Share what you are looking for and we will help you understand the next step.")}</p>{(site.business.address || site.business.hours) && <p class="contact-detail">{site.business.address}<br />{site.business.hours}</p>}{site.business.phone && <a class="contact-phone" href={phoneHref(site.business.phone)}>{site.business.phone}</a>}</div><LeadForm /></div></section></Fragment>}
   </Fragment>
 ))}
 

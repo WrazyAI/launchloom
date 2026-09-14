@@ -56,6 +56,13 @@ export type DesignTypography =
   | "industrial"
   | "condensed"
   | "soft-sans";
+export type DesignFamily =
+  | "classic"
+  | "image-mosaic"
+  | "cinematic-premium"
+  | "atmospheric-editorial"
+  | "project-showcase"
+  | "studio-minimal";
 export type SiteConfig = {
   preset: "wellness" | "home-services";
   industry?: string;
