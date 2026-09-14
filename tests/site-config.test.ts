@@ -3,6 +3,7 @@ import {
   argumentValue,
   evaluateDraft,
   normalise,
+  prepareGenerationIntake,
 } from "../scripts/generate-site-config.mjs";
 
 describe("site configuration", () => {
@@ -86,6 +87,27 @@ describe("site configuration", () => {
     expect(
       argumentValue(["node", "script.mjs", "--research"], "--research"),
     ).toBe("");
+  });
+
+  it("fails closed and bounds research before model generation", () => {
+    expect(
+      prepareGenerationIntake({ businessName: "Harbor Plumbing" }),
+    ).toMatchObject({
+      seoResearch: { mode: "baseline", publishReady: false },
+    });
+    const prepared = prepareGenerationIntake({
+      seoResearch: {
+        mode: "researched",
+        validatedQueries: Array.from({ length: 20 }, (_, index) => ({
+          query: `query ${index}`,
+        })),
+        evidence: Array.from({ length: 20 }, (_, index) => ({
+          url: `${index}`,
+        })),
+      },
+    });
+    expect(prepared.seoResearch?.validatedQueries).toHaveLength(12);
+    expect(prepared.seoResearch?.evidence).toHaveLength(6);
   });
 
   it("uses client photos and logo metadata without substituting an unrelated stock image", () => {

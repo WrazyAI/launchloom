@@ -39,6 +39,13 @@ function seoResearchForConfig(value) {
   };
 }
 
+export function prepareGenerationIntake(intake = {}) {
+  return {
+    ...intake,
+    seoResearch: seoResearchForConfig(intake.seoResearch || {}),
+  };
+}
+
 const STOCK_PACKS = {
   "home-care": {
     hero: "https://images.unsplash.com/photo-1543333995-a78aea2eee50?auto=format&fit=crop&w=1600&q=85",
@@ -1326,15 +1333,22 @@ async function refineDraft(intake, draft, report, model = MODEL) {
 export async function generateSiteConfigWithModel(intake, model = MODEL) {
   if (!process.env.OPENROUTER_API_KEY)
     throw new Error("OPENROUTER_API_KEY is required to generate client copy.");
+  const groundedIntake = prepareGenerationIntake(intake);
   let draft;
   try {
-    draft = normalise(await askModel(intake, "medium", model), intake);
+    draft = normalise(
+      await askModel(groundedIntake, "medium", model),
+      groundedIntake,
+    );
   } catch (firstError) {
     console.warn(
       "Low-effort generation failed; retrying once with high effort.",
       firstError.message,
     );
-    draft = normalise(await askModel(intake, "high", model), intake);
+    draft = normalise(
+      await askModel(groundedIntake, "high", model),
+      groundedIntake,
+    );
   }
   const initialReport = evaluateDraft(draft);
   if (!initialReport.issues.length)
@@ -1345,8 +1359,8 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
 
   try {
     const refined = normalise(
-      await refineDraft(intake, draft, initialReport, model),
-      intake,
+      await refineDraft(groundedIntake, draft, initialReport, model),
+      groundedIntake,
     );
     const finalReport = evaluateDraft(refined);
     const selected = finalReport.score >= initialReport.score ? refined : draft;
