@@ -5,6 +5,7 @@ import {
   listDesignVariants,
   selectDesignVariant,
 } from "../templates/client-site/src/lib/design-variants";
+import { requestedDesignFamily } from "../scripts/generate-site-config.mjs";
 
 describe("design variant registry", () => {
   it("provides nine stable variants for every recipe family", () => {
@@ -84,5 +85,14 @@ describe("design variant registry", () => {
         expect(designFamilyForVariant(selected.id)).toBe(family);
       }
     }
+  });
+
+  it("prefers the specific cinematic editorial family over generic cinematic", () => {
+    expect(
+      requestedDesignFamily({ brandNotes: "A cinematic editorial direction" }),
+    ).toBe("atmospheric-editorial");
+    expect(
+      requestedDesignFamily({ brandNotes: "A cinematic luxury direction" }),
+    ).toBe("cinematic-premium");
   });
 });

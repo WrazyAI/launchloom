@@ -417,7 +417,7 @@ function requestedTypography(intake, fallback) {
   return fallback;
 }
 
-function requestedDesignFamily(intake) {
+export function requestedDesignFamily(intake) {
   const notes = [
     intake.stylePreference,
     intake.brandNotes,
@@ -431,14 +431,14 @@ function requestedDesignFamily(intake) {
     /masked cards?|shared image|image mosaic|mosaic|clinical portal/.test(notes)
   )
     return "image-mosaic";
+  if (/liquid glass|glassmorphism|atmospheric|cinematic editorial/.test(notes))
+    return "atmospheric-editorial";
   if (
     /cinematic|full-screen video|fullscreen video|luxury|premium jet/.test(
       notes,
     )
   )
     return "cinematic-premium";
-  if (/liquid glass|glassmorphism|atmospheric|cinematic editorial/.test(notes))
-    return "atmospheric-editorial";
   if (
     /project[- ]led|portfolio|case studies|project showcase|before and after/.test(
       notes,
