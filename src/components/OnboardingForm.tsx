@@ -11,7 +11,16 @@ type Place = {
   rating?: number;
   ratingCount?: number;
 };
-const steps = ["Business", "Goals", "Style", "Confirm"];
+export type SeoIntake = {
+  priorityService: string;
+  searchPhrases: string;
+  customerProblems: string;
+  excludedServices: string;
+  priorityLocations: string;
+  competitorUrls: string;
+  seoNotSure?: "yes";
+};
+const steps = ["Business", "Services", "Search language", "Brand", "Confirm"];
 const apiBase = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || "").replace(
   /\/$/,
   "",
@@ -211,6 +220,7 @@ export default function OnboardingForm() {
   const [step, setStep] = useState(0);
   const [place, setPlace] = useState<Place | null>(null);
   const [showLookup, setShowLookup] = useState(true);
+  const [seoNotSure, setSeoNotSure] = useState(false);
   const [submissionId, setSubmissionId] = useState(
     () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
   );
@@ -222,6 +232,7 @@ export default function OnboardingForm() {
     () => `${((step + 1) / steps.length) * 100}%`,
     [step],
   );
+  const draftValue = (name: string) => draftRef.current[name] || "Not provided";
 
   function captureDraft() {
     const form = formRef.current;
@@ -421,6 +432,7 @@ export default function OnboardingForm() {
       setStep(0);
       setPlace(null);
       setShowLookup(true);
+      setSeoNotSure(false);
       setSubmissionId(
         globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
       );
@@ -729,6 +741,80 @@ export default function OnboardingForm() {
         hidden={step !== 2}
         aria-hidden={step !== 2}
       >
+        <span className="eyebrow">Use your customers' words</span>
+        <h1>How do people search for this?</h1>
+        <p>
+          Share the phrases customers use when they need help. We will validate
+          them before using them in the website strategy.
+        </p>
+        <label className="choice seo-not-sure">
+          <input
+            type="checkbox"
+            name="seoNotSure"
+            value="yes"
+            checked={seoNotSure}
+            onChange={(event) => setSeoNotSure(event.currentTarget.checked)}
+          />
+          <span>
+            <b>I am not sure which keywords to use</b>
+            <small>
+              Start from my confirmed services, locations, and customer problems
+              instead.
+            </small>
+          </span>
+        </label>
+        <div className="field-grid">
+          <label className="field full">
+            Priority service
+            <input
+              name="priorityService"
+              placeholder="The service you most want customers to find"
+            />
+          </label>
+          <label className="field full" hidden={seoNotSure}>
+            Search phrases customers might use
+            <textarea
+              name="searchPhrases"
+              placeholder="One phrase per line, ideally 3 to 8 phrases"
+            />
+          </label>
+          <label className="field full">
+            What problem would a customer describe?
+            <textarea
+              name="customerProblems"
+              placeholder="Use their words. Example: The drain keeps backing up after we run the dishwasher."
+            />
+          </label>
+          <label className="field full">
+            Services or claims we must not include
+            <textarea name="excludedServices" placeholder="One item per line" />
+          </label>
+          <label className="field full">
+            Priority locations
+            <textarea
+              name="priorityLocations"
+              placeholder="The most important confirmed service areas, one per line"
+            />
+          </label>
+          <label className="field full">
+            Competitor websites for research
+            <textarea
+              name="competitorUrls"
+              placeholder="Up to 3 public website URLs, one per line"
+            />
+          </label>
+        </div>
+        <p className="form-note">
+          Your phrases are treated as client-supplied ideas, not verified search
+          volume or ranking claims.
+        </p>
+      </section>
+      <section
+        className="form-step"
+        data-step="3"
+        hidden={step !== 3}
+        aria-hidden={step !== 3}
+      >
         <span className="eyebrow">Make it feel like you</span>
         <h1>Give us your visual direction.</h1>
         <fieldset className="cta-options">
@@ -805,22 +891,68 @@ export default function OnboardingForm() {
       </section>
       <section
         className="form-step"
-        data-step="3"
-        hidden={step !== 3}
-        aria-hidden={step !== 3}
+        data-step="4"
+        hidden={step !== 4}
+        aria-hidden={step !== 4}
       >
         <span className="eyebrow">One last check</span>
         <h1>You control the facts.</h1>
         <p>
-          We use the details you confirm here to write the site. Google listing
-          data only prefills this brief; it is never treated as your website’s
-          CMS.
+          Review the brief below. We use confirmed facts and bounded search
+          research to write the site.
         </p>
+        <dl className="confirmation-summary">
+          <div>
+            <dt>Business</dt>
+            <dd>{draftValue("businessName")}</dd>
+          </div>
+          <div>
+            <dt>Priority service</dt>
+            <dd>{draftValue("priorityService")}</dd>
+          </div>
+          <div>
+            <dt>Confirmed services</dt>
+            <dd>{draftValue("services")}</dd>
+          </div>
+          <div>
+            <dt>Search phrases</dt>
+            <dd>
+              {seoNotSure
+                ? "Research from confirmed business context"
+                : draftValue("searchPhrases")}
+            </dd>
+          </div>
+          <div>
+            <dt>Priority locations</dt>
+            <dd>{draftValue("priorityLocations")}</dd>
+          </div>
+          <div>
+            <dt>Customer problem language</dt>
+            <dd>{draftValue("customerProblems")}</dd>
+          </div>
+          <div>
+            <dt>Do not include</dt>
+            <dd>{draftValue("excludedServices")}</dd>
+          </div>
+        </dl>
         <label className="consent">
           <input type="checkbox" required name="confirmAccuracy" value="yes" />
           <span>
             I confirm the business details, services, and claims submitted here
             are accurate and approved for use on my website.
+          </span>
+        </label>
+        <label className="consent">
+          <input
+            type="checkbox"
+            required
+            name="confirmSeoResearch"
+            value="yes"
+          />
+          <span>
+            I approve bounded research of the phrases, locations, and public
+            competitor URLs in this brief. Research suggestions will not replace
+            my confirmed business facts.
           </span>
         </label>
         <label className="consent">

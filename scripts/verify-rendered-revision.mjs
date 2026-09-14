@@ -70,6 +70,27 @@ const expectsLocationMap =
       String(config.business?.address || ""),
     ));
 
+const indexHtml = await fs.readFile(path.join(dist, "index.html"), "utf8");
+const sitemapXml = await fs
+  .readFile(path.join(dist, "sitemap.xml"), "utf8")
+  .catch(() => "");
+const robotsTxt = await fs
+  .readFile(path.join(dist, "robots.txt"), "utf8")
+  .catch(() => "");
+if (!indexHtml.includes('name="description"'))
+  failures.push("seo: homepage description metadata is missing.");
+if (!indexHtml.includes('type="application/ld+json"'))
+  failures.push("seo: LocalBusiness structured data is missing.");
+if (config.business?.domain && !indexHtml.includes('rel="canonical"'))
+  failures.push("seo: configured public domain is missing a canonical URL.");
+if (!sitemapXml.includes("<urlset"))
+  failures.push("seo: sitemap.xml is missing or invalid.");
+for (const service of config.services || [])
+  if (!sitemapXml.includes(`/services/${service.slug}/`))
+    failures.push(`seo: sitemap omits service route ${service.slug}.`);
+if (!/^User-agent: \*/mu.test(robotsTxt))
+  failures.push("seo: robots.txt is missing or invalid.");
+
 try {
   await fs.mkdir(screenshotDir, { recursive: true });
   for (const viewport of [

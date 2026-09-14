@@ -34,6 +34,7 @@ jobs:
           git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
           cd "$RUNNER_TEMP/client"
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
+          node -e 'const x=require("./src/site.config.json"); if (x.seoResearch && x.seoResearch.mode !== "researched") { console.error("Production publish blocked: SEO research is incomplete."); process.exit(1); }'
           npm ci
           PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
           npx wrangler pages deploy dist --project-name "$PROJECT" --commit-hash "$(git rev-parse HEAD)" --commit-message "LaunchLoom approved deployment"

@@ -8,6 +8,21 @@ const signedReviewUrl =
   "https://review.example.pages.dev/services?review=eyJzaXRlSWQiOiJ0ZXN0In0.signature&next=%2Fhome";
 
 describe("LaunchLoom lifecycle emails", () => {
+  it("shows SEO research readiness in the initial developer email", () => {
+    const email = renderLifecycleEmail({
+      audience: "developer",
+      kind: "initial",
+      clientName: "Harbor Plumbing",
+      previewUrl: "https://preview.example",
+      reviewUrl: "https://review.example",
+      revisionOutcome:
+        "Research is incomplete. Production approval is blocked until research succeeds.",
+    });
+
+    expect(email.html).toContain("SEO research status");
+    expect(email.text).toContain("Production approval is blocked");
+  });
+
   it.each([
     ["developer", "initial", "Review developer preview"],
     ["developer", "revision", "Review developer preview"],

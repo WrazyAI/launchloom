@@ -1,0 +1,12 @@
+{
+  "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
+  "type": "frontend",
+  "name": "Required business facts block incomplete navigation",
+  "description": "The onboarding flow must not leave the Business step when required factual fields are empty.",
+  "priority": "p1",
+  "planSteps": [
+    { "type": "action", "description": "Navigate to /onboard/ and choose Enter details manually" },
+    { "type": "action", "description": "Leave the required Business fields empty and activate Continue" },
+    { "type": "assertion", "description": "The form remains on step 1 Business and the first missing required business field is reported invalid" }
+  ]
+}

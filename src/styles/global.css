@@ -592,6 +592,38 @@ button {
   color: #385449;
   line-height: 1.45;
 }
+.seo-not-sure {
+  margin-top: 28px;
+}
+.confirmation-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 28px 0;
+}
+.confirmation-summary div {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #d4ddd5;
+  border-radius: 13px;
+  background: #f6f8f4;
+}
+.confirmation-summary dt {
+  color: #63786f;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.confirmation-summary dd {
+  margin: 7px 0 0;
+  overflow-wrap: anywhere;
+  color: #24483c;
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1.45;
+  white-space: pre-line;
+}
 .form-note {
   font-size: 0.8rem;
 }
@@ -758,6 +790,9 @@ button {
   }
   .site-header nav {
     gap: 14px;
+  }
+  .confirmation-summary {
+    grid-template-columns: 1fr;
   }
   .hero-grid,
   .preset-band {

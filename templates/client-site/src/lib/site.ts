@@ -192,6 +192,31 @@ export type SiteConfig = {
     issues: string[];
     refined: boolean;
   };
+  seoResearch?: {
+    version: number;
+    mode: "researched" | "context-only" | "baseline";
+    publishReady: boolean;
+    validatedQueries: Array<{
+      query: string;
+      searchVolume?: number | null;
+      cpc?: number | null;
+      competition?: number | null;
+      intent?: string;
+      provenance: string;
+    }>;
+    customerQuestions: string[];
+    copyVocabulary: string[];
+    pageDecisions: Array<{
+      type: "service" | "location";
+      title: string;
+      reason?: string;
+      provenance: string;
+    }>;
+    prohibitedClaims: string[];
+    evidence: Array<Record<string, unknown>>;
+    cost: { tasks: number; usd: number; limitUsd: number };
+    warnings: string[];
+  };
   socialProof?: {
     source: "google_reviews" | "verified_differentiators";
     heading: string;

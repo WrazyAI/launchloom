@@ -3,6 +3,7 @@ import {
   RevisionCoordinator,
   type RevisionRequestInput,
 } from "./revision-coordinator";
+import { seoResearchReadiness } from "./seo-readiness";
 
 export { RevisionCoordinator } from "./revision-coordinator";
 
@@ -304,6 +305,21 @@ async function currentReviewPr(env: Env, claims: ReviewClaims) {
   );
 }
 
+async function siteConfigAtReviewHead(env: Env, claims: ReviewClaims) {
+  const response = await github(
+    env,
+    `/repos/${claims.repo}/contents/src/site.config.json?ref=${encodeURIComponent(claims.headSha || "")}`,
+  );
+  const payload = (await response.json()) as {
+    content?: string;
+    encoding?: string;
+  };
+  if (payload.encoding !== "base64" || !payload.content)
+    throw new Error("Could not verify the preview research status.");
+  const jsonText = atob(payload.content.replace(/\s/gu, ""));
+  return JSON.parse(jsonText) as Record<string, unknown>;
+}
+
 async function intake(request: Request, env: Env) {
   const headers = cors(request, platformOrigins(env));
   if (request.method === "OPTIONS")
@@ -326,7 +342,8 @@ async function intake(request: Request, env: Env) {
       !businessName ||
       !email ||
       !clean(raw.confirmAccuracy, 10) ||
-      !clean(raw.confirmRights, 10)
+      !clean(raw.confirmRights, 10) ||
+      !clean(raw.confirmSeoResearch, 10)
     )
       return json(
         { error: "Please complete the required business details." },
@@ -819,6 +836,15 @@ async function approval(request: Request, env: Env) {
               ? "Revision processing is paused after a failure. Resolve it before publishing."
               : "A website revision is still in progress. Review the final revision before publishing.",
         },
+        409,
+        cors(request, claims.allowedOrigins),
+      );
+    const research = seoResearchReadiness(
+      await siteConfigAtReviewHead(env, claims),
+    );
+    if (!research.allowed)
+      return json(
+        { code: research.code, error: research.error },
         409,
         cors(request, claims.allowedOrigins),
       );

@@ -2,6 +2,75 @@ import { describe, expect, it } from "vitest";
 import { evaluateDraft, normalise } from "../scripts/generate-site-config.mjs";
 
 describe("site configuration", () => {
+  it("keeps the validated SEO dossier attached to generated content", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning",
+        serviceAreas: "Tacoma",
+        industry: "home-services",
+        seoResearch: {
+          version: 1,
+          mode: "researched",
+          validatedQueries: [
+            {
+              query: "drain cleaning tacoma",
+              searchVolume: 90,
+              provenance: "dataforseo_keyword_overview",
+            },
+          ],
+          pageDecisions: [
+            {
+              type: "service",
+              title: "Drain cleaning",
+              provenance: "client_supplied",
+            },
+          ],
+          cost: { tasks: 2, usd: 0.07, limitUsd: 0.1 },
+          warnings: [],
+        },
+      },
+    );
+
+    expect(config.seoResearch).toMatchObject({
+      mode: "researched",
+      publishReady: true,
+      cost: { tasks: 2, usd: 0.07, limitUsd: 0.1 },
+    });
+    expect(config.seoResearch.validatedQueries[0].query).toBe(
+      "drain cleaning tacoma",
+    );
+    expect(config.locations).toEqual([]);
+  });
+
+  it("creates only location routes selected by grounded research", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning",
+        serviceAreas: "Tacoma\nLakewood",
+        industry: "home-services",
+        seoResearch: {
+          mode: "researched",
+          pageDecisions: [
+            {
+              type: "location",
+              title: "Tacoma",
+              provenance: "research_strategy",
+            },
+          ],
+          cost: { tasks: 2, usd: 0.07, limitUsd: 0.1 },
+        },
+      },
+    );
+
+    expect(
+      config.locations.map((location: { name: string }) => location.name),
+    ).toEqual(["Tacoma"]);
+  });
+
   it("uses client photos and logo metadata without substituting an unrelated stock image", () => {
     const config = normalise(
       {
