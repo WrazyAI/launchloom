@@ -1184,7 +1184,7 @@ export function normalise(candidate, intake) {
     ...featureConfig,
   };
   const seoResearch = seoResearchForConfig(intake.seoResearch);
-  const researchedLocations = seoResearch
+  const researchedLocations = seoResearch?.mode === "researched"
     ? new Set(
         seoResearch.pageDecisions
           .filter((decision) => decision?.type === "location")

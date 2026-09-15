@@ -55,6 +55,12 @@ describe("SEO release gate", () => {
     const dist = await fixture();
     expect(await checkSeoRelease({ mode: "production", config, dist, origin })).toEqual([]);
   });
+  it("keeps explicitly grandfathered legacy sites publishable", async () => {
+    const dist = await fixture();
+    const { seoResearch: _legacyDossier, ...legacyConfig } = config;
+    expect(await checkSeoRelease({ mode: "production", config: legacyConfig, dist, origin }))
+      .toEqual([]);
+  });
   it("blocks stale canonical and noindex metadata before publishing", async () => {
     const dist = await fixture();
     const file = path.join(dist, "index.html");

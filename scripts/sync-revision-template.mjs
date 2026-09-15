@@ -32,7 +32,6 @@ const files = new Set([
   "components/ReviewBanner.astro",
   // SEO metadata is a shared release contract, not a bounded visual revision.
   // Refresh it for older client repositories before rendering their previews.
-  "layouts/SiteLayout.astro",
   "pages/robots.txt.ts",
   "pages/sitemap.xml.ts",
 ]);
@@ -108,10 +107,27 @@ for (const relative of files) {
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(source, destination);
 }
-await fs.copyFile(
-  path.join(repository, "templates/client-site/astro.config.mjs"),
-  path.join(client, "astro.config.mjs"),
-);
+// Upgrade only the known legacy canonical expression. Preserve any other
+// client-authored layout changes; an unknown layout must fail the release gate
+// rather than be overwritten during unrelated feedback.
+const layoutFile = path.join(client, "src/layouts/SiteLayout.astro");
+const legacyLayout = await fs.readFile(layoutFile, "utf8").catch((error) => {
+  if (error.code === "ENOENT") return "";
+  throw error;
+});
+const legacyCanonical = /^const canonical = site\.business\.domain \? .*;$/mu;
+if (legacyCanonical.test(legacyLayout)) {
+  const templateLayout = await fs.readFile(
+    path.join(template, "layouts/SiteLayout.astro"), "utf8",
+  );
+  const currentCanonical = templateLayout.match(/^const canonical = .*;$/mu)?.[0];
+  if (!currentCanonical) throw new Error("Shared canonical expression is missing.");
+  await fs.writeFile(
+    layoutFile,
+    legacyLayout.replace(legacyCanonical, currentCanonical),
+    "utf8",
+  );
+}
 if (kinds.has("set_social_proof")) {
   const homepage = path.join(client, "src/pages/index.astro");
   const source = await fs.readFile(homepage, "utf8");

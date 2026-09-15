@@ -3,10 +3,10 @@ import fs from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { chromium } from "playwright";
 
-const repository = path.resolve(new URL("..", import.meta.url).pathname);
+const repository = fileURLToPath(new URL("..", import.meta.url));
 const outputFlag = process.argv.indexOf("--out");
 const output = path.resolve(
   (outputFlag >= 0 ? process.argv[outputFlag + 1] : undefined) ||
@@ -44,6 +44,7 @@ const demos = [
 function run(command, args, cwd) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd, stdio: "inherit" });
+    child.on("error", reject);
     child.on("exit", (code) =>
       code === 0
         ? resolve()
@@ -65,12 +66,18 @@ async function listHtmlFiles(directory) {
 }
 
 function portableTarget(siteRoot, htmlFile, absoluteTarget) {
-  const [pathname, suffix = ""] = absoluteTarget.split(/(?=[?#])/u, 2);
+  const delimiter = absoluteTarget.search(/[?#]/u);
+  const pathname =
+    delimiter < 0 ? absoluteTarget : absoluteTarget.slice(0, delimiter);
+  const suffix = delimiter < 0 ? "" : absoluteTarget.slice(delimiter);
   const normalized = pathname.replace(/^\/+/, "");
-  const target = normalized.endsWith("/") || normalized === ""
-    ? path.join(siteRoot, normalized, "index.html")
-    : path.join(siteRoot, normalized);
-  let relative = path.relative(path.dirname(htmlFile), target).replaceAll(path.sep, "/");
+  const target =
+    normalized.endsWith("/") || normalized === ""
+      ? path.join(siteRoot, normalized, "index.html")
+      : path.join(siteRoot, normalized);
+  let relative = path
+    .relative(path.dirname(htmlFile), target)
+    .replaceAll(path.sep, "/");
   if (!relative.startsWith(".")) relative = `./${relative}`;
   return `${relative}${suffix}`;
 }
@@ -93,37 +100,41 @@ for (const demo of demos) {
   const workspace = await fs.mkdtemp(
     path.join(os.tmpdir(), `launchloom-family-${demo.slug}-`),
   );
-  await fs.cp(path.join(repository, "templates/client-site"), workspace, {
-    recursive: true,
-    filter: (source) =>
-      !source.includes(`${path.sep}node_modules`) &&
-      !source.includes(`${path.sep}dist`),
-  });
-  await fs.symlink(
-    path.join(repository, "templates/client-site/node_modules"),
-    path.join(workspace, "node_modules"),
-    "dir",
-  );
-  const config = JSON.parse(
-    await fs.readFile(
-      path.join(repository, "fixtures/design-demos", demo.fixture),
-      "utf8",
-    ),
-  );
-  config.design.variantId = demo.variantId;
-  config.design.sections = [];
-  await fs.writeFile(
-    path.join(workspace, "src/site.config.json"),
-    JSON.stringify(config, null, 2),
-  );
-  await run("npm", ["run", "build"], workspace);
-  await fs.cp(path.join(workspace, "dist"), path.join(output, demo.slug), {
-    recursive: true,
-  });
-  await makeSitePortable(path.join(output, demo.slug));
-  console.log(
-    `design_family=${demo.slug} output=${path.join(output, demo.slug)}`,
-  );
+  try {
+    await fs.cp(path.join(repository, "templates/client-site"), workspace, {
+      recursive: true,
+      filter: (source) =>
+        !source.includes(`${path.sep}node_modules`) &&
+        !source.includes(`${path.sep}dist`),
+    });
+    await fs.symlink(
+      path.join(repository, "templates/client-site/node_modules"),
+      path.join(workspace, "node_modules"),
+      "dir",
+    );
+    const config = JSON.parse(
+      await fs.readFile(
+        path.join(repository, "fixtures/design-demos", demo.fixture),
+        "utf8",
+      ),
+    );
+    config.design.variantId = demo.variantId;
+    config.design.sections = [];
+    await fs.writeFile(
+      path.join(workspace, "src/site.config.json"),
+      JSON.stringify(config, null, 2),
+    );
+    await run("npm", ["run", "build"], workspace);
+    await fs.cp(path.join(workspace, "dist"), path.join(output, demo.slug), {
+      recursive: true,
+    });
+    await makeSitePortable(path.join(output, demo.slug));
+    console.log(
+      `design_family=${demo.slug} output=${path.join(output, demo.slug)}`,
+    );
+  } finally {
+    await fs.rm(workspace, { recursive: true, force: true });
+  }
 }
 
 const links = demos
@@ -177,7 +188,9 @@ const offlineGallery = await browser.newPage({
   viewport: { width: 1440, height: 1000 },
 });
 for (let index = 0; index < demos.length; index += 1) {
-  await offlineGallery.goto(pathToFileURL(path.join(output, "index.html")).href);
+  await offlineGallery.goto(
+    pathToFileURL(path.join(output, "index.html")).href,
+  );
   const link = offlineGallery.locator(".grid a").nth(index);
   const expectedHref = `/${demos[index].slug}/index.html`;
   await link.click();

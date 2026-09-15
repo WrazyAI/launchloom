@@ -26,6 +26,8 @@ export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
   const originUrl = mode === "production" ? new URL(origin) : null;
   if (originUrl && (originUrl.protocol !== "https:" || !originUrl.hostname.endsWith(".pages.dev")))
     failures.push("Production origin must be the approved HTTPS Pages hostname.");
+  // New intakes always carry at least a baseline dossier. Absence denotes an
+  // approved pre-research legacy site, retained by the worker readiness policy.
   if (mode === "production" && config.seoResearch &&
       (config.seoResearch.mode !== "researched" || config.seoResearch.publishReady !== true))
     failures.push("SEO research is incomplete; production publishing is blocked.");

@@ -76,6 +76,19 @@ describe("site configuration", () => {
     ).toEqual(["Tacoma, WA"]);
   });
 
+  it("preserves submitted service areas when research is only a baseline", () => {
+    const config = normalise({}, {
+      businessName: "Harbor Plumbing",
+      services: "Drain cleaning",
+      serviceAreas: "Tacoma, WA\nLakewood, WA",
+      industry: "home-services",
+      seoResearch: { mode: "baseline", pageDecisions: [] },
+    });
+    expect(config.business.serviceAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
+    expect(config.locations.map((location: { name: string }) => location.name))
+      .toEqual(["Tacoma, WA", "Lakewood, WA"]);
+  });
+
   it("does not invent an argument value when an optional flag is absent", () => {
     expect(argumentValue(["node", "script.mjs"], "--research")).toBe("");
     expect(

@@ -57,7 +57,7 @@ const servicesIntro =
     : "Explore the available options and choose a useful next step.");
 const contactHeading =
   isDirectionsPrimary() &&
-  (!copy.contactHeading || copy.contactHeading.toLowerCase() === "get directions")
+  (!copy.contactHeading || copy.contactHeading.trim().toLowerCase() === "get directions")
     ? `Contact ${site.business.name}`
     : copy.contactHeading || site.business.primaryCta;
 ---

@@ -120,7 +120,7 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$RUNNER_TEMP/client"
           if git diff --quiet; then echo "Feedback produced no reviewable site change." >&2; exit 1; fi
           git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
-          git add src public astro.config.mjs AGENTS.md docs/site-generation-guidelines.md; git commit -m "Apply client feedback for developer review"; git push origin "${{ steps.revision.outputs.branch }}"
+          git add src public AGENTS.md docs/site-generation-guidelines.md; git commit -m "Apply client feedback for developer review"; git push origin "${{ steps.revision.outputs.branch }}"
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
           npm ci
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
