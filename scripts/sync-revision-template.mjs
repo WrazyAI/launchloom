@@ -30,6 +30,11 @@ const template = path.join(repository, "templates/client-site/src");
 const files = new Set([
   "components/LeadForm.astro",
   "components/ReviewBanner.astro",
+  // SEO metadata is a shared release contract, not a bounded visual revision.
+  // Refresh it for older client repositories before rendering their previews.
+  "layouts/SiteLayout.astro",
+  "pages/robots.txt.ts",
+  "pages/sitemap.xml.ts",
 ]);
 if (
   String(config.business?.primaryCta || "")
@@ -103,6 +108,10 @@ for (const relative of files) {
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(source, destination);
 }
+await fs.copyFile(
+  path.join(repository, "templates/client-site/astro.config.mjs"),
+  path.join(client, "astro.config.mjs"),
+);
 if (kinds.has("set_social_proof")) {
   const homepage = path.join(client, "src/pages/index.astro");
   const source = await fs.readFile(homepage, "utf8");

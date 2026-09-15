@@ -34,12 +34,12 @@ jobs:
           git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
           cd "$RUNNER_TEMP/client"
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
-          node -e 'const x=require("./src/site.config.json"); if (x.seoResearch && x.seoResearch.mode !== "researched") { console.error("Production publish blocked: SEO research is incomplete."); process.exit(1); }'
+          PRODUCTION="https://$PROJECT.pages.dev"
           npm ci
-          PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
+          PUBLIC_SITE_URL="$PRODUCTION" PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
+          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION"
           npx wrangler pages deploy dist --project-name "$PROJECT" --commit-hash "$(git rev-parse HEAD)" --commit-message "LaunchLoom approved deployment"
           test -n "$CLIENT_EMAIL" && test -n "$FEEDBACK_ISSUE"
-          PRODUCTION="https://$PROJECT.pages.dev"
           TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage client --repo "$CLIENT_REPO" --site "$PROJECT" --email "$CLIENT_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$PRODUCTION" --token-only true)
           NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"
           REVIEW_URL="$PRODUCTION?review=$TOKEN"

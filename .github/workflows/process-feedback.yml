@@ -95,17 +95,19 @@ jobs:
           cd "$CLIENT_DIR"
           if git diff --quiet; then echo "Feedback produced no reviewable site change." >&2; exit 1; fi
           git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
-          git add src public AGENTS.md docs/site-generation-guidelines.md; git commit -m "Apply developer feedback"; git push origin "${{ steps.branch.outputs.name }}"
+          git add src public astro.config.mjs AGENTS.md docs/site-generation-guidelines.md; git commit -m "Apply developer feedback"; git push origin "${{ steps.branch.outputs.name }}"
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
           npm ci
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
           node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --html dist/index.html
           node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
+          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
           node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode plan --config src/site.config.json --screenshots "$RUNNER_TEMP/revision-screenshots" --report "$RUNNER_TEMP/revision-screenshots/visual-gate-plan.json"
           if jq -e '.changed == true' "$RUNNER_TEMP/revision-screenshots/visual-gate-plan.json" >/dev/null; then
             PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
             node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --html dist/index.html
             node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
+            node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
             node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/revision-screenshots" --report "$RUNNER_TEMP/revision-screenshots/visual-gate-final.json"
             git add src/site.config.json
             git commit -m "Apply GLM visual quality corrections"

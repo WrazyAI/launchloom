@@ -12,14 +12,12 @@ const escapeXml = (value: string) =>
     .replace(/'/g, "&apos;");
 
 export const GET: APIRoute = ({ site }) => {
-  const configured = siteConfig.business.domain
-    ? `https://${siteConfig.business.domain.replace(/^https?:\/\//u, "").replace(/\/$/u, "")}/`
-    : site?.href || "https://example.pages.dev/";
+  const configured = site?.href || "https://example.pages.dev/";
   const paths = [
     "/",
     ...siteConfig.services.map((service) => `/services/${service.slug}/`),
     ...(siteConfig.industry === "home-services"
-      ? siteConfig.locations.map((location) => `/locations/${location.slug}/`)
+      ? (siteConfig.locations.length ? siteConfig.locations : siteConfig.business.serviceAreas.map((name) => ({ slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") }))).map((location) => `/locations/${location.slug}/`)
       : []),
   ];
   const urls = paths

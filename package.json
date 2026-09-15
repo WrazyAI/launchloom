@@ -9,7 +9,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "check:worker": "tsc -p worker/tsconfig.json && tsc -p worker/test/tsconfig.json",
-    "test": "vitest run tests",
+    "test": "vitest run --dir tests",
     "test:worker": "vitest run --config vitest.worker.config.ts",
     "evaluate:models": "node scripts/evaluate-models.mjs",
     "evaluate:visual-models": "node scripts/evaluate-visual-models.mjs",
