@@ -150,11 +150,19 @@ function validateStrategy(
 
 export async function researchSiteContext(intake, options = {}) {
   const seo = normaliseSeoIntake(intake);
+  const requestedMaxTasks = Number(options.maxTasks ?? DEFAULT_MAX_TASKS);
+  const requestedMaxUsd = Number(options.maxUsd ?? DEFAULT_MAX_USD);
   const maxTasks = Math.max(
     0,
-    Math.min(DEFAULT_MAX_TASKS, Number(options.maxTasks ?? DEFAULT_MAX_TASKS)),
+    Math.min(
+      DEFAULT_MAX_TASKS,
+      Number.isFinite(requestedMaxTasks) ? requestedMaxTasks : DEFAULT_MAX_TASKS,
+    ),
   );
-  const maxUsd = Math.max(0, Number(options.maxUsd ?? DEFAULT_MAX_USD));
+  const maxUsd = Math.max(
+    0,
+    Number.isFinite(requestedMaxUsd) ? requestedMaxUsd : DEFAULT_MAX_USD,
+  );
   const warnings = [];
   let seeds = defaultSeeds(intake, seo);
   const groundedTerms = [

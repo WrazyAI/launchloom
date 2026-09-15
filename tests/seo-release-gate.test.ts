@@ -112,4 +112,16 @@ describe("SEO release gate", () => {
     expect((await checkSeoRelease({ mode: "review", config, dist })).some(
       (error: string) => error.includes("robots.txt"))).toBe(true);
   });
+  it("requires an exact noindex directive on review pages", async () => {
+    const dist = await fixture(true);
+    for (const route of ["", "services/consultation/"]) {
+      const file = path.join(dist, route, "index.html");
+      await fs.writeFile(
+        file,
+        (await fs.readFile(file, "utf8")).replace("noindex, nofollow", "noindexing, nofollow"),
+      );
+    }
+    expect((await checkSeoRelease({ mode: "review", config, dist })).some(
+      (error: string) => error.includes("not marked noindex"))).toBe(true);
+  });
 });

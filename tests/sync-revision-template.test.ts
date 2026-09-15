@@ -21,13 +21,14 @@ it("refreshes shared SEO files without overwriting client Astro config", async (
   }));
   const custom = "export default { site: process.env.PUBLIC_SITE_URL, redirects: { '/old': '/new' } };\n";
   await fs.writeFile(path.join(client, "astro.config.mjs"), custom);
-  const legacyLayout = 'const noIndex = true;\nconst canonical = site.business.domain ? `https://${site.business.domain.replace(/^https?:\\/\\//, "").replace(/\\/$/, "")}${Astro.url.pathname}` : undefined;\n<!-- client-only layout detail -->\n';
+  const legacyLayout = 'const noIndex = true;\nconst canonical = site.business.domain ? `https://${site.business.domain.replace(/^https?:\\/\\//, "").replace(/\\/$/, "")}${Astro.url.pathname}` : undefined;\n<head>\n</head>\n<!-- client-only layout detail -->\n';
   await fs.writeFile(path.join(client, "src/layouts/SiteLayout.astro"), legacyLayout);
   await exec("node", [path.resolve("scripts/sync-revision-template.mjs"), "--client", client]);
   expect(await fs.readFile(path.join(client, "astro.config.mjs"), "utf8")).toBe(custom);
   const updatedLayout = await fs.readFile(path.join(client, "src/layouts/SiteLayout.astro"), "utf8");
   expect(updatedLayout).toContain("client-only layout detail");
   expect(updatedLayout).toContain("Astro.site ?? Astro.url");
+  expect(updatedLayout).toContain('<meta name="robots" content="noindex, nofollow" />');
   expect(await fs.readFile(path.join(client, "src/pages/robots.txt.ts"), "utf8"))
     .toContain("Allow: /");
 });

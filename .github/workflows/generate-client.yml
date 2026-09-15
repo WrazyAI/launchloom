@@ -227,14 +227,34 @@ jobs:
           TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "${{ steps.client.outputs.repo }}" --pr "${{ steps.branch.outputs.pr }}" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.client.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "${{ steps.intake.outputs.email }}" --feedback-issue "${{ steps.client.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
           echo "link=$PREVIEW?review=$TOKEN" >> "$GITHUB_OUTPUT"
       - name: Post handoff links
+        env:
+          CLIENT_ASSET_SUMMARY: ${{ steps.intake.outputs.asset_summary }}
+          CLIENT_PROJECT: ${{ steps.client.outputs.project }}
+          CLIENT_REPO: ${{ steps.client.outputs.repo }}
+          DEVELOPER_REVIEW_LINK: ${{ steps.review.outputs.link }}
+          INTAKE_ISSUE: ${{ steps.intake.outputs.issue }}
+          LAYOUT: ${{ steps.intake.outputs.layout }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview }}
+          RESEARCH_COST: ${{ steps.intake.outputs.research_cost }}
+          RESEARCH_MODE: ${{ steps.intake.outputs.research_mode }}
+          RESEARCH_QUERIES: ${{ steps.intake.outputs.research_queries }}
+          REVIEW_PR: ${{ steps.branch.outputs.pr }}
         run: |
-          gh pr comment "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\nSEO research mode: %s\nValidated queries: %s\nRecorded research cost: $%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Initial developer preview' '${{ steps.intake.outputs.layout }}' '${{ steps.intake.outputs.asset_summary }}' '${{ steps.intake.outputs.research_mode }}' '${{ steps.intake.outputs.research_queries }}' '${{ steps.intake.outputs.research_cost }}' '${{ steps.deploy.outputs.preview }}' '${{ steps.review.outputs.link }}')"
-          gh issue comment "${{ steps.intake.outputs.issue }}" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' '## Awaiting developer approval' '${{ steps.client.outputs.repo }}' '${{ steps.client.outputs.project }}' '${{ steps.deploy.outputs.preview }}')"
+          gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\nSEO research mode: %s\nValidated queries: %s\nRecorded research cost: $%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Initial developer preview' "$LAYOUT" "$CLIENT_ASSET_SUMMARY" "$RESEARCH_MODE" "$RESEARCH_QUERIES" "$RESEARCH_COST" "$PREVIEW_URL" "$DEVELOPER_REVIEW_LINK")"
+          gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' '## Awaiting developer approval' "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL")"
       - name: Send developer preview email
+        env:
+          BUSINESS_NAME: ${{ steps.intake.outputs.business_name }}
+          CLIENT_PROJECT: ${{ steps.client.outputs.project }}
+          CLIENT_REPO: ${{ steps.client.outputs.repo }}
+          DEPLOY_SHA: ${{ steps.deploy.outputs.sha }}
+          DEVELOPER_REVIEW_LINK: ${{ steps.review.outputs.link }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview }}
+          REVIEW_PR: ${{ steps.branch.outputs.pr }}
         run: |
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "${{ steps.intake.outputs.business_name }}" --preview "${{ steps.deploy.outputs.preview }}" --review "${{ steps.review.outputs.link }}" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt --idempotency-key "initial-${{ steps.client.outputs.project }}-${{ steps.deploy.outputs.sha }}"
-          gh pr comment "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --body '<!-- launchloom-initial-email:${{ steps.deploy.outputs.sha }} -->'
-          gh pr edit "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --remove-label launchloom-delivery-pending
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
+          gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
+          gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending
       - name: Notify developer when generation stops
         if: failure()
         env:

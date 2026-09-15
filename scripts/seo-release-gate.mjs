@@ -90,12 +90,15 @@ export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
     if (route !== "/" && textWords(html) < 80)
       failures.push(`${route}: service or location page is too thin to publish.`);
     const robotsMeta = attribute(meta(html, "robots") || "", "content") || "";
+    const robotsDirectives = new Set(
+      robotsMeta.toLowerCase().split(/[,\s]+/u).filter(Boolean),
+    );
     const link = attribute(canonical(html) || "", "href");
     if (mode === "review") {
-      if (!robotsMeta.toLowerCase().includes("noindex"))
+      if (!robotsDirectives.has("noindex"))
         failures.push(`${route}: review page is not marked noindex.`);
     } else {
-      if (robotsMeta.toLowerCase().includes("noindex"))
+      if (robotsDirectives.has("noindex"))
         failures.push(`${route}: production page is marked noindex.`);
       if (link !== new URL(route, originUrl).href)
         failures.push(`${route}: canonical URL does not match the approved production origin.`);

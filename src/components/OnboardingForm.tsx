@@ -928,6 +928,10 @@ export default function OnboardingForm() {
             <dd>{draftValue("priorityLocations")}</dd>
           </div>
           <div>
+            <dt>Competitor websites</dt>
+            <dd>{draftValue("competitorUrls")}</dd>
+          </div>
+          <div>
             <dt>Customer problem language</dt>
             <dd>{draftValue("customerProblems")}</dd>
           </div>

@@ -158,11 +158,11 @@ describe("SEO research", () => {
     expect(keywordOverview.mock.calls[0][0].keywords).not.toContain(
       "roof repair Tacoma",
     );
-    expect(dossier.pageDecisions).not.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ title: "Roof repair" }),
-        expect.objectContaining({ title: "Seattle" }),
-      ]),
+    expect(dossier.pageDecisions).not.toContainEqual(
+      expect.objectContaining({ title: "Roof repair" }),
+    );
+    expect(dossier.pageDecisions).not.toContainEqual(
+      expect.objectContaining({ title: "Seattle" }),
     );
     expect(JSON.stringify(dossier)).not.toContain("Septic pumping service");
   });
@@ -181,5 +181,14 @@ describe("SEO research", () => {
     expect(dossier.cost.tasks).toBe(0);
     expect(dossier.seedQueries).toContain("emergency drain cleaning");
     expect(dossier.warnings.join(" ")).toContain("upstream down");
+  });
+
+  it("uses safe defaults for non-finite research limits", async () => {
+    const dossier = await researchSiteContext(intake, {
+      maxTasks: Number.NaN,
+      maxUsd: Number.POSITIVE_INFINITY,
+    });
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.cost).toEqual({ tasks: 0, usd: 0, limitUsd: 0.1 });
   });
 });

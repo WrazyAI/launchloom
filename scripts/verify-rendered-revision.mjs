@@ -18,6 +18,7 @@ const args = Object.fromEntries(
 if (!args.config || !args.dist)
   throw new Error("--config and --dist are required.");
 const config = JSON.parse(await fs.readFile(path.resolve(args.config), "utf8"));
+const reviewMode = process.env.PUBLIC_REVIEW_MODE === "true";
 const dist = path.resolve(args.dist);
 const screenshotDir = path.resolve(
   args.screenshots || path.join(dist, "revision-screenshots"),
@@ -81,7 +82,7 @@ if (!indexHtml.includes('name="description"'))
   failures.push("seo: homepage description metadata is missing.");
 if (!indexHtml.includes('type="application/ld+json"'))
   failures.push("seo: LocalBusiness structured data is missing.");
-if (config.business?.domain && !indexHtml.includes('rel="canonical"'))
+if (!reviewMode && config.business?.domain && !indexHtml.includes('rel="canonical"'))
   failures.push("seo: configured public domain is missing a canonical URL.");
 if (!sitemapXml.includes("<urlset"))
   failures.push("seo: sitemap.xml is missing or invalid.");

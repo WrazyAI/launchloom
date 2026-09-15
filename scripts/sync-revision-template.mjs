@@ -122,9 +122,21 @@ if (legacyLayout.includes(legacyCanonical)) {
   );
   const currentCanonical = templateLayout.match(/^const canonical = .*;$/mu)?.[0];
   if (!currentCanonical) throw new Error("Shared canonical expression is missing.");
+  const currentRobots = templateLayout.match(
+    /^\s*\{noIndex && <meta name="robots"[^\n]+$/mu,
+  )?.[0]?.trim();
+  if (!currentRobots) throw new Error("Shared robots metadata is missing.");
+  const migratedLayout = legacyLayout
+    .replace(legacyCanonical, currentCanonical)
+    .replace(
+      /<\/head>/iu,
+      legacyLayout.includes('name="robots"')
+        ? "</head>"
+        : `  ${currentRobots}\n  </head>`,
+    );
   await fs.writeFile(
     layoutFile,
-    legacyLayout.replace(legacyCanonical, currentCanonical),
+    migratedLayout,
     "utf8",
   );
 }
