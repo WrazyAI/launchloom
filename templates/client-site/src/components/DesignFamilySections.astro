@@ -49,7 +49,9 @@ const servicesHeading =
     ? "Start with the problem you can see."
     : hospitality
       ? "Made for the moment in front of you."
-      : "Choose the place that fits today.");
+      : care
+        ? "Choose the support that fits today."
+        : "Choose the option that fits today.");
 const servicesIntro =
   copy.servicesIntro ||
   (trades

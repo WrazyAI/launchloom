@@ -223,17 +223,29 @@ for (const demo of demos) {
   ]) {
     const page = await browser.newPage({ viewport });
     await page.goto(url, { waitUntil: "networkidle" });
-    const result = await page.evaluate(() => ({
-      overflow:
-        document.documentElement.scrollWidth >
-        document.documentElement.clientWidth,
-      emDashes: (document.body.innerText.match(/—/g) || []).length,
-      brokenFragments: [...document.querySelectorAll('a[href^="#"]')]
-        .map((link) => link.getAttribute("href"))
-        .filter(
-          (href) => href && href !== "#" && !document.querySelector(href),
+    const result = await page.evaluate(() => {
+      const visitorContent = [
+        document.title,
+        document.body.innerText,
+        ...[...document.querySelectorAll("meta[content]")].map((element) =>
+          element.getAttribute("content"),
         ),
-    }));
+        ...[...document.querySelectorAll("[alt], [aria-label], [title], [placeholder]")]
+          .flatMap((element) => ["alt", "aria-label", "title", "placeholder"]
+            .map((attribute) => element.getAttribute(attribute))),
+      ].filter(Boolean).join("\n");
+      return {
+        overflow:
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth,
+        emDashes: (visitorContent.match(/—/g) || []).length,
+        brokenFragments: [...document.querySelectorAll('a[href^="#"]')]
+          .map((link) => link.getAttribute("href"))
+          .filter(
+            (href) => href && href !== "#" && !document.querySelector(href),
+          ),
+      };
+    });
     if (result.overflow || result.emDashes || result.brokenFragments.length) {
       throw new Error(
         `Visual verification failed for ${demo.slug} at ${viewport.width}px: ${JSON.stringify(result)}`,
