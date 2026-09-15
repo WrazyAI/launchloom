@@ -12,6 +12,23 @@ const meta = (html, name) =>
   tags(html, "meta").find((tag) => attribute(tag, "name") === name);
 const canonical = (html) =>
   tags(html, "link").find((tag) => attribute(tag, "rel") === "canonical");
+const decodeHtmlText = (value = "") => value.replace(
+  /&(?:#(\d+)|#x([\da-f]+)|(amp|lt|gt|quot|apos));/giu,
+  (entity, decimal, hexadecimal, named) => {
+    const codePoint = decimal
+      ? Number.parseInt(decimal, 10)
+      : hexadecimal
+        ? Number.parseInt(hexadecimal, 16)
+        : null;
+    if (codePoint !== null)
+      return codePoint >= 0 && codePoint <= 0x10ffff
+        ? String.fromCodePoint(codePoint)
+        : entity;
+    return { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" }[
+      String(named).toLowerCase()
+    ] || entity;
+  },
+);
 const textWords = (html) =>
   html
     .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/giu, " ")
@@ -62,7 +79,9 @@ export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
     if (!html) { failures.push(`${route}: rendered route is missing.`); continue; }
     if (html.includes("—"))
       failures.push(`${route}: rendered page contains a prohibited em dash.`);
-    const title = html.match(/<title>([^<]+)<\/title>/iu)?.[1]?.trim();
+    const title = decodeHtmlText(
+      html.match(/<title>([^<]+)<\/title>/iu)?.[1],
+    ).trim();
     const description = attribute(meta(html, "description") || "", "content");
     if (!title || title.length < 10 || !title.includes(config.business?.name || ""))
       failures.push(`${route}: descriptive business-specific title is missing.`);
