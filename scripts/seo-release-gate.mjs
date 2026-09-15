@@ -13,7 +13,7 @@ const meta = (html, name) =>
 const canonical = (html) =>
   tags(html, "link").find((tag) => attribute(tag, "rel") === "canonical");
 const decodeHtmlText = (value = "") => value.replace(
-  /&(?:#(\d+)|#x([\da-f]+)|(amp|lt|gt|quot|apos));/giu,
+  /&(?:#(\d+)|#[xX]([\da-fA-F]+)|(amp|AMP|lt|LT|gt|GT|quot|QUOT|apos));/gu,
   (entity, decimal, hexadecimal, named) => {
     const codePoint = decimal
       ? Number.parseInt(decimal, 10)
@@ -24,9 +24,13 @@ const decodeHtmlText = (value = "") => value.replace(
       return codePoint >= 0 && codePoint <= 0x10ffff
         ? String.fromCodePoint(codePoint)
         : entity;
-    return { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" }[
-      String(named).toLowerCase()
-    ] || entity;
+    return {
+      amp: "&", AMP: "&",
+      lt: "<", LT: "<",
+      gt: ">", GT: ">",
+      quot: '"', QUOT: '"',
+      apos: "'",
+    }[named] || entity;
   },
 );
 const textWords = (html) =>

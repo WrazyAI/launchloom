@@ -73,6 +73,23 @@ describe("SEO release gate", () => {
     expect(errors.some((error: string) => error === "/: descriptive business-specific title is missing."))
       .toBe(false);
   });
+  it("does not decode an invalid mixed-case HTML entity in the title", async () => {
+    const dist = await fixture();
+    const file = path.join(dist, "index.html");
+    const html = await fs.readFile(file, "utf8");
+    await fs.writeFile(file, html.replace("Fixture Clinic</title>", "Fixture &aMp; Clinic</title>"));
+    const mixedCaseConfig = {
+      ...config,
+      business: { ...config.business, name: "Fixture & Clinic" },
+    };
+    const errors = await checkSeoRelease({
+      mode: "production",
+      config: mixedCaseConfig,
+      dist,
+      origin,
+    });
+    expect(errors).toContain("/: descriptive business-specific title is missing.");
+  });
   it("keeps explicitly grandfathered legacy sites publishable", async () => {
     const dist = await fixture();
     const { seoResearch: _legacyDossier, ...legacyConfig } = config;
