@@ -775,6 +775,7 @@ export default function OnboardingForm() {
             Search phrases customers might use
             <textarea
               name="searchPhrases"
+              disabled={seoNotSure}
               placeholder="One phrase per line, ideally 3 to 8 phrases"
             />
           </label>

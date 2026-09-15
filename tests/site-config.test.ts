@@ -46,7 +46,8 @@ describe("site configuration", () => {
     expect(config.seoResearch.validatedQueries[0].query).toBe(
       "drain cleaning tacoma",
     );
-    expect(config.locations).toEqual([]);
+    expect(config.locations.map((location: { name: string }) => location.name))
+      .toEqual(["Tacoma"]);
   });
 
   it("creates only location routes selected by grounded research", () => {
@@ -83,6 +84,19 @@ describe("site configuration", () => {
       serviceAreas: "Tacoma, WA\nLakewood, WA",
       industry: "home-services",
       seoResearch: { mode: "baseline", pageDecisions: [] },
+    });
+    expect(config.business.serviceAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
+    expect(config.locations.map((location: { name: string }) => location.name))
+      .toEqual(["Tacoma, WA", "Lakewood, WA"]);
+  });
+
+  it("preserves submitted service areas when research selected no location pages", () => {
+    const config = normalise({}, {
+      businessName: "Harbor Plumbing",
+      services: "Drain cleaning",
+      serviceAreas: "Tacoma, WA\nLakewood, WA",
+      industry: "home-services",
+      seoResearch: { mode: "researched", pageDecisions: [] },
     });
     expect(config.business.serviceAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
     expect(config.locations.map((location: { name: string }) => location.name))

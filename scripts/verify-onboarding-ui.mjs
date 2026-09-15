@@ -97,6 +97,12 @@ try {
   await page.getByRole("button", { name: "Continue" }).click();
 
   await page.locator('[name="priorityService"]').fill("Website design");
+  await page.locator('[name="seoNotSure"]').check();
+  if (!(await page.locator('[name="searchPhrases"]').isDisabled()))
+    failures.push("Hidden SEO search phrases still submit when not-sure is selected.");
+  await page.locator('[name="seoNotSure"]').uncheck();
+  if (await page.locator('[name="searchPhrases"]').isDisabled())
+    failures.push("SEO search phrases stay disabled after not-sure is cleared.");
   await page
     .locator('[name="searchPhrases"]')
     .fill("website designer austin\nlocal web design");

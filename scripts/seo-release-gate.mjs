@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const attribute = (tag, name) =>
   tag.match(new RegExp(`\\b${name}=["']([^"']*)["']`, "iu"))?.[1];
@@ -96,7 +97,7 @@ export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
   return failures;
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${path.resolve(process.argv[1])}`).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const args = Object.fromEntries(process.argv.slice(2).reduce((pairs, value, index, all) =>
     index % 2 === 0 ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]] : pairs, []));
   if (!args.config || !args.dist || !args.mode || (args.mode === "production" && !args.origin))

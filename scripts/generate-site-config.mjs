@@ -1184,12 +1184,13 @@ export function normalise(candidate, intake) {
     ...featureConfig,
   };
   const seoResearch = seoResearchForConfig(intake.seoResearch);
-  const researchedLocations = seoResearch?.mode === "researched"
-    ? new Set(
-        seoResearch.pageDecisions
-          .filter((decision) => decision?.type === "location")
-          .map((decision) => slugify(String(decision.title || ""))),
-      )
+  const selectedLocations = seoResearch?.mode === "researched"
+    ? seoResearch.pageDecisions
+        .filter((decision) => decision?.type === "location")
+        .map((decision) => slugify(String(decision.title || "")))
+    : [];
+  const researchedLocations = selectedLocations.length
+    ? new Set(selectedLocations)
     : null;
   const locationNames = researchedLocations
     ? business.serviceAreas.filter((name) =>

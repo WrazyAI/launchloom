@@ -115,8 +115,8 @@ const legacyLayout = await fs.readFile(layoutFile, "utf8").catch((error) => {
   if (error.code === "ENOENT") return "";
   throw error;
 });
-const legacyCanonical = /^const canonical = site\.business\.domain \? .*;$/mu;
-if (legacyCanonical.test(legacyLayout)) {
+const legacyCanonical = 'const canonical = site.business.domain ? `https://${site.business.domain.replace(/^https?:\\/\\//, "").replace(/\\/$/, "")}${Astro.url.pathname}` : undefined;';
+if (legacyLayout.includes(legacyCanonical)) {
   const templateLayout = await fs.readFile(
     path.join(template, "layouts/SiteLayout.astro"), "utf8",
   );

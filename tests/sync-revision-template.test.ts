@@ -21,7 +21,7 @@ it("refreshes shared SEO files without overwriting client Astro config", async (
   }));
   const custom = "export default { site: process.env.PUBLIC_SITE_URL, redirects: { '/old': '/new' } };\n";
   await fs.writeFile(path.join(client, "astro.config.mjs"), custom);
-  const legacyLayout = "const noIndex = true;\nconst canonical = site.business.domain ? `https://${site.business.domain}${Astro.url.pathname}` : undefined;\n<!-- client-only layout detail -->\n";
+  const legacyLayout = 'const noIndex = true;\nconst canonical = site.business.domain ? `https://${site.business.domain.replace(/^https?:\\/\\//, "").replace(/\\/$/, "")}${Astro.url.pathname}` : undefined;\n<!-- client-only layout detail -->\n';
   await fs.writeFile(path.join(client, "src/layouts/SiteLayout.astro"), legacyLayout);
   await exec("node", [path.resolve("scripts/sync-revision-template.mjs"), "--client", client]);
   expect(await fs.readFile(path.join(client, "astro.config.mjs"), "utf8")).toBe(custom);
@@ -30,4 +30,18 @@ it("refreshes shared SEO files without overwriting client Astro config", async (
   expect(updatedLayout).toContain("Astro.site ?? Astro.url");
   expect(await fs.readFile(path.join(client, "src/pages/robots.txt.ts"), "utf8"))
     .toContain("Allow: /");
+});
+
+it("preserves a client-authored canonical expression", async () => {
+  const client = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-sync-"));
+  dirs.push(client);
+  await fs.mkdir(path.join(client, "src/layouts"), { recursive: true });
+  await fs.writeFile(path.join(client, "src/site.config.json"), JSON.stringify({
+    business: { primaryCta: "Contact us" },
+  }));
+  const custom = 'const canonical = site.business.domain ? `https://${site.business.domain}/special` : undefined;\n';
+  await fs.writeFile(path.join(client, "src/layouts/SiteLayout.astro"), custom);
+  await exec("node", [path.resolve("scripts/sync-revision-template.mjs"), "--client", client]);
+  expect(await fs.readFile(path.join(client, "src/layouts/SiteLayout.astro"), "utf8"))
+    .toBe(custom);
 });
