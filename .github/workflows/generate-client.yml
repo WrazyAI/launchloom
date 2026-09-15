@@ -21,6 +21,8 @@ jobs:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '2' }}
+      SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.10' }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
@@ -44,11 +46,14 @@ jobs:
       - name: Read and generate from intake
         id: intake
         env:
+          DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
+          DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
         run: |
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
-          node scripts/generate-site-config.mjs --source /tmp/intake.md --out /tmp/site.config.json
+          node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json
+          node scripts/generate-site-config.mjs --source /tmp/intake.md --research /tmp/seo-research.json --out /tmp/site.config.json
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
@@ -58,6 +63,16 @@ jobs:
           echo "assets=$(node -e 'const x=require("/tmp/site.config.json"); console.log(JSON.stringify(x.assets || {}))')" >> "$GITHUB_OUTPUT"
           echo "layout=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.layout || "editorial-authority")')" >> "$GITHUB_OUTPUT"
           echo "asset_summary=$(node -e 'const x=require("/tmp/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " → " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')" >> "$GITHUB_OUTPUT"
+          echo "research_mode=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')" >> "$GITHUB_OUTPUT"
+          echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
+          echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "No externally validated queries")')" >> "$GITHUB_OUTPUT"
+          node -e 'const x=require("/tmp/seo-research.json"); const state=x.mode === "researched" ? "Research complete. Production approval is available." : "Research is incomplete. This preview can be reviewed, but production approval is blocked until research succeeds."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}\nValidated queries: ${(x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "None"}\nRecorded research cost: $${Number(x.cost?.usd || 0).toFixed(5)}`)'
+      - name: Preserve SEO research evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: seo-research-${{ steps.intake.outputs.issue }}
+          path: /tmp/seo-research.json
+          retention-days: 14
       - name: Create private repository and Cloudflare Pages project
         id: client
         run: |
@@ -158,6 +173,8 @@ jobs:
             git remote set-url origin "$REMOTE"
           fi
           cp /tmp/site.config.json src/site.config.json
+          mkdir -p .launchloom
+          cp /tmp/seo-research.json .launchloom/seo-research.json
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
           git_push_with_retry --set-upstream origin review/initial
@@ -172,12 +189,14 @@ jobs:
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
-          PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
+          PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
           node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
+          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
           node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode plan --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json"
           if jq -e '.changed == true' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null; then
-            PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
+            PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
             node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
+            node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
             node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$RUNNER_TEMP/initial-screenshots/visual-gate-final.json"
             git add src/site.config.json
             git commit -m "Apply GLM visual quality corrections"
@@ -208,14 +227,34 @@ jobs:
           TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "${{ steps.client.outputs.repo }}" --pr "${{ steps.branch.outputs.pr }}" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.client.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "${{ steps.intake.outputs.email }}" --feedback-issue "${{ steps.client.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
           echo "link=$PREVIEW?review=$TOKEN" >> "$GITHUB_OUTPUT"
       - name: Post handoff links
+        env:
+          CLIENT_ASSET_SUMMARY: ${{ steps.intake.outputs.asset_summary }}
+          CLIENT_PROJECT: ${{ steps.client.outputs.project }}
+          CLIENT_REPO: ${{ steps.client.outputs.repo }}
+          DEVELOPER_REVIEW_LINK: ${{ steps.review.outputs.link }}
+          INTAKE_ISSUE: ${{ steps.intake.outputs.issue }}
+          LAYOUT: ${{ steps.intake.outputs.layout }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview }}
+          RESEARCH_COST: ${{ steps.intake.outputs.research_cost }}
+          RESEARCH_MODE: ${{ steps.intake.outputs.research_mode }}
+          RESEARCH_QUERIES: ${{ steps.intake.outputs.research_queries }}
+          REVIEW_PR: ${{ steps.branch.outputs.pr }}
         run: |
-          gh pr comment "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Initial developer preview' '${{ steps.intake.outputs.layout }}' '${{ steps.intake.outputs.asset_summary }}' '${{ steps.deploy.outputs.preview }}' '${{ steps.review.outputs.link }}')"
-          gh issue comment "${{ steps.intake.outputs.issue }}" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' '## Awaiting developer approval' '${{ steps.client.outputs.repo }}' '${{ steps.client.outputs.project }}' '${{ steps.deploy.outputs.preview }}')"
+          gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\nSEO research mode: %s\nValidated queries: %s\nRecorded research cost: $%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Initial developer preview' "$LAYOUT" "$CLIENT_ASSET_SUMMARY" "$RESEARCH_MODE" "$RESEARCH_QUERIES" "$RESEARCH_COST" "$PREVIEW_URL" "$DEVELOPER_REVIEW_LINK")"
+          gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' '## Awaiting developer approval' "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL")"
       - name: Send developer preview email
+        env:
+          BUSINESS_NAME: ${{ steps.intake.outputs.business_name }}
+          CLIENT_PROJECT: ${{ steps.client.outputs.project }}
+          CLIENT_REPO: ${{ steps.client.outputs.repo }}
+          DEPLOY_SHA: ${{ steps.deploy.outputs.sha }}
+          DEVELOPER_REVIEW_LINK: ${{ steps.review.outputs.link }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview }}
+          REVIEW_PR: ${{ steps.branch.outputs.pr }}
         run: |
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "${{ steps.intake.outputs.business_name }}" --preview "${{ steps.deploy.outputs.preview }}" --review "${{ steps.review.outputs.link }}" --kind initial --audience developer --idempotency-key "initial-${{ steps.client.outputs.project }}-${{ steps.deploy.outputs.sha }}"
-          gh pr comment "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --body '<!-- launchloom-initial-email:${{ steps.deploy.outputs.sha }} -->'
-          gh pr edit "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --remove-label launchloom-delivery-pending
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
+          gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
+          gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending
       - name: Notify developer when generation stops
         if: failure()
         env:

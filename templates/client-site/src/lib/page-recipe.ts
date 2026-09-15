@@ -1,5 +1,5 @@
 import type { PageRecipe, PageSection, SiteConfig } from "./site";
-import { variantForSite } from "./design-variants";
+import { designFamilyForVariant, variantForSite } from "./design-variants";
 
 const recipes: Record<PageRecipe, PageSection[]> = {
   "care-editorial": [
@@ -81,16 +81,19 @@ export function defaultRecipe(site: SiteConfig): PageRecipe {
   return "general-editorial";
 }
 
-export function resolvePageRecipe(site: SiteConfig): {
+export type ResolvedPageRecipe = {
   recipe: PageRecipe;
   sections: PageSection[];
   variantId: string | null;
+  family: import("./site").DesignFamily;
   composition: import("./site").DesignComposition;
   treatment: {
     density: "compact" | "balanced" | "spacious";
     typography: import("./site").DesignTypography;
   };
-} {
+};
+
+export function resolvePageRecipe(site: SiteConfig): ResolvedPageRecipe {
   const recipe =
     site.design?.recipe && recipes[site.design.recipe]
       ? site.design.recipe
@@ -128,6 +131,7 @@ export function resolvePageRecipe(site: SiteConfig): {
   return {
     recipe,
     variantId: designVariant?.id || null,
+    family: designFamilyForVariant(designVariant?.id),
     composition: designVariant?.composition || "split",
     treatment: {
       density:

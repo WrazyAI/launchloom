@@ -146,6 +146,11 @@ export function renderLifecycleEmail(input) {
     }
   }
 
+  if (audience === "developer" && kind === "initial" && outcome && !feedback) {
+    rows += textBlock("SEO research status", outcome);
+    textSections.push(`SEO RESEARCH STATUS\n${outcome}`);
+  }
+
   if (audience === "developer" && queuedFeedback) {
     const queuedLabel =
       queuedStage === "client"

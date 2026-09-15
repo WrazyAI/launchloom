@@ -56,6 +56,13 @@ export type DesignTypography =
   | "industrial"
   | "condensed"
   | "soft-sans";
+export type DesignFamily =
+  | "classic"
+  | "image-mosaic"
+  | "cinematic-premium"
+  | "atmospheric-editorial"
+  | "project-showcase"
+  | "studio-minimal";
 export type SiteConfig = {
   preset: "wellness" | "home-services";
   industry?: string;
@@ -184,6 +191,31 @@ export type SiteConfig = {
     score: number;
     issues: string[];
     refined: boolean;
+  };
+  seoResearch?: {
+    version: number;
+    mode: "researched" | "context-only" | "baseline";
+    publishReady: boolean;
+    validatedQueries: Array<{
+      query: string;
+      searchVolume?: number | null;
+      cpc?: number | null;
+      competition?: number | null;
+      intent?: string;
+      provenance: string;
+    }>;
+    customerQuestions: string[];
+    copyVocabulary: string[];
+    pageDecisions: Array<{
+      type: "service" | "location";
+      title: string;
+      reason?: string;
+      provenance: string;
+    }>;
+    prohibitedClaims: string[];
+    evidence: Array<Record<string, unknown>>;
+    cost: { tasks: number; usd: number; limitUsd: number };
+    warnings: string[];
   };
   socialProof?: {
     source: "google_reviews" | "verified_differentiators";

@@ -1,5 +1,6 @@
 import type {
   DesignComposition,
+  DesignFamily,
   DesignTypography,
   PageRecipe,
   PageSection,
@@ -560,6 +561,47 @@ const registry: readonly DesignVariant[] = Object.entries(recipeSeeds).flatMap(
 
 const registryById = new Map(registry.map((variant) => [variant.id, variant]));
 
+const familyVariants: Readonly<
+  Record<Exclude<DesignFamily, "classic">, readonly DesignVariantId[]>
+> = {
+  "image-mosaic": [
+    "care-modern-clinic",
+    "care-studio",
+    "trades-proof-first",
+    "general-product-studio",
+  ],
+  "cinematic-premium": [
+    "care-concierge",
+    "trades-emergency-line",
+    "general-bold-launch",
+  ],
+  "atmospheric-editorial": [
+    "care-wellness-journal",
+    "trades-straight-talk",
+    "general-editorial-house",
+  ],
+  "project-showcase": [
+    "care-human-story",
+    "trades-project-led",
+    "trades-craftsman",
+    "general-maker",
+  ],
+  "studio-minimal": [
+    "care-private-practice",
+    "trades-field-report",
+    "general-modern-office",
+    "general-human-brand",
+  ],
+};
+
+export function designFamilyForVariant(id?: string): DesignFamily {
+  if (!id) return "classic";
+  for (const [family, ids] of Object.entries(familyVariants)) {
+    if (ids.includes(id as DesignVariantId)) return family as DesignFamily;
+  }
+  return "classic";
+}
+
 export function listDesignVariants(
   recipe?: PageRecipe,
 ): readonly DesignVariant[] {
@@ -575,8 +617,15 @@ export function getDesignVariant(id?: string): DesignVariant | null {
 export function selectDesignVariant(
   recipe: PageRecipe,
   seed: string,
+  family?: DesignFamily,
 ): DesignVariant {
-  const candidates = listDesignVariants(recipe);
+  const familyCandidates = listDesignVariants(recipe).filter(
+    (candidate) => designFamilyForVariant(candidate.id) === family,
+  );
+  const candidates =
+    family && familyCandidates.length
+      ? familyCandidates
+      : listDesignVariants(recipe);
   let hash = 2166136261;
   for (const character of seed.trim().toLowerCase()) {
     hash ^= character.charCodeAt(0);

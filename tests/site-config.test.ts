@@ -1,7 +1,142 @@
 import { describe, expect, it } from "vitest";
-import { evaluateDraft, normalise } from "../scripts/generate-site-config.mjs";
+import {
+  argumentValue,
+  evaluateDraft,
+  normalise,
+  prepareGenerationIntake,
+} from "../scripts/generate-site-config.mjs";
 
 describe("site configuration", () => {
+  it("keeps the validated SEO dossier attached to generated content", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning",
+        serviceAreas: "Tacoma",
+        industry: "home-services",
+        seoResearch: {
+          version: 1,
+          mode: "researched",
+          validatedQueries: [
+            {
+              query: "drain cleaning tacoma",
+              searchVolume: 90,
+              provenance: "dataforseo_keyword_overview",
+            },
+          ],
+          pageDecisions: [
+            {
+              type: "service",
+              title: "Drain cleaning",
+              provenance: "client_supplied",
+            },
+          ],
+          cost: { tasks: 2, usd: 0.07, limitUsd: 0.1 },
+          warnings: [],
+        },
+      },
+    );
+
+    expect(config.seoResearch).toMatchObject({
+      mode: "researched",
+      publishReady: true,
+      cost: { tasks: 2, usd: 0.07, limitUsd: 0.1 },
+    });
+    expect(config.seoResearch.validatedQueries[0].query).toBe(
+      "drain cleaning tacoma",
+    );
+    expect(config.locations.map((location: { name: string }) => location.name))
+      .toEqual(["Tacoma"]);
+  });
+
+  it("creates only location routes selected by grounded research", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning",
+        serviceAreas: "Tacoma, WA\nLakewood, WA",
+        industry: "home-services",
+        seoResearch: {
+          mode: "researched",
+          pageDecisions: [
+            {
+              type: "location",
+              title: "Tacoma WA",
+              provenance: "research_strategy",
+            },
+          ],
+          cost: { tasks: 2, usd: 0.07, limitUsd: 0.1 },
+        },
+      },
+    );
+
+    expect(
+      config.locations.map((location: { name: string }) => location.name),
+    ).toEqual(["Tacoma, WA"]);
+  });
+
+  it("preserves submitted service areas when research is only a baseline", () => {
+    const config = normalise({}, {
+      businessName: "Harbor Plumbing",
+      services: "Drain cleaning",
+      serviceAreas: "Tacoma, WA\nLakewood, WA",
+      industry: "home-services",
+      seoResearch: { mode: "baseline", pageDecisions: [] },
+    });
+    expect(config.business.serviceAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
+    expect(config.locations.map((location: { name: string }) => location.name))
+      .toEqual(["Tacoma, WA", "Lakewood, WA"]);
+  });
+
+  it("preserves submitted service areas when research selected no location pages", () => {
+    const config = normalise({}, {
+      businessName: "Harbor Plumbing",
+      services: "Drain cleaning",
+      serviceAreas: "Tacoma, WA\nLakewood, WA",
+      industry: "home-services",
+      seoResearch: { mode: "researched", pageDecisions: [] },
+    });
+    expect(config.business.serviceAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
+    expect(config.locations.map((location: { name: string }) => location.name))
+      .toEqual(["Tacoma, WA", "Lakewood, WA"]);
+  });
+
+  it("does not invent an argument value when an optional flag is absent", () => {
+    expect(argumentValue(["node", "script.mjs"], "--research")).toBe("");
+    expect(
+      argumentValue(
+        ["node", "script.mjs", "--research", "dossier.json"],
+        "--research",
+      ),
+    ).toBe("dossier.json");
+    expect(
+      argumentValue(["node", "script.mjs", "--research"], "--research"),
+    ).toBe("");
+  });
+
+  it("fails closed and bounds research before model generation", () => {
+    expect(
+      prepareGenerationIntake({ businessName: "Harbor Plumbing" }),
+    ).toMatchObject({
+      seoResearch: { mode: "baseline", publishReady: false },
+    });
+    const prepared = prepareGenerationIntake({
+      seoResearch: {
+        mode: "researched",
+        validatedQueries: Array.from({ length: 20 }, (_, index) => ({
+          query: `query ${index}`,
+        })),
+        evidence: Array.from({ length: 20 }, (_, index) => ({
+          url: `${index}`,
+        })),
+      },
+    });
+    expect(prepared.seoResearch?.validatedQueries).toHaveLength(12);
+    expect(prepared.seoResearch?.evidence).toHaveLength(6);
+  });
+
   it("uses client photos and logo metadata without substituting an unrelated stock image", () => {
     const config = normalise(
       {

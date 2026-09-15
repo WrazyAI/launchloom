@@ -1,17 +1,20 @@
 ---
 import site, { phoneHref } from "../lib/site";
-import { defaultRecipe } from "../lib/page-recipe";
-const sections = site.design?.sections || [];
-const recipe = site.design?.recipe || defaultRecipe(site);
+import type { DesignFamily } from "../lib/site";
+import { resolvePageRecipe } from "../lib/page-recipe";
+const page = resolvePageRecipe(site);
+const sections = page.sections;
+const recipe = page.recipe;
 const sectionId = (type: string, fallback?: string) =>
   sections.find((section) => section.type === type)?.id || fallback;
 const servicesId = sectionId("services", "services");
 const aboutId = sectionId("about", "about");
 const coverageId = sectionId("coverage");
 const contactId = sectionId("contact", "contact");
+const { family = page.family } = Astro.props as { family?: DesignFamily };
 ---
 
-<header class:list={["header-shell", `header-${recipe}`]}><div class="header wrap">
+<header class:list={["header-shell", `header-${recipe}`, `header-family-${family}`]}><div class="header wrap">
   <a class:list={["wordmark", { "wordmark--logo": Boolean(site.assets?.logo) }]} href="/">
     {site.assets?.logo && <img src={site.assets.logo} alt="" />}
     <span class="wordmark__name">{site.business.name}</span>

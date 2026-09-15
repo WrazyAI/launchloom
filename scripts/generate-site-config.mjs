@@ -13,6 +13,39 @@ const SHARED_CREATIVE_DIRECTION =
 const RECIPE_CREATIVE_DIRECTION =
   "For home care and care businesses, write for the person and family making a trust-sensitive decision: calm editorial language, routines and concerns, a clear first conversation, practical preparation, and reassurance without medical promises. Keep home care language distinct from treatment or aesthetics language. For local trades, use direct problem-led language: identify recognizable symptoms, coverage, what the customer should prepare, and the next service step. Do not promise price, arrival time, warranty, or availability unless supplied.";
 
+function seoResearchForConfig(value) {
+  if (!value || typeof value !== "object") return undefined;
+  const mode = ["researched", "context-only", "baseline"].includes(value.mode)
+    ? value.mode
+    : "baseline";
+  const list = (items, limit = 12) =>
+    (Array.isArray(items) ? items : []).slice(0, limit);
+  return {
+    version: 1,
+    mode,
+    publishReady: mode === "researched",
+    validatedQueries: list(value.validatedQueries),
+    customerQuestions: list(value.customerQuestions),
+    copyVocabulary: list(value.copyVocabulary, 16),
+    pageDecisions: list(value.pageDecisions),
+    prohibitedClaims: list(value.prohibitedClaims),
+    evidence: list(value.evidence, 6),
+    cost: {
+      tasks: Number(value.cost?.tasks) || 0,
+      usd: Number(value.cost?.usd) || 0,
+      limitUsd: Number(value.cost?.limitUsd) || 0.1,
+    },
+    warnings: list(value.warnings, 8),
+  };
+}
+
+export function prepareGenerationIntake(intake = {}) {
+  return {
+    ...intake,
+    seoResearch: seoResearchForConfig(intake.seoResearch || {}),
+  };
+}
+
 const STOCK_PACKS = {
   "home-care": {
     hero: "https://images.unsplash.com/photo-1543333995-a78aea2eee50?auto=format&fit=crop&w=1600&q=85",
@@ -79,6 +112,12 @@ function slugify(value) {
       .replace(/(^-|-$)/g, "")
       .slice(0, 60) || "client-site"
   );
+}
+
+export function argumentValue(argv, flag) {
+  const index = argv.indexOf(flag);
+  const value = index >= 0 ? argv[index + 1] : "";
+  return value && !value.startsWith("--") ? value : "";
 }
 
 function serviceIdentity(value) {
@@ -417,6 +456,39 @@ function requestedTypography(intake, fallback) {
   return fallback;
 }
 
+export function requestedDesignFamily(intake) {
+  const notes = [
+    intake.stylePreference,
+    intake.brandNotes,
+    intake.websiteGoals,
+    intake.additionalNotes,
+  ]
+    .map((value) => text(value, 1200))
+    .join(" ")
+    .toLowerCase();
+  if (
+    /masked cards?|shared image|image mosaic|mosaic|clinical portal/.test(notes)
+  )
+    return "image-mosaic";
+  if (/liquid glass|glassmorphism|atmospheric|cinematic editorial/.test(notes))
+    return "atmospheric-editorial";
+  if (
+    /cinematic|full-screen video|fullscreen video|luxury|premium jet/.test(
+      notes,
+    )
+  )
+    return "cinematic-premium";
+  if (
+    /project[- ]led|portfolio|case studies|project showcase|before and after/.test(
+      notes,
+    )
+  )
+    return "project-showcase";
+  if (/minimal|restrained|narrow column|clean white|studio minimal/.test(notes))
+    return "studio-minimal";
+  return undefined;
+}
+
 function designFor(kind, industry, intake = {}) {
   const recipe =
     kind === "home-care" || (industry === "wellness" && kind !== "fitness")
@@ -430,7 +502,11 @@ function designFor(kind, industry, intake = {}) {
     intake.stylePreference || "",
     intake.primaryColor || "",
   ].join("|");
-  const selected = selectDesignVariant(recipe, seed);
+  const selected = selectDesignVariant(
+    recipe,
+    seed,
+    requestedDesignFamily(intake),
+  );
   return {
     recipe,
     variantId: selected.id,
@@ -1107,6 +1183,20 @@ export function normalise(candidate, intake) {
     faqs: validatedFaqs.length ? validatedFaqs : base.conversion.faqs,
     ...featureConfig,
   };
+  const seoResearch = seoResearchForConfig(intake.seoResearch);
+  const selectedLocations = seoResearch?.mode === "researched"
+    ? seoResearch.pageDecisions
+        .filter((decision) => decision?.type === "location")
+        .map((decision) => slugify(String(decision.title || "")))
+    : [];
+  const researchedLocations = selectedLocations.length
+    ? new Set(selectedLocations)
+    : null;
+  const locationNames = researchedLocations
+    ? business.serviceAreas.filter((name) =>
+        researchedLocations.has(slugify(name)),
+      )
+    : business.serviceAreas;
   return removeEmDashes({
     preset,
     industry: base.industry,
@@ -1120,7 +1210,7 @@ export function normalise(candidate, intake) {
     differentiators: different.length ? different : base.differentiators,
     locations:
       base.industry === "home-services"
-        ? business.serviceAreas.map((name, index) => {
+        ? locationNames.map((name, index) => {
             const proposed = Array.isArray(value.locations)
               ? value.locations.find(
                   (location) => slugify(location?.name || "") === slugify(name),
@@ -1147,6 +1237,7 @@ export function normalise(candidate, intake) {
     conversion,
     design: designFor(base.businessKind, base.industry, intake),
     assetReport,
+    ...(seoResearch ? { seoResearch } : {}),
     ...(assets ? { assets } : {}),
     ...(intake.lead && typeof intake.lead === "object"
       ? { lead: intake.lead }
@@ -1182,7 +1273,7 @@ async function askModel(intake, effort, model = MODEL) {
         messages: [
           {
             role: "system",
-            content: `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`,
+            content: `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use its validated queries, customer questions, vocabulary, and page decisions as strategy context. Never present search metrics or SERP language as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`,
           },
           {
             role: "user",
@@ -1243,15 +1334,22 @@ async function refineDraft(intake, draft, report, model = MODEL) {
 export async function generateSiteConfigWithModel(intake, model = MODEL) {
   if (!process.env.OPENROUTER_API_KEY)
     throw new Error("OPENROUTER_API_KEY is required to generate client copy.");
+  const groundedIntake = prepareGenerationIntake(intake);
   let draft;
   try {
-    draft = normalise(await askModel(intake, "medium", model), intake);
+    draft = normalise(
+      await askModel(groundedIntake, "medium", model),
+      groundedIntake,
+    );
   } catch (firstError) {
     console.warn(
       "Low-effort generation failed; retrying once with high effort.",
       firstError.message,
     );
-    draft = normalise(await askModel(intake, "high", model), intake);
+    draft = normalise(
+      await askModel(groundedIntake, "high", model),
+      groundedIntake,
+    );
   }
   const initialReport = evaluateDraft(draft);
   if (!initialReport.issues.length)
@@ -1262,8 +1360,8 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
 
   try {
     const refined = normalise(
-      await refineDraft(intake, draft, initialReport, model),
-      intake,
+      await refineDraft(groundedIntake, draft, initialReport, model),
+      groundedIntake,
     );
     const finalReport = evaluateDraft(refined);
     const selected = finalReport.score >= initialReport.score ? refined : draft;
@@ -1293,13 +1391,16 @@ function extractIntake(body) {
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
-  const source = process.argv[process.argv.indexOf("--source") + 1];
-  const destination = process.argv[process.argv.indexOf("--out") + 1];
+  const source = argumentValue(process.argv, "--source");
+  const destination = argumentValue(process.argv, "--out");
+  const researchFile = argumentValue(process.argv, "--research");
   if (!source || !destination)
     throw new Error(
       "Usage: node generate-site-config.mjs --source intake.md --out site.config.json",
     );
   const intake = extractIntake(await fs.readFile(source, "utf8"));
+  if (researchFile)
+    intake.seoResearch = JSON.parse(await fs.readFile(researchFile, "utf8"));
   await fs.writeFile(
     destination,
     `${JSON.stringify(await generateSiteConfig(intake), null, 2)}\n`,

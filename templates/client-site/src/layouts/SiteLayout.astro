@@ -6,7 +6,13 @@ import ExitOffer from "../components/ExitOffer.astro";
 import "../styles/site.css";
 
 const { title = site.business.name, description = site.business.description } = Astro.props;
-const canonical = site.business.domain ? `https://${site.business.domain.replace(/^https?:\/\//, "").replace(/\/$/, "")}${Astro.url.pathname}` : undefined;
+const noIndex = import.meta.env.PUBLIC_REVIEW_MODE === "true";
+// The approved deployment origin is supplied at build time. A domain in the
+// intake is not necessarily connected to Pages and must not become canonical.
+const canonical = noIndex ? undefined : new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+const openGraphImage = site.images.hero
+  ? new URL(site.images.hero, Astro.site ?? Astro.url).href
+  : undefined;
 const structuredData = {
   "@context": "https://schema.org",
   "@type": site.industry === "home-services" ? "HomeAndConstructionBusiness" : "LocalBusiness",
@@ -27,10 +33,12 @@ const structuredDataJson = JSON.stringify(structuredData).replace(/</g, "\\u003c
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    {noIndex && <meta name="robots" content="noindex, nofollow" />}
     <meta name="theme-color" content={site.style.primaryColor} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    {openGraphImage && <meta property="og:image" content={openGraphImage} />}
     {canonical && <link rel="canonical" href={canonical} />}
     <script is:inline type="application/ld+json" set:html={structuredDataJson} />
     <title>{title}</title>

@@ -30,6 +30,10 @@ const template = path.join(repository, "templates/client-site/src");
 const files = new Set([
   "components/LeadForm.astro",
   "components/ReviewBanner.astro",
+  // SEO metadata is a shared release contract, not a bounded visual revision.
+  // Refresh it for older client repositories before rendering their previews.
+  "pages/robots.txt.ts",
+  "pages/sitemap.xml.ts",
 ]);
 if (
   String(config.business?.primaryCta || "")
@@ -102,6 +106,39 @@ for (const relative of files) {
   const destination = path.join(client, "src", relative);
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(source, destination);
+}
+// Upgrade only the known legacy canonical expression. Preserve any other
+// client-authored layout changes; an unknown layout must fail the release gate
+// rather than be overwritten during unrelated feedback.
+const layoutFile = path.join(client, "src/layouts/SiteLayout.astro");
+const legacyLayout = await fs.readFile(layoutFile, "utf8").catch((error) => {
+  if (error.code === "ENOENT") return "";
+  throw error;
+});
+const legacyCanonical = 'const canonical = site.business.domain ? `https://${site.business.domain.replace(/^https?:\\/\\//, "").replace(/\\/$/, "")}${Astro.url.pathname}` : undefined;';
+if (legacyLayout.includes(legacyCanonical)) {
+  const templateLayout = await fs.readFile(
+    path.join(template, "layouts/SiteLayout.astro"), "utf8",
+  );
+  const currentCanonical = templateLayout.match(/^const canonical = .*;$/mu)?.[0];
+  if (!currentCanonical) throw new Error("Shared canonical expression is missing.");
+  const currentRobots = templateLayout.match(
+    /^\s*\{noIndex && <meta name="robots"[^\n]+$/mu,
+  )?.[0]?.trim();
+  if (!currentRobots) throw new Error("Shared robots metadata is missing.");
+  const migratedLayout = legacyLayout
+    .replace(legacyCanonical, currentCanonical)
+    .replace(
+      /<\/head>/iu,
+      legacyLayout.includes('name="robots"')
+        ? "</head>"
+        : `  ${currentRobots}\n  </head>`,
+    );
+  await fs.writeFile(
+    layoutFile,
+    migratedLayout,
+    "utf8",
+  );
 }
 if (kinds.has("set_social_proof")) {
   const homepage = path.join(client, "src/pages/index.astro");

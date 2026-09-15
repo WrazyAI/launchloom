@@ -1,0 +1,15 @@
+{
+  "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
+  "type": "frontend",
+  "name": "Manual entry is a clear reversible action",
+  "description": "A user without a Google Business Profile can visibly switch to manual entry and return to lookup.",
+  "priority": "p1",
+  "planSteps": [
+    { "type": "action", "description": "Navigate to /onboard/" },
+    { "type": "assertion", "description": "Enter details manually appears as a visually distinct button next to the Google Business Profile fallback message" },
+    { "type": "action", "description": "Activate Enter details manually" },
+    { "type": "assertion", "description": "A Manual details panel is visible with a clickable Use Google lookup instead action" },
+    { "type": "action", "description": "Activate Use Google lookup instead" },
+    { "type": "assertion", "description": "The business listing search field and Find listing button are visible again" }
+  ]
+}

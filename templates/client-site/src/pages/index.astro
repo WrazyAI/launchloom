@@ -11,7 +11,7 @@ const { density, typography } = page.treatment;
 ---
 
 <SiteLayout>
-  <Header />
+  <Header family={page.family} />
   <main class:list={["site-main", `recipe-${page.recipe}`, `layout-${site.conversion?.layout || "editorial-authority"}`, `density-${density}`, `type-${typography}`, `composition-${page.composition}`, page.variantId && `design-${page.variantId}`]}>
     <PageSections page={page} />
   </main>

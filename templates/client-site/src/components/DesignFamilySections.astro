@@ -1,0 +1,1045 @@
+---
+import site, {
+  phoneHref,
+  primaryCtaHref,
+  isDirectionsPrimary,
+} from "../lib/site";
+import type { ResolvedPageRecipe } from "../lib/page-recipe";
+import LeadForm from "./LeadForm.astro";
+import LocationMap from "./LocationMap.astro";
+import SocialProof from "./SocialProof.astro";
+
+interface Props {
+  page: ResolvedPageRecipe;
+}
+
+const { page } = Astro.props;
+const copy = site.copy || {};
+const family = page.family;
+const care =
+  site.businessKind === "home-care" ||
+  (site.industry === "wellness" && site.businessKind !== "fitness");
+const trades =
+  site.businessKind === "garage-door" || site.industry === "home-services";
+const hospitality = site.industry === "hospitality";
+const contactId =
+  page.sections.find((section) => section.type === "contact")?.id || "contact";
+const process = site.conversion?.process?.length
+  ? site.conversion.process
+  : ["Share what you need", "Review the next step", "Move forward clearly"];
+const faqs = site.conversion?.faqs || [];
+const proofPoints = site.differentiators.filter(Boolean).slice(0, 4);
+const galleryImages = [
+  site.assets?.photoThree,
+  site.assets?.teamPhoto,
+  site.images.secondary,
+].filter((image): image is string => Boolean(image));
+const heroHeading = copy.heroHeading || site.business.tagline;
+const heroBody = copy.heroBody || site.business.description;
+const heroKicker =
+  copy.heroKicker ||
+  (trades
+    ? "Local service with a clear next step"
+    : care
+      ? "Care that begins with listening"
+      : "Built around what matters next");
+const servicesHeading =
+  copy.servicesHeading ||
+  (trades
+    ? "Start with the problem you can see."
+    : hospitality
+      ? "Made for the moment in front of you."
+      : care
+        ? "Choose the support that fits today."
+        : "Choose the option that fits today.");
+const servicesIntro =
+  copy.servicesIntro ||
+  (trades
+    ? "Choose the service need that is closest to what is happening."
+    : "Explore the available options and choose a useful next step.");
+const contactHeading =
+  isDirectionsPrimary() &&
+  (!copy.contactHeading || copy.contactHeading.trim().toLowerCase() === "get directions")
+    ? `Contact ${site.business.name}`
+    : copy.contactHeading || site.business.primaryCta;
+---
+
+<div class:list={["design-family", `family-${family}`]}>
+  {
+    page.sections.map((section) => (
+      <Fragment>
+        {section.type === "hero" && (
+          <section id={section.id} class:list={["family-hero", section.variant && `variant-${section.variant}`]}>
+            <div class="family-hero__copy">
+              <span class="family-kicker">{heroKicker}</span>
+              <h1>{heroHeading}</h1>
+              <p>{heroBody}</p>
+              {site.business.offer && (
+                <div class="family-offer">{site.business.offer}</div>
+              )}
+              <div class="family-actions">
+                <a class="family-button" href={primaryCtaHref(Astro.url.pathname)}>
+                  {site.business.primaryCta}
+                </a>
+                {site.business.phone && (
+                  <a class="family-link" href={phoneHref(site.business.phone)}>
+                    Call {site.business.phone}
+                  </a>
+                )}
+              </div>
+            </div>
+            <div class="family-hero__media">
+              {site.images.hero ? (
+                <Fragment>
+                  <figure class="family-media family-media--main">
+                    <img src={site.images.hero} alt={`${site.business.name} service context`} />
+                  </figure>
+                  <figure class="family-media family-media--detail" aria-hidden="true">
+                    <img src={site.images.hero} alt="" />
+                  </figure>
+                  <div class="family-media family-media--message">
+                    <span>{trades ? "Start with the problem" : "Start with what matters"}</span>
+                  </div>
+                </Fragment>
+              ) : (
+                <div class="family-media family-media--art" aria-label={site.business.name}>
+                  <span>{site.business.name}</span>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {section.type === "trust" && proofPoints.length > 0 && (
+          <section id={section.id} class:list={["family-trust", section.variant && `variant-${section.variant}`]} aria-label="Why choose us">
+            {proofPoints.map((point) => (
+              <p>{point}</p>
+            ))}
+          </section>
+        )}
+
+        {section.type === "services" && (
+          <section id={section.id} class:list={["family-services", section.variant && `variant-${section.variant}`]}>
+            <header class="family-heading">
+              <span class="family-kicker">
+                {trades
+                  ? "What needs attention?"
+                  : hospitality
+                    ? "What is available"
+                    : "Ways to begin"}
+              </span>
+              <h2>{servicesHeading}</h2>
+              <p>{servicesIntro}</p>
+            </header>
+            <div class="family-service-list">
+              {site.services.map((service) => (
+                <a class="family-service" href={`/services/${service.slug}/`}>
+                  <div class="family-service__title">
+                    <h3>{service.name}</h3>
+                    <span aria-hidden="true">↗</span>
+                  </div>
+                  <p>{service.description}</p>
+                  <b>
+                    {trades
+                      ? "View service"
+                      : hospitality
+                        ? "Explore this offering"
+                        : "Explore this option"}
+                  </b>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {section.type === "about" && (
+          <section id={section.id} class:list={["family-about", section.variant && `variant-${section.variant}`]}>
+            {site.images.secondary && (
+              <figure>
+                <img
+                  src={site.images.secondary}
+                  alt={`${site.business.name} ${trades ? "work context" : "business setting"}`}
+                  loading="lazy"
+                />
+              </figure>
+            )}
+            <div>
+              <span class="family-kicker">{copy.aboutKicker || "Our approach"}</span>
+              <h2>{copy.aboutHeading || "A clearer way to move forward."}</h2>
+              <p>{copy.aboutBody || site.business.description}</p>
+              <a class="family-link" href={`#${contactId}`}>Talk with our team</a>
+            </div>
+          </section>
+        )}
+
+        {section.type === "process" && (
+          <section id={section.id} class:list={["family-process", section.variant && `variant-${section.variant}`]}>
+            <header class="family-heading">
+              <span class="family-kicker">{copy.processKicker || "What happens next"}</span>
+              <h2>{copy.processHeading || "Know the next useful step."}</h2>
+            </header>
+            <ol>
+              {process.map((step, index) => (
+                <li>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <p>{step}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {section.type === "social-proof" && site.socialProof && (
+          <SocialProof id={section.id} />
+        )}
+
+        {section.type === "gallery" && galleryImages.length > 0 && (
+          <section id={section.id} class:list={["family-gallery", section.variant && `variant-${section.variant}`]}>
+            <header class="family-heading">
+              <span class="family-kicker">A closer look</span>
+              <h2>{trades ? "See the work in context." : "See the experience up close."}</h2>
+            </header>
+            <div>
+              {galleryImages.map((image, index) => (
+                <figure>
+                  <img
+                    src={image}
+                    alt={`${site.business.name} ${index + 1}`}
+                    loading="lazy"
+                  />
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {section.type === "coverage" && (
+          <section id={section.id} class:list={["family-coverage", section.variant && `variant-${section.variant}`]}>
+            <header>
+              <span class="family-kicker">Where we work</span>
+              <h2>Service across the communities we know.</h2>
+              <p>Share your address and we will confirm current coverage.</p>
+            </header>
+            <div>
+              {site.locations.length
+                ? site.locations.map((location) => (
+                    <a href={`/locations/${location.slug}/`}>{location.name}</a>
+                  ))
+                : site.business.serviceAreas.map((area) => <span>{area}</span>)}
+            </div>
+          </section>
+        )}
+
+        {section.type === "faq" && faqs.length > 0 && (
+          <section id={section.id} class:list={["family-faq", section.variant && `variant-${section.variant}`]}>
+            <header class="family-heading">
+              <span class="family-kicker">{copy.faqKicker || "Questions, answered"}</span>
+              <h2>{copy.faqHeading || "Useful details before you reach out."}</h2>
+            </header>
+            <div>
+              {faqs.map((faq) => (
+                <details>
+                  <summary>
+                    {faq.question}<span aria-hidden="true">+</span>
+                  </summary>
+                  <p>{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {section.type === "contact" && (
+          <Fragment>
+            {section.id !== "contact" && (
+              <span id="contact" class="anchor-alias" aria-hidden="true" />
+            )}
+            <LocationMap />
+            <section id={section.id} class:list={["family-contact", section.variant && `variant-${section.variant}`]}>
+              <div>
+                <span class="family-kicker">{copy.contactKicker || "Take the next step"}</span>
+                <h2>{contactHeading}</h2>
+                <p>
+                  {copy.formIntro ||
+                    site.business.offer ||
+                    "Share a few useful details and the team will follow up with the next step."}
+                </p>
+                {(site.business.address || site.business.hours) && (
+                  <p class="family-contact__details">
+                    {[site.business.address, site.business.hours].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {site.business.phone && (
+                  <a class="family-phone" href={phoneHref(site.business.phone)}>
+                    {site.business.phone}
+                  </a>
+                )}
+              </div>
+              <LeadForm />
+            </section>
+          </Fragment>
+        )}
+      </Fragment>
+    ))
+  }
+</div>
+
+<style is:global>
+  .design-family {
+    --family-space: clamp(4.5rem, 9vw, 8.5rem);
+    color: var(--ink);
+    background: var(--cream);
+  }
+  .anchor-alias {
+    position: relative;
+    display: block;
+    width: 0;
+    height: 0;
+    scroll-margin-top: 5rem;
+  }
+  .design-family h1,
+  .design-family h2,
+  .design-family h3,
+  .design-family p {
+    margin-top: 0;
+  }
+  .family-kicker {
+    display: block;
+    margin-bottom: 1rem;
+    color: var(--brand-ink);
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .family-button {
+    display: inline-flex;
+    min-height: 3.1rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 1.3rem;
+    background: var(--brand);
+    color: var(--on-brand);
+    font-weight: 850;
+    text-decoration: none;
+  }
+  .family-link,
+  .family-phone {
+    font-weight: 800;
+    text-underline-offset: 0.4rem;
+  }
+
+  .header-family-image-mosaic .header {
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+  }
+  .header-family-image-mosaic .wordmark,
+  .header-family-image-mosaic .header-call {
+    font-family: Arial, sans-serif;
+    font-weight: 900;
+  }
+  .header-family-cinematic-premium,
+  .header-family-atmospheric-editorial,
+  .header-family-project-showcase {
+    color: #fff;
+    background: #080b0b;
+  }
+  .header-family-cinematic-premium .header,
+  .header-family-atmospheric-editorial .header,
+  .header-family-project-showcase .header {
+    background: transparent;
+  }
+  .header-family-cinematic-premium .wordmark,
+  .header-family-atmospheric-editorial .wordmark {
+    font-weight: 500;
+  }
+  .header-family-project-showcase .wordmark {
+    font-family: Arial, sans-serif;
+    font-weight: 950;
+    text-transform: uppercase;
+  }
+  .header-family-studio-minimal .header {
+    width: min(54rem, calc(100% - 2rem));
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+  .header-family-studio-minimal .wordmark {
+    font-weight: 500;
+  }
+  .family-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    align-items: center;
+    margin-top: 1.8rem;
+  }
+  .family-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(22rem, 1.1fr);
+    gap: clamp(2rem, 6vw, 6rem);
+    align-items: center;
+    min-height: 42rem;
+    padding: var(--family-space) max(1.25rem, calc((100vw - 1160px) / 2));
+  }
+  .family-hero__copy h1 {
+    max-width: 48rem;
+    margin-bottom: 1.5rem;
+    font-size: clamp(3.6rem, 7vw, 7.6rem);
+    line-height: 0.88;
+    letter-spacing: -0.07em;
+  }
+  .family-hero__copy > p {
+    max-width: 35rem;
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.65;
+  }
+  .family-offer {
+    max-width: 34rem;
+    margin-top: 1.2rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    font-size: 0.85rem;
+    font-weight: 750;
+  }
+  .family-hero__media {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    grid-template-rows: 1fr 0.72fr;
+    gap: 0.55rem;
+    min-height: 37rem;
+  }
+  .family-media {
+    position: relative;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    background: var(--hero-surface);
+  }
+  .family-media--main {
+    grid-row: 1 / 3;
+  }
+  .family-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .family-media--detail img {
+    object-position: 78% center;
+    transform: scale(1.45);
+  }
+  .family-media--message,
+  .family-media--art {
+    display: grid;
+    place-items: end start;
+    padding: 1.4rem;
+    background: var(--brand);
+    color: var(--on-brand);
+    font-size: 1.25rem;
+    font-weight: 750;
+  }
+  .family-media--art {
+    grid-column: 1 / -1;
+    grid-row: 1 / 3;
+    place-items: center;
+    font-size: clamp(2rem, 5vw, 5rem);
+    text-align: center;
+  }
+  .family-trust {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .family-trust p {
+    margin: 0;
+    padding: 1.5rem max(1.25rem, calc((100vw - 1160px) / 8));
+    border-right: 1px solid var(--line);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+  .family-services,
+  .family-process,
+  .family-gallery,
+  .family-faq,
+  .family-contact,
+  .family-coverage {
+    padding: var(--family-space) max(1.25rem, calc((100vw - 1160px) / 2));
+  }
+  .family-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(16rem, 0.8fr);
+    gap: 3rem;
+    align-items: end;
+    margin-bottom: 3.5rem;
+  }
+  .family-heading .family-kicker {
+    grid-column: 1 / -1;
+    margin-bottom: -2rem;
+  }
+  .family-heading h2,
+  .family-about h2,
+  .family-contact h2,
+  .family-coverage h2 {
+    max-width: 52rem;
+    margin-bottom: 0;
+    font-size: clamp(3rem, 5.6vw, 5.8rem);
+    line-height: 0.92;
+    letter-spacing: -0.065em;
+  }
+  .family-heading p {
+    max-width: 35rem;
+    margin-bottom: 0;
+    color: var(--muted);
+  }
+  .family-service-list {
+    border-top: 1px solid var(--line);
+  }
+  .family-service {
+    display: grid;
+    grid-template-columns: minmax(14rem, 0.8fr) minmax(16rem, 1.2fr) auto;
+    gap: 2rem;
+    align-items: start;
+    padding: 1.7rem 0;
+    border-bottom: 1px solid var(--line);
+    color: inherit;
+    text-decoration: none;
+  }
+  .family-service__title {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+  }
+  .family-service h3 {
+    margin: 0;
+    font-size: clamp(1.5rem, 2.5vw, 2.5rem);
+    line-height: 1;
+    letter-spacing: -0.045em;
+  }
+  .family-service p {
+    max-width: 36rem;
+    margin: 0;
+    color: var(--muted);
+  }
+  .family-service b {
+    font-size: 0.76rem;
+  }
+  .family-about {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(3rem, 8vw, 8rem);
+    align-items: center;
+    min-height: 42rem;
+    padding: var(--family-space) max(1.25rem, calc((100vw - 1160px) / 2));
+    background: var(--brand-surface);
+    color: var(--on-brand-surface);
+  }
+  .family-about figure {
+    height: 34rem;
+    margin: 0;
+    overflow: hidden;
+  }
+  .family-about img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .family-about p {
+    max-width: 37rem;
+    line-height: 1.7;
+  }
+  .family-about .family-kicker {
+    color: inherit;
+    opacity: 0.75;
+  }
+  .family-process ol {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .family-process li {
+    min-height: 13rem;
+    padding: 1.6rem;
+    border-top: 2px solid var(--brand);
+    background: color-mix(in srgb, var(--hero-surface) 52%, var(--cream));
+  }
+  .family-process li span {
+    font-size: 0.7rem;
+    font-weight: 900;
+  }
+  .family-process li p {
+    margin: 4rem 0 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .family-gallery > div {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 0.8rem;
+  }
+  .family-gallery figure {
+    height: 30rem;
+    margin: 0;
+    overflow: hidden;
+  }
+  .family-gallery figure:nth-child(3n) {
+    grid-column: 1 / -1;
+    height: 38rem;
+  }
+  .family-gallery img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .family-coverage {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    background: var(--ink);
+    color: var(--cream);
+  }
+  .family-coverage .family-kicker {
+    color: inherit;
+    opacity: 0.7;
+  }
+  .family-coverage > div {
+    display: grid;
+    align-content: center;
+  }
+  .family-coverage a,
+  .family-coverage > div > span {
+    padding: 1rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--cream) 30%, transparent);
+    color: inherit;
+    text-decoration: none;
+    font-weight: 750;
+  }
+  .family-faq > div {
+    max-width: 54rem;
+    border-top: 1px solid var(--line);
+  }
+  .family-faq details {
+    padding: 1.4rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .family-faq summary {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: 750;
+  }
+  .family-faq details p {
+    max-width: 43rem;
+    margin: 1rem 0 0;
+    color: var(--muted);
+  }
+  .family-contact {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: clamp(3rem, 8vw, 8rem);
+    background: var(--hero-surface);
+  }
+  .family-contact > div > p {
+    max-width: 34rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .family-phone {
+    display: block;
+    margin-top: 2rem;
+    font-size: 1.25rem;
+  }
+
+  .family-image-mosaic .family-hero {
+    min-height: calc(100vh - 6rem);
+    padding: 1rem;
+    gap: 0.55rem;
+    grid-template-columns: 0.8fr 1.2fr;
+  }
+  .family-image-mosaic .family-hero__copy {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: clamp(2rem, 5vw, 5rem);
+    border-radius: 1.1rem;
+    background: var(--hero-surface);
+  }
+  .family-image-mosaic .family-hero__copy h1 {
+    font-family: Arial, sans-serif;
+    font-weight: 900;
+  }
+  .family-image-mosaic .family-hero__media,
+  .family-image-mosaic .family-media {
+    border-radius: 1.1rem;
+  }
+  .family-image-mosaic .family-services {
+    padding-top: 1rem;
+  }
+  .family-image-mosaic .family-service-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+    border: 0;
+  }
+  .family-image-mosaic .family-service {
+    display: flex;
+    min-height: 20rem;
+    flex-direction: column;
+    padding: 1.8rem;
+    border: 0;
+    border-radius: 1rem;
+    background: color-mix(in srgb, var(--hero-surface) 70%, white);
+  }
+  .family-image-mosaic .family-service p {
+    margin-top: auto;
+  }
+  .family-image-mosaic .family-service b {
+    margin-top: 1rem;
+  }
+
+  .family-cinematic-premium {
+    background: var(--ink);
+    color: var(--cream);
+  }
+  .family-cinematic-premium .family-hero {
+    position: relative;
+    display: grid;
+    min-height: calc(100vh - 4rem);
+    place-items: center;
+    overflow: hidden;
+    text-align: center;
+  }
+  .family-cinematic-premium .family-hero__copy {
+    position: relative;
+    z-index: 2;
+    max-width: 62rem;
+  }
+  .family-cinematic-premium .family-hero__copy h1 {
+    max-width: 62rem;
+    font-weight: 500;
+  }
+  .family-cinematic-premium .family-hero__copy > p,
+  .family-cinematic-premium .family-heading p,
+  .family-cinematic-premium .family-service p {
+    color: color-mix(in srgb, var(--cream) 72%, transparent);
+  }
+  .family-cinematic-premium .family-actions {
+    justify-content: center;
+  }
+  .family-cinematic-premium .family-kicker {
+    color: var(--cream);
+  }
+  .family-cinematic-premium .family-hero__media {
+    position: absolute;
+    inset: 0;
+    display: block;
+    opacity: 0.46;
+  }
+  .family-cinematic-premium .family-media--main {
+    position: absolute;
+    inset: 0;
+  }
+  .family-cinematic-premium .family-media--detail,
+  .family-cinematic-premium .family-media--message {
+    display: none;
+  }
+  .family-cinematic-premium .family-hero:after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #0005, #0002 50%, #0008);
+  }
+  .family-cinematic-premium .family-services,
+  .family-cinematic-premium .family-process,
+  .family-cinematic-premium .family-gallery,
+  .family-cinematic-premium .family-faq {
+    background: var(--ink);
+    color: var(--cream);
+  }
+  .family-cinematic-premium .family-service {
+    border-color: color-mix(in srgb, var(--cream) 24%, transparent);
+  }
+  .family-cinematic-premium .family-process li {
+    color: var(--ink);
+  }
+
+  .family-atmospheric-editorial {
+    background: #080b0b;
+    color: #fff;
+  }
+  .family-atmospheric-editorial .family-hero {
+    position: relative;
+    min-height: calc(100vh - 4rem);
+    overflow: hidden;
+  }
+  .family-atmospheric-editorial .family-hero__copy {
+    position: relative;
+    z-index: 2;
+    padding: clamp(2rem, 5vw, 5rem);
+    border: 1px solid #ffffff55;
+    border-radius: 1.5rem;
+    background: #ffffff08;
+    box-shadow: inset 0 1px #ffffff33;
+    backdrop-filter: blur(22px);
+  }
+  .family-atmospheric-editorial .family-hero__copy h1,
+  .family-atmospheric-editorial .family-heading h2,
+  .family-atmospheric-editorial .family-about h2 {
+    font-family: Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+  }
+  .family-atmospheric-editorial .family-hero__copy > p,
+  .family-atmospheric-editorial .family-heading p,
+  .family-atmospheric-editorial .family-service p {
+    color: #ffffffb8;
+  }
+  .family-atmospheric-editorial .family-kicker {
+    color: #fff;
+  }
+  .family-atmospheric-editorial .family-media {
+    border-radius: 1.5rem;
+    border: 1px solid #ffffff33;
+  }
+  .family-atmospheric-editorial .family-services,
+  .family-atmospheric-editorial .family-process,
+  .family-atmospheric-editorial .family-gallery,
+  .family-atmospheric-editorial .family-faq {
+    background: #080b0b;
+    color: #fff;
+  }
+  .family-atmospheric-editorial .family-service-list,
+  .family-atmospheric-editorial .family-service,
+  .family-atmospheric-editorial .family-faq > div,
+  .family-atmospheric-editorial .family-faq details {
+    border-color: #ffffff33;
+  }
+  .family-atmospheric-editorial .family-service-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    border: 0;
+  }
+  .family-atmospheric-editorial .family-service {
+    display: flex;
+    min-height: 23rem;
+    flex-direction: column;
+    padding: 1.5rem;
+    border: 1px solid #ffffff44;
+    border-radius: 1.3rem;
+    background: #ffffff08;
+    backdrop-filter: blur(16px);
+  }
+  .family-atmospheric-editorial .family-service p {
+    margin-top: auto;
+  }
+  .family-atmospheric-editorial .family-service b {
+    margin-top: 1rem;
+  }
+  .family-atmospheric-editorial .family-process li {
+    border-color: #ffffff44;
+    background: #ffffff0c;
+  }
+
+  .family-project-showcase .family-hero {
+    position: relative;
+    min-height: 45rem;
+    align-items: end;
+    overflow: hidden;
+    background: #0c0c0c;
+    color: #d7e2ea;
+  }
+  .family-project-showcase .family-hero__copy {
+    position: relative;
+    z-index: 2;
+  }
+  .family-project-showcase .family-hero__copy h1 {
+    max-width: 56rem;
+    font-family: Arial, sans-serif;
+    font-size: clamp(4.5rem, 10vw, 11rem);
+    font-weight: 950;
+    line-height: 0.76;
+    text-transform: uppercase;
+  }
+  .family-project-showcase .family-hero__copy > p {
+    color: #d7e2eacc;
+  }
+  .family-project-showcase .family-hero__media {
+    align-self: stretch;
+    min-height: 34rem;
+  }
+  .family-project-showcase .family-media {
+    border-radius: 2.2rem;
+  }
+  .family-project-showcase .family-gallery > div {
+    display: block;
+  }
+  .family-project-showcase .family-gallery figure {
+    position: sticky;
+    top: 6rem;
+    height: min(72vh, 46rem);
+    margin-bottom: 7rem;
+    padding: 0.8rem;
+    border: 2px solid var(--ink);
+    border-radius: 2.5rem;
+    background: var(--cream);
+  }
+  .family-project-showcase .family-gallery img {
+    border-radius: 1.9rem;
+  }
+  .family-project-showcase .family-service-list {
+    border-top: 2px solid var(--ink);
+  }
+  .family-project-showcase .family-service h3 {
+    font-family: Arial, sans-serif;
+    font-size: clamp(2.2rem, 4vw, 4.6rem);
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .family-studio-minimal .family-hero {
+    display: block;
+    min-height: 0;
+    padding-top: 6rem;
+  }
+  .family-studio-minimal .family-hero__copy {
+    max-width: 32rem;
+    margin: auto;
+  }
+  .family-studio-minimal .family-hero__copy h1 {
+    font-size: clamp(3rem, 5vw, 4.8rem);
+    line-height: 1.04;
+    letter-spacing: -0.055em;
+  }
+  .family-studio-minimal .family-hero__copy > p {
+    color: var(--ink);
+  }
+  .family-studio-minimal .family-hero__media {
+    width: min(70rem, 100%);
+    min-height: 28rem;
+    margin: 5rem auto 0;
+  }
+  .family-studio-minimal .family-media {
+    border-radius: 1.2rem;
+  }
+  .family-studio-minimal .family-services,
+  .family-studio-minimal .family-faq {
+    width: min(54rem, 100%);
+    margin: auto;
+  }
+  .family-studio-minimal .family-heading {
+    display: block;
+  }
+  .family-studio-minimal .family-heading .family-kicker {
+    margin-bottom: 1rem;
+  }
+  .family-studio-minimal .family-service {
+    grid-template-columns: 1fr auto;
+  }
+  .family-studio-minimal .family-service p {
+    grid-column: 1 / -1;
+  }
+  .family-studio-minimal .family-contact {
+    margin: 3rem;
+    border-radius: 2.5rem;
+    background: var(--ink);
+    color: var(--cream);
+  }
+  .family-studio-minimal .family-contact .family-kicker,
+  .family-studio-minimal .family-contact > div > p {
+    color: inherit;
+    opacity: 0.78;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .design-family *,
+    .design-family *:before,
+    .design-family *:after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  @media (max-width: 760px) {
+    .family-hero,
+    .family-image-mosaic .family-hero,
+    .family-about,
+    .family-contact,
+    .family-coverage {
+      grid-template-columns: 1fr;
+    }
+    .family-hero,
+    .family-image-mosaic .family-hero {
+      padding: 4.5rem 1rem;
+    }
+    .family-hero__copy h1,
+    .family-project-showcase .family-hero__copy h1 {
+      font-size: clamp(3.4rem, 17vw, 5rem);
+      line-height: 0.88;
+    }
+    .family-hero__media {
+      min-height: 28rem;
+    }
+    .family-trust {
+      grid-template-columns: 1fr;
+    }
+    .family-trust p {
+      border-right: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .family-heading {
+      display: block;
+    }
+    .family-heading .family-kicker {
+      margin-bottom: 1rem;
+    }
+    .family-service,
+    .family-studio-minimal .family-service {
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+    }
+    .family-service p {
+      grid-column: 1 / -1;
+    }
+    .family-service b {
+      grid-column: 1 / -1;
+    }
+    .family-process ol,
+    .family-atmospheric-editorial .family-service-list,
+    .family-image-mosaic .family-service-list {
+      grid-template-columns: 1fr;
+    }
+    .family-image-mosaic .family-service {
+      min-height: 15rem;
+    }
+    .family-about figure {
+      height: 25rem;
+    }
+    .family-gallery > div {
+      grid-template-columns: 1fr;
+    }
+    .family-gallery figure,
+    .family-gallery figure:nth-child(3n) {
+      grid-column: auto;
+      height: 23rem;
+    }
+    .family-project-showcase .family-gallery figure {
+      height: 60vh;
+      margin-bottom: 3rem;
+      border-radius: 1.6rem;
+    }
+    .family-studio-minimal .family-contact {
+      margin: 1rem;
+      border-radius: 1.5rem;
+    }
+    .family-cinematic-premium .family-hero__media {
+      min-height: 0;
+    }
+  }
+</style>

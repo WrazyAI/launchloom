@@ -1,5 +1,8 @@
 ---
+import site from "../lib/site";
+
 const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$/, "");
+const publishReady = !site.seoResearch || site.seoResearch.publishReady;
 ---
 
 <aside class="ll-review" id="ll-review" hidden aria-label="LaunchLoom website review">
@@ -83,7 +86,7 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
   }
 </style>
 
-<script is:inline define:vars={{ launchloomUrl }}>
+<script is:inline define:vars={{ launchloomUrl, publishReady }}>
   const root = document.querySelector("#ll-review");
   const token = new URLSearchParams(window.location.search).get("review");
   const claims = (() => {
@@ -126,6 +129,13 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
       ? "Leave clear internal notes, or approve this exact version to publish and invite the client."
       : "Tap what applies, then leave a clear note. We will review it before publishing an update.";
     approve.toggleAttribute("hidden", !developer);
+    if (developer && !publishReady) {
+      root.querySelector(".ll-review__summary").innerHTML =
+        "<span aria-hidden=\"true\">▣</span> Internal review. SEO research is incomplete, so publishing is blocked.";
+      approve.disabled = true;
+      approve.textContent = "SEO research required";
+      approve.title = "Rerun the intake after SEO research succeeds.";
+    }
     const setModal = (visible) => {
       modal.toggleAttribute("hidden", !visible);
       if (visible) window.dispatchEvent(new CustomEvent("launchloom:overlay-open", { detail: { id: "review" } }));

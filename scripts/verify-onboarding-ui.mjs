@@ -96,6 +96,22 @@ try {
     .fill("Clear strategy and careful execution");
   await page.getByRole("button", { name: "Continue" }).click();
 
+  await page.locator('[name="priorityService"]').fill("Website design");
+  await page.locator('[name="seoNotSure"]').check();
+  if (!(await page.locator('[name="searchPhrases"]').isDisabled()))
+    failures.push("Hidden SEO search phrases still submit when not-sure is selected.");
+  await page.locator('[name="seoNotSure"]').uncheck();
+  if (await page.locator('[name="searchPhrases"]').isDisabled())
+    failures.push("SEO search phrases stay disabled after not-sure is cleared.");
+  await page
+    .locator('[name="searchPhrases"]')
+    .fill("website designer austin\nlocal web design");
+  await page
+    .locator('[name="customerProblems"]')
+    .fill("Our current site does not explain why clients should contact us.");
+  await page.locator('[name="priorityLocations"]').fill("Austin");
+  await page.getByRole("button", { name: "Continue" }).click();
+
   const colorInput = page.locator('[name="primaryColor"]');
   if (!(await colorInput.isVisible()))
     failures.push("Primary color picker is not visibly usable.");
@@ -103,6 +119,7 @@ try {
   if (!pickerBox || pickerBox.width < 60 || pickerBox.height < 50)
     failures.push("Primary color picker still renders as a small line.");
   await colorInput.fill("#d4ff00");
+  await page.locator('[name="leadEmail"]').fill("leads@example.com");
   if (!(await page.getByText("#D4FF00", { exact: true }).isVisible()))
     failures.push("Primary color picker does not show its selected value.");
 
@@ -119,11 +136,43 @@ try {
     failures.push("Image preview does not identify the selected file.");
 
   await page.getByRole("button", { name: "Back" }).click();
+  if (
+    (await page.locator('[name="priorityService"]').inputValue()) !==
+    "Website design"
+  )
+    failures.push(
+      "SEO priority service was lost after returning to an earlier step.",
+    );
+  if (
+    !(await page.locator('[name="searchPhrases"]').inputValue()).includes(
+      "local web design",
+    )
+  )
+    failures.push(
+      "SEO search phrases were lost after returning to an earlier step.",
+    );
   await page.getByRole("button", { name: "Continue" }).click();
   if ((await colorInput.inputValue()) !== "#d4ff00")
     failures.push("Primary color was lost after returning to an earlier step.");
   if (!(await preview.isVisible()))
     failures.push("Image preview was lost after returning to an earlier step.");
+
+  await page.getByRole("button", { name: "Continue" }).click();
+  const priorityServiceSummary = page
+    .locator("dl > div")
+    .filter({
+      has: page.getByText("Priority service", { exact: true }),
+    })
+    .getByRole("definition");
+  if (
+    !(await priorityServiceSummary
+      .getByText("Website design", { exact: true })
+      .isVisible())
+  )
+    failures.push("Confirmation does not show the SEO priority service.");
+  if (!(await page.getByText(/website designer austin/).isVisible()))
+    failures.push("Confirmation does not show the supplied search phrases.");
+  await page.getByRole("button", { name: "Back" }).click();
 
   await page.screenshot({
     path: path.join(screenshotDir, "image-preview-desktop.png"),
