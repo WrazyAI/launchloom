@@ -46,6 +46,35 @@ describe("GLM visual quality gate", () => {
     expect(serialized).not.toContain("apiUrl");
   });
 
+  it("describes the selected experience renderer instead of stale legacy sections", () => {
+    const experienceConfig = structuredClone(config);
+    experienceConfig.design.experience = {
+      packId: "bold-utility",
+      blueprintVersion: 2,
+      fingerprint:
+        "bold-utility|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+    };
+
+    const manifest: any = buildSafeVisualManifest(experienceConfig);
+
+    expect(manifest.design.renderer).toMatchObject({
+      type: "experience-pack",
+      packId: "bold-utility",
+      navigation: "utility-pill",
+      hero: "editorial-dialogue",
+      conversion: "embedded-qualifier",
+    });
+    expect(manifest.design.requiredSections).toEqual([
+      "hero",
+      "conversion",
+      "services",
+      "faq",
+      "contact",
+    ]);
+    expect(manifest.design.sections).toBeUndefined();
+    expect(manifest.design.allowedVariants).toEqual({});
+  });
+
   it("applies only bounded layout operations", () => {
     const next = structuredClone(config);
     const applied = applySafeVisualOperations(next, [

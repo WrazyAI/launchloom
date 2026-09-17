@@ -20,6 +20,15 @@ describe("site configuration", () => {
     expect(config.industry).toBe("other");
     expect(config.images.hero).toBeUndefined();
     expect(config.images.secondary).toBeUndefined();
+    expect(config.conversion.qualification[0].options).toEqual([
+      "Mobile dog grooming",
+      "Bath and coat care",
+      "Paw care",
+      "Not sure yet",
+    ]);
+    expect(config.conversion.qualification[0].options).not.toContain(
+      "A new project",
+    );
   });
 
   it("does not mistake carpet cleaning for a pet business", () => {
