@@ -99,6 +99,9 @@ describe("experience-pack compiler", () => {
     expect(workflow).toMatch(
       /Upload experience bakeoff evidence[\s\S]*experience-bakeoff-screenshots[\s\S]*\.launchloom\/experience-bakeoff\.json/,
     );
+    expect(workflow).toMatch(
+      /Upload experience bakeoff evidence[\s\S]*include-hidden-files: true/,
+    );
   });
 
   it("defines a factual, visually distinct second-business canary", () => {

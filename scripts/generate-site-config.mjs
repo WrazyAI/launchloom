@@ -546,7 +546,7 @@ function layoutFor(industry) {
   return "editorial-authority";
 }
 
-function qualificationFor(industry, kind = industry) {
+function qualificationFor(industry, kind = industry, services = []) {
   if (kind === "home-care")
     return [
       {
@@ -606,17 +606,21 @@ function qualificationFor(industry, kind = industry) {
         options: ["This week", "Next week", "Just exploring"],
       },
     ];
+  const serviceOptions = [
+    ...new Set(
+      services
+        .map((service) => text(service?.name || service, 100))
+        .filter(Boolean),
+    ),
+  ].slice(0, 3);
   return [
     {
       name: "interest",
       label: "What would you like to discuss?",
       placeholder: "Select an option",
-      options: [
-        "A new project",
-        "Improving an existing service",
-        "A consultation",
-        "Not sure yet",
-      ],
+      options: serviceOptions.length
+        ? [...serviceOptions, "Not sure yet"]
+        : ["A consultation", "General questions", "Not sure yet"],
     },
   ];
 }
@@ -949,7 +953,7 @@ function fallback(intake) {
     ),
     conversion: {
       layout: layoutFor(industry),
-      qualification: qualificationFor(industry, businessKind),
+      qualification: qualificationFor(industry, businessKind, services),
       process: [
         "Tell us what you need",
         "Get clear next steps",

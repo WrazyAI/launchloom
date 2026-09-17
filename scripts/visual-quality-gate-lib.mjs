@@ -14,6 +14,65 @@ const SHARED_VARIANTS = {
   process: ["compact"],
   contact: ["compact"],
 };
+const EXPERIENCE_CONTRACTS = {
+  "cinematic-narrative": {
+    navigation: "minimal-inline",
+    hero: "image-narrative",
+    conversion: "discovery-ribbon",
+    services: "editorial-index",
+    proof: "principle-line",
+    closing: "cinematic-inquiry",
+    sectionOrder: [
+      "hero",
+      "conversion",
+      "services",
+      "about",
+      "gallery",
+      "social-proof",
+      "faq",
+      "location-map",
+      "contact",
+    ],
+  },
+  "bold-utility": {
+    navigation: "utility-pill",
+    hero: "editorial-dialogue",
+    conversion: "embedded-qualifier",
+    services: "service-chapters",
+    proof: "quiet-ledger",
+    closing: "conversation-handoff",
+    sectionOrder: [
+      "hero",
+      "conversion",
+      "services",
+      "trust",
+      "about",
+      "social-proof",
+      "faq",
+      "location-map",
+      "contact",
+    ],
+  },
+  "kinetic-poster": {
+    navigation: "command-bar",
+    hero: "poster-split",
+    conversion: "quick-request",
+    services: "diagnostic-list",
+    proof: "evidence-strip",
+    closing: "action-poster",
+    sectionOrder: [
+      "hero",
+      "conversion",
+      "services",
+      "coverage",
+      "process",
+      "social-proof",
+      "faq",
+      "location-map",
+      "contact",
+    ],
+  },
+};
 
 function publicText(value, limit = 500) {
   return String(value || "")
@@ -21,6 +80,69 @@ function publicText(value, limit = 500) {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, limit);
+}
+
+function safeDesignManifest(config) {
+  const packId = publicText(config.design?.experience?.packId, 50);
+  const experience = EXPERIENCE_CONTRACTS[packId];
+  if (experience) {
+    return {
+      recipe: publicText(config.design?.recipe, 60),
+      renderer: {
+        type: "experience-pack",
+        packId,
+        blueprintVersion: 2,
+        navigation: experience.navigation,
+        hero: experience.hero,
+        conversion: experience.conversion,
+        services: experience.services,
+        proof: experience.proof,
+        closing: experience.closing,
+      },
+      navigationLinks: ["Services", "FAQs", "Contact"],
+      requiredSections: ["hero", "conversion", "services", "faq", "contact"],
+      optionalSections: experience.sectionOrder.filter(
+        (section) =>
+          !["hero", "conversion", "services", "faq", "contact"].includes(
+            section,
+          ),
+      ),
+      sectionOrder: [...experience.sectionOrder],
+      allowedVariants: {},
+      treatment: null,
+    };
+  }
+  return {
+    recipe: publicText(config.design?.recipe, 60),
+    renderer: { type: "legacy-design-family" },
+    sections: (config.design?.sections || []).slice(0, 14).map((section) => ({
+      id: publicText(section.id, 70),
+      type: publicText(section.type, 40),
+      variant: publicText(section.variant, 50),
+    })),
+    requiredSections: (config.design?.sections || [])
+      .slice(0, 14)
+      .map((section) => publicText(section.type, 40)),
+    allowedVariants: Object.fromEntries(
+      (config.design?.sections || [])
+        .slice(0, 14)
+        .map((section) => [
+          publicText(section.type, 40),
+          [
+            ...new Set([
+              publicText(section.variant, 50),
+              ...(SHARED_VARIANTS[section.type] || []),
+            ]),
+          ],
+        ]),
+    ),
+    treatment: config.design?.treatment
+      ? {
+          density: publicText(config.design.treatment.density, 20),
+          typography: publicText(config.design.treatment.typography, 20),
+        }
+      : null,
+  };
 }
 
 export function buildSafeVisualManifest(config) {
@@ -69,33 +191,7 @@ export function buildSafeVisualManifest(config) {
         .filter((key) => config.copy?.[key])
         .map((key) => [key, publicText(config.copy[key], 600)]),
     ),
-    design: {
-      recipe: publicText(config.design?.recipe, 60),
-      sections: (config.design?.sections || []).slice(0, 14).map((section) => ({
-        id: publicText(section.id, 70),
-        type: publicText(section.type, 40),
-        variant: publicText(section.variant, 50),
-      })),
-      allowedVariants: Object.fromEntries(
-        (config.design?.sections || [])
-          .slice(0, 14)
-          .map((section) => [
-            publicText(section.type, 40),
-            [
-              ...new Set([
-                publicText(section.variant, 50),
-                ...(SHARED_VARIANTS[section.type] || []),
-              ]),
-            ],
-          ]),
-      ),
-      treatment: config.design?.treatment
-        ? {
-            density: publicText(config.design.treatment.density, 20),
-            typography: publicText(config.design.treatment.typography, 20),
-          }
-        : null,
-    },
+    design: safeDesignManifest(config),
     assets: {
       hasLogo: Boolean(config.assets?.logo),
       hasClientHero: Boolean(config.assets?.photoOne),
@@ -174,6 +270,7 @@ export function validateVisualAudit(value) {
 }
 
 export function applySafeVisualOperations(config, operations) {
+  if (EXPERIENCE_CONTRACTS[config.design?.experience?.packId]) return [];
   const applied = [];
   for (const operation of operations.slice(0, 3)) {
     if (!ALLOWED_KINDS.has(operation.kind)) continue;

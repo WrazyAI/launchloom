@@ -228,6 +228,7 @@ jobs:
           path: |
             ${{ runner.temp }}/experience-bakeoff-screenshots
             ${{ steps.branch.outputs.dir }}/.launchloom/experience-bakeoff.json
+          include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14
       - name: Track pending developer delivery
