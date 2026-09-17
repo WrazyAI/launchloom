@@ -75,6 +75,21 @@ describe("GLM visual quality gate", () => {
     expect(manifest.design.allowedVariants).toEqual({});
   });
 
+  it("keeps versionless pack identifiers on the legacy visual contract", () => {
+    const legacyConfig = structuredClone(config);
+    legacyConfig.design.experience = { packId: "bold-utility" };
+
+    const manifest: any = buildSafeVisualManifest(legacyConfig);
+
+    expect(manifest.design.renderer.type).toBe("legacy-design-family");
+    expect(manifest.design.sections).toHaveLength(3);
+    expect(
+      applySafeVisualOperations(legacyConfig, [
+        { kind: "set_section_variant", sectionType: "hero", variant: "centered" },
+      ] as any),
+    ).toHaveLength(1);
+  });
+
   it("applies only bounded layout operations", () => {
     const next = structuredClone(config);
     const applied = applySafeVisualOperations(next, [

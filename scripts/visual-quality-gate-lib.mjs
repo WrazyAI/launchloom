@@ -84,7 +84,10 @@ function publicText(value, limit = 500) {
 
 function safeDesignManifest(config) {
   const packId = publicText(config.design?.experience?.packId, 50);
-  const experience = EXPERIENCE_CONTRACTS[packId];
+  const experience =
+    config.design?.experience?.blueprintVersion === 2
+      ? EXPERIENCE_CONTRACTS[packId]
+      : undefined;
   if (experience) {
     return {
       recipe: publicText(config.design?.recipe, 60),
@@ -270,7 +273,11 @@ export function validateVisualAudit(value) {
 }
 
 export function applySafeVisualOperations(config, operations) {
-  if (EXPERIENCE_CONTRACTS[config.design?.experience?.packId]) return [];
+  if (
+    config.design?.experience?.blueprintVersion === 2 &&
+    EXPERIENCE_CONTRACTS[config.design.experience.packId]
+  )
+    return [];
   const applied = [];
   for (const operation of operations.slice(0, 3)) {
     if (!ALLOWED_KINDS.has(operation.kind)) continue;
