@@ -188,6 +188,84 @@ function text(value, limit = 240) {
   return excerpt.slice(0, wordEnd > 0 ? wordEnd : limit).trim();
 }
 
+const WRITING_SYSTEMS = {
+  Latin: /\p{Script=Latin}/u,
+  Han: /\p{Script=Han}/u,
+  Hiragana: /\p{Script=Hiragana}/u,
+  Katakana: /\p{Script=Katakana}/u,
+  Hangul: /\p{Script=Hangul}/u,
+  Cyrillic: /\p{Script=Cyrillic}/u,
+  Arabic: /\p{Script=Arabic}/u,
+  Hebrew: /\p{Script=Hebrew}/u,
+  Devanagari: /\p{Script=Devanagari}/u,
+  Thai: /\p{Script=Thai}/u,
+  Greek: /\p{Script=Greek}/u,
+};
+const SCRIPT_NEUTRAL_LETTERS = /[\p{Script=Common}\p{Script=Inherited}]/u;
+
+function writingSystems(value) {
+  const systems = new Set();
+  for (const character of String(value || "")) {
+    if (!/\p{Letter}/u.test(character)) continue;
+    if (SCRIPT_NEUTRAL_LETTERS.test(character)) continue;
+    const matched = Object.entries(WRITING_SYSTEMS).find(([, pattern]) =>
+      pattern.test(character),
+    );
+    systems.add(matched?.[0] || "Other");
+  }
+  return systems;
+}
+
+function writingSystemFamily(value) {
+  const systems = writingSystems(value);
+  if (systems.has("Hiragana") || systems.has("Katakana")) return "Japanese";
+  if (systems.has("Hangul")) return "Korean";
+  const nonLatin = [...systems].filter((system) => system !== "Latin");
+  return nonLatin[0] || "Latin";
+}
+
+function matchesWritingSystem(value, clientSource) {
+  const candidate = writingSystems(value);
+  if (!candidate.size) return true;
+  const family = writingSystemFamily(clientSource);
+  if (family === "Japanese") {
+    const allowed = new Set(["Latin", "Han", "Hiragana", "Katakana"]);
+    return (
+      ["Han", "Hiragana", "Katakana"].some((system) =>
+        candidate.has(system),
+      ) && [...candidate].every((system) => allowed.has(system))
+    );
+  }
+  if (family === "Korean") {
+    const allowed = new Set(["Latin", "Han", "Hangul"]);
+    return (
+      candidate.has("Hangul") &&
+      [...candidate].every((system) => allowed.has(system))
+    );
+  }
+  const allowed =
+    family === "Latin" ? new Set(["Latin"]) : new Set(["Latin", family]);
+  return (
+    candidate.has(family) &&
+    [...candidate].every((system) => allowed.has(system))
+  );
+}
+
+function safeGeneratedText(
+  value,
+  fallback,
+  clientSource,
+  limit = 240,
+  clientFallback = "",
+) {
+  const candidate = text(value, limit);
+  if (matchesWritingSystem(candidate, clientSource)) return candidate;
+  const deterministicFallback = text(fallback, limit);
+  if (matchesWritingSystem(deterministicFallback, clientSource))
+    return deterministicFallback;
+  return text(clientFallback, limit);
+}
+
 function wordCount(value) {
   return String(value || "")
     .trim()
@@ -971,6 +1049,13 @@ function fallback(intake) {
 
 export function normalise(candidate, intake) {
   const base = fallback(intake);
+  const clientSource = Object.values(intake || {})
+    .filter((value) => typeof value === "string")
+    .join(" ");
+  const clientLanguageFallback = text(
+    intake.differentiators || intake.services || intake.businessName,
+    180,
+  );
   const value = candidate && typeof candidate === "object" ? candidate : {};
   const preset =
     value.preset === "home-services" ? "home-services" : base.preset;
@@ -1020,22 +1105,38 @@ export function normalise(candidate, intake) {
     const fallbackSupport = decisionSupportFor(base.businessKind, name);
     return {
       name,
-      description: String(
+      description: safeGeneratedText(
         usefulServiceDescription(
           service.description || base.services[index]?.description,
           name,
         ),
+        usefulServiceDescription(base.services[index]?.description, name),
+        clientSource,
+        180,
+        clientLanguageFallback,
       ),
       slug: slugify(service.slug || service.name || `service-${index + 1}`),
       decisionSupport: {
-        scope: text(proposedSupport.scope || fallbackSupport.scope, 260),
-        nextStep: text(
-          proposedSupport.nextStep || fallbackSupport.nextStep,
+        scope: safeGeneratedText(
+          proposedSupport.scope || fallbackSupport.scope,
+          fallbackSupport.scope,
+          clientSource,
           260,
+          clientLanguageFallback,
         ),
-        preparation: text(
-          proposedSupport.preparation || fallbackSupport.preparation,
+        nextStep: safeGeneratedText(
+          proposedSupport.nextStep || fallbackSupport.nextStep,
+          fallbackSupport.nextStep,
+          clientSource,
           260,
+          clientLanguageFallback,
+        ),
+        preparation: safeGeneratedText(
+          proposedSupport.preparation || fallbackSupport.preparation,
+          fallbackSupport.preparation,
+          clientSource,
+          260,
+          clientLanguageFallback,
         ),
       },
     };
@@ -1047,16 +1148,35 @@ export function normalise(candidate, intake) {
   const business = {
     ...base.business,
     tagline: conciseHeadline(
-      proposedBusiness.tagline || base.business.tagline,
+      safeGeneratedText(
+        proposedBusiness.tagline || base.business.tagline,
+        base.business.tagline,
+        clientSource,
+        180,
+        clientLanguageFallback,
+      ),
       base.business.tagline,
     ),
-    description: text(
+    description: safeGeneratedText(
       proposedBusiness.description || base.business.description,
+      base.business.description,
+      clientSource,
       520,
+      clientLanguageFallback,
     ),
   };
   const rawProposedDifferentiators = Array.isArray(value.differentiators)
-    ? value.differentiators.map((item) => text(item, 500)).filter(Boolean)
+    ? value.differentiators
+        .map((item) =>
+          safeGeneratedText(
+            item,
+            "",
+            clientSource,
+            500,
+            clientLanguageFallback,
+          ),
+        )
+        .filter(Boolean)
     : [];
   const proposedDifferentiators = rawProposedDifferentiators
     .flatMap(proofStatements)
@@ -1125,15 +1245,36 @@ export function normalise(candidate, intake) {
       placement: "brand",
       source: "client",
     });
-  const suppliedCopy =
+  const rawSuppliedCopy =
     value.copy && typeof value.copy === "object" ? value.copy : {};
+  const defaultSiteCopy = defaultCopy(
+    business,
+    base.industry,
+    base.businessKind,
+  );
+  const suppliedCopy = Object.fromEntries(
+    Object.entries(rawSuppliedCopy).map(([key, candidateValue]) => [
+      key,
+      safeGeneratedText(
+        candidateValue,
+        defaultSiteCopy[key] || "",
+        clientSource,
+        180,
+        clientLanguageFallback,
+      ),
+    ]),
+  );
   const copy = Object.fromEntries(
-    Object.entries(defaultCopy(business, base.industry, base.businessKind)).map(
-      ([key, fallbackValue]) => [
+    Object.entries(defaultSiteCopy).map(([key, fallbackValue]) => [
         key,
-        text(suppliedCopy[key] || fallbackValue, 180),
-      ],
-    ),
+        safeGeneratedText(
+          suppliedCopy[key] || fallbackValue,
+          fallbackValue,
+          clientSource,
+          180,
+          clientLanguageFallback,
+        ),
+      ]),
   );
   copy.heroHeading = conciseHeadline(
     suppliedCopy.heroHeading || copy.heroHeading || business.tagline,
@@ -1180,13 +1321,34 @@ export function normalise(candidate, intake) {
       ? rawConversion.process
       : base.conversion.process
   )
-    .map(processStepText)
+    .map((step, index) =>
+      safeGeneratedText(
+        processStepText(step),
+        base.conversion.process[index] || "Tell us what you need",
+        clientSource,
+        120,
+        clientLanguageFallback,
+      ),
+    )
     .filter(Boolean)
     .slice(0, 4);
   const validatedFaqs = proposedFaqs
-    .map((faq) => ({
-      question: text(faq?.question, 160),
-      answer: text(faq?.answer, 360),
+    .map((faq, index) => ({
+      question: safeGeneratedText(
+        faq?.question,
+        base.conversion.faqs[index]?.question || "What happens next?",
+        clientSource,
+        160,
+        clientLanguageFallback,
+      ),
+      answer: safeGeneratedText(
+        faq?.answer,
+        base.conversion.faqs[index]?.answer ||
+          "Contact the team to discuss the most useful next step.",
+        clientSource,
+        360,
+        clientLanguageFallback,
+      ),
     }))
     .filter((faq) => faq.question && faq.answer)
     .slice(0, 5);
@@ -1243,15 +1405,21 @@ export function normalise(candidate, intake) {
             return {
               name,
               slug: slugify(name),
-              description: text(
+              description: safeGeneratedText(
                 proposed?.description ||
                   `${business.name} accepts service requests from ${name} and confirms availability by address.`,
+                `${business.name} accepts service requests from ${name} and confirms availability by address.`,
+                clientSource,
                 320,
+                clientLanguageFallback,
               ),
-              localNote: text(
+              localNote: safeGeneratedText(
                 proposed?.localNote ||
                   `Share the ${name} service address and the issue you are seeing so the team can confirm coverage and the next available step.`,
+                `Share the ${name} service address and the issue you are seeing so the team can confirm coverage and the next available step.`,
+                clientSource,
                 320,
+                clientLanguageFallback,
               ),
             };
           })
@@ -1297,7 +1465,7 @@ async function askModel(intake, effort, model = MODEL) {
         messages: [
           {
             role: "system",
-            content: `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-English website copy from verified facts. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use its validated queries, customer questions, vocabulary, and page decisions as strategy context. Never present search metrics or SERP language as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`,
+            content: `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use its validated queries, customer questions, vocabulary, and page decisions as strategy context. Never present search metrics or SERP language as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`,
           },
           {
             role: "user",
@@ -1335,7 +1503,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
         messages: [
           {
             role: "system",
-            content: `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`,
+            content: `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`,
           },
           {
             role: "user",
