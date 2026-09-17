@@ -221,6 +221,9 @@ describe("site configuration", () => {
       config.conversion.faqs,
     );
     expect(config.conversion.exitOffer.enabled).toBe(false);
+    expect(config.design.experience.packId).toMatch(
+      /^(cinematic-narrative|bold-utility|kinetic-poster)$/,
+    );
   });
 
   it("enables a restrained exit offer only when the client supplied a real offer", () => {

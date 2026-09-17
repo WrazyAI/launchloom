@@ -3,17 +3,24 @@ import SiteLayout from "../layouts/SiteLayout.astro";
 import Header from "../components/Header.astro";
 import PageSections from "../components/PageSections.astro";
 import Footer from "../components/Footer.astro";
+import ExperiencePage from "../components/ExperiencePage.astro";
 import site from "../lib/site";
 import { resolvePageRecipe } from "../lib/page-recipe";
+import { compileExperiencePack } from "../lib/experience-pack";
 
 const page = resolvePageRecipe(site);
 const { density, typography } = page.treatment;
+const experience = site.design?.experience?.packId
+  ? compileExperiencePack(site, page.recipe)
+  : null;
 ---
 
 <SiteLayout>
-  <Header family={page.family} />
-  <main class:list={["site-main", `recipe-${page.recipe}`, `layout-${site.conversion?.layout || "editorial-authority"}`, `density-${density}`, `type-${typography}`, `composition-${page.composition}`, page.variantId && `design-${page.variantId}`]}>
-    <PageSections page={page} />
-  </main>
-  <Footer />
+  {experience ? <ExperiencePage experience={experience} /> : <Fragment>
+    <Header family={page.family} />
+    <main class:list={["site-main", `recipe-${page.recipe}`, `layout-${site.conversion?.layout || "editorial-authority"}`, `density-${density}`, `type-${typography}`, `composition-${page.composition}`, page.variantId && `design-${page.variantId}`]}>
+      <PageSections page={page} />
+    </main>
+    <Footer />
+  </Fragment>}
 </SiteLayout>

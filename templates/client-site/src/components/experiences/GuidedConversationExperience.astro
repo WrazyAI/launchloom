@@ -1,0 +1,50 @@
+---
+import { phoneHref, primaryCtaHref } from "../../lib/site";
+import type { ExperienceBlueprintV2, ExperienceContent } from "../../lib/experience-pack";
+import LeadForm from "../LeadForm.astro";
+import LocationMap from "../LocationMap.astro";
+import SocialProof from "../SocialProof.astro";
+
+interface Props { program: ExperienceBlueprintV2; content: ExperienceContent }
+const { program, content } = Astro.props;
+const { brand, hero, services, proof, faqs, copy } = content;
+---
+
+<div class="xp-guide" data-experience-pack={program.packId} data-layout-fingerprint={program.fingerprint}>
+  <header class="xp-guide__header">
+    <a class="xp-guide__brand" href="/">{brand.logo && <img src={brand.logo} alt="" />}<span>{brand.name}</span></a>
+    <nav aria-label="Main navigation"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
+    <a class="xp-guide__cta" href={primaryCtaHref(Astro.url.pathname)}>{hero.primaryLabel}</a>
+  </header>
+
+  <main>
+    <section class="xp-guide__hero" id="opening">
+      <div class="xp-guide__hero-copy"><p class="xp-guide__eyebrow">{hero.kicker}</p><h1>{hero.heading}</h1><p>{hero.body}</p>{brand.phone && <a href={phoneHref(brand.phone)}>Call {brand.phone}</a>}</div>
+      {hero.image ? <figure><img src={hero.image} alt={`${brand.name} service context`} fetchpriority="high" /><figcaption>{hero.offer || "Start with what matters most today."}</figcaption></figure> : <div class="xp-guide__hero-art"><span>{brand.name}</span></div>}
+    </section>
+
+    <section class="xp-guide__qualifier" aria-label="Start a conversation">
+      <div><p class="xp-guide__eyebrow">A useful place to begin</p><h2>{copy.contactHeading || "Tell us what would help."}</h2><p>{copy.formIntro || "Choose the closest options so the first conversation can focus on what matters."}</p></div>
+      <LeadForm id="guided-experience-lead" />
+    </section>
+
+    <section class="xp-guide__services" id="services">
+      <header><p class="xp-guide__eyebrow">Ways we can help</p><h2>{copy.servicesHeading || "Choose the support that fits today."}</h2></header>
+      <div>{services.map((service) => <article><div class="xp-guide__dot" aria-hidden="true"></div><h3>{service.name}</h3><p>{service.description}</p><a href={`/services/${service.slug}/`}>Explore this service</a></article>)}</div>
+    </section>
+
+    {proof.length > 0 && <section class="xp-guide__proof" aria-label="Why choose us"><p>What guides the work</p><div>{proof.map((item) => <strong>{item}</strong>)}</div></section>}
+
+    <section class="xp-guide__about">
+      <p class="xp-guide__eyebrow">{copy.aboutKicker || "A thoughtful approach"}</p><h2>{copy.aboutHeading || "Clarity before commitment."}</h2><p>{copy.aboutBody || content.businessDescription}</p>
+    </section>
+
+    {content.hasSocialProof && <SocialProof id="social-proof" />}
+
+    {faqs.length > 0 && <section class="xp-guide__faqs" id="faqs"><header><p class="xp-guide__eyebrow">Questions</p><h2>{copy.faqHeading || "Useful details before you reach out."}</h2></header><div>{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
+
+    {content.showLocationMap && <LocationMap />}
+    <section class="xp-guide__contact" id="contact"><div><p class="xp-guide__eyebrow">Contact</p><h2>Continue the conversation.</h2></div><div>{brand.phone && <a href={phoneHref(brand.phone)}>{brand.phone}</a>}<a href={`mailto:${brand.email}`}>{brand.email}</a><p>{brand.address}</p></div></section>
+  </main>
+  <footer class="xp-guide__footer"><span>{brand.name}</span><span>© {new Date().getFullYear()}</span></footer>
+</div>

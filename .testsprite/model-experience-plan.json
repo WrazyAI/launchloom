@@ -1,0 +1,16 @@
+{
+  "planSteps": [
+    { "type": "action", "description": "Navigate to the model-authored experience gallery" },
+    { "type": "action", "description": "Open the pipeline-model experience that passed deterministic gates" },
+    { "type": "assertion", "description": "Verify the first viewport uses a two-column hero: readable promise and first-climb action on the left, plus a climbing photograph on the right occupying roughly one third to one half of the hero width with both the climber and wall visibly inside its bordered frame" },
+    { "type": "action", "description": "Scroll to the route finder" },
+    { "type": "action", "description": "Select the option for building climbing technique" },
+    { "type": "assertion", "description": "Verify the route-finder recommendation updates to the Intro to Bouldering starting path with a relevant next action" },
+    { "type": "action", "description": "Navigate to the frequently asked questions section" },
+    { "type": "action", "description": "Expand one frequently asked question" },
+    { "type": "action", "description": "Navigate to the contact section" },
+    { "type": "action", "description": "Complete the inquiry form with valid sample contact details and a short project note" },
+    { "type": "action", "description": "Submit the inquiry form" },
+    { "type": "assertion", "description": "Verify the submitted inquiry is replaced by an honest local-demo notice explaining that nothing was sent and providing a direct contact fallback" }
+  ]
+}

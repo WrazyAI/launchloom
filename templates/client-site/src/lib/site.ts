@@ -63,6 +63,13 @@ export type DesignFamily =
   | "atmospheric-editorial"
   | "project-showcase"
   | "studio-minimal";
+export type ExperiencePackId =
+  | "cinematic-narrative"
+  | "bold-utility"
+  | "kinetic-poster"
+  | "editorial-folio"
+  | "guided-conversation"
+  | "service-led";
 export type SiteConfig = {
   preset: "wellness" | "home-services";
   industry?: string;
@@ -172,6 +179,13 @@ export type SiteConfig = {
     treatment?: {
       density?: "compact" | "balanced" | "spacious";
       typography?: DesignTypography;
+    };
+    experience?: {
+      packId?: ExperiencePackId | string;
+      blueprintVersion?: 2;
+      candidatePackIds?: string[];
+      selectionMode?: "internal-bakeoff" | "requested" | "legacy";
+      fingerprint?: string;
     };
   };
   assetReport?: {

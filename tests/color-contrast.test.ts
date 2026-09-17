@@ -33,4 +33,11 @@ describe("rendered CSS color contrast", () => {
       contrast(palette.brandTextColor, palette.surfaceColor),
     ).toBeGreaterThanOrEqual(4.5);
   });
+
+  it("repairs mid-tone brand surfaces that miss AA with both black and white", () => {
+    const palette = resolvePalette({ primaryColor: "#9b7137" });
+    expect(
+      contrast(palette.brandSurfaceTextColor, palette.brandSurfaceColor),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
 });

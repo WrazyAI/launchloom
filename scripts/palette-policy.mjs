@@ -42,6 +42,21 @@ function readableAccent(primary, surface, ink) {
   return ink;
 }
 
+function readableSurface(color) {
+  let candidate = color;
+  let foreground = readableOn(candidate);
+  if (contrast(foreground, candidate) >= 4.5)
+    return { color: candidate, foreground };
+  const target = foreground === "#ffffff" ? "#000000" : "#ffffff";
+  for (let weight = 0.05; weight <= 1; weight += 0.05) {
+    candidate = mix(color, target, weight);
+    foreground = readableOn(candidate);
+    if (contrast(foreground, candidate) >= 4.5)
+      return { color: candidate, foreground };
+  }
+  return { color: "#111315", foreground: "#ffffff" };
+}
+
 /**
  * Keeps the submitted brand color intact for bounded accents and actions, then
  * derives separate tokens for text and large color fields. This prevents vivid
@@ -65,17 +80,18 @@ export function resolvePalette(input = {}) {
   );
   const lineColor = safeHex(input.lineColor, mix(inkColor, surfaceColor, 0.8));
   const exceptionallyBright = contrast("#000000", primaryColor) >= 10;
-  const brandSurfaceColor = safeHex(
+  const requestedBrandSurfaceColor = safeHex(
     input.brandSurfaceColor,
     exceptionallyBright ? mix(primaryColor, "#111315", 0.84) : primaryColor,
   );
+  const brandSurface = readableSurface(requestedBrandSurfaceColor);
 
   return {
     primaryColor,
     contrastColor: readableOn(primaryColor),
     brandTextColor: readableAccent(primaryColor, surfaceColor, inkColor),
-    brandSurfaceColor,
-    brandSurfaceTextColor: readableOn(brandSurfaceColor),
+    brandSurfaceColor: brandSurface.color,
+    brandSurfaceTextColor: brandSurface.foreground,
     surfaceColor,
     heroColor,
     inkColor,

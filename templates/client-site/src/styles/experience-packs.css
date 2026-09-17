@@ -1,0 +1,1132 @@
+.xp-folio,
+.xp-guide,
+.xp-service {
+  min-height: 100vh;
+}
+
+.xp-folio img,
+.xp-guide img,
+.xp-service img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.xp-folio__header,
+.xp-guide__header,
+.xp-service__header {
+  position: relative;
+  z-index: 10;
+}
+
+.xp-folio__header nav,
+.xp-guide__header nav,
+.xp-service__header nav {
+  display: flex;
+  gap: 1.35rem;
+}
+
+.xp-folio__header nav a,
+.xp-guide__header nav a,
+.xp-service__header nav a {
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+/* Editorial folio */
+.xp-folio {
+  --folio-black: #11110f;
+  --folio-paper: #efece4;
+  --folio-brass: color-mix(in srgb, var(--brand) 72%, #b78a42);
+  background: var(--folio-black);
+  color: var(--folio-paper);
+  font-family: Arial, sans-serif;
+}
+
+.xp-folio__header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 1rem 2.2vw;
+  border-bottom: 1px solid rgb(255 255 255 / 16%);
+}
+
+.xp-folio__mark {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: Georgia, serif;
+}
+
+.xp-folio__mark > span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid var(--folio-brass);
+  border-radius: 50%;
+  color: var(--folio-brass);
+}
+
+.xp-folio__mark img {
+  width: auto;
+  max-width: 8rem;
+  height: 2.2rem;
+  object-fit: contain;
+}
+
+.xp-folio__phone {
+  justify-self: end;
+  color: var(--folio-paper);
+  font-size: 0.75rem;
+}
+
+.xp-folio__hero {
+  padding: clamp(3rem, 8vw, 8rem) 3vw clamp(2rem, 5vw, 5rem);
+}
+
+.xp-folio__eyebrow,
+.xp-folio__services header > p,
+.xp-folio__faqs header > p {
+  color: var(--folio-brass);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.xp-folio__hero > h1 {
+  max-width: 13ch;
+  margin: 1rem 0 clamp(2.5rem, 7vw, 6rem);
+  font: 400 clamp(4.6rem, 12vw, 12.5rem)/0.76 Georgia, serif;
+  letter-spacing: -0.075em;
+}
+
+.xp-folio__hero-grid {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.55fr) minmax(26rem, 1.45fr);
+  gap: clamp(2rem, 7vw, 8rem);
+  align-items: end;
+}
+
+.xp-folio__intro {
+  padding-bottom: 2rem;
+}
+
+.xp-folio__intro p,
+.xp-folio__story p,
+.xp-folio__contact > div > p {
+  color: rgb(239 236 228 / 70%);
+  line-height: 1.7;
+}
+
+.xp-folio__intro > a,
+.xp-folio__ribbon a,
+.xp-folio__contact a {
+  display: inline-flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 1.4rem;
+  border-bottom: 1px solid currentColor;
+  color: var(--folio-paper);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.xp-folio__hero figure {
+  height: min(65rem, 72vw);
+  max-height: 780px;
+  margin: 0;
+  overflow: hidden;
+}
+
+.xp-folio__hero figure img {
+  transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.xp-folio__hero figure:hover img {
+  transform: scale(1.025);
+}
+
+.xp-folio__art {
+  display: grid;
+  min-height: 38rem;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 18%);
+  color: var(--folio-brass);
+  font: 400 clamp(2rem, 6vw, 7rem)/1 Georgia, serif;
+}
+
+.xp-folio__ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.35rem 3vw;
+  background: var(--brand-surface);
+  color: var(--on-brand-surface);
+}
+
+.xp-folio__ribbon p,
+.xp-folio__ribbon a {
+  margin: 0;
+  color: inherit;
+  font-weight: 800;
+}
+
+.xp-folio__services,
+.xp-folio__faqs,
+.xp-folio__contact {
+  padding: clamp(5rem, 9vw, 9rem) 6vw;
+}
+
+.xp-folio__services > header,
+.xp-folio__faqs > header {
+  display: grid;
+  grid-template-columns: 0.45fr 1.55fr;
+  gap: 2rem;
+  align-items: start;
+  margin-bottom: 4rem;
+}
+
+.xp-folio__services h2,
+.xp-folio__story h2,
+.xp-folio__faqs h2,
+.xp-folio__contact h2 {
+  max-width: 12ch;
+  margin: 0;
+  font: 400 clamp(3rem, 6.8vw, 7.5rem)/0.88 Georgia, serif;
+  letter-spacing: -0.06em;
+}
+
+.xp-folio__service-index {
+  border-top: 1px solid rgb(255 255 255 / 24%);
+}
+
+.xp-folio__service-index > a {
+  display: grid;
+  grid-template-columns: minmax(16rem, 0.8fr) minmax(18rem, 1.2fr) auto;
+  gap: 3rem;
+  align-items: start;
+  padding: 2rem 0;
+  border-bottom: 1px solid rgb(255 255 255 / 24%);
+  color: var(--folio-paper);
+}
+
+.xp-folio__service-index h3 {
+  margin: 0;
+  font: 400 clamp(1.7rem, 3.2vw, 3.5rem)/0.95 Georgia, serif;
+}
+
+.xp-folio__service-index p {
+  max-width: 36rem;
+  margin: 0;
+  color: rgb(239 236 228 / 64%);
+  line-height: 1.55;
+}
+
+.xp-folio__service-index span {
+  color: var(--folio-brass);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.xp-folio__story {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: clamp(3rem, 8vw, 9rem);
+  padding: 3vw 6vw clamp(6rem, 10vw, 11rem);
+  min-height: 145vh;
+  align-items: start;
+}
+
+.xp-folio__story figure {
+  position: sticky;
+  top: 8vh;
+  height: 84vh;
+  max-height: 820px;
+  margin: 0;
+}
+
+.xp-folio__story > div {
+  padding-top: 32vh;
+}
+
+.xp-folio__proof {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid rgb(255 255 255 / 22%);
+  border-bottom: 1px solid rgb(255 255 255 / 22%);
+}
+
+.xp-folio__proof p {
+  margin: 0;
+  padding: 2rem 3vw;
+  border-right: 1px solid rgb(255 255 255 / 22%);
+  font: 400 clamp(1.2rem, 2vw, 2rem)/1.1 Georgia, serif;
+}
+
+.xp-folio__faqs > div {
+  max-width: 58rem;
+  margin-left: auto;
+  border-top: 1px solid rgb(255 255 255 / 24%);
+}
+
+.xp-folio__faqs details {
+  padding: 1.4rem 0;
+  border-bottom: 1px solid rgb(255 255 255 / 24%);
+}
+
+.xp-folio__faqs summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  font-family: Georgia, serif;
+  font-size: 1.35rem;
+}
+
+.xp-folio__faqs details p {
+  max-width: 44rem;
+  color: rgb(239 236 228 / 68%);
+  line-height: 1.6;
+}
+
+.xp-folio__contact {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: clamp(3rem, 8vw, 9rem);
+  background: #1a1916;
+}
+
+.xp-folio__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 3vw;
+  border-top: 1px solid rgb(255 255 255 / 20%);
+  color: rgb(239 236 228 / 60%);
+  font-size: 0.7rem;
+}
+
+/* Guided conversation */
+.xp-guide {
+  --guide-green: var(--ink);
+  --guide-mist: color-mix(in srgb, var(--hero-surface) 72%, #f6f3ea);
+  background: #f7f5ee;
+  color: var(--ink);
+  font-family: Arial, sans-serif;
+}
+
+.xp-guide__header {
+  display: flex;
+  width: min(1180px, calc(100% - 2rem));
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin: 1rem auto;
+  padding: 0.6rem 0.7rem 0.6rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 86%);
+}
+
+.xp-guide__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: Georgia, serif;
+  font-weight: 700;
+}
+
+.xp-guide__brand img {
+  width: auto;
+  max-width: 7rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+.xp-guide__cta {
+  padding: 0.85rem 1.2rem;
+  border-radius: 999px;
+  background: var(--brand-surface);
+  color: var(--on-brand-surface);
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.xp-guide__hero {
+  display: grid;
+  grid-template-columns: 0.92fr 1.08fr;
+  min-height: 43rem;
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+  padding: clamp(3rem, 7vw, 7rem) max(1.25rem, calc((100vw - 1180px) / 2));
+}
+
+.xp-guide__eyebrow {
+  margin-bottom: 1rem;
+  color: var(--brand-ink);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.xp-guide__hero h1,
+.xp-guide__qualifier h2,
+.xp-guide__services h2,
+.xp-guide__about h2,
+.xp-guide__faqs h2,
+.xp-guide__contact h2 {
+  margin: 0 0 1.5rem;
+  font: 400 clamp(3.5rem, 6.8vw, 7.2rem)/0.9 Georgia, serif;
+  letter-spacing: -0.065em;
+}
+
+.xp-guide__hero-copy > p:not(.xp-guide__eyebrow) {
+  max-width: 34rem;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.xp-guide__hero-copy > a {
+  display: inline-block;
+  margin-top: 1.3rem;
+  border-bottom: 1px solid currentColor;
+  font-weight: 800;
+}
+
+.xp-guide__hero figure {
+  position: relative;
+  height: 37rem;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 12rem 12rem 1rem 1rem;
+}
+
+.xp-guide__hero figcaption {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  padding: 1rem 1.2rem;
+  border-radius: 0.8rem;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 750;
+}
+
+.xp-guide__hero-art {
+  display: grid;
+  min-height: 34rem;
+  place-items: center;
+  border-radius: 12rem 12rem 1rem 1rem;
+  background: var(--guide-mist);
+  font: 400 3rem/1 Georgia, serif;
+}
+
+.xp-guide__qualifier {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: clamp(2rem, 7vw, 8rem);
+  padding: clamp(4rem, 8vw, 8rem) max(1.25rem, calc((100vw - 1180px) / 2));
+  background: var(--guide-mist);
+}
+
+.xp-guide__qualifier > div > p:last-child {
+  max-width: 28rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.xp-guide__services,
+.xp-guide__faqs {
+  padding: clamp(5rem, 9vw, 9rem) max(1.25rem, calc((100vw - 1180px) / 2));
+}
+
+.xp-guide__services > header,
+.xp-guide__faqs > header {
+  max-width: 48rem;
+  margin-bottom: 4rem;
+}
+
+.xp-guide__services > div {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.xp-guide__services article {
+  display: grid;
+  min-height: 24rem;
+  align-content: start;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid var(--line);
+  border-radius: 1.5rem;
+  background: #fff;
+}
+
+.xp-guide__dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-bottom: auto;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+.xp-guide__services h3 {
+  margin: 5rem 0 1rem;
+  font: 400 clamp(1.8rem, 3vw, 3rem)/1 Georgia, serif;
+}
+
+.xp-guide__services article p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.xp-guide__services article a {
+  margin-top: auto;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.xp-guide__proof {
+  display: grid;
+  grid-template-columns: 0.55fr 1.45fr;
+  gap: 3rem;
+  padding: 2.5rem max(1.25rem, calc((100vw - 1180px) / 2));
+  background: var(--guide-green);
+  color: #fff;
+}
+
+.xp-guide__proof > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+}
+
+.xp-guide__about {
+  max-width: 58rem;
+  margin: auto;
+  padding: clamp(6rem, 12vw, 12rem) 1.25rem;
+  text-align: center;
+}
+
+.xp-guide__about p:last-child {
+  max-width: 42rem;
+  margin: auto;
+  color: var(--muted);
+  font-size: 1.08rem;
+  line-height: 1.75;
+}
+
+.xp-guide__faqs {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 5rem;
+  background: #fff;
+}
+
+.xp-guide__faqs details {
+  padding: 1.4rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.xp-guide__faqs summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  font-family: Georgia, serif;
+  font-size: 1.25rem;
+}
+
+.xp-guide__faqs details p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.xp-guide__contact {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 3rem;
+  align-items: end;
+  padding: clamp(5rem, 9vw, 9rem) max(1.25rem, calc((100vw - 1180px) / 2));
+  background: var(--brand-surface);
+  color: var(--on-brand-surface);
+}
+
+.xp-guide__contact .xp-guide__eyebrow {
+  color: inherit;
+}
+
+.xp-guide__contact a {
+  display: block;
+  margin: 0.6rem 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.xp-guide__footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.4rem max(1.25rem, calc((100vw - 1180px) / 2));
+  background: var(--brand-surface);
+  color: var(--on-brand-surface);
+  font-size: 0.72rem;
+}
+
+/* Service-led */
+.xp-service {
+  --service-dark: #101b19;
+  background: #f6f3eb;
+  color: var(--service-dark);
+  font-family: Arial, sans-serif;
+}
+
+.xp-service__header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 5rem;
+  padding: 0 2.5vw;
+  border-top: 5px solid var(--brand);
+  border-bottom: 1px solid #cfcac0;
+  background: #fff;
+}
+
+.xp-service__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.xp-service__brand img {
+  width: auto;
+  max-width: 8rem;
+  height: 2.5rem;
+  object-fit: contain;
+}
+
+.xp-service__call {
+  display: grid;
+  justify-self: end;
+  text-align: right;
+  font-weight: 900;
+}
+
+.xp-service__call span {
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.xp-service__hero {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  min-height: 42rem;
+  background: var(--service-dark);
+  color: #fff;
+}
+
+.xp-service__hero > div:first-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(3rem, 7vw, 7rem) clamp(1.5rem, 5vw, 6rem);
+}
+
+.xp-service__eyebrow {
+  color: var(--brand-ink);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.xp-service__hero h1,
+.xp-service__services h2,
+.xp-service__coverage h2,
+.xp-service__process h2,
+.xp-service__faqs h2,
+.xp-service__contact h2 {
+  margin: 1rem 0 1.5rem;
+  font: 900 clamp(3.2rem, 6.5vw, 7rem)/0.86 Arial, sans-serif;
+  letter-spacing: -0.075em;
+}
+
+.xp-service__hero > div > p:not(.xp-service__eyebrow) {
+  max-width: 34rem;
+  color: rgb(255 255 255 / 72%);
+  line-height: 1.65;
+}
+
+.xp-service__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1.8rem;
+}
+
+.xp-service__actions a {
+  padding: 1rem 1.25rem;
+  border: 1px solid rgb(255 255 255 / 40%);
+  font-weight: 850;
+}
+
+.xp-service__actions a:first-child {
+  border-color: var(--brand-surface);
+  background: var(--brand-surface);
+  color: var(--on-brand-surface);
+}
+
+.xp-service__hero figure {
+  position: relative;
+  min-height: 42rem;
+  margin: 0;
+}
+
+.xp-service__hero figcaption {
+  position: absolute;
+  right: 1.2rem;
+  bottom: 1.2rem;
+  padding: 0.8rem 1rem;
+  background: #fff;
+  color: var(--service-dark);
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+.xp-service__hero-art {
+  display: grid;
+  place-items: center;
+  background: var(--brand-surface);
+  color: var(--on-brand-surface);
+  font-size: clamp(2rem, 5vw, 6rem);
+  font-weight: 900;
+  text-align: center;
+}
+
+.xp-service__request {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.4rem 2.5vw;
+  background: var(--brand-surface);
+  color: var(--on-brand-surface);
+}
+
+.xp-service__hero .xp-service__eyebrow,
+.xp-service__coverage .xp-service__eyebrow {
+  color: #ffc5a8;
+}
+
+.xp-service__request a {
+  font-weight: 900;
+}
+
+.xp-service__services,
+.xp-service__process,
+.xp-service__faqs,
+.xp-service__contact {
+  padding: clamp(5rem, 8vw, 8rem) max(1.25rem, calc((100vw - 1180px) / 2));
+}
+
+.xp-service__services > header,
+.xp-service__process > header,
+.xp-service__faqs > header {
+  max-width: 54rem;
+  margin-bottom: 3.5rem;
+}
+
+.xp-service__services > header > p:last-child {
+  max-width: 35rem;
+  color: #5d6662;
+}
+
+.xp-service__services > div {
+  border-top: 3px solid var(--service-dark);
+}
+
+.xp-service__services > div > a {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr auto;
+  gap: 2.5rem;
+  align-items: center;
+  min-height: 9.5rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid #bfc2bc;
+}
+
+.xp-service__services span {
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.xp-service__services h3 {
+  margin: 0.5rem 0 0;
+  font-size: clamp(1.6rem, 3vw, 3rem);
+  line-height: 0.95;
+}
+
+.xp-service__services a > p {
+  max-width: 38rem;
+  margin: 0;
+  color: #5d6662;
+  line-height: 1.55;
+}
+
+.xp-service__coverage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  padding: clamp(5rem, 8vw, 8rem) max(1.25rem, calc((100vw - 1180px) / 2));
+  background: var(--service-dark);
+  color: #fff;
+}
+
+.xp-service__coverage > div:last-child {
+  display: grid;
+  align-content: center;
+}
+
+.xp-service__coverage > div:last-child a,
+.xp-service__coverage > div:last-child span {
+  padding: 1rem 0;
+  border-bottom: 1px solid rgb(255 255 255 / 28%);
+  font-weight: 850;
+}
+
+.xp-service__process ol {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.xp-service__process li {
+  min-height: 14rem;
+  padding: 1.4rem;
+  border-top: 4px solid var(--brand);
+  background: #fff;
+}
+
+.xp-service__process li span {
+  font-size: 0.65rem;
+  font-weight: 900;
+}
+
+.xp-service__process li p {
+  margin-top: 5rem;
+  font-size: 1.3rem;
+  font-weight: 850;
+}
+
+.xp-service__faqs {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 5rem;
+  background: #fff;
+}
+
+.xp-service__faqs details {
+  padding: 1.3rem 0;
+  border-bottom: 1px solid #c7cac4;
+}
+
+.xp-service__faqs summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.xp-service__faqs details p {
+  color: #5d6662;
+  line-height: 1.6;
+}
+
+.xp-service__contact {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 5rem;
+  background: #e7e2d7;
+}
+
+.xp-service__contact > div > p:not(.xp-service__eyebrow) {
+  color: #5d6662;
+  line-height: 1.65;
+}
+
+.xp-service__contact .xp-service__eyebrow {
+  color: var(--service-dark);
+}
+
+.xp-service__contact > div > a {
+  display: inline-block;
+  margin-top: 1rem;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.xp-service__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem max(1.25rem, calc((100vw - 1180px) / 2));
+  background: var(--service-dark);
+  color: #fff;
+  font-size: 0.7rem;
+}
+
+/* Inner routes keep the selected visual language while preserving the shared
+   factual service and location page contract. */
+.inner-experience-cinematic-narrative .inner-hero {
+  background: #11110f;
+  color: #efece4;
+}
+
+.inner-experience-cinematic-narrative .inner-hero h1,
+.inner-experience-cinematic-narrative .section-heading h2 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.055em;
+}
+
+.inner-experience-cinematic-narrative .inner-hero-grid {
+  grid-template-columns: minmax(18rem, 0.75fr) minmax(26rem, 1.25fr);
+}
+
+.inner-experience-bold-utility .inner-hero {
+  background: color-mix(in srgb, var(--brand-surface) 9%, #f7f4ec);
+}
+
+.inner-experience-bold-utility .inner-hero-grid img {
+  border-radius: 12rem 12rem 1.25rem 1.25rem;
+}
+
+.inner-experience-bold-utility .decision-grid > div {
+  border-radius: 1.25rem;
+}
+
+.inner-experience-kinetic-poster .inner-hero {
+  border-top: 5px solid var(--brand-surface);
+  background: #0b1b17;
+  color: #fff;
+}
+
+.inner-experience-kinetic-poster .inner-hero h1,
+.inner-experience-kinetic-poster .section-heading h2 {
+  font-family: Arial, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.07em;
+}
+
+.inner-experience-kinetic-poster .decision-grid {
+  gap: 0;
+  border: 1px solid var(--line);
+}
+
+.inner-experience-kinetic-poster .decision-grid > div {
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xp-folio__hero figure img {
+    transition: none;
+  }
+}
+
+@media (min-width: 761px) {
+  .xp-folio__hero {
+    display: grid;
+    min-height: calc(100svh - 4.1rem);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    align-content: center;
+    padding: clamp(1.5rem, 4vh, 2.75rem) 3vw;
+  }
+
+  .xp-folio__hero > .xp-folio__eyebrow {
+    text-align: center;
+  }
+
+  .xp-folio__hero > h1 {
+    max-width: 12ch;
+    margin: 0.75rem auto clamp(1.25rem, 2.5vh, 2rem);
+    font-size: clamp(3.5rem, min(7vw, 8.5vh), 7rem);
+    text-align: center;
+  }
+
+  .xp-folio__hero-grid {
+    width: min(100%, 64rem);
+    height: clamp(18rem, 42vh, 23rem);
+    grid-template-columns: minmax(13rem, 0.62fr) minmax(22rem, 1.38fr);
+    gap: clamp(2rem, 5vw, 5rem);
+    margin: 0 auto;
+  }
+
+  .xp-folio__intro {
+    padding-bottom: 0;
+  }
+
+  .xp-folio__hero figure {
+    height: 100%;
+    max-height: none;
+  }
+
+  .xp-guide__hero {
+    min-height: calc(100svh - 5.875rem);
+    padding-block: clamp(2rem, 4vh, 3.75rem);
+  }
+
+  .xp-guide__hero h1 {
+    font-size: clamp(3.5rem, min(6.8vw, 10vh), 6rem);
+  }
+
+  .xp-guide__hero figure {
+    height: clamp(28rem, calc(100svh - 15rem), 37rem);
+  }
+
+  .xp-service__hero {
+    height: calc(100svh - 5rem);
+    min-height: 36rem;
+    max-height: 52rem;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .xp-service__hero > div:first-child {
+    padding-block: clamp(2rem, 4.5vh, 4rem);
+  }
+
+  .xp-service__hero h1 {
+    font-size: clamp(3rem, min(5.6vw, 10vh), 6rem);
+  }
+
+  .xp-service__hero figure {
+    height: 100%;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .xp-folio__header,
+  .xp-service__header {
+    grid-template-columns: 1fr auto;
+  }
+  .xp-folio__header nav,
+  .xp-service__header nav,
+  .xp-guide__header nav {
+    display: none;
+  }
+  .xp-folio__mark strong,
+  .xp-folio__phone,
+  .xp-service__call span {
+    display: none;
+  }
+  .xp-folio__hero {
+    padding-top: 4rem;
+  }
+  .xp-folio__hero > h1 {
+    font-size: clamp(4rem, 20vw, 6.2rem);
+  }
+  .xp-folio__hero-grid,
+  .xp-folio__story,
+  .xp-folio__contact,
+  .xp-guide__hero,
+  .xp-guide__qualifier,
+  .xp-guide__faqs,
+  .xp-guide__contact,
+  .xp-service__hero,
+  .xp-service__coverage,
+  .xp-service__faqs,
+  .xp-service__contact {
+    grid-template-columns: 1fr;
+  }
+  .xp-folio__hero-grid {
+    gap: 2rem;
+  }
+  .xp-folio__hero figure,
+  .xp-folio__story figure {
+    height: 120vw;
+    max-height: 620px;
+  }
+  .xp-folio__story {
+    min-height: 0;
+  }
+  .xp-folio__story figure {
+    position: static;
+  }
+  .xp-folio__story > div {
+    padding-top: 0;
+  }
+  .xp-folio__ribbon,
+  .xp-service__request {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .xp-folio__services > header,
+  .xp-folio__faqs > header {
+    grid-template-columns: 1fr;
+  }
+  .xp-folio__service-index > a,
+  .xp-service__services > div > a {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+  .xp-folio__proof,
+  .xp-guide__services > div,
+  .xp-service__process ol {
+    grid-template-columns: 1fr;
+  }
+  .xp-folio__footer,
+  .xp-service__footer {
+    flex-direction: column;
+  }
+  .xp-guide__header {
+    width: calc(100% - 1rem);
+    margin: 0.5rem;
+  }
+  .xp-guide__cta {
+    padding: 0.72rem 0.9rem;
+  }
+  .xp-guide__brand span {
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .xp-guide__hero {
+    padding-top: 4rem;
+  }
+  .xp-guide__hero figure {
+    height: 31rem;
+  }
+  .xp-guide__proof {
+    grid-template-columns: 1fr;
+  }
+  .xp-guide__contact {
+    align-items: start;
+  }
+  .xp-service__hero figure {
+    min-height: 28rem;
+  }
+  .xp-service__hero h1,
+  .xp-service__services h2,
+  .xp-service__coverage h2,
+  .xp-service__process h2,
+  .xp-service__faqs h2,
+  .xp-service__contact h2 {
+    font-size: clamp(3rem, 15vw, 5rem);
+  }
+}

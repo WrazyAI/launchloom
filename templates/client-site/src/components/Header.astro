@@ -8,8 +8,7 @@ const recipe = page.recipe;
 const sectionId = (type: string, fallback?: string) =>
   sections.find((section) => section.type === type)?.id || fallback;
 const servicesId = sectionId("services", "services");
-const aboutId = sectionId("about", "about");
-const coverageId = sectionId("coverage");
+const faqId = sectionId("faq", "faqs");
 const contactId = sectionId("contact", "contact");
 const { family = page.family } = Astro.props as { family?: DesignFamily };
 ---
@@ -19,6 +18,6 @@ const { family = page.family } = Astro.props as { family?: DesignFamily };
     {site.assets?.logo && <img src={site.assets.logo} alt="" />}
     <span class="wordmark__name">{site.business.name}</span>
   </a>
-  <nav aria-label="Main navigation"><a href={`/#${servicesId}`}>Services</a>{aboutId && <a href={`/#${aboutId}`}>Approach</a>}{coverageId && <a href={`/#${coverageId}`}>Service areas</a>}<a href={`/#${contactId}`}>Contact</a></nav>
+  <nav aria-label="Main navigation"><a href={`/#${servicesId}`}>Services</a><a href={`/#${faqId}`}>FAQs</a><a href={`/#${contactId}`}>Contact</a></nav>
   {site.business.phone && <a class="header-call" href={phoneHref(site.business.phone)}><span>{recipe === "local-trades" ? "Call for service" : "Call us"}</span>{site.business.phone}</a>}
 </div></header>

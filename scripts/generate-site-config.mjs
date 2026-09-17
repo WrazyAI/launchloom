@@ -2,6 +2,10 @@ import fs from "node:fs/promises";
 import { parseModelJson } from "./model-json.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import { selectDesignVariant } from "../templates/client-site/src/lib/design-variants.ts";
+import {
+  listExperiencePacks,
+  selectExperiencePackId,
+} from "../templates/client-site/src/lib/experience-pack.ts";
 
 export { parseModelJson } from "./model-json.mjs";
 
@@ -507,6 +511,14 @@ function designFor(kind, industry, intake = {}) {
     seed,
     requestedDesignFamily(intake),
   );
+  const availablePacks = listExperiencePacks();
+  const requestedPack = text(intake.experiencePackId, 80) || undefined;
+  const experiencePackId = selectExperiencePackId({
+    recipe,
+    seed,
+    requested: requestedPack,
+    hasImage: Boolean(intake.heroImage || intake.photoOne || intake.photoTwo || intake.logo),
+  });
   return {
     recipe,
     variantId: selected.id,
@@ -516,6 +528,13 @@ function designFor(kind, industry, intake = {}) {
     treatment: {
       density: selected.density,
       typography: requestedTypography(intake, selected.typography),
+    },
+    experience: {
+      packId: experiencePackId,
+      blueprintVersion: 2,
+      candidatePackIds: availablePacks.map((pack) => pack.packId),
+      selectionMode: requestedPack ? "requested" : "internal-bakeoff",
+      fingerprint: availablePacks.find((pack) => pack.packId === experiencePackId)?.fingerprint,
     },
   };
 }

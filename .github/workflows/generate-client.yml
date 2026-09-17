@@ -189,6 +189,12 @@ jobs:
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
+          node "$GITHUB_WORKSPACE/scripts/run-experience-bakeoff.mjs" --site-dir "$PWD" --report .launchloom/experience-bakeoff.json --screenshots "$RUNNER_TEMP/experience-bakeoff-screenshots"
+          git add src/site.config.json .launchloom/experience-bakeoff.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Select reviewed experience candidate"
+            git push origin review/initial
+          fi
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
           node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
@@ -212,6 +218,15 @@ jobs:
         with:
           name: initial-site-screenshots
           path: ${{ runner.temp }}/initial-screenshots
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload experience bakeoff evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: experience-bakeoff-screenshots
+          path: ${{ runner.temp }}/experience-bakeoff-screenshots
+          if-no-files-found: warn
           retention-days: 14
       - name: Track pending developer delivery
         run: |

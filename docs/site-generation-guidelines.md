@@ -44,6 +44,12 @@ compact mobile actions, and accessible forms. Avoid stacked popups, overlapping
 sticky controls, placeholder links, horizontal overflow, and text embedded in
 images. Never use em dashes in generated or rendered content.
 
+At desktop widths, size opening typography and vertical spacing against both
+viewport width and height. The header and complete hero must fit within a
+1536 by 864 viewport at 100% browser zoom. Do not rely on browser zoom to reveal
+the opening copy, actions, or primary image. Mobile openings may remain
+content-driven when their copy and image stack vertically.
+
 Treat the opening as a hook, not an inventory. Keep the hero heading to roughly
 4-10 memorable words, the hero body to one useful sentence, and service-card
 descriptions to one distinct sentence. Put supporting detail on the service
@@ -123,15 +129,23 @@ Initial generation selects one recipe and keeps its section order, typography,
 palette, imagery, and conversion path coherent. The model writes within the
 typed site configuration; it does not generate unrestricted application code.
 
-Visual variation is expressed through five design families behind the shared
-Astro rendering interface. `image-mosaic` uses coordinated image windows and
-modular service panels. `cinematic-premium` uses a media-led opening and a
-restrained premium conversion path. `atmospheric-editorial` uses immersive
-imagery, editorial typography, and bounded glass surfaces. `project-showcase`
-uses oversized identity and project-led proof. `studio-minimal` uses a narrow,
-content-led composition with restrained interaction. Family selection must be
-compatible with the submitted assets and business journey. Never compensate
-for missing media by inventing proof or importing a reference site's assets.
+New initial generations use the experience-pack compiler for structural
+variation. A compiled experience selects an independent navigation grammar,
+hero composition, immediate conversion mechanic, service presentation, section
+rhythm, mobile behavior, and bounded motion profile. The first version-two
+production packs are `cinematic-narrative`, `bold-utility`, and
+`kinetic-poster`. They keep
+separate Astro markup rather than sharing one broad page DOM. Older sites remain
+on their approved design-family renderer until explicitly migrated. Pack
+selection must be compatible with the submitted assets and business journey.
+Never compensate for missing media by inventing proof or importing a reference
+site's assets.
+
+Every new intake compiles all compatible packs for an internal bakeoff. The
+winning candidate and its versioned structural fingerprint are stored with the
+site configuration. The model may author experimental canaries, but unrestricted
+model JSX and CSS never enter a client repository until that visual language
+has been reviewed and promoted as a registered pack.
 
 Treat reference prompts as design evidence, not application architecture.
 LaunchLoom keeps Astro, shared SEO rendering, shared forms, provenance, review

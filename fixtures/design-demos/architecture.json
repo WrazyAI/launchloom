@@ -1,0 +1,72 @@
+{
+  "preset": "wellness",
+  "industry": "professional-services",
+  "businessKind": "architecture",
+  "business": {
+    "name": "Alder & Ash Architecture",
+    "tagline": "Homes shaped by light, land, and life.",
+    "description": "A hypothetical residential architecture studio serving Asheville and Western North Carolina with new-home design, renovation planning, and interior architecture.",
+    "phone": "(828) 555-0184",
+    "email": "hello@alderandash.example",
+    "address": "",
+    "serviceAreas": ["Asheville", "Black Mountain", "Western North Carolina"],
+    "hours": "Meetings by appointment",
+    "primaryCta": "Start a project conversation",
+    "offer": "Bring the site, the questions, and the constraints that matter.",
+    "domain": "alderandash.example",
+    "leadEmail": "hello@alderandash.example"
+  },
+  "style": {
+    "primaryColor": "#9b7137",
+    "tone": "editorial",
+    "surfaceColor": "#efece4",
+    "heroColor": "#1a1916",
+    "inkColor": "#121210",
+    "mutedColor": "#6c6b65",
+    "lineColor": "#d1ccc0",
+    "contrastColor": "#10100e"
+  },
+  "services": [
+    { "name": "Residential architecture", "description": "Plan a new home around its site, daily routines, and long-term use.", "slug": "residential-architecture" },
+    { "name": "Renovation planning", "description": "Rework an existing home with a clear understanding of constraints and priorities.", "slug": "renovation-planning" },
+    { "name": "Interior architecture", "description": "Coordinate rooms, circulation, materials, and built elements as one spatial system.", "slug": "interior-architecture" },
+    { "name": "Site studies", "description": "Study access, orientation, views, and context before the design direction is set.", "slug": "site-studies" }
+  ],
+  "differentiators": ["Site-responsive thinking", "Clear design dialogue", "Measured material choices"],
+  "locations": [],
+  "images": {
+    "hero": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1600&q=85",
+    "secondary": "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=1400&q=85"
+  },
+  "copy": {
+    "heroKicker": "Residential architecture in Western North Carolina",
+    "heroHeading": "Make the site part of the home.",
+    "heroBody": "Thoughtful residential design begins with how the land, light, and everyday routines meet.",
+    "servicesHeading": "A careful brief becomes a useful place.",
+    "servicesIntro": "Start with the kind of design decision in front of you.",
+    "aboutKicker": "The studio",
+    "aboutHeading": "Architecture begins before the first line.",
+    "aboutBody": "The work starts by understanding the property, the practical constraints, and how the people using the space want to live.",
+    "faqHeading": "Questions before the first sketch.",
+    "contactKicker": "Begin here",
+    "contactHeading": "Bring us the real brief.",
+    "formIntro": "Share the project type, location, and the decision you are trying to make."
+  },
+  "conversion": {
+    "layout": "editorial-authority",
+    "qualification": [
+      { "name": "projectType", "label": "What are you considering?", "placeholder": "Choose one", "options": ["New home", "Renovation", "Interior architecture", "Site study"] }
+    ],
+    "process": ["Share the property and priorities", "Clarify scope and constraints", "Define the next design step"],
+    "faqs": [
+      { "question": "What should I bring to a first conversation?", "answer": "Share the property location, any available plans or surveys, and the priorities or constraints already shaping the decision." },
+      { "question": "Can we begin before purchasing a property?", "answer": "A site study can help frame questions about access, orientation, context, and the kind of home the property may support." },
+      { "question": "Do you work beyond Asheville?", "answer": "The studio serves submitted project areas across Western North Carolina and confirms fit and availability for each property." }
+    ]
+  },
+  "design": {
+    "recipe": "general-editorial",
+    "sections": [],
+    "experience": { "packId": "editorial-folio" }
+  }
+}
