@@ -5,7 +5,7 @@ import {
   applySafeVisualOperations,
   blockingFindings,
   buildSafeVisualManifest,
-  validateVisualAudit,
+  parseVisualAuditChoice,
 } from "./visual-quality-gate-lib.mjs";
 
 const args = Object.fromEntries(
@@ -121,15 +121,6 @@ const auditSchema = {
   },
 };
 
-function jsonFromModel(value) {
-  return JSON.parse(
-    String(value || "")
-      .trim()
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```$/, ""),
-  );
-}
-
 async function imagePart(file) {
   const data = await fs.readFile(file);
   const extension = path.extname(file).toLowerCase();
@@ -153,7 +144,7 @@ async function requestAudit(manifest) {
   if (missing.length)
     throw new Error(`Missing visual gate screenshots: ${missing.join(", ")}`);
   let lastError;
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 180_000);
     try {
@@ -169,8 +160,8 @@ async function requestAudit(manifest) {
           },
           body: JSON.stringify({
             model,
-            temperature: 0.1,
-            max_tokens: 4000,
+            temperature: 0,
+            max_completion_tokens: [6000, 9000, 12000][attempt - 1],
             reasoning_effort: "low",
             provider: { require_parameters: true },
             response_format: { type: "json_schema", json_schema: auditSchema },
@@ -202,9 +193,7 @@ async function requestAudit(manifest) {
         throw new Error(
           `OpenRouter visual audit failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
         );
-      const audit = validateVisualAudit(
-        jsonFromModel(payload?.choices?.[0]?.message?.content),
-      );
+      const audit = parseVisualAuditChoice(payload?.choices?.[0]);
       return {
         audit,
         usage: payload.usage || null,
@@ -213,7 +202,7 @@ async function requestAudit(manifest) {
       };
     } catch (error) {
       lastError = error;
-      if (attempt === 2) throw error;
+      if (attempt === 3) throw error;
     } finally {
       clearTimeout(timeout);
     }
