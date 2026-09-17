@@ -1,0 +1,19 @@
+{
+  "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
+  "type": "frontend",
+  "name": "Production experience pack preserves the complete conversion journey",
+  "description": "A reviewed production pack presents a viewport-safe opening, the required navigation and content, a working FAQ, and an honest lead-form outcome.",
+  "priority": "p0",
+  "planSteps": [
+    { "type": "action", "description": "Navigate to the production experience-pack gallery" },
+    { "type": "action", "description": "Open the Bold Utility experience" },
+    { "type": "assertion", "description": "Verify the header exposes Services, FAQs, and Contact and the complete hero is visible without horizontal clipping" },
+    { "type": "assertion", "description": "Verify an interactive conversion form appears immediately after the hero" },
+    { "type": "action", "description": "Navigate to Services and open one service detail page" },
+    { "type": "assertion", "description": "Verify the service page contains useful decision support, related services, FAQs, and a contact action" },
+    { "type": "action", "description": "Return to the homepage, navigate to FAQs, and expand one question" },
+    { "type": "assertion", "description": "Verify the answer is visible and readable" },
+    { "type": "action", "description": "Navigate to Contact, complete the lead form with fictional valid details, and submit it" },
+    { "type": "assertion", "description": "Verify the page shows an honest not-configured fallback and does not claim the message was sent" }
+  ]
+}

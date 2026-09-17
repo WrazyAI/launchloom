@@ -1,0 +1,23 @@
+---
+import type { CompiledExperience } from "../lib/experience-pack";
+import "../styles/experience-packs.css";
+import EditorialFolioExperience from "./experiences/EditorialFolioExperience.astro";
+import GuidedConversationExperience from "./experiences/GuidedConversationExperience.astro";
+import ServiceLedExperience from "./experiences/ServiceLedExperience.astro";
+
+interface Props {
+  experience: CompiledExperience;
+}
+
+const { experience } = Astro.props;
+---
+
+{
+  experience.program.packId === "cinematic-narrative" ? (
+    <EditorialFolioExperience program={experience.program} content={experience.content} />
+  ) : experience.program.packId === "bold-utility" ? (
+    <GuidedConversationExperience program={experience.program} content={experience.content} />
+  ) : (
+    <ServiceLedExperience program={experience.program} content={experience.content} />
+  )
+}

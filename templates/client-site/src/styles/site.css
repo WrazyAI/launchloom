@@ -368,6 +368,10 @@ h2 {
   gap: 12px;
   padding: 28px;
   background: #fff;
+  color: var(--ink);
+}
+.lead-form .kicker {
+  color: var(--ink);
 }
 .lead-form--guided {
   min-height: 520px;
@@ -549,8 +553,8 @@ h2 {
   border: 0;
   border-radius: 999px;
   padding: 12px 17px 12px 12px;
-  background: var(--brand);
-  color: var(--on-brand, #fff);
+  background: var(--brand-surface, var(--brand));
+  color: var(--on-brand-surface, var(--on-brand, #fff));
   box-shadow: 0 12px 35px #0003;
   font:
     800 0.82rem/1 Inter,

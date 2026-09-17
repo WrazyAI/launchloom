@@ -1,0 +1,19 @@
+{
+  "id": "oakland-bouldering-gym",
+  "assetSource": "artifacts/model-experience-assets/boulder-gym",
+  "referenceFile": "artifacts/a1-design-showcase/screenshots/neighborhood-table-desktop.png",
+  "assignedDirection": "Playful neo-brutalism for a bouldering and movement gym. Use warm white as the breathing field, electric cobalt for major spatial blocks, clay red for decisive actions, and charcoal for type. Favor huge compressed sans-serif typography, unexpected crops, route-grade symbols, visible grid lines, sticker-like labels, and physical plywood texture. Let sections snap between editorial poster, training diagram, and community noticeboard rhythms. Do not use dark luxury, Swiss emergency-service styling, cinematic architecture pacing, glass cards, fitness-tech gradients, generic black gym branding, or the reference layout one-to-one.",
+  "businessBrief": "- Crux Commons is a fictional bouldering and movement gym serving Oakland and Emeryville, California. Do not claim a street address.\n- Phone: (510) 555-0136. Email: hello@cruxcommons.com.\n- Primary action: Book a first climb.\n- Services: Day Passes; Intro to Bouldering; Movement Coaching; Youth Programs.\n- Audience: first-time climbers, returning climbers building technique, families, and Oakland residents looking for an active community space.\n- Natural SEO vocabulary: bouldering gym Oakland, indoor climbing Oakland, beginner climbing classes Oakland, youth climbing Oakland.\n- Never invent certifications, memberships or prices, opening hours, age minimums, class schedules, staff, review scores, route-setting frequency, facility size, equipment inclusions, guarantees, or injury-prevention claims.",
+  "assetBrief": "- Use only /assets/hero-climb.png, /assets/chalk-detail.png, and /assets/route-coaching.png for imagery.\n- These are sealed local assets. Use all three at meaningful scale, and let at least one crop break a conventional rectangular layout without harming legibility.",
+  "interactionBrief": "- The purposeful interaction must be a route-finder for visitor intent with choices for First climb, Build technique, Train strength, and Climb with family. A selection must visibly update a concise recommended starting path and a relevant next action. Keep it an honest frontend demonstration and never imply that a booking was delivered.",
+  "forbiddenClaims": [
+    "certified coach",
+    "starting at \\$",
+    "open daily",
+    "routes every week",
+    "all gear included",
+    "injury[- ]free",
+    "five[- ]star",
+    "5[- ]star"
+  ]
+}

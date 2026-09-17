@@ -5,12 +5,15 @@ import LeadForm from "../../components/LeadForm.astro";
 import Footer from "../../components/Footer.astro";
 import site, { phoneHref, type Service } from "../../lib/site";
 import { resolvePageRecipe } from "../../lib/page-recipe";
+import { compileExperiencePack } from "../../lib/experience-pack";
+import "../../styles/experience-packs.css";
 
 export function getStaticPaths() {
   return site.services.map((service) => ({ params: { slug: service.slug }, props: { service } }));
 }
 const { service } = Astro.props as { service: Service };
 const { recipe } = resolvePageRecipe(site);
+const experience = site.design?.experience?.packId ? compileExperiencePack(site, recipe) : null;
 const trades = recipe === "local-trades";
 const related = site.services.filter((item) => item.slug !== service.slug).slice(0, 3);
 const process = site.conversion?.process?.slice(0, 4) || [];
@@ -20,7 +23,7 @@ const support = service.decisionSupport;
 
 <SiteLayout title={`${service.name} | ${site.business.name}`} description={service.description}>
   <Header />
-  <main class:list={["inner-page", `recipe-${recipe}`]}>
+  <main class:list={["inner-page", `recipe-${recipe}`, experience && `inner-experience-${experience.program.packId}`]} data-experience-pack={experience?.program.packId}>
     <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home / Services</a><span class="kicker">{trades ? "Service details" : "Care option"}</span><h1>{service.name}</h1><p>{service.description}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{site.images.secondary && <img src={site.images.secondary} alt={`${site.business.name} service context`} />}</div></section>
 
     <section class="section wrap service-decision"><div class="section-heading"><span class="kicker">A useful place to start</span><h2>{trades ? "Understand the problem, then choose the right service." : "Talk through the support that fits your situation."}</h2></div><div class="decision-grid"><div><h3>What to ask about</h3><p>{support?.scope || service.description}</p></div><div><h3>What happens next</h3><p>{support?.nextStep || (trades ? "Describe the issue, share your location, and the team will confirm the appropriate next step before scheduling." : "Share what support you are considering. The team will listen, answer questions, and help you decide whether this option is suitable.")}</p></div><div><h3>What to prepare</h3><p>{support?.preparation || site.business.offer || `Contact ${site.business.name} for details that apply to your needs.`}</p></div></div></section>

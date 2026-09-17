@@ -1,0 +1,45 @@
+---
+import { phoneHref, primaryCtaHref } from "../../lib/site";
+import type { ExperienceBlueprintV2, ExperienceContent } from "../../lib/experience-pack";
+import LeadForm from "../LeadForm.astro";
+import LocationMap from "../LocationMap.astro";
+import SocialProof from "../SocialProof.astro";
+
+interface Props { program: ExperienceBlueprintV2; content: ExperienceContent }
+const { program, content } = Astro.props;
+const { brand, hero, services, proof, process, faqs, locations, copy } = content;
+---
+
+<div class="xp-service" data-experience-pack={program.packId} data-layout-fingerprint={program.fingerprint}>
+  <header class="xp-service__header">
+    <a class="xp-service__brand" href="/">{brand.logo && <img src={brand.logo} alt="" />}<strong>{brand.name}</strong></a>
+    <nav aria-label="Main navigation"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
+    {brand.phone && <a class="xp-service__call" href={phoneHref(brand.phone)}><span>Call</span>{brand.phone}</a>}
+  </header>
+
+  <main>
+    <section class="xp-service__hero" id="opening">
+      <div><p class="xp-service__eyebrow">{hero.kicker}</p><h1>{hero.heading}</h1><p>{hero.body}</p><div class="xp-service__actions"><a href={primaryCtaHref(Astro.url.pathname)}>{hero.primaryLabel}</a>{brand.phone && <a href={phoneHref(brand.phone)}>Call now</a>}</div></div>
+      {hero.image ? <figure><img src={hero.image} alt={`${brand.name} service work`} fetchpriority="high" />{proof[0] && <figcaption>{proof[0]}</figcaption>}</figure> : <div class="xp-service__hero-art"><span>{brand.name}</span></div>}
+    </section>
+
+    <aside class="xp-service__request" aria-label="Request service"><strong>{hero.offer || "Tell us what you are seeing and where the service is needed."}</strong><a href="#contact">Request the next step →</a></aside>
+
+    <section class="xp-service__services" id="services">
+      <header><p class="xp-service__eyebrow">Start with the need</p><h2>{copy.servicesHeading || "What needs attention?"}</h2><p>{copy.servicesIntro || "Choose the service closest to what is happening."}</p></header>
+      <div>{services.map((service) => <a href={`/services/${service.slug}/`}><div><span>Service</span><h3>{service.name}</h3></div><p>{service.description}</p><b aria-hidden="true">↗</b></a>)}</div>
+    </section>
+
+    <section class="xp-service__coverage"><div><p class="xp-service__eyebrow">Service area</p><h2>Coverage where the work is needed.</h2><p>Share the address and service need so the team can confirm coverage.</p></div><div>{locations.length ? locations.map((location) => <a href={`/locations/${location.slug}/`}>{location.name}</a>) : brand.serviceAreas.map((area) => <span>{area}</span>)}</div></section>
+
+    {process.length > 0 && <section class="xp-service__process"><header><p class="xp-service__eyebrow">What happens next</p><h2>{copy.processHeading || "A practical path forward."}</h2></header><ol>{process.map((step, index) => <li><span>{String(index + 1).padStart(2, "0")}</span><p>{step}</p></li>)}</ol></section>}
+
+    {content.hasSocialProof && <SocialProof id="social-proof" />}
+
+    {faqs.length > 0 && <section class="xp-service__faqs" id="faqs"><header><p class="xp-service__eyebrow">Before you call</p><h2>{copy.faqHeading || "Practical questions, answered."}</h2></header><div>{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
+
+    {content.showLocationMap && <LocationMap />}
+    <section class="xp-service__contact" id="contact"><div><p class="xp-service__eyebrow">Request service</p><h2>{copy.contactHeading || hero.primaryLabel}</h2><p>{content.businessDescription}</p>{brand.phone && <a href={phoneHref(brand.phone)}>{brand.phone}</a>}</div><LeadForm id="service-experience-lead" /></section>
+  </main>
+  <footer class="xp-service__footer"><strong>{brand.name}</strong><span>{brand.serviceAreas.join(" · ")}</span><span>© {new Date().getFullYear()}</span></footer>
+</div>

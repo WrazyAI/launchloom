@@ -35,6 +35,24 @@ const files = new Set([
   "pages/robots.txt.ts",
   "pages/sitemap.xml.ts",
 ]);
+if (config.design?.experience?.packId) {
+  for (const relative of [
+    "components/ExperiencePage.astro",
+    "components/experiences/EditorialFolioExperience.astro",
+    "components/experiences/GuidedConversationExperience.astro",
+    "components/experiences/ServiceLedExperience.astro",
+    "components/Header.astro",
+    "components/Footer.astro",
+    "components/LocationMap.astro",
+    "components/SocialProof.astro",
+    "pages/index.astro",
+    "pages/services/[slug].astro",
+    "pages/locations/[slug].astro",
+    "lib/experience-pack.ts",
+    "lib/site.ts",
+    "styles/experience-packs.css",
+  ]) files.add(relative);
+}
 if (
   String(config.business?.primaryCta || "")
     .trim()

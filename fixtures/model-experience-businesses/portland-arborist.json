@@ -1,0 +1,18 @@
+{
+  "id": "portland-arborist",
+  "assetSource": "artifacts/canopy-stone-storm-prototype/public/assets",
+  "referenceFile": "artifacts/a1-design-showcase/screenshots/rapid-response-desktop.png",
+  "assignedDirection": "Bright Swiss utility for an outdoor service brand. Use warm cream as the dominant field, deep forest green for structure, and safety orange as a controlled action color. Favor decisive grotesk typography, editorial rules, overscale cropped words, modular diagnostic controls, and real tree imagery. The result must feel practical, optimistic, and distinctly Pacific Northwest. Do not use dark cinematic luxury, serif-led architecture styling, floating glass cards, rounded pill overload, or the reference layout one-to-one.",
+  "businessBrief": "- Northline Tree Response is a fictional tree-care business serving Portland, Oregon and nearby Portland metro communities. Do not claim a street address.\n- Phone: (503) 555-0182. Email: hello@northlinetrees.com.\n- Primary action: Request a tree assessment.\n- Services: Storm Damage Assessment; Tree Pruning; Hazardous Tree Removal; Stump Grinding.\n- Audience: homeowners dealing with leaning, damaged, overgrown, or fallen trees.\n- Natural SEO vocabulary: emergency tree service Portland, tree removal Portland Oregon, tree pruning Portland, storm damage tree assessment.\n- Never invent licenses, insurance, certifications, guarantees, pricing, staff, years in business, review scores, project counts, exact availability, response times, or emergency dispatch promises.",
+  "assetBrief": "- Use only /assets/canopy-hero.png, /assets/service-pruning.png, /assets/service-removal.png, and /assets/service-stump.png for imagery.\n- These are sealed local assets. Make the hero image a meaningful part of the first-viewport composition rather than a small thumbnail.",
+  "interactionBrief": "- The purposeful interaction must be a symptom-first tree assessment with choices for Broken limb, Tree leaning, Storm damage, and Not sure. A selection must visibly update a short recommendation and next action. Keep it an honest frontend demonstration and never imply that a request was delivered to the business.",
+  "forbiddenClaims": [
+    "licensed and insured",
+    "ISA[- ]certified",
+    "24\\/7",
+    "same[- ]day service",
+    "guaranteed response",
+    "five[- ]star",
+    "5[- ]star"
+  ]
+}
