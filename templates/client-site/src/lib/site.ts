@@ -280,8 +280,10 @@ export const shouldShowLocationMap = () =>
 
 export const contactSectionHref = (pathname = "/") => {
   const id =
-    site.design?.sections.find((section) => section.type === "contact")?.id ||
-    "contact";
+    (site.design?.experience?.packId
+      ? "contact"
+      : site.design?.sections.find((section) => section.type === "contact")
+          ?.id) || "contact";
   return pathname === "/" ? `#${id}` : `/#${id}`;
 };
 

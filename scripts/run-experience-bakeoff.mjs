@@ -222,6 +222,9 @@ try {
       ? candidateResult.compatibilityScore
       : -1000;
     results.push(candidateResult);
+    console.log(
+      `experience_bakeoff_candidate=${candidateResult.packId} valid=${candidateResult.valid} failures=${JSON.stringify(candidateResult.failures)}`,
+    );
   }
 } finally {
   await browser.close();

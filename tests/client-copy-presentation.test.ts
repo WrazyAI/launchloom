@@ -46,5 +46,8 @@ describe("client copy presentation", () => {
     );
     expect(siteModule).toContain("export const contactSectionHref");
     expect(siteModule).toContain("return contactSectionHref(pathname)");
+    expect(siteModule).toMatch(
+      /site\.design\?\.experience\?\.packId\s*\?\s*"contact"/,
+    );
   });
 });

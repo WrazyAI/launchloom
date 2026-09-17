@@ -7,6 +7,33 @@ import {
 } from "../scripts/generate-site-config.mjs";
 
 describe("site configuration", () => {
+  it("does not classify pet care as human wellness imagery", () => {
+    const config = normalise({}, {
+      preset: "home-services",
+      industry: "pet-services",
+      businessName: "Moss and Mane Mobile Grooming",
+      services: "Mobile dog grooming\nBath and coat care\nPaw care",
+      differentiators: "One dog at a time with an individual care plan.",
+      serviceAreas: "Portland, Oregon",
+    });
+
+    expect(config.industry).toBe("other");
+    expect(config.images.hero).toBeUndefined();
+    expect(config.images.secondary).toBeUndefined();
+  });
+
+  it("does not mistake carpet cleaning for a pet business", () => {
+    const config = normalise({}, {
+      preset: "home-services",
+      industry: "home-services",
+      businessName: "Clearway Carpet Cleaning",
+      services: "Carpet cleaning\nUpholstery cleaning",
+      serviceAreas: "Portland, Oregon",
+    });
+
+    expect(config.industry).toBe("home-services");
+  });
+
   it("keeps the validated SEO dossier attached to generated content", () => {
     const config = normalise(
       {},
