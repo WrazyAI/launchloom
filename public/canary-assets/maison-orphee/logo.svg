@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title desc">
+  <title id="title">Maison Orphée</title>
+  <desc id="desc">An orbital M and O monogram.</desc>
+  <rect width="120" height="120" rx="60" fill="#0B0B0C"/>
+  <ellipse cx="60" cy="60" rx="45" ry="24" fill="none" stroke="#E6D8BD" stroke-width="2.5" transform="rotate(-24 60 60)"/>
+  <ellipse cx="60" cy="60" rx="45" ry="24" fill="none" stroke="#9A7B47" stroke-width="2.5" transform="rotate(24 60 60)"/>
+  <path d="M34 77V42l26 26 26-26v35" fill="none" stroke="#F5F1E8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="60" cy="60" r="5" fill="#E6D8BD"/>
+</svg>
