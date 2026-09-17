@@ -3,6 +3,8 @@ import {
   applySafeVisualOperations,
   blockingFindings,
   buildSafeVisualManifest,
+  parseVisualAuditChoice,
+  parseVisualAuditContent,
   validateVisualAudit,
 } from "../scripts/visual-quality-gate-lib.mjs";
 
@@ -38,6 +40,34 @@ const config: any = {
 };
 
 describe("GLM visual quality gate", () => {
+  it("parses structured JSON with or without a markdown fence", () => {
+    const audit = {
+      summary: "The page is sound.",
+      verdict: "pass",
+      findings: [],
+      operations: [],
+    };
+    expect(parseVisualAuditContent(JSON.stringify(audit))).toEqual(audit);
+    expect(
+      parseVisualAuditContent("```json\n" + JSON.stringify(audit) + "\n```"),
+    ).toEqual(audit);
+  });
+
+  it("rejects truncated visual audit choices so the caller can retry", () => {
+    expect(() =>
+      parseVisualAuditChoice({
+        finish_reason: "length",
+        message: { content: '{"summary":"cut off' },
+      }),
+    ).toThrow("truncated");
+    expect(() =>
+      parseVisualAuditChoice({
+        finish_reason: "stop",
+        message: { content: '{"summary":"cut off' },
+      }),
+    ).toThrow("incomplete or invalid JSON");
+  });
+
   it("builds a bounded manifest without private delivery fields", () => {
     const serialized = JSON.stringify(buildSafeVisualManifest(config));
     expect(serialized).toContain("Bread made slowly");
@@ -85,7 +115,11 @@ describe("GLM visual quality gate", () => {
     expect(manifest.design.sections).toHaveLength(3);
     expect(
       applySafeVisualOperations(legacyConfig, [
-        { kind: "set_section_variant", sectionType: "hero", variant: "centered" },
+        {
+          kind: "set_section_variant",
+          sectionType: "hero",
+          variant: "centered",
+        },
       ] as any),
     ).toHaveLength(1);
   });

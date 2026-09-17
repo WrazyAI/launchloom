@@ -2,6 +2,32 @@ import { applyOperation } from "./revision-engine.mjs";
 
 export const VISUAL_GATE_MODEL = "z-ai/glm-5.3-flash";
 
+export function parseVisualAuditContent(value) {
+  const content = String(value || "")
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "");
+  if (!content) throw new Error("Visual audit returned empty content.");
+  try {
+    return JSON.parse(content);
+  } catch (error) {
+    throw new Error(
+      `Visual audit returned incomplete or invalid JSON: ${error.message}`,
+      { cause: error },
+    );
+  }
+}
+
+export function parseVisualAuditChoice(choice) {
+  if (!choice || typeof choice !== "object")
+    throw new Error("Visual audit response did not include a choice.");
+  if (["length", "max_tokens"].includes(choice.finish_reason))
+    throw new Error(
+      `Visual audit response was truncated (${choice.finish_reason}).`,
+    );
+  return validateVisualAudit(parseVisualAuditContent(choice.message?.content));
+}
+
 const ALLOWED_KINDS = new Set([
   "set_section_variant",
   "reorder_section",
