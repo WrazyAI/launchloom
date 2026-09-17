@@ -7,7 +7,7 @@ These original assets support the fictional Arc & Alder Cycle Atelier pipeline c
 - `hero-workshop.webp`: wide atelier interior with left-side copy space
 - `bike-fit.webp`: portrait fitting and measurement scene
 - `wheel-building.webp`: workshop detail for gallery or service storytelling
-- `logo.svg`: repository-native vector mark and wordmark
+- `logo.svg`: compact repository-native vector mark; the renderer supplies the wordmark
 
 ## Generation provenance
 
