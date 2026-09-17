@@ -351,6 +351,7 @@ function industryFor(intake) {
   ]
     .join(" ")
     .toLowerCase();
+  if (/\b(?:pet|dog|cat|groom\w*|veterinar\w*)\b/.test(facts)) return "other";
   if (
     /health|care|wellness|clinic|therapy|dental|medspa|medical|beauty/.test(
       facts,

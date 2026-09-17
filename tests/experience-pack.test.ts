@@ -93,6 +93,12 @@ describe("experience-pack compiler", () => {
     expect(bakeoff).toContain('delete finalConfig.design.experience');
     expect(bakeoff).toContain('selectionMode: "internal-bakeoff"');
     expect(bakeoff).toContain('hero exceeds desktop viewport');
+    expect(bakeoff).toContain('experience_bakeoff_candidate=');
+    const workflow = readFileSync(".github/workflows/generate-client.yml", "utf8");
+    expect(workflow).toContain(".launchloom/experience-bakeoff.json");
+    expect(workflow).toMatch(
+      /Upload experience bakeoff evidence[\s\S]*experience-bakeoff-screenshots[\s\S]*\.launchloom\/experience-bakeoff\.json/,
+    );
   });
 
   it("defines a factual, visually distinct second-business canary", () => {
