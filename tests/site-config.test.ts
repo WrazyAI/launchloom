@@ -52,6 +52,36 @@ describe("site configuration", () => {
     expect(config.copy.aboutBody).toContain("安心して相談できるサービスです。");
   });
 
+  it("rejects Latin-only model copy for a Japanese-language brief", () => {
+    const config = normalise(
+      { copy: { aboutBody: "Friendly support for every household." } },
+      {
+        businessName: "さくらケア",
+        services: "訪問サポート",
+        differentiators: "日本語で相談できます。",
+        industry: "professional-services",
+      },
+    );
+
+    expect(config.copy.aboutBody).not.toContain("Friendly support");
+    expect(config.copy.aboutBody).toMatch(/[\p{Script=Han}\p{Script=Hiragana}]/u);
+  });
+
+  it("rejects an unapproved writing system for an English-language brief", () => {
+    const config = normalise(
+      { copy: { aboutBody: "Φροντίδα for every household." } },
+      {
+        businessName: "Harbor Support",
+        services: "Home support",
+        differentiators: "Clear conversations before service begins.",
+        industry: "professional-services",
+      },
+    );
+
+    expect(config.copy.aboutBody).not.toMatch(/\p{Script=Greek}/u);
+    expect(config.copy.aboutBody).toContain("goal, constraints, and questions");
+  });
+
   it("does not mistake carpet cleaning for a pet business", () => {
     const config = normalise({}, {
       preset: "home-services",
