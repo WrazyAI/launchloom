@@ -54,6 +54,7 @@ jobs:
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
           node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json
           node scripts/generate-site-config.mjs --source /tmp/intake.md --research /tmp/seo-research.json --out /tmp/site.config.json
+          node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/intake.md --out /tmp/inspiration-pack.json
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
@@ -72,6 +73,12 @@ jobs:
         with:
           name: seo-research-${{ steps.intake.outputs.issue }}
           path: /tmp/seo-research.json
+          retention-days: 14
+      - name: Preserve inspiration evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: inspiration-pack-${{ steps.intake.outputs.issue }}
+          path: /tmp/inspiration-pack.json
           retention-days: 14
       - name: Create private repository and Cloudflare Pages project
         id: client
@@ -175,6 +182,7 @@ jobs:
           cp /tmp/site.config.json src/site.config.json
           mkdir -p .launchloom
           cp /tmp/seo-research.json .launchloom/seo-research.json
+          cp /tmp/inspiration-pack.json .launchloom/inspiration-pack.json
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
           git_push_with_retry --set-upstream origin review/initial
