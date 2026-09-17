@@ -8,7 +8,12 @@ import {
 
 describe("site configuration", () => {
   it("does not classify pet care as human wellness imagery", () => {
-    const config = normalise({}, {
+    const config = normalise({
+      copy: {
+        aboutBody:
+          "Busy salons mean barking,陌生 hands, and long waits for many dogs.",
+      },
+    }, {
       preset: "home-services",
       industry: "pet-services",
       businessName: "Moss and Mane Mobile Grooming",
@@ -29,6 +34,22 @@ describe("site configuration", () => {
     expect(config.conversion.qualification[0].options).not.toContain(
       "A new project",
     );
+    expect(config.copy.aboutBody).not.toMatch(/\p{Script=Han}/u);
+    expect(config.copy.aboutBody).toContain("goal, constraints, and questions");
+  });
+
+  it("preserves a non-Latin script when the client supplied that script", () => {
+    const config = normalise(
+      { copy: { aboutBody: "安心して相談できるサービスです。" } },
+      {
+        businessName: "さくらケア",
+        services: "訪問サポート",
+        differentiators: "日本語で相談できます。",
+        industry: "professional-services",
+      },
+    );
+
+    expect(config.copy.aboutBody).toContain("安心して相談できるサービスです。");
   });
 
   it("does not mistake carpet cleaning for a pet business", () => {
