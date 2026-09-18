@@ -32,8 +32,10 @@ const entry = launchRecordFrom({
   config,
   inspiration,
   launchedAt: args["launched-at"] || new Date().toISOString(),
+  stage: args.stage || "preview",
 });
 const history = await recordLaunch(entry, historyPath);
 console.log(`launch_recorded=${entry.id}`);
+console.log(`launch_stage=${entry.stage}`);
 console.log(`launch_pack=${entry.packId}:${entry.variantId}`);
 console.log(`launch_history=${historyPath} total=${history.launches.length}`);

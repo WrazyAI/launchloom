@@ -67,17 +67,21 @@ Existing client sites do not migrate automatically. A site opts into the compile
 
 ## Rotation and launch history
 
-`data/recent-launch-signatures.json` records approved launches. Each entry
-stores the business, recipe, pack and variant, layout fingerprint, and the
-inspiration route signatures and reference IDs that informed the design.
+`data/recent-launch-signatures.json` records generated previews. Each entry
+stores the business, recipe, pack and variant, layout fingerprint, stage, and
+the inspiration route signatures and reference IDs that informed the design.
 
 - `scripts/launch-history.mjs` owns reading, validating, capping, and recording
   entries.
 - `scripts/record-launch.mjs` writes an entry from the client config and
-  inspiration pack. `publish-site.yml` runs it after a successful production
-  deploy. Recording is best effort and never blocks a published site.
+  inspiration pack. `generate-client.yml` runs it after a successful preview
+  deployment, with `--stage preview`. Recording is best effort and never blocks
+  generation, preview deployment, or handoff.
+- Recording previews, rather than only production publishes, keeps rotation
+  useful during internal testing where most generations never reach production.
 - Initial pack selection and the bakeoff both read the history and apply the
-  recency penalty, so a launched pack and variant is less likely to repeat.
+  recency penalty, so a recently generated pack and variant is less likely to
+  repeat.
 - The inspiration compiler reads the same history to exclude recently used
   references and route signatures.
 

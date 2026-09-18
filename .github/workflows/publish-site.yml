@@ -5,7 +5,7 @@ on:
     types: [publish-site]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   publish:
@@ -48,21 +48,3 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience delivery-failure || true
             exit 1
           fi
-      # Rotation history is best effort. A failure here must not block an
-      # already-published client site or its delivery email.
-      - name: Record launch for rotation history
-        continue-on-error: true
-        run: |
-          git config user.name "LaunchLoom"
-          git config user.email "automation@launchloom.app"
-          node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
-            --config "$RUNNER_TEMP/client/src/site.config.json" \
-            --inspiration "$RUNNER_TEMP/client/.launchloom/inspiration-pack.json"
-          if git diff --quiet -- data/recent-launch-signatures.json; then
-            echo "No launch history change."
-            exit 0
-          fi
-          git add data/recent-launch-signatures.json
-          git commit -m "Record approved launch signature [skip ci]"
-          git pull --rebase origin main
-          git push origin HEAD:main

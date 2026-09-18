@@ -48,6 +48,7 @@ describe("launch history", () => {
     });
     expect(record).toMatchObject({
       id: "2026-09-18-pulse-athletic-club",
+      stage: "preview",
       businessName: "Pulse Athletic Club",
       recipe: "care-editorial",
       packId: "bold-utility",
@@ -68,6 +69,16 @@ describe("launch history", () => {
         inspiration: undefined,
       }),
     ).toThrow(/pack id and layout fingerprint/);
+  });
+
+  it("marks production records when a stage is supplied", () => {
+    const record = launchRecordFrom({
+      config,
+      inspiration,
+      launchedAt: "2026-09-18T20:00:00.000Z",
+      stage: "production",
+    });
+    expect(record.stage).toBe("production");
   });
 
   it("records, dedupes, and caps launches", async () => {

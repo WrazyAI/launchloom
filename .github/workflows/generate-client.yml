@@ -238,6 +238,26 @@ jobs:
           npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "Initial LaunchLoom preview"
           echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      # Recording previews keeps rotation useful during internal testing. A
+      # failure here must not block generation, preview deployment, or handoff.
+      - name: Record launch signature for rotation
+        continue-on-error: true
+        run: |
+          git config user.name "LaunchLoom"
+          git config user.email "automation@launchloom.app"
+          node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
+            --config "${{ steps.branch.outputs.dir }}/src/site.config.json" \
+            --inspiration "${{ steps.branch.outputs.dir }}/.launchloom/inspiration-pack.json" \
+            --stage preview
+          if git diff --quiet -- data/recent-launch-signatures.json; then
+            echo "No launch history change."
+            exit 0
+          fi
+          git add data/recent-launch-signatures.json
+          git commit -m "Record preview launch signature [skip ci]"
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
       - name: Upload rendered initial evidence
         if: always()
         uses: actions/upload-artifact@v4

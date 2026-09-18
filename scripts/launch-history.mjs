@@ -57,6 +57,7 @@ export function launchRecordFrom({
   config,
   inspiration,
   launchedAt = new Date().toISOString(),
+  stage = "preview",
 }) {
   const experience = config?.design?.experience || {};
   const packId = String(experience.packId || "").trim();
@@ -68,6 +69,7 @@ export function launchRecordFrom({
   return {
     id: `${launchedAt.slice(0, 10)}-${slug(config?.business?.name)}`,
     launchedAt,
+    stage: stage === "production" ? "production" : "preview",
     businessName: String(config?.business?.name || "").trim(),
     recipe: String(config?.design?.recipe || "").trim(),
     packId,
