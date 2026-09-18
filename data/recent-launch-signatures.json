@@ -1,5 +1,22 @@
 {
   "version": 1,
-  "updatedAt": null,
-  "launches": []
+  "updatedAt": "2026-09-18T22:09:18.452Z",
+  "launches": [
+    {
+      "id": "2026-09-18-pulse-athletic-club",
+      "launchedAt": "2026-09-18T22:09:18.451Z",
+      "stage": "preview",
+      "businessName": "Pulse Athletic Club",
+      "recipe": "general-editorial",
+      "packId": "kinetic-poster",
+      "variantId": "full-bleed",
+      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+      "referenceIds": [],
+      "routeSignatures": [
+        "discreet-overlay-navigation|full-bleed-image-with-inset-manifesto|sensory-chapter-sequence|cinematic-display-serif|dark-light-crescendo|low-light-material-macro",
+        "floating-clinical-menu|shared-image-window-mosaic|translucent-service-ribbon|heavy-neutral-sans|seamless-full-screen-panels|single-image-multi-window",
+        "transparent-horizon-navigation|centered-copy-over-motion-landscape|floating-destination-index|overlapping-modern-sans|single-scene-immersion|atmospheric-motion-background"
+      ]
+    }
+  ]
 }
