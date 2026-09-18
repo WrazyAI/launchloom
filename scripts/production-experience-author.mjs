@@ -400,6 +400,30 @@ async function generateContract(generate, request) {
   }
 }
 
+async function generateValidatedSource({ generate, request, stage, validate }) {
+  const result = await generateStageValue(generate, request, "content", stage);
+  let source = normalizeAuthoredSource(result.value);
+  let repaired = result.repaired;
+  try {
+    validate(source, request.route);
+  } catch (error) {
+    const repair = await generateStageValue(
+      generate,
+      {
+        ...request,
+        validationError: error instanceof Error ? error.message : String(error),
+        previousSource: source,
+      },
+      "content",
+      stage,
+    );
+    source = normalizeAuthoredSource(repair.value);
+    repaired = true;
+    validate(source, request.route);
+  }
+  return { source, repaired };
+}
+
 /**
  * Deep module interface for Phase 2 production authorship.
  *
@@ -466,35 +490,33 @@ export async function authorExperienceCandidates({
         experience = normalizeAuthoredSource(repairedExperience.value);
         validateExperience(experience, route, content);
       }
-      const [stylesResult, motionResult] = await Promise.all([
-        generateStageValue(
+      const [stylesOutput, motionOutput] = await Promise.all([
+        generateValidatedSource({
           generate,
-          {
+          request: {
             ...base,
             stage: "styles",
             designContract,
             experienceSource: experience,
           },
-          "content",
-          "styles",
-        ),
-        generateStageValue(
+          stage: "styles",
+          validate: validateStyles,
+        }),
+        generateValidatedSource({
           generate,
-          {
+          request: {
             ...base,
             stage: "motion",
             designContract,
             experienceSource: experience,
           },
-          "content",
-          "motion",
-        ),
+          stage: "motion",
+          validate: validateMotion,
+        }),
       ]);
-      const styles = normalizeAuthoredSource(stylesResult.value);
-      const motion = normalizeAuthoredSource(motionResult.value);
-      complianceRepaired ||= stylesResult.repaired || motionResult.repaired;
-      validateStyles(styles, route);
-      validateMotion(motion, route);
+      const styles = stylesOutput.source;
+      const motion = motionOutput.source;
+      complianceRepaired ||= stylesOutput.repaired || motionOutput.repaired;
       const metadata = {
         version: 1,
         candidateId: `candidate-${String.fromCharCode(97 + index)}`,

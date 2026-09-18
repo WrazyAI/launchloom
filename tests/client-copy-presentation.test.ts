@@ -50,4 +50,17 @@ describe("client copy presentation", () => {
       /site\.design\?\.experience\?\.packId\s*\?\s*"contact"/,
     );
   });
+
+  it("keeps shared light forms and location labels readable in dark themes", async () => {
+    const styles = await fs.readFile(
+      "templates/client-site/src/styles/site.css",
+      "utf8",
+    );
+    expect(styles).toMatch(
+      /\.lead-form\s*\{[^}]*--ink:\s*#14201d;[^}]*--muted:\s*#53605b;[^}]*--line:\s*#d8ded7;/s,
+    );
+    expect(styles).toMatch(
+      /\.location-map-copy \.kicker\s*\{[^}]*color:\s*var\(--ink\);/s,
+    );
+  });
 });

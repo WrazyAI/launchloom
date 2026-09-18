@@ -364,6 +364,9 @@ h2 {
   line-height: 1.7;
 }
 .lead-form {
+  --ink: #14201d;
+  --muted: #53605b;
+  --line: #d8ded7;
   display: grid;
   gap: 12px;
   padding: 28px;
@@ -1095,6 +1098,9 @@ h2 {
 .location-map-copy h2 {
   max-width: 540px;
   margin: 18px 0;
+}
+.location-map-copy .kicker {
+  color: var(--ink);
 }
 .location-map-copy > p {
   max-width: 440px;

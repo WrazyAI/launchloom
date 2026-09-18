@@ -344,6 +344,26 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("repairs motion that omits its reduced-motion path", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage !== "motion" || request.validationError) return value;
+        return {
+          content:
+            "export function mountExperienceMotion() { document.body.animate([{ opacity: 0 }, { opacity: 1 }]); return () => {}; }",
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(
+      result.candidates.every((item) => item.metadata.complianceRepaired),
+    ).toBe(true);
+  });
+
   it("rejects authored bundles that bypass sealed business content", async () => {
     await expect(
       authorExperienceCandidates({
@@ -387,5 +407,10 @@ describe("production experience author", () => {
     expect(workflow).toContain(
       "cp -R /tmp/generated-experiences .launchloom/generated-experiences",
     );
+    expect(
+      workflow.match(
+        /PUBLIC_REVIEW_MODE=true node "\$GITHUB_WORKSPACE\/scripts\/verify-rendered-revision\.mjs"/g,
+      ),
+    ).toHaveLength(2);
   });
 });
