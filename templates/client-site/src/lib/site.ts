@@ -185,6 +185,7 @@ export type SiteConfig = {
       variantId?: string;
       blueprintVersion?: 2;
       candidatePackIds?: string[];
+      avoidPackIds?: string[];
       selectionMode?: "internal-bakeoff" | "requested" | "legacy";
       fingerprint?: string;
     };

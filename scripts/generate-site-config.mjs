@@ -8,6 +8,7 @@ import {
 } from "./launch-history.mjs";
 import { selectDesignVariant } from "../templates/client-site/src/lib/design-variants.ts";
 import {
+  avoidPackIdsFromNotes,
   listExperiencePacks,
   selectExperiencePackId,
   selectExperienceVariantId,
@@ -608,12 +609,14 @@ function designFor(kind, industry, intake = {}) {
   );
   const availablePacks = listExperiencePacks();
   const requestedPack = text(intake.experiencePackId, 80) || undefined;
+  const avoidPackIds = avoidPackIdsFromNotes(intake.brandNotes);
   const experiencePackId = selectExperiencePackId({
     recipe,
     seed,
     requested: requestedPack,
     recentFingerprints: recentFingerprintsForSelection(),
     hasImage: Boolean(intake.heroImage || intake.photoOne || intake.photoTwo || intake.logo),
+    avoidPackIds,
   });
   const typography = requestedTypography(intake, selected.typography);
   const experienceVariantId = selectExperienceVariantId({
@@ -635,6 +638,7 @@ function designFor(kind, industry, intake = {}) {
       variantId: experienceVariantId,
       blueprintVersion: 2,
       candidatePackIds: availablePacks.map((pack) => pack.packId),
+      ...(avoidPackIds.length ? { avoidPackIds } : {}),
       selectionMode: requestedPack ? "requested" : "internal-bakeoff",
       fingerprint: availablePacks
         .find((pack) => pack.packId === experiencePackId)

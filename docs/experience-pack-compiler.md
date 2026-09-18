@@ -38,14 +38,23 @@ revision behavior can distinguish two variants of the same pack.
 
 The bakeoff renders up to six candidates (`maxCandidates`), one per compatible
 pack plus the strongest alternates. Candidate ordering and scoring are
-influenced by four bounded inputs:
+influenced by five bounded inputs:
 
 - the intake seed, which deterministically prefers one variant per pack so
   different businesses rotate structures without a model call
 - requested typography, matched against each variant's affinity list
 - the three inspiration routes, which front-load one candidate per route and
   add a small affinity bonus to strongly matching structures
-- recently launched fingerprints, which carry a recency penalty
+- recently generated fingerprints, which carry a recency penalty
+- explicit brand-note prohibitions, which carry an avoidance penalty for the
+  pack whose visual language they describe
+
+`avoidPackIdsFromNotes` maps phrases such as "white pill navbar", "pale arch
+hero panel", or "guided-conversation visual language" to `bold-utility`, and
+"command bar" or "poster split" to `kinetic-poster`. The derived
+`design.experience.avoidPackIds` list is persisted in the config, applied to
+initial selection and the bakeoff, and never overrides an explicitly requested
+pack.
 
 The deterministic compatibility score still chooses the final winner. Variants
 are never selected by a model and never change verified facts, copy, contact

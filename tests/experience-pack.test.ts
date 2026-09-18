@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
+  avoidPackIdsFromNotes,
   compileExperiencePack,
   compileExperienceCandidates,
   listExperiencePacks,
@@ -374,6 +375,49 @@ describe("experience-pack compiler", () => {
       "bold-utility:standard",
       "kinetic-poster:full-bleed",
     ]);
+  });
+
+  it("maps prohibited brand-note patterns to avoided packs", () => {
+    expect(
+      avoidPackIdsFromNotes(
+        "Do not use a white pill navbar, pale arch hero panel, centered split-card layout, or the guided-conversation visual language.",
+      ),
+    ).toEqual(["bold-utility"]);
+    expect(avoidPackIdsFromNotes("Avoid command-bar navigation.")).toEqual([
+      "kinetic-poster",
+    ]);
+    expect(avoidPackIdsFromNotes("Warm, calm, and human.")).toEqual([]);
+  });
+
+  it("penalizes an avoided pack during candidate scoring and selection", () => {
+    const input = site("Avoidance Check");
+    input.images.hero = "/images/hero.webp";
+    const avoid = avoidPackIdsFromNotes(
+      "Do not use a white pill navbar, pale arch hero panel, centered split-card layout, or the guided-conversation visual language.",
+    );
+    const candidates = compileExperienceCandidates(input, "general-editorial", {
+      avoidPackIds: avoid,
+    });
+    const baseline = compileExperienceCandidates(input, "general-editorial");
+    const findBold = (
+      list: ReturnType<typeof compileExperienceCandidates>,
+    ) =>
+      list.find(
+        (candidate) =>
+          candidate.packId === "bold-utility" &&
+          candidate.variantId === "standard",
+      );
+    expect(findBold(candidates)!.compatibilityScore).toBeLessThan(
+      findBold(baseline)!.compatibilityScore,
+    );
+
+    const selected = selectExperiencePackId({
+      recipe: "general-editorial",
+      seed: "avoidance|check",
+      hasImage: true,
+      avoidPackIds: avoid,
+    });
+    expect(selected).not.toBe("bold-utility");
   });
 
   it("varies the preferred variant by intake seed", () => {

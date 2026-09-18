@@ -149,6 +149,9 @@ const candidates = compileExperienceCandidates(original, recipe, {
   routePreferences: Array.isArray(inspiration?.routes)
     ? inspiration.routes
     : undefined,
+  avoidPackIds: Array.isArray(original.design?.experience?.avoidPackIds)
+    ? original.design.experience.avoidPackIds
+    : undefined,
 }).filter((candidate) => candidate.compatibilityScore >= 0);
 const browser = await chromium.launch({ headless: true });
 const results = [];

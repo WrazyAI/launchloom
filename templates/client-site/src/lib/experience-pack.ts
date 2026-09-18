@@ -355,6 +355,53 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
 };
 
 const packIds = Object.keys(packs) as ExperiencePackId[];
+
+const AVOIDANCE_PENALTY = 20;
+
+// Intake brand notes can prohibit a specific visual language. These rules map
+// explicit negative direction onto the pack signatures it describes, so the
+// selection respects the brief instead of shipping the prohibited pattern.
+const avoidanceRules: readonly {
+  pattern: RegExp;
+  packIds: readonly ExperiencePackId[];
+}[] = [
+  {
+    pattern: /\b(?:utility[-\s]?pill|pill\s+nav(?:bar)?|white\s+pill)\b/iu,
+    packIds: ["bold-utility"],
+  },
+  {
+    pattern: /\b(?:pale\s+arch|arch\s+(?:hero|panel))\b/iu,
+    packIds: ["bold-utility"],
+  },
+  {
+    pattern: /\bguided[-\s]conversation\b/iu,
+    packIds: ["bold-utility"],
+  },
+  {
+    pattern: /\bcentered\s+(?:split[-\s]?card|split|card)\b/iu,
+    packIds: ["bold-utility"],
+  },
+  {
+    pattern: /\bcommand[-\s]bar\b/iu,
+    packIds: ["kinetic-poster"],
+  },
+  {
+    pattern: /\bposter[-\s]split\b/iu,
+    packIds: ["kinetic-poster"],
+  },
+];
+
+export function avoidPackIdsFromNotes(
+  notes: unknown,
+): readonly ExperiencePackId[] {
+  const text = String(notes || "").toLowerCase();
+  if (!text) return [];
+  const avoid = new Set<ExperiencePackId>();
+  for (const rule of avoidanceRules)
+    if (rule.pattern.test(text)) rule.packIds.forEach((id) => avoid.add(id));
+  return [...avoid];
+}
+
 function stableHash(value: string) {
   let hash = 2166136261;
   for (const character of value) {
@@ -512,6 +559,7 @@ export function compileExperienceCandidates(
     maxCandidates?: number;
     typography?: DesignTypography;
     routePreferences?: readonly ExperienceRoutePreference[];
+    avoidPackIds?: readonly ExperiencePackId[];
   } = {},
 ): readonly ExperienceCandidate[] {
   const seed = seedFor(site);
@@ -519,6 +567,7 @@ export function compileExperienceCandidates(
   const recent = new Set(options.recentFingerprints || []);
   const maxCandidates = Math.max(packIds.length, options.maxCandidates ?? 6);
   const routePreferences = options.routePreferences || [];
+  const avoidPackIds = new Set(options.avoidPackIds || []);
   const candidates: ExperienceCandidate[] = [];
   packIds.forEach((packId, index) => {
     const definition = packs[packId];
@@ -536,6 +585,7 @@ export function compileExperienceCandidates(
           ? 4
           : 0;
       const blueprintRouteBonus = routeBonus(blueprint, routePreferences);
+      const avoidPenalty = avoidPackIds.has(packId) ? AVOIDANCE_PENALTY : 0;
       const compatibilityScore =
         result.score < 0
           ? result.score
@@ -546,7 +596,8 @@ export function compileExperienceCandidates(
                 recencyPenalty -
                 variantPenalty +
                 affinityBonus +
-                blueprintRouteBonus,
+                blueprintRouteBonus -
+                avoidPenalty,
             );
       candidates.push({
         packId,
@@ -612,18 +663,21 @@ export function selectExperiencePackId({
   requested,
   recentFingerprints = [],
   hasImage = true,
+  avoidPackIds = [],
 }: {
   recipe: PageRecipe;
   seed: string;
   requested?: unknown;
   recentFingerprints?: readonly string[];
   hasImage?: boolean;
+  avoidPackIds?: readonly ExperiencePackId[];
 }): ExperiencePackId {
   const requestedId = canonicalPackId(requested);
   if (requestedId && (!packs[requestedId].requiresImage || hasImage))
     return requestedId;
   const offset = stableHash(seed) % packIds.length;
   const recent = new Set(recentFingerprints);
+  const avoided = new Set(avoidPackIds);
   return packIds
     .filter((id) => hasImage || !packs[id].requiresImage)
     .sort((left, right) => {
@@ -632,7 +686,8 @@ export function selectExperiencePackId({
         (packs[id].preferredRecipes.includes(recipe) ? 0.5 : 0) +
         (recent.has(fingerprint(packs[id], primaryVariant(packs[id])))
           ? 100
-          : 0);
+          : 0) +
+        (avoided.has(id) ? AVOIDANCE_PENALTY : 0);
       return score(left) - score(right);
     })[0];
 }
