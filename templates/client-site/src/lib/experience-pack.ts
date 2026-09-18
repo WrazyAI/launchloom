@@ -459,7 +459,7 @@ function seedFor(site: SiteConfig) {
 }
 
 function routeAffinity(
-  candidate: ExperienceCandidate,
+  blueprint: ExperienceBlueprintV2,
   route: ExperienceRoutePreference,
 ) {
   const haystack = [
@@ -474,21 +474,34 @@ function routeAffinity(
     .toLowerCase();
   if (!haystack) return 0;
   const tokens = [
-    candidate.blueprint.navigation,
-    candidate.blueprint.hero,
-    candidate.blueprint.conversion,
-    candidate.blueprint.services,
-    candidate.blueprint.proof,
-    candidate.blueprint.closing,
-    candidate.blueprint.typography,
-    candidate.blueprint.rhythm,
-    candidate.blueprint.imageStrategy,
+    blueprint.navigation,
+    blueprint.hero,
+    blueprint.conversion,
+    blueprint.services,
+    blueprint.proof,
+    blueprint.closing,
+    blueprint.typography,
+    blueprint.rhythm,
+    blueprint.imageStrategy,
   ]
     .join(" ")
     .toLowerCase()
     .split(/[^a-z0-9]+/u)
     .filter((token) => token.length > 3);
   return new Set(tokens.filter((token) => haystack.includes(token))).size;
+}
+
+const ROUTE_BONUS_LIMIT = 3;
+
+function routeBonus(
+  blueprint: ExperienceBlueprintV2,
+  routes: readonly ExperienceRoutePreference[],
+) {
+  return routes.reduce(
+    (best, route) =>
+      Math.max(best, Math.min(routeAffinity(blueprint, route), ROUTE_BONUS_LIMIT)),
+    0,
+  );
 }
 
 export function compileExperienceCandidates(
@@ -501,23 +514,28 @@ export function compileExperienceCandidates(
     routePreferences?: readonly ExperienceRoutePreference[];
   } = {},
 ): readonly ExperienceCandidate[] {
-  const offset = stableHash(seedFor(site)) % packIds.length;
+  const seed = seedFor(site);
+  const offset = stableHash(seed) % packIds.length;
   const recent = new Set(options.recentFingerprints || []);
   const maxCandidates = Math.max(packIds.length, options.maxCandidates ?? 6);
+  const routePreferences = options.routePreferences || [];
   const candidates: ExperienceCandidate[] = [];
   packIds.forEach((packId, index) => {
     const definition = packs[packId];
+    const preferredVariantIndex =
+      stableHash(`${seed}|${packId}`) % definition.variants.length;
     definition.variants.forEach((variant, variantIndex) => {
       const result = compatibility(definition, variant, site, recipe);
       const blueprint = asBlueprint(definition, variant);
       const rotationPenalty =
         (index - offset + packIds.length) % packIds.length;
       const recencyPenalty = recent.has(blueprint.fingerprint) ? 15 : 0;
-      const variantPenalty = variantIndex * 4;
+      const variantPenalty = variantIndex === preferredVariantIndex ? 0 : 4;
       const affinityBonus =
         options.typography && variant.affinity.includes(options.typography)
           ? 4
           : 0;
+      const blueprintRouteBonus = routeBonus(blueprint, routePreferences);
       const compatibilityScore =
         result.score < 0
           ? result.score
@@ -527,7 +545,8 @@ export function compileExperienceCandidates(
                 rotationPenalty -
                 recencyPenalty -
                 variantPenalty +
-                affinityBonus,
+                affinityBonus +
+                blueprintRouteBonus,
             );
       candidates.push({
         packId,
@@ -549,7 +568,7 @@ export function compileExperienceCandidates(
   // Route preferences front-load one candidate per inspiration route, so the
   // bakeoff compares structurally different directions instead of near
   // duplicates. The deterministic score still decides the final winner.
-  for (const route of options.routePreferences || []) {
+  for (const route of routePreferences) {
     const best = candidates
       .filter(
         (candidate) =>
@@ -557,7 +576,8 @@ export function compileExperienceCandidates(
       )
       .sort(
         (left, right) =>
-          routeAffinity(right, route) - routeAffinity(left, route) ||
+          routeAffinity(right.blueprint, route) -
+            routeAffinity(left.blueprint, route) ||
           right.compatibilityScore - left.compatibilityScore ||
           packIds.indexOf(left.packId) - packIds.indexOf(right.packId),
       )[0];

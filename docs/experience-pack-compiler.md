@@ -37,11 +37,14 @@ motion profile, and mobile behavior. The selected `variantId` is recorded in
 revision behavior can distinguish two variants of the same pack.
 
 The bakeoff renders up to six candidates (`maxCandidates`), one per compatible
-pack plus the strongest alternates. Candidate ordering is influenced by three
-bounded inputs:
+pack plus the strongest alternates. Candidate ordering and scoring are
+influenced by four bounded inputs:
 
+- the intake seed, which deterministically prefers one variant per pack so
+  different businesses rotate structures without a model call
 - requested typography, matched against each variant's affinity list
-- the three inspiration routes, which front-load one candidate per route
+- the three inspiration routes, which front-load one candidate per route and
+  add a small affinity bonus to strongly matching structures
 - recently launched fingerprints, which carry a recency penalty
 
 The deterministic compatibility score still chooses the final winner. Variants

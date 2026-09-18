@@ -376,6 +376,22 @@ describe("experience-pack compiler", () => {
     ]);
   });
 
+  it("varies the preferred variant by intake seed", () => {
+    const preferred = new Set(
+      Array.from({ length: 40 }, (_, index) => {
+        const input = site(`Seed Business ${index}`);
+        input.images.hero = "/images/hero.webp";
+        return compileExperienceCandidates(input, "general-editorial")
+          .filter((candidate) => candidate.packId === "bold-utility")
+          .sort(
+            (left, right) =>
+              right.compatibilityScore - left.compatibilityScore,
+          )[0].variantId;
+      }),
+    );
+    expect(preferred).toEqual(new Set(["standard", "portrait"]));
+  });
+
   it("penalizes a recently launched pack and variant fingerprint", () => {
     const input = site("Variant Recency");
     input.images.hero = "/images/hero.webp";
