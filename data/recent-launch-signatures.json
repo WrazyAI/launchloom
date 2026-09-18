@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-18T22:09:18.452Z",
+  "updatedAt": "2026-09-18T23:08:33.544Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -16,6 +16,22 @@
         "discreet-overlay-navigation|full-bleed-image-with-inset-manifesto|sensory-chapter-sequence|cinematic-display-serif|dark-light-crescendo|low-light-material-macro",
         "floating-clinical-menu|shared-image-window-mosaic|translucent-service-ribbon|heavy-neutral-sans|seamless-full-screen-panels|single-image-multi-window",
         "transparent-horizon-navigation|centered-copy-over-motion-landscape|floating-destination-index|overlapping-modern-sans|single-scene-immersion|atmospheric-motion-background"
+      ]
+    },
+    {
+      "id": "2026-09-18-aurora-ridge-observatory-pipeline-canary",
+      "launchedAt": "2026-09-18T23:08:33.544Z",
+      "stage": "preview",
+      "businessName": "Aurora Ridge Observatory [Pipeline Canary]",
+      "recipe": "general-editorial",
+      "packId": "bold-utility",
+      "variantId": "standard",
+      "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+      "referenceIds": [],
+      "routeSignatures": [
+        "fixed-bottom-conversation-pill|narrow-authored-column|project-marquee-and-pricing-pair|neo-grotesk-with-pixel-serif|essay-marquee-testimonial|wide-moving-project-strip",
+        "micro-menu-with-cart-counterpoint|editorial-face-and-type-collision|archive-collection-rail|fashion-grotesk-and-display-mix|campaign-spread-sequence|hard-cropped-fashion-portrait",
+        "whispered-corner-navigation|typographic-monument-with-central-portrait|magazine-ledger|monumental-serif-with-script-accent|slow-cinematic-chapters|warm-architectural-tableaux"
       ]
     }
   ]
