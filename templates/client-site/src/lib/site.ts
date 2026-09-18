@@ -182,6 +182,7 @@ export type SiteConfig = {
     };
     experience?: {
       packId?: ExperiencePackId | string;
+      variantId?: string;
       blueprintVersion?: 2;
       candidatePackIds?: string[];
       selectionMode?: "internal-bakeoff" | "requested" | "legacy";

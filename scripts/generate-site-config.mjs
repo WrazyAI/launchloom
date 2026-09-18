@@ -1,13 +1,29 @@
 import fs from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { parseModelJson } from "./model-json.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
+import {
+  defaultHistoryPath,
+  recentLayoutFingerprints,
+} from "./launch-history.mjs";
 import { selectDesignVariant } from "../templates/client-site/src/lib/design-variants.ts";
 import {
   listExperiencePacks,
   selectExperiencePackId,
+  selectExperienceVariantId,
 } from "../templates/client-site/src/lib/experience-pack.ts";
 
 export { parseModelJson } from "./model-json.mjs";
+
+function recentFingerprintsForSelection() {
+  try {
+    return recentLayoutFingerprints(
+      JSON.parse(readFileSync(defaultHistoryPath(), "utf8")),
+    );
+  } catch {
+    return [];
+  }
+}
 
 const MODEL = "z-ai/glm-5.3-flash";
 
@@ -596,7 +612,13 @@ function designFor(kind, industry, intake = {}) {
     recipe,
     seed,
     requested: requestedPack,
+    recentFingerprints: recentFingerprintsForSelection(),
     hasImage: Boolean(intake.heroImage || intake.photoOne || intake.photoTwo || intake.logo),
+  });
+  const typography = requestedTypography(intake, selected.typography);
+  const experienceVariantId = selectExperienceVariantId({
+    packId: experiencePackId,
+    typography,
   });
   return {
     recipe,
@@ -606,14 +628,18 @@ function designFor(kind, industry, intake = {}) {
       .map((section) => ({ ...section })),
     treatment: {
       density: selected.density,
-      typography: requestedTypography(intake, selected.typography),
+      typography,
     },
     experience: {
       packId: experiencePackId,
+      variantId: experienceVariantId,
       blueprintVersion: 2,
       candidatePackIds: availablePacks.map((pack) => pack.packId),
       selectionMode: requestedPack ? "requested" : "internal-bakeoff",
-      fingerprint: availablePacks.find((pack) => pack.packId === experiencePackId)?.fingerprint,
+      fingerprint: availablePacks
+        .find((pack) => pack.packId === experiencePackId)
+        ?.variants.find((variant) => variant.id === experienceVariantId)
+        ?.fingerprint,
     },
   };
 }

@@ -1,4 +1,9 @@
-import type { PageRecipe, PageSectionType, SiteConfig } from "./site";
+import type {
+  DesignTypography,
+  PageRecipe,
+  PageSectionType,
+  SiteConfig,
+} from "./site";
 
 export type ExperiencePackId =
   "cinematic-narrative" | "bold-utility" | "kinetic-poster";
@@ -6,26 +11,90 @@ export type LegacyExperiencePackId =
   "editorial-folio" | "guided-conversation" | "service-led";
 export type ExperienceSection = PageSectionType | "conversion" | "location-map";
 
+export type ExperienceNavigation =
+  | "minimal-inline"
+  | "utility-pill"
+  | "command-bar";
+export type ExperienceHero =
+  | "image-narrative"
+  | "centered-monument"
+  | "editorial-dialogue"
+  | "guided-portrait"
+  | "poster-split"
+  | "poster-full-bleed";
+export type ExperienceConversion =
+  | "discovery-ribbon"
+  | "embedded-qualifier"
+  | "quick-request";
+export type ExperienceServices =
+  | "editorial-index"
+  | "chaptered-index"
+  | "service-chapters"
+  | "service-grid"
+  | "diagnostic-list"
+  | "problem-grid";
+export type ExperienceProof =
+  | "principle-line"
+  | "quiet-ledger"
+  | "evidence-strip";
+export type ExperienceClosing =
+  | "cinematic-inquiry"
+  | "conversation-handoff"
+  | "action-poster";
+export type ExperienceTypography =
+  | "editorial-contrast"
+  | "humanist-calm"
+  | "graphic-impact";
+export type ExperienceImageStrategy =
+  | "narrative-crops"
+  | "human-context"
+  | "bold-documentary";
+export type ExperienceRhythm = "cinematic" | "conversational" | "kinetic";
+export type ExperienceMobile =
+  | "editorial-stack"
+  | "guided-stack"
+  | "poster-stack";
+export type ExperienceMotion = Readonly<{
+  profile: "still" | "restrained" | "cinematic";
+  engine: "css" | "native-scroll";
+  maxPinnedScenes: 0 | 1;
+}>;
+
 export type ExperienceBlueprintV2 = Readonly<{
   version: 2;
   packId: ExperiencePackId;
-  navigation: "minimal-inline" | "utility-pill" | "command-bar";
-  hero: "image-narrative" | "editorial-dialogue" | "poster-split";
-  conversion: "discovery-ribbon" | "embedded-qualifier" | "quick-request";
-  services: "editorial-index" | "service-chapters" | "diagnostic-list";
-  proof: "principle-line" | "quiet-ledger" | "evidence-strip";
-  closing: "cinematic-inquiry" | "conversation-handoff" | "action-poster";
-  typography: "editorial-contrast" | "humanist-calm" | "graphic-impact";
-  imageStrategy: "narrative-crops" | "human-context" | "bold-documentary";
-  rhythm: "cinematic" | "conversational" | "kinetic";
-  motion: Readonly<{
-    profile: "still" | "restrained" | "cinematic";
-    engine: "css" | "native-scroll";
-    maxPinnedScenes: 0 | 1;
-  }>;
+  variantId: string;
+  navigation: ExperienceNavigation;
+  hero: ExperienceHero;
+  conversion: ExperienceConversion;
+  services: ExperienceServices;
+  proof: ExperienceProof;
+  closing: ExperienceClosing;
+  typography: ExperienceTypography;
+  imageStrategy: ExperienceImageStrategy;
+  rhythm: ExperienceRhythm;
+  motion: ExperienceMotion;
   sectionOrder: readonly ExperienceSection[];
-  mobile: "editorial-stack" | "guided-stack" | "poster-stack";
+  mobile: ExperienceMobile;
   fingerprint: string;
+}>;
+
+export type ExperiencePackVariant = Readonly<{
+  id: string;
+  label: string;
+  hero: ExperienceHero;
+  services: ExperienceServices;
+  sectionOrder: readonly ExperienceSection[];
+  fingerprint: string;
+}>;
+
+export type ExperienceRoutePreference = Readonly<{
+  navigation?: string;
+  heroGeometry?: string;
+  servicePresentation?: string;
+  sectionRhythm?: string;
+  typographyCategory?: string;
+  signature?: string;
 }>;
 
 export type ExperienceContent = Readonly<{
@@ -66,15 +135,24 @@ export type CompiledExperience = Readonly<{
 
 export type ExperienceCandidate = Readonly<{
   packId: ExperiencePackId;
+  variantId: string;
   blueprint: ExperienceBlueprintV2;
   compatibilityScore: number;
   diagnostics: readonly string[];
 }>;
 
-type PackDefinition = Omit<ExperienceBlueprintV2, "version" | "fingerprint"> & {
+type PackVariantDefinition = Omit<ExperiencePackVariant, "fingerprint"> & {
+  affinity: readonly DesignTypography[];
+};
+
+type PackDefinition = Omit<
+  ExperienceBlueprintV2,
+  "version" | "fingerprint" | "variantId" | "hero" | "services" | "sectionOrder"
+> & {
   intent: string;
   preferredRecipes: readonly PageRecipe[];
   requiresImage: boolean;
+  variants: readonly PackVariantDefinition[];
 };
 
 const legacyAliases: Record<LegacyExperiencePackId, ExperiencePackId> = {
@@ -90,9 +168,7 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
     preferredRecipes: ["general-editorial", "care-editorial"],
     requiresImage: true,
     navigation: "minimal-inline",
-    hero: "image-narrative",
     conversion: "discovery-ribbon",
-    services: "editorial-index",
     proof: "principle-line",
     closing: "cinematic-inquiry",
     typography: "editorial-contrast",
@@ -104,16 +180,51 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
       maxPinnedScenes: 1,
     },
     mobile: "editorial-stack",
-    sectionOrder: [
-      "hero",
-      "conversion",
-      "services",
-      "about",
-      "gallery",
-      "social-proof",
-      "faq",
-      "location-map",
-      "contact",
+    variants: [
+      {
+        id: "standard",
+        label: "Image narrative",
+        affinity: ["refined-serif", "editorial", "soft-sans", "humanist"],
+        hero: "image-narrative",
+        services: "editorial-index",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "about",
+          "gallery",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+      {
+        id: "monument",
+        label: "Centered monument",
+        affinity: [
+          "heritage",
+          "modern-serif",
+          "geometric",
+          "industrial",
+          "condensed",
+          "strong",
+          "sans",
+        ],
+        hero: "centered-monument",
+        services: "chaptered-index",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "about",
+          "social-proof",
+          "gallery",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
     ],
   },
   "bold-utility": {
@@ -123,9 +234,7 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
     preferredRecipes: ["care-editorial", "general-editorial"],
     requiresImage: false,
     navigation: "utility-pill",
-    hero: "editorial-dialogue",
     conversion: "embedded-qualifier",
-    services: "service-chapters",
     proof: "quiet-ledger",
     closing: "conversation-handoff",
     typography: "humanist-calm",
@@ -133,16 +242,51 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
     rhythm: "conversational",
     motion: { profile: "restrained", engine: "css", maxPinnedScenes: 0 },
     mobile: "guided-stack",
-    sectionOrder: [
-      "hero",
-      "conversion",
-      "services",
-      "trust",
-      "about",
-      "social-proof",
-      "faq",
-      "location-map",
-      "contact",
+    variants: [
+      {
+        id: "standard",
+        label: "Editorial dialogue",
+        affinity: ["humanist", "soft-sans", "refined-serif", "editorial"],
+        hero: "editorial-dialogue",
+        services: "service-chapters",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "trust",
+          "about",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+      {
+        id: "portrait",
+        label: "Guided portrait",
+        affinity: [
+          "sans",
+          "geometric",
+          "strong",
+          "modern-serif",
+          "heritage",
+          "industrial",
+          "condensed",
+        ],
+        hero: "guided-portrait",
+        services: "service-grid",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "about",
+          "trust",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
     ],
   },
   "kinetic-poster": {
@@ -152,9 +296,7 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
     preferredRecipes: ["local-trades", "general-editorial"],
     requiresImage: false,
     navigation: "command-bar",
-    hero: "poster-split",
     conversion: "quick-request",
-    services: "diagnostic-list",
     proof: "evidence-strip",
     closing: "action-poster",
     typography: "graphic-impact",
@@ -162,16 +304,52 @@ const packs: Record<ExperiencePackId, PackDefinition> = {
     rhythm: "kinetic",
     motion: { profile: "still", engine: "css", maxPinnedScenes: 0 },
     mobile: "poster-stack",
-    sectionOrder: [
-      "hero",
-      "conversion",
-      "services",
-      "coverage",
-      "process",
-      "social-proof",
-      "faq",
-      "location-map",
-      "contact",
+    variants: [
+      {
+        id: "standard",
+        label: "Poster split",
+        affinity: ["condensed", "geometric", "industrial"],
+        hero: "poster-split",
+        services: "diagnostic-list",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "coverage",
+          "process",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+      {
+        id: "full-bleed",
+        label: "Full bleed",
+        affinity: [
+          "strong",
+          "sans",
+          "editorial",
+          "modern-serif",
+          "heritage",
+          "humanist",
+          "soft-sans",
+          "refined-serif",
+        ],
+        hero: "poster-full-bleed",
+        services: "problem-grid",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "process",
+          "coverage",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
     ],
   },
 };
@@ -190,13 +368,17 @@ function canonicalPackId(value: unknown): ExperiencePackId | undefined {
   if (value in packs) return value as ExperiencePackId;
   return legacyAliases[value as LegacyExperiencePackId];
 }
-function fingerprint(definition: PackDefinition) {
+function fingerprint(
+  definition: PackDefinition,
+  variant: PackVariantDefinition,
+) {
   return [
     definition.packId,
+    variant.id,
     definition.navigation,
-    definition.hero,
+    variant.hero,
     definition.conversion,
-    definition.services,
+    variant.services,
     definition.proof,
     definition.closing,
     definition.typography,
@@ -206,20 +388,42 @@ function fingerprint(definition: PackDefinition) {
     definition.motion.engine,
     definition.motion.maxPinnedScenes,
     definition.mobile,
-    definition.sectionOrder.join("/"),
+    variant.sectionOrder.join("/"),
   ].join("|");
 }
-function asBlueprint(definition: PackDefinition): ExperienceBlueprintV2 {
+function asBlueprint(
+  definition: PackDefinition,
+  variant: PackVariantDefinition,
+): ExperienceBlueprintV2 {
   return {
-    ...definition,
-    motion: { ...definition.motion },
-    sectionOrder: [...definition.sectionOrder],
     version: 2,
-    fingerprint: fingerprint(definition),
+    packId: definition.packId,
+    variantId: variant.id,
+    navigation: definition.navigation,
+    hero: variant.hero,
+    conversion: definition.conversion,
+    services: variant.services,
+    proof: definition.proof,
+    closing: definition.closing,
+    typography: definition.typography,
+    imageStrategy: definition.imageStrategy,
+    rhythm: definition.rhythm,
+    motion: { ...definition.motion },
+    sectionOrder: [...variant.sectionOrder],
+    mobile: definition.mobile,
+    fingerprint: fingerprint(definition, variant),
   };
+}
+function primaryVariant(definition: PackDefinition) {
+  return definition.variants[0];
+}
+function findVariant(definition: PackDefinition, variantId: unknown) {
+  if (typeof variantId !== "string") return undefined;
+  return definition.variants.find((variant) => variant.id === variantId);
 }
 function compatibility(
   definition: PackDefinition,
+  variant: PackVariantDefinition,
   site: SiteConfig,
   recipe: PageRecipe,
 ) {
@@ -238,7 +442,7 @@ function compatibility(
     definition.conversion === "embedded-qualifier"
   )
     score += 10;
-  if (recipe === "local-trades" && definition.services === "diagnostic-list")
+  if (recipe === "local-trades" && variant.services === "diagnostic-list")
     score += 12;
   if (recipe === "care-editorial" && definition.typography === "humanist-calm")
     score += 12;
@@ -254,33 +458,132 @@ function seedFor(site: SiteConfig) {
   ].join("|");
 }
 
+function routeAffinity(
+  candidate: ExperienceCandidate,
+  route: ExperienceRoutePreference,
+) {
+  const haystack = [
+    route.navigation,
+    route.heroGeometry,
+    route.servicePresentation,
+    route.sectionRhythm,
+    route.typographyCategory,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  if (!haystack) return 0;
+  const tokens = [
+    candidate.blueprint.navigation,
+    candidate.blueprint.hero,
+    candidate.blueprint.conversion,
+    candidate.blueprint.services,
+    candidate.blueprint.proof,
+    candidate.blueprint.closing,
+    candidate.blueprint.typography,
+    candidate.blueprint.rhythm,
+    candidate.blueprint.imageStrategy,
+  ]
+    .join(" ")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/u)
+    .filter((token) => token.length > 3);
+  return new Set(tokens.filter((token) => haystack.includes(token))).size;
+}
+
 export function compileExperienceCandidates(
   site: SiteConfig,
   recipe: PageRecipe,
-  options: { recentFingerprints?: readonly string[] } = {},
+  options: {
+    recentFingerprints?: readonly string[];
+    maxCandidates?: number;
+    typography?: DesignTypography;
+    routePreferences?: readonly ExperienceRoutePreference[];
+  } = {},
 ): readonly ExperienceCandidate[] {
   const offset = stableHash(seedFor(site)) % packIds.length;
   const recent = new Set(options.recentFingerprints || []);
-  return packIds
-    .map((packId, index) => {
-      const definition = packs[packId];
-      const result = compatibility(definition, site, recipe);
-      const blueprint = asBlueprint(definition);
+  const maxCandidates = Math.max(packIds.length, options.maxCandidates ?? 6);
+  const candidates: ExperienceCandidate[] = [];
+  packIds.forEach((packId, index) => {
+    const definition = packs[packId];
+    definition.variants.forEach((variant, variantIndex) => {
+      const result = compatibility(definition, variant, site, recipe);
+      const blueprint = asBlueprint(definition, variant);
       const rotationPenalty =
         (index - offset + packIds.length) % packIds.length;
       const recencyPenalty = recent.has(blueprint.fingerprint) ? 15 : 0;
+      const variantPenalty = variantIndex * 4;
+      const affinityBonus =
+        options.typography && variant.affinity.includes(options.typography)
+          ? 4
+          : 0;
       const compatibilityScore =
         result.score < 0
           ? result.score
-          : Math.max(0, result.score - rotationPenalty - recencyPenalty);
-      return {
+          : Math.max(
+              0,
+              result.score -
+                rotationPenalty -
+                recencyPenalty -
+                variantPenalty +
+                affinityBonus,
+            );
+      candidates.push({
         packId,
+        variantId: variant.id,
         blueprint,
         compatibilityScore,
         diagnostics: result.diagnostics,
-      };
-    })
-    .sort((left, right) => right.compatibilityScore - left.compatibilityScore);
+      });
+    });
+  });
+  candidates.sort(
+    (left, right) =>
+      right.compatibilityScore - left.compatibilityScore ||
+      packIds.indexOf(left.packId) - packIds.indexOf(right.packId) ||
+      left.variantId.localeCompare(right.variantId),
+  );
+  const selected: ExperienceCandidate[] = [];
+  const taken = new Set<ExperienceCandidate>();
+  // Route preferences front-load one candidate per inspiration route, so the
+  // bakeoff compares structurally different directions instead of near
+  // duplicates. The deterministic score still decides the final winner.
+  for (const route of options.routePreferences || []) {
+    const best = candidates
+      .filter(
+        (candidate) =>
+          candidate.compatibilityScore >= 0 && !taken.has(candidate),
+      )
+      .sort(
+        (left, right) =>
+          routeAffinity(right, route) - routeAffinity(left, route) ||
+          right.compatibilityScore - left.compatibilityScore ||
+          packIds.indexOf(left.packId) - packIds.indexOf(right.packId),
+      )[0];
+    if (!best) continue;
+    taken.add(best);
+    selected.push(best);
+  }
+  const selectedPacks = new Set(selected.map((candidate) => candidate.packId));
+  for (const candidate of candidates) {
+    if (candidate.compatibilityScore < 0 || taken.has(candidate)) continue;
+    if (selectedPacks.has(candidate.packId)) continue;
+    taken.add(candidate);
+    selected.push(candidate);
+    selectedPacks.add(candidate.packId);
+  }
+  for (const candidate of candidates) {
+    if (selected.length >= maxCandidates) break;
+    if (candidate.compatibilityScore < 0 || taken.has(candidate)) continue;
+    taken.add(candidate);
+    selected.push(candidate);
+  }
+  for (const candidate of candidates) {
+    if (candidate.compatibilityScore >= 0) continue;
+    selected.push(candidate);
+  }
+  return selected;
 }
 
 export function selectExperiencePackId({
@@ -307,9 +610,29 @@ export function selectExperiencePackId({
       const score = (id: ExperiencePackId) =>
         ((packIds.indexOf(id) - offset + packIds.length) % packIds.length) -
         (packs[id].preferredRecipes.includes(recipe) ? 0.5 : 0) +
-        (recent.has(fingerprint(packs[id])) ? 100 : 0);
+        (recent.has(fingerprint(packs[id], primaryVariant(packs[id])))
+          ? 100
+          : 0);
       return score(left) - score(right);
     })[0];
+}
+
+export function selectExperienceVariantId({
+  packId,
+  typography,
+}: {
+  packId: ExperiencePackId | string;
+  typography?: DesignTypography;
+}): string {
+  const definition = packs[packId as ExperiencePackId];
+  if (!definition) return "standard";
+  if (typography) {
+    const match = definition.variants.find((variant) =>
+      variant.affinity.includes(typography),
+    );
+    if (match) return match.id;
+  }
+  return primaryVariant(definition).id;
 }
 
 function validate(program: ExperienceBlueprintV2) {
@@ -332,6 +655,7 @@ function validate(program: ExperienceBlueprintV2) {
     diagnostics.push("The section order contains duplicates.");
   if (program.motion.maxPinnedScenes > 1)
     diagnostics.push("Only one pinned motion scene is allowed.");
+  if (!program.variantId) diagnostics.push("The variant is required.");
   return diagnostics;
 }
 
@@ -385,14 +709,23 @@ function contentFor(site: SiteConfig): ExperienceContent {
 }
 
 export function listExperiencePacks() {
-  return packIds.map((id) => ({
-    ...packs[id],
-    motion: { ...packs[id].motion },
-    preferredRecipes: [...packs[id].preferredRecipes],
-    sectionOrder: [...packs[id].sectionOrder],
-    version: 2 as const,
-    fingerprint: fingerprint(packs[id]),
-  }));
+  return packIds.map((id) => {
+    const definition = packs[id];
+    return {
+      ...asBlueprint(definition, primaryVariant(definition)),
+      intent: definition.intent,
+      preferredRecipes: [...definition.preferredRecipes],
+      requiresImage: definition.requiresImage,
+      variants: definition.variants.map((variant) => ({
+        id: variant.id,
+        label: variant.label,
+        hero: variant.hero,
+        services: variant.services,
+        sectionOrder: [...variant.sectionOrder],
+        fingerprint: fingerprint(definition, variant),
+      })),
+    };
+  });
 }
 
 export function compileExperiencePack(
@@ -402,12 +735,19 @@ export function compileExperiencePack(
 ): CompiledExperience {
   const requested = site.design?.experience?.packId;
   const requestedId = canonicalPackId(requested);
+  const requestedVariantId = site.design?.experience?.variantId;
   const candidates = compileExperienceCandidates(site, recipe, options);
+  const requestedPack = requestedId ? packs[requestedId] : undefined;
+  const requestedVariant = requestedPack
+    ? findVariant(requestedPack, requestedVariantId)
+    : undefined;
   const chosen =
-    (requestedId
+    (requestedId && requestedPack
       ? candidates.find(
           (candidate) =>
             candidate.packId === requestedId &&
+            candidate.variantId ===
+              (requestedVariant?.id || primaryVariant(requestedPack).id) &&
             candidate.compatibilityScore >= 0,
         )
       : undefined) ||
@@ -432,6 +772,18 @@ export function compileExperiencePack(
       ...(requestedId && requestedId !== chosen.packId
         ? [
             `Experience pack '${requestedId}' was incompatible with verified assets and was replaced safely.`,
+          ]
+        : []),
+      ...(requestedVariantId && requestedPack && !requestedVariant
+        ? [
+            `Unknown experience variant '${String(requestedVariantId)}' was replaced safely.`,
+          ]
+        : []),
+      ...(requestedVariant &&
+      requestedId === chosen.packId &&
+      requestedVariant.id !== chosen.variantId
+        ? [
+            `Experience variant '${requestedVariant.id}' was incompatible and was replaced safely.`,
           ]
         : []),
     ],

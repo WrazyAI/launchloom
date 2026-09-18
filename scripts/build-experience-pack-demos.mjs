@@ -19,17 +19,26 @@ const demos = [
     slug: "cinematic-narrative",
     fixture: "architecture.json",
     packId: "cinematic-narrative",
+    variants: ["standard", "monument"],
   },
-  { slug: "bold-utility", fixture: "home-care.json", packId: "bold-utility" },
+  {
+    slug: "bold-utility",
+    fixture: "home-care.json",
+    packId: "bold-utility",
+    variants: ["standard", "portrait"],
+  },
   {
     slug: "kinetic-poster",
     fixture: "garage-door.json",
     packId: "kinetic-poster",
+    variants: ["standard", "full-bleed"],
   },
 ];
 // A dark requested palette must not place light text on a pack's fixed light
 // surfaces, nor dark text on its dark surfaces. Each pack is re-rendered with
-// an inverted palette and audited for readable contrast.
+// an inverted palette and audited for readable contrast. Every variant is
+// exercised on the light palette; only the primary variant is repeated dark to
+// bound build time.
 const darkPalette = {
   surfaceColor: "#111315",
   heroColor: "#1d1f21",
@@ -42,13 +51,18 @@ const palettes = [
   { name: "dark", style: darkPalette },
 ];
 const renderTargets = palettes.flatMap((palette) =>
-  demos.map((demo) => ({
-    ...demo,
-    slug: `${demo.slug}-${palette.name}`,
-    demoSlug: demo.slug,
-    palette: palette.name,
-    paletteStyle: palette.style,
-  })),
+  demos.flatMap((demo) =>
+    (palette.name === "dark" ? demo.variants.slice(0, 1) : demo.variants).map(
+      (variantId) => ({
+        ...demo,
+        variantId,
+        slug: `${demo.slug}-${variantId}-${palette.name}`,
+        demoSlug: demo.slug,
+        palette: palette.name,
+        paletteStyle: palette.style,
+      }),
+    ),
+  ),
 );
 
 function run(command, args, cwd) {
@@ -140,7 +154,10 @@ for (const demo of renderTargets) {
       ),
     );
     config.design ||= { recipe: "general-editorial", sections: [] };
-    config.design.experience = { packId: demo.packId };
+    config.design.experience = {
+      packId: demo.packId,
+      variantId: demo.variantId,
+    };
     config.style = {
       ...config.style,
       ...resolvePalette({
@@ -289,6 +306,7 @@ try {
         const heroBounds = hero?.getBoundingClientRect();
         return {
           packId: root?.getAttribute("data-experience-pack"),
+          variantId: root?.getAttribute("data-experience-variant"),
           fingerprint: root?.getAttribute("data-layout-fingerprint"),
           h1: document.querySelectorAll("h1").length,
           nav: [
@@ -315,6 +333,7 @@ try {
       });
       if (
         result.packId !== demo.packId ||
+        result.variantId !== demo.variantId ||
         !result.fingerprint ||
         result.h1 !== 1 ||
         result.nav.join("|") !== "Services|FAQs|Contact" ||
@@ -330,7 +349,7 @@ try {
           `${demo.slug} failed at ${viewport.width}px: ${JSON.stringify({ ...result, browserErrors })}`,
         );
       }
-      packFingerprints.set(demo.packId, result.fingerprint);
+      packFingerprints.set(`${demo.packId}:${demo.variantId}`, result.fingerprint);
       await page.screenshot({
         path: path.join(
           output,
@@ -360,6 +379,7 @@ try {
         );
       if (
         demo.demoSlug === "cinematic-narrative" &&
+        demo.palette === "light" &&
         viewport.name === "desktop"
       ) {
         const leadForm = page.locator("#folio-lead");
@@ -397,9 +417,13 @@ try {
       );
     }
   }
-  if (new Set(packFingerprints.values()).size !== demos.length)
+  const expectedVariants = demos.reduce(
+    (total, demo) => total + demo.variants.length,
+    0,
+  );
+  if (new Set(packFingerprints.values()).size !== expectedVariants)
     throw new Error(
-      `Expected ${demos.length} structural fingerprints, got ${new Set(packFingerprints.values()).size}`,
+      `Expected ${expectedVariants} structural fingerprints, got ${new Set(packFingerprints.values()).size}`,
     );
 } finally {
   await browser.close();
@@ -413,7 +437,7 @@ const cards = renderTargets
     (demo) => `
   <a href="./${demo.slug}/index.html">
     <img src="./screenshots/${demo.slug}-desktop.png" alt="${demo.slug.replaceAll("-", " ")} desktop preview">
-    <span>${demo.packId.replaceAll("-", " ")} (${demo.palette})</span>
+    <span>${demo.packId.replaceAll("-", " ")} · ${demo.variantId} (${demo.palette})</span>
   </a>`,
   )
   .join("");

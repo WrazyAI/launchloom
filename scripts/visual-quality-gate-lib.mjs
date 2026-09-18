@@ -43,60 +43,117 @@ const SHARED_VARIANTS = {
 const EXPERIENCE_CONTRACTS = {
   "cinematic-narrative": {
     navigation: "minimal-inline",
-    hero: "image-narrative",
     conversion: "discovery-ribbon",
-    services: "editorial-index",
     proof: "principle-line",
     closing: "cinematic-inquiry",
-    sectionOrder: [
-      "hero",
-      "conversion",
-      "services",
-      "about",
-      "gallery",
-      "social-proof",
-      "faq",
-      "location-map",
-      "contact",
-    ],
+    variants: {
+      standard: {
+        hero: "image-narrative",
+        services: "editorial-index",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "about",
+          "gallery",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+      monument: {
+        hero: "centered-monument",
+        services: "chaptered-index",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "about",
+          "social-proof",
+          "gallery",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    },
   },
   "bold-utility": {
     navigation: "utility-pill",
-    hero: "editorial-dialogue",
     conversion: "embedded-qualifier",
-    services: "service-chapters",
     proof: "quiet-ledger",
     closing: "conversation-handoff",
-    sectionOrder: [
-      "hero",
-      "conversion",
-      "services",
-      "trust",
-      "about",
-      "social-proof",
-      "faq",
-      "location-map",
-      "contact",
-    ],
+    variants: {
+      standard: {
+        hero: "editorial-dialogue",
+        services: "service-chapters",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "trust",
+          "about",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+      portrait: {
+        hero: "guided-portrait",
+        services: "service-grid",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "about",
+          "trust",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    },
   },
   "kinetic-poster": {
     navigation: "command-bar",
-    hero: "poster-split",
     conversion: "quick-request",
-    services: "diagnostic-list",
     proof: "evidence-strip",
     closing: "action-poster",
-    sectionOrder: [
-      "hero",
-      "conversion",
-      "services",
-      "coverage",
-      "process",
-      "social-proof",
-      "faq",
-      "location-map",
-      "contact",
-    ],
+    variants: {
+      standard: {
+        hero: "poster-split",
+        services: "diagnostic-list",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "coverage",
+          "process",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+      "full-bleed": {
+        hero: "poster-full-bleed",
+        services: "problem-grid",
+        sectionOrder: [
+          "hero",
+          "conversion",
+          "services",
+          "process",
+          "coverage",
+          "social-proof",
+          "faq",
+          "location-map",
+          "contact",
+        ],
+      },
+    },
   },
 };
 
@@ -110,33 +167,44 @@ function publicText(value, limit = 500) {
 
 function safeDesignManifest(config) {
   const packId = publicText(config.design?.experience?.packId, 50);
-  const experience =
+  const contract =
     config.design?.experience?.blueprintVersion === 2
       ? EXPERIENCE_CONTRACTS[packId]
       : undefined;
-  if (experience) {
+  const requestedVariantId = publicText(
+    config.design?.experience?.variantId,
+    50,
+  );
+  const variant = contract
+    ? contract.variants[requestedVariantId] || contract.variants.standard
+    : undefined;
+  if (contract && variant) {
+    const variantId = contract.variants[requestedVariantId]
+      ? requestedVariantId
+      : "standard";
     return {
       recipe: publicText(config.design?.recipe, 60),
       renderer: {
         type: "experience-pack",
         packId,
+        variantId,
         blueprintVersion: 2,
-        navigation: experience.navigation,
-        hero: experience.hero,
-        conversion: experience.conversion,
-        services: experience.services,
-        proof: experience.proof,
-        closing: experience.closing,
+        navigation: contract.navigation,
+        hero: variant.hero,
+        conversion: contract.conversion,
+        services: variant.services,
+        proof: contract.proof,
+        closing: contract.closing,
       },
       navigationLinks: ["Services", "FAQs", "Contact"],
       requiredSections: ["hero", "conversion", "services", "faq", "contact"],
-      optionalSections: experience.sectionOrder.filter(
+      optionalSections: variant.sectionOrder.filter(
         (section) =>
           !["hero", "conversion", "services", "faq", "contact"].includes(
             section,
           ),
       ),
-      sectionOrder: [...experience.sectionOrder],
+      sectionOrder: [...variant.sectionOrder],
       allowedVariants: {},
       treatment: null,
     };

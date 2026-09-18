@@ -4,6 +4,11 @@ import http from "node:http";
 import path from "node:path";
 import { chromium } from "playwright";
 import { compileExperienceCandidates } from "../templates/client-site/src/lib/experience-pack.ts";
+import {
+  defaultHistoryPath,
+  readLaunchHistory,
+  recentLayoutFingerprints,
+} from "./launch-history.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -93,6 +98,9 @@ async function inspect(page) {
       renderedPackId: document
         .querySelector("[data-experience-pack]")
         ?.getAttribute("data-experience-pack"),
+      renderedVariantId: document
+        .querySelector("[data-experience-pack]")
+        ?.getAttribute("data-experience-variant"),
       fingerprint: document
         .querySelector("[data-layout-fingerprint]")
         ?.getAttribute("data-layout-fingerprint"),
@@ -124,9 +132,24 @@ async function inspect(page) {
 const original = JSON.parse(await fs.readFile(configPath, "utf8"));
 const recipe = original.design?.recipe || "general-editorial";
 const requiresFaqs = Boolean(original.conversion?.faqs?.length);
-const candidates = compileExperienceCandidates(original, recipe).filter(
-  (candidate) => candidate.compatibilityScore >= 0,
+const historyPath = path.resolve(args.history || defaultHistoryPath());
+const inspirationPath = path.resolve(
+  args.inspiration || path.join(siteDir, ".launchloom/inspiration-pack.json"),
 );
+const inspiration = await fs
+  .readFile(inspirationPath, "utf8")
+  .then(JSON.parse)
+  .catch(() => undefined);
+const recentFingerprints = recentLayoutFingerprints(
+  await readLaunchHistory(historyPath),
+);
+const candidates = compileExperienceCandidates(original, recipe, {
+  recentFingerprints,
+  typography: original.design?.treatment?.typography,
+  routePreferences: Array.isArray(inspiration?.routes)
+    ? inspiration.routes
+    : undefined,
+}).filter((candidate) => candidate.compatibilityScore >= 0);
 const browser = await chromium.launch({ headless: true });
 const results = [];
 await fs.mkdir(evidenceDir, { recursive: true });
@@ -138,14 +161,19 @@ try {
     config.design.experience = {
       ...(config.design.experience || {}),
       packId: candidate.packId,
+      variantId: candidate.variantId,
       blueprintVersion: 2,
       selectionMode: "internal-bakeoff",
-      candidatePackIds: candidates.map((item) => item.packId),
+      candidatePackIds: [...new Set(candidates.map((item) => item.packId))],
+      candidateVariants: candidates.map(
+        (item) => `${item.packId}:${item.variantId}`,
+      ),
       fingerprint: candidate.blueprint.fingerprint,
     };
     await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
     const candidateResult = {
       packId: candidate.packId,
+      variantId: candidate.variantId,
       compatibilityScore: candidate.compatibilityScore,
       fingerprint: candidate.blueprint.fingerprint,
       valid: true,
@@ -170,6 +198,8 @@ try {
           const failures = [
             evidence.renderedPackId !== candidate.packId &&
               "wrong pack rendered",
+            evidence.renderedVariantId !== candidate.variantId &&
+              "wrong variant rendered",
             evidence.h1Count !== 1 && "expected one H1",
             evidence.nav.join("|") !== "Services|FAQs|Contact" &&
               "navigation contract failed",
@@ -200,7 +230,7 @@ try {
           await page.screenshot({
             path: path.join(
               evidenceDir,
-              `${candidate.packId}-${viewport.name}.png`,
+              `${candidate.packId}-${candidate.variantId}-${viewport.name}.png`,
             ),
             fullPage: true,
           });
@@ -223,7 +253,7 @@ try {
       : -1000;
     results.push(candidateResult);
     console.log(
-      `experience_bakeoff_candidate=${candidateResult.packId} valid=${candidateResult.valid} failures=${JSON.stringify(candidateResult.failures)}`,
+      `experience_bakeoff_candidate=${candidateResult.packId}:${candidateResult.variantId} valid=${candidateResult.valid} failures=${JSON.stringify(candidateResult.failures)}`,
     );
   }
 } finally {
@@ -237,9 +267,13 @@ if (winner?.valid) {
   finalConfig.design.experience = {
     ...(finalConfig.design.experience || {}),
     packId: winner.packId,
+    variantId: winner.variantId,
     blueprintVersion: 2,
     selectionMode: "internal-bakeoff",
-    candidatePackIds: candidates.map((candidate) => candidate.packId),
+    candidatePackIds: [...new Set(candidates.map((candidate) => candidate.packId))],
+    candidateVariants: candidates.map(
+      (candidate) => `${candidate.packId}:${candidate.variantId}`,
+    ),
     fingerprint: winner.fingerprint,
   };
 } else {
@@ -249,10 +283,13 @@ await fs.writeFile(configPath, `${JSON.stringify(finalConfig, null, 2)}\n`);
 await fs.mkdir(path.dirname(reportPath), { recursive: true });
 await fs.writeFile(
   reportPath,
-  `${JSON.stringify({ version: 1, selectedPackId: winner?.valid ? winner.packId : null, fallback: !winner?.valid, candidates: results }, null, 2)}\n`,
+  `${JSON.stringify({ version: 2, selectedPackId: winner?.valid ? winner.packId : null, selectedVariantId: winner?.valid ? winner.variantId : null, fallback: !winner?.valid, candidates: results }, null, 2)}\n`,
 );
 await run("npm", ["run", "build"], siteDir);
 console.log(
   `experience_bakeoff_selected=${winner?.valid ? winner.packId : "legacy-renderer"}`,
+);
+console.log(
+  `experience_bakeoff_variant=${winner?.valid ? winner.variantId : "legacy-renderer"}`,
 );
 console.log(`experience_bakeoff_report=${reportPath}`);

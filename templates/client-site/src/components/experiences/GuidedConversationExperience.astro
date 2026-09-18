@@ -10,7 +10,7 @@ const { program, content } = Astro.props;
 const { brand, hero, services, proof, faqs, copy } = content;
 ---
 
-<div class="xp-guide" data-experience-pack={program.packId} data-layout-fingerprint={program.fingerprint}>
+<div class="xp-guide" data-experience-pack={program.packId} data-experience-variant={program.variantId} data-layout-fingerprint={program.fingerprint}>
   <header class="xp-guide__header">
     <a class="xp-guide__brand" href="/">{brand.logo && <img src={brand.logo} alt="" />}<span>{brand.name}</span></a>
     <nav aria-label="Main navigation"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>

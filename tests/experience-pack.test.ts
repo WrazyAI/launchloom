@@ -210,16 +210,26 @@ describe("experience-pack compiler", () => {
     }
   });
 
-  it("compiles three bakeoff candidates while rejecting image-dependent packs without media", () => {
+  it("compiles bakeoff candidates with per-pack coverage while rejecting image-dependent packs without media", () => {
     const input = site("No Image Business");
     const candidates = compileExperienceCandidates(input, "general-editorial");
-    expect(candidates).toHaveLength(3);
-    expect(candidates.map((candidate) => candidate.packId)).toEqual(
-      expect.arrayContaining(["cinematic-narrative", "bold-utility", "kinetic-poster"]),
+    expect(candidates).toHaveLength(6);
+    expect(new Set(candidates.map((candidate) => candidate.packId))).toEqual(
+      new Set(["cinematic-narrative", "bold-utility", "kinetic-poster"]),
     );
-    expect(
-      candidates.find((candidate) => candidate.packId === "cinematic-narrative")?.diagnostics,
-    ).toContain("This experience requires a verified business-relevant image.");
+    for (const packId of [
+      "cinematic-narrative",
+      "bold-utility",
+      "kinetic-poster",
+    ] as const) {
+      expect(candidates.filter((candidate) => candidate.packId === packId)).toHaveLength(2);
+    }
+    for (const candidate of candidates.filter(
+      (item) => item.packId === "cinematic-narrative",
+    ))
+      expect(candidate.diagnostics).toContain(
+        "This experience requires a verified business-relevant image.",
+      );
     expect(compileExperiencePack(input, "general-editorial").program.packId).not.toBe(
       "cinematic-narrative",
     );
@@ -259,6 +269,131 @@ describe("experience-pack compiler", () => {
     expect(compiled.diagnostics[0]).toContain("Unknown experience pack");
     expect(compiled.program.sectionOrder).toEqual(
       expect.arrayContaining(["hero", "conversion", "services", "faq", "contact"]),
+    );
+  });
+
+  it("registers variant structures with unique fingerprints and a primary standard", () => {
+    const packs = listExperiencePacks();
+    const fingerprints = packs.flatMap((pack) =>
+      pack.variants.map((variant) => variant.fingerprint),
+    );
+    expect(new Set(fingerprints).size).toBe(fingerprints.length);
+    for (const pack of packs) {
+      expect(pack.variants[0].id).toBe("standard");
+      expect(pack.variantId).toBe("standard");
+      expect(pack.fingerprint).toBe(pack.variants[0].fingerprint);
+      expect(new Set(pack.variants.map((variant) => variant.hero)).size).toBe(
+        pack.variants.length,
+      );
+      expect(new Set(pack.variants.map((variant) => variant.services)).size).toBe(
+        pack.variants.length,
+      );
+    }
+  });
+
+  it("compiles a requested variant behind the same stable interface", () => {
+    const input = site("Variant Request", "bold-utility");
+    input.design!.experience = { packId: "bold-utility", variantId: "portrait" };
+    const compiled = compileExperiencePack(input, "general-editorial");
+    expect(compiled.source).toBe("requested");
+    expect(compiled.program.packId).toBe("bold-utility");
+    expect(compiled.program.variantId).toBe("portrait");
+    expect(compiled.program.hero).toBe("guided-portrait");
+    expect(compiled.program.services).toBe("service-grid");
+    expect(compiled.program.sectionOrder[0]).toBe("hero");
+    expect(compiled.program.sectionOrder[1]).toBe("conversion");
+  });
+
+  it("falls back to the standard variant when a requested variant is unknown", () => {
+    const input = site("Variant Fallback", "bold-utility");
+    input.design!.experience = {
+      packId: "bold-utility",
+      variantId: "nonexistent",
+    };
+    const compiled = compileExperiencePack(input, "general-editorial");
+    expect(compiled.program.variantId).toBe("standard");
+    expect(compiled.diagnostics.join(" ")).toContain(
+      "Unknown experience variant",
+    );
+  });
+
+  it("caps bakeoff candidates while keeping every compatible pack reachable", () => {
+    const input = site("Cap Check");
+    input.images.hero = "/images/hero.webp";
+    const candidates = compileExperienceCandidates(input, "general-editorial", {
+      maxCandidates: 4,
+    });
+    expect(candidates).toHaveLength(4);
+    expect(new Set(candidates.map((candidate) => candidate.packId)).size).toBe(3);
+  });
+
+  it("front-loads one candidate per inspiration route", () => {
+    const input = site("Route Aware");
+    input.images.hero = "/images/hero.webp";
+    const routePreferences = [
+      {
+        navigation: "discreet-overlay-navigation",
+        heroGeometry: "image-narrative-monument",
+        servicePresentation: "editorial-index-chapters",
+        typographyCategory: "cinematic-editorial-contrast",
+      },
+      {
+        navigation: "utility-pill-navigation",
+        heroGeometry: "editorial-dialogue-portrait",
+        servicePresentation: "service-chapters-qualifier",
+        typographyCategory: "humanist-calm",
+      },
+      {
+        navigation: "command-bar-navigation",
+        heroGeometry: "poster-split-full-bleed",
+        servicePresentation: "diagnostic-list-problem-grid",
+        typographyCategory: "graphic-impact-documentary",
+      },
+    ];
+    const candidates = compileExperienceCandidates(input, "general-editorial", {
+      routePreferences,
+    });
+    expect(
+      candidates
+        .slice(0, 3)
+        .map((candidate) => `${candidate.packId}:${candidate.variantId}`),
+    ).toEqual([
+      "cinematic-narrative:standard",
+      "bold-utility:standard",
+      "kinetic-poster:full-bleed",
+    ]);
+    const repeated = compileExperienceCandidates(input, "general-editorial", {
+      routePreferences,
+    });
+    expect(
+      repeated
+        .slice(0, 3)
+        .map((candidate) => `${candidate.packId}:${candidate.variantId}`),
+    ).toEqual([
+      "cinematic-narrative:standard",
+      "bold-utility:standard",
+      "kinetic-poster:full-bleed",
+    ]);
+  });
+
+  it("penalizes a recently launched pack and variant fingerprint", () => {
+    const input = site("Variant Recency");
+    input.images.hero = "/images/hero.webp";
+    const baseline = compileExperienceCandidates(input, "general-editorial");
+    const boldStandard = baseline.find(
+      (candidate) =>
+        candidate.packId === "bold-utility" && candidate.variantId === "standard",
+    );
+    expect(boldStandard).toBeDefined();
+    const penalized = compileExperienceCandidates(input, "general-editorial", {
+      recentFingerprints: [boldStandard!.blueprint.fingerprint],
+    });
+    const penalizedBold = penalized.find(
+      (candidate) =>
+        candidate.packId === "bold-utility" && candidate.variantId === "standard",
+    );
+    expect(penalizedBold!.compatibilityScore).toBeLessThan(
+      boldStandard!.compatibilityScore,
     );
   });
 });

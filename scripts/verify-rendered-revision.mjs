@@ -327,6 +327,14 @@ try {
         contrastTargets,
         brokenLinks,
         mainClasses: main?.className || "",
+        experiencePack:
+          document
+            .querySelector("[data-experience-pack]")
+            ?.getAttribute("data-experience-pack") || "",
+        experienceVariant:
+          document
+            .querySelector("[data-experience-pack]")
+            ?.getAttribute("data-experience-variant") || "",
         bodyText: document.body.textContent?.replace(/\s+/g, " ").trim() || "",
         overflow:
           Math.max(
@@ -350,6 +358,22 @@ try {
       failures.push(
         `${viewport.name}: horizontal overflow of ${state.overflow}px.`,
       );
+    if (config.design?.experience?.blueprintVersion === 2) {
+      const expectedPack = String(config.design.experience.packId || "");
+      const expectedVariant = String(config.design.experience.variantId || "");
+      if (expectedPack && state.experiencePack !== expectedPack)
+        failures.push(
+          `${viewport.name}: rendered experience pack ${state.experiencePack || "none"} does not match ${expectedPack}.`,
+        );
+      if (
+        expectedPack &&
+        expectedVariant &&
+        state.experienceVariant !== expectedVariant
+      )
+        failures.push(
+          `${viewport.name}: rendered experience variant ${state.experienceVariant || "none"} does not match ${expectedVariant}.`,
+        );
+    }
     if (state.brokenLinks.length)
       failures.push(
         `${viewport.name}: broken fragment links ${state.brokenLinks.join(", ")}.`,

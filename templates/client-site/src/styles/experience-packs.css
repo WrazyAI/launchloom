@@ -1172,3 +1172,181 @@
     font-size: clamp(3rem, 15vw, 5rem);
   }
 }
+
+/* Variant structures. Each alternate owns a different composition inside its
+   pack, so the same verified content can ship as a visibly different page
+   while the pack keeps its identity, navigation, and conversion contract. */
+
+/* cinematic-narrative: centered monument */
+.xp-folio[data-experience-variant="monument"] .xp-folio__hero {
+  min-height: 0;
+  padding-block: clamp(1.5rem, 4vh, 3rem);
+  grid-template-rows: auto auto auto;
+  align-content: start;
+}
+.xp-folio[data-experience-variant="monument"] .xp-folio__eyebrow {
+  text-align: center;
+}
+.xp-folio[data-experience-variant="monument"] .xp-folio__hero > h1 {
+  max-width: 18ch;
+  margin-inline: auto;
+  font-size: clamp(3rem, min(6.4vw, 8vh), 6.4rem);
+  text-align: center;
+}
+.xp-folio[data-experience-variant="monument"] .xp-folio__hero-grid {
+  width: min(100%, 78rem);
+  height: auto;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(1.5rem, 3vh, 2.5rem);
+}
+.xp-folio[data-experience-variant="monument"] .xp-folio__intro {
+  order: 2;
+  max-width: 44rem;
+  margin-inline: auto;
+  padding-bottom: 0;
+  text-align: center;
+}
+.xp-folio[data-experience-variant="monument"] .xp-folio__hero figure {
+  order: 1;
+  height: clamp(15rem, 34vh, 24rem);
+  max-height: none;
+}
+.xp-folio[data-experience-variant="monument"] .xp-folio__service-index > a {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 2rem 4rem;
+  align-items: end;
+  padding: 3rem 0;
+}
+.xp-folio[data-experience-variant="monument"] .xp-folio__service-index h3 {
+  font-size: clamp(2.2rem, 4.6vw, 4.6rem);
+}
+.xp-folio[data-experience-variant="monument"] .xp-folio__service-index span {
+  grid-column: 1;
+  justify-self: start;
+}
+
+/* bold-utility: guided portrait */
+.xp-guide[data-experience-variant="portrait"] .xp-guide__hero {
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+}
+.xp-guide[data-experience-variant="portrait"] .xp-guide__hero figure {
+  grid-area: 1 / 1;
+  height: min(72svh, 40rem);
+  margin: 0;
+  border-radius: 0 0 2rem 2rem;
+}
+.xp-guide[data-experience-variant="portrait"] .xp-guide__hero-copy {
+  grid-area: 1 / 1;
+  z-index: 1;
+  align-self: end;
+  justify-self: start;
+  max-width: 38rem;
+  margin: clamp(1rem, 3vw, 2.5rem);
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  border-radius: 1.25rem;
+  background: rgb(255 255 255 / 94%);
+}
+.xp-guide[data-experience-variant="portrait"] .xp-guide__services > div {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.xp-guide[data-experience-variant="portrait"] .xp-guide__services article {
+  min-height: 19rem;
+  border-top: 3px solid var(--brand);
+}
+.xp-guide[data-experience-variant="portrait"] .xp-guide__services h3 {
+  margin-top: 3rem;
+}
+
+/* kinetic-poster: full bleed */
+.xp-service[data-experience-variant="full-bleed"] .xp-service__hero {
+  position: relative;
+  display: block;
+  height: calc(100svh - 5rem);
+  min-height: 34rem;
+  max-height: 52rem;
+}
+.xp-service[data-experience-variant="full-bleed"] .xp-service__hero figure {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+}
+.xp-service[data-experience-variant="full-bleed"] .xp-service__hero figure::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(16 27 25 / 8%), rgb(16 27 25 / 90%));
+}
+.xp-service[data-experience-variant="full-bleed"] .xp-service__hero > div:first-child {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  justify-content: flex-end;
+  padding-bottom: clamp(2rem, 6vh, 4rem);
+}
+.xp-service[data-experience-variant="full-bleed"] .xp-service__services > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  border-top: 0;
+}
+.xp-service[data-experience-variant="full-bleed"] .xp-service__services > div > a {
+  display: block;
+  min-height: 13rem;
+  padding: 1.5rem;
+  border: 0;
+  border-top: 4px solid var(--brand);
+  background: #fff;
+}
+.xp-service[data-experience-variant="full-bleed"] .xp-service__services a > p {
+  margin-top: 1.25rem;
+}
+.xp-service[data-experience-variant="full-bleed"] .xp-service__services b {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .xp-folio[data-experience-variant="monument"] .xp-folio__hero > h1 {
+    font-size: clamp(2.8rem, 14vw, 4.4rem);
+  }
+  .xp-folio[data-experience-variant="monument"] .xp-folio__service-index > a {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+  .xp-guide[data-experience-variant="portrait"] .xp-guide__hero {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 1.5rem;
+    padding: 2rem 1.25rem 0;
+  }
+  .xp-guide[data-experience-variant="portrait"] .xp-guide__hero figure {
+    height: 24rem;
+    border-radius: 10rem 10rem 1rem 1rem;
+  }
+  .xp-guide[data-experience-variant="portrait"] .xp-guide__hero-copy {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+  .xp-guide[data-experience-variant="portrait"] .xp-guide__services > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .xp-service[data-experience-variant="full-bleed"] .xp-service__hero {
+    height: auto;
+    min-height: 0;
+  }
+  .xp-service[data-experience-variant="full-bleed"] .xp-service__hero figure {
+    position: relative;
+    height: 26rem;
+  }
+  .xp-service[data-experience-variant="full-bleed"] .xp-service__hero > div:first-child {
+    padding: 2.5rem 1.25rem;
+  }
+  .xp-service[data-experience-variant="full-bleed"] .xp-service__services > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

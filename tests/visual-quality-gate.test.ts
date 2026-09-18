@@ -82,7 +82,7 @@ describe("GLM visual quality gate", () => {
       packId: "bold-utility",
       blueprintVersion: 2,
       fingerprint:
-        "bold-utility|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+        "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
     };
 
     const manifest: any = buildSafeVisualManifest(experienceConfig);
@@ -90,6 +90,7 @@ describe("GLM visual quality gate", () => {
     expect(manifest.design.renderer).toMatchObject({
       type: "experience-pack",
       packId: "bold-utility",
+      variantId: "standard",
       navigation: "utility-pill",
       hero: "editorial-dialogue",
       conversion: "embedded-qualifier",
@@ -103,6 +104,30 @@ describe("GLM visual quality gate", () => {
     ]);
     expect(manifest.design.sections).toBeUndefined();
     expect(manifest.design.allowedVariants).toEqual({});
+  });
+
+  it("describes a requested experience variant in the visual manifest", () => {
+    const experienceConfig = structuredClone(config);
+    experienceConfig.design.experience = {
+      packId: "bold-utility",
+      variantId: "portrait",
+      blueprintVersion: 2,
+    };
+
+    const manifest: any = buildSafeVisualManifest(experienceConfig);
+
+    expect(manifest.design.renderer).toMatchObject({
+      type: "experience-pack",
+      packId: "bold-utility",
+      variantId: "portrait",
+      hero: "guided-portrait",
+      services: "service-grid",
+    });
+    expect(manifest.design.sectionOrder.slice(0, 3)).toEqual([
+      "hero",
+      "conversion",
+      "services",
+    ]);
   });
 
   it("keeps versionless pack identifiers on the legacy visual contract", () => {
