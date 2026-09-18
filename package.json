@@ -19,6 +19,7 @@
     "build:design-families": "node scripts/build-design-family-demos.mjs",
     "build:experience-packs": "node scripts/build-experience-pack-demos.mjs",
     "compile:inspiration": "node scripts/compile-inspiration-pack.mjs",
+    "author:experiences": "node scripts/author-production-experiences.mjs",
     "bakeoff:experience": "node scripts/run-experience-bakeoff.mjs",
     "generate:model-experiences": "node scripts/generate-model-experience-lab.mjs",
     "build:template-gallery": "node scripts/build-template-variant-gallery.mjs",

@@ -21,6 +21,7 @@ jobs:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      MODEL_AUTHORED_EXPERIENCE_MODEL: ${{ vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
       SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '2' }}
       SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.10' }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
@@ -79,6 +80,22 @@ jobs:
         with:
           name: inspiration-pack-${{ steps.intake.outputs.issue }}
           path: /tmp/inspiration-pack.json
+          retention-days: 14
+      - name: Author Phase 2 experience candidates in shadow mode
+        timeout-minutes: 8
+        run: >-
+          npm run author:experiences --
+          --config /tmp/site.config.json
+          --inspiration /tmp/inspiration-pack.json
+          --out /tmp/generated-experiences
+          --failure-mode record
+      - name: Preserve authored experience evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authored-experiences-${{ steps.intake.outputs.issue }}
+          path: /tmp/generated-experiences
+          if-no-files-found: error
           retention-days: 14
       - name: Create private repository and Cloudflare Pages project
         id: client
@@ -183,6 +200,7 @@ jobs:
           mkdir -p .launchloom
           cp /tmp/seo-research.json .launchloom/seo-research.json
           cp /tmp/inspiration-pack.json .launchloom/inspiration-pack.json
+          cp -R /tmp/generated-experiences .launchloom/generated-experiences
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
           git_push_with_retry --set-upstream origin review/initial

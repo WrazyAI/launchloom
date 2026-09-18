@@ -24,6 +24,37 @@ Run:
 npm run compile:inspiration -- --config src/site.config.json --out .launchloom/inspiration-pack.json
 ```
 
-Initial-generation workflows also preserve the resulting pack as an artifact and copy it into the private client repository. Phase 1 does not change the production renderer. Later phases will use these routes as independent model-authoring briefs.
+Initial-generation workflows also preserve the resulting pack as an artifact and copy it into the private client repository.
+
+## Phase 2 shadow authorship
+
+The generation workflow now passes the three routes to the production authorship compiler. Each route independently produces:
+
+```text
+.launchloom/generated-experiences/
+  content-manifest.json
+  creative-run.json
+  candidate-a/
+    contract.json
+    Experience.jsx
+    styles.css
+    motion.js
+    metadata.json
+  candidate-b/
+  candidate-c/
+```
+
+Run it directly with:
+
+```sh
+npm run author:experiences -- \
+  --config src/site.config.json \
+  --inspiration .launchloom/inspiration-pack.json \
+  --out .launchloom/generated-experiences
+```
+
+The model may author composition and motion, but visitor-facing business content remains in `content-manifest.json`. Generated JSX can reference only its immutable `content.*` tokens. The compiler rejects remote URLs, arbitrary network access, unsafe code, unapproved imports, hardcoded marketing copy, missing navigation or conversion markers, and motion without a reduced-motion path.
+
+Phase 2 runs in shadow mode: candidate source and usage evidence are retained, while the existing reviewed Astro experience remains the deployed preview. Rendering, screenshot gates, repair, and creative winner promotion belong to Phase 3.
 
 `data/recent-launch-signatures.json` defines the file-adapter schema for recently used reference IDs and route signatures. It is intentionally empty until the model-authored winner can be recorded truthfully in the later production phase.

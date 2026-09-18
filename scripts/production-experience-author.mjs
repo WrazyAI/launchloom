@@ -1,0 +1,550 @@
+import crypto from "node:crypto";
+
+/**
+ * @typedef {"contract" | "experience" | "styles" | "motion"} AuthorStage
+ * @typedef {{
+ *   stage: AuthorStage;
+ *   route: Record<string, any>;
+ *   contentTokens: string[];
+ *   contentShape: Record<string, any>;
+ *   rules: string;
+ *   designContract?: string;
+ *   experienceSource?: string;
+ *   validationError?: string;
+ *   previousSource?: string;
+ * }} AuthorStageRequest
+ */
+
+const candidateDirectories = ["candidate-a", "candidate-b", "candidate-c"];
+const allowedImports = new Set([
+  "react",
+  "@launchloom/runtime",
+  "gsap",
+  "gsap/ScrollTrigger",
+  "./motion.js",
+]);
+const requiredRouteKeys = [
+  "navigation",
+  "heroGeometry",
+  "servicePresentation",
+  "sectionRhythm",
+  "typographyCategory",
+  "imageStrategy",
+  "signature",
+];
+const allowedInterfaceCopy = new Set([
+  "Services",
+  "FAQs",
+  "Contact",
+  "Menu",
+  "Close",
+  "Main navigation",
+  "Open menu",
+  "Close menu",
+]);
+
+const contentTokenDefinitions = [
+  ["content.brand.name", "string"],
+  ["content.brand.logo", "string?"],
+  ["content.hero.kicker", "string"],
+  ["content.hero.heading", "string"],
+  ["content.hero.body", "string"],
+  ["content.hero.primaryLabel", "string"],
+  ["content.hero.offer", "string?"],
+  ["content.services", "array"],
+  ["content.services[].name", "string"],
+  ["content.services[].description", "string"],
+  ["content.services[].slug", "string?"],
+  ["content.proof", "array"],
+  ["content.process", "array"],
+  ["content.faqs", "array"],
+  ["content.faqs[].question", "string"],
+  ["content.faqs[].answer", "string"],
+  ["content.locations", "array"],
+  ["content.contact.phoneLabel", "string"],
+  ["content.contact.phoneHref", "string"],
+  ["content.contact.emailLabel", "string"],
+  ["content.contact.emailHref", "string"],
+  ["content.contact.address", "string"],
+  ["content.assets.hero", "string?"],
+  ["content.assets.heroAlt", "string"],
+  ["content.assets.secondary", "string?"],
+  ["content.assets.secondaryAlt", "string"],
+  ["content.assets.tertiary", "string?"],
+  ["content.assets.tertiaryAlt", "string"],
+];
+const contentTokens = contentTokenDefinitions.map(([token]) => token);
+
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object")
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`)
+      .join(",")}}`;
+  return JSON.stringify(value);
+}
+
+function digest(value) {
+  return crypto.createHash("sha256").update(stableJson(value)).digest("hex");
+}
+
+function phoneHref(phone) {
+  const value = String(phone || "").replace(/[^+\d]/gu, "");
+  return value ? `tel:${value}` : "#contact";
+}
+
+function contentShape(site) {
+  const business = site.business || {};
+  const copy = site.copy || {};
+  const assets = site.assets || {};
+  const images = site.images || {};
+  return {
+    brand: {
+      name: String(business.name || ""),
+      logo: assets.logo || "",
+    },
+    hero: {
+      kicker: String(
+        copy.heroKicker || site.hero?.kicker || business.tagline || "",
+      ),
+      heading: String(
+        copy.heroHeading ||
+          site.hero?.heading ||
+          business.tagline ||
+          business.name ||
+          "",
+      ),
+      body: String(
+        copy.heroBody || site.hero?.body || business.description || "",
+      ),
+      primaryLabel: String(
+        site.hero?.primaryLabel || business.primaryCta || "Contact us",
+      ),
+      offer: String(site.hero?.offer || business.offer || ""),
+    },
+    services: (site.services || []).map((service) => ({
+      name: String(service.name || ""),
+      description: String(service.description || ""),
+      slug: String(service.slug || ""),
+    })),
+    proof: (site.differentiators || []).slice(0, 3).map(String),
+    process: (site.conversion?.process || []).map(String),
+    faqs: (site.conversion?.faqs || []).map((faq) => ({
+      question: String(faq.question || ""),
+      answer: String(faq.answer || ""),
+    })),
+    locations: (site.locations || []).map((location) => ({
+      name: String(location.name || ""),
+      slug: String(location.slug || ""),
+      description: String(location.description || ""),
+    })),
+    contact: {
+      phoneLabel: String(business.phone || ""),
+      phoneHref: phoneHref(business.phone),
+      emailLabel: String(business.email || ""),
+      emailHref: business.email ? `mailto:${business.email}` : "#contact",
+      address: String(business.address || ""),
+    },
+    assets: {
+      hero: assets.photoOne || images.hero || "",
+      heroAlt: `${String(business.name || "Business")} featured image`,
+      secondary: assets.photoTwo || images.secondary || "",
+      secondaryAlt: `${String(business.name || "Business")} supporting image`,
+      tertiary: assets.photoThree || "",
+      tertiaryAlt: `${String(business.name || "Business")} detail image`,
+    },
+  };
+}
+
+function assertInspirationPack(pack) {
+  if (!pack || !Array.isArray(pack.routes) || pack.routes.length !== 3)
+    throw new Error("Phase 2 requires exactly three inspiration routes.");
+  for (const route of pack.routes) {
+    for (const key of requiredRouteKeys)
+      if (!String(route[key] || "").trim())
+        throw new Error(
+          `Inspiration route ${route.id || "unknown"} is missing ${key}.`,
+        );
+  }
+  for (const key of [
+    "navigation",
+    "heroGeometry",
+    "servicePresentation",
+    "typographyCategory",
+    "signature",
+  ]) {
+    if (new Set(pack.routes.map((route) => route[key])).size !== 3)
+      throw new Error(`Inspiration routes are not independent in ${key}.`);
+  }
+}
+
+function asText(value, label) {
+  if (typeof value !== "string" || !value.trim())
+    throw new Error(`Model stage returned no ${label}.`);
+  return value.trim();
+}
+
+function normalizeAuthoredSource(value) {
+  return value.replaceAll("—", "-");
+}
+
+function importSpecifiers(source) {
+  return [
+    ...source.matchAll(/\bimport\s+(?:[^;]*?\s+from\s+)?["']([^"']+)["']/gu),
+  ].map((match) => match[1]);
+}
+
+function unsupportedClaimLiterals(source) {
+  const withoutImports = source.replace(/^\s*import[^;]+;?\s*$/gmu, "");
+  const textNodes = [...withoutImports.matchAll(/>([^<>{}\n]+)</gu)].map(
+    (match) => match[1].trim(),
+  );
+  const visitorAttributes = [
+    ...withoutImports.matchAll(
+      /\b(?:alt|aria-label|placeholder|title)\s*=\s*["']([^"']+)["']/gu,
+    ),
+  ].map((match) => match[1].trim());
+  return [...textNodes, ...visitorAttributes].filter(
+    (value) =>
+      value &&
+      !allowedInterfaceCopy.has(value) &&
+      /\b(?:award(?:-?winning)?|certified|licensed|insured|guaranteed?|best|number one|#1|five[- ]star|top[- ]rated|years? of experience)\b/iu.test(
+        value,
+      ),
+  );
+}
+
+function scalarContentValues(value) {
+  if (Array.isArray(value)) return value.flatMap(scalarContentValues);
+  if (value && typeof value === "object")
+    return Object.values(value).flatMap(scalarContentValues);
+  if (typeof value !== "string") return [];
+  const normalized = value.trim();
+  return normalized.length >= 4 ? [normalized] : [];
+}
+
+function referencesContentPath(source, token) {
+  if (source.includes(token)) return true;
+  const [group, member] = token.replace(/^content\./u, "").split(".");
+  if (!group) return false;
+  const groupBinding = new RegExp(
+    `(?:const|let)\\s+${group}\\s*=\\s*content\\.${group}\\b|(?:const|let)\\s*\\{[^}]*\\b${group}\\b[^}]*\\}\\s*=\\s*content\\b`,
+    "u",
+  );
+  const parameterGroupBinding = new RegExp(
+    `\\bcontent\\s*:\\s*\\{[\\s\\S]{0,500}?\\b${group}\\b`,
+    "u",
+  );
+  if (!member)
+    return groupBinding.test(source) || parameterGroupBinding.test(source);
+  if (groupBinding.test(source) && source.includes(`${group}.${member}`))
+    return true;
+  if (
+    parameterGroupBinding.test(source) &&
+    source.includes(`${group}.${member}`)
+  )
+    return true;
+  const nestedBinding = new RegExp(
+    `\\b${group}\\s*:\\s*\\{[^}]*\\b${member}\\b[^}]*\\}\\s*\\}\\s*=\\s*content\\b|\\bcontent\\s*:\\s*\\{[\\s\\S]{0,500}?\\b${group}\\s*:\\s*\\{[^}]*\\b${member}\\b`,
+    "u",
+  );
+  if (nestedBinding.test(source)) return true;
+  const memberBinding = new RegExp(
+    `(?:const|let)\\s+${member}\\s*=\\s*content\\.${group}\\.${member}\\b|(?:const|let)\\s*\\{[^}]*\\b${member}\\b[^}]*\\}\\s*=\\s*content\\.${group}\\b`,
+    "u",
+  );
+  const chainedMemberBinding = new RegExp(
+    `(?:const|let)\\s*\\{[^}]*\\b${member}\\b[^}]*\\}\\s*=\\s*${group}\\b`,
+    "u",
+  );
+  if (groupBinding.test(source) && chainedMemberBinding.test(source))
+    return true;
+  return memberBinding.test(source);
+}
+
+function validateExperience(source, route, content) {
+  for (const specifier of importSpecifiers(source))
+    if (!allowedImports.has(specifier))
+      throw new Error(
+        `Candidate ${route.id} uses unapproved import ${specifier}.`,
+      );
+  const forbidden = [
+    [/https?:\/\/|(?:src|href)\s*=\s*["']\/\//iu, "remote URL"],
+    [/\bfetch\s*\(/iu, "network request"],
+    [/\bXMLHttpRequest\b|\bWebSocket\b/iu, "network primitive"],
+    [/\beval\s*\(|\bnew\s+Function\b/iu, "dynamic code"],
+    [/<canvas\b|\bthree(?:\.js)?\b/iu, "unapproved rendering engine"],
+    [/<script\b/iu, "script element"],
+    [/—/u, "em dash"],
+  ];
+  for (const [pattern, label] of forbidden)
+    if (pattern.test(source))
+      throw new Error(`Candidate ${route.id} contains forbidden ${label}.`);
+  for (const marker of [
+    "data-hero",
+    "data-early-conversion",
+    'id="services"',
+    'id="faqs"',
+    'id="contact"',
+  ])
+    if (!source.includes(marker))
+      throw new Error(
+        `Candidate ${route.id} is missing required marker ${marker}.`,
+      );
+  for (const token of [
+    "content.hero.heading",
+    "content.services",
+    "content.faqs",
+  ])
+    if (!referencesContentPath(source, token))
+      throw new Error(
+        `Candidate ${route.id} is missing required sealed binding ${token}.`,
+      );
+  const literals = unsupportedClaimLiterals(source);
+  if (literals.length)
+    throw new Error(
+      `Candidate ${route.id} contains an unsupported claim literal: ${literals[0]}`,
+    );
+  const embeddedFact = scalarContentValues(content).find((value) =>
+    source.includes(value),
+  );
+  if (embeddedFact)
+    throw new Error(
+      `Candidate ${route.id} hardcodes sealed content instead of using a token: ${embeddedFact}`,
+    );
+}
+
+function validateStyles(source, route) {
+  if (/url\s*\(\s*["']?(?:https?:)?\/\//iu.test(source))
+    throw new Error(`Candidate ${route.id} CSS contains a remote URL.`);
+  if (/—/u.test(source))
+    throw new Error(`Candidate ${route.id} CSS contains an em dash.`);
+}
+
+function validateMotion(source, route) {
+  for (const specifier of importSpecifiers(source))
+    if (!allowedImports.has(specifier))
+      throw new Error(
+        `Candidate ${route.id} motion uses unapproved import ${specifier}.`,
+      );
+  if (
+    /\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|\beval\s*\(/iu.test(source)
+  )
+    throw new Error(
+      `Candidate ${route.id} motion contains an unsafe primitive.`,
+    );
+  if (!/reducedMotion|prefers-reduced-motion/u.test(source))
+    throw new Error(
+      `Candidate ${route.id} motion lacks a reduced-motion path.`,
+    );
+}
+
+function authorRules() {
+  return [
+    "Do not hardcode business facts or marketing copy. Render all visitor-facing business content through the supplied content tokens.",
+    "Use only React, @launchloom/runtime, GSAP, GSAP ScrollTrigger, and the local motion module.",
+    "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
+    "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
+    "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
+    "The complete header, hero, image, promise, and action must fit at 1536x864 and 1366x768 at 100 percent zoom.",
+    "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
+  ].join("\n");
+}
+
+function stageValue(value, key, stage) {
+  if (!value || typeof value !== "object")
+    throw new Error(`Model returned invalid ${stage} output.`);
+  return asText(value[key], `${stage}.${key}`);
+}
+
+async function generateStageValue(generate, request, key, stage) {
+  let result;
+  try {
+    result = await generate(request);
+    return { value: stageValue(result, key, stage), repaired: false };
+  } catch (error) {
+    result = await generate({
+      ...request,
+      validationError: error instanceof Error ? error.message : String(error),
+      previousSource: result
+        ? JSON.stringify(result).slice(0, 12000)
+        : "No valid structured output was returned.",
+    });
+    return { value: stageValue(result, key, stage), repaired: true };
+  }
+}
+
+async function generateContract(generate, request) {
+  let result;
+  try {
+    result = await generate(request);
+    return {
+      designContract: stageValue(result, "designContract", "contract"),
+      designRationale: stageValue(result, "designRationale", "contract"),
+      repaired: false,
+    };
+  } catch (error) {
+    result = await generate({
+      ...request,
+      validationError: error instanceof Error ? error.message : String(error),
+      previousSource: result
+        ? JSON.stringify(result).slice(0, 12000)
+        : "No valid structured output was returned.",
+    });
+    return {
+      designContract: stageValue(result, "designContract", "contract"),
+      designRationale: stageValue(result, "designRationale", "contract"),
+      repaired: true,
+    };
+  }
+}
+
+/**
+ * Deep module interface for Phase 2 production authorship.
+ *
+ * @param {{
+ *   site: Record<string, any>;
+ *   inspirationPack: Record<string, any>;
+ *   generate: (request: AuthorStageRequest) => Promise<Record<string, any>>;
+ *   model?: string;
+ * }} input
+ */
+export async function authorExperienceCandidates({
+  site,
+  inspirationPack,
+  generate,
+  model = "z-ai/glm-5.3-flash",
+}) {
+  assertInspirationPack(inspirationPack);
+  if (typeof generate !== "function")
+    throw new Error("A generation adapter is required.");
+  const content = contentShape(site);
+  const manifest = {
+    version: 1,
+    values: content,
+    tokens: contentTokenDefinitions.map(([token, type]) => ({ token, type })),
+  };
+  const contentManifest = { ...manifest, digest: digest(manifest) };
+  const rules = authorRules();
+
+  const candidates = await Promise.all(
+    inspirationPack.routes.map(async (route, index) => {
+      const base = { route, contentTokens, contentShape: content, rules };
+      const contractResult = await generateContract(generate, {
+        ...base,
+        stage: "contract",
+      });
+      const designContract = contractResult.designContract;
+      const designRationale = contractResult.designRationale;
+      const experienceResult = await generateStageValue(
+        generate,
+        { ...base, stage: "experience", designContract },
+        "content",
+        "experience",
+      );
+      let experience = normalizeAuthoredSource(experienceResult.value);
+      let complianceRepaired =
+        contractResult.repaired || experienceResult.repaired;
+      try {
+        validateExperience(experience, route, content);
+      } catch (error) {
+        complianceRepaired = true;
+        const repairedExperience = await generateStageValue(
+          generate,
+          {
+            ...base,
+            stage: "experience",
+            designContract,
+            previousSource: experience,
+            validationError:
+              error instanceof Error ? error.message : String(error),
+          },
+          "content",
+          "experience",
+        );
+        experience = normalizeAuthoredSource(repairedExperience.value);
+        validateExperience(experience, route, content);
+      }
+      const [stylesResult, motionResult] = await Promise.all([
+        generateStageValue(
+          generate,
+          {
+            ...base,
+            stage: "styles",
+            designContract,
+            experienceSource: experience,
+          },
+          "content",
+          "styles",
+        ),
+        generateStageValue(
+          generate,
+          {
+            ...base,
+            stage: "motion",
+            designContract,
+            experienceSource: experience,
+          },
+          "content",
+          "motion",
+        ),
+      ]);
+      const styles = normalizeAuthoredSource(stylesResult.value);
+      const motion = normalizeAuthoredSource(motionResult.value);
+      complianceRepaired ||= stylesResult.repaired || motionResult.repaired;
+      validateStyles(styles, route);
+      validateMotion(motion, route);
+      const metadata = {
+        version: 1,
+        candidateId: `candidate-${String.fromCharCode(97 + index)}`,
+        routeId: route.id,
+        routeLabel: route.label,
+        model,
+        signature: route.signature,
+        navigation: route.navigation,
+        heroGeometry: route.heroGeometry,
+        servicePresentation: route.servicePresentation,
+        sectionRhythm: route.sectionRhythm,
+        typographyCategory: route.typographyCategory,
+        imageStrategy: route.imageStrategy,
+        motionOpportunity: route.motionOpportunity,
+        complianceRepaired,
+        contentManifestDigest: contentManifest.digest,
+        allowedImports: [...allowedImports],
+        runtimeInstrumentation: {
+          rootAttribute: "data-model-experience",
+          rootValue: route.id,
+        },
+      };
+      const contract = {
+        version: 1,
+        route,
+        designContract,
+        designRationale,
+        rules: rules.split("\n"),
+        contentTokens,
+      };
+      return {
+        id: metadata.candidateId,
+        directory: candidateDirectories[index],
+        metadata,
+        files: {
+          "contract.json": `${JSON.stringify(contract, null, 2)}\n`,
+          "Experience.jsx": `${experience}\n`,
+          "styles.css": `${styles}\n`,
+          "motion.js": `${motion}\n`,
+          "metadata.json": `${JSON.stringify(metadata, null, 2)}\n`,
+        },
+      };
+    }),
+  );
+
+  return {
+    version: 1,
+    model,
+    selectionKey: inspirationPack.selectionKey || "",
+    contentManifest,
+    candidates,
+  };
+}
