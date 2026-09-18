@@ -13,6 +13,11 @@
 }
 body {
   margin: 0;
+  /* The resolved palette is applied as custom properties on body. Declaring
+     the inherited color and background here keeps pages that rely on
+     inheritance in step with that palette, including dark page surfaces. */
+  color: var(--ink);
+  background: var(--cream);
 }
 .anchor-alias {
   position: relative;
@@ -367,6 +372,9 @@ h2 {
   --ink: #14201d;
   --muted: #53605b;
   --line: #d8ded7;
+  /* The form is always a light surface, so its option fills must stay light
+     even when the client palette resolves the page to a dark surface. */
+  --cream: #f8f6f0;
   display: grid;
   gap: 12px;
   padding: 28px;
@@ -1235,10 +1243,16 @@ h2 {
 }
 .social-proof {
   background: var(--hero-surface);
+  color: var(--ink);
+}
+.social-proof .kicker {
+  /* The band uses the hero surface, which can be darker than the page canvas
+     the shared brand ink was measured against, so darken it for this surface. */
+  color: color-mix(in srgb, var(--brand-ink, var(--brand)) 72%, var(--ink));
 }
 .social-proof__intro {
   max-width: 670px;
-  color: var(--muted);
+  color: color-mix(in srgb, var(--ink) 80%, var(--hero-surface));
   line-height: 1.65;
 }
 .proof-points {
@@ -1252,6 +1266,7 @@ h2 {
   padding: 20px;
   background: #fff;
   border-left: 3px solid var(--brand);
+  color: #14201d;
   line-height: 1.55;
 }
 .proof-points--fallback {
@@ -1270,6 +1285,7 @@ h2 {
   padding: 23px;
   background: #fff;
   border: 1px solid var(--line);
+  color: #14201d;
 }
 .google-review__author {
   font-weight: 800;
@@ -1281,7 +1297,7 @@ h2 {
   margin: 12px 0;
 }
 .google-review > p:not(.google-review__rating) {
-  color: var(--muted);
+  color: #53605b;
   line-height: 1.6;
 }
 .google-review__source {

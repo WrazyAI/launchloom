@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { resolvePalette } from "./palette-policy.mjs";
+import { contrast, parseCssColor } from "./color-contrast.mjs";
 
 const repository = fileURLToPath(new URL("..", import.meta.url));
 const outputFlag = process.argv.indexOf("--out");
@@ -26,6 +27,29 @@ const demos = [
     packId: "kinetic-poster",
   },
 ];
+// A dark requested palette must not place light text on a pack's fixed light
+// surfaces, nor dark text on its dark surfaces. Each pack is re-rendered with
+// an inverted palette and audited for readable contrast.
+const darkPalette = {
+  surfaceColor: "#111315",
+  heroColor: "#1d1f21",
+  inkColor: "#f7f7f2",
+  mutedColor: "#a0a09e",
+  lineColor: "#3f4141",
+};
+const palettes = [
+  { name: "light", style: null },
+  { name: "dark", style: darkPalette },
+];
+const renderTargets = palettes.flatMap((palette) =>
+  demos.map((demo) => ({
+    ...demo,
+    slug: `${demo.slug}-${palette.name}`,
+    demoSlug: demo.slug,
+    palette: palette.name,
+    paletteStyle: palette.style,
+  })),
+);
 
 function run(command, args, cwd) {
   return new Promise((resolve, reject) => {
@@ -93,7 +117,7 @@ const contentTypes = {
 await fs.rm(output, { recursive: true, force: true });
 await fs.mkdir(path.join(output, "screenshots"), { recursive: true });
 
-for (const demo of demos) {
+for (const demo of renderTargets) {
   const workspace = await fs.mkdtemp(
     path.join(os.tmpdir(), `launchloom-pack-${demo.slug}-`),
   );
@@ -117,7 +141,13 @@ for (const demo of demos) {
     );
     config.design ||= { recipe: "general-editorial", sections: [] };
     config.design.experience = { packId: demo.packId };
-    config.style = { ...config.style, ...resolvePalette(config.style) };
+    config.style = {
+      ...config.style,
+      ...resolvePalette({
+        primaryColor: config.style?.primaryColor,
+        ...(demo.paletteStyle || {}),
+      }),
+    };
     await fs.writeFile(
       path.join(workspace, "src/site.config.json"),
       JSON.stringify(config, null, 2),
@@ -158,10 +188,84 @@ if (!address || typeof address === "string")
   throw new Error("Could not start demo server");
 const origin = `http://127.0.0.1:${address.port}`;
 const browser = await chromium.launch({ headless: true });
-const fingerprints = new Set();
+const packFingerprints = new Map();
+
+// Samples every visible element that owns direct text, so a pack cannot render
+// light text on a light surface (or dark text on a dark surface) for either a
+// light or a dark requested palette.
+const textContrastFailures = (samples, label) => {
+  const failures = [];
+  for (const sample of samples) {
+    if (
+      !parseCssColor(sample.color).length ||
+      !parseCssColor(sample.background).length
+    )
+      continue;
+    const minimum =
+      sample.fontSize >= 24 || (sample.fontSize >= 18.66 && sample.fontWeight >= 700)
+        ? 3
+        : 4.5;
+    const ratio = contrast(sample.color, sample.background);
+    if (ratio < minimum)
+      failures.push({ label, ...sample, ratio: Number(ratio.toFixed(2)), minimum });
+  }
+  return failures;
+};
+
+const sampleText = (page) =>
+  page.evaluate(() => {
+    const effectiveBackground = (start) => {
+      let current = start;
+      while (current) {
+        const background = getComputedStyle(current).backgroundColor;
+        const alpha = background.match(
+          /rgba?\([^)]*[,/]\s*([\d.]+)\s*\)$/,
+        )?.[1];
+        if (!background.startsWith("rgba") || Number(alpha) > 0)
+          return background;
+        current = current.parentElement;
+      }
+      return "rgb(255, 255, 255)";
+    };
+    const directText = (element) =>
+      [...element.childNodes]
+        .filter((node) => node.nodeType === Node.TEXT_NODE)
+        .map((node) => node.textContent.trim())
+        .join("");
+    const selectors = [
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "p",
+      "summary",
+      "li",
+      "strong",
+      "label",
+      "legend",
+      "button",
+      "a",
+      "span",
+      "b",
+      "small",
+      "figcaption",
+    ];
+    return [...document.querySelectorAll(selectors.join(","))]
+      .filter((element) => directText(element).length > 1 && element.getClientRects().length)
+      .map((element) => {
+        const style = getComputedStyle(element);
+        return {
+          text: directText(element).replace(/\s+/g, " ").slice(0, 40),
+          color: style.color,
+          background: effectiveBackground(element),
+          fontSize: Number.parseFloat(style.fontSize),
+          fontWeight: Number.parseInt(style.fontWeight, 10) || 400,
+        };
+      });
+  });
 
 try {
-  for (const demo of demos) {
+  for (const demo of renderTargets) {
     for (const viewport of [
       { name: "desktop", width: 1536, height: 864 },
       { name: "desktop-compact", width: 1366, height: 768 },
@@ -226,7 +330,7 @@ try {
           `${demo.slug} failed at ${viewport.width}px: ${JSON.stringify({ ...result, browserErrors })}`,
         );
       }
-      fingerprints.add(result.fingerprint);
+      packFingerprints.set(demo.packId, result.fingerprint);
       await page.screenshot({
         path: path.join(
           output,
@@ -235,7 +339,29 @@ try {
         ),
         fullPage: true,
       });
-      if (demo.slug === "cinematic-narrative" && viewport.name === "desktop") {
+      const contrastFailures = textContrastFailures(
+        await sampleText(page),
+        `${demo.slug} ${viewport.name}`,
+      );
+      const qualifier = page.locator(".qualifier-option").first();
+      if (await qualifier.isVisible().catch(() => false)) {
+        await qualifier.click();
+        await page.waitForTimeout(200);
+        contrastFailures.push(
+          ...textContrastFailures(
+            await sampleText(page),
+            `${demo.slug} ${viewport.name} checked`,
+          ),
+        );
+      }
+      if (contrastFailures.length)
+        throw new Error(
+          `${demo.slug} text contrast failed at ${viewport.width}px: ${JSON.stringify(contrastFailures)}`,
+        );
+      if (
+        demo.demoSlug === "cinematic-narrative" &&
+        viewport.name === "desktop"
+      ) {
         const leadForm = page.locator("#folio-lead");
         for (let step = 0; step < 10; step += 1) {
           if (await leadForm.locator('input[name="name"]').isVisible()) break;
@@ -271,9 +397,9 @@ try {
       );
     }
   }
-  if (fingerprints.size !== demos.length)
+  if (new Set(packFingerprints.values()).size !== demos.length)
     throw new Error(
-      `Expected ${demos.length} structural fingerprints, got ${fingerprints.size}`,
+      `Expected ${demos.length} structural fingerprints, got ${new Set(packFingerprints.values()).size}`,
     );
 } finally {
   await browser.close();
@@ -282,12 +408,12 @@ try {
   );
 }
 
-const cards = demos
+const cards = renderTargets
   .map(
     (demo) => `
   <a href="./${demo.slug}/index.html">
     <img src="./screenshots/${demo.slug}-desktop.png" alt="${demo.slug.replaceAll("-", " ")} desktop preview">
-    <span>${demo.packId.replaceAll("-", " ")}</span>
+    <span>${demo.packId.replaceAll("-", " ")} (${demo.palette})</span>
   </a>`,
   )
   .join("");

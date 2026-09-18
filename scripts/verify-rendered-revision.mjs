@@ -280,7 +280,18 @@ try {
         .map(contrastDetails);
       const contrastTargets = [
         ...document.querySelectorAll(
-          ".kicker, .offer, .contact-phone, .split-section h2, .split-section p, .split-section li",
+          [
+            ".kicker, .offer, .contact-phone, .split-section h2, .split-section p, .split-section li",
+            // Experience packs own their own surfaces, so their headings and
+            // accents must be checked independently of the classic selectors.
+            ".xp-folio h1, .xp-folio h2, .xp-folio h3, .xp-folio__eyebrow, .xp-folio__intro p, .xp-folio__service-index p, .xp-folio__faqs details p",
+            ".xp-guide h1, .xp-guide h2, .xp-guide h3, .xp-guide__eyebrow, .xp-guide__hero-copy > p, .xp-guide__services article p, .xp-guide__about p:last-child, .xp-guide__faqs details p",
+            ".xp-service h1, .xp-service h2, .xp-service h3, .xp-service__eyebrow, .xp-service__services a > p, .xp-service__process li p, .xp-service__faqs details p",
+            // Shared conversion and proof surfaces can sit on either a light or
+            // a dark pack, so they are verified on their own backgrounds.
+            ".social-proof__intro, .proof-points p, .google-review > p:not(.google-review__rating)",
+            ".qualifier-option span, .qualifier-heading h3, .qualifier-heading > p, .qualifier-step legend, .lead-form small",
+          ].join(","),
         ),
       ]
         .filter(visible)

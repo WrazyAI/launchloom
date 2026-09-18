@@ -314,10 +314,29 @@
 
 /* Guided conversation */
 .xp-guide {
-  --guide-green: var(--ink);
-  --guide-mist: color-mix(in srgb, var(--hero-surface) 72%, #f6f3ea);
-  background: #f7f5ee;
-  color: var(--ink);
+  /* This pack owns a fixed light composition. Re-scope the neutral palette
+     tokens to light polarity so neither the pack's own text nor nested shared
+     components (social proof, location map, lead form) can render light text
+     on a light surface when the client palette resolves to a dark page. Brand
+     hue is retained through bounded mixes toward the local ink. */
+  --cream: #f7f5ee;
+  --hero-surface: #eef1ea;
+  --ink: #14201d;
+  --muted: #52605a;
+  --line: #d8ded7;
+  --guide-canvas: #f7f5ee;
+  --guide-surface: #ffffff;
+  --guide-ink: var(--ink);
+  --guide-muted: var(--muted);
+  --guide-line: var(--line);
+  --guide-accent: color-mix(in srgb, var(--brand) 55%, var(--guide-ink));
+  --guide-green: color-mix(in srgb, var(--brand) 30%, #101b19);
+  --guide-mist: color-mix(in srgb, var(--brand) 9%, #f1eee5);
+  /* Shared kickers inherit brand-ink, which is resolved against the global
+     page surface and would be too light on this pack's light canvas. */
+  --brand-ink: var(--guide-accent);
+  background: var(--guide-canvas);
+  color: var(--guide-ink);
   font-family: Arial, sans-serif;
 }
 
@@ -329,7 +348,7 @@
   gap: 1.5rem;
   margin: 1rem auto;
   padding: 0.6rem 0.7rem 0.6rem 1.1rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--guide-line);
   border-radius: 999px;
   background: rgb(255 255 255 / 86%);
 }
@@ -369,7 +388,7 @@
 
 .xp-guide__eyebrow {
   margin-bottom: 1rem;
-  color: var(--brand-ink);
+  color: var(--guide-accent);
   font-size: 0.68rem;
   font-weight: 850;
   letter-spacing: 0.16em;
@@ -389,7 +408,7 @@
 
 .xp-guide__hero-copy > p:not(.xp-guide__eyebrow) {
   max-width: 34rem;
-  color: var(--muted);
+  color: var(--guide-muted);
   font-size: 1.05rem;
   line-height: 1.7;
 }
@@ -416,8 +435,8 @@
   left: 1rem;
   padding: 1rem 1.2rem;
   border-radius: 0.8rem;
-  background: #fff;
-  color: var(--ink);
+  background: var(--guide-surface);
+  color: var(--guide-ink);
   font-weight: 750;
 }
 
@@ -440,7 +459,7 @@
 
 .xp-guide__qualifier > div > p:last-child {
   max-width: 28rem;
-  color: var(--muted);
+  color: var(--guide-muted);
   line-height: 1.65;
 }
 
@@ -466,9 +485,9 @@
   min-height: 24rem;
   align-content: start;
   padding: clamp(1.5rem, 4vw, 3rem);
-  border: 1px solid var(--line);
+  border: 1px solid var(--guide-line);
   border-radius: 1.5rem;
-  background: #fff;
+  background: var(--guide-surface);
 }
 
 .xp-guide__dot {
@@ -485,7 +504,7 @@
 }
 
 .xp-guide__services article p {
-  color: var(--muted);
+  color: var(--guide-muted);
   line-height: 1.6;
 }
 
@@ -520,7 +539,7 @@
 .xp-guide__about p:last-child {
   max-width: 42rem;
   margin: auto;
-  color: var(--muted);
+  color: var(--guide-muted);
   font-size: 1.08rem;
   line-height: 1.75;
 }
@@ -529,12 +548,12 @@
   display: grid;
   grid-template-columns: 0.8fr 1.2fr;
   gap: 5rem;
-  background: #fff;
+  background: var(--guide-surface);
 }
 
 .xp-guide__faqs details {
   padding: 1.4rem 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--guide-line);
 }
 
 .xp-guide__faqs summary {
@@ -547,7 +566,7 @@
 }
 
 .xp-guide__faqs details p {
-  color: var(--muted);
+  color: var(--guide-muted);
   line-height: 1.6;
 }
 
@@ -583,7 +602,17 @@
 
 /* Service-led */
 .xp-service {
+  /* Like the guided pack, this pack owns a fixed light composition. Scope the
+     neutral tokens and shared brand ink to light polarity so a dark client
+     palette cannot invert text against the pack's own light surfaces, while
+     the hero and coverage bands keep their dark treatment. */
   --service-dark: #101b19;
+  --cream: #f6f3eb;
+  --hero-surface: #e7e2d7;
+  --ink: #101b19;
+  --muted: #5d6662;
+  --line: #cfcac0;
+  --brand-ink: color-mix(in srgb, var(--brand) 55%, #101b19);
   background: #f6f3eb;
   color: var(--service-dark);
   font-family: Arial, sans-serif;
@@ -905,6 +934,19 @@
 
 .inner-experience-cinematic-narrative .inner-hero-grid {
   grid-template-columns: minmax(18rem, 0.75fr) minmax(26rem, 1.25fr);
+}
+
+/* The bold-utility inner routes keep the pack's fixed light polarity so a dark
+   client palette cannot turn its light hero into light text on a light field. */
+.inner-experience-bold-utility {
+  --cream: #f7f5ee;
+  --hero-surface: #eef1ea;
+  --ink: #14201d;
+  --muted: #52605a;
+  --line: #d8ded7;
+  --brand-ink: color-mix(in srgb, var(--brand) 55%, #14201d);
+  background: var(--cream);
+  color: var(--ink);
 }
 
 .inner-experience-bold-utility .inner-hero {
