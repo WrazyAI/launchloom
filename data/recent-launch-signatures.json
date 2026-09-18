@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-18T23:08:33.544Z",
+  "updatedAt": "2026-09-18T23:45:45.958Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -20,18 +20,18 @@
     },
     {
       "id": "2026-09-18-aurora-ridge-observatory-pipeline-canary",
-      "launchedAt": "2026-09-18T23:08:33.544Z",
+      "launchedAt": "2026-09-18T23:45:45.958Z",
       "stage": "preview",
       "businessName": "Aurora Ridge Observatory [Pipeline Canary]",
       "recipe": "general-editorial",
-      "packId": "bold-utility",
+      "packId": "cinematic-narrative",
       "variantId": "standard",
-      "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+      "layoutFingerprint": "cinematic-narrative|standard|minimal-inline|image-narrative|discovery-ribbon|editorial-index|principle-line|cinematic-inquiry|editorial-contrast|narrative-crops|cinematic|cinematic|native-scroll|1|editorial-stack|hero/conversion/services/about/gallery/social-proof/faq/location-map/contact",
       "referenceIds": [],
       "routeSignatures": [
-        "fixed-bottom-conversation-pill|narrow-authored-column|project-marquee-and-pricing-pair|neo-grotesk-with-pixel-serif|essay-marquee-testimonial|wide-moving-project-strip",
-        "micro-menu-with-cart-counterpoint|editorial-face-and-type-collision|archive-collection-rail|fashion-grotesk-and-display-mix|campaign-spread-sequence|hard-cropped-fashion-portrait",
-        "whispered-corner-navigation|typographic-monument-with-central-portrait|magazine-ledger|monumental-serif-with-script-accent|slow-cinematic-chapters|warm-architectural-tableaux"
+        "distributed-uppercase-navigation|oversized-wordmark-with-magnetic-portrait|giant-number-service-list|compressed-industrial-sans|marquee-to-sticky-project-stack|object-led-3d-collage",
+        "museum-caption-navigation|isolated-object-on-exhibition-stage|collection-atlas|museum-serif-with-micro-labels|artifact-caption-gallery|single-object-deep-focus",
+        "orbital-glass-navigation|video-field-with-floating-instruments|liquid-glass-capability-cells|italic-editorial-display|continuous-atmospheric-field|abstract-video-atmosphere"
       ]
     }
   ]
