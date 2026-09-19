@@ -385,7 +385,7 @@ describe("production experience author", () => {
     ).rejects.toThrow(/unsupported claim literal/i);
   });
 
-  it("runs shadow authorship before repository creation and preserves its evidence", () => {
+  it("generates contextual assets before shadow authorship and preserves both evidence sets", () => {
     const workflow = readFileSync(
       new URL("../.github/workflows/generate-client.yml", import.meta.url),
       "utf8",
@@ -402,7 +402,10 @@ describe("production experience author", () => {
 
     expect(inspirationIndex).toBeGreaterThan(-1);
     expect(authorIndex).toBeGreaterThan(inspirationIndex);
-    expect(repositoryIndex).toBeGreaterThan(authorIndex);
+    expect(repositoryIndex).toBeGreaterThan(inspirationIndex);
+    expect(authorIndex).toBeGreaterThan(repositoryIndex);
+    expect(workflow.indexOf("name: Generate or reuse contextual imagery")).toBeGreaterThan(repositoryIndex);
+    expect(workflow.indexOf("name: Generate or reuse contextual imagery")).toBeLessThan(authorIndex);
     expect(workflow).toContain("name: authored-experiences-${{");
     expect(workflow).toContain(
       "cp -R /tmp/generated-experiences .launchloom/generated-experiences",

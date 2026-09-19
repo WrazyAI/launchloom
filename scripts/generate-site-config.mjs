@@ -1003,6 +1003,8 @@ function fallback(intake) {
     intake.primaryColor,
     preset === "wellness" ? "#205d51" : "#bd552d",
   );
+  const stylePreference = text(intake.stylePreference, 80);
+  const visualDirection = text(intake.imageDirection, 600);
   const suppressUnverifiedLocation = hasConflictingUnverifiedAddress(intake);
   return {
     preset,
@@ -1035,6 +1037,8 @@ function fallback(intake) {
     style: {
       ...paletteHintsFromIntake(intake, primaryColor),
       tone: intake.tone || "confident",
+      ...(stylePreference ? { preference: stylePreference } : {}),
+      ...(visualDirection ? { visualDirection } : {}),
     },
     services: services.length
       ? services
@@ -1421,6 +1425,10 @@ export function normalise(candidate, intake) {
     style: {
       ...resolvePalette({ ...(value.style || {}), ...base.style }),
       tone: base.style.tone,
+      ...(base.style.preference ? { preference: base.style.preference } : {}),
+      ...(base.style.visualDirection
+        ? { visualDirection: base.style.visualDirection }
+        : {}),
     },
     services: services.length ? services : base.services,
     differentiators: different.length ? different : base.differentiators,

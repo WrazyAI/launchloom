@@ -151,7 +151,7 @@ function contentShape(site) {
       heroAlt: `${String(business.name || "Business")} featured image`,
       secondary: assets.photoTwo || images.secondary || "",
       secondaryAlt: `${String(business.name || "Business")} supporting image`,
-      tertiary: assets.photoThree || "",
+      tertiary: assets.photoThree || images.tertiary || "",
       tertiaryAlt: `${String(business.name || "Business")} detail image`,
     },
   };

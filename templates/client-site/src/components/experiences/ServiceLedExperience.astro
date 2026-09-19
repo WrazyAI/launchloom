@@ -4,6 +4,7 @@ import type { ExperienceBlueprintV2, ExperienceContent } from "../../lib/experie
 import LeadForm from "../LeadForm.astro";
 import LocationMap from "../LocationMap.astro";
 import SocialProof from "../SocialProof.astro";
+import ExperienceMediaRail from "./ExperienceMediaRail.astro";
 
 interface Props { program: ExperienceBlueprintV2; content: ExperienceContent }
 const { program, content } = Astro.props;
@@ -33,6 +34,8 @@ const { brand, hero, services, proof, process, faqs, locations, copy } = content
     <section class="xp-service__coverage"><div><p class="xp-service__eyebrow">Service area</p><h2>Coverage where the work is needed.</h2><p>Share the address and service need so the team can confirm coverage.</p></div><div>{locations.length ? locations.map((location) => <a href={`/locations/${location.slug}/`}>{location.name}</a>) : brand.serviceAreas.map((area) => <span>{area}</span>)}</div></section>
 
     {process.length > 0 && <section class="xp-service__process"><header><p class="xp-service__eyebrow">What happens next</p><h2>{copy.processHeading || "A practical path forward."}</h2></header><ol>{process.map((step, index) => <li><span>{String(index + 1).padStart(2, "0")}</span><p>{step}</p></li>)}</ol></section>}
+
+    <ExperienceMediaRail images={[{ src: hero.secondaryImage, alt: `${brand.name} service setting` }, { src: hero.tertiaryImage, alt: `${brand.name} service detail` }]} />
 
     {content.hasSocialProof && <SocialProof id="social-proof" />}
 

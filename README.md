@@ -30,6 +30,7 @@ GitHub Actions secrets in `WrazyAI/launchloom`:
 | `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | Direct Pages deploys, Worker deploy, and R2 binding.                |
 | `LAUNCHLOOM_GITHUB_ORG_TOKEN`                    | Private client repositories, issues, pull requests, and dispatches. |
 | `OPENROUTER_API_KEY`                             | GLM 5.3 Flash generation in Actions only.                           |
+| `FAL_KEY`                                        | Optional server-only contextual image generation for missing client media. |
 | `GOOGLE_PLACES_API_KEY`                          | Places API (New) lookup in the Worker.                              |
 | `REVIEW_SIGNING_SECRET`                          | HMAC review and approval links; exactly the Worker value.           |
 | `LEAD_SIGNING_SECRET`                            | HMAC client lead-form claims; exactly the Worker value.             |
@@ -47,7 +48,7 @@ The Cloudflare token must be scoped to the account and permit Workers Scripts ed
 
 ## Deploy order
 
-1. Confirm the Pages platform and R2 custom domains are active, and add the seven application secrets above.
+1. Confirm the Pages platform and R2 custom domains are active, and add the required application secrets above. Add `FAL_KEY` only when contextual image generation is enabled; it is optional and never blocks an intake.
 2. Run **Deploy LaunchLoom platform**. It writes Worker secrets, deploys `launchloom-api`, attaches the API custom domain, then direct-uploads the platform to the existing `launchloom` Pages project.
 3. Confirm `https://launchloom.wrazyos.com/onboard/` can call `https://api.launchloom.wrazyos.com/api/places` and submit an intake.
 4. Use a fictional intake first. The generation action creates a private client repository and a private-source / public-URL Pages project, deploys `review-initial.<project>.pages.dev`, then emails only the developer. Developer approval merges and publishes that exact commit before the client is invited. Client feedback creates another internal developer preview; only a further developer approval can update production.

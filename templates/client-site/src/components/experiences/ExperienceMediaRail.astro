@@ -1,0 +1,20 @@
+---
+interface Props {
+  images: Array<{ src?: string; alt: string }>;
+}
+
+const { images } = Astro.props;
+const entries = images.filter((image) => Boolean(image.src));
+---
+
+{entries.length > 0 && (
+  <section class="xp-media-rail" aria-label="More from the service">
+    <div>
+      {entries.map((image) => (
+        <figure>
+          <img src={image.src} alt={image.alt} loading="lazy" />
+        </figure>
+      ))}
+    </div>
+  </section>
+)}

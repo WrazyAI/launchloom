@@ -855,6 +855,13 @@ export default function OnboardingForm() {
               placeholder="Colors or fonts you love (or hate), competitors to avoid resembling, words we should use or avoid…"
             />
           </label>
+          <label className="field full">
+            Generated image direction (optional)
+            <textarea
+              name="imageDirection"
+              placeholder="Subjects, places, materials, or imagery to show or avoid when you do not have business photos."
+            />
+          </label>
           <ImageUploadField name="logo" label="Logo" optional />
           <ImageUploadField name="photoOne" label="Business photo 1" optional />
           <ImageUploadField name="photoTwo" label="Business photo 2" optional />
@@ -888,6 +895,11 @@ export default function OnboardingForm() {
         <p className="form-note">
           Use 4–6 strong photos if you have them. Images are compressed in your
           browser; keep total uploads under 7.5 MB.
+        </p>
+        <p className="form-note">
+          If you do not upload suitable business photos, we may create draft
+          imagery with a third-party image model. Client-provided media always
+          takes priority.
         </p>
       </section>
       <section

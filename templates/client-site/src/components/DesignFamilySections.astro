@@ -29,11 +29,14 @@ const process = site.conversion?.process?.length
   : ["Share what you need", "Review the next step", "Move forward clearly"];
 const faqs = site.conversion?.faqs || [];
 const proofPoints = site.differentiators.filter(Boolean).slice(0, 4);
-const galleryImages = [
-  site.assets?.photoThree,
-  site.assets?.teamPhoto,
-  site.images.secondary,
-].filter((image): image is string => Boolean(image));
+const galleryImages = Array.from(
+  new Set([
+    site.assets?.photoThree,
+    site.images.tertiary,
+    site.assets?.teamPhoto,
+    site.images.secondary,
+  ]),
+).filter((image): image is string => Boolean(image));
 const heroHeading = copy.heroHeading || site.business.tagline;
 const heroBody = copy.heroBody || site.business.description;
 const heroKicker =

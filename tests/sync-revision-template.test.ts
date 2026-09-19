@@ -46,3 +46,21 @@ it("preserves a client-authored canonical expression", async () => {
   expect(await fs.readFile(path.join(client, "src/layouts/SiteLayout.astro"), "utf8"))
     .toBe(custom);
 });
+
+it("refreshes the shared experience media rail for pack-based revisions", async () => {
+  const client = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-sync-"));
+  dirs.push(client);
+  await fs.mkdir(path.join(client, "src/layouts"), { recursive: true });
+  await fs.writeFile(path.join(client, "src/site.config.json"), JSON.stringify({
+    business: { primaryCta: "Contact us" },
+    design: { experience: { packId: "cinematic-narrative" } },
+  }));
+  await fs.writeFile(path.join(client, "src/layouts/SiteLayout.astro"), "<head></head>\n");
+  await exec("node", [path.resolve("scripts/sync-revision-template.mjs"), "--client", client]);
+  expect(
+    await fs.readFile(
+      path.join(client, "src/components/experiences/ExperienceMediaRail.astro"),
+      "utf8",
+    ),
+  ).toContain("xp-media-rail");
+});

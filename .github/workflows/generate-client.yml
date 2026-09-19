@@ -21,6 +21,10 @@ jobs:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
+      FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
+      FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
+      FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '4' }}
       MODEL_AUTHORED_EXPERIENCE_MODEL: ${{ vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
       SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '2' }}
       SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.10' }}
@@ -80,22 +84,6 @@ jobs:
         with:
           name: inspiration-pack-${{ steps.intake.outputs.issue }}
           path: /tmp/inspiration-pack.json
-          retention-days: 14
-      - name: Author Phase 2 experience candidates in shadow mode
-        timeout-minutes: 8
-        run: >-
-          npm run author:experiences --
-          --config /tmp/site.config.json
-          --inspiration /tmp/inspiration-pack.json
-          --out /tmp/generated-experiences
-          --failure-mode record
-      - name: Preserve authored experience evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: authored-experiences-${{ steps.intake.outputs.issue }}
-          path: /tmp/generated-experiences
-          if-no-files-found: error
           retention-days: 14
       - name: Create private repository and Cloudflare Pages project
         id: client
@@ -200,7 +188,6 @@ jobs:
           mkdir -p .launchloom
           cp /tmp/seo-research.json .launchloom/seo-research.json
           cp /tmp/inspiration-pack.json .launchloom/inspiration-pack.json
-          cp -R /tmp/generated-experiences .launchloom/generated-experiences
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
           git_push_with_retry --set-upstream origin review/initial
@@ -210,6 +197,62 @@ jobs:
           fi
           echo "dir=$CLIENT_DIR" >> "$GITHUB_OUTPUT"
           echo "pr=${PR##*/}" >> "$GITHUB_OUTPUT"
+      - name: Generate or reuse contextual imagery
+        id: assets
+        timeout-minutes: 12
+        run: |
+          cd "${{ steps.branch.outputs.dir }}"
+          mkdir -p public/images/generated
+          node "$GITHUB_WORKSPACE/scripts/generate-contextual-assets.mjs" \
+            --config /tmp/site.config.json \
+            --inspiration /tmp/inspiration-pack.json \
+            --output "$PWD/public/images/generated" \
+            --manifest "$PWD/.launchloom/generated-assets.json"
+          cp /tmp/site.config.json src/site.config.json
+          git add src/site.config.json public/images/generated .launchloom/generated-assets.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Add contextual image assets"
+            git push origin review/initial
+          fi
+          node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
+      - name: Preserve generated asset evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-assets-${{ steps.intake.outputs.issue }}
+          path: |
+            ${{ steps.branch.outputs.dir }}/.launchloom/generated-assets.json
+            ${{ steps.branch.outputs.dir }}/public/images/generated
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Author Phase 2 experience candidates in shadow mode
+        timeout-minutes: 8
+        run: >-
+          npm run author:experiences --
+          --config /tmp/site.config.json
+          --inspiration /tmp/inspiration-pack.json
+          --out /tmp/generated-experiences
+          --failure-mode record
+      - name: Preserve authored experience evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authored-experiences-${{ steps.intake.outputs.issue }}
+          path: /tmp/generated-experiences
+          if-no-files-found: error
+          retention-days: 14
+      - name: Commit authored experience evidence
+        run: |
+          cd "${{ steps.branch.outputs.dir }}"
+          mkdir -p .launchloom
+          rm -rf .launchloom/generated-experiences
+          cp -R /tmp/generated-experiences .launchloom/generated-experiences
+          git add .launchloom/generated-experiences
+          if ! git diff --cached --quiet; then
+            git commit -m "Record authored experience candidates"
+            git push origin review/initial
+          fi
       - name: Build and direct-upload public preview
         id: deploy
         run: |
@@ -292,7 +335,7 @@ jobs:
           echo "link=$PREVIEW?review=$TOKEN" >> "$GITHUB_OUTPUT"
       - name: Post handoff links
         env:
-          CLIENT_ASSET_SUMMARY: ${{ steps.intake.outputs.asset_summary }}
+          CLIENT_ASSET_SUMMARY: ${{ steps.assets.outputs.summary || steps.intake.outputs.asset_summary }}
           CLIENT_PROJECT: ${{ steps.client.outputs.project }}
           CLIENT_REPO: ${{ steps.client.outputs.repo }}
           DEVELOPER_REVIEW_LINK: ${{ steps.review.outputs.link }}

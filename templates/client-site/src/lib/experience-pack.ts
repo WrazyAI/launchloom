@@ -113,6 +113,7 @@ export type ExperienceContent = Readonly<{
     primaryLabel: string;
     image?: string;
     secondaryImage?: string;
+    tertiaryImage?: string;
     offer?: string;
   };
   services: readonly SiteConfig["services"][number][];
@@ -760,9 +761,12 @@ function contentFor(site: SiteConfig): ExperienceContent {
       heading: copy.heroHeading || site.business.tagline,
       body: copy.heroBody || site.business.description,
       primaryLabel: site.business.primaryCta,
-      image: site.images.hero || site.images.secondary || site.assets?.photoOne,
-      secondaryImage:
-        site.images.secondary || site.assets?.photoTwo || site.images.hero,
+      image:
+        site.assets?.photoOne ||
+        site.images.hero ||
+        site.images.secondary,
+      secondaryImage: site.assets?.photoTwo || site.images.secondary,
+      tertiaryImage: site.assets?.photoThree || site.images.tertiary || "",
       offer: site.business.offer,
     },
     services: site.services,

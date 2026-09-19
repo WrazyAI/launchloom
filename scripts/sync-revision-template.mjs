@@ -39,6 +39,7 @@ if (config.design?.experience?.packId) {
   for (const relative of [
     "components/ExperiencePage.astro",
     "components/experiences/EditorialFolioExperience.astro",
+    "components/experiences/ExperienceMediaRail.astro",
     "components/experiences/GuidedConversationExperience.astro",
     "components/experiences/ServiceLedExperience.astro",
     "components/Header.astro",

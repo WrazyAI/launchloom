@@ -93,6 +93,8 @@ export type SiteConfig = {
   style: {
     primaryColor: string;
     tone: string;
+    preference?: string;
+    visualDirection?: string;
     showBrandName?: boolean;
     surfaceColor?: string;
     heroColor?: string;
@@ -107,7 +109,7 @@ export type SiteConfig = {
   services: Service[];
   differentiators: string[];
   locations: Location[];
-  images: { hero?: string; secondary?: string };
+  images: { hero?: string; secondary?: string; tertiary?: string };
   assets?: {
     logo?: string;
     photoOne?: string;
@@ -196,10 +198,17 @@ export type SiteConfig = {
       placement: string;
       source: string;
       provider?: string;
+      model?: string;
       creator?: string;
       sourceUrl?: string;
       license?: string;
       subject?: string;
+      promptHash?: string;
+      requestId?: string;
+      sha256?: string;
+      generatedAt?: string;
+      width?: number;
+      height?: number;
     }>;
     skipped: Array<{ asset: string; reason: string }>;
   };

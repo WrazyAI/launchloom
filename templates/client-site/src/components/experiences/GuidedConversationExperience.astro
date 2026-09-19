@@ -4,6 +4,7 @@ import type { ExperienceBlueprintV2, ExperienceContent } from "../../lib/experie
 import LeadForm from "../LeadForm.astro";
 import LocationMap from "../LocationMap.astro";
 import SocialProof from "../SocialProof.astro";
+import ExperienceMediaRail from "./ExperienceMediaRail.astro";
 
 interface Props { program: ExperienceBlueprintV2; content: ExperienceContent }
 const { program, content } = Astro.props;
@@ -38,6 +39,8 @@ const { brand, hero, services, proof, faqs, copy } = content;
     <section class="xp-guide__about">
       <p class="xp-guide__eyebrow">{copy.aboutKicker || "A thoughtful approach"}</p><h2>{copy.aboutHeading || "Clarity before commitment."}</h2><p>{copy.aboutBody || content.businessDescription}</p>
     </section>
+
+    <ExperienceMediaRail images={[{ src: hero.secondaryImage, alt: `${brand.name} service setting` }, { src: hero.tertiaryImage, alt: `${brand.name} service detail` }]} />
 
     {content.hasSocialProof && <SocialProof id="social-proof" />}
 

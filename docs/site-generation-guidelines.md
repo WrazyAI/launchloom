@@ -39,6 +39,20 @@ and its placement. If no suitable asset exists, use deliberate brand art or a
 graphic treatment. Do not use an attractive but unrelated photograph. Stock
 people cannot be described as the business's team, patients, or customers.
 
+When a client has a missing or partial image set, the contextual-asset stage may
+create up to three draft images through the server-only FAL adapter. Client
+media always wins for its matching placement. Generated prompts may use the
+verified business kind, services, service areas, SEO vocabulary, customer
+questions, and the submitted visual direction, but must not include private
+contact fields or invent a storefront, people, credentials, outcomes, or
+readable text. Generated images are local WebP assets with a prompt hash and
+provider provenance in the private review repository. The FAL provider URL must
+never be emitted into the public site config or deployed HTML. If generation
+times out, returns an invalid image, or is unavailable, retry once and retain a
+reviewed stock or deliberate brand-art fallback. A missing FAL key must never
+make an intake fail. Generated imagery is draft material and requires human
+approval before production publication.
+
 Use concise headings, readable contrast, stable spacing, descriptive links,
 compact mobile actions, and accessible forms. Avoid stacked popups, overlapping
 sticky controls, placeholder links, horizontal overflow, and text embedded in
