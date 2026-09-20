@@ -359,8 +359,17 @@ function validateExperience(source, route, content) {
     throw new Error(`Candidate ${route.id} must use the shared LaunchLoom runtime.`);
   if (!/\bLeadForm\b/u.test(source))
     throw new Error(`Candidate ${route.id} must render the shared LeadForm runtime surface.`);
+  if (!/<LeadForm\b[^>]*\bcontent\s*=\s*\{\s*content\s*\}/u.test(source))
+    throw new Error(
+      `Candidate ${route.id} must pass sealed content to the shared LeadForm runtime surface.`,
+    );
   if (/\balt\s*=\s*["']\s*["']/iu.test(source))
     throw new Error(`Candidate ${route.id} contains an empty image alt attribute.`);
+  for (const target of ["services", "faqs", "contact"])
+    if (!new RegExp(`href\\s*=\\s*["']#${target}["']`, "u").test(source))
+      throw new Error(
+        `Candidate ${route.id} navigation must expose href="#${target}".`,
+      );
   for (const binding of requiredExperienceBindings)
     if (!binding.aliases.some((token) => referencesContentPath(source, token)))
       throw new Error(

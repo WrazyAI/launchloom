@@ -486,6 +486,30 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("repairs missing LeadForm content and anchor navigation bindings", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage !== "experience" || request.validationError)
+          return value;
+        return {
+          content: String(value.content)
+            .replace("<LeadForm content={content} runtime={runtime} />", "<LeadForm runtime={runtime} />")
+            .replaceAll('href="#services"', 'onClick={() => {}}')
+            .replaceAll('href="#faqs"', 'onClick={() => {}}')
+            .replaceAll('href="#contact"', 'onClick={() => {}}'),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(
+      result.candidates.every((item) => item.metadata.complianceRepaired),
+    ).toBe(true);
+  });
+
   it("rejects authored bundles that bypass sealed business content", async () => {
     await expect(
       authorExperienceCandidates({
