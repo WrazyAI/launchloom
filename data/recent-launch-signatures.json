@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-20T15:33:08.671Z",
+  "updatedAt": "2026-09-20T23:48:43.039Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -48,6 +48,22 @@
         "market-day-navigation|loose-product-collage|seasonal-shelf-menu|friendly-display-serif|collage-menu-visit|overlapping-product-stills",
         "transparent-horizon-navigation|centered-copy-over-motion-landscape|floating-destination-index|overlapping-modern-sans|single-scene-immersion|atmospheric-motion-background",
         "whispered-corner-navigation|typographic-monument-with-central-portrait|magazine-ledger|monumental-serif-with-script-accent|slow-cinematic-chapters|warm-architectural-tableaux"
+      ]
+    },
+    {
+      "id": "2026-09-20-aurora-ridge-observatory-pipeline-canary",
+      "launchedAt": "2026-09-20T23:48:43.038Z",
+      "stage": "preview",
+      "businessName": "Aurora Ridge Observatory [Pipeline Canary]",
+      "recipe": "general-editorial",
+      "packId": "kinetic-poster",
+      "variantId": "full-bleed",
+      "layoutFingerprint": "806f8f759f283dc5f96b40f0",
+      "referenceIds": [],
+      "routeSignatures": [
+        "fixed-bottom-conversation-pill|narrow-authored-column|project-marquee-and-pricing-pair|neo-grotesk-with-pixel-serif|essay-marquee-testimonial|wide-moving-project-strip",
+        "micro-menu-with-cart-counterpoint|editorial-face-and-type-collision|archive-collection-rail|fashion-grotesk-and-display-mix|campaign-spread-sequence|hard-cropped-fashion-portrait",
+        "performance-scoreboard-navigation|full-viewport-action-poster|horizontal-program-bands|oversized-athletic-condensed|impact-band-recovery|full-bleed-action-documentary"
       ]
     }
   ]
