@@ -48,13 +48,19 @@ describe("creative repair loop", () => {
           category: "conversion",
           evidence: "On mobile the navigation is hidden and no menu is visible.",
         },
+        {
+          category: "hierarchy",
+          evidence: "The services intro is an oversized five-line display heading that dwarfs the service rows.",
+        },
       ],
     );
     expect(result.styles).toContain("launchloom-visual-repair: footer-contrast");
-    expect(result.styles).toContain("launchloom-visual-repair: mobile-cta-clearance");
+    expect(result.styles).toContain("launchloom-visual-repair: conversion-clearance");
     expect(result.styles).toContain("launchloom-visual-repair: hero-host-collision");
     expect(result.styles).toContain("launchloom-visual-repair: mobile-navigation-visibility");
-    expect(result.styles).toContain('main + [data-cta-placement]');
+    expect(result.styles).toContain('body:has([data-creative-host="true"]) .quick-answers');
+    expect(result.styles).toContain('[data-creative-host="true"] a[data-navigation-geometry="fixed-bottom-conversation-pill"]');
+    expect(result.styles).toContain("launchloom-visual-repair: service-intro-hierarchy");
     expect(result.styles).not.toContain("data-experience-pack");
   });
 
@@ -74,5 +80,22 @@ describe("creative repair loop", () => {
     expect(repairFindings).toHaveLength(1);
     expect(result.pass).toBe(true);
     expect(result.files.styles).toContain("launchloom-visual-repair: footer-contrast");
+  });
+
+  it("uses only deterministic safety repairs when the author returns malformed output", async () => {
+    const result = await runCreativeRepairLoop({
+      files: { experience: "<main></main>", styles: ".hero { background: var(--cream); }", motion: "" },
+      findings: [{ category: "content-integrity", evidence: "Hero heading is white-on-white on a light panel." }],
+      referenceDna: { familyId: "test" },
+      generate: async () => { throw new Error("OpenRouter returned malformed JSON"); },
+      evaluate: async (files: any) => ({
+        pass: files.styles.includes("hero-host-collision"),
+        findings: files.styles.includes("hero-host-collision") ? [] : ["hero still collides"],
+      }),
+      maxCycles: 2,
+    });
+    expect(result.pass).toBe(true);
+    expect(result.cyclesUsed).toBe(1);
+    expect(result.cycles[0].generationError).toContain("malformed JSON");
   });
 });

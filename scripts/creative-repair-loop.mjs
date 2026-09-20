@@ -90,17 +90,51 @@ export function applyCreativeVisualSafetyRepairs(files, findings = []) {
   if (hasFinding(findings, /(?:sticky|floating|pill|cta)[\s\S]*(?:overlap|collision|cover)|(?:overlap|collision|cover)[\s\S]*(?:sticky|floating|pill|cta)/iu)) {
     styles = appendRepair(
       styles,
-      "/* launchloom-visual-repair: mobile-cta-clearance */",
+      "/* launchloom-visual-repair: conversion-clearance */",
       `
+/* The authored conversion control remains the same anchor and style, but
+   cannot obscure a signature marquee or image strip at the viewport edge. */
+[data-creative-host="true"] a[data-navigation-geometry="fixed-bottom-conversation-pill"],
+body > div > a[data-navigation-geometry="fixed-bottom-conversation-pill"] {
+  position: static !important;
+  display: table !important;
+  margin: 1.5rem auto 1.5rem !important;
+  transform: none !important;
+}
+
+/* QuickAnswers belongs to the production shell. Scope the adjustment to a
+   creative host so legacy pages retain their existing floating assistant. */
+body:has([data-creative-host="true"]) .quick-answers {
+  position: static !important;
+  display: table !important;
+  margin: 0 1.5rem 1.5rem auto !important;
+}
+
 @media (max-width: 760px) {
   [data-reference-section="footer"] {
     padding-bottom: max(6rem, calc(3rem + env(safe-area-inset-bottom)));
   }
-
-  main + [data-cta-placement] {
-    position: static !important;
-    margin-bottom: 1.5rem !important;
+}
+`,
+    );
   }
+  if (hasFinding(findings, /(?:service|services)[\s\S]*(?:oversized|overlong|display heading|five-line|dwarf)|(?:oversized|overlong|display heading|five-line|dwarf)[\s\S]*(?:service|services)/iu)) {
+    styles = appendRepair(
+      styles,
+      "/* launchloom-visual-repair: service-intro-hierarchy */",
+      `
+/* Keep the service promise legible without letting it overpower the actual
+   service rows that carry the conversion decision. */
+[data-reference-section="pricing"] > h2,
+[data-reference-section="services"] > h2 {
+  max-width: 42rem !important;
+  margin-bottom: 2rem !important;
+  font-family: var(--ll-creative-sans, Arial, sans-serif) !important;
+  font-size: clamp(1.05rem, 2.2vw, 1.55rem) !important;
+  font-style: normal !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.45 !important;
 }
 `,
     );
@@ -161,15 +195,32 @@ export async function runCreativeRepairLoop({
   let forcedRepair = findings.length > 0;
   for (let cycle = 1; (!result.pass || forcedRepair) && cycle <= maxCycles; cycle += 1) {
     const cycleFindings = mergeFindings(findings, result.findings);
-    const repaired = await generate({
-      stage: "repair",
-      cycle,
-      maxCycles,
-      referenceDna,
-      findings: cycleFindings,
-      screenshots,
-      files: current,
-    });
+    let repaired;
+    try {
+      repaired = await generate({
+        stage: "repair",
+        cycle,
+        maxCycles,
+        referenceDna,
+        findings: cycleFindings,
+        screenshots,
+        files: current,
+      });
+    } catch (error) {
+      // A malformed or unavailable author response must not publish stale
+      // output. Preserve the repair budget and give only the evidence-driven
+      // safety transforms a chance to recover before failing closed.
+      current = applyCreativeVisualSafetyRepairs(current, cycleFindings);
+      result = await evaluate(current);
+      forcedRepair = false;
+      cycles.push({
+        cycle,
+        pass: Boolean(result.pass),
+        findings: result.findings || [],
+        generationError: clean(error instanceof Error ? error.message : error, 600),
+      });
+      continue;
+    }
     if (!repaired || typeof repaired !== "object") throw new Error(`Creative repair cycle ${cycle} returned no files.`);
     current = {
       experience: clean(repaired.experience || current.experience, Number.MAX_SAFE_INTEGER),
