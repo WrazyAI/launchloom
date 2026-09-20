@@ -591,30 +591,36 @@ async function generateContract(generate, request) {
 }
 
 async function generateValidatedSource({ generate, request, stage, validate }) {
-  const result = await generateStageValue(generate, request, "content", stage);
-  let source = normalizeAuthoredSource(result.value);
-  let repaired = result.repaired;
-  try {
-    validate(source, request.route);
-  } catch (error) {
-    const repair = await generateStageValue(
+  let source = "";
+  let repaired = false;
+  let validationError = "";
+  for (let cycle = 0; cycle <= 2; cycle += 1) {
+    const result = await generateStageValue(
       generate,
-      {
-        ...request,
-        validationError: error instanceof Error ? error.message : String(error),
-        previousSource: source,
-      },
+      cycle === 0
+        ? request
+        : {
+            ...request,
+            validationError: `Reference-safe ${stage} repair cycle ${cycle}/2. Fix this exact validation error without changing the assigned composition: ${validationError}`,
+            previousSource: source,
+          },
       "content",
       stage,
     );
-    source = normalizeAuthoredSource(repair.value);
-    repaired = true;
-    validate(source, request.route);
+    source = normalizeAuthoredSource(result.value);
+    repaired ||= result.repaired || cycle > 0;
+    try {
+      validate(source, request.route);
+      return {
+        source: stage === "styles" ? namespaceCreativeCss(source) : source,
+        repaired,
+      };
+    } catch (error) {
+      validationError = error instanceof Error ? error.message : String(error);
+      if (cycle === 2) throw error;
+    }
   }
-  return {
-    source: stage === "styles" ? namespaceCreativeCss(source) : source,
-    repaired,
-  };
+  throw new Error(`Candidate ${request.route.id} ${stage} validation did not complete.`);
 }
 
 async function generateMotionSource({ generate, request, validate }) {

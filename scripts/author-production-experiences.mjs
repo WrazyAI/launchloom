@@ -181,7 +181,7 @@ async function requestStage(request) {
       : 90_000;
   const remainingMs = authorDeadline - Date.now();
   if (remainingMs <= 0)
-    throw new Error("Phase 2 authorship exceeded its seven-minute budget.");
+    throw new Error("Phase 2 authorship exceeded its configured budget.");
   const timeout = setTimeout(
     () => controller.abort(),
     Math.min(stageLimitMs, remainingMs),
@@ -223,7 +223,7 @@ async function requestStage(request) {
     const efforts = fallbackEfforts[reasoningEffort] || [reasoningEffort];
     // Validation repairs should prioritize a complete structured response over
     // maximum hidden reasoning. A failed max-effort repair must not consume the
-    // whole seven-minute authoring budget before trying the proven lower lane.
+    // whole configured authoring budget before trying the proven lower lane.
     const requestedEfforts = request.validationError
       ? efforts.slice(1).length
         ? efforts.slice(1)

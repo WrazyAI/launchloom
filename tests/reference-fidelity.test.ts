@@ -21,4 +21,17 @@ describe("reference fidelity validator", () => {
     expect(report.pass).toBe(false);
     expect(report.findings.map((item: any) => item.code)).toEqual(expect.arrayContaining(["prohibited-pattern", "css-token-collision"]));
   });
+
+  it("accepts human-readable marker values that normalize to the contract slugs", () => {
+    const humanReadable = validExperience
+      .replace("single-column-editorial-chapters", "single column editorial chapters")
+      .replace("masked-image-reveal", "masked image reveal")
+      .replace("quiet-corner-links", "quiet corner links")
+      .replace("typographic-monument", "typographic monument")
+      .replace("magazine-archive-ledger", "magazine archive ledger")
+      .replace("after-hero-image", "after hero image");
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: humanReadable, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.pass).toBe(true);
+    expect(report.findings).toEqual([]);
+  });
 });
