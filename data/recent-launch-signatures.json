@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-20T04:02:48.577Z",
+  "updatedAt": "2026-09-20T09:30:58.402Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -36,18 +36,18 @@
     },
     {
       "id": "2026-09-20-cinder-coast-coffee-lab-qa",
-      "launchedAt": "2026-09-20T04:02:48.577Z",
+      "launchedAt": "2026-09-20T09:30:58.401Z",
       "stage": "preview",
       "businessName": "Cinder & Coast Coffee Lab QA",
       "recipe": "general-editorial",
-      "packId": "bold-utility",
-      "variantId": "portrait",
-      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "packId": "cinematic-narrative",
+      "variantId": "monument",
+      "layoutFingerprint": "cinematic-narrative|monument|minimal-inline|centered-monument|discovery-ribbon|chaptered-index|principle-line|cinematic-inquiry|editorial-contrast|narrative-crops|cinematic|cinematic|native-scroll|1|editorial-stack|hero/conversion/services/about/social-proof/gallery/faq/location-map/contact",
       "referenceIds": [],
       "routeSignatures": [
-        "fixed-bottom-conversation-pill|narrow-authored-column|project-marquee-and-pricing-pair|neo-grotesk-with-pixel-serif|essay-marquee-testimonial|wide-moving-project-strip",
-        "market-day-navigation|loose-product-collage|seasonal-shelf-menu|friendly-display-serif|collage-menu-visit|overlapping-product-stills",
-        "whispered-corner-navigation|typographic-monument-with-central-portrait|magazine-ledger|monumental-serif-with-script-accent|slow-cinematic-chapters|warm-architectural-tableaux"
+        "measured-professional-navigation|narrow-positioning-with-portrait-proof|ruled-expertise-ledger|restrained-humanist-serif|position-proof-process|named-professional-portrait",
+        "micro-menu-with-cart-counterpoint|editorial-face-and-type-collision|archive-collection-rail|fashion-grotesk-and-display-mix|campaign-spread-sequence|hard-cropped-fashion-portrait",
+        "performance-scoreboard-navigation|full-viewport-action-poster|horizontal-program-bands|oversized-athletic-condensed|impact-band-recovery|full-bleed-action-documentary"
       ]
     }
   ]
