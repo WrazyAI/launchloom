@@ -18,7 +18,9 @@ lead endpoint, or ship an unverified layout.
 3. `author-production-experiences.mjs` asks the visual author for three
    independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
    author can use React, the shared runtime, GSAP, and ScrollTrigger, but not
-   network access, remote code, canvas, or Three.js by default.
+   network access, remote code, canvas, or Three.js by default. Model stages
+   are globally limited to two in-flight requests so a three-candidate bakeoff
+   does not exhaust the provider budget.
 4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders desktop and mobile viewports, and records the
    evidence. A candidate must expose one hero, one early conversion surface,
@@ -49,6 +51,10 @@ The workflow normalizes every other repository-variable value to `preview`.
 There is no new-intake escape hatch for the legacy renderer. The deterministic
 experience-pack renderer and its bakeoff remain only as migration support for
 already-created client repositories and historical tests.
+
+Authoring failures stop before rendering and deployment with the provider
+error attached to the run. The workflow never turns an empty candidate set into
+a legacy preview.
 
 The model is independently configurable with `CREATIVE_EXPERIENCE_MODEL` and
 `CREATIVE_EXPERIENCE_REASONING_EFFORT`. The truth/configuration lane remains on

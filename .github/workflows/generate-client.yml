@@ -246,7 +246,7 @@ jobs:
           --config /tmp/site.config.json
           --inspiration /tmp/inspiration-pack.json
           --out /tmp/generated-experiences
-          --failure-mode record
+          --failure-mode throw
       - name: Preserve authored experience evidence
         if: always()
         continue-on-error: true

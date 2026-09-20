@@ -194,6 +194,29 @@ describe("production experience author", () => {
     }
   });
 
+  it("limits concurrent model stages to protect the provider in-flight budget", async () => {
+    let active = 0;
+    let maximumActive = 0;
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        active += 1;
+        maximumActive = Math.max(maximumActive, active);
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        try {
+          return safeStage(request);
+        } finally {
+          active -= 1;
+        }
+      },
+      model: "test/model",
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(maximumActive).toBeLessThanOrEqual(2);
+  });
+
   it("passes a sealed token manifest and a distinct route brief to every generation stage", async () => {
     const requests: AuthorStageRequest[] = [];
     await authorExperienceCandidates({
@@ -675,6 +698,8 @@ describe("production experience author", () => {
     expect(workflow).toContain(
       "cp -R /tmp/generated-experiences .launchloom/generated-experiences",
     );
+    expect(workflow).toContain("--failure-mode throw");
+    expect(workflow).not.toContain("--failure-mode record");
     expect(
       workflow.match(
         /PUBLIC_REVIEW_MODE=true node "\$GITHUB_WORKSPACE\/scripts\/verify-rendered-revision\.mjs"/g,

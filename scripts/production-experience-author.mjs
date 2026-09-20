@@ -622,6 +622,31 @@ async function generateMotionSource({ generate, request, validate }) {
   }
 }
 
+function createGenerationLimiter(generate, maxConcurrency = 2) {
+  const queue = [];
+  let active = 0;
+
+  const drain = () => {
+    while (active < maxConcurrency && queue.length) {
+      const job = queue.shift();
+      active += 1;
+      Promise.resolve()
+        .then(() => generate(job.request))
+        .then(job.resolve, job.reject)
+        .finally(() => {
+          active -= 1;
+          drain();
+        });
+    }
+  };
+
+  return (request) =>
+    new Promise((resolve, reject) => {
+      queue.push({ request, resolve, reject });
+      drain();
+    });
+}
+
 /**
  * Deep module interface for Phase 2 production authorship.
  *
@@ -652,17 +677,22 @@ export async function authorExperienceCandidates({
   const routes = assertInspirationPack(inspirationPack).map((route) =>
     buildRouteContract(route),
   );
+  // OpenRouter's in-flight budget is shared across the account. Keep the
+  // independent candidates, but never put more than two model stages in
+  // flight at once. This protects the creative lane without falling back to a
+  // deterministic renderer.
+  const limitedGenerate = createGenerationLimiter(generate, 2);
   const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
       const base = { route, contentTokens, contentShape: content, rules };
-      const contractResult = await generateContract(generate, {
+      const contractResult = await generateContract(limitedGenerate, {
         ...base,
         stage: "contract",
       });
       const designContract = contractResult.designContract;
       const designRationale = contractResult.designRationale;
       const experienceResult = await generateStageValue(
-        generate,
+        limitedGenerate,
         { ...base, stage: "experience", designContract },
         "content",
         "experience",
@@ -677,7 +707,7 @@ export async function authorExperienceCandidates({
         let repairedExperience;
         try {
           repairedExperience = await generateStageValue(
-            generate,
+            limitedGenerate,
             {
               ...base,
               stage: "experience",
@@ -699,7 +729,7 @@ export async function authorExperienceCandidates({
             validateExperience(experience, route, content);
           } else {
             const finalRepair = await generateStageValue(
-              generate,
+              limitedGenerate,
               {
                 ...base,
                 stage: "experience",
@@ -725,7 +755,7 @@ export async function authorExperienceCandidates({
       }
       const [stylesOutput, motionOutput] = await Promise.all([
         generateValidatedSource({
-          generate,
+          generate: limitedGenerate,
           request: {
             ...base,
             stage: "styles",
@@ -736,7 +766,7 @@ export async function authorExperienceCandidates({
           validate: validateStyles,
         }),
         generateMotionSource({
-          generate,
+          generate: limitedGenerate,
           request: {
             ...base,
             stage: "motion",
