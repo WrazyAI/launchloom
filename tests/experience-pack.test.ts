@@ -97,6 +97,13 @@ describe("experience-pack compiler", () => {
     expect(bakeoff).toContain('experience_bakeoff_candidate=');
     const workflow = readFileSync(".github/workflows/generate-client.yml", "utf8");
     expect(workflow).toContain(".launchloom/experience-bakeoff.json");
+    const creativeRender = workflow.slice(
+      workflow.indexOf("name: Render creative candidates in the production shell"),
+      workflow.indexOf("name: Build and direct-upload public preview"),
+    );
+    expect(creativeRender).not.toContain("continue-on-error: true");
+    expect(workflow).toContain('Authored creative renderer was not selected');
+    expect(workflow).toContain('CANDIDATE_ID=$(jq -r');
     expect(workflow).toMatch(
       /Upload experience bakeoff evidence[\s\S]*experience-bakeoff-screenshots[\s\S]*\.launchloom\/experience-bakeoff\.json/,
     );

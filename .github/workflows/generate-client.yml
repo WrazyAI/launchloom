@@ -265,7 +265,6 @@ jobs:
           fi
       - name: Render creative candidates in the production shell
         if: env.CREATIVE_EXPERIENCE_MODE != 'legacy'
-        continue-on-error: true
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
@@ -292,7 +291,9 @@ jobs:
           npm ci
           if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ] || [ "$CREATIVE_EXPERIENCE_MODE" = "preview" ]; then
             test -f .launchloom/creative-bakeoff.json || { echo "Creative promotion report missing"; exit 1; }
-            jq -e '.selectedCandidateId != null and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "No authored creative candidate passed the preview gates"; exit 1; }
+            jq -e '(.design.experience.renderer == "creative-candidate") and (.design.experience.candidateId != null) and (.design.experience.selectionMode == "creative-preview" or .design.experience.selectionMode == "creative-bakeoff")' src/site.config.json >/dev/null || { echo "Authored creative renderer was not selected"; exit 1; }
+            CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
+            jq -e --arg candidate "$CANDIDATE_ID" '.selectedCandidateId == $candidate and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "No authored creative candidate passed the preview gates"; exit 1; }
           else
             node "$GITHUB_WORKSPACE/scripts/run-experience-bakeoff.mjs" --site-dir "$PWD" --report .launchloom/experience-bakeoff.json --screenshots "$RUNNER_TEMP/experience-bakeoff-screenshots"
           fi
