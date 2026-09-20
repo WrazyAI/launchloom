@@ -458,6 +458,27 @@ function validateStyles(source, route) {
     throw new Error(`Candidate ${route.id} CSS contains a malformed trailing wrapper.`);
 }
 
+/**
+ * Candidate styles are mounted inside the production shell, whose body owns
+ * generic tokens such as --ink and --muted for the deterministic renderer.
+ * Rename variables declared by the candidate so those local design decisions
+ * cannot be overridden by inherited shell tokens. References to host-owned
+ * variables remain available when a candidate intentionally consumes them.
+ */
+export function namespaceCreativeCss(source) {
+  const declared = new Set(
+    [...source.matchAll(/(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu)].map(
+      (match) => match[1],
+    ),
+  );
+  if (!declared.size) return source;
+  return source.replace(/--[A-Za-z][\w-]*/gu, (token) =>
+    declared.has(token) && !token.startsWith("--ll-creative-")
+      ? `--ll-creative-${token.slice(2)}`
+      : token,
+  );
+}
+
 function validateMotion(source, route) {
   syntaxErrorFor(source, route, "motion.js", false);
   for (const specifier of importSpecifiers(source))
@@ -565,7 +586,10 @@ async function generateValidatedSource({ generate, request, stage, validate }) {
     repaired = true;
     validate(source, request.route);
   }
-  return { source, repaired };
+  return {
+    source: stage === "styles" ? namespaceCreativeCss(source) : source,
+    repaired,
+  };
 }
 
 async function generateMotionSource({ generate, request, validate }) {
