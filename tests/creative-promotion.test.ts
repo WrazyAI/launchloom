@@ -64,6 +64,28 @@ describe("creative candidate promotion", () => {
     expect(config.design.experience.familyId).toBe("editorial-monument");
   });
 
+  it("normalizes service slug fragments to real SEO routes before promotion", async () => {
+    const root = await makeFixture();
+    const file = path.join(root, "candidate-a/Experience.jsx");
+    const source = await fs.readFile(file, "utf8");
+    await fs.writeFile(
+      file,
+      source.replace(
+        "{content.services.map((service) => <p key={service.name}>{service.name}</p>)}",
+        "{content.services.map((service) => <a href={`#${service.slug}`} key={service.name}>{service.name}</a>)}",
+      ),
+    );
+
+    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+
+    const selected = await fs.readFile(
+      path.join(root, "src/generated-experiences/selected/Experience.jsx"),
+      "utf8",
+    );
+    expect(selected).toContain("/services/${service.slug}/");
+    expect(selected).not.toContain("href={`#${service.slug}`}");
+  });
+
   it("rejects a candidate that bypasses the shared runtime", async () => {
     const root = await makeFixture();
     const file = path.join(root, "candidate-a/Experience.jsx");

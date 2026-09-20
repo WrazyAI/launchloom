@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { validateCandidateManifest } from "./creative-compiler.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import { normalizeCreativeExperienceLinks } from "./creative-source-safety.mjs";
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -63,7 +64,9 @@ export async function promoteCreativeCandidate({
   const required = ["Experience.jsx", "styles.css", "motion.js"];
   for (const file of required) await fs.access(path.join(source, file));
   const files = {
-    experience: await fs.readFile(path.join(source, "Experience.jsx"), "utf8"),
+    experience: normalizeCreativeExperienceLinks(
+      await fs.readFile(path.join(source, "Experience.jsx"), "utf8"),
+    ),
     styles: await fs.readFile(path.join(source, "styles.css"), "utf8"),
     motion: await fs.readFile(path.join(source, "motion.js"), "utf8"),
   };
@@ -71,9 +74,11 @@ export async function promoteCreativeCandidate({
 
   const selected = path.resolve(root, "src/generated-experiences/selected");
   await fs.mkdir(selected, { recursive: true });
-  await Promise.all(
-    required.map((file) => fs.copyFile(path.join(source, file), path.join(selected, file))),
-  );
+  await Promise.all([
+    fs.writeFile(path.join(selected, "Experience.jsx"), files.experience),
+    fs.copyFile(path.join(source, "styles.css"), path.join(selected, "styles.css")),
+    fs.copyFile(path.join(source, "motion.js"), path.join(selected, "motion.js")),
+  ]);
   await fs.writeFile(
     path.join(selected, "manifest.json"),
     `${JSON.stringify(manifest, null, 2)}\n`,
