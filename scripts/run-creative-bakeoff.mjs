@@ -298,7 +298,11 @@ export async function runCreativeBakeoff({
       };
       const peerDistances = candidates
         .filter((peer) => peer.manifest.candidateId !== candidate.manifest.candidateId)
-        .map((peer) => fingerprintDistance(candidate.manifest, peer.manifest));
+        // The compact creative manifest intentionally carries the route
+        // fingerprint hash, but not every structural dimension. Compare the
+        // authored metadata so pairwise diversity reflects the actual route
+        // grammar rather than collapsing distinct candidates to distance 1.
+        .map((peer) => fingerprintDistance(candidate.metadata, peer.metadata));
       const minimumDistance = peerDistances.length
         ? Math.min(...peerDistances)
         : candidate.manifest.version >= 2

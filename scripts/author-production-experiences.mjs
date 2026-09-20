@@ -73,6 +73,13 @@ function contentSchema(name) {
   };
 }
 
+function markerSlug(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/^-|-$/gu, "");
+}
+
 function stagePrompt(request) {
   const route = JSON.stringify(
     {
@@ -128,12 +135,26 @@ REFERENCE FIDELITY RULES
 - Use one distinctive, purposeful interaction from the assigned family and provide its reduced-motion equivalent.
 - Keep business facts, SEO copy, contact details, and imagery bound to sealed content tokens. Never copy reference branding, copy, assets, or trade dress.`;
 
+  const dna = request.route.referenceDna;
+  const referenceMarkers = dna
+    ? `
+CANONICAL REFERENCE MARKERS
+Copy these normalized values exactly into the matching data attributes. They are structural contract markers, not prose:
+data-hero-geometry="${markerSlug(dna.heroGeometry?.mode)}"
+data-navigation-geometry="${markerSlug(dna.navigationGeometry?.mode)}"
+data-service-presentation="${markerSlug(dna.servicePresentation?.pattern)}"
+data-cta-placement="${markerSlug(dna.ctaPlacement?.early)}"
+data-mobile-recomposition="${markerSlug(dna.mobileRecomposition?.strategy)}"
+data-motion-primitive="${markerSlug(dna.motion?.primitive)}"
+Do not substitute the primary or secondary CTA placement for the early CTA marker. The early conversion element must use the exact data-cta-placement value above.`
+    : "";
+
   if (request.stage === "contract")
-    return `${shared}
+    return `${shared}${referenceMarkers}
 
 Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, hero geometry, early conversion, non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
   if (request.stage === "experience")
-    return `${shared}
+    return `${shared}${referenceMarkers}
 
 DESIGN CONTRACT
 ${request.designContract}
@@ -143,7 +164,7 @@ Return complete Experience.jsx in content. Export default function Experience({ 
 
 Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" to each major section so the compiler can verify the assigned rhythm. Do not invent values: use the slugs from Reference DNA.`;
   if (request.stage === "styles")
-    return `${shared}
+    return `${shared}${referenceMarkers}
 
 DESIGN CONTRACT
 ${request.designContract}
@@ -152,7 +173,7 @@ AUTHORED EXPERIENCE JSX
 ${request.experienceSource}
 
 Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. Style the exact markup without changing its structure. The header plus hero must have a measured bounding bottom no greater than the viewport height at 1536x864 and 1366x768 at 100 percent zoom. Use a compact hero composition: one headline, short body, one early CTA, and the image treatment. Do not make the hero grow to accommodate a contact form, service list, or long copy. Avoid large fixed padding and min-heights that exceed the viewport; use min-height: 0 where content can wrap. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
-  return `${shared}
+  return `${shared}${referenceMarkers}
 
 DESIGN CONTRACT
 ${request.designContract}
