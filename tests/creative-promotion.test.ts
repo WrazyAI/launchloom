@@ -30,7 +30,7 @@ async function makeFixture() {
     route,
     model: "test/model",
     contentManifestDigest: "content-digest",
-    assets: ["content.assets.hero"],
+    assets: ["content.hero.image"],
   });
   await fs.writeFile(path.join(root, "src/site.config.json"), JSON.stringify({ design: { recipe: "general-editorial", sections: [] } }));
   await fs.writeFile(path.join(root, "candidate-a/metadata.json"), JSON.stringify({ ...manifest, creativeManifest: manifest }));

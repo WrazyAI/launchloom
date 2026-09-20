@@ -87,7 +87,7 @@ describe("creative compiler", () => {
       route: routes[0],
       model: "test/model",
       contentManifestDigest: "digest",
-      assets: ["content.assets.hero"],
+      assets: ["content.hero.image"],
     });
     expect(validateCandidateManifest(manifest)).toBe(manifest);
     expect(() => validateCandidateManifest({ ...manifest, requiredSections: ["hero"] })).toThrow(/early-conversion/iu);

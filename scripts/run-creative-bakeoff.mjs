@@ -28,12 +28,31 @@ function run(command, commandArgs, cwd) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, commandArgs, {
       cwd,
-      stdio: "inherit",
+      stdio: ["ignore", "pipe", "pipe"],
       env: { ...process.env, PUBLIC_REVIEW_MODE: "true" },
     });
+    const tails = { stdout: "", stderr: "" };
+    const appendTail = (key, chunk) => {
+      const text = chunk.toString();
+      process[key].write(text);
+      tails[key] = `${tails[key]}${text}`.slice(-6000);
+    };
+    child.stdout?.on("data", (chunk) => appendTail("stdout", chunk));
+    child.stderr?.on("data", (chunk) => appendTail("stderr", chunk));
     child.on("error", reject);
     child.on("exit", (code) =>
-      code === 0 ? resolve() : reject(new Error(`${command} exited with ${code}`)),
+      code === 0
+        ? resolve()
+        : reject(
+            new Error(
+              `${command} exited with ${code}\n${[
+                tails.stdout && `stdout:\n${tails.stdout}`,
+                tails.stderr && `stderr:\n${tails.stderr}`,
+              ]
+                .filter(Boolean)
+                .join("\n")}`,
+            ),
+          ),
     );
   });
 }

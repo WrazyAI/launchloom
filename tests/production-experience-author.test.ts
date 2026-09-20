@@ -96,16 +96,14 @@ function safeStage(request: AuthorStageRequest) {
   if (request.stage === "experience") {
     return {
       content: `import React from "react";
-import { mountExperienceMotion } from "./motion.js";
 import { LeadForm } from "@launchloom/runtime";
 export default function Experience({ content, runtime }) {
-  React.useEffect(() => mountExperienceMotion(runtime), [runtime]);
   return <div data-model-experience="${request.route.id}">
     <nav aria-label="Main navigation"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
     <main><section data-hero><h1>{content.hero.heading}</h1><p>{content.hero.body}</p><button data-early-conversion>{content.hero.primaryLabel}</button></section>
     <section id="services">{content.services.map((service) => <article key={service.name}><h2>{service.name}</h2><p>{service.description}</p></article>)}</section>
     <section id="faqs">{content.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
-    <section id="contact"><LeadForm content={content} runtime={runtime} data-runtime="lead-form" /><a href={content.contact.phoneHref}>{content.contact.phoneLabel}</a></section></main>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /><a href={content.brand.phone}>{content.brand.phone}</a></section></main>
   </div>;
 }`,
     };
@@ -140,6 +138,10 @@ describe("production experience author", () => {
         result.candidates.map((candidate) => candidate.metadata.signature),
       ).size,
     ).toBe(3);
+    expect(result.contentManifest.values).not.toHaveProperty("contact");
+    expect(result.contentManifest.tokens.map(({ token }) => token)).toContain(
+      "content.hero.image",
+    );
     for (const candidate of result.candidates) {
       expect(Object.keys(candidate.files).sort()).toEqual([
         "Experience.jsx",
@@ -239,12 +241,12 @@ describe("production experience author", () => {
           content: String(value.content)
             .replace(
               "export default function Experience({ content, runtime }) {",
-              "export default function Experience({ content: { hero, services, faqs, contact }, runtime }) {",
+              "export default function Experience({ content: { hero, services, faqs, brand }, runtime }) {",
             )
             .replaceAll("content.hero.", "hero.")
             .replaceAll("content.services", "services")
             .replaceAll("content.faqs", "faqs")
-            .replaceAll("content.contact.", "contact."),
+            .replaceAll("content.brand.", "brand."),
         };
       },
     });
@@ -279,6 +281,20 @@ describe("production experience author", () => {
         },
       }),
     ).rejects.toThrow(/forbidden remote URL/i);
+  });
+
+  it("keeps motion mounting in the deterministic host", async () => {
+    await expect(
+      authorExperienceCandidates({
+        site,
+        inspirationPack,
+        generate: async (request) => {
+          const value = safeStage(request);
+          if (request.stage !== "experience") return value;
+          return { content: `import "./motion.js";\n${value.content}` };
+        },
+      }),
+    ).rejects.toThrow(/unapproved import \.\/motion\.js/i);
   });
 
   it("repairs one JSX compliance failure without changing the route", async () => {

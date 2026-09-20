@@ -26,7 +26,6 @@ const allowedImports = new Set([
   "@launchloom/runtime",
   "gsap",
   "gsap/ScrollTrigger",
-  "./motion.js",
 ]);
 const requiredRouteKeys = [
   "navigation",
@@ -51,10 +50,17 @@ const allowedInterfaceCopy = new Set([
 const contentTokenDefinitions = [
   ["content.brand.name", "string"],
   ["content.brand.logo", "string?"],
+  ["content.brand.phone", "string"],
+  ["content.brand.email", "string"],
+  ["content.brand.address", "string"],
+  ["content.brand.serviceAreas", "array"],
   ["content.hero.kicker", "string"],
   ["content.hero.heading", "string"],
   ["content.hero.body", "string"],
   ["content.hero.primaryLabel", "string"],
+  ["content.hero.image", "string?"],
+  ["content.hero.secondaryImage", "string?"],
+  ["content.hero.tertiaryImage", "string?"],
   ["content.hero.offer", "string?"],
   ["content.services", "array"],
   ["content.services[].name", "string"],
@@ -66,17 +72,26 @@ const contentTokenDefinitions = [
   ["content.faqs[].question", "string"],
   ["content.faqs[].answer", "string"],
   ["content.locations", "array"],
-  ["content.contact.phoneLabel", "string"],
-  ["content.contact.phoneHref", "string"],
-  ["content.contact.emailLabel", "string"],
-  ["content.contact.emailHref", "string"],
-  ["content.contact.address", "string"],
-  ["content.assets.hero", "string?"],
-  ["content.assets.heroAlt", "string"],
-  ["content.assets.secondary", "string?"],
-  ["content.assets.secondaryAlt", "string"],
-  ["content.assets.tertiary", "string?"],
-  ["content.assets.tertiaryAlt", "string"],
+  ["content.locations[].name", "string"],
+  ["content.locations[].description", "string?"],
+  ["content.copy.heroKicker", "string?"],
+  ["content.copy.heroHeading", "string?"],
+  ["content.copy.heroBody", "string?"],
+  ["content.copy.servicesHeading", "string?"],
+  ["content.copy.servicesIntro", "string?"],
+  ["content.copy.aboutKicker", "string?"],
+  ["content.copy.aboutHeading", "string?"],
+  ["content.copy.aboutBody", "string?"],
+  ["content.copy.contactKicker", "string?"],
+  ["content.copy.contactHeading", "string?"],
+  ["content.copy.processKicker", "string?"],
+  ["content.copy.processHeading", "string?"],
+  ["content.copy.faqKicker", "string?"],
+  ["content.copy.faqHeading", "string?"],
+  ["content.copy.formIntro", "string?"],
+  ["content.businessDescription", "string"],
+  ["content.showLocationMap", "boolean"],
+  ["content.hasSocialProof", "boolean"],
 ];
 const contentTokens = contentTokenDefinitions.map(([token]) => token);
 
@@ -94,20 +109,30 @@ function digest(value) {
   return crypto.createHash("sha256").update(stableJson(value)).digest("hex");
 }
 
-function phoneHref(phone) {
-  const value = String(phone || "").replace(/[^+\d]/gu, "");
-  return value ? `tel:${value}` : "#contact";
-}
-
 function contentShape(site) {
   const business = site.business || {};
   const copy = site.copy || {};
   const assets = site.assets || {};
   const images = site.images || {};
+  const socialProofPoints = (site.socialProof?.points || []).filter(Boolean);
+  const fallbackProofPoints = (site.socialProof?.fallback?.points || []).filter(
+    Boolean,
+  );
+  const hasLiveGoogleProof = Boolean(
+    site.socialProof?.source === "google_reviews" &&
+      site.socialProof.google?.apiUrl &&
+      site.socialProof.google?.token,
+  );
   return {
     brand: {
       name: String(business.name || ""),
       logo: assets.logo || "",
+      phone: String(business.phone || ""),
+      email: String(business.email || ""),
+      address: String(business.address || ""),
+      serviceAreas: Array.isArray(business.serviceAreas)
+        ? business.serviceAreas.map(String)
+        : [],
     },
     hero: {
       kicker: String(
@@ -124,8 +149,11 @@ function contentShape(site) {
         copy.heroBody || site.hero?.body || business.description || "",
       ),
       primaryLabel: String(
-        site.hero?.primaryLabel || business.primaryCta || "Contact us",
+        business.primaryCta || site.hero?.primaryLabel || "Contact us",
       ),
+      image: assets.photoOne || images.hero || images.secondary || "",
+      secondaryImage: assets.photoTwo || images.secondary || "",
+      tertiaryImage: assets.photoThree || images.tertiary || "",
       offer: String(site.hero?.offer || business.offer || ""),
     },
     services: (site.services || []).map((service) => ({
@@ -134,7 +162,7 @@ function contentShape(site) {
       slug: String(service.slug || ""),
     })),
     proof: (site.differentiators || []).slice(0, 3).map(String),
-    process: (site.conversion?.process || []).map(String),
+    process: (site.conversion?.process || []).slice(0, 4).map(String),
     faqs: (site.conversion?.faqs || []).map((faq) => ({
       question: String(faq.question || ""),
       answer: String(faq.answer || ""),
@@ -144,21 +172,17 @@ function contentShape(site) {
       slug: String(location.slug || ""),
       description: String(location.description || ""),
     })),
-    contact: {
-      phoneLabel: String(business.phone || ""),
-      phoneHref: phoneHref(business.phone),
-      emailLabel: String(business.email || ""),
-      emailHref: business.email ? `mailto:${business.email}` : "#contact",
-      address: String(business.address || ""),
-    },
-    assets: {
-      hero: assets.photoOne || images.hero || "",
-      heroAlt: `${String(business.name || "Business")} featured image`,
-      secondary: assets.photoTwo || images.secondary || "",
-      secondaryAlt: `${String(business.name || "Business")} supporting image`,
-      tertiary: assets.photoThree || images.tertiary || "",
-      tertiaryAlt: `${String(business.name || "Business")} detail image`,
-    },
+    copy,
+    businessDescription: String(business.description || ""),
+    showLocationMap:
+      String(business.primaryCta || "").trim().toLowerCase() ===
+        "get directions" &&
+      (Boolean(String(business.placeId || "").trim()) ||
+        /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(String(business.address || "").trim())),
+    hasSocialProof:
+      socialProofPoints.length > 0 ||
+      fallbackProofPoints.length > 0 ||
+      hasLiveGoogleProof,
   };
 }
 
@@ -338,12 +362,16 @@ function validateMotion(source, route) {
     throw new Error(
       `Candidate ${route.id} motion lacks a reduced-motion path.`,
     );
+  if (!/export\s+(?:function|const)\s+mountExperienceMotion\b/u.test(source))
+    throw new Error(
+      `Candidate ${route.id} motion must export mountExperienceMotion.`,
+    );
 }
 
 function authorRules() {
   return [
     "Do not hardcode business facts or marketing copy. Render all visitor-facing business content through the supplied content tokens.",
-    "Use only React, @launchloom/runtime, GSAP, GSAP ScrollTrigger, and the local motion module.",
+    "Use only React, @launchloom/runtime, GSAP, and GSAP ScrollTrigger in Experience.jsx. The deterministic host imports and mounts motion.js; do not import or invoke ./motion.js from Experience.jsx.",
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
     "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
     "Import LeadForm from @launchloom/runtime and render it for the primary conversion surface; do not fake a form or create a second lead endpoint.",
@@ -525,7 +553,7 @@ export async function authorExperienceCandidates({
         route,
         model,
         contentManifestDigest: contentManifest.digest,
-        assets: ["content.assets.hero", "content.assets.secondary", "content.assets.tertiary"],
+        assets: ["content.hero.image", "content.hero.secondaryImage", "content.hero.tertiaryImage"],
       });
       const metadata = {
         version: 2,
