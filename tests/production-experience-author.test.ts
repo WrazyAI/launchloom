@@ -230,6 +230,49 @@ describe("production experience author", () => {
     expect(result.candidates).toHaveLength(3);
   });
 
+  it("accepts optional chaining and aliased nested content bindings", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage !== "experience") return value;
+        return {
+          content: String(value.content)
+            .replace("content.hero.heading", "content.hero?.heading")
+            .replace(
+              "export default function Experience({ content, runtime }) {",
+              "export default function Experience({ content, runtime }) {\n  const { hero: heroContent } = content;",
+            )
+            .replace("content.hero.body", "heroContent.body"),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+  });
+
+  it("keeps successful sibling candidates when one route fails", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        if (request.route.id === "route-02" && request.stage === "experience")
+          throw new Error("simulated route failure");
+        return safeStage(request);
+      },
+    });
+
+    expect(result.candidates).toHaveLength(2);
+    expect(result.failures).toEqual([
+      {
+        routeId: "route-02",
+        candidateId: "candidate-b",
+        error: "simulated route failure",
+      },
+    ]);
+  });
+
   it("accepts sealed content destructured in the component parameter", async () => {
     const result = await authorExperienceCandidates({
       site,

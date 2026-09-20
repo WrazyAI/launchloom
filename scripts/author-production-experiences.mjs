@@ -282,6 +282,7 @@ async function writeResult(result) {
         selectionKey: result.selectionKey,
         contentManifestDigest: result.contentManifest.digest,
         candidates: result.candidates.map((candidate) => candidate.metadata),
+        failures: result.failures || [],
         usage,
       },
       null,
@@ -326,6 +327,10 @@ try {
   console.log(`production_experience_candidates=${outputPath}`);
   console.log(`production_experience_model=${model}`);
   console.log(`production_experience_count=${result.candidates.length}`);
+  if (result.failures?.length)
+    console.error(
+      `production_experience_candidate_failures=${JSON.stringify(result.failures)}`,
+    );
 } catch (error) {
   sharedAbortController.abort();
   if (failureMode !== "record") throw error;

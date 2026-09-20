@@ -114,6 +114,9 @@ function contentShape(site) {
   const copy = site.copy || {};
   const assets = site.assets || {};
   const images = site.images || {};
+  const serviceAreas = Array.isArray(business.serviceAreas)
+    ? business.serviceAreas.map(String)
+    : [];
   const socialProofPoints = (site.socialProof?.points || []).filter(Boolean);
   const fallbackProofPoints = (site.socialProof?.fallback?.points || []).filter(
     Boolean,
@@ -130,48 +133,23 @@ function contentShape(site) {
       phone: String(business.phone || ""),
       email: String(business.email || ""),
       address: String(business.address || ""),
-      serviceAreas: Array.isArray(business.serviceAreas)
-        ? business.serviceAreas.map(String)
-        : [],
+      serviceAreas,
     },
     hero: {
-      kicker: String(
-        copy.heroKicker || site.hero?.kicker || business.tagline || "",
-      ),
-      heading: String(
-        copy.heroHeading ||
-          site.hero?.heading ||
-          business.tagline ||
-          business.name ||
-          "",
-      ),
-      body: String(
-        copy.heroBody || site.hero?.body || business.description || "",
-      ),
-      primaryLabel: String(
-        business.primaryCta || site.hero?.primaryLabel || "Contact us",
-      ),
+      kicker: String(copy.heroKicker || serviceAreas[0] || "Local service"),
+      heading: String(copy.heroHeading || business.tagline || ""),
+      body: String(copy.heroBody || business.description || ""),
+      primaryLabel: String(business.primaryCta || ""),
       image: assets.photoOne || images.hero || images.secondary || "",
       secondaryImage: assets.photoTwo || images.secondary || "",
       tertiaryImage: assets.photoThree || images.tertiary || "",
-      offer: String(site.hero?.offer || business.offer || ""),
+      offer: String(business.offer || ""),
     },
-    services: (site.services || []).map((service) => ({
-      name: String(service.name || ""),
-      description: String(service.description || ""),
-      slug: String(service.slug || ""),
-    })),
+    services: site.services || [],
     proof: (site.differentiators || []).slice(0, 3).map(String),
     process: (site.conversion?.process || []).slice(0, 4).map(String),
-    faqs: (site.conversion?.faqs || []).map((faq) => ({
-      question: String(faq.question || ""),
-      answer: String(faq.answer || ""),
-    })),
-    locations: (site.locations || []).map((location) => ({
-      name: String(location.name || ""),
-      slug: String(location.slug || ""),
-      description: String(location.description || ""),
-    })),
+    faqs: (site.conversion?.faqs || []).slice(0, 8),
+    locations: site.locations || [],
     copy,
     businessDescription: String(business.description || ""),
     showLocationMap:
@@ -248,6 +226,21 @@ function referencesContentPath(source, token) {
   if (source.includes(token)) return true;
   const [group, member] = token.replace(/^content\./u, "").split(".");
   if (!group) return false;
+  if (
+    member &&
+    new RegExp(`\\bcontent\\.${group}(?:\\.|\\?\\.)${member}\\b`, "u").test(
+      source,
+    )
+  )
+    return true;
+  const aliasedGroup = source.match(
+    new RegExp(
+      `(?:const|let)\\s+\\{\\s*${group}\\s*:\\s*([A-Za-z_$][\\w$]*)\\s*\\}\\s*=\\s*content\\b`,
+      "u",
+    ),
+  )?.[1];
+  if (member && aliasedGroup && source.includes(`${aliasedGroup}.${member}`))
+    return true;
   const groupBinding = new RegExp(
     `(?:const|let)\\s+${group}\\s*=\\s*content\\.${group}\\b|(?:const|let)\\s*\\{[^}]*\\b${group}\\b[^}]*\\}\\s*=\\s*content\\b`,
     "u",
@@ -483,7 +476,7 @@ export async function authorExperienceCandidates({
   const routes = assertInspirationPack(inspirationPack).map((route) =>
     buildRouteContract(route),
   );
-  const candidates = await Promise.all(
+  const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
       const base = { route, contentTokens, contentShape: content, rules };
       const contractResult = await generateContract(generate, {
@@ -605,11 +598,30 @@ export async function authorExperienceCandidates({
     }),
   );
 
+  const candidates = [];
+  const failures = [];
+  for (const [index, result] of authoredResults.entries()) {
+    if (result.status === "fulfilled") {
+      candidates.push(result.value);
+      continue;
+    }
+    failures.push({
+      routeId: routes[index].id,
+      candidateId: `candidate-${String.fromCharCode(97 + index)}`,
+      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+    });
+  }
+  if (!candidates.length)
+    throw new Error(
+      `All creative candidates failed: ${failures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
+    );
+
   return {
     version: 1,
     model,
     selectionKey: inspirationPack.selectionKey || "",
     contentManifest,
     candidates,
+    failures,
   };
 }
