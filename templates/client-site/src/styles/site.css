@@ -1664,7 +1664,10 @@ h2 {
 .ll-review {
   position: sticky;
   top: 0;
-  z-index: 20;
+  /* Authored experiences may own fixed headers and menus. The review
+     controls are a production shell contract and must remain clickable above
+     any candidate-authored stacking context. */
+  z-index: 1000;
   display: block;
   background: #11150e;
   color: #fff;
