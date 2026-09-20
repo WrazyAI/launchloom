@@ -22,6 +22,73 @@ function clean(value, limit = 900) {
   return String(value || "").replace(/[—–]/gu, "-").trim().slice(0, limit);
 }
 
+function findingText(finding) {
+  if (typeof finding === "string") return finding;
+  if (!finding || typeof finding !== "object") return "";
+  return [finding.category, finding.message, finding.evidence, finding.recommendation]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function hasFinding(findings, pattern) {
+  return findings.some((finding) => pattern.test(findingText(finding)));
+}
+
+function mergeFindings(...sources) {
+  return sources.flatMap((source) => (Array.isArray(source) ? source : []));
+}
+
+function appendRepair(styles, marker, css) {
+  if (styles.includes(marker)) return styles;
+  return `${styles.trim()}\n\n${marker}\n${css.trim()}\n`;
+}
+
+/**
+ * Apply only deterministic, scoped safety repairs for findings that are
+ * directly evidenced by the screenshot gate. These are not a renderer or
+ * layout fallback: they preserve the authored DOM and composition, and the
+ * workflow rerenders every viewport before promotion.
+ */
+export function applyCreativeVisualSafetyRepairs(files, findings = []) {
+  let styles = String(files?.styles || "");
+  if (hasFinding(findings, /footer[\s\S]*(?:unreadable|contrast|dark tone|clipped)|(?:unreadable|contrast|dark tone|clipped)[\s\S]*footer/iu)) {
+    styles = appendRepair(
+      styles,
+      "/* launchloom-visual-repair: footer-contrast */",
+      `
+[data-reference-section="footer"] {
+  padding-top: clamp(2rem, 5vw, 4rem);
+}
+
+[data-reference-section="footer"] > strong,
+[data-reference-section="footer"] h2,
+[data-reference-section="footer"] h3 {
+  color: var(--ll-creative-paper, #fff) !important;
+}
+`,
+    );
+  }
+  if (hasFinding(findings, /(?:sticky|floating|pill|cta)[\s\S]*(?:overlap|collision|cover)|(?:overlap|collision|cover)[\s\S]*(?:sticky|floating|pill|cta)/iu)) {
+    styles = appendRepair(
+      styles,
+      "/* launchloom-visual-repair: mobile-cta-clearance */",
+      `
+@media (max-width: 760px) {
+  [data-reference-section="footer"] {
+    padding-bottom: max(6rem, calc(3rem + env(safe-area-inset-bottom)));
+  }
+
+  main + [data-cta-placement] {
+    position: static !important;
+    margin-bottom: 1.5rem !important;
+  }
+}
+`,
+    );
+  }
+  return { ...files, styles };
+}
+
 /**
  * Bounded author-owned repair loop. The evaluator is deliberately injected so
  * tests can prove the retry limit without contacting a model provider.
@@ -43,12 +110,13 @@ export async function runCreativeRepairLoop({
   let result = await evaluate(current);
   let forcedRepair = findings.length > 0;
   for (let cycle = 1; (!result.pass || forcedRepair) && cycle <= maxCycles; cycle += 1) {
+    const cycleFindings = mergeFindings(findings, result.findings);
     const repaired = await generate({
       stage: "repair",
       cycle,
       maxCycles,
       referenceDna,
-      findings: result.findings || findings,
+      findings: cycleFindings,
       screenshots,
       files: current,
     });
@@ -58,6 +126,7 @@ export async function runCreativeRepairLoop({
       styles: clean(repaired.styles || current.styles, Number.MAX_SAFE_INTEGER),
       motion: clean(repaired.motion || current.motion, Number.MAX_SAFE_INTEGER),
     };
+    current = applyCreativeVisualSafetyRepairs(current, cycleFindings);
     result = await evaluate(current);
     forcedRepair = false;
     cycles.push({ cycle, pass: Boolean(result.pass), findings: result.findings || [] });
