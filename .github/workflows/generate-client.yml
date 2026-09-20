@@ -323,7 +323,11 @@ jobs:
           jq -e '(.design.experience.renderer == "creative-candidate") and (.design.experience.candidateId != null) and (.design.experience.selectionMode == "creative-preview" or .design.experience.selectionMode == "creative-bakeoff")' src/site.config.json >/dev/null || { echo "Authored creative renderer was not selected"; exit 1; }
           CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
           jq -e --arg candidate "$CANDIDATE_ID" '.selectedCandidateId == $candidate and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "No authored creative candidate passed the preview gates"; exit 1; }
-          if grep -R -I -E -q --include='*.html' 'data-experience-pack|legacy-design-family' dist; then echo "Legacy renderer marker found in creative preview"; exit 1; fi
+          # Service and location detail routes intentionally retain their
+          # deterministic SEO renderer. The new preview path is the homepage;
+          # fail closed only if that deployed entrypoint contains legacy
+          # renderer markers.
+          if grep -I -E -q 'data-experience-pack|legacy-design-family' dist/index.html; then echo "Legacy renderer marker found in creative preview"; exit 1; fi
           git add src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Select reviewed experience candidate"
