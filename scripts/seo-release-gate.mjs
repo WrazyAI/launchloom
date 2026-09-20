@@ -2,8 +2,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const attribute = (tag, name) =>
-  tag.match(new RegExp(`\\b${name}=["']([^"']*)["']`, "iu"))?.[1];
+const attribute = (tag, name) => {
+  const match = tag.match(
+    new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)')`, "iu"),
+  );
+  return match?.[1] ?? match?.[2];
+};
 const tags = (html, name) =>
   [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "giu"))].map(
     (match) => match[0],

@@ -55,6 +55,19 @@ describe("SEO release gate", () => {
     const dist = await fixture();
     expect(await checkSeoRelease({ mode: "production", config, dist, origin })).toEqual([]);
   });
+  it("accepts meta descriptions containing apostrophes", async () => {
+    const dist = await fixture();
+    const file = path.join(dist, "services/consultation/index.html");
+    const html = await fs.readFile(file, "utf8");
+    await fs.writeFile(
+      file,
+      html.replace(
+        "Fixture Clinic provides practical consultation support for local customers in Testville.",
+        "Fixture Clinic's practical consultation support helps local customers in Testville.",
+      ),
+    );
+    expect(await checkSeoRelease({ mode: "production", config, dist, origin })).toEqual([]);
+  });
   it("accepts an HTML-escaped business name in the title", async () => {
     const dist = await fixture();
     const file = path.join(dist, "index.html");
