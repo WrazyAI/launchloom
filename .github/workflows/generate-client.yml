@@ -322,7 +322,9 @@ jobs:
             git commit -m "Apply GLM visual quality corrections"
             git push origin review/initial
           fi
-          if grep -R -F -q "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
+          # Scan rendered text assets only. Binary generated imagery can contain
+          # the UTF-8 byte sequence by coincidence and is not page copy.
+          if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
           npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "Initial LaunchLoom preview"
           echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"

@@ -138,7 +138,9 @@ jobs:
             git commit -m "Apply GLM visual quality corrections"
             git push origin "${{ steps.revision.outputs.branch }}"
           fi
-          if grep -R -F -q "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
+          # Scan rendered text assets only. Binary generated imagery can contain
+          # the UTF-8 byte sequence by coincidence and is not page copy.
+          if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
           BRANCH_SAFE=$(echo "${{ steps.revision.outputs.branch }}" | tr '/' '-')
           npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "Client feedback developer preview"
           echo "changed=true" >> "$GITHUB_OUTPUT"
