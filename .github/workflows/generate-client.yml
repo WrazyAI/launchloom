@@ -240,7 +240,10 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
       - name: Author independent experience candidates
-        timeout-minutes: 8
+        # Luna authors three independent candidates in separate stages. Keep
+        # the runner timeout above the author's internal fail-closed budget
+        # so Actions cannot terminate a valid creative run early.
+        timeout-minutes: 25
         run: >-
           npm run author:experiences --
           --config /tmp/site.config.json
