@@ -18,14 +18,17 @@ lead endpoint, or ship an unverified layout.
    recomposition, prohibited patterns, required signatures, and acceptance
    checks. A missing required desktop screenshot fails creative compilation;
    prose-only inspiration cannot reach Luna.
-3. `author-production-experiences.mjs` asks the visual author for three
+   3. `author-production-experiences.mjs` asks the visual author for three
    independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
    author receives the complete Reference DNA and its desktop/mobile evidence,
    then must expose the contract's signatures and geometry markers in the
    rendered DOM. It can use React, the shared runtime, GSAP, and ScrollTrigger,
    but not network access, remote code, canvas, or Three.js by default. Model
    stages are globally limited to two in-flight requests so a three-candidate
-   bakeoff does not exhaust the provider budget. A failed reference-fidelity
+   bakeoff does not exhaust the provider budget. The authoring budget defaults
+   to 20 minutes and can be bounded with
+   `CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS`; it never turns an expired author
+   run into a legacy renderer. A failed reference-fidelity
    check gets at most two author-owned repairs and then fails closed.
 4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders 1536x864 desktop, 1366x768 compact desktop, and

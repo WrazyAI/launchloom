@@ -30,7 +30,12 @@ const reasoningEffort =
   (model === "openai/gpt-5.6-luna" ? "max" : "low");
 const failureMode = args["failure-mode"] || "throw";
 const usage = [];
-const authorDeadline = Date.now() + 7 * 60_000;
+const authorDeadline =
+  Date.now() +
+  Math.max(
+    5 * 60_000,
+    Number(process.env.CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS || 20 * 60_000),
+  );
 const sharedAbortController = new AbortController();
 
 if (!process.env.OPENROUTER_API_KEY)
