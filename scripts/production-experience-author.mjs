@@ -95,6 +95,14 @@ const contentTokenDefinitions = [
   ["content.hasSocialProof", "boolean"],
 ];
 const contentTokens = contentTokenDefinitions.map(([token]) => token);
+const requiredExperienceBindings = [
+  {
+    token: "content.hero.heading",
+    aliases: ["content.hero.heading", "content.copy.heroHeading"],
+  },
+  { token: "content.services", aliases: ["content.services"] },
+  { token: "content.faqs", aliases: ["content.faqs"] },
+];
 
 function stableJson(value) {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
@@ -353,14 +361,10 @@ function validateExperience(source, route, content) {
     throw new Error(`Candidate ${route.id} must render the shared LeadForm runtime surface.`);
   if (/\balt\s*=\s*["']\s*["']/iu.test(source))
     throw new Error(`Candidate ${route.id} contains an empty image alt attribute.`);
-  for (const token of [
-    "content.hero.heading",
-    "content.services",
-    "content.faqs",
-  ])
-    if (!referencesContentPath(source, token))
+  for (const binding of requiredExperienceBindings)
+    if (!binding.aliases.some((token) => referencesContentPath(source, token)))
       throw new Error(
-        `Candidate ${route.id} is missing required sealed binding ${token}.`,
+        `Candidate ${route.id} is missing required sealed binding ${binding.token}.`,
       );
   const literals = unsupportedClaimLiterals(source);
   if (literals.length)

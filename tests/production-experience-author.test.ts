@@ -252,6 +252,27 @@ describe("production experience author", () => {
     expect(result.candidates).toHaveLength(3);
   });
 
+  it("accepts the sealed copy heading alias", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage !== "experience") return value;
+        return {
+          content: String(value.content)
+            .replace(
+              "export default function Experience({ content, runtime }) {",
+              "export default function Experience({ content, runtime }) {\n  const { copy } = content;",
+            )
+            .replace("content.hero.heading", "copy.heroHeading"),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+  });
+
   it("keeps successful sibling candidates when one route fails", async () => {
     const result = await authorExperienceCandidates({
       site,
