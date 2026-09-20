@@ -134,7 +134,9 @@ describe("production experience author", () => {
       "[data-creative-host=\"true\"] .launchloom-lead-form small {\n  color: var(--ll-creative-muted, currentColor);",
     );
     expect(styles).toContain("[data-creative-host=\"true\"] {\n  width: 100%;");
-    expect(styles).toContain("overflow-x: clip;");
+    expect(styles).toMatch(
+      /\[data-creative-host="true"\]\s*\{[^}]*overflow-x:\s*clip;/u,
+    );
   });
 
   it("namespaces candidate-owned CSS variables without hiding host tokens", () => {
