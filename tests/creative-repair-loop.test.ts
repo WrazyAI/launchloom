@@ -82,6 +82,24 @@ describe("creative repair loop", () => {
     expect(result.files.styles).toContain("launchloom-visual-repair: footer-contrast");
   });
 
+  it("fits long unbroken service titles on mobile", () => {
+    const result = applyCreativeVisualSafetyRepairs(
+      { experience: "<main />", styles: ".archive-row-name { font-size: 4rem; }", motion: "" },
+      [{
+        category: "content-integrity",
+        severity: "critical",
+        viewport: "mobile",
+        evidence: "ASTROPHOTOGRAPHY is cut off at the right viewport edge.",
+        recommendation: "Allow the long service title to wrap on mobile.",
+      }],
+    );
+
+    expect(result.styles).toContain("mobile-service-title-fit");
+    expect(result.styles).toContain("overflow-wrap: break-word");
+    expect(result.styles).toContain("word-break: normal");
+    expect(result.styles).toContain('[data-creative-host="true"] .archive-row-name');
+  });
+
   it("uses only deterministic safety repairs when the author returns malformed output", async () => {
     const result = await runCreativeRepairLoop({
       files: { experience: "<main></main>", styles: ".hero { background: var(--cream); }", motion: "" },

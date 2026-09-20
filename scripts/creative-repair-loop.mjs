@@ -148,6 +148,29 @@ body:has([data-creative-host="true"]) .quick-answers {
 `,
     );
   }
+  if (hasFinding(findings, /(?:service|services|title|heading)[\s\S]*(?:astrophotograph|long unbroken|right viewport edge|final letters|clipped|overflow)|(?:astrophotograph|long unbroken|right viewport edge|final letters|clipped|overflow)[\s\S]*(?:service|services|title|heading)/iu)) {
+    styles = appendRepair(
+      styles,
+      "/* launchloom-visual-repair: mobile-service-title-fit */",
+      `
+/* Keep long, unbroken service names inside the mobile row without changing
+   the authored archive composition or its desktop scale. */
+@media (max-width: 760px) {
+  [data-creative-host="true"] .archive-row-name,
+  [data-creative-host="true"] [data-service-presentation] [data-service-name],
+  [data-creative-host="true"] [data-service-presentation] h3 {
+    max-width: 100% !important;
+    font-size: clamp(1.5rem, 6.4vw, 2.35rem) !important;
+    line-height: .9 !important;
+    letter-spacing: -.045em !important;
+    overflow-wrap: break-word !important;
+    word-break: normal !important;
+    white-space: normal !important;
+  }
+}
+`,
+    );
+  }
   if (hasFinding(findings, /(?:mobile|small)[\s\S]*(?:navigation|nav|menu)[\s\S]*(?:absent|missing|not visible|hidden)|(?:navigation|nav|menu)[\s\S]*(?:absent|missing|not visible|hidden)[\s\S]*(?:mobile|small)/iu)) {
     styles = appendRepair(
       styles,
