@@ -255,7 +255,13 @@ try {
           style.visibility !== "hidden"
         );
       };
-      const sections = [...document.querySelectorAll("main section")].map(
+      // Authored candidates are mounted inside the deterministic creative host
+      // and may choose their own root element. Verify the host's sections when
+      // present, while preserving the classic main-section check for packs.
+      const sectionRoot =
+        document.querySelector("[data-creative-host]") ||
+        document.querySelector("main");
+      const sections = [...(sectionRoot?.querySelectorAll("section") || [])].map(
         (element) => ({
           id: element.id,
           classes: element.className,
@@ -321,7 +327,7 @@ try {
             href === "#" ||
             (href?.startsWith("#") && !document.querySelector(href)),
         );
-      const main = document.querySelector("main");
+      const main = document.querySelector("main") || sectionRoot;
       const locationMap = document.querySelector(
         '[data-conversion-feature="location-map"]',
       );
