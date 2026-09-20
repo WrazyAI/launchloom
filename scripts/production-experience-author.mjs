@@ -184,7 +184,9 @@ function asText(value, label) {
 }
 
 function normalizeAuthoredSource(value) {
-  return value.replaceAll("—", "-");
+  const trimmed = value.trim();
+  const fenced = trimmed.match(/^```(?:[a-z]+)?\s*\n([\s\S]*?)\n```$/iu);
+  return (fenced ? fenced[1] : trimmed).replaceAll("—", "-");
 }
 
 function importSpecifiers(source) {
@@ -309,6 +311,8 @@ function validateExperience(source, route, content) {
     throw new Error(`Candidate ${route.id} must use the shared LaunchLoom runtime.`);
   if (!/\bLeadForm\b/u.test(source))
     throw new Error(`Candidate ${route.id} must render the shared LeadForm runtime surface.`);
+  if (/\balt\s*=\s*["']\s*["']/iu.test(source))
+    throw new Error(`Candidate ${route.id} contains an empty image alt attribute.`);
   for (const token of [
     "content.hero.heading",
     "content.services",
@@ -337,6 +341,8 @@ function validateStyles(source, route) {
     throw new Error(`Candidate ${route.id} CSS contains a remote URL.`);
   if (/—/u.test(source))
     throw new Error(`Candidate ${route.id} CSS contains an em dash.`);
+  if (/(?:^|\n)\s*["']\s*\n?\}\s*$/u.test(source))
+    throw new Error(`Candidate ${route.id} CSS contains a malformed trailing wrapper.`);
 }
 
 function validateMotion(source, route) {
@@ -359,6 +365,8 @@ function validateMotion(source, route) {
     throw new Error(
       `Candidate ${route.id} motion must export mountExperienceMotion.`,
     );
+  if (/<[A-Za-z][^>]*>/u.test(source) || /\b(?:React|useState|useEffect|LeadForm)\b/u.test(source))
+    throw new Error(`Candidate ${route.id} motion must be JavaScript without JSX or React components.`);
 }
 
 function authorRules() {

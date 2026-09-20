@@ -424,6 +424,47 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("repairs motion responses that accidentally contain JSX", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage !== "motion" || request.validationError) return value;
+        return {
+          content: `import React from "react";\n${value.content}\n<svg />`,
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(
+      result.candidates.every(
+        (item) => !item.files["motion.js"].includes("<svg") && item.metadata.complianceRepaired,
+      ),
+    ).toBe(true);
+  });
+
+  it("repairs malformed CSS wrappers and empty image alt attributes", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage === "styles" && !request.validationError)
+          return { content: `${value.content}\n}\n\"\n}` };
+        if (request.stage === "experience" && !request.validationError)
+          return { content: `${value.content}\n<img src={content.hero.image} alt="" />` };
+        return value;
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(
+      result.candidates.every((item) => item.metadata.complianceRepaired),
+    ).toBe(true);
+  });
+
   it("rejects authored bundles that bypass sealed business content", async () => {
     await expect(
       authorExperienceCandidates({

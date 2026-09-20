@@ -462,10 +462,14 @@
   bottom: 1rem;
   left: 1rem;
   z-index: 2;
+  display: flex;
+  min-height: 3.25rem;
+  align-items: center;
   padding: 1rem 1.2rem;
   border-radius: 0.8rem;
   background: var(--guide-surface);
   color: var(--guide-ink);
+  line-height: 1.35;
   font-weight: 750;
 }
 
@@ -1280,6 +1284,9 @@
   height: min(72svh, 40rem);
   margin: 0;
   border-radius: 0 0 2rem 2rem;
+}
+.xp-guide[data-experience-variant="portrait"] .xp-guide__hero figcaption {
+  bottom: 1.5rem;
 }
 .xp-guide[data-experience-variant="portrait"] .xp-guide__hero-copy {
   grid-area: 1 / 1;
