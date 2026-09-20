@@ -458,6 +458,30 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("repairs motion that hides required sections until scroll", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage !== "motion" || request.validationError) return value;
+        return {
+          content: `export function mountExperienceMotion() {
+            const sections = document.querySelectorAll("section");
+            gsap.set(sections, { opacity: 0, y: 24 });
+            return () => {};
+          }
+          // prefers-reduced-motion`,
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(
+      result.candidates.every((item) => item.metadata.complianceRepaired),
+    ).toBe(true);
+  });
+
   it("repairs motion responses that accidentally contain JSX", async () => {
     const result = await authorExperienceCandidates({
       site,

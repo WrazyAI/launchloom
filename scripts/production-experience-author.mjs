@@ -496,6 +496,14 @@ function validateMotion(source, route) {
     throw new Error(
       `Candidate ${route.id} motion lacks a reduced-motion path.`,
     );
+  if (
+    /gsap\.set\(\s*(?:children|sections|sectionElements)\s*,\s*\{[^}]*opacity\s*:\s*0/isu.test(
+      source,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} motion hides required sections before scroll; keep public content visible without JavaScript or scrolling.`,
+    );
   if (!/export\s+(?:function|const)\s+mountExperienceMotion\b/u.test(source))
     throw new Error(
       `Candidate ${route.id} motion must export mountExperienceMotion.`,
@@ -512,6 +520,7 @@ function authorRules() {
     "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
     "Import LeadForm from @launchloom/runtime and render it for the primary conversion surface; do not fake a form or create a second lead endpoint.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
+    "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",
     "The complete header, hero, image, promise, and action must fit at 1536x864 and 1366x768 at 100 percent zoom.",
     "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
   ].join("\n");
