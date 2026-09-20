@@ -85,4 +85,35 @@ describe("creative candidate promotion", () => {
     expect(report.fallback).toBe(true);
     expect(report.selectedCandidateId).toBeNull();
   }, 45_000);
+
+  it("selects the valid authored candidate for preview before diversity promotion", async () => {
+    const root = await makeFixture();
+    const siteRoot = path.resolve("templates/client-site");
+    const configPath = path.join(siteRoot, "src/site.config.json");
+    const selectedPath = path.join(siteRoot, "src/generated-experiences/selected");
+    const selectedBackup = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-selected-"));
+    const originalConfig = await fs.readFile(configPath, "utf8");
+    await fs.cp(selectedPath, selectedBackup, { recursive: true });
+    try {
+      const report = await runCreativeBakeoff({
+        siteDir: siteRoot,
+        candidatesDir: root,
+        reportPath: path.join(root, "preview-report.json"),
+        screenshotsDir: path.join(root, "preview-screenshots"),
+        preview: true,
+      });
+      expect(report.candidates[0].valid).toBe(true);
+      expect(report.candidates[0].eligible).toBe(false);
+      expect(report.selectedCandidateId).toBe("candidate-a");
+      expect(report.fallback).toBe(false);
+      expect(report.promotionReady).toBe(false);
+      const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+      expect(config.design.experience.selectionMode).toBe("creative-preview");
+    } finally {
+      await fs.writeFile(configPath, originalConfig);
+      await fs.rm(selectedPath, { recursive: true, force: true });
+      await fs.cp(selectedBackup, selectedPath, { recursive: true });
+      await fs.rm(selectedBackup, { recursive: true, force: true });
+    }
+  }, 45_000);
 });

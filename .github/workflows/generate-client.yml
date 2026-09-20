@@ -27,7 +27,9 @@ jobs:
       FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '4' }}
       MODEL_AUTHORED_EXPERIENCE_MODEL: ${{ vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
       CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL || vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
-      CREATIVE_EXPERIENCE_MODE: ${{ vars.CREATIVE_EXPERIENCE_MODE || 'shadow' }}
+      # Authored preview is the default. A stale `shadow` repository variable
+      # must not put the legacy renderer back in front of model-authored work.
+      CREATIVE_EXPERIENCE_MODE: ${{ (vars.CREATIVE_EXPERIENCE_MODE == 'legacy' && 'legacy') || (vars.CREATIVE_EXPERIENCE_MODE == 'promote' && 'promote') || 'preview' }}
       SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '2' }}
       SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.10' }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
@@ -233,7 +235,7 @@ jobs:
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14
-      - name: Author Phase 2 experience candidates in shadow mode
+      - name: Author independent experience candidates
         timeout-minutes: 8
         run: >-
           npm run author:experiences --
@@ -268,13 +270,16 @@ jobs:
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
           PROMOTE=false
+          PREVIEW=false
           if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then PROMOTE=true; fi
+          if [ "$CREATIVE_EXPERIENCE_MODE" = "preview" ]; then PREVIEW=true; fi
           node "$GITHUB_WORKSPACE/scripts/run-creative-bakeoff.mjs" \
             --site-dir "$PWD" \
             --candidates /tmp/generated-experiences \
             --report .launchloom/creative-bakeoff.json \
             --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots" \
-            --promote "$PROMOTE"
+            --promote "$PROMOTE" \
+            --preview "$PREVIEW"
           git add .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Render creative experience candidates"
@@ -285,14 +290,14 @@ jobs:
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
-          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then
+          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ] || [ "$CREATIVE_EXPERIENCE_MODE" = "preview" ]; then
             test -f .launchloom/creative-bakeoff.json || { echo "Creative promotion report missing"; exit 1; }
-            jq -e '.selectedCandidateId != null and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "Creative candidate did not pass promotion gates"; exit 1; }
+            jq -e '.selectedCandidateId != null and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "No authored creative candidate passed the preview gates"; exit 1; }
           else
             node "$GITHUB_WORKSPACE/scripts/run-experience-bakeoff.mjs" --site-dir "$PWD" --report .launchloom/experience-bakeoff.json --screenshots "$RUNNER_TEMP/experience-bakeoff-screenshots"
           fi
           git add src/site.config.json
-          if [ "$CREATIVE_EXPERIENCE_MODE" != "promote" ]; then git add .launchloom/experience-bakeoff.json; fi
+          if [ "$CREATIVE_EXPERIENCE_MODE" = "legacy" ]; then git add .launchloom/experience-bakeoff.json; fi
           if ! git diff --cached --quiet; then
             git commit -m "Select reviewed experience candidate"
             git push origin review/initial
@@ -301,7 +306,7 @@ jobs:
           PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
           node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode plan --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json"
-          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then
+          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ] || [ "$CREATIVE_EXPERIENCE_MODE" = "preview" ]; then
             jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0)' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null || { echo "Creative candidate did not pass the multimodal visual gate"; exit 1; }
           fi
           if jq -e '.changed == true' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null; then

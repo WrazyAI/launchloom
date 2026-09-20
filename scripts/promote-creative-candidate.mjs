@@ -33,7 +33,7 @@ function validateAuthoredFiles(candidateId, files) {
 }
 
 /**
- * @param {{siteDir?: string, candidateDir?: string, configPath?: string, visualScore?: number, distinctivenessScore?: number}} options
+ * @param {{siteDir?: string, candidateDir?: string, configPath?: string, visualScore?: number, distinctivenessScore?: number, selectionMode?: string}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function promoteCreativeCandidate({
@@ -42,6 +42,7 @@ export async function promoteCreativeCandidate({
   configPath = "src/site.config.json",
   visualScore,
   distinctivenessScore,
+  selectionMode = "creative-bakeoff",
 } = {}) {
   if (!candidateDir) throw new Error("A candidate directory is required.");
   const root = path.resolve(siteDir);
@@ -79,7 +80,7 @@ export async function promoteCreativeCandidate({
     fingerprint: candidateManifest.fingerprint,
     ...(Number.isFinite(visualScore) ? { visualScore } : {}),
     ...(Number.isFinite(distinctivenessScore) ? { distinctivenessScore } : {}),
-    selectionMode: "creative-bakeoff",
+    selectionMode,
   };
   await fs.writeFile(configFile, `${JSON.stringify(config, null, 2)}\n`);
   return {

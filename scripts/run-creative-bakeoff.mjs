@@ -145,7 +145,7 @@ function hardFailures(evidence, viewport) {
 }
 
 /**
- * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean}} options
+ * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function runCreativeBakeoff({
@@ -154,6 +154,7 @@ export async function runCreativeBakeoff({
   reportPath,
   screenshotsDir,
   promote = false,
+  preview = false,
 } = {}) {
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
@@ -273,28 +274,44 @@ export async function runCreativeBakeoff({
     await fs.rm(selectedBackup, { recursive: true, force: true });
   }
 
-  const valid = results.filter((candidate) => candidate.eligible);
+  // Review previews must show authored work. Diversity remains a production
+  // promotion requirement, not a reason to silently select the legacy page.
+  const previewEligible = results.filter(
+    (candidate) =>
+      candidate.valid &&
+      candidate.visualScore >= CREATIVE_PROMOTION_THRESHOLDS.visualScore &&
+      candidate.technicalScore >= 100,
+  );
+  const valid = preview ? previewEligible : results.filter((candidate) => candidate.eligible);
   const winner = valid
     .sort((left, right) => right.score - left.score || left.candidateId.localeCompare(right.candidateId))[0] || null;
   const report = {
     version: 1,
-    mode: promote ? "promote" : "review",
+    mode: promote ? "promote" : preview ? "preview" : "review",
     thresholds: CREATIVE_PROMOTION_THRESHOLDS,
     scoreSource: "rendered-structure-and-contract; multimodal visual gate remains required",
     diversity,
     candidates: results,
-    selectedCandidateId: promote && winner && diversity.pass ? winner.candidateId : null,
-    fallback: !winner || !diversity.pass,
+    selectedCandidateId:
+      (preview && winner) || (promote && winner && diversity.pass)
+        ? winner.candidateId
+        : null,
+    // In preview mode fallback means that no authored candidate was renderable.
+    // A diversity miss is recorded separately and cannot send the page back to
+    // the legacy renderer.
+    fallback: !winner || (!preview && !diversity.pass),
+    promotionReady: Boolean(winner && diversity.pass && winner.eligible),
   };
   await fs.mkdir(path.dirname(reportFile), { recursive: true });
   await fs.writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`);
 
-  if (promote && winner && diversity.pass) {
+  if ((promote || preview) && winner && (preview || diversity.pass)) {
     await promoteCreativeCandidate({
       siteDir: root,
       candidateDir: path.relative(root, path.join(candidateRoot, winner.directory)),
       visualScore: winner.visualScore,
       distinctivenessScore: winner.distinctivenessScore,
+      selectionMode: promote ? "creative-bakeoff" : "creative-preview",
     });
   }
   return report;
@@ -308,6 +325,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     reportPath: args.report,
     screenshotsDir: args.screenshots,
     promote: args.promote === "true",
+    preview: args.preview === "true",
   });
   console.log(JSON.stringify({
     selectedCandidateId: report.selectedCandidateId,

@@ -33,13 +33,21 @@ lead endpoint, or ship an unverified layout.
 
 ## Safe rollout
 
-The workflow variable `CREATIVE_EXPERIENCE_MODE` has three values:
+The workflow variable `CREATIVE_EXPERIENCE_MODE` has three supported values:
 
 - `legacy`: skip creative rendering and use the reviewed experience pack.
-- `shadow` (default): author and render candidates, keep the public preview on
-  the existing renderer, and attach the candidate report and screenshots.
+- `preview` (default): author and render candidates, select the best authored
+  candidate that passes the build, responsive, accessibility, and visual
+  minimums, and deploy that candidate to the review preview. Diversity is
+  still recorded and required for production promotion. If no authored
+  candidate passes, the intake fails instead of silently showing the legacy
+  renderer.
 - `promote`: require a passing creative bakeoff report before deployment and
   copy the selected candidate into `src/generated-experiences/selected`.
+
+`shadow` is retained only as a historical report label. Workflow values other
+than `legacy` and `promote` are normalized to `preview`; the legacy renderer
+cannot be selected accidentally by a stale repository variable.
 
 The model is independently configurable with `CREATIVE_EXPERIENCE_MODEL`.
 Keep the reliable copy/configuration model for the truth layer. Benchmark a
@@ -62,8 +70,8 @@ customer questions, and crop-safe placement brief. FAL output is downloaded,
 validated as an image, resized to WebP, capped at 2.5 MB, and recorded in
 `.launchloom/generated-assets.json` with a prompt hash, request ID, dimensions,
 and provider metadata. If `FAL_KEY` is absent or generation fails, the site
-keeps its reviewed fallback and records the reason instead of blocking an
-otherwise truthful preview.
+keeps its reviewed image fallback and records the reason. Image fallback does
+not authorize a return to the legacy page renderer.
 
 ## Adding a new family
 
@@ -71,5 +79,5 @@ Add a family to `scripts/creative-compiler.mjs` only when it has a distinct
 navigation grammar, hero geometry, service treatment, typography category,
 mobile recomposition, and motion opportunity. Add a registry record with
 reference rights and a screenshot path. Add a focused compiler test and run a
-shadow bakeoff before enabling promotion. Do not add a family that is merely a
+preview bakeoff before enabling promotion. Do not add a family that is merely a
 new color palette or a renamed split hero.

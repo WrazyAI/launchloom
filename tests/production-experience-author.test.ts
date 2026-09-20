@@ -587,7 +587,7 @@ describe("production experience author", () => {
     ).rejects.toThrow(/unsupported claim literal/i);
   });
 
-  it("generates contextual assets before shadow authorship and preserves both evidence sets", () => {
+  it("generates contextual assets before authored preview and preserves both evidence sets", () => {
     const workflow = readFileSync(
       new URL("../.github/workflows/generate-client.yml", import.meta.url),
       "utf8",
@@ -596,7 +596,7 @@ describe("production experience author", () => {
       "name: Preserve inspiration evidence",
     );
     const authorIndex = workflow.indexOf(
-      "name: Author Phase 2 experience candidates in shadow mode",
+      "name: Author independent experience candidates",
     );
     const repositoryIndex = workflow.indexOf(
       "name: Create private repository and Cloudflare Pages project",
