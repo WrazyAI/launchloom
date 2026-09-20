@@ -417,6 +417,11 @@ function validateExperience(source, route, content) {
     throw new Error(`Candidate ${route.id} must use the shared LaunchLoom runtime.`);
   if (!/\bLeadForm\b/u.test(source))
     throw new Error(`Candidate ${route.id} must render the shared LeadForm runtime surface.`);
+  const leadFormCount = (source.match(/<LeadForm\b/gu) || []).length;
+  if (leadFormCount !== 1)
+    throw new Error(
+      `Candidate ${route.id} must render exactly one shared LeadForm in the contact section; keep the hero conversion as a compact link.`,
+    );
   if (!/<LeadForm\b[^>]*\bcontent\s*=\s*\{\s*content\s*\}/u.test(source))
     throw new Error(
       `Candidate ${route.id} must pass sealed content to the shared LeadForm runtime surface.`,
@@ -428,6 +433,10 @@ function validateExperience(source, route, content) {
       throw new Error(
         `Candidate ${route.id} navigation must expose href="#${target}".`,
       );
+  if (!/id\s*=\s*["']contact["'][\s\S]{0,5000}<LeadForm\b/u.test(source))
+    throw new Error(
+      `Candidate ${route.id} must render the shared LeadForm inside the contact section, not in the hero.`,
+    );
   for (const binding of requiredExperienceBindings)
     if (!binding.aliases.some((token) => referencesContentPath(source, token)))
       throw new Error(
@@ -518,10 +527,10 @@ function authorRules() {
     "Use only React, @launchloom/runtime, GSAP, and GSAP ScrollTrigger in Experience.jsx. The deterministic host imports and mounts motion.js; do not import or invoke ./motion.js from Experience.jsx.",
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
     "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
-    "Import LeadForm from @launchloom/runtime and render it for the primary conversion surface; do not fake a form or create a second lead endpoint.",
+    "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; use a compact anchor CTA for early conversion and do not fake a form or create a second lead endpoint.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",
-    "The complete header, hero, image, promise, and action must fit at 1536x864 and 1366x768 at 100 percent zoom.",
+    "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact: no full LeadForm, service list, or long-copy block in the first fold.",
     "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
   ].join("\n");
 }
