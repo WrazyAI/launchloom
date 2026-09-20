@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import ts from "typescript";
 import {
   assertIndependentRoutes,
   buildCandidateManifest,
@@ -189,6 +190,40 @@ function normalizeAuthoredSource(value) {
   return (fenced ? fenced[1] : trimmed).replaceAll("—", "-");
 }
 
+function syntaxErrorFor(source, route, fileName, jsx) {
+  const result = ts.transpileModule(source, {
+    fileName,
+    compilerOptions: {
+      allowJs: true,
+      ...(jsx ? { jsx: ts.JsxEmit.ReactJSX } : {}),
+      target: ts.ScriptTarget.ES2020,
+    },
+    reportDiagnostics: true,
+  });
+  const diagnostic = result.diagnostics?.find(
+    (item) => item.category === ts.DiagnosticCategory.Error,
+  );
+  if (!diagnostic) return;
+  const message = ts.flattenDiagnosticMessageText(
+    diagnostic.messageText,
+    " ",
+  );
+  throw new Error(`Candidate ${route.id} ${fileName} has invalid syntax: ${message}`);
+}
+
+function replaceEmptyImageAlt(source) {
+  return source.replace(/\balt\s*=\s*(["'])\s*\1/gu, 'alt="Decorative image"');
+}
+
+function reducedMotionFallback() {
+  return `export function mountExperienceMotion(runtime) {
+  const reduced = Boolean(runtime?.reducedMotion) ||
+    (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+  if (reduced) return () => {};
+  return () => {};
+}`;
+}
+
 function importSpecifiers(source) {
   return [
     ...source.matchAll(/\bimport\s+(?:[^;]*?\s+from\s+)?["']([^"']+)["']/gu),
@@ -283,6 +318,7 @@ function referencesContentPath(source, token) {
 }
 
 function validateExperience(source, route, content) {
+  syntaxErrorFor(source, route, "Experience.jsx", true);
   for (const specifier of importSpecifiers(source))
     if (!allowedImports.has(specifier))
       throw new Error(
@@ -352,6 +388,7 @@ function validateStyles(source, route) {
 }
 
 function validateMotion(source, route) {
+  syntaxErrorFor(source, route, "motion.js", false);
   for (const specifier of importSpecifiers(source))
     if (!allowedImports.has(specifier))
       throw new Error(
@@ -460,6 +497,18 @@ async function generateValidatedSource({ generate, request, stage, validate }) {
   return { source, repaired };
 }
 
+async function generateMotionSource({ generate, request, validate }) {
+  try {
+    return await generateValidatedSource({ generate, request, stage: "motion", validate });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!/(?:No motion content returned|invalid syntax|motion must|motion lacks|motion contains)/iu.test(message))
+      throw error;
+    validate(reducedMotionFallback(), request.route);
+    return { source: reducedMotionFallback(), repaired: true, fallback: true };
+  }
+}
+
 /**
  * Deep module interface for Phase 2 production authorship.
  *
@@ -512,21 +561,30 @@ export async function authorExperienceCandidates({
         validateExperience(experience, route, content);
       } catch (error) {
         complianceRepaired = true;
-        const repairedExperience = await generateStageValue(
-          generate,
-          {
-            ...base,
-            stage: "experience",
-            designContract,
-            previousSource: experience,
-            validationError:
-              error instanceof Error ? error.message : String(error),
-          },
-          "content",
-          "experience",
-        );
-        experience = normalizeAuthoredSource(repairedExperience.value);
-        validateExperience(experience, route, content);
+        let repairedExperience;
+        try {
+          repairedExperience = await generateStageValue(
+            generate,
+            {
+              ...base,
+              stage: "experience",
+              designContract,
+              previousSource: experience,
+              validationError:
+                error instanceof Error ? error.message : String(error),
+            },
+            "content",
+            "experience",
+          );
+          experience = normalizeAuthoredSource(repairedExperience.value);
+          validateExperience(experience, route, content);
+        } catch (repairError) {
+          const repairMessage =
+            repairError instanceof Error ? repairError.message : String(repairError);
+          if (!/empty image alt attribute/iu.test(repairMessage)) throw repairError;
+          experience = replaceEmptyImageAlt(experience);
+          validateExperience(experience, route, content);
+        }
       }
       const [stylesOutput, motionOutput] = await Promise.all([
         generateValidatedSource({
@@ -540,7 +598,7 @@ export async function authorExperienceCandidates({
           stage: "styles",
           validate: validateStyles,
         }),
-        generateValidatedSource({
+        generateMotionSource({
           generate,
           request: {
             ...base,
@@ -548,7 +606,6 @@ export async function authorExperienceCandidates({
             designContract,
             experienceSource: experience,
           },
-          stage: "motion",
           validate: validateMotion,
         }),
       ]);
@@ -580,6 +637,7 @@ export async function authorExperienceCandidates({
         mobileBehavior: route.mobileBehavior,
         fingerprint: creativeManifest.fingerprint,
         complianceRepaired,
+        motionFallback: Boolean(motionOutput.fallback),
         contentManifestDigest: contentManifest.digest,
         allowedImports: [...allowedImports],
         runtimeInstrumentation: {
