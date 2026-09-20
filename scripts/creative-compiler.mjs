@@ -1,0 +1,323 @@
+import crypto from "node:crypto";
+
+/**
+ * The creative compiler is the narrow seam between verified site data and a
+ * model-authored experience.  It intentionally owns normalization, identity,
+ * diversity, and promotion decisions while leaving rendering to the host.
+ */
+
+export const CREATIVE_CONTRACT_VERSION = 1;
+export const CREATIVE_FINGERPRINT_FIELDS = [
+  "familyId",
+  "navigation",
+  "heroGeometry",
+  "servicePresentation",
+  "sectionRhythm",
+  "typographyCategory",
+  "motionOpportunity",
+  "mobileBehavior",
+];
+
+export const CREATIVE_FAMILIES = Object.freeze({
+  "editorial-monument": {
+    label: "Editorial monument",
+    defaultMotion: "masked-image-reveal",
+    prohibitedPatterns: ["generic-card-wall", "numbered-service-cards"],
+  },
+  "cinematic-stage": {
+    label: "Full-bleed cinematic stage",
+    defaultMotion: "pinned-narrative",
+    prohibitedPatterns: ["white-pill-navbar", "bento-grid"],
+  },
+  "utility-diagnostic": {
+    label: "Utility diagnostic flow",
+    defaultMotion: "state-transition",
+    prohibitedPatterns: ["decorative-numbering", "hero-copy-wall"],
+  },
+  "typographic-poster": {
+    label: "Typographic poster",
+    defaultMotion: "velocity-type",
+    prohibitedPatterns: ["generic-split-hero", "glassmorphism"],
+  },
+  "archive-rail": {
+    label: "Archive collection rail",
+    defaultMotion: "horizontal-archive-scrub",
+    prohibitedPatterns: ["stacked-service-cards", "hero-carousel"],
+  },
+  "guided-conversation": {
+    label: "Guided conversation",
+    defaultMotion: "staged-question-reveal",
+    prohibitedPatterns: ["long-why-us-copy", "late-contact-section"],
+  },
+  "spatial-object": {
+    label: "Spatial object stage",
+    defaultMotion: "object-focus-transition",
+    prohibitedPatterns: ["unrelated-3d-decoration", "autoplay-scroll-lock"],
+  },
+});
+
+const DEFAULT_PROHIBITED = [
+  "generic-card-wall",
+  "decorative-numbering",
+  "hero-copy-wall",
+  "white-pill-navbar",
+  "bento-grid",
+  "late-contact-section",
+];
+
+function clean(value, limit = 180) {
+  return String(value || "")
+    .replace(/[\u0000-\u001f\u007f]/gu, " ")
+    .replace(/[—–]/gu, "-")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, limit);
+}
+
+function list(value, limit = 12) {
+  return [
+    ...new Set(
+      (Array.isArray(value) ? value : [])
+        .map((item) => clean(item, 120))
+        .filter(Boolean),
+    ),
+  ].slice(0, limit);
+}
+
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object")
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`)
+      .join(",")}}`;
+  return JSON.stringify(value);
+}
+
+export function digest(value) {
+  return crypto.createHash("sha256").update(stableJson(value)).digest("hex");
+}
+
+function inferFamily(route) {
+  const value = [
+    route?.familyId,
+    route?.heroGeometry,
+    route?.servicePresentation,
+    route?.sectionRhythm,
+    route?.motionOpportunity,
+  ]
+    .map((part) => clean(part, 120).toLowerCase())
+    .join(" ");
+  if (/monument|magazine|column|narrow-authored|central-portrait/u.test(value)) return "editorial-monument";
+  if (/object|museum|spatial|product|artifact/u.test(value)) return "spatial-object";
+  if (/archive|rail|collection|marquee/u.test(value)) return "archive-rail";
+  if (/diagnostic|utility|problem|command|scoreboard/u.test(value)) return "utility-diagnostic";
+  if (/poster|athletic|kinetic|velocity|full-viewport/u.test(value)) return "typographic-poster";
+  if (/conversation|guided|question|qualifier/u.test(value)) return "guided-conversation";
+  if (/full-bleed|cinematic|motion|atmospheric|video/u.test(value)) return "cinematic-stage";
+  return "editorial-monument";
+}
+
+export function familyForRoute(route) {
+  const familyId = clean(route?.familyId, 60) || inferFamily(route);
+  return CREATIVE_FAMILIES[familyId] ? familyId : inferFamily(route);
+}
+
+export function fingerprintForRoute(route) {
+  const familyId = familyForRoute(route);
+  return digest(
+    CREATIVE_FINGERPRINT_FIELDS.map((field) =>
+      field === "familyId"
+        ? familyId
+        : clean(route?.[field], 140).toLowerCase(),
+    ).join("|"),
+  ).slice(0, 24);
+}
+
+export function buildRouteContract(route, index = 0) {
+  if (!route || typeof route !== "object")
+    throw new Error(`Creative route ${index + 1} is not an object.`);
+  const familyId = familyForRoute(route);
+  const family = CREATIVE_FAMILIES[familyId];
+  const motionOpportunity =
+    clean(route.motionOpportunity, 120) || family.defaultMotion;
+  const prohibitedPatterns = [
+    ...new Set([
+      ...DEFAULT_PROHIBITED,
+      ...family.prohibitedPatterns,
+      ...list(route.prohibitedPatterns),
+    ]),
+  ];
+  return Object.freeze({
+    version: CREATIVE_CONTRACT_VERSION,
+    id: clean(route.id, 80) || `route-${String(index + 1).padStart(2, "0")}`,
+    label: clean(route.label, 140),
+    intent: clean(route.intent, 500),
+    familyId,
+    familyLabel: family.label,
+    navigation: clean(route.navigation, 120),
+    heroGeometry: clean(route.heroGeometry, 120),
+    servicePresentation: clean(route.servicePresentation, 120),
+    sectionRhythm: clean(route.sectionRhythm, 120),
+    typographyCategory: clean(route.typographyCategory, 120),
+    imageStrategy: clean(route.imageStrategy, 120),
+    motionOpportunity,
+    mobileBehavior:
+      clean(route.mobileBehavior, 160) ||
+      "recompose into a content-driven single column without horizontal overflow",
+    prohibitedPatterns,
+    referenceIds: list(route.referenceIds, 8),
+    evidence: Array.isArray(route.evidence)
+      ? route.evidence.map((item) => ({
+          id: clean(item.id, 80),
+          name: clean(item.name, 140),
+          source: clean(item.source, 100),
+          rights: clean(item.rights, 30),
+          screenshotPath: clean(item.screenshotPath, 300),
+          notes: clean(item.notes, 320),
+        }))
+      : [],
+    signature: clean(route.signature, 300) || fingerprintForRoute(route),
+    fingerprint: fingerprintForRoute({ ...route, familyId }),
+  });
+}
+
+export function assertIndependentRoutes(routes, expected = 3) {
+  if (!Array.isArray(routes) || routes.length !== expected)
+    throw new Error(`Creative compilation requires exactly ${expected} routes.`);
+  const contracts = routes.map(buildRouteContract);
+  for (const field of [
+    "familyId",
+    "navigation",
+    "heroGeometry",
+    "servicePresentation",
+    "typographyCategory",
+  ]) {
+    if (new Set(contracts.map((route) => route[field])).size !== contracts.length)
+      throw new Error(`Creative routes are not independent in ${field}.`);
+  }
+  if (new Set(contracts.map((route) => route.fingerprint)).size !== contracts.length)
+    throw new Error("Creative routes contain duplicate structural fingerprints.");
+  return contracts;
+}
+
+export function fingerprintForCandidate(candidate) {
+  const contract = candidate?.contract || candidate?.route || candidate || {};
+  return digest(
+    CREATIVE_FINGERPRINT_FIELDS.map((field) =>
+      field === "familyId"
+        ? familyForRoute(contract)
+        : clean(contract[field], 140).toLowerCase(),
+    ).join("|"),
+  ).slice(0, 24);
+}
+
+export function fingerprintDistance(left, right) {
+  const a = left?.fingerprintFields || left?.contract || left?.route || left || {};
+  const b = right?.fingerprintFields || right?.contract || right?.route || right || {};
+  return CREATIVE_FINGERPRINT_FIELDS.reduce((distance, field) => {
+    const leftValue = field === "familyId" ? familyForRoute(a) : clean(a[field], 140).toLowerCase();
+    const rightValue = field === "familyId" ? familyForRoute(b) : clean(b[field], 140).toLowerCase();
+    return distance + (leftValue !== rightValue ? 1 : 0);
+  }, 0);
+}
+
+export function diversityReport(candidates, { minimumDistance = 4 } = {}) {
+  const pairs = [];
+  let pass = true;
+  for (let i = 0; i < candidates.length; i += 1) {
+    for (let j = i + 1; j < candidates.length; j += 1) {
+      const distance = fingerprintDistance(candidates[i], candidates[j]);
+      const pair = {
+        left: candidates[i]?.id || candidates[i]?.candidateId || `candidate-${i + 1}`,
+        right: candidates[j]?.id || candidates[j]?.candidateId || `candidate-${j + 1}`,
+        distance,
+        pass: distance >= minimumDistance,
+      };
+      pairs.push(pair);
+      if (!pair.pass) pass = false;
+    }
+  }
+  const dimensions = Object.fromEntries(
+    CREATIVE_FINGERPRINT_FIELDS.map((field) => [
+      field,
+      new Set(
+        candidates.map((candidate) => {
+          const value = candidate?.contract || candidate?.route || candidate || {};
+          return field === "familyId" ? familyForRoute(value) : clean(value[field], 140).toLowerCase();
+        }),
+      ).size,
+    ]),
+  );
+  const uniqueDimensionCount = Object.values(dimensions).filter((value) => value > 1).length;
+  return {
+    version: CREATIVE_CONTRACT_VERSION,
+    pass: pass && uniqueDimensionCount >= 4,
+    minimumDistance,
+    dimensions,
+    uniqueDimensionCount,
+    pairs,
+  };
+}
+
+/**
+ * @param {{candidate?: object, route: object, model?: string, contentManifestDigest?: string, assets?: string[]}} input
+ */
+export function buildCandidateManifest(input) {
+  const { candidate, route, model, contentManifestDigest, assets = [] } = input;
+  const contract = buildRouteContract(route);
+  const fingerprint = fingerprintForCandidate({ contract });
+  return {
+    version: CREATIVE_CONTRACT_VERSION,
+    candidateId: candidate?.candidateId || candidate?.id || "candidate",
+    routeId: contract.id,
+    familyId: contract.familyId,
+    model: clean(model, 160),
+    routeFingerprint: contract.fingerprint,
+    fingerprint,
+    contentManifestDigest: clean(contentManifestDigest, 128),
+    assetTokens: list(assets, 12),
+    requiredSections: ["hero", "services", "faqs", "contact", "early-conversion"],
+    motion: {
+      opportunity: contract.motionOpportunity,
+      reducedMotionRequired: true,
+      maxPinnedScenes: 1,
+    },
+    status: "authored",
+  };
+}
+
+export function validateCandidateManifest(manifest) {
+  if (!manifest || typeof manifest !== "object") throw new Error("Creative candidate manifest is missing.");
+  for (const field of ["candidateId", "routeId", "familyId", "routeFingerprint", "fingerprint", "contentManifestDigest"])
+    if (!clean(manifest[field])) throw new Error(`Creative candidate manifest is missing ${field}.`);
+  if (!CREATIVE_FAMILIES[manifest.familyId])
+    throw new Error(`Creative candidate manifest uses unknown family ${manifest.familyId}.`);
+  if (!Array.isArray(manifest.requiredSections) || !["hero", "services", "faqs", "contact", "early-conversion"].every((section) => manifest.requiredSections.includes(section)))
+    throw new Error("Creative candidate manifest is missing a required page section, including early-conversion.");
+  if (manifest.motion?.reducedMotionRequired !== true)
+    throw new Error("Creative candidate manifest must require a reduced-motion path.");
+  if (manifest.motion?.maxPinnedScenes > 1)
+    throw new Error("Creative candidate may declare at most one pinned scene.");
+  return manifest;
+}
+
+export function scoreCreativeCandidate({ hardPass, visual = {}, technical = {}, distinctiveness = 0 }) {
+  if (!hardPass) return -1000;
+  const value =
+    Number(visual.hierarchy || 0) * 0.2 +
+    Number(visual.composition || 0) * 0.15 +
+    Number(visual.responsive || 0) * 0.15 +
+    Number(visual.industryFit || 0) * 0.15 +
+    Number(visual.conversion || 0) * 0.1 +
+    Number(technical.accessibility || 0) * 0.1 +
+    Number(distinctiveness || 0) * 0.15;
+  return Math.round(value * 100) / 100;
+}
+
+export const CREATIVE_PROMOTION_THRESHOLDS = Object.freeze({
+  visualScore: 78,
+  distinctivenessScore: 70,
+  minimumFingerprintDistance: 4,
+  minimumUniqueDimensions: 4,
+});
