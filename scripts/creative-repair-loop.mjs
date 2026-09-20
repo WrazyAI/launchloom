@@ -76,7 +76,7 @@ export function applyCreativeVisualSafetyRepairs(files, findings = []) {
 /* The production shell has a legacy .hero surface rule. Keep it from
    repainting an authored candidate's hero while preserving its composition. */
 [data-hero] {
-  background: transparent !important;
+  background-color: transparent !important;
   color: inherit !important;
 }
 
