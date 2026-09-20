@@ -74,12 +74,16 @@ jobs:
           echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "No externally validated queries")')" >> "$GITHUB_OUTPUT"
           node -e 'const x=require("/tmp/seo-research.json"); const state=x.mode === "researched" ? "Research complete. Production approval is available." : "Research is incomplete. This preview can be reviewed, but production approval is blocked until research succeeds."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}\nValidated queries: ${(x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "None"}\nRecorded research cost: $${Number(x.cost?.usd || 0).toFixed(5)}`)'
       - name: Preserve SEO research evidence
+        # Evidence is useful but must not block a client preview when the
+        # repository's Actions artifact quota is temporarily exhausted.
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: seo-research-${{ steps.intake.outputs.issue }}
           path: /tmp/seo-research.json
           retention-days: 14
       - name: Preserve inspiration evidence
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: inspiration-pack-${{ steps.intake.outputs.issue }}
@@ -217,6 +221,7 @@ jobs:
           node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
       - name: Preserve generated asset evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: generated-assets-${{ steps.intake.outputs.issue }}
@@ -236,11 +241,12 @@ jobs:
           --failure-mode record
       - name: Preserve authored experience evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: authored-experiences-${{ steps.intake.outputs.issue }}
           path: /tmp/generated-experiences
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
       - name: Commit authored experience evidence
         run: |
@@ -303,6 +309,7 @@ jobs:
           git push origin HEAD:main
       - name: Upload rendered initial evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: initial-site-screenshots
@@ -311,6 +318,7 @@ jobs:
           retention-days: 14
       - name: Upload experience bakeoff evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: experience-bakeoff-screenshots

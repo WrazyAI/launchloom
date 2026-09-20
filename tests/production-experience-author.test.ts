@@ -407,6 +407,17 @@ describe("production experience author", () => {
     expect(workflow.indexOf("name: Generate or reuse contextual imagery")).toBeGreaterThan(repositoryIndex);
     expect(workflow.indexOf("name: Generate or reuse contextual imagery")).toBeLessThan(authorIndex);
     expect(workflow).toContain("name: authored-experiences-${{");
+    const seoEvidence = workflow.slice(
+      workflow.indexOf("name: Preserve SEO research evidence"),
+      workflow.indexOf("name: Preserve inspiration evidence"),
+    );
+    expect(seoEvidence).toContain("continue-on-error: true");
+    const authoredEvidence = workflow.slice(
+      workflow.indexOf("name: Preserve authored experience evidence"),
+      workflow.indexOf("name: Commit authored experience evidence"),
+    );
+    expect(authoredEvidence).toContain("continue-on-error: true");
+    expect(authoredEvidence).toContain("if-no-files-found: warn");
     expect(workflow).toContain(
       "cp -R /tmp/generated-experiences .launchloom/generated-experiences",
     );
