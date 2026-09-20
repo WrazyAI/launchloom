@@ -6,9 +6,9 @@ The inspiration registry is LaunchLoom's cached, reference-only design research 
 
 Call `buildInspirationPack(request, registry)`. The returned pack is deterministic for the same seed, registry, style context, and recent-launch history.
 
-The module owns normalization, rights validation, relevance scoring, deterministic tie-breaking, structural separation, recent-history exclusion, and evidence shaping. Callers never receive source assets or download locations.
+The module owns normalization, rights validation, relevance scoring, deterministic tie-breaking, structural separation, recent-history exclusion, bounded freshness fallback, and evidence shaping. Callers never receive source assets or download locations. Fresh references and route signatures are preferred; if those exclusions make three independent routes impossible, route-signature exclusions are relaxed first, then reference exclusions, and the selected mode is recorded in the pack summary.
 
-Each route must differ in navigation, hero geometry, service presentation, and typography category. References cannot be reused across routes. If the registry cannot supply three independent routes, compilation stops with an explicit error.
+Each route must differ in navigation, hero geometry, service presentation, and typography category. References cannot be reused across routes. If the full registry cannot supply three independent routes, compilation stops with an explicit error.
 
 ## Cached ingestion
 

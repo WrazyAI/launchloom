@@ -75,6 +75,31 @@ describe("inspiration registry", () => {
     expect(JSON.stringify(pack)).not.toContain("downloadUrl");
   });
 
+  it("relaxes stale-history exclusions when they would make the three-route contract impossible", () => {
+    const pack = buildInspirationPack(
+      {
+        ...jewelryRequest,
+        recentRouteSignatures: registry.records
+          .map((record: any) =>
+            [
+              record.navigation,
+              record.heroGeometry,
+              record.servicePresentation,
+              record.typographyCategory,
+              record.sectionRhythm,
+              record.imageStrategy,
+            ].join("|"),
+          ),
+      },
+      registry,
+    );
+
+    expect(pack.routes).toHaveLength(3);
+    expect(["route-signatures-relaxed", "history-relaxed"]).toContain(
+      pack.request.freshnessFallback,
+    );
+  });
+
   it("fails clearly when the registry cannot supply three independent routes", () => {
     expect(() =>
       buildInspirationPack(jewelryRequest, {

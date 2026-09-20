@@ -156,6 +156,36 @@ function evidenceFor(record) {
   };
 }
 
+function rankedRecords(registry, request, recentReferenceIds, recentRouteSignatures, mode) {
+  return registry.records
+    .filter(
+      (record) =>
+        (!mode.excludeReferences ||
+          !recentReferenceIds.has(record.id.toLowerCase())) &&
+        (!mode.excludeRouteSignatures ||
+          !recentRouteSignatures.has(signatureFor(record))),
+    )
+    .map((record) => ({
+      record,
+      score: scoreRecord(record, request),
+    }))
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        left.record.id.localeCompare(right.record.id),
+    );
+}
+
+function independentAnchors(ranked) {
+  const anchors = [];
+  for (const candidate of ranked) {
+    if (!structurallyIndependent(candidate.record, anchors)) continue;
+    anchors.push(candidate.record);
+    if (anchors.length === 3) break;
+  }
+  return anchors;
+}
+
 export function buildInspirationPack(request, rawRegistry) {
   const registry = normalizeRegistry(rawRegistry);
   const seed = cleanText(request?.seed, 180);
@@ -171,29 +201,35 @@ export function buildInspirationPack(request, rawRegistry) {
       : []
     ).map((value) => cleanText(value, 600)),
   );
-  const ranked = registry.records
-    .filter((record) => !recentReferenceIds.has(record.id.toLowerCase()))
-    .map((record) => ({
-      record,
-      score: scoreRecord(record, { ...request, seed, industry }),
-    }))
-    .sort(
-      (left, right) =>
-        right.score - left.score ||
-        left.record.id.localeCompare(right.record.id),
+  const selectionModes = [
+    { id: "fresh", excludeReferences: true, excludeRouteSignatures: true },
+    {
+      id: "route-signatures-relaxed",
+      excludeReferences: true,
+      excludeRouteSignatures: false,
+    },
+    { id: "history-relaxed", excludeReferences: false, excludeRouteSignatures: false },
+  ];
+  let selection;
+  for (const mode of selectionModes) {
+    const ranked = rankedRecords(
+      registry,
+      { ...request, seed, industry },
+      recentReferenceIds,
+      recentRouteSignatures,
+      mode,
     );
-  const anchors = [];
-  for (const candidate of ranked) {
-    const signature = signatureFor(candidate.record);
-    if (recentRouteSignatures.has(signature)) continue;
-    if (!structurallyIndependent(candidate.record, anchors)) continue;
-    anchors.push(candidate.record);
-    if (anchors.length === 3) break;
+    const anchors = independentAnchors(ranked);
+    if (anchors.length === 3) {
+      selection = { mode, ranked, anchors };
+      break;
+    }
   }
-  if (anchors.length < 3)
+  if (!selection)
     throw new Error(
-      "The inspiration registry cannot supply three structurally independent creative routes after recent-history exclusions.",
+      "The inspiration registry cannot supply three structurally independent creative routes, even after relaxing recent-history exclusions.",
     );
+  const { anchors, ranked } = selection;
 
   const used = new Set(anchors.map((record) => record.id));
   const routes = anchors.map((anchor, index) => {
@@ -240,6 +276,7 @@ export function buildInspirationPack(request, rawRegistry) {
     styleTerms: cleanList(request.styleTerms, 20),
     recentReferenceIds: [...recentReferenceIds].sort(),
     recentRouteSignatures: [...recentRouteSignatures].sort(),
+    freshnessFallback: selection.mode.id,
   };
   return {
     version: 1,
