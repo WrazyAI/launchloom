@@ -221,7 +221,11 @@ function scalarContentValues(value) {
     return Object.values(value).flatMap(scalarContentValues);
   if (typeof value !== "string") return [];
   const normalized = value.trim();
-  return normalized.length >= 4 ? [normalized] : [];
+  const isMeaningfulPhrase =
+    normalized.length >= 12 ||
+    normalized.split(/\s+/u).length >= 3 ||
+    /[@+()\d]/u.test(normalized);
+  return isMeaningfulPhrase ? [normalized] : [];
 }
 
 function referencesContentPath(source, token) {
@@ -337,6 +341,8 @@ function validateExperience(source, route, content) {
 }
 
 function validateStyles(source, route) {
+  if (/<!doctype\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/iu.test(source))
+    throw new Error(`Candidate ${route.id} styles must contain CSS only, not an HTML document.`);
   if (/url\s*\(\s*["']?(?:https?:)?\/\//iu.test(source))
     throw new Error(`Candidate ${route.id} CSS contains a remote URL.`);
   if (/—/u.test(source))

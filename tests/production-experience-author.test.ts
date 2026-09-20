@@ -452,7 +452,7 @@ describe("production experience author", () => {
       generate: async (request) => {
         const value = safeStage(request);
         if (request.stage === "styles" && !request.validationError)
-          return { content: `${value.content}\n}\n\"\n}` };
+          return { content: `<!doctype html>\n<html><body></body></html>\n${value.content}\n}\n\"\n}` };
         if (request.stage === "experience" && !request.validationError)
           return { content: `${value.content}\n<img src={content.hero.image} alt="" />` };
         return value;

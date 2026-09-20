@@ -133,7 +133,7 @@ ${request.designContract}
 AUTHORED EXPERIENCE JSX
 ${request.experienceSource}
 
-Return complete styles.css in content. Style the exact markup without changing its structure. The header and full hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
+Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. Style the exact markup without changing its structure. The header and full hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
   return `${shared}
 
 DESIGN CONTRACT
@@ -142,7 +142,7 @@ ${request.designContract}
 AUTHORED EXPERIENCE JSX
 ${request.experienceSource}
 
-Return complete motion.js in content. Export mountExperienceMotion(runtime), returning a cleanup function. Use native browser APIs or GSAP only when the assigned motion opportunity materially improves the narrative. Read runtime?.reducedMotion or match prefers-reduced-motion and provide a still equivalent. Use at most one pinned or scrubbed sequence. Do not use network access.`;
+Return complete motion.js in content. Return JavaScript text only, never JSX, React components, HTML, CSS, markdown fences, or a second experience implementation. Export mountExperienceMotion(runtime), returning a cleanup function. Use native browser APIs or GSAP only when the assigned motion opportunity materially improves the narrative. Read runtime?.reducedMotion or match prefers-reduced-motion and provide a still equivalent. Use at most one pinned or scrubbed sequence. Do not use network access.`;
 }
 
 async function requestStage(request) {
