@@ -23,6 +23,7 @@ const outputPath = path.resolve(
 );
 const model =
   args.model ||
+  process.env.CREATIVE_EXPERIENCE_MODEL ||
   process.env.MODEL_AUTHORED_EXPERIENCE_MODEL ||
   "z-ai/glm-5.3-flash";
 const failureMode = args["failure-mode"] || "throw";
@@ -78,11 +79,15 @@ function stagePrompt(request) {
       typographyCategory: request.route.typographyCategory,
       imageStrategy: request.route.imageStrategy,
       motionOpportunity: request.route.motionOpportunity,
+      familyId: request.route.familyId,
+      mobileBehavior: request.route.mobileBehavior,
+      prohibitedPatterns: request.route.prohibitedPatterns,
       signature: request.route.signature,
       evidence: (request.route.evidence || []).map((item) => ({
         name: item.name,
         source: item.source,
         rights: item.rights,
+        screenshotPath: item.screenshotPath,
         notes: item.notes,
       })),
     },
@@ -105,7 +110,7 @@ ${request.rules}
 
 ${request.validationError && request.stage !== "experience" ? `BOUNDED FORMAT REPAIR\nThe previous ${request.stage} output failed validation: ${request.validationError}\nReturn the complete corrected ${request.stage} output using the required schema. Preserve the assigned route.\n\nPREVIOUS OUTPUT\n${request.previousSource}\n` : ""}
 
-Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. This candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template.`;
+Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. This candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, mobile behavior, and prohibited patterns as binding design constraints, not suggestions.`;
 
   if (request.stage === "contract")
     return `${shared}
@@ -118,7 +123,7 @@ DESIGN CONTRACT
 ${request.designContract}
 
 ${request.validationError ? `COMPLIANCE REPAIR\nThe previous JSX failed: ${request.validationError}\nRepair that exact violation without reducing the composition or changing the design contract.\n\nPREVIOUS JSX\n${request.previousSource}\n` : ""}
-Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. Import ./motion.js when motion is used. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Do not return CSS.`;
+Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import LeadForm from @launchloom/runtime and render the shared LeadForm in the contact or early-conversion surface. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. Import ./motion.js when motion is used. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Do not return CSS.`;
   if (request.stage === "styles")
     return `${shared}
 
@@ -164,6 +169,23 @@ async function requestStage(request) {
     Math.min(stageLimitMs, remainingMs),
   );
   try {
+    const userContent = [{ type: "text", text: stagePrompt(request) }];
+    for (const evidence of request.route.evidence || []) {
+      const screenshotPath = evidence.screenshotPath;
+      if (!screenshotPath || userContent.length >= 3) continue;
+      try {
+        const data = await fs.readFile(path.resolve(screenshotPath));
+        const extension = path.extname(screenshotPath).toLowerCase();
+        const mime = extension === ".png" ? "image/png" : "image/jpeg";
+        userContent.push({
+          type: "image_url",
+          image_url: { url: `data:${mime};base64,${data.toString("base64")}` },
+        });
+      } catch {
+        // Reference evidence is optional. The route contract remains usable
+        // when a local screenshot is not available in the generation runner.
+      }
+    }
     const response = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
@@ -199,7 +221,7 @@ async function requestStage(request) {
               content:
                 "Return valid JSON only. Create an ambitious, production-grade frontend while obeying the sealed content and safety contract exactly.",
             },
-            { role: "user", content: stagePrompt(request) },
+            { role: "user", content: userContent },
           ],
         }),
       },

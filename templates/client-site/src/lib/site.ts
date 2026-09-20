@@ -186,9 +186,15 @@ export type SiteConfig = {
       packId?: ExperiencePackId | string;
       variantId?: string;
       blueprintVersion?: 2;
+      renderer?: "reviewed-pack" | "creative-candidate" | "legacy" | string;
+      candidateId?: string;
+      familyId?: string;
+      contractHash?: string;
+      visualScore?: number;
+      distinctivenessScore?: number;
       candidatePackIds?: string[];
       avoidPackIds?: string[];
-      selectionMode?: "internal-bakeoff" | "requested" | "legacy";
+      selectionMode?: "internal-bakeoff" | "requested" | "legacy" | "creative-bakeoff";
       fingerprint?: string;
     };
   };

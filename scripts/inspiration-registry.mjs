@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { buildRouteContract } from "./creative-compiler.mjs";
 
 const REQUIRED_FIELDS = [
   "id",
@@ -72,6 +73,9 @@ function normalizeRecord(record, index) {
     typographyCategory: cleanText(record.typographyCategory, 80),
     imageStrategy: cleanText(record.imageStrategy, 80),
     motionOpportunities: cleanList(record.motionOpportunities, 8),
+    familyId: cleanText(record.familyId, 60),
+    mobileBehavior: cleanText(record.mobileBehavior, 180),
+    prohibitedPatterns: cleanList(record.prohibitedPatterns, 12),
     screenshotPath: cleanText(record.screenshotPath, 300),
     notes: cleanText(record.notes, 320),
   };
@@ -126,8 +130,12 @@ function scoreRecord(record, request) {
 }
 
 function structurallyIndependent(record, selected) {
-  return STRUCTURAL_FIELDS.every(
-    (field) => !selected.some((item) => item[field] === record[field]),
+  const candidateFamily = buildRouteContract(record).familyId;
+  return (
+    !selected.some((item) => buildRouteContract(item).familyId === candidateFamily) &&
+    STRUCTURAL_FIELDS.every(
+      (field) => !selected.some((item) => item[field] === record[field]),
+    )
   );
 }
 
@@ -139,6 +147,11 @@ function evidenceFor(record) {
     sourceUrl: record.sourceUrl,
     rights: record.rights,
     screenshotPath: record.screenshotPath || undefined,
+    familyId: record.familyId || undefined,
+    mobileBehavior: record.mobileBehavior || undefined,
+    prohibitedPatterns: record.prohibitedPatterns?.length
+      ? record.prohibitedPatterns
+      : undefined,
     notes: record.notes || undefined,
   };
 }
@@ -192,7 +205,7 @@ export function buildInspirationPack(request, rawRegistry) {
     )?.record;
     if (supporting) used.add(supporting.id);
     const evidence = [anchor, supporting].filter(Boolean).map(evidenceFor);
-    return {
+    const route = {
       id: `route-${String(index + 1).padStart(2, "0")}`,
       label: anchor.name,
       intent: `Use ${anchor.heroGeometry} with ${anchor.servicePresentation}, guided by ${anchor.sectionRhythm}.`,
@@ -204,9 +217,20 @@ export function buildInspirationPack(request, rawRegistry) {
       imageStrategy: anchor.imageStrategy,
       motionOpportunity:
         anchor.motionOpportunities[0] || "restrained-native-motion",
+      familyId: anchor.familyId || undefined,
+      mobileBehavior: anchor.mobileBehavior || undefined,
+      prohibitedPatterns: anchor.prohibitedPatterns || [],
       referenceIds: evidence.map((item) => item.id),
       evidence,
       signature: signatureFor(anchor),
+    };
+    const contract = buildRouteContract(route, index);
+    return {
+      ...route,
+      familyId: contract.familyId,
+      mobileBehavior: contract.mobileBehavior,
+      prohibitedPatterns: contract.prohibitedPatterns,
+      fingerprint: contract.fingerprint,
     };
   });
 

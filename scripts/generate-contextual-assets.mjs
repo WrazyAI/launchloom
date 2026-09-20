@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fal as defaultFal } from "@fal-ai/client";
 import sharp from "sharp";
+import { buildRouteContract } from "./creative-compiler.mjs";
 
 export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
 export const DEFAULT_MAX_IMAGES = 3;
@@ -16,6 +17,7 @@ const PLACEMENTS = [
     aspectRatio: "16:9",
     maxWidth: 1600,
     alt: "featured service context",
+    focal: "Keep the main subject in the central safe crop with negative space for copy.",
   },
   {
     id: "secondary",
@@ -23,6 +25,7 @@ const PLACEMENTS = [
     aspectRatio: "4:3",
     maxWidth: 1200,
     alt: "supporting service context",
+    focal: "Keep the subject legible in a 4:3 crop and preserve a calm edge for overlays.",
   },
   {
     id: "tertiary",
@@ -30,6 +33,7 @@ const PLACEMENTS = [
     aspectRatio: "3:2",
     maxWidth: 1200,
     alt: "detail of the service experience",
+    focal: "Use a tactile close crop with a clear subject at mobile width.",
   },
 ];
 
@@ -96,6 +100,7 @@ function promptFor(site, route, placement) {
   const vocabulary = list(seo.copyVocabulary, 5);
   const problems = list(seo.customerQuestions, 3);
   const routeLanguage = [
+    route?.familyId,
     route?.heroGeometry,
     route?.typographyCategory,
     route?.signature,
@@ -135,6 +140,7 @@ function promptFor(site, route, placement) {
     "Style: distinctive editorial art direction, believable materials, natural light, restrained composition, and a polished commercial website photograph.",
     "Constraints: no readable text, no logos, no watermark, no signage, no invented credentials, no branded products, no medical claims, no identifiable people, no faces, no customer or staff implication, and no copied real-world campaign.",
     "Keep the image useful at the requested crop and avoid tiny details that disappear on mobile.",
+    placement.focal,
   ]
     .filter(Boolean)
     .join(" ");
@@ -287,12 +293,16 @@ export async function generateContextualAssets({
     : {};
   const routes = Array.isArray(inspiration?.routes) ? inspiration.routes : [];
   const route = routes[0] || {};
+  const routeContract = buildRouteContract(route);
   const placements = PLACEMENTS.filter((placement) => !clientAssetFor(site, placement)).slice(0, maxImages);
   const manifest = {
-    version: 1,
+    version: 2,
     provider: "fal.ai",
     model,
-    strategy: "client-first-fill-missing",
+    strategy: "client-first-fill-missing-route-directed",
+    routeId: routeContract.id,
+    familyId: routeContract.familyId,
+    routeFingerprint: routeContract.fingerprint,
     generatedAt: new Date().toISOString(),
     placements: [],
     skipped: [],
@@ -357,6 +367,8 @@ export async function generateContextualAssets({
           bytes: normalized.bytes,
           alt: placement.alt,
           sourceFormat: normalized.sourceFormat,
+          focal: placement.focal,
+          familyId: routeContract.familyId,
         };
         break;
       } catch (error) {

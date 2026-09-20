@@ -97,6 +97,7 @@ function safeStage(request: AuthorStageRequest) {
     return {
       content: `import React from "react";
 import { mountExperienceMotion } from "./motion.js";
+import { LeadForm } from "@launchloom/runtime";
 export default function Experience({ content, runtime }) {
   React.useEffect(() => mountExperienceMotion(runtime), [runtime]);
   return <div data-model-experience="${request.route.id}">
@@ -104,7 +105,7 @@ export default function Experience({ content, runtime }) {
     <main><section data-hero><h1>{content.hero.heading}</h1><p>{content.hero.body}</p><button data-early-conversion>{content.hero.primaryLabel}</button></section>
     <section id="services">{content.services.map((service) => <article key={service.name}><h2>{service.name}</h2><p>{service.description}</p></article>)}</section>
     <section id="faqs">{content.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
-    <section id="contact"><a href={content.contact.phoneHref}>{content.contact.phoneLabel}</a></section></main>
+    <section id="contact"><LeadForm content={content} runtime={runtime} data-runtime="lead-form" /><a href={content.contact.phoneHref}>{content.contact.phoneLabel}</a></section></main>
   </div>;
 }`,
     };

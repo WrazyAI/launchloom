@@ -166,6 +166,27 @@ function publicText(value, limit = 500) {
 }
 
 function safeDesignManifest(config) {
+  if (config.design?.experience?.renderer === "creative-candidate") {
+    return {
+      recipe: publicText(config.design?.recipe, 60),
+      renderer: {
+        type: "creative-candidate",
+        candidateId: publicText(config.design?.experience?.candidateId, 100),
+        familyId: publicText(config.design?.experience?.familyId, 80),
+        fingerprint: publicText(config.design?.experience?.fingerprint, 100),
+        visualScore: Number(config.design?.experience?.visualScore || 0),
+        distinctivenessScore: Number(
+          config.design?.experience?.distinctivenessScore || 0,
+        ),
+      },
+      navigationLinks: ["Services", "FAQs", "Contact"],
+      requiredSections: ["hero", "conversion", "services", "faq", "contact"],
+      optionalSections: [],
+      sectionOrder: [],
+      allowedVariants: {},
+      treatment: null,
+    };
+  }
   const packId = publicText(config.design?.experience?.packId, 50);
   const contract =
     config.design?.experience?.blueprintVersion === 2

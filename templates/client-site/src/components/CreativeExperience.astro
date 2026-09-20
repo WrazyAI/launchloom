@@ -1,0 +1,28 @@
+---
+import "../generated-experiences/selected/styles.css";
+import "../styles/creative-runtime.css";
+import CreativeCandidateHost from "./CreativeCandidateHost";
+import site from "../lib/site";
+
+const { experience } = Astro.props;
+const candidateId = site.design?.experience?.candidateId || "selected";
+const runtime = {
+  candidateId,
+  lead: {
+    apiUrl: site.lead?.apiUrl || "",
+    token: site.lead?.token || "",
+  },
+};
+---
+
+<div
+  data-creative-host="true"
+  data-creative-candidate={candidateId}
+  data-creative-family={site.design?.experience?.familyId || "unknown"}
+>
+  <CreativeCandidateHost
+    client:load
+    content={experience.content}
+    runtime={runtime}
+  />
+</div>

@@ -1,0 +1,79 @@
+.launchloom-lead-form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 34rem;
+}
+
+.launchloom-lead-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+}
+
+.launchloom-lead-form input,
+.launchloom-lead-form textarea {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid currentColor;
+  border-radius: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  color: inherit;
+  background: transparent;
+}
+
+.launchloom-lead-form textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.launchloom-lead-form button {
+  min-height: 2.75rem;
+  width: fit-content;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.launchloom-lead-form button:focus-visible,
+.launchloom-lead-form input:focus-visible,
+.launchloom-lead-form textarea:focus-visible,
+.launchloom-contact-links a:focus-visible,
+.launchloom-chat-launcher:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.launchloom-contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+
+.launchloom-chat-launcher {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 20;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.65rem 0.9rem;
+  color: inherit;
+  background: Canvas;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

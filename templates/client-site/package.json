@@ -8,9 +8,13 @@
     "check": "astro check"
   },
   "dependencies": {
-    "astro": "latest"
+    "@astrojs/react": "6.0.6",
+    "astro": "7.2.10",
+    "gsap": "3.15.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
-    "typescript": "latest"
+    "typescript": "7.0.2"
   }
 }

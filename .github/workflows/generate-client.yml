@@ -26,6 +26,8 @@ jobs:
       FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
       FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '4' }}
       MODEL_AUTHORED_EXPERIENCE_MODEL: ${{ vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
+      CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL || vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
+      CREATIVE_EXPERIENCE_MODE: ${{ vars.CREATIVE_EXPERIENCE_MODE || 'shadow' }}
       SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '2' }}
       SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.10' }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
@@ -259,13 +261,38 @@ jobs:
             git commit -m "Record authored experience candidates"
             git push origin review/initial
           fi
+      - name: Render creative candidates in the production shell
+        if: env.CREATIVE_EXPERIENCE_MODE != 'legacy'
+        continue-on-error: true
+        run: |
+          cd "${{ steps.branch.outputs.dir }}"
+          npm ci
+          PROMOTE=false
+          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then PROMOTE=true; fi
+          node "$GITHUB_WORKSPACE/scripts/run-creative-bakeoff.mjs" \
+            --site-dir "$PWD" \
+            --candidates /tmp/generated-experiences \
+            --report .launchloom/creative-bakeoff.json \
+            --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots" \
+            --promote "$PROMOTE"
+          git add .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Render creative experience candidates"
+            git push origin review/initial
+          fi
       - name: Build and direct-upload public preview
         id: deploy
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
-          node "$GITHUB_WORKSPACE/scripts/run-experience-bakeoff.mjs" --site-dir "$PWD" --report .launchloom/experience-bakeoff.json --screenshots "$RUNNER_TEMP/experience-bakeoff-screenshots"
-          git add src/site.config.json .launchloom/experience-bakeoff.json
+          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then
+            test -f .launchloom/creative-bakeoff.json || { echo "Creative promotion report missing"; exit 1; }
+            jq -e '.selectedCandidateId != null and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "Creative candidate did not pass promotion gates"; exit 1; }
+          else
+            node "$GITHUB_WORKSPACE/scripts/run-experience-bakeoff.mjs" --site-dir "$PWD" --report .launchloom/experience-bakeoff.json --screenshots "$RUNNER_TEMP/experience-bakeoff-screenshots"
+          fi
+          git add src/site.config.json
+          if [ "$CREATIVE_EXPERIENCE_MODE" != "promote" ]; then git add .launchloom/experience-bakeoff.json; fi
           if ! git diff --cached --quiet; then
             git commit -m "Select reviewed experience candidate"
             git push origin review/initial
@@ -274,6 +301,9 @@ jobs:
           PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
           node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode plan --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json"
+          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then
+            jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0)' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null || { echo "Creative candidate did not pass the multimodal visual gate"; exit 1; }
+          fi
           if jq -e '.changed == true' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null; then
             PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
             PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
@@ -325,6 +355,18 @@ jobs:
           path: |
             ${{ runner.temp }}/experience-bakeoff-screenshots
             ${{ steps.branch.outputs.dir }}/.launchloom/experience-bakeoff.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload creative bakeoff evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: creative-bakeoff-${{ steps.intake.outputs.issue }}
+          path: |
+            ${{ runner.temp }}/creative-bakeoff-screenshots
+            ${{ steps.branch.outputs.dir }}/.launchloom/creative-bakeoff.json
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14

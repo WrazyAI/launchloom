@@ -1,4 +1,9 @@
 import crypto from "node:crypto";
+import {
+  assertIndependentRoutes,
+  buildCandidateManifest,
+  buildRouteContract,
+} from "./creative-compiler.mjs";
 
 /**
  * @typedef {"contract" | "experience" | "styles" | "motion"} AuthorStage
@@ -159,7 +164,7 @@ function contentShape(site) {
 
 function assertInspirationPack(pack) {
   if (!pack || !Array.isArray(pack.routes) || pack.routes.length !== 3)
-    throw new Error("Phase 2 requires exactly three inspiration routes.");
+    throw new Error("Creative authorship requires exactly three inspiration routes.");
   for (const route of pack.routes) {
     for (const key of requiredRouteKeys)
       if (!String(route[key] || "").trim())
@@ -167,16 +172,7 @@ function assertInspirationPack(pack) {
           `Inspiration route ${route.id || "unknown"} is missing ${key}.`,
         );
   }
-  for (const key of [
-    "navigation",
-    "heroGeometry",
-    "servicePresentation",
-    "typographyCategory",
-    "signature",
-  ]) {
-    if (new Set(pack.routes.map((route) => route[key])).size !== 3)
-      throw new Error(`Inspiration routes are not independent in ${key}.`);
-  }
+  return assertIndependentRoutes(pack.routes);
 }
 
 function asText(value, label) {
@@ -292,6 +288,10 @@ function validateExperience(source, route, content) {
       throw new Error(
         `Candidate ${route.id} is missing required marker ${marker}.`,
       );
+  if (!/from\s+["']@launchloom\/runtime["']/u.test(source))
+    throw new Error(`Candidate ${route.id} must use the shared LaunchLoom runtime.`);
+  if (!/\bLeadForm\b/u.test(source))
+    throw new Error(`Candidate ${route.id} must render the shared LeadForm runtime surface.`);
   for (const token of [
     "content.hero.heading",
     "content.services",
@@ -346,6 +346,7 @@ function authorRules() {
     "Use only React, @launchloom/runtime, GSAP, GSAP ScrollTrigger, and the local motion module.",
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
     "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
+    "Import LeadForm from @launchloom/runtime and render it for the primary conversion surface; do not fake a form or create a second lead endpoint.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     "The complete header, hero, image, promise, and action must fit at 1536x864 and 1366x768 at 100 percent zoom.",
     "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
@@ -440,7 +441,6 @@ export async function authorExperienceCandidates({
   generate,
   model = "z-ai/glm-5.3-flash",
 }) {
-  assertInspirationPack(inspirationPack);
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
   const content = contentShape(site);
@@ -452,8 +452,11 @@ export async function authorExperienceCandidates({
   const contentManifest = { ...manifest, digest: digest(manifest) };
   const rules = authorRules();
 
+  const routes = assertInspirationPack(inspirationPack).map((route) =>
+    buildRouteContract(route),
+  );
   const candidates = await Promise.all(
-    inspirationPack.routes.map(async (route, index) => {
+    routes.map(async (route, index) => {
       const base = { route, contentTokens, contentShape: content, rules };
       const contractResult = await generateContract(generate, {
         ...base,
@@ -517,8 +520,15 @@ export async function authorExperienceCandidates({
       const styles = stylesOutput.source;
       const motion = motionOutput.source;
       complianceRepaired ||= stylesOutput.repaired || motionOutput.repaired;
+      const creativeManifest = buildCandidateManifest({
+        candidate: { candidateId: `candidate-${String.fromCharCode(97 + index)}` },
+        route,
+        model,
+        contentManifestDigest: contentManifest.digest,
+        assets: ["content.assets.hero", "content.assets.secondary", "content.assets.tertiary"],
+      });
       const metadata = {
-        version: 1,
+        version: 2,
         candidateId: `candidate-${String.fromCharCode(97 + index)}`,
         routeId: route.id,
         routeLabel: route.label,
@@ -531,6 +541,9 @@ export async function authorExperienceCandidates({
         typographyCategory: route.typographyCategory,
         imageStrategy: route.imageStrategy,
         motionOpportunity: route.motionOpportunity,
+        familyId: route.familyId,
+        mobileBehavior: route.mobileBehavior,
+        fingerprint: creativeManifest.fingerprint,
         complianceRepaired,
         contentManifestDigest: contentManifest.digest,
         allowedImports: [...allowedImports],
@@ -538,14 +551,16 @@ export async function authorExperienceCandidates({
           rootAttribute: "data-model-experience",
           rootValue: route.id,
         },
+        creativeManifest,
       };
       const contract = {
-        version: 1,
+        version: 2,
         route,
         designContract,
         designRationale,
         rules: rules.split("\n"),
         contentTokens,
+        creativeManifest,
       };
       return {
         id: metadata.candidateId,
