@@ -1,7 +1,12 @@
-.launchloom-lead-form {
+[data-creative-host="true"] .launchloom-lead-form {
   display: grid;
   gap: 0.75rem;
   max-width: 34rem;
+  /* Creative candidates own their surface palette.  The shared SiteLayout
+     still exposes the legacy page variables on body, so explicitly inherit
+     the candidate ink here instead of allowing dark legacy --ink values to
+     make helper text unreadable on a candidate's dark form. */
+  color: var(--ll-creative-ink, currentColor);
 }
 
 .launchloom-lead-form label {
@@ -37,6 +42,12 @@
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+
+[data-creative-host="true"] .launchloom-lead-form small {
+  color: var(--ll-creative-muted, currentColor);
+  font-size: 0.75rem;
+  line-height: 1.45;
 }
 
 .launchloom-lead-form button:focus-visible,

@@ -120,6 +120,21 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("keeps shared creative form helper text on the candidate contrast palette", () => {
+    const styles = readFileSync(
+      "templates/client-site/src/styles/creative-runtime.css",
+      "utf8",
+    );
+
+    expect(styles).toContain(
+      "[data-creative-host=\"true\"] .launchloom-lead-form {",
+    );
+    expect(styles).toContain("color: var(--ll-creative-ink, currentColor);");
+    expect(styles).toContain(
+      "[data-creative-host=\"true\"] .launchloom-lead-form small {\n  color: var(--ll-creative-muted, currentColor);",
+    );
+  });
+
   it("namespaces candidate-owned CSS variables without hiding host tokens", () => {
     const css = namespaceCreativeCss(
       ":root { --ink: #f5f1e9; --accent: var(--ink); } .hero { color: var(--ink); background: var(--brand); }",
