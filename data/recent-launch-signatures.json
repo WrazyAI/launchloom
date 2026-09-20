@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-18T23:45:45.958Z",
+  "updatedAt": "2026-09-20T04:02:48.577Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -32,6 +32,22 @@
         "distributed-uppercase-navigation|oversized-wordmark-with-magnetic-portrait|giant-number-service-list|compressed-industrial-sans|marquee-to-sticky-project-stack|object-led-3d-collage",
         "museum-caption-navigation|isolated-object-on-exhibition-stage|collection-atlas|museum-serif-with-micro-labels|artifact-caption-gallery|single-object-deep-focus",
         "orbital-glass-navigation|video-field-with-floating-instruments|liquid-glass-capability-cells|italic-editorial-display|continuous-atmospheric-field|abstract-video-atmosphere"
+      ]
+    },
+    {
+      "id": "2026-09-20-cinder-coast-coffee-lab-qa",
+      "launchedAt": "2026-09-20T04:02:48.577Z",
+      "stage": "preview",
+      "businessName": "Cinder & Coast Coffee Lab QA",
+      "recipe": "general-editorial",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "referenceIds": [],
+      "routeSignatures": [
+        "fixed-bottom-conversation-pill|narrow-authored-column|project-marquee-and-pricing-pair|neo-grotesk-with-pixel-serif|essay-marquee-testimonial|wide-moving-project-strip",
+        "market-day-navigation|loose-product-collage|seasonal-shelf-menu|friendly-display-serif|collage-menu-visit|overlapping-product-stills",
+        "whispered-corner-navigation|typographic-monument-with-central-portrait|magazine-ledger|monumental-serif-with-script-accent|slow-cinematic-chapters|warm-architectural-tableaux"
       ]
     }
   ]
