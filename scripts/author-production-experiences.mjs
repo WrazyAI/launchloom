@@ -24,8 +24,10 @@ const outputPath = path.resolve(
 const model =
   args.model ||
   process.env.CREATIVE_EXPERIENCE_MODEL ||
-  process.env.MODEL_AUTHORED_EXPERIENCE_MODEL ||
-  "z-ai/glm-5.3-flash";
+  "openai/gpt-5.6-luna";
+const reasoningEffort =
+  process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
+  (model === "openai/gpt-5.6-luna" ? "max" : "low");
 const failureMode = args["failure-mode"] || "throw";
 const usage = [];
 const authorDeadline = Date.now() + 7 * 60_000;
@@ -186,69 +188,98 @@ async function requestStage(request) {
         // when a local screenshot is not available in the generation runner.
       }
     }
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "X-OpenRouter-Title": "LaunchLoom Production Experience Author",
-        },
-        body: JSON.stringify({
-          model,
-          temperature: request.stage === "contract" ? 0.76 : 0.62,
-          reasoning: {
-            effort: request.stage === "contract" ? "medium" : "low",
-            exclude: true,
-          },
-          response_format: {
-            type: "json_schema",
-            json_schema: schemas[request.stage],
-          },
-          max_tokens:
-            request.stage === "experience" || request.stage === "styles"
-              ? request.stage === "experience"
-                ? 9000
-                : 8000
-              : request.stage === "contract"
-                ? 4000
-                : 3500,
-          messages: [
-            {
-              role: "system",
-              content:
-                "Return valid JSON only. Create an ambitious, production-grade frontend while obeying the sealed content and safety contract exactly.",
+    const fallbackEfforts = {
+      max: ["max", "medium", "low"],
+      xhigh: ["xhigh", "high", "medium", "low"],
+      high: ["high", "medium", "low"],
+      medium: ["medium", "low"],
+      low: ["low"],
+      none: ["none"],
+    };
+    const efforts = fallbackEfforts[reasoningEffort] || [reasoningEffort];
+    // Validation repairs should prioritize a complete structured response over
+    // maximum hidden reasoning. A failed max-effort repair must not consume the
+    // whole seven-minute authoring budget before trying the proven lower lane.
+    const requestedEfforts = request.validationError
+      ? efforts.slice(1).length
+        ? efforts.slice(1)
+        : efforts
+      : efforts;
+    let lastError;
+    for (const effort of requestedEfforts) {
+      try {
+        const response = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            signal: controller.signal,
+            headers: {
+              Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+              "X-OpenRouter-Title": "LaunchLoom Production Experience Author",
             },
-            { role: "user", content: userContent },
-          ],
-        }),
-      },
-    );
-    const payload = await response.json().catch(() => ({}));
-    if (sharedAbortController.signal.aborted)
-      throw new Error("Phase 2 authorship cancelled after a sibling failure.");
-    if (!response.ok)
-      throw new Error(
-        `OpenRouter ${response.status}: ${JSON.stringify(payload).slice(0, 1000)}`,
-      );
-    const content = payload.choices?.[0]?.message?.content;
-    if (!content)
-      throw new Error(
-        `No ${request.stage} content returned for ${request.route.id} (${payload.choices?.[0]?.finish_reason || "unknown"}).`,
-      );
-    usage.push({
-      routeId: request.route.id,
-      stage: request.stage,
-      provider: payload.provider || null,
-      usage: payload.usage || null,
-      durationMs: Date.now() - startedAt,
-    });
-    console.log(
-      `production_experience_stage=completed route=${request.route.id} stage=${request.stage} duration_ms=${Date.now() - startedAt}`,
-    );
-    return parseModelJson(content);
+            body: JSON.stringify({
+              model,
+              temperature: request.stage === "contract" ? 0.76 : 0.62,
+              reasoning: { effort, exclude: true },
+              response_format: {
+                type: "json_schema",
+                json_schema: schemas[request.stage],
+              },
+              max_tokens:
+                request.stage === "experience" || request.stage === "styles"
+                  ? request.stage === "experience"
+                    ? 9000
+                    : 8000
+                  : request.stage === "contract"
+                    ? 4000
+                    : 3500,
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "Return valid JSON only. Create an ambitious, production-grade frontend while obeying the sealed content and safety contract exactly.",
+                },
+                { role: "user", content: userContent },
+              ],
+            }),
+          },
+        );
+        const payload = await response.json().catch(() => ({}));
+        if (sharedAbortController.signal.aborted)
+          throw new Error("Phase 2 authorship cancelled after a sibling failure.");
+        if (!response.ok)
+          throw new Error(
+            `OpenRouter ${response.status}: ${JSON.stringify(payload).slice(0, 1000)}`,
+          );
+        const content = payload.choices?.[0]?.message?.content;
+        if (!content)
+          throw new Error(
+            `No ${request.stage} content returned for ${request.route.id} (${payload.choices?.[0]?.finish_reason || "unknown"}).`,
+          );
+        const parsed = parseModelJson(content);
+        usage.push({
+          routeId: request.route.id,
+          stage: request.stage,
+          provider: payload.provider || null,
+          reasoningEffort: effort,
+          usage: payload.usage || null,
+          durationMs: Date.now() - startedAt,
+        });
+        console.log(
+          `production_experience_stage=completed route=${request.route.id} stage=${request.stage} effort=${effort} duration_ms=${Date.now() - startedAt}`,
+        );
+        return parsed;
+      } catch (error) {
+        lastError = error;
+        if (controller.signal.aborted || effort === requestedEfforts.at(-1))
+          throw error;
+        console.warn(
+          `production_experience_stage=retry route=${request.route.id} stage=${request.stage} next_effort=${requestedEfforts[requestedEfforts.indexOf(effort) + 1]}`,
+        );
+      }
+    }
+    throw lastError || new Error(`No ${request.stage} response returned.`);
   } finally {
     clearTimeout(timeout);
     sharedAbortController.signal.removeEventListener("abort", abortStage);

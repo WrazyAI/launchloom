@@ -26,7 +26,10 @@ jobs:
       FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
       FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '4' }}
       MODEL_AUTHORED_EXPERIENCE_MODEL: ${{ vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
-      CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL || vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
+      # Keep truth/configuration generation separate from visual authorship.
+      # The creative lane owns the rendered composition and defaults to Luna.
+      CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-5.6-luna' }}
+      CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'max' }}
       # Authored preview is the default. A stale `shadow` repository variable
       # must not put the legacy renderer back in front of model-authored work.
       CREATIVE_EXPERIENCE_MODE: ${{ (vars.CREATIVE_EXPERIENCE_MODE == 'legacy' && 'legacy') || (vars.CREATIVE_EXPERIENCE_MODE == 'promote' && 'promote') || 'preview' }}

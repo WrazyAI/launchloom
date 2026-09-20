@@ -594,7 +594,7 @@ export async function authorExperienceCandidates({
   site,
   inspirationPack,
   generate,
-  model = "z-ai/glm-5.3-flash",
+  model = "openai/gpt-5.6-luna",
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");

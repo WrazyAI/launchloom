@@ -49,9 +49,14 @@ The workflow variable `CREATIVE_EXPERIENCE_MODE` has three supported values:
 than `legacy` and `promote` are normalized to `preview`; the legacy renderer
 cannot be selected accidentally by a stale repository variable.
 
-The model is independently configurable with `CREATIVE_EXPERIENCE_MODEL`.
-Keep the reliable copy/configuration model for the truth layer. Benchmark a
-stronger visual model behind the creative flag before changing the default.
+The model is independently configurable with `CREATIVE_EXPERIENCE_MODEL` and
+`CREATIVE_EXPERIENCE_REASONING_EFFORT`. The truth/configuration lane remains on
+GLM-5.3-Flash, while the rendered creative lane defaults to
+`openai/gpt-5.6-luna` with maximum reasoning. A repository variable can select a
+different visual author without changing SEO or business-fact generation. When
+Luna exhausts the structured-output budget at maximum effort, the author retries
+that stage at medium and then low effort; this is a format-recovery path, not a
+legacy-renderer fallback.
 
 ## Shared runtime contract
 
