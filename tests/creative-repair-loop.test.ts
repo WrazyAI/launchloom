@@ -96,6 +96,22 @@ describe("creative repair loop", () => {
     });
     expect(result.pass).toBe(true);
     expect(result.cyclesUsed).toBe(1);
+    expect(result.authorAttempts).toBe(0);
+    expect(result.generationFailures).toBe(1);
     expect(result.cycles[0].generationError).toContain("malformed JSON");
+  });
+
+  it("keeps malformed responses bounded without spending successful author attempts", async () => {
+    const result = await runCreativeRepairLoop({
+      files: { experience: "old", styles: "old", motion: "old" },
+      referenceDna: { familyId: "test" },
+      generate: async () => [],
+      evaluate: async () => ({ pass: false, findings: ["still blocked"] }),
+      maxCycles: 2,
+    });
+    expect(result.pass).toBe(false);
+    expect(result.cyclesUsed).toBe(2);
+    expect(result.authorAttempts).toBe(0);
+    expect(result.generationFailures).toBe(2);
   });
 });

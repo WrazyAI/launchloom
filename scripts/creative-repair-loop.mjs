@@ -43,6 +43,15 @@ function appendRepair(styles, marker, css) {
   return `${styles.trim()}\n\n${marker}\n${css.trim()}\n`;
 }
 
+function isCompleteRepair(value) {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      ["experience", "styles", "motion"].every((key) => typeof value[key] === "string"),
+  );
+}
+
 /**
  * Apply only deterministic, scoped safety repairs for findings that are
  * directly evidenced by the screenshot gate. These are not a renderer or
@@ -193,7 +202,12 @@ export async function runCreativeRepairLoop({
   const cycles = [];
   let result = await evaluate(current);
   let forcedRepair = findings.length > 0;
-  for (let cycle = 1; (!result.pass || forcedRepair) && cycle <= maxCycles; cycle += 1) {
+  let authorAttempts = 0;
+  let generationFailures = 0;
+  let repairCycles = 0;
+  while ((!result.pass || forcedRepair) && authorAttempts < maxCycles && repairCycles < maxCycles) {
+    repairCycles += 1;
+    const cycle = repairCycles;
     const cycleFindings = mergeFindings(findings, result.findings);
     let repaired;
     try {
@@ -206,10 +220,12 @@ export async function runCreativeRepairLoop({
         screenshots,
         files: current,
       });
+      if (!isCompleteRepair(repaired)) throw new Error(`Creative repair cycle ${cycle} returned incomplete files.`);
     } catch (error) {
       // A malformed or unavailable author response must not publish stale
       // output. Preserve the repair budget and give only the evidence-driven
       // safety transforms a chance to recover before failing closed.
+      generationFailures += 1;
       current = applyCreativeVisualSafetyRepairs(current, cycleFindings);
       result = await evaluate(current);
       forcedRepair = false;
@@ -221,7 +237,7 @@ export async function runCreativeRepairLoop({
       });
       continue;
     }
-    if (!repaired || typeof repaired !== "object") throw new Error(`Creative repair cycle ${cycle} returned no files.`);
+    authorAttempts += 1;
     current = {
       experience: clean(repaired.experience || current.experience, Number.MAX_SAFE_INTEGER),
       styles: clean(repaired.styles || current.styles, Number.MAX_SAFE_INTEGER),
@@ -235,7 +251,9 @@ export async function runCreativeRepairLoop({
   return {
     pass: Boolean(result.pass),
     cycles,
-    cyclesUsed: cycles.length,
+    cyclesUsed: repairCycles,
+    authorAttempts,
+    generationFailures,
     maxCycles,
     files: current,
     findings: result.findings || [],
