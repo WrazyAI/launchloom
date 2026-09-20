@@ -219,6 +219,62 @@ function syntaxErrorFor(source, route, fileName, jsx) {
   throw new Error(`Candidate ${route.id} ${fileName} has invalid syntax: ${message}`);
 }
 
+function bindingPatternContains(pattern, name) {
+  if (ts.isIdentifier(pattern)) return pattern.text === name;
+  if (ts.isBindingElement(pattern))
+    return bindingPatternContains(pattern.name, name);
+  if (ts.isObjectBindingPattern(pattern) || ts.isArrayBindingPattern(pattern))
+    return pattern.elements.some((element) => bindingPatternContains(element, name));
+  return false;
+}
+
+function functionHasParameter(node, name) {
+  return node.parameters.some((parameter) =>
+    bindingPatternContains(parameter.name, name),
+  );
+}
+
+function functionUsesUnboundContent(node) {
+  let found = false;
+  const visit = (child) => {
+    if (found) return;
+    if (child !== node && ts.isFunctionLike(child)) return;
+    if (ts.isIdentifier(child) && child.text === "content") {
+      const parent = child.parent;
+      if (
+        (ts.isPropertyAccessExpression(parent) && parent.name === child) ||
+        (ts.isPropertyAssignment(parent) && parent.name === child)
+      )
+        return;
+      found = true;
+      return;
+    }
+    ts.forEachChild(child, visit);
+  };
+  if (node.body) visit(node.body);
+  return found;
+}
+
+function scopeErrorFor(source, route) {
+  const file = ts.createSourceFile(
+    "Experience.jsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JSX,
+  );
+  for (const statement of file.statements) {
+    if (
+      ts.isFunctionDeclaration(statement) &&
+      statement.name &&
+      statement.name.text !== "Experience" &&
+      !functionHasParameter(statement, "content") &&
+      functionUsesUnboundContent(statement)
+    )
+      return `Candidate ${route.id} component ${statement.name.text} references content without receiving it.`;
+  }
+}
+
 function replaceEmptyImageAlt(source) {
   return source.replace(/\balt\s*=\s*(["'])\s*\1/gu, 'alt="Decorative image"');
 }
@@ -327,6 +383,8 @@ function referencesContentPath(source, token) {
 
 function validateExperience(source, route, content) {
   syntaxErrorFor(source, route, "Experience.jsx", true);
+  const scopeError = scopeErrorFor(source, route);
+  if (scopeError) throw new Error(scopeError);
   for (const specifier of importSpecifiers(source))
     if (!allowedImports.has(specifier))
       throw new Error(
@@ -355,7 +413,7 @@ function validateExperience(source, route, content) {
       throw new Error(
         `Candidate ${route.id} is missing required marker ${marker}.`,
       );
-  if (!/from\s+["']@launchloom\/runtime["']/u.test(source))
+  if (!/import\s+\{[^}]*\bLeadForm\b[^}]*\}\s+from\s+["']@launchloom\/runtime["']/u.test(source))
     throw new Error(`Candidate ${route.id} must use the shared LaunchLoom runtime.`);
   if (!/\bLeadForm\b/u.test(source))
     throw new Error(`Candidate ${route.id} must render the shared LeadForm runtime surface.`);

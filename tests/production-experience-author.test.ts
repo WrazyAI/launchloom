@@ -510,6 +510,34 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("repairs helpers with unbound sealed content and wrong runtime imports", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage !== "experience" || request.validationError)
+          return value;
+        return {
+          content: String(value.content)
+            .replace(
+              'import { LeadForm } from "@launchloom/runtime";',
+              'import LeadForm from "@launchloom/runtime";',
+            )
+            .replace(
+              "export default function Experience",
+              "function Header() { return <span>{content.brand.name}</span>; }\nexport default function Experience",
+            ),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(
+      result.candidates.every((item) => item.metadata.complianceRepaired),
+    ).toBe(true);
+  });
+
   it("rejects authored bundles that bypass sealed business content", async () => {
     await expect(
       authorExperienceCandidates({
