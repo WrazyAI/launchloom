@@ -39,6 +39,7 @@ node_modules/
 dist/
 .astro/
 artifacts/
+.testsprite/runs/
 
 # credentials and machine-specific files
 .env

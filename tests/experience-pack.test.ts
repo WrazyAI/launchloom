@@ -96,7 +96,11 @@ describe("experience-pack compiler", () => {
     expect(bakeoff).toContain('hero exceeds desktop viewport');
     expect(bakeoff).toContain('experience_bakeoff_candidate=');
     const workflow = readFileSync(".github/workflows/generate-client.yml", "utf8");
-    expect(workflow).toContain(".launchloom/experience-bakeoff.json");
+    expect(workflow).toContain(".launchloom/creative-bakeoff.json");
+    expect(workflow).toContain("vars.CREATIVE_EXPERIENCE_MODE == 'promote'");
+    expect(workflow).not.toContain("vars.CREATIVE_EXPERIENCE_MODE == 'legacy'");
+    expect(workflow).not.toContain("run-experience-bakeoff.mjs");
+    expect(workflow).not.toContain("if: env.CREATIVE_EXPERIENCE_MODE != 'legacy'");
     const creativeRender = workflow.slice(
       workflow.indexOf("name: Render creative candidates in the production shell"),
       workflow.indexOf("name: Build and direct-upload public preview"),

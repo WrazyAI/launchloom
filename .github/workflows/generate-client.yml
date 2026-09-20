@@ -30,9 +30,10 @@ jobs:
       # The creative lane owns the rendered composition and defaults to Luna.
       CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-5.6-luna' }}
       CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'max' }}
-      # Authored preview is the default. A stale `shadow` repository variable
-      # must not put the legacy renderer back in front of model-authored work.
-      CREATIVE_EXPERIENCE_MODE: ${{ (vars.CREATIVE_EXPERIENCE_MODE == 'legacy' && 'legacy') || (vars.CREATIVE_EXPERIENCE_MODE == 'promote' && 'promote') || 'preview' }}
+      # Authored rendering is mandatory for every new intake. The only mode
+      # distinction is whether the passing candidate is previewed or promoted;
+      # no repository variable can route a new site back to the legacy DOM.
+      CREATIVE_EXPERIENCE_MODE: ${{ vars.CREATIVE_EXPERIENCE_MODE == 'promote' && 'promote' || 'preview' }}
       SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '2' }}
       SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.10' }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
@@ -267,14 +268,16 @@ jobs:
             git push origin review/initial
           fi
       - name: Render creative candidates in the production shell
-        if: env.CREATIVE_EXPERIENCE_MODE != 'legacy'
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
           PROMOTE=false
           PREVIEW=false
-          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then PROMOTE=true; fi
-          if [ "$CREATIVE_EXPERIENCE_MODE" = "preview" ]; then PREVIEW=true; fi
+          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then
+            PROMOTE=true
+          else
+            PREVIEW=true
+          fi
           node "$GITHUB_WORKSPACE/scripts/run-creative-bakeoff.mjs" \
             --site-dir "$PWD" \
             --candidates /tmp/generated-experiences \
@@ -292,16 +295,11 @@ jobs:
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
-          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ] || [ "$CREATIVE_EXPERIENCE_MODE" = "preview" ]; then
-            test -f .launchloom/creative-bakeoff.json || { echo "Creative promotion report missing"; exit 1; }
-            jq -e '(.design.experience.renderer == "creative-candidate") and (.design.experience.candidateId != null) and (.design.experience.selectionMode == "creative-preview" or .design.experience.selectionMode == "creative-bakeoff")' src/site.config.json >/dev/null || { echo "Authored creative renderer was not selected"; exit 1; }
-            CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
-            jq -e --arg candidate "$CANDIDATE_ID" '.selectedCandidateId == $candidate and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "No authored creative candidate passed the preview gates"; exit 1; }
-          else
-            node "$GITHUB_WORKSPACE/scripts/run-experience-bakeoff.mjs" --site-dir "$PWD" --report .launchloom/experience-bakeoff.json --screenshots "$RUNNER_TEMP/experience-bakeoff-screenshots"
-          fi
+          test -f .launchloom/creative-bakeoff.json || { echo "Creative promotion report missing"; exit 1; }
+          jq -e '(.design.experience.renderer == "creative-candidate") and (.design.experience.candidateId != null) and (.design.experience.selectionMode == "creative-preview" or .design.experience.selectionMode == "creative-bakeoff")' src/site.config.json >/dev/null || { echo "Authored creative renderer was not selected"; exit 1; }
+          CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
+          jq -e --arg candidate "$CANDIDATE_ID" '.selectedCandidateId == $candidate and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "No authored creative candidate passed the preview gates"; exit 1; }
           git add src/site.config.json
-          if [ "$CREATIVE_EXPERIENCE_MODE" = "legacy" ]; then git add .launchloom/experience-bakeoff.json; fi
           if ! git diff --cached --quiet; then
             git commit -m "Select reviewed experience candidate"
             git push origin review/initial
@@ -310,9 +308,7 @@ jobs:
           PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
           node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode plan --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json"
-          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ] || [ "$CREATIVE_EXPERIENCE_MODE" = "preview" ]; then
-            jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0)' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null || { echo "Creative candidate did not pass the multimodal visual gate"; exit 1; }
-          fi
+          jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0)' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null || { echo "Creative candidate did not pass the multimodal visual gate"; exit 1; }
           if jq -e '.changed == true' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null; then
             PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
             PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"

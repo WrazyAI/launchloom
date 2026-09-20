@@ -1,0 +1,26 @@
+[
+  {
+    "type": "action",
+    "description": "Navigate to the generated business homepage"
+  },
+  {
+    "type": "action",
+    "description": "Click the FAQs navigation link"
+  },
+  {
+    "type": "action",
+    "description": "Open one question in the FAQ section"
+  },
+  {
+    "type": "action",
+    "description": "Click the floating Got questions assistant launcher"
+  },
+  {
+    "type": "assertion",
+    "description": "Verify an answer is expanded within the FAQ section"
+  },
+  {
+    "type": "assertion",
+    "description": "Verify the questions assistant panel shows an input for asking a question"
+  }
+]

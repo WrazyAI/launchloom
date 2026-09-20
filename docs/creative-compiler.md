@@ -33,21 +33,22 @@ lead endpoint, or ship an unverified layout.
 
 ## Safe rollout
 
-The workflow variable `CREATIVE_EXPERIENCE_MODE` has three supported values:
+Every new intake uses the authored pipeline. The workflow variable
+`CREATIVE_EXPERIENCE_MODE` has only two supported outcomes:
 
-- `legacy`: skip creative rendering and use the reviewed experience pack.
 - `preview` (default): author and render candidates, select the best authored
   candidate that passes the build, responsive, accessibility, and visual
   minimums, and deploy that candidate to the review preview. Diversity is
   still recorded and required for production promotion. If no authored
-  candidate passes, the intake fails instead of silently showing the legacy
+  candidate passes, the intake fails instead of silently showing a shared
   renderer.
 - `promote`: require a passing creative bakeoff report before deployment and
   copy the selected candidate into `src/generated-experiences/selected`.
 
-`shadow` is retained only as a historical report label. Workflow values other
-than `legacy` and `promote` are normalized to `preview`; the legacy renderer
-cannot be selected accidentally by a stale repository variable.
+The workflow normalizes every other repository-variable value to `preview`.
+There is no new-intake escape hatch for the legacy renderer. The deterministic
+experience-pack renderer and its bakeoff remain only as migration support for
+already-created client repositories and historical tests.
 
 The model is independently configurable with `CREATIVE_EXPERIENCE_MODEL` and
 `CREATIVE_EXPERIENCE_REASONING_EFFORT`. The truth/configuration lane remains on
