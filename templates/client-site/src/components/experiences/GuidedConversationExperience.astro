@@ -47,7 +47,7 @@ const { brand, hero, services, proof, faqs, copy } = content;
     {faqs.length > 0 && <section class="xp-guide__faqs" id="faqs"><header><p class="xp-guide__eyebrow">Questions</p><h2>{copy.faqHeading || "Useful details before you reach out."}</h2></header><div>{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
 
     {content.showLocationMap && <LocationMap />}
-    <section class="xp-guide__contact" id="contact"><div><p class="xp-guide__eyebrow">Contact</p><h2>Continue the conversation.</h2></div><div>{brand.phone && <a href={phoneHref(brand.phone)}>{brand.phone}</a>}<a href={`mailto:${brand.email}`}>{brand.email}</a><p>{brand.address}</p></div></section>
+    <section class="xp-guide__contact" id="contact"><div><p class="xp-guide__eyebrow">Contact</p><h2>{copy.contactHeading || hero.primaryLabel || "Continue the conversation."}</h2></div><div>{brand.phone && <a href={phoneHref(brand.phone)}>{brand.phone}</a>}<a href={`mailto:${brand.email}`}>{brand.email}</a><p>{brand.address}</p></div></section>
   </main>
   <footer class="xp-guide__footer"><span>{brand.name}</span><span>© {new Date().getFullYear()}</span></footer>
 </div>

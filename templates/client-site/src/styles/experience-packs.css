@@ -461,6 +461,7 @@
   right: 1rem;
   bottom: 1rem;
   left: 1rem;
+  z-index: 2;
   padding: 1rem 1.2rem;
   border-radius: 0.8rem;
   background: var(--guide-surface);
@@ -1184,10 +1185,11 @@
     padding: 0.72rem 0.9rem;
   }
   .xp-guide__brand span {
-    max-width: 9rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    min-width: 0;
+    max-width: none;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    line-height: 1.1;
   }
   .xp-guide__hero {
     padding-top: 4rem;

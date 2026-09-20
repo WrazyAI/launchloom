@@ -139,6 +139,25 @@ describe("experience-pack compiler", () => {
     expect(new Set(packs.map((pack) => pack.services))).toHaveLength(3);
   });
 
+  it("keeps guided portrait offer and closing copy above the hero overlay", () => {
+    const component = readFileSync(
+      "templates/client-site/src/components/experiences/GuidedConversationExperience.astro",
+      "utf8",
+    );
+    const styles = readFileSync(
+      "templates/client-site/src/styles/experience-packs.css",
+      "utf8",
+    );
+
+    expect(component).toContain(
+      "{copy.contactHeading || hero.primaryLabel || \"Continue the conversation.\"}",
+    );
+    expect(styles).toContain(".xp-guide__hero figcaption");
+    expect(styles).toContain("z-index: 2;");
+    expect(styles).toContain("overflow-wrap: anywhere;");
+    expect(styles).not.toContain("text-overflow: ellipsis;");
+  });
+
   it("returns isolated nested blueprint data and fingerprints motion", () => {
     const listed = listExperiencePacks();
     const originalProfile = listed[0].motion.profile;
