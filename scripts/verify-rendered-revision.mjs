@@ -20,6 +20,8 @@ if (!args.config || !args.dist)
 const config = JSON.parse(await fs.readFile(path.resolve(args.config), "utf8"));
 const reviewMode = process.env.PUBLIC_REVIEW_MODE === "true";
 const dist = path.resolve(args.dist);
+const creativeExperience =
+  config.design?.experience?.renderer === "creative-candidate";
 const screenshotDir = path.resolve(
   args.screenshots || path.join(dist, "revision-screenshots"),
 );
@@ -103,11 +105,16 @@ try {
       deviceScaleFactor: 1,
     });
     await page.goto(url, { waitUntil: "networkidle" });
+    // Astro's inline module islands can finish attaching interaction handlers
+    // just after network idle. Give the shared conversion controls one frame
+    // to initialize before exercising them.
+    await page.waitForTimeout(500);
     if (viewport.name === "desktop") {
       const exitOffer = page.locator('[data-conversion-feature="exit-offer"]');
       if (await exitOffer.count()) {
         await page.evaluate(() => {
-          window.scrollTo(0, 700);
+          document.documentElement.style.scrollBehavior = "auto";
+          window.scrollTo({ top: 700, left: 0, behavior: "auto" });
         });
         await page.waitForTimeout(100);
         await page.evaluate(() => {
@@ -120,10 +127,21 @@ try {
           );
         });
         await page.waitForTimeout(100);
+        // Candidate-authored motion can delay the scroll/exit event loop. Wait
+        // for the actual dialog state instead of assuming a fixed 100ms frame.
+        await page
+          .waitForFunction(
+            () =>
+              document.querySelector('[data-conversion-feature="exit-offer"]')
+                ?.open === true,
+            null,
+            { timeout: 1500 },
+          )
+          .catch(() => {});
         const exitOpened = await exitOffer.evaluate((element) => element.open);
-        if (!exitOpened)
+        if (!exitOpened) {
           failures.push("desktop: eligible exit offer did not open.");
-        else {
+        } else {
           await page.screenshot({
             path: path.join(screenshotDir, "desktop-exit-offer.png"),
           });
@@ -335,6 +353,10 @@ try {
           document
             .querySelector("[data-experience-pack]")
             ?.getAttribute("data-experience-variant") || "",
+        creativeCandidateId:
+          document
+            .querySelector("[data-creative-candidate]")
+            ?.getAttribute("data-creative-candidate") || "",
         bodyText: document.body.textContent?.replace(/\s+/g, " ").trim() || "",
         overflow:
           Math.max(
@@ -358,7 +380,20 @@ try {
       failures.push(
         `${viewport.name}: horizontal overflow of ${state.overflow}px.`,
       );
-    if (config.design?.experience?.blueprintVersion === 2) {
+    if (creativeExperience) {
+      const expectedCandidate = String(
+        config.design?.experience?.candidateId || "",
+      );
+      if (!state.creativeCandidateId)
+        failures.push(`${viewport.name}: authored creative candidate is not mounted.`);
+      else if (
+        expectedCandidate &&
+        state.creativeCandidateId !== expectedCandidate
+      )
+        failures.push(
+          `${viewport.name}: rendered creative candidate ${state.creativeCandidateId} does not match ${expectedCandidate}.`,
+        );
+    } else if (config.design?.experience?.blueprintVersion === 2) {
       const expectedPack = String(config.design.experience.packId || "");
       const expectedVariant = String(config.design.experience.variantId || "");
       if (expectedPack && state.experiencePack !== expectedPack)
