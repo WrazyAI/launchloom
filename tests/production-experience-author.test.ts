@@ -538,6 +538,34 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("uses one final bounded experience repair after a failed repair", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage !== "experience") return value;
+        if (!request.validationError)
+          return {
+            content: String(value.content).replace(
+              "<LeadForm content={content} runtime={runtime} />",
+              "<LeadForm runtime={runtime} />",
+            ),
+          };
+        if (request.validationError.includes("first repair still failed"))
+          return value;
+        return {
+          content: String(value.content).replace(
+            "<LeadForm content={content} runtime={runtime} />",
+            "<LeadForm runtime={runtime} />",
+          ),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+  });
+
   it("rejects authored bundles that bypass sealed business content", async () => {
     await expect(
       authorExperienceCandidates({

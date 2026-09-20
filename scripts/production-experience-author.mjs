@@ -652,9 +652,33 @@ export async function authorExperienceCandidates({
         } catch (repairError) {
           const repairMessage =
             repairError instanceof Error ? repairError.message : String(repairError);
-          if (!/empty image alt attribute/iu.test(repairMessage)) throw repairError;
-          experience = replaceEmptyImageAlt(experience);
-          validateExperience(experience, route, content);
+          if (/empty image alt attribute/iu.test(repairMessage)) {
+            experience = replaceEmptyImageAlt(experience);
+            validateExperience(experience, route, content);
+          } else {
+            const finalRepair = await generateStageValue(
+              generate,
+              {
+                ...base,
+                stage: "experience",
+                designContract,
+                previousSource: experience,
+                validationError: `The first repair still failed validation: ${repairMessage}. This is the final repair attempt. Return complete JSX with every listed contract requirement fixed.`,
+              },
+              "content",
+              "experience",
+            );
+            experience = normalizeAuthoredSource(finalRepair.value);
+            try {
+              validateExperience(experience, route, content);
+            } catch (finalError) {
+              const finalMessage =
+                finalError instanceof Error ? finalError.message : String(finalError);
+              if (!/empty image alt attribute/iu.test(finalMessage)) throw finalError;
+              experience = replaceEmptyImageAlt(experience);
+              validateExperience(experience, route, content);
+            }
+          }
         }
       }
       const [stylesOutput, motionOutput] = await Promise.all([
