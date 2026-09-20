@@ -40,10 +40,20 @@ describe("creative repair loop", () => {
           category: "conversion",
           evidence: "Floating CTA pill overlaps footer content on mobile.",
         },
+        {
+          category: "content-integrity",
+          evidence: "Hero heading is white-on-white on a light panel.",
+        },
+        {
+          category: "conversion",
+          evidence: "On mobile the navigation is hidden and no menu is visible.",
+        },
       ],
     );
     expect(result.styles).toContain("launchloom-visual-repair: footer-contrast");
     expect(result.styles).toContain("launchloom-visual-repair: mobile-cta-clearance");
+    expect(result.styles).toContain("launchloom-visual-repair: hero-host-collision");
+    expect(result.styles).toContain("launchloom-visual-repair: mobile-navigation-visibility");
     expect(result.styles).toContain('main + [data-cta-placement]');
     expect(result.styles).not.toContain("data-experience-pack");
   });

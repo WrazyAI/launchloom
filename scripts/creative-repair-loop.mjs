@@ -68,6 +68,25 @@ export function applyCreativeVisualSafetyRepairs(files, findings = []) {
 `,
     );
   }
+  if (hasFinding(findings, /hero[\s\S]*(?:white-on-white|unreadable|invisible|contrast|light panel)|(?:white-on-white|unreadable|invisible|contrast|light panel)[\s\S]*hero/iu)) {
+    styles = appendRepair(
+      styles,
+      "/* launchloom-visual-repair: hero-host-collision */",
+      `
+/* The production shell has a legacy .hero surface rule. Keep it from
+   repainting an authored candidate's hero while preserving its composition. */
+[data-hero] {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+[data-hero] h1,
+[data-hero] .hero-offer {
+  color: inherit !important;
+}
+`,
+    );
+  }
   if (hasFinding(findings, /(?:sticky|floating|pill|cta)[\s\S]*(?:overlap|collision|cover)|(?:overlap|collision|cover)[\s\S]*(?:sticky|floating|pill|cta)/iu)) {
     styles = appendRepair(
       styles,
@@ -81,6 +100,37 @@ export function applyCreativeVisualSafetyRepairs(files, findings = []) {
   main + [data-cta-placement] {
     position: static !important;
     margin-bottom: 1.5rem !important;
+  }
+}
+`,
+    );
+  }
+  if (hasFinding(findings, /(?:mobile|small)[\s\S]*(?:navigation|nav|menu)[\s\S]*(?:absent|missing|not visible|hidden)|(?:navigation|nav|menu)[\s\S]*(?:absent|missing|not visible|hidden)[\s\S]*(?:mobile|small)/iu)) {
+    styles = appendRepair(
+      styles,
+      "/* launchloom-visual-repair: mobile-navigation-visibility */",
+      `
+@media (max-width: 760px) {
+  [data-navigation-geometry] header,
+  [data-navigation-geometry] .site-header,
+  [data-navigation-geometry] .command-bar {
+    flex-wrap: wrap !important;
+    height: auto !important;
+    min-height: 4rem;
+    padding-bottom: .75rem;
+  }
+
+  [data-navigation-geometry] header nav,
+  [data-navigation-geometry] .site-header nav,
+  [data-navigation-geometry] .command-bar nav {
+    display: flex !important;
+    order: 3;
+    flex-basis: 100%;
+    justify-content: space-between;
+    gap: .75rem;
+    padding-top: .75rem;
+    border-top: 1px solid currentColor;
+    font-size: .75rem;
   }
 }
 `,

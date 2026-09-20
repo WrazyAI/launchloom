@@ -5,6 +5,7 @@ import {
   buildSafeVisualManifest,
   parseVisualAuditChoice,
   parseVisualAuditContent,
+  shouldFailVisualPlan,
   validateVisualAudit,
 } from "../scripts/visual-quality-gate-lib.mjs";
 
@@ -199,5 +200,18 @@ describe("GLM visual quality gate", () => {
       operations: [],
     });
     expect(audit.findings[0].viewport).toBe("compact");
+  });
+
+  it("hands creative critical findings to authored repair but fails legacy plans", () => {
+    expect(shouldFailVisualPlan({
+      rendererType: "creative-candidate",
+      blockers: [{ severity: "critical" }],
+      verdict: "block",
+    })).toBe(false);
+    expect(shouldFailVisualPlan({
+      rendererType: "legacy-design-family",
+      blockers: [{ severity: "critical" }],
+      verdict: "block",
+    })).toBe(true);
   });
 });

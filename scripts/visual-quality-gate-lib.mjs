@@ -408,3 +408,19 @@ export function blockingFindings(audit, { includeMajor = false } = {}) {
       finding.severity === "critical" || (includeMajor && finding.severity === "major"),
   );
 }
+
+/**
+ * Creative candidates need the plan report even when the multimodal audit
+ * finds a critical, repairable defect. The authored repair loop consumes the
+ * report and the verify pass remains fail-closed. Legacy pages retain the
+ * original immediate-failure behavior.
+ */
+export function shouldFailVisualPlan({
+  rendererType,
+  appliedOperations = [],
+  blockers = [],
+  verdict = "pass",
+} = {}) {
+  if (appliedOperations.length || (!blockers.length && verdict !== "block")) return false;
+  return rendererType !== "creative-candidate";
+}

@@ -6,6 +6,7 @@ import {
   blockingFindings,
   buildSafeVisualManifest,
   parseVisualAuditChoice,
+  shouldFailVisualPlan,
 } from "./visual-quality-gate-lib.mjs";
 
 const args = Object.fromEntries(
@@ -267,11 +268,12 @@ if (
     `GLM visual gate blocked deployment with ${blockers.length} critical finding(s). See ${reportPath}.`,
   );
 }
-if (
-  mode === "plan" &&
-  !appliedOperations.length &&
-  (blockers.length || result.audit.verdict === "block")
-) {
+if (mode === "plan" && shouldFailVisualPlan({
+  rendererType: manifest.design?.renderer?.type,
+  appliedOperations,
+  blockers,
+  verdict: result.audit.verdict,
+})) {
   throw new Error(
     `GLM visual gate found a critical defect with no safe automatic correction. See ${reportPath}.`,
   );
