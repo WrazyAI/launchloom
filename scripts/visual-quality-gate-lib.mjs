@@ -377,7 +377,7 @@ export function validateVisualAudit(value) {
       severity: ["critical", "major", "minor"].includes(finding.severity)
         ? finding.severity
         : "minor",
-      viewport: ["desktop", "mobile", "both"].includes(finding.viewport)
+      viewport: ["desktop", "compact", "mobile", "both"].includes(finding.viewport)
         ? finding.viewport
         : "both",
       evidence: publicText(finding.evidence, 320),
@@ -402,6 +402,9 @@ export function applySafeVisualOperations(config, operations) {
   return applied;
 }
 
-export function blockingFindings(audit) {
-  return audit.findings.filter((finding) => finding.severity === "critical");
+export function blockingFindings(audit, { includeMajor = false } = {}) {
+  return audit.findings.filter(
+    (finding) =>
+      finding.severity === "critical" || (includeMajor && finding.severity === "major"),
+  );
 }

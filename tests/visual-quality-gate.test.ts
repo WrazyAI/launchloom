@@ -171,7 +171,7 @@ describe("GLM visual quality gate", () => {
       verdict: "block",
       findings: Array.from({ length: 10 }, (_, index) => ({
         category: "content-integrity",
-        severity: index === 0 ? "critical" : "minor",
+        severity: index === 0 ? "critical" : index === 1 ? "major" : "minor",
         viewport: "both",
         evidence: "A sentence is clipped",
         recommendation: "Repair the source copy",
@@ -180,5 +180,24 @@ describe("GLM visual quality gate", () => {
     });
     expect(audit.findings).toHaveLength(8);
     expect(blockingFindings(audit)).toHaveLength(1);
+    expect(blockingFindings(audit, { includeMajor: true })).toHaveLength(2);
+  });
+
+  it("preserves compact viewport findings for authored repair", () => {
+    const audit = validateVisualAudit({
+      summary: "Compact desktop needs a tighter hero.",
+      verdict: "revise",
+      findings: [
+        {
+          category: "responsive-layout",
+          severity: "major",
+          viewport: "compact",
+          evidence: "The compact hero exceeds the viewport.",
+          recommendation: "Reduce the compact hero spacing.",
+        },
+      ],
+      operations: [],
+    });
+    expect(audit.findings[0].viewport).toBe("compact");
   });
 });

@@ -109,6 +109,16 @@ function promptFor(site, route, placement) {
     .filter(Boolean)
     .join(", ");
   const direction = visualDirection(site);
+  const dna = route?.referenceDna || {};
+  const familyImageDirection = {
+    "kokoro-editorial-architecture": "warm architectural interiors, editorial still life, restrained dark palette, tactile natural materials",
+    "skyelite-cinematic-luxury": "luxury transport atmosphere, wide cinematic framing, soft horizon light, premium restraint",
+    "health-portal-masked-mosaic": "modular clinical imagery, calm human-safe materials, mask-friendly windows, clean neutral surfaces",
+    "3d-portfolio-object-led": "object-led renders, spatial compositions, sculptural materials, controlled studio lighting",
+    "veyra-kinetic-typography": "high-energy action documentary framing with clear subject silhouettes and bold negative space",
+    "digital-experiences-liquid-glass": "abstract atmospheric fields, liquid light, depth and translucent surfaces without readable text",
+    "vortex-editorial-studio": "editorial project stills, expressive but credible studio materials, wide moving-strip crops",
+  };
   const subject = services.length
     ? services.join(", ")
     : safePromptPart(site.businessKind || site.industry || "local service", 100) || "local service";
@@ -120,6 +130,9 @@ function promptFor(site, route, placement) {
     ? `Customer concerns to understand visually, without adding claims: ${problems.join("; ")}.`
     : "";
   const routeContext = routeLanguage ? `Creative route: ${routeLanguage}.` : "";
+  const dnaContext = dna.familyId
+    ? `Reference DNA family: ${safePromptPart(dna.familyId, 100)}. Hero geometry: ${safePromptPart(dna.heroGeometry?.mode, 100)}. Image treatment: ${safePromptPart(dna.imageTreatment?.mode, 120)}. Crop strategy: ${safePromptPart(dna.imageTreatment?.crop, 140)}. Palette intent: ${safePromptPart(dna.palette?.contrastIntent, 140)}. ${familyImageDirection[dna.familyId] || "Follow the assigned reference mechanics without copying a brand."}`
+    : "";
   const directionContext = direction ? `Visual direction: ${direction}.` : "";
   const placementBrief =
     placement.id === "hero"
@@ -134,6 +147,7 @@ function promptFor(site, route, placement) {
     `Business context: ${subject}.`,
     areaContext,
     routeContext,
+    dnaContext,
     directionContext,
     vocabularyContext,
     problemContext,

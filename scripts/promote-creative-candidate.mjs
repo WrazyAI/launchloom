@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { validateCandidateManifest } from "./creative-compiler.mjs";
+import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -18,7 +19,7 @@ async function readJson(file) {
   return JSON.parse(await fs.readFile(file, "utf8"));
 }
 
-function validateAuthoredFiles(candidateId, files) {
+function validateAuthoredFiles(candidateId, files, candidateManifest) {
   const experience = files.experience;
   for (const marker of ["data-hero", "data-early-conversion", 'id="services"', 'id="faqs"', 'id="contact"'])
     if (!experience.includes(marker)) throw new Error(`Creative candidate ${candidateId} is missing ${marker}.`);
@@ -30,6 +31,16 @@ function validateAuthoredFiles(candidateId, files) {
     throw new Error(`Creative candidate ${candidateId} contains an unsafe styles.css value.`);
   if (/\b(?:fetch|XMLHttpRequest|WebSocket|eval)\s*\(/iu.test(files.motion) || !/reducedMotion|prefers-reduced-motion/u.test(files.motion))
     throw new Error(`Creative candidate ${candidateId} motion is missing safety or reduced-motion handling.`);
+  if (candidateManifest.version >= 2) {
+    const fidelity = validateReferenceCandidate({
+      referenceDna: candidateManifest.referenceDna,
+      experienceSource: files.experience,
+      stylesSource: files.styles,
+      motionSource: files.motion,
+    });
+    if (!fidelity.pass)
+      throw new Error(`Creative candidate ${candidateId} failed reference fidelity: ${fidelity.findings.map((item) => item.message).join(" | ")}`);
+  }
 }
 
 /**
@@ -56,7 +67,7 @@ export async function promoteCreativeCandidate({
     styles: await fs.readFile(path.join(source, "styles.css"), "utf8"),
     motion: await fs.readFile(path.join(source, "motion.js"), "utf8"),
   };
-  validateAuthoredFiles(candidateManifest.candidateId, files);
+  validateAuthoredFiles(candidateManifest.candidateId, files, candidateManifest);
 
   const selected = path.resolve(root, "src/generated-experiences/selected");
   await fs.mkdir(selected, { recursive: true });
@@ -76,6 +87,8 @@ export async function promoteCreativeCandidate({
     renderer: "creative-candidate",
     candidateId: candidateManifest.candidateId,
     familyId: candidateManifest.familyId,
+    referenceFamilyId: candidateManifest.referenceDna?.familyId || candidateManifest.familyId,
+    referenceDnaVersion: candidateManifest.referenceDna?.version || null,
     contractHash: candidateManifest.routeFingerprint,
     fingerprint: candidateManifest.fingerprint,
     ...(Number.isFinite(visualScore) ? { visualScore } : {}),

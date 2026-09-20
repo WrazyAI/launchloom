@@ -5,6 +5,8 @@ import {
   buildCandidateManifest,
   buildRouteContract,
 } from "./creative-compiler.mjs";
+import { validateReferenceDna } from "./reference-dna.mjs";
+import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 
 /**
  * @typedef {"contract" | "experience" | "styles" | "motion"} AuthorStage
@@ -183,7 +185,12 @@ function assertInspirationPack(pack) {
           `Inspiration route ${route.id || "unknown"} is missing ${key}.`,
         );
   }
-  return assertIndependentRoutes(pack.routes);
+  const contracts = assertIndependentRoutes(pack.routes);
+  if (pack.referenceEvidenceRequired || Number(pack.version || 1) >= 2) {
+    for (const route of contracts)
+      validateReferenceDna(route.referenceDna, { requireEvidence: true });
+  }
+  return contracts;
 }
 
 function asText(value, label) {
@@ -779,6 +786,31 @@ export async function authorExperienceCandidates({
       const styles = stylesOutput.source;
       const motion = motionOutput.source;
       complianceRepaired ||= stylesOutput.repaired || motionOutput.repaired;
+      let referenceRepairCycles = 0;
+      if (route.referenceDna?.complete) {
+        let fidelity = validateReferenceCandidate({ referenceDna: route.referenceDna, experienceSource: experience, stylesSource: styles, motionSource: motion });
+        while (!fidelity.pass && referenceRepairCycles < 2) {
+          referenceRepairCycles += 1;
+          const repaired = await generateStageValue(
+            limitedGenerate,
+            {
+              ...base,
+              stage: "experience",
+              designContract,
+              previousSource: experience,
+              validationError: `Reference fidelity repair cycle ${referenceRepairCycles}/2. Fix every finding without simplifying the assigned composition: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
+            },
+            "content",
+            "experience",
+          );
+          experience = normalizeAuthoredSource(repaired.value);
+          complianceRepaired = true;
+          validateExperience(experience, route, content);
+          fidelity = validateReferenceCandidate({ referenceDna: route.referenceDna, experienceSource: experience, stylesSource: styles, motionSource: motion });
+        }
+        if (!fidelity.pass)
+          throw new Error(`Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`);
+      }
       const creativeManifest = buildCandidateManifest({
         candidate: { candidateId: `candidate-${String.fromCharCode(97 + index)}` },
         route,
@@ -801,9 +833,13 @@ export async function authorExperienceCandidates({
         imageStrategy: route.imageStrategy,
         motionOpportunity: route.motionOpportunity,
         familyId: route.familyId,
+        referenceFamilyId: route.referenceDna.familyId,
+        referenceName: route.referenceDna.referenceName,
+        referenceDna: route.referenceDna,
         mobileBehavior: route.mobileBehavior,
         fingerprint: creativeManifest.fingerprint,
         complianceRepaired,
+        referenceRepairCycles,
         motionFallback: Boolean(motionOutput.fallback),
         contentManifestDigest: contentManifest.digest,
         allowedImports: [...allowedImports],

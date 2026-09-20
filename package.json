@@ -22,6 +22,7 @@
     "author:experiences": "node scripts/author-production-experiences.mjs",
     "bakeoff:experience": "node scripts/run-experience-bakeoff.mjs",
     "bakeoff:creative": "node scripts/run-creative-bakeoff.mjs",
+    "canary:creative": "node scripts/run-creative-canary.mjs",
     "promote:creative": "node scripts/promote-creative-candidate.mjs",
     "generate:model-experiences": "node scripts/generate-model-experience-lab.mjs",
     "build:template-gallery": "node scripts/build-template-variant-gallery.mjs",

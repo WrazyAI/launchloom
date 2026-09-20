@@ -85,6 +85,7 @@ function stagePrompt(request) {
       mobileBehavior: request.route.mobileBehavior,
       prohibitedPatterns: request.route.prohibitedPatterns,
       signature: request.route.signature,
+      referenceDna: request.route.referenceDna,
       evidence: (request.route.evidence || []).map((item) => ({
         name: item.name,
         source: item.source,
@@ -112,7 +113,15 @@ ${request.rules}
 
 ${request.validationError && request.stage !== "experience" ? `BOUNDED FORMAT REPAIR\nThe previous ${request.stage} output failed validation: ${request.validationError}\nReturn the complete corrected ${request.stage} output using the required schema. Preserve the assigned route.\n\nPREVIOUS OUTPUT\n${request.previousSource}\n` : ""}
 
-Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. This candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, mobile behavior, and prohibited patterns as binding design constraints, not suggestions.`;
+Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. This candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, Reference DNA, mobile behavior, and prohibited patterns as binding design constraints, not suggestions.
+
+REFERENCE FIDELITY RULES
+- Do not average the references or drift to a familiar LaunchLoom composition.
+- Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
+- Preserve the assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
+- Include every required signature element and expose its data-reference-signature attribute in the rendered DOM.
+- Use one distinctive, purposeful interaction from the assigned family and provide its reduced-motion equivalent.
+- Keep business facts, SEO copy, contact details, and imagery bound to sealed content tokens. Never copy reference branding, copy, assets, or trade dress.`;
 
   if (request.stage === "contract")
     return `${shared}
@@ -125,7 +134,9 @@ DESIGN CONTRACT
 ${request.designContract}
 
 ${request.validationError ? `COMPLIANCE REPAIR\nThe previous JSX failed: ${request.validationError}\nRepair that exact violation without reducing the composition or changing the design contract.\n\nPREVIOUS JSX\n${request.previousSource}\n` : ""}
-Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". The hero's early conversion is a compact anchor or button linking to #contact, not the full four-field form. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.`;
+Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". The hero's early conversion is a compact anchor or button linking to #contact, not the full four-field form. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
+
+Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" to each major section so the compiler can verify the assigned rhythm. Do not invent values: use the slugs from Reference DNA.`;
   if (request.stage === "styles")
     return `${shared}
 
@@ -172,20 +183,28 @@ async function requestStage(request) {
   );
   try {
     const userContent = [{ type: "text", text: stagePrompt(request) }];
-    for (const evidence of request.route.evidence || []) {
-      const screenshotPath = evidence.screenshotPath;
-      if (!screenshotPath || userContent.length >= 3) continue;
+    const evidencePaths = [
+      request.route.referenceDna?.evidence?.desktopScreenshot?.path,
+      request.route.referenceDna?.evidence?.mobileScreenshot?.path,
+    ].filter(Boolean);
+    for (const screenshotPath of evidencePaths) {
+      if (userContent.length >= 3) break;
       try {
         const data = await fs.readFile(path.resolve(screenshotPath));
         const extension = path.extname(screenshotPath).toLowerCase();
-        const mime = extension === ".png" ? "image/png" : "image/jpeg";
+        const mime = extension === ".png"
+          ? "image/png"
+          : extension === ".webp"
+            ? "image/webp"
+            : extension === ".svg"
+              ? "image/svg+xml"
+              : "image/jpeg";
         userContent.push({
           type: "image_url",
           image_url: { url: `data:${mime};base64,${data.toString("base64")}` },
         });
-      } catch {
-        // Reference evidence is optional. The route contract remains usable
-        // when a local screenshot is not available in the generation runner.
+      } catch (error) {
+        throw new Error(`Reference evidence could not be loaded for ${request.route.id}: ${screenshotPath}`, { cause: error });
       }
     }
     const fallbackEfforts = {

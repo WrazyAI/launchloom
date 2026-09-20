@@ -72,7 +72,7 @@ const auditSchema = {
               ],
             },
             severity: { type: "string", enum: ["critical", "major", "minor"] },
-            viewport: { type: "string", enum: ["desktop", "mobile", "both"] },
+            viewport: { type: "string", enum: ["desktop", "compact", "mobile", "both"] },
             evidence: { type: "string", maxLength: 320 },
             recommendation: { type: "string", maxLength: 400 },
           },
@@ -132,7 +132,7 @@ async function imagePart(file) {
 }
 
 async function requestAudit(manifest) {
-  const screenshots = ["desktop.png", "mobile.png"];
+  const screenshots = ["desktop.png", "compact.png", "mobile.png"];
   const missing = [];
   for (const file of screenshots) {
     try {
@@ -141,8 +141,9 @@ async function requestAudit(manifest) {
       missing.push(file);
     }
   }
-  if (missing.length)
-    throw new Error(`Missing visual gate screenshots: ${missing.join(", ")}`);
+  const requiredMissing = missing.filter((file) => file !== "compact.png");
+  if (requiredMissing.length)
+    throw new Error(`Missing visual gate screenshots: ${requiredMissing.join(", ")}`);
   let lastError;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const controller = new AbortController();
@@ -169,7 +170,7 @@ async function requestAudit(manifest) {
               {
                 role: "system",
                 content:
-                  "You are LaunchLoom's strict pre-deployment visual QA gate. Inspect the complete desktop and mobile screenshots against the supplied public-content manifest. Only design.requiredSections are mandatory. design.optionalSections may be absent when verified content is unavailable. When design.renderer.type is experience-pack or creative-candidate, judge its declared navigation, hero, conversion, services, proof, closing, family, and fingerprint instead of inferring a legacy variant from other fields, and return operations as an empty array. Critical means content is visibly corrupted or clipped, industry language or imagery is clearly unrelated, a primary action is unusable or obscured, horizontal overflow breaks the page, or a required public section is absent. Generic composition, decorative numbering without sequence meaning, weak distinctiveness, repeated template grammar, and visibly overlong hero or card copy are major, not critical. Never invent business facts. Recommend at most three safe layout operations for legacy pages only. A creative candidate must be repaired or rejected by its authoring stage, never structurally rewritten into a shared template. For unused operation fields return empty strings. In verify mode return no operations. Do not use em dashes.",
+                  "You are LaunchLoom's strict pre-deployment visual QA gate. Inspect the complete desktop and mobile screenshots against the supplied public-content manifest. Only design.requiredSections are mandatory. design.optionalSections may be absent when verified content is unavailable. When design.renderer.type is experience-pack or creative-candidate, judge its declared navigation, hero, conversion, services, proof, closing, family, and fingerprint instead of inferring a legacy variant from other fields, and return operations as an empty array. Only report actual defects that require a change. Never put compliments, confirmations, or the absence of a problem in findings; a passing audit should normally return findings as an empty array. Critical means content is visibly corrupted or clipped, industry language or imagery is clearly unrelated, a primary action is unusable or obscured, horizontal overflow breaks the page, or a required public section is absent. Generic composition, decorative numbering without sequence meaning, weak distinctiveness, repeated template grammar, and visibly overlong hero or card copy are major, not critical. Any major finding requires verdict revise or block; verdict pass is reserved for zero critical and zero major findings. Never invent business facts. Recommend at most three safe layout operations for legacy pages only. A creative candidate must be repaired or rejected by its authoring stage, never structurally rewritten into a shared template. For unused operation fields return empty strings. In verify mode return no operations. Do not use em dashes.",
               },
               {
                 role: "user",
@@ -180,6 +181,7 @@ async function requestAudit(manifest) {
                   },
                   { type: "text", text: "Desktop screenshot:" },
                   await imagePart(path.join(screenshotsDir, "desktop.png")),
+                  ...(missing.includes("compact.png") ? [] : [{ type: "text", text: "Compact desktop screenshot:" }, await imagePart(path.join(screenshotsDir, "compact.png"))]),
                   { type: "text", text: "Mobile screenshot:" },
                   await imagePart(path.join(screenshotsDir, "mobile.png")),
                 ],
@@ -228,7 +230,10 @@ const appliedOperations =
   mode === "plan"
     ? applySafeVisualOperations(config, result.audit.operations)
     : [];
-const blockers = blockingFindings(result.audit);
+const blockers = blockingFindings(result.audit, {
+  includeMajor:
+    mode === "verify" && manifest.design?.renderer?.type === "creative-candidate",
+});
 if (appliedOperations.length)
   await fs.writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
 const report = {

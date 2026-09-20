@@ -11,6 +11,7 @@ import {
   validateCandidateManifest,
 } from "./creative-compiler.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
+import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -120,6 +121,15 @@ async function inspect(page) {
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
       emDashes: (text.match(/—/gu) || []).length,
+      referenceSignatures: [...new Set([...document.querySelectorAll("[data-reference-signature]")].map((element) => element.getAttribute("data-reference-signature")).filter(Boolean))],
+      referenceSections: [...document.querySelectorAll("[data-reference-section]")].map((element) => element.getAttribute("data-reference-section")).filter(Boolean),
+      heroGeometry: root?.querySelector("[data-hero]")?.getAttribute("data-hero-geometry") || "",
+      navigationGeometry: root?.querySelector("[data-navigation-geometry]")?.getAttribute("data-navigation-geometry") || "",
+      servicePresentation: root?.querySelector("[data-service-presentation]")?.getAttribute("data-service-presentation") || "",
+      ctaPlacement: root?.querySelector("[data-cta-placement]")?.getAttribute("data-cta-placement") || "",
+      mobileRecomposition: root?.querySelector("[data-mobile-recomposition]")?.getAttribute("data-mobile-recomposition") || "",
+      motionPrimitive: root?.querySelector("[data-motion-primitive]")?.getAttribute("data-motion-primitive") || "",
+      creativeRenderer: document.querySelector("[data-creative-renderer]")?.getAttribute("data-creative-renderer") || "",
     };
   });
 }
@@ -141,6 +151,7 @@ function hardFailures(evidence, viewport) {
     evidence.overflow && "horizontal overflow",
     evidence.brokenImages > 0 && "broken image",
     evidence.emDashes > 0 && "em dash found",
+    evidence.creativeRenderer !== "creative-candidate" && "creative renderer marker missing",
   ].filter(Boolean);
 }
 
@@ -196,12 +207,22 @@ export async function runCreativeBakeoff({
         directory: candidate.directory,
         familyId: candidate.manifest.familyId,
         fingerprint: candidate.manifest.fingerprint,
+        manifest: candidate.manifest,
         valid: true,
         score: 0,
         failures: [],
         viewports: [],
       };
       try {
+        const experienceSource = await fs.readFile(path.join(candidateRoot, candidate.directory, "Experience.jsx"), "utf8");
+        const stylesSource = await fs.readFile(path.join(candidateRoot, candidate.directory, "styles.css"), "utf8");
+        const motionSource = await fs.readFile(path.join(candidateRoot, candidate.directory, "motion.js"), "utf8");
+        const sourceFidelity = candidate.manifest.version >= 2
+          ? validateReferenceCandidate({ referenceDna: candidate.manifest.referenceDna, experienceSource, stylesSource, motionSource })
+          : { version: 1, pass: true, score: 100, findings: [], requiredSignatures: [] };
+        candidateResult.referenceFidelity = sourceFidelity;
+        if (!sourceFidelity.pass)
+          candidateResult.failures.push(...sourceFidelity.findings.map((item) => `source: ${item.message}`));
         await promoteCreativeCandidate({ siteDir: root, candidateDir: path.relative(root, path.join(candidateRoot, candidate.directory)) });
         await run("npm", ["run", "build"], root);
         const { server, origin } = await startServer(path.join(root, "dist"));
@@ -219,6 +240,26 @@ export async function runCreativeBakeoff({
             const failures = [...hardFailures(evidence, viewport), browserErrors.length > 0 && "browser error"].filter(Boolean);
             candidateResult.failures.push(...failures.map((failure) => `${viewport.name}: ${failure}`));
             candidateResult.viewports.push({ ...viewport, ...evidence, browserErrors });
+            if (candidate.manifest.version >= 2) {
+              const renderedFidelity = validateReferenceCandidate({
+                referenceDna: candidate.manifest.referenceDna,
+                experienceSource,
+                stylesSource,
+                motionSource,
+                renderedDom: await page.locator("[data-creative-host]").evaluate((element) => element.outerHTML),
+              });
+              candidateResult.referenceFidelity = {
+                ...candidateResult.referenceFidelity,
+                rendered: renderedFidelity,
+                score: Math.min(candidateResult.referenceFidelity.score, renderedFidelity.score),
+                pass: candidateResult.referenceFidelity.pass && renderedFidelity.pass,
+              };
+              if (!renderedFidelity.pass)
+                candidateResult.failures.push(...renderedFidelity.findings.map((item) => `${viewport.name}: ${item.message}`));
+            }
+            // Keep the requested viewport width while including the complete
+            // route so the screenshot-level gate can inspect lower sections,
+            // FAQs, and the contact handoff as well as the hero.
             await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}.png`), fullPage: true });
             await page.close();
           }
@@ -233,12 +274,24 @@ export async function runCreativeBakeoff({
       const desktopEvidence = candidateResult.viewports.filter((viewport) => viewport.name !== "mobile");
       const mobileEvidence = candidateResult.viewports.find((viewport) => viewport.name === "mobile");
       const allEvidence = candidateResult.viewports;
+      candidateResult.visualFingerprint = allEvidence[0]
+        ? [
+            allEvidence[0].referenceSignatures?.join(","),
+            allEvidence[0].referenceSections?.join(","),
+            allEvidence[0].heroGeometry,
+            allEvidence[0].servicePresentation,
+            allEvidence[0].motionPrimitive,
+          ].join("|")
+        : "";
       const visual = {
         hierarchy: allEvidence.every((viewport) => viewport.h1Count === 1 && viewport.hasHero) ? 100 : 0,
         composition: desktopEvidence.every((viewport) => viewport.heroBottom <= viewport.viewportHeight + 1 && !viewport.overflow) ? 100 : 0,
         responsive: Boolean(mobileEvidence && !mobileEvidence.overflow && mobileEvidence.hasHero) ? 100 : 0,
         industryFit: 80,
         conversion: allEvidence.every((viewport) => viewport.hasEarlyConversion && viewport.hasLeadForm) ? 100 : 0,
+        referenceFidelity: candidateResult.referenceFidelity?.score ?? 0,
+        motionEvidence: allEvidence.every((viewport) => viewport.motionPrimitive) ? 100 : 0,
+        imageRelevance: allEvidence.every((viewport) => viewport.brokenImages === 0) ? 100 : 0,
       };
       const technical = {
         accessibility: allEvidence.every((viewport) => viewport.missingAlt === 0 && viewport.unnamedControls === 0 && viewport.browserErrors.length === 0) ? 100 : 0,
@@ -246,10 +299,14 @@ export async function runCreativeBakeoff({
       const peerDistances = candidates
         .filter((peer) => peer.manifest.candidateId !== candidate.manifest.candidateId)
         .map((peer) => fingerprintDistance(candidate.manifest, peer.manifest));
-      const minimumDistance = peerDistances.length ? Math.min(...peerDistances) : 0;
+      const minimumDistance = peerDistances.length
+        ? Math.min(...peerDistances)
+        : candidate.manifest.version >= 2
+          ? CREATIVE_PROMOTION_THRESHOLDS.minimumFingerprintDistance
+          : 0;
       const distinctivenessScore = Math.min(
         100,
-        Math.round((minimumDistance / CREATIVE_PROMOTION_THRESHOLDS.minimumFingerprintDistance) * 70),
+        Math.round((minimumDistance / CREATIVE_PROMOTION_THRESHOLDS.minimumFingerprintDistance) * 100),
       );
       candidateResult.visualScore = Math.round(
         Object.values(visual).reduce((sum, value) => sum + value, 0) / Object.keys(visual).length,
@@ -263,14 +320,23 @@ export async function runCreativeBakeoff({
         technical,
         distinctiveness: distinctivenessScore,
       });
-      candidateResult.eligible = candidateResult.valid && candidateResult.visualScore >= CREATIVE_PROMOTION_THRESHOLDS.visualScore && candidateResult.distinctivenessScore >= CREATIVE_PROMOTION_THRESHOLDS.distinctivenessScore;
+      candidateResult.eligible = candidateResult.valid && candidateResult.referenceFidelity?.pass !== false && candidateResult.referenceFidelity?.score >= CREATIVE_PROMOTION_THRESHOLDS.referenceFidelityScore && candidateResult.visualScore >= CREATIVE_PROMOTION_THRESHOLDS.visualScore && candidateResult.distinctivenessScore >= CREATIVE_PROMOTION_THRESHOLDS.distinctivenessScore;
       results.push(candidateResult);
     }
   } finally {
     await browser.close();
     await fs.writeFile(originalConfigPath, originalConfig);
     await fs.rm(selectedDir, { recursive: true, force: true });
-    await fs.cp(selectedBackup, selectedDir, { recursive: true, force: true }).catch(() => {});
+    const backupEntries = await fs.readdir(selectedBackup).catch(() => []);
+    await fs.mkdir(selectedDir, { recursive: true });
+    await Promise.all(
+      backupEntries.map((entry) =>
+        fs.cp(path.join(selectedBackup, entry), path.join(selectedDir, entry), {
+          recursive: true,
+          force: true,
+        }),
+      ),
+    );
     await fs.rm(selectedBackup, { recursive: true, force: true });
   }
 
@@ -279,33 +345,53 @@ export async function runCreativeBakeoff({
   const previewEligible = results.filter(
     (candidate) =>
       candidate.valid &&
+      (candidate.manifest.version < 2 || candidate.referenceFidelity?.score >= CREATIVE_PROMOTION_THRESHOLDS.referenceFidelityScore) &&
       candidate.visualScore >= CREATIVE_PROMOTION_THRESHOLDS.visualScore &&
-      candidate.technicalScore >= 100,
+      candidate.technicalScore >= 100 &&
+      (candidate.manifest.version < 2 || candidate.distinctivenessScore >= CREATIVE_PROMOTION_THRESHOLDS.distinctivenessScore),
   );
   const valid = preview ? previewEligible : results.filter((candidate) => candidate.eligible);
   const winner = valid
     .sort((left, right) => right.score - left.score || left.candidateId.localeCompare(right.candidateId))[0] || null;
+  const visualPairs = [];
+  for (let i = 0; i < results.length; i += 1) {
+    for (let j = i + 1; j < results.length; j += 1) {
+      const distance = results[i].visualFingerprint && results[i].visualFingerprint !== results[j].visualFingerprint ? 1 : 0;
+      visualPairs.push({
+        left: results[i].candidateId,
+        right: results[j].candidateId,
+        distance,
+        pass: distance >= CREATIVE_PROMOTION_THRESHOLDS.minimumPairwiseVisualDistance,
+      });
+    }
+  }
+  const visualDiversity = {
+    minimumDistance: visualPairs.length ? Math.min(...visualPairs.map((pair) => pair.distance)) : 1,
+    pairs: visualPairs,
+    pass: visualPairs.every((pair) => pair.pass),
+  };
   const report = {
     version: 1,
     mode: promote ? "promote" : preview ? "preview" : "review",
     thresholds: CREATIVE_PROMOTION_THRESHOLDS,
     scoreSource: "rendered-structure-and-contract; multimodal visual gate remains required",
     diversity,
+    visualDiversity,
     candidates: results,
     selectedCandidateId:
-      (preview && winner) || (promote && winner && diversity.pass)
+      (preview && winner) || (promote && winner && diversity.pass && visualDiversity.pass)
         ? winner.candidateId
         : null,
     // In preview mode fallback means that no authored candidate was renderable.
     // A diversity miss is recorded separately and cannot send the page back to
     // the legacy renderer.
-    fallback: !winner || (!preview && !diversity.pass),
-    promotionReady: Boolean(winner && diversity.pass && winner.eligible),
+    fallback: !winner || (!preview && (!diversity.pass || !visualDiversity.pass)),
+    promotionReady: Boolean(winner && diversity.pass && visualDiversity.pass && winner.eligible),
   };
   await fs.mkdir(path.dirname(reportFile), { recursive: true });
   await fs.writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`);
 
-  if ((promote || preview) && winner && (preview || diversity.pass)) {
+  if ((promote || preview) && winner && (preview || (diversity.pass && visualDiversity.pass))) {
     await promoteCreativeCandidate({
       siteDir: root,
       candidateDir: path.relative(root, path.join(candidateRoot, winner.directory)),

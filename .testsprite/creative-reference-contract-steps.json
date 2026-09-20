@@ -1,0 +1,17 @@
+{
+  "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
+  "type": "frontend",
+  "name": "Creative reference contract preview renders",
+  "description": "The creative preview exposes its authored renderer markers and remains usable at the first viewport.",
+  "priority": "p1",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Navigate to the generated business homepage"
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the page renders a creative candidate experience with a visible hero, Services, FAQs, Contact navigation, and an early conversion action without horizontal clipping"
+    }
+  ]
+}

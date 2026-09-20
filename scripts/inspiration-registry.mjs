@@ -1,5 +1,9 @@
 import crypto from "node:crypto";
 import { buildRouteContract } from "./creative-compiler.mjs";
+import {
+  buildReferenceDna,
+  validateReferenceDna,
+} from "./reference-dna.mjs";
 
 const REQUIRED_FIELDS = [
   "id",
@@ -77,6 +81,10 @@ function normalizeRecord(record, index) {
     mobileBehavior: cleanText(record.mobileBehavior, 180),
     prohibitedPatterns: cleanList(record.prohibitedPatterns, 12),
     screenshotPath: cleanText(record.screenshotPath, 300),
+    mobileScreenshotPath: cleanText(record.mobileScreenshotPath, 300),
+    referenceName: cleanText(record.referenceName, 180),
+    referenceNotes: cleanText(record.referenceNotes, 900),
+    sourceUrl: cleanText(record.sourceUrl, 500),
     notes: cleanText(record.notes, 320),
   };
   if (!normalized.id || !normalized.sourceUrl || !normalized.industries.length)
@@ -147,6 +155,9 @@ function evidenceFor(record) {
     sourceUrl: record.sourceUrl,
     rights: record.rights,
     screenshotPath: record.screenshotPath || undefined,
+    mobileScreenshotPath: record.mobileScreenshotPath || undefined,
+    referenceName: record.referenceName || record.name,
+    referenceNotes: record.referenceNotes || record.notes,
     familyId: record.familyId || undefined,
     mobileBehavior: record.mobileBehavior || undefined,
     prohibitedPatterns: record.prohibitedPatterns?.length
@@ -260,12 +271,16 @@ export function buildInspirationPack(request, rawRegistry) {
       evidence,
       signature: signatureFor(anchor),
     };
-    const contract = buildRouteContract(route, index);
+    const referenceDna = validateReferenceDna(buildReferenceDna(route), {
+      requireEvidence: true,
+    });
+    const contract = buildRouteContract({ ...route, referenceDna }, index);
     return {
       ...route,
       familyId: contract.familyId,
       mobileBehavior: contract.mobileBehavior,
       prohibitedPatterns: contract.prohibitedPatterns,
+      referenceDna,
       fingerprint: contract.fingerprint,
     };
   });
@@ -279,7 +294,8 @@ export function buildInspirationPack(request, rawRegistry) {
     freshnessFallback: selection.mode.id,
   };
   return {
-    version: 1,
+    version: 2,
+    referenceEvidenceRequired: true,
     registryVersion: registry.version,
     registryUpdatedAt: registry.updatedAt || undefined,
     registryDigest: digest(JSON.stringify(registry)),

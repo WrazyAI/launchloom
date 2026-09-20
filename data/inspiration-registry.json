@@ -22,7 +22,7 @@
       "typographyCategory": "monumental-serif-with-script-accent",
       "imageStrategy": "warm-architectural-tableaux",
       "motionOpportunities": ["masked-image-reveal", "slow-scroll-crop"],
-      "screenshotPath": "artifacts/creative-probe-kokoro/reference/kokoro-template-for-framer.webp",
+      "screenshotPath": "data/inspiration-evidence/creative-probe-kokoro/reference/kokoro-template-for-framer.webp",
       "notes": "Use only its editorial scale, pacing, and image rhythm. Do not reproduce branding or layout."
     },
     {
@@ -40,7 +40,8 @@
       "typographyCategory": "cinematic-display-serif",
       "imageStrategy": "low-light-material-macro",
       "motionOpportunities": ["scrubbed-light-shift", "crossfade-scene-change"],
-      "screenshotPath": "",
+      "screenshotPath": "data/inspiration-evidence/nightjar/qa/desktop-full-page.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/nightjar/qa/mobile-full-page.png",
       "notes": "Owned visual experiment suitable for studying atmosphere and conversion pacing."
     },
     {
@@ -61,7 +62,8 @@
         "coordinated-mask-drift",
         "staggered-panel-reveal"
       ],
-      "screenshotPath": "",
+      "screenshotPath": "data/inspiration-evidence/a1-design-showcase/screenshots/quiet-practice-desktop.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/a1-design-showcase/screenshots/quiet-practice-mobile.png",
       "notes": "Reference the shared-image mechanics, not its clinical branding."
     },
     {
@@ -79,7 +81,8 @@
       "typographyCategory": "overlapping-modern-sans",
       "imageStrategy": "atmospheric-motion-background",
       "motionOpportunities": ["slow-video-dissolve", "horizon-parallax"],
-      "screenshotPath": "",
+      "screenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/cinematic-premium-desktop.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/cinematic-premium-mobile.png",
       "notes": "Use the sense of arrival and controlled restraint without copying the jet composition."
     },
     {
@@ -102,7 +105,8 @@
       "typographyCategory": "italic-editorial-display",
       "imageStrategy": "abstract-video-atmosphere",
       "motionOpportunities": ["blur-focus-sequence", "pinned-capability-scene"],
-      "screenshotPath": "",
+      "screenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/studio-minimal-desktop.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/studio-minimal-mobile.png",
       "notes": "Reference depth, layering, and motion hierarchy only."
     },
     {
@@ -125,7 +129,8 @@
       "typographyCategory": "neo-grotesk-with-pixel-serif",
       "imageStrategy": "wide-moving-project-strip",
       "motionOpportunities": ["infinite-project-marquee", "cursor-image-trail"],
-      "screenshotPath": "",
+      "screenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/atmospheric-editorial-desktop.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/atmospheric-editorial-mobile.png",
       "notes": "Use the authored voice and nonlinear pacing, not the original studio identity."
     },
     {
@@ -143,7 +148,8 @@
       "typographyCategory": "compressed-industrial-sans",
       "imageStrategy": "object-led-3d-collage",
       "motionOpportunities": ["scroll-driven-marquee", "sticky-card-scaling"],
-      "screenshotPath": "",
+      "screenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/project-showcase-desktop.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/project-showcase-mobile.png",
       "notes": "Reference its scale and stacked interaction while avoiding decorative numbering for services."
     },
     {
@@ -161,7 +167,8 @@
       "typographyCategory": "museum-serif-with-micro-labels",
       "imageStrategy": "single-object-deep-focus",
       "motionOpportunities": ["object-rotation-illusion", "caption-scrub"],
-      "screenshotPath": "",
+      "screenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/image-mosaic-desktop.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/image-mosaic-mobile.png",
       "notes": "Strong candidate for product-led luxury storytelling without imitating a specific museum."
     },
     {
@@ -179,7 +186,8 @@
       "typographyCategory": "fashion-grotesk-and-display-mix",
       "imageStrategy": "hard-cropped-fashion-portrait",
       "motionOpportunities": ["horizontal-archive-scrub", "type-image-wipe"],
-      "screenshotPath": "",
+      "screenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/project-showcase-desktop.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/design-family-demos/screenshots/project-showcase-mobile.png",
       "notes": "Reference campaign confidence and cropping, never the depicted person or brand."
     },
     {
@@ -197,7 +205,8 @@
       "typographyCategory": "friendly-display-serif",
       "imageStrategy": "overlapping-product-stills",
       "motionOpportunities": ["collage-depth-parallax", "shelf-drag"],
-      "screenshotPath": "artifacts/a1-design-showcase/screenshots/neighborhood-table-desktop.png",
+      "screenshotPath": "data/inspiration-evidence/a1-design-showcase/screenshots/neighborhood-table-desktop.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/a1-design-showcase/screenshots/neighborhood-table-mobile.png",
       "notes": "Original LaunchLoom study informed by multiple hospitality references."
     },
     {
@@ -218,7 +227,8 @@
         "velocity-linked-type",
         "horizontal-program-scrub"
       ],
-      "screenshotPath": "artifacts/a1-design-showcase/screenshots/kinetic-club-desktop.png",
+      "screenshotPath": "data/inspiration-evidence/a1-design-showcase/screenshots/kinetic-club-desktop.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/a1-design-showcase/screenshots/kinetic-club-mobile.png",
       "notes": "Original LaunchLoom study for high-energy businesses."
     },
     {
@@ -236,7 +246,8 @@
       "typographyCategory": "restrained-humanist-serif",
       "imageStrategy": "named-professional-portrait",
       "motionOpportunities": ["subtle-rule-reveal", "portrait-depth-shift"],
-      "screenshotPath": "artifacts/a1-design-showcase/screenshots/clear-counsel-desktop.png",
+      "screenshotPath": "data/inspiration-evidence/a1-design-showcase/screenshots/clear-counsel-desktop.png",
+      "mobileScreenshotPath": "data/inspiration-evidence/a1-design-showcase/screenshots/clear-counsel-mobile.png",
       "notes": "Original LaunchLoom study for trust-sensitive professional services."
     }
   ]

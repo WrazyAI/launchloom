@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { buildReferenceDna } from "./reference-dna.mjs";
 
 /**
  * The creative compiler is the narrow seam between verified site data and a
@@ -6,7 +7,7 @@ import crypto from "node:crypto";
  * diversity, and promotion decisions while leaving rendering to the host.
  */
 
-export const CREATIVE_CONTRACT_VERSION = 1;
+export const CREATIVE_CONTRACT_VERSION = 2;
 export const CREATIVE_FINGERPRINT_FIELDS = [
   "familyId",
   "navigation",
@@ -148,6 +149,7 @@ export function buildRouteContract(route, index = 0) {
       ...list(route.prohibitedPatterns),
     ]),
   ];
+  const referenceDna = route.referenceDna || buildReferenceDna(route);
   return Object.freeze({
     version: CREATIVE_CONTRACT_VERSION,
     id: clean(route.id, 80) || `route-${String(index + 1).padStart(2, "0")}`,
@@ -166,6 +168,8 @@ export function buildRouteContract(route, index = 0) {
       clean(route.mobileBehavior, 160) ||
       "recompose into a content-driven single column without horizontal overflow",
     prohibitedPatterns,
+    referenceDna,
+    referenceEvidenceComplete: Boolean(referenceDna.complete),
     referenceIds: list(route.referenceIds, 8),
     evidence: Array.isArray(route.evidence)
       ? route.evidence.map((item) => ({
@@ -267,8 +271,9 @@ export function buildCandidateManifest(input) {
   const { candidate, route, model, contentManifestDigest, assets = [] } = input;
   const contract = buildRouteContract(route);
   const fingerprint = fingerprintForCandidate({ contract });
+  const referenceReady = Boolean(contract.referenceDna.complete);
   return {
-    version: CREATIVE_CONTRACT_VERSION,
+    version: referenceReady ? CREATIVE_CONTRACT_VERSION : 1,
     candidateId: candidate?.candidateId || candidate?.id || "candidate",
     routeId: contract.id,
     familyId: contract.familyId,
@@ -277,6 +282,16 @@ export function buildCandidateManifest(input) {
     fingerprint,
     contentManifestDigest: clean(contentManifestDigest, 128),
     assetTokens: list(assets, 12),
+    ...(referenceReady
+      ? {
+          referenceDna: contract.referenceDna,
+          referenceEvidence: {
+            desktop: contract.referenceDna.evidence?.desktopScreenshot?.path || "",
+            mobile: contract.referenceDna.evidence?.mobileScreenshot?.path || "",
+            complete: true,
+          },
+        }
+      : {}),
     requiredSections: ["hero", "services", "faqs", "contact", "early-conversion"],
     motion: {
       opportunity: contract.motionOpportunity,
@@ -299,6 +314,8 @@ export function validateCandidateManifest(manifest) {
     throw new Error("Creative candidate manifest must require a reduced-motion path.");
   if (manifest.motion?.maxPinnedScenes > 1)
     throw new Error("Creative candidate may declare at most one pinned scene.");
+  if (manifest.version >= 2 && (!manifest.referenceDna || manifest.referenceEvidence?.complete !== true))
+    throw new Error("Creative candidate manifest must include complete Reference DNA evidence.");
   return manifest;
 }
 
@@ -320,4 +337,6 @@ export const CREATIVE_PROMOTION_THRESHOLDS = Object.freeze({
   distinctivenessScore: 70,
   minimumFingerprintDistance: 4,
   minimumUniqueDimensions: 4,
+  referenceFidelityScore: 80,
+  minimumPairwiseVisualDistance: 0.2,
 });

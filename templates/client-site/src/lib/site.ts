@@ -189,6 +189,8 @@ export type SiteConfig = {
       renderer?: "reviewed-pack" | "creative-candidate" | "legacy" | string;
       candidateId?: string;
       familyId?: string;
+      referenceFamilyId?: string;
+      referenceDnaVersion?: number;
       contractHash?: string;
       visualScore?: number;
       distinctivenessScore?: number;
