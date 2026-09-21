@@ -109,13 +109,21 @@ export function openRouterCacheMetrics(usage) {
   const cacheWriteTokens = Number(details.cache_write_tokens || 0);
   const cacheHitRate =
     promptTokens > 0 ? Math.min(1, cachedTokens / promptTokens) : 0;
-  return {
+  const metrics = {
     promptTokens,
     cachedTokens,
     cacheWriteTokens,
     cacheHitRate,
     cacheHitPercent: Math.round(cacheHitRate * 1000) / 10,
   };
+  if (source.cost !== undefined && Number.isFinite(Number(source.cost)))
+    metrics.cost = Number(source.cost);
+  if (
+    source.cache_discount !== undefined &&
+    Number.isFinite(Number(source.cache_discount))
+  )
+    metrics.cacheDiscount = Number(source.cache_discount);
+  return metrics;
 }
 
 export function logOpenRouterCacheUsage(label, usage, logger = console.log) {
@@ -128,6 +136,10 @@ export function logOpenRouterCacheUsage(label, usage, logger = console.log) {
       `cached_tokens=${metrics.cachedTokens}`,
       `cache_write_tokens=${metrics.cacheWriteTokens}`,
       `hit_percent=${metrics.cacheHitPercent}`,
+      ...(metrics.cost !== undefined ? [`cost=${metrics.cost}`] : []),
+      ...(metrics.cacheDiscount !== undefined
+        ? [`cache_discount=${metrics.cacheDiscount}`]
+        : []),
     ].join(" "),
   );
   return metrics;
@@ -207,6 +219,7 @@ export async function openRouterChatCompletion({
 
   const requestBody = {
     ...body,
+    ...(body.usage === undefined ? { usage: { include: true } } : {}),
     ...(sessionId ? { session_id: String(sessionId).slice(0, 256) } : {}),
   };
 
