@@ -1319,11 +1319,16 @@ export function verifyRevision(config, report, html = "") {
   const failures = [];
   if (!Array.isArray(report.results) || !report.results.length)
     failures.push("Revision has no per-feedback results.");
-  for (const result of report.results || [])
-    if (result.status !== "fulfilled")
+  for (const result of report.results || []) {
+    const creativeVerified =
+      result.status === "creative" &&
+      report.creativeSourceRepairRequired === true &&
+      report.creativeSourceRepairVerified?.pass === true;
+    if (result.status !== "fulfilled" && !creativeVerified)
       failures.push(
         `Feedback item ${result.feedbackIndex + 1} is ${result.status}: ${result.unresolved?.join(", ") || "unresolved"}.`,
       );
+  }
   for (const artifact of report.expectedArtifacts || []) {
     if (artifact.type === "html" && !html.includes(artifact.marker))
       failures.push(`Missing rendered artifact: ${artifact.marker}`);
