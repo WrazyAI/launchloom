@@ -76,9 +76,15 @@ revised.revisionReport = {
           ["layout", "color", "social-proof", "brand-name"].includes(intent),
         ),
     ),
+  creativeSourceRepairVerified: null,
   expectedArtifacts: expectedArtifacts(planned.operations, revised).filter(
     (artifact) =>
-      !creativeRenderer || !creativeIgnoredArtifactTypes.has(artifact.type),
+      !creativeRenderer ||
+      (!creativeIgnoredArtifactTypes.has(artifact.type) &&
+        !(
+          artifact.type === "html" &&
+          artifact.marker === 'class="wordmark__name"'
+        )),
   ),
 };
 if (process.env.FEEDBACK_SUMMARY_PATH)
