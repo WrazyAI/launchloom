@@ -186,25 +186,66 @@ export async function writeCandidate(
       installed.push(name);
     }
   } catch (error) {
-    for (const name of [...installed].reverse())
-      await fsImpl.rm(path.join(candidateDir, name), {
-        recursive: true,
-        force: true,
-      }).catch(() => {});
+    const rollbackErrors = [];
+    for (const name of [...installed].reverse()) {
+      try {
+        await fsImpl.rm(path.join(candidateDir, name), {
+          recursive: true,
+          force: true,
+        });
+      } catch (rollbackError) {
+        rollbackErrors.push(
+          `${name} cleanup failed: ${rollbackError?.message || rollbackError}`,
+        );
+      }
+    }
     for (const name of [...backedUp].reverse()) {
       const original = path.join(backup, name);
       const destination = path.join(candidateDir, name);
-      await fsImpl.rm(destination, {
-        recursive: true,
-        force: true,
-      }).catch(() => {});
-      await fsImpl.rename(original, destination).catch(() => {});
+      try {
+        await fsImpl.rm(destination, {
+          recursive: true,
+          force: true,
+        });
+        await fsImpl.rename(original, destination);
+      } catch (rollbackError) {
+        rollbackErrors.push(
+          `${name} restore failed: ${rollbackError?.message || rollbackError}`,
+        );
+      }
+    }
+    if (rollbackErrors.length) {
+      const originalMessage = error?.message || String(error);
+      const recovery = new Error(
+        `${originalMessage} Rollback incomplete; recovery backup preserved at ${backup}. ${rollbackErrors.join(" | ")}`,
+        { cause: error instanceof Error ? error : undefined },
+      );
+      recovery.recoveryBackup = backup;
+      throw recovery;
     }
     throw error;
   } finally {
-    await fsImpl.rm(staging, { recursive: true, force: true });
-    await fsImpl.rm(backup, { recursive: true, force: true });
+    await fsImpl.rm(staging, { recursive: true, force: true }).catch(() => {});
+    const backupEntries = await fsImpl.readdir?.(backup).catch?.(() => []) || [];
+    if (!backupEntries.length)
+      await fsImpl.rm(backup, { recursive: true, force: true }).catch(() => {});
   }
+}
+
+export async function collectAvailableScreenshots(
+  screenshots,
+  { fsImpl = fs } = {},
+) {
+  const available = [];
+  for (const file of screenshots) {
+    try {
+      await fsImpl.access(file);
+      available.push(file);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
+  return available;
 }
 
 async function copySelectedScreenshots({ screenshotsDir, candidateId, targetDir }) {
@@ -247,6 +288,7 @@ export async function runVisualGateProcess({
   configPath = path.join(siteDir, "src/site.config.json"),
   visualGateScript = path.resolve("scripts/visual-quality-gate.mjs"),
 } = {}) {
+  await fs.rm(reportPath, { force: true });
   const result = await spawnCapture(
     process.execPath,
     [
@@ -448,15 +490,9 @@ export async function runRenderedCreativeRepair({
     const screenshots = VIEWPORTS.map((viewport) =>
       path.join(screenshotsDir, `${candidateId}-${viewport}.png`),
     );
-    const availableScreenshots = [];
-    for (const file of screenshots) {
-      try {
-        await fs.access(file);
-        availableScreenshots.push(file);
-      } catch {
-        // A build failure can legitimately leave no screenshot for a route.
-      }
-    }
+    // A build failure can legitimately leave an ENOENT screenshot, but
+    // permissions and I/O errors must fail closed instead of weakening evidence.
+    const availableScreenshots = await collectAvailableScreenshots(screenshots);
     const nextCycle = used + 1;
     await repairCandidateImpl({
       candidateDir,
