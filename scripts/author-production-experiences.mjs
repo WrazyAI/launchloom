@@ -8,7 +8,6 @@ import {
   openRouterChatCompletion,
   openRouterPromptCacheKey,
   openRouterSessionId,
-  promptCachedText,
   promptCachedMessageContent,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
