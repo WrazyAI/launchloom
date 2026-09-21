@@ -3,6 +3,14 @@ import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
 import { authorExperienceCandidates } from "./production-experience-author.mjs";
+import {
+  logOpenRouterCacheUsage,
+  openRouterChatCompletion,
+  openRouterPromptCacheKey,
+  openRouterSessionId,
+  promptCachedText,
+  promptCacheRequestFields,
+} from "./openrouter-client.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -81,6 +89,39 @@ function markerSlug(value) {
     .replace(/^-|-$/gu, "");
 }
 
+function authorSystemPrompt(request) {
+  return `Return valid JSON only. Create an ambitious, production-grade frontend while obeying the sealed content and safety contract exactly.
+
+You are authoring one candidate for the LaunchLoom production creative compiler.
+
+TYPOGRAPHY PALETTE
+${typographyPalettePrompt()}
+Choose typography by role from these locally safe stacks. Do not invent remote font URLs. Preserve the reference's scale, weight contrast, tracking, line-height, and display/body relationship even when an exact proprietary reference font is unavailable.
+
+ALLOWED CONTENT TOKENS
+${request.contentTokens.join("\n")}
+
+RELEASE RULES
+${request.rules}
+
+Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. The candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, Reference DNA, mobile behavior, and prohibited patterns as binding design constraints, not suggestions.
+
+REFERENCE FIDELITY RULES
+- Do not average references or drift to a familiar LaunchLoom composition.
+- Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
+- Preserve assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
+- Include every required signature element and expose its data-reference-signature attribute in the rendered DOM.
+- Use one distinctive, purposeful interaction from the assigned family and provide its reduced-motion equivalent.
+- Keep business facts, SEO copy, contact details, and imagery bound to sealed content tokens. Never copy reference branding, copy, assets, or trade dress.
+
+STAGE SAFETY
+- Contract output defines the implementation but never contains source files.
+- Experience JSX owns semantic structure and sealed content bindings; it must use the shared LeadForm and no remote/network primitives.
+- CSS styles the authored markup without changing structure, remote assets, or viewport safety.
+- motion.js exports mountExperienceMotion(runtime), uses reduced-motion fallbacks, and never creates a second experience implementation.
+- Every stage must preserve Reference DNA mechanics and the same route identity.`;
+}
+
 function stagePrompt(request) {
   const route = JSON.stringify(
     {
@@ -110,35 +151,13 @@ function stagePrompt(request) {
     null,
     2,
   );
-  const shared = `You are authoring one candidate for the LaunchLoom production creative compiler.
-
-ROUTE
+  const shared = `ROUTE
 ${route}
-
-TYPOGRAPHY PALETTE
-${typographyPalettePrompt()}
-Choose typography by role from these locally safe stacks. Do not invent remote font URLs. Preserve the reference's scale, weight contrast, tracking, line-height, and display/body relationship even when an exact proprietary reference font is unavailable.
 
 SEALED CONTENT SHAPE
 ${JSON.stringify(request.contentShape, null, 2)}
 
-ALLOWED CONTENT TOKENS
-${request.contentTokens.join("\n")}
-
-RELEASE RULES
-${request.rules}
-
-${request.validationError && request.stage !== "experience" ? `BOUNDED FORMAT REPAIR\nThe previous ${request.stage} output failed validation: ${request.validationError}\nReturn the complete corrected ${request.stage} output using the required schema. Preserve the assigned route.\n\nPREVIOUS OUTPUT\n${request.previousSource}\n` : ""}
-
-Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. This candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, Reference DNA, mobile behavior, and prohibited patterns as binding design constraints, not suggestions.
-
-REFERENCE FIDELITY RULES
-- Do not average the references or drift to a familiar LaunchLoom composition.
-- Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
-- Preserve the assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
-- Include every required signature element and expose its data-reference-signature attribute in the rendered DOM.
-- Use one distinctive, purposeful interaction from the assigned family and provide its reduced-motion equivalent.
-- Keep business facts, SEO copy, contact details, and imagery bound to sealed content tokens. Never copy reference branding, copy, assets, or trade dress.`;
+${request.validationError && request.stage !== "experience" ? `BOUNDED FORMAT REPAIR\nThe previous ${request.stage} output failed validation: ${request.validationError}\nReturn the complete corrected ${request.stage} output using the required schema. Preserve the assigned route.\n\nPREVIOUS OUTPUT\n${request.previousSource}\n` : ""}`;
 
   const dna = request.route.referenceDna;
   const referenceMarkers = dna
@@ -258,18 +277,26 @@ async function requestStage(request) {
     let lastError;
     for (const effort of requestedEfforts) {
       try {
-        const response = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            method: "POST",
-            signal: controller.signal,
-            headers: {
-              Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-              "Content-Type": "application/json",
-              "X-OpenRouter-Title": "LaunchLoom Production Experience Author",
-            },
-            body: JSON.stringify({
+        const systemPrompt = authorSystemPrompt(request);
+        const sessionId = openRouterSessionId(
+          "creative-author",
+          model,
+          request.contentShape?.brand?.name,
+          request.contentShape?.brand?.phone,
+          request.contentShape?.brand?.email,
+        );
+        const promptCacheKey = openRouterPromptCacheKey(
+          "creative-author-system",
+          model,
+          systemPrompt,
+        );
+        const response = await openRouterChatCompletion({
+          title: "LaunchLoom Production Experience Author",
+          signal: controller.signal,
+          sessionId,
+          body: {
               model,
+              ...promptCacheRequestFields(model, promptCacheKey),
               temperature: request.stage === "contract" ? 0.76 : 0.62,
               reasoning: { effort, exclude: true },
               response_format: {
@@ -287,14 +314,12 @@ async function requestStage(request) {
               messages: [
                 {
                   role: "system",
-                  content:
-                    "Return valid JSON only. Create an ambitious, production-grade frontend while obeying the sealed content and safety contract exactly.",
+                  content: [promptCachedText(model, systemPrompt)],
                 },
                 { role: "user", content: userContent },
               ],
-            }),
-          },
-        );
+            },
+        });
         const payload = await response.json().catch(() => ({}));
         if (sharedAbortController.signal.aborted)
           throw new Error("Phase 2 authorship cancelled after a sibling failure.");
@@ -308,12 +333,18 @@ async function requestStage(request) {
             `No ${request.stage} content returned for ${request.route.id} (${payload.choices?.[0]?.finish_reason || "unknown"}).`,
           );
         const parsed = parseModelJson(content);
+        const cache = logOpenRouterCacheUsage(
+          `creative-author-${request.stage}`,
+          payload.usage,
+        );
         usage.push({
           routeId: request.route.id,
           stage: request.stage,
           provider: payload.provider || null,
           reasoningEffort: effort,
           usage: payload.usage || null,
+          cache,
+          sessionId,
           durationMs: Date.now() - startedAt,
         });
         console.log(
