@@ -710,4 +710,47 @@ describe("production experience author", () => {
       ),
     ).toHaveLength(2);
   });
+
+  it("passes route-specific sealed imagery to each creative candidate", async () => {
+    const routeSite = {
+      ...site,
+      creativeAssets: {
+        "route-01": {
+          hero: "/images/generated/route-01-hero.webp",
+          secondary: "/images/generated/route-01-secondary.webp",
+          tertiary: "/images/generated/route-01-tertiary.webp",
+        },
+        "route-02": {
+          hero: "/images/generated/route-02-hero.webp",
+          secondary: "/images/generated/route-02-secondary.webp",
+          tertiary: "/images/generated/route-02-tertiary.webp",
+        },
+        "route-03": {
+          hero: "/images/generated/route-03-hero.webp",
+          secondary: "/images/generated/route-03-secondary.webp",
+          tertiary: "/images/generated/route-03-tertiary.webp",
+        },
+      },
+    };
+    const seen = new Map<string, string>();
+    await authorExperienceCandidates({
+      site: routeSite,
+      inspirationPack,
+      generate: async (request) => {
+        seen.set(request.route.id, request.contentShape.hero.image);
+        return safeStage(request);
+      },
+    });
+
+    expect(seen.get("route-01")).toBe(
+      "/images/generated/route-01-hero.webp",
+    );
+    expect(seen.get("route-02")).toBe(
+      "/images/generated/route-02-hero.webp",
+    );
+    expect(seen.get("route-03")).toBe(
+      "/images/generated/route-03-hero.webp",
+    );
+  });
+
 });
