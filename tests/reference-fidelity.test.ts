@@ -66,6 +66,86 @@ describe("reference fidelity validator", () => {
     ]));
   });
 
+  const staticExperience = validExperience
+    .replace("{content.hero.heading}", "heading")
+    .replace("{content.hero.image}", '"/placeholder.jpg"')
+    .replace("{content.services}", "services")
+    .replace("{content.faqs}", "faqs");
+  const aliasedExperience = validExperience
+    .replace("{content.hero.image}", "{heroImage}")
+    .replace("{content.services}", "{serviceItems}")
+    .replace("{content.faqs}", "{faqItems}");
+  const tokenFindings = (experienceSource: string) => validateReferenceCandidate({
+    referenceDna: dna,
+    experienceSource,
+    stylesSource: validStyles,
+    motionSource: validMotion,
+  }).findings.filter((item: any) => item.code === "unbound-content-token");
+
+  it.each([
+    ["nested destructuring", `const { hero: { image: heroImage }, services: serviceItems, faqs: faqItems } = content; return ${aliasedExperience};`],
+    ["chained aliases", `const sealed = content; const { hero: banner, services: serviceItems, faqs: faqItems } = sealed; const heroImage = banner.image; return ${aliasedExperience};`],
+    ["destructured props", `export default function Experience({ content: { hero: { image: heroImage }, services: serviceItems, faqs: faqItems } }) { return ${aliasedExperience}; }`],
+    ["renamed content parameter", `export default ({ content: sealed }) => { const { hero: { image: heroImage }, services: serviceItems, faqs: faqItems } = sealed; return ${aliasedExperience}; };`],
+    ["ordinary props parameter", `export default function Experience(props) { const { hero: { image: heroImage }, services: serviceItems, faqs: faqItems } = props.content; return ${aliasedExperience}; }`],
+    ["returned JSX alias", `export function Experience({ content }) { const view = ${validExperience}; return view; }`],
+    ["separate default export", `const Page = ({ content }) => ${validExperience}; export default Page;`],
+    ["direct content parameter", `export function Experience(content) { return ${validExperience}; }`],
+    ["block output", `if (ready) { const { hero: { image: heroImage }, services: serviceItems, faqs: faqItems } = content; return ${aliasedExperience}; }`],
+    ["direct collection mappings", validExperience
+      .replace("{content.services}", "{content.services.map(({ name }) => <p>{name}</p>)}")
+      .replace("{content.faqs}", "{content.faqs.map((faq) => { const answer = <p>{faq.answer}</p>; return answer; })}")],
+    ["mapped aliases", `export const Experience = ({ content }) => { const { hero: { image: heroImage }, services, faqs } = content; const serviceItems = services.map(({ name }) => <p>{name}</p>); const faqItems = faqs.map(({ question }) => <p>{question}</p>); return ${aliasedExperience}; };`],
+    ["returned output expressions", "export function Experience({ content }) { const { hero: { image }, services, faqs } = content; return [image, services.map(({ name }) => name), faqs.map(({ answer }) => answer)]; }"],
+    ["typed and bracketed aliases", `export function Experience({ content }) { const heroImage = (content["hero"]["image"] as string); const serviceItems = content.services!; const faqItems = content?.faqs; return ${aliasedExperience}; }`],
+    ["unrelated block shadow", `const { hero: { image: heroImage }, services: serviceItems, faqs: faqItems } = content; { const heroImage = "local"; const serviceItems = []; const faqItems = []; } return ${aliasedExperience};`],
+    ["mapping callback output", 'export function Experience({ content }) { return [1].map(() => <div><img src={content.hero.image} />{content.services}{content.faqs}</div>); }'],
+  ])("accepts sealed tokens flowing through %s", (_label, source) => {
+    expect(tokenFindings(source)).toEqual([]);
+  });
+
+  it.each([
+    ["unused destructuring", `const { hero: { image: heroImage }, services, faqs } = content; return ${staticExperience};`],
+    ["unused assignments", `const image = content.hero.image; const services = content.services; const faqs = content.faqs; return ${staticExperience};`],
+    ["unused parameter bindings", `export default function Experience({ content: { hero: { image }, services, faqs } }) { return ${staticExperience}; }`],
+    ["unused JSX assignment", `export function Experience({ content }) { const unused = ${validExperience}; return ${staticExperience}; }`],
+    ["unused mapped output", `const images = [content.hero.image].map((image) => <img src={image} />); const services = content.services.map((service) => <p>{service.name}</p>); const faqs = content.faqs.map((faq) => <p>{faq.answer}</p>); return ${staticExperience};`],
+    ["comments and strings", `// content.hero.image content.services content.faqs\n/* content.hero.image content.services content.faqs */\nconst mention = "content.hero.image content.services content.faqs"; return ${staticExperience};`],
+    ["literal JSX mentions", '<main title="content.hero.image content.services content.faqs">content.hero.image content.services content.faqs{"content.hero.image content.services content.faqs"}{/* content.hero.image content.services content.faqs */}</main>'],
+    ["discarded expressions", `content.hero.image; content.services; content.faqs; console.log(content.hero.image, content.services, content.faqs); return ${staticExperience};`],
+    ["discarded comma operands", `return (content.hero.image, content.services, content.faqs, ${staticExperience});`],
+    ["unused helper", `function unused() { return ${validExperience}; } export function Experience() { return ${staticExperience}; }`],
+    ["unused arrow", `const unused = () => ${validExperience}; return ${staticExperience};`],
+    ["local content shadow", `const content = { hero: { image: "local" }, services: [], faqs: [] }; return ${validExperience};`],
+    ["block binding shadow", `const { hero: { image: heroImage }, services: serviceItems, faqs: faqItems } = content; { const heroImage = "local"; const serviceItems = []; const faqItems = []; return ${aliasedExperience}; }`],
+    ["callback parameter shadow", `export function Experience({ content }) { return unrelated.map((content) => ${validExperience}); }`],
+    ["destructured callback shadow", `const { hero: { image: heroImage }, services: serviceItems, faqs: faqItems } = content; export function Experience() { return unrelated.map(({ heroImage, serviceItems, faqItems }) => ${aliasedExperience}); }`],
+    ["unused callback bindings", `export function Experience({ content }) { return unrelated.map(() => { const image = content.hero.image, services = content.services, faqs = content.faqs; return ${staticExperience}; }); }`],
+    ["catch parameter shadow", `export function Experience({ content }) { try { work(); } catch (content) { return ${validExperience}; } }`],
+    ["hoisted function binding shadow", `const { hero: { image: heroImage }, services: serviceItems, faqs: faqItems } = content; export function Experience() { if (ready) { var heroImage = "local", serviceItems = [], faqItems = []; } return ${aliasedExperience}; }`],
+    ["overwritten aliases", `let heroImage = content.hero.image, serviceItems = content.services, faqItems = content.faqs; heroImage = "local"; serviceItems = []; faqItems = []; return ${aliasedExperience};`],
+    ["unrelated property names", 'const unrelated = { "content.hero.image": 1, "content.services": 2, "content.faqs": 3 }; return unrelated;'],
+    ["similar token prefixes", validExperience
+      .replace("content.hero.image", "content.hero.imageCaption")
+      .replace("content.services", "content.servicesHeading")
+      .replace("content.faqs", "content.faqsHeading")],
+  ])("rejects sealed token evidence from %s", (_label, source) => {
+    const findings = tokenFindings(source);
+    expect(findings).toHaveLength(3);
+    for (const token of ["content.hero.image", "content.services", "content.faqs"])
+      expect(findings).toContainEqual(expect.objectContaining({ message: expect.stringContaining(token) }));
+  });
+
+  it("tracks each required token independently", () => {
+    const source = `const { services, faqs } = content; return ${validExperience
+      .replace("{content.services}", "services")
+      .replace("{content.faqs}", "faqs")};`;
+    expect(tokenFindings(source).map((item: any) => item.message)).toEqual([
+      "Required sealed token content.services does not flow into output.",
+      "Required sealed token content.faqs does not flow into output.",
+    ]);
+  });
+
   it("rejects marker values that only contain the expected slug", () => {
     const mismatched = validExperience.replace(
       'data-hero-geometry="typographic-monument"',

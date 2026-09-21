@@ -55,18 +55,70 @@ describe("creative repair loop", () => {
     ]);
   });
 
-  it.each(["desktopScreenshot", "mobileScreenshot"])("fails terminally for unreadable %s instead of applying safety repairs", async (kind) => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-"));
-    roots.push(root);
+  it.each([
+    undefined,
+    {},
+    { available: true },
+    { available: false, path: "desktop.png" },
+  ])("fails terminally before requesting a repair for invalid desktop evidence %j", async (desktopScreenshot) => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const evaluate = vi.fn(async () => ({ pass: true, findings: [] }));
     await expect(runCreativeRepairLoop({
       files: { experience: "old", styles: "old", motion: "old" },
-      referenceDna: { evidence: { [kind]: {
-        path: path.join(root, "missing.png"),
-        absolutePath: root,
-      } } },
+      referenceDna: { evidence: { desktopScreenshot } },
+      findings: [{ evidence: "Hero heading is white-on-white on a light panel." }],
+      generate: (request: any) => requestRepair({ model: "test/model", ...request }),
+      evaluate,
+    })).rejects.toThrow("Creative repair requires desktop reference evidence");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(evaluate).toHaveBeenCalledOnce();
+  });
+
+  it.each([undefined, {}, { available: false, path: "missing-mobile.png" }])("keeps mobile reference evidence optional: %j", async (mobileScreenshot) => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => new Response(JSON.stringify({
+      choices: [{ message: { content: JSON.stringify(repaired) } }],
+    })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(requestRepair({
+      model: "test/model",
+      referenceDna: { evidence: { desktopScreenshot: { path: desktop }, mobileScreenshot } },
+      findings: [],
+      files: repaired,
+      screenshots: [],
+    })).resolves.toEqual(repaired);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.messages[1].content.filter((part: any) => part.type === "image_url")).toHaveLength(1);
+  });
+
+  it.each([
+    ["desktopScreenshot", false],
+    ["desktopScreenshot", true],
+    ["mobileScreenshot", false],
+    ["mobileScreenshot", true],
+  ] as const)("fails terminally for unreadable %s (directory: %s) instead of applying safety repairs", async (kind, directory) => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const evaluate = vi.fn(async () => ({ pass: true, findings: [] }));
+    await expect(runCreativeRepairLoop({
+      files: { experience: "old", styles: "old", motion: "old" },
+      referenceDna: { evidence: {
+        desktopScreenshot: { path: desktop },
+        [kind]: {
+          path: path.join(root, "missing.png"),
+          absolutePath: directory ? root : path.join(root, "also-missing.png"),
+        },
+      } },
       findings: [{ evidence: "Hero heading is white-on-white on a light panel." }],
       generate: (request: any) => requestRepair({ model: "test/model", ...request }),
       evaluate,

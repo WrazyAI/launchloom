@@ -307,11 +307,18 @@ export async function resolveReferenceEvidencePath(record) {
 }
 
 export async function requestRepair({ model, referenceDna, findings, files, screenshots }) {
+  const desktopReference = referenceDna?.evidence?.desktopScreenshot;
+  if (
+    desktopReference?.available === false ||
+    !(desktopReference?.path || desktopReference?.absolutePath)
+  ) {
+    throw new ReferenceEvidenceError("Creative repair requires desktop reference evidence.");
+  }
   const content = [{ type: "text", text: `Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer. Reference DNA:\n${JSON.stringify(referenceDna, null, 2)}\nFindings:\n${JSON.stringify(findings, null, 2)}\nCurrent Experience.jsx:\n${files.experience}\nCurrent styles.css:\n${files.styles}\nCurrent motion.js:\n${files.motion}\nReturn complete files. Keep the required data-reference-signature, geometry, section, CTA, mobile, and motion markers. Do not add remote URLs, hardcoded business facts, or em dashes.` }];
   for (const screenshot of screenshots.slice(0, 3))
     content.push(await imagePart(screenshot));
   const referenceScreenshots = [
-    referenceDna?.evidence?.desktopScreenshot,
+    desktopReference,
     referenceDna?.evidence?.mobileScreenshot,
   ].filter((record) => record?.available !== false && (record?.path || record?.absolutePath));
   for (const record of referenceScreenshots) {

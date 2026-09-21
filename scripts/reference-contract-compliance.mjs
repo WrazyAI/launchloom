@@ -1,3 +1,4 @@
+import ts from "typescript";
 import { validateReferenceDna } from "./reference-dna.mjs";
 
 const slug = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "");
@@ -23,19 +24,159 @@ function markerMatches(source, attribute, expected) {
   return Boolean(actual && target && actual === target);
 }
 
-function referencesContentToken(source, token) {
-  if (source.includes(token)) return true;
-  const group = token.replace(/^content\./u, "");
-  if (!group || group.includes(".")) return false;
-  const groupBinding = new RegExp(
-    `(?:const|let)\\s+\\{[^}]*\\b${group}\\b[^}]*\\}\\s*=\\s*content\\b`,
-    "u",
-  );
-  const parameterBinding = new RegExp(
-    `\\bcontent\\s*:\\s*\\{[\\s\\S]{0,500}?\\b${group}\\b`,
-    "u",
-  );
-  return groupBinding.test(source) || parameterBinding.test(source);
+function outputContentPaths(source) {
+  // Raw JSX fixtures can contain adjacent roots without a component wrapper.
+  const input = source.trimStart().startsWith("<") ? `<>${source}</>` : source;
+  const file = ts.createSourceFile("Experience.tsx", input, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const scopes = new WeakMap();
+  const roots = [];
+  const writes = [];
+  const moduleScope = { bindings: new Map(), parent: null, functionScope: true };
+  const propertyName = (node) => node && (ts.isIdentifier(node) || ts.isStringLiteral(node) || ts.isNumericLiteral(node)) ? node.text : null;
+  const lookup = (scope, name) => {
+    for (; scope; scope = scope.parent)
+      if (scope.bindings.has(name)) return scope.bindings.get(name);
+    return null;
+  };
+  const bind = (name, scope, value, path = []) => {
+    if (ts.isIdentifier(name)) {
+      scope.bindings.set(name.text, { ...value, path });
+    } else if (ts.isObjectBindingPattern(name) || ts.isArrayBindingPattern(name)) {
+      name.elements.forEach((element, index) => {
+        if (!ts.isBindingElement(element)) return;
+        const key = ts.isArrayBindingPattern(name) ? String(index) : propertyName(element.propertyName || element.name);
+        bind(element.name, scope, element.dotDotDotToken || key === null ? {} : value, [...path, key]);
+      });
+    }
+  };
+  const exported = (node) => node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword);
+  const entryNames = new Set(["Experience"]);
+  for (const statement of file.statements)
+    if (ts.isExportAssignment(statement) && ts.isIdentifier(statement.expression)) entryNames.add(statement.expression.text);
+  const isEntryFunction = (node) => {
+    if (node.parent === file) return exported(node) || entryNames.has(node.name?.text);
+    if (ts.isExportAssignment(node.parent)) return true;
+    const declaration = node.parent;
+    return ts.isVariableDeclaration(declaration) && ts.isVariableDeclarationList(declaration.parent) &&
+      ts.isVariableStatement(declaration.parent.parent) && declaration.parent.parent.parent === file &&
+      (entryNames.has(declaration.name.getText(file)) || exported(declaration.parent.parent));
+  };
+  const returnedExpressions = (body) => {
+    if (!body) return [];
+    if (!ts.isBlock(body)) return [body];
+    const expressions = [];
+    const visit = (node) => {
+      if (ts.isFunctionLike(node)) return;
+      if (ts.isReturnStatement(node)) {
+        if (node.expression) expressions.push(node.expression);
+        return;
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(body);
+    return expressions;
+  };
+  const index = (node, scope) => {
+    if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) && node.name)
+      bind(node.name, scope, {});
+    if (ts.isFunctionLike(node)) {
+      const entry = isEntryFunction(node);
+      scope = { bindings: new Map(), parent: scope, functionScope: true };
+      if (node.name && ts.isIdentifier(node.name)) bind(node.name, scope, {});
+      for (const parameter of node.parameters)
+        bind(parameter.name, scope, entry ? { seed: ts.isIdentifier(parameter.name) && parameter.name.text === "content" ? "content" : "$props" } : {});
+      if (entry) roots.push(...returnedExpressions(node.body));
+    } else if (ts.isBlock(node) || ts.isCaseBlock(node) || ts.isCatchClause(node) || ts.isForStatement(node) || ts.isForOfStatement(node) || ts.isForInStatement(node)) {
+      scope = { bindings: new Map(), parent: scope, functionScope: false };
+    }
+    scopes.set(node, scope);
+    if (ts.isVariableDeclaration(node)) {
+      let target = scope;
+      if (ts.isVariableDeclarationList(node.parent) && !(node.parent.flags & ts.NodeFlags.BlockScoped))
+        while (!target.functionScope) target = target.parent;
+      bind(node.name, target, { expression: node.initializer });
+    }
+    if (ts.isImportClause(node) && node.name) bind(node.name, scope, {});
+    if (ts.isImportSpecifier(node) || ts.isNamespaceImport(node)) bind(node.name, scope, {});
+    if (ts.isBinaryExpression(node) && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment)
+      writes.push(node.left);
+    if ((ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) &&
+      (node.operator === ts.SyntaxKind.PlusPlusToken || node.operator === ts.SyntaxKind.MinusMinusToken)) writes.push(node.operand);
+    if (ts.isReturnStatement(node) && node.expression) {
+      let owner = scope;
+      while (!owner.functionScope) owner = owner.parent;
+      if (owner === moduleScope) roots.push(node.expression);
+    }
+    if (node.parent === file) {
+      if (ts.isExpressionStatement(node) && (ts.isJsxElement(node.expression) || ts.isJsxSelfClosingElement(node.expression) || ts.isJsxFragment(node.expression)))
+        roots.push(node.expression);
+      if (ts.isExportAssignment(node) && !ts.isFunctionLike(node.expression)) roots.push(node.expression);
+    }
+    ts.forEachChild(node, (child) => index(child, scope));
+  };
+  index(file, moduleScope);
+  // Reassigned aliases are deliberately not evidence. This is a dependency walk,
+  // not an execution engine for control flow or mutable state.
+  const invalidate = (node) => {
+    if (ts.isIdentifier(node)) {
+      const binding = lookup(scopes.get(node), node.text);
+      if (binding) binding.written = true;
+    } else if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
+      invalidate(node.expression);
+    } else {
+      ts.forEachChild(node, invalidate);
+    }
+  };
+  writes.forEach(invalidate);
+  const append = (paths, keys) => paths.map((path) => [path, ...keys].join(".").replace(/^\$props\.content(?=\.|$)/u, "content"));
+  const active = new Set();
+  const paths = (node) => {
+    if (!node) return [];
+    if (ts.isIdentifier(node)) {
+      const binding = lookup(scopes.get(node), node.text);
+      if (!binding) return node.text === "content" ? ["content"] : [];
+      if (binding.written || active.has(binding)) return [];
+      active.add(binding);
+      const result = append(binding.seed ? [binding.seed] : paths(binding.expression), binding.path);
+      active.delete(binding);
+      return result;
+    }
+    if (ts.isPropertyAccessExpression(node)) return append(paths(node.expression), [node.name.text]);
+    if (ts.isElementAccessExpression(node)) {
+      const key = node.argumentExpression;
+      return key && (ts.isStringLiteral(key) || ts.isNumericLiteral(key)) ? append(paths(node.expression), [key.text]) : paths(node.expression);
+    }
+    if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isTypeAssertionExpression(node) || ts.isNonNullExpression(node) || ts.isSatisfiesExpression(node))
+      return paths(node.expression);
+    if (ts.isJsxElement(node)) return [...paths(node.openingElement), ...node.children.flatMap(paths)];
+    if (ts.isJsxFragment(node)) return node.children.flatMap(paths);
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) return node.attributes.properties.flatMap(paths);
+    if (ts.isJsxAttribute(node)) return paths(node.initializer);
+    if (ts.isJsxExpression(node) || ts.isJsxSpreadAttribute(node) || ts.isSpreadElement(node) || ts.isSpreadAssignment(node)) return paths(node.expression);
+    if (ts.isCallExpression(node)) {
+      const callee = node.expression;
+      const mapped = ts.isPropertyAccessExpression(callee) && callee.name.text === "map";
+      return [
+        ...paths(callee),
+        ...node.arguments.flatMap((argument) => mapped && ts.isFunctionLike(argument)
+          ? returnedExpressions(argument.body).flatMap(paths) : paths(argument)),
+      ];
+    }
+    if (ts.isConditionalExpression(node)) return [...paths(node.condition), ...paths(node.whenTrue), ...paths(node.whenFalse)];
+    if (ts.isBinaryExpression(node)) {
+      if (node.operatorToken.kind === ts.SyntaxKind.CommaToken || node.operatorToken.kind === ts.SyntaxKind.EqualsToken) return paths(node.right);
+      return [...paths(node.left), ...paths(node.right)];
+    }
+    if (ts.isArrayLiteralExpression(node)) return node.elements.flatMap(paths);
+    if (ts.isObjectLiteralExpression(node)) return node.properties.flatMap(paths);
+    if (ts.isPropertyAssignment(node)) return paths(node.initializer);
+    if (ts.isShorthandPropertyAssignment(node)) return paths(node.name);
+    if (ts.isTemplateExpression(node)) return node.templateSpans.flatMap((span) => paths(span.expression));
+    // Literals, comments, type nodes, declarations, and uninvoked functions do
+    // not contribute output dependencies.
+    return [];
+  };
+  return new Set(roots.flatMap(paths));
 }
 
 function sourceSectionOrder(source) {
@@ -108,9 +249,10 @@ export function validateReferenceContractCompliance({
   for (const match of stylesSource.matchAll(/--([a-z][\w-]*)\s*:/giu))
     if (!match[1].startsWith("ll-creative-"))
       findings.push(finding("css-token-collision", "critical", `Candidate CSS variable --${match[1]} is not isolated.`));
+  const contentPaths = [...outputContentPaths(experienceSource)];
   for (const token of ["content.hero.image", "content.services", "content.faqs"])
-    if (!referencesContentToken(experienceSource, token))
-      findings.push(finding("unbound-content-token", "critical", `Required sealed token ${token} is not referenced.`));
+    if (!contentPaths.some((path) => path === token || path.startsWith(`${token}.`)))
+      findings.push(finding("unbound-content-token", "critical", `Required sealed token ${token} does not flow into output.`));
   const critical = findings.filter((item) => item.severity === "critical").length;
   const score = Math.max(0, Math.round(100 - critical * 18 - findings.filter((item) => item.severity === "major").length * 8));
   return {
