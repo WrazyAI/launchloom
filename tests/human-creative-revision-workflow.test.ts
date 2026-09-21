@@ -120,6 +120,9 @@ describe("human creative revision lifecycle", () => {
     expect(worker).toContain('claims.stage !== "developer"');
     expect(worker).toContain('await dispatch(env, "publish-site"');
     expect(publish).toContain('--to "$CLIENT_EMAIL"');
+    expect(publish).toContain("REVISION_STAGE");
+    expect(publish).toContain("client-approved-feedback.txt");
+    expect(publish).toContain('--feedback-file "$RUNNER_TEMP/client-approved-feedback.txt"');
   });
 
   it("returns client-requested revisions to the developer with the triggering request in the email", () => {
