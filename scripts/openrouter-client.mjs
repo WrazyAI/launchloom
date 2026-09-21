@@ -87,7 +87,7 @@ export function promptCacheRequestFields(
 ) {
   if (!supportsExplicitOpenAiPromptCaching(model) || !cacheKey) return {};
   return {
-    prompt_cache_key: String(cacheKey).slice(0, 256),
+    prompt_cache_key: String(cacheKey).slice(0, 64),
     prompt_cache_options: {
       mode: "explicit",
       ttl,
