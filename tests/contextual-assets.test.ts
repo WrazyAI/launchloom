@@ -211,6 +211,7 @@ describe("contextual image generation", () => {
       inspiration,
       outputDir,
       key: "test-fal-key",
+      maxImages: 99,
       maxRequests: 12,
       falClient: {
         config() {},
@@ -233,10 +234,12 @@ describe("contextual image generation", () => {
     expect(new Set(Object.values(result.site.creativeAssets).map((assets: any) => assets.hero)).size).toBe(3);
     expect(result.manifest.strategy).toBe("client-first-per-route-reference-directed");
     expect(result.manifest.routes).toHaveLength(3);
-    expect(result.manifest.placements).toHaveLength(9);
+    expect(result.manifest.placements).toHaveLength(3);
+    for (const manifest of result.manifest.routes)
+      expect(manifest.placements).toHaveLength(1);
   });
 
-  it.each([12, 13])("reserves requests for later routes despite retries with a cap of %i", async (maxRequests) => {
+  it.each([6, 7])("reserves requests for later routes despite retries with a cap of %i", async (maxRequests) => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const routes = [1, 2, 3].map((number) => ({
       id: `route-0${number}`,
@@ -261,16 +264,16 @@ describe("contextual image generation", () => {
       fetchImpl: async () => fakeImageResponse(),
     });
 
-    expect(calls).toEqual(routes.flatMap((route) => Array(4).fill(route.signature)));
-    expect(result.requests).toBe(12);
+    expect(calls).toEqual(routes.flatMap((route) => Array(2).fill(route.signature)));
+    expect(result.requests).toBe(6);
     expect(result.requests).toBeLessThanOrEqual(maxRequests);
     for (const manifest of result.manifest.routes) {
       expect(manifest.placements.map((entry: any) => entry.placement)).toEqual([
         "hero",
-        "secondary",
       ]);
       expect(manifest.skipped).toEqual([
-        expect.objectContaining({ placement: "tertiary", reason: "request-budget-exhausted" }),
+        expect.objectContaining({ placement: "secondary", reason: "image-budget-exhausted" }),
+        expect.objectContaining({ placement: "tertiary", reason: "image-budget-exhausted" }),
       ]);
     }
   });
@@ -306,6 +309,54 @@ describe("contextual image generation", () => {
     expect(result.manifest.skipped).toHaveLength(9);
     for (const route of routes)
       expect(result.site.creativeAssets[route.id].hero).toBe(site.images.hero);
+  });
+
+  it("reuses route-specific aggregate manifest assets without new requests", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const manifestPath = join(outputDir, "generated-assets.json");
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-0${number}`,
+      signature: `reuse-route-${number}`,
+    }));
+    let requests = 0;
+    await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe() {
+          requests += 1;
+          return { data: { images: [{ url: `https://fal.example/reuse-${requests}.jpg` }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+    expect(requests).toBe(3);
+
+    let reuseRequests = 0;
+    const reused = await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe() {
+          reuseRequests += 1;
+          throw new Error("Route assets should be reused from the aggregate manifest.");
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(reuseRequests).toBe(0);
+    expect(reused.requests).toBe(0);
+    expect(reused.manifest.placements).toHaveLength(3);
+    expect(reused.manifest.placements.every((entry: any) => entry.reused)).toBe(true);
   });
 
 });

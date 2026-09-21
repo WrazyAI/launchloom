@@ -34,12 +34,14 @@ lead endpoint, or ship an unverified layout.
 4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders 1536x864 desktop, 1366x768 compact desktop, and
    390x844 mobile viewports, and records the evidence. Structural contract
-   compliance remains a cheap preflight, but promotion fidelity comes from
-   `rendered-reference-fidelity.mjs`, which compares candidate pixels directly
-   with the assigned reference pixels across hero geometry, typography,
-   spatial rhythm, imagery, service presentation, navigation, CTA placement,
-   mobile recomposition, and interaction evidence. Screenshot-to-screenshot
-   candidate distance is also a hard preview and promotion gate; different
+   compliance remains a cheap safety preflight for sealed content and isolated
+   CSS. Reference geometry and signature markers remain diagnostic evidence,
+   while promotion fidelity comes from `rendered-reference-fidelity.mjs`, which
+   judges the candidate screenshots against the assigned reference screenshots
+   across hero geometry, typography, spatial rhythm, imagery, service
+   presentation, navigation, CTA placement, mobile recomposition, and
+   interaction evidence. Screenshot-to-screenshot candidate distance is
+   recorded for preview and is a hard production-promotion gate; different
    metadata, colors, or copy do not count as visual diversity.
 5. The diversity gate compares route fingerprints. It rejects a bakeoff where
    the candidates differ only in copy or color. Promotion is possible only
@@ -96,15 +98,18 @@ second lead API or fetch untrusted content.
 ## Image generation
 
 `generate-contextual-assets.mjs` fills missing client image slots only. It
-  routes the prompt through the selected inspiration family and Reference DNA,
-  including geometry, crop, palette intent, and family-specific art direction,
-  plus service vocabulary, customer questions, and crop-safe placement brief.
-  FAL output is downloaded,
-validated as an image, resized to WebP, capped at 2.5 MB, and recorded in
-`.launchloom/generated-assets.json` with a prompt hash, request ID, dimensions,
-and provider metadata. If `FAL_KEY` is absent or generation fails, the site
-keeps its reviewed image fallback and records the reason. Image fallback does
-not authorize a return to the legacy page renderer.
+routes each prompt through the selected inspiration family and Reference DNA,
+including geometry, crop, palette intent, family-specific art direction,
+service vocabulary, customer questions, and a crop-safe placement brief. The
+stage keeps at most three route-directed images globally across all routes,
+with a default six-request budget that permits one retry per image. It allocates
+the remaining slots across routes and reuses matching route entries from the
+aggregate manifest before making provider requests. FAL output is
+downloaded, validated as an image, resized to WebP, capped at 2.5 MB, and
+recorded in `.launchloom/generated-assets.json` with route provenance, a prompt
+hash, request ID, dimensions, and provider metadata. If `FAL_KEY` is absent or
+generation fails, the site keeps its reviewed image fallback and records the
+reason. Image fallback does not authorize a return to the legacy page renderer.
 
 ## Adding a new family
 

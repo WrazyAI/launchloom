@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { buildCandidateManifest } from "../scripts/creative-compiler.mjs";
+import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 import { promoteCreativeCandidate } from "../scripts/promote-creative-candidate.mjs";
 import { runCreativeBakeoff } from "../scripts/run-creative-bakeoff.mjs";
 
@@ -108,8 +109,33 @@ describe("creative candidate promotion", () => {
     expect(report.selectedCandidateId).toBeNull();
   }, 45_000);
 
-  it("selects the valid authored candidate for preview before diversity promotion", async () => {
+  it("selects a version-two candidate for preview before diversity promotion", async () => {
     const root = await makeFixture();
+    const metadataPath = path.join(root, "candidate-a/metadata.json");
+    const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+    const record = JSON.parse(
+      await fs.readFile("data/inspiration-registry.json", "utf8"),
+    ).records[0];
+    const baseDna = buildReferenceDna(record, { requireEvidence: true });
+    metadata.version = 2;
+    metadata.referenceDna = baseDna;
+    metadata.creativeManifest = {
+      ...metadata.creativeManifest,
+      version: 2,
+      referenceDna: baseDna,
+    };
+    await fs.writeFile(metadataPath, JSON.stringify(metadata));
+    const experiencePath = path.join(root, "candidate-a/Experience.jsx");
+    const experience = await fs.readFile(experiencePath, "utf8");
+    await fs.writeFile(
+      experiencePath,
+      experience
+        .replace("<main>", '<main data-mobile-recomposition="wrong-layout" data-motion-primitive="wrong-motion">')
+        .replace("<nav>", '<nav data-navigation-geometry="wrong-navigation">')
+        .replace("<section data-hero>", '<section data-hero data-hero-geometry="wrong-hero"><img src={content.hero.image} alt={content.hero.heading} />')
+        .replace('<section id="services">', '<section id="services" data-service-presentation="wrong-services">')
+        .replace("<button data-early-conversion>", '<button data-early-conversion data-cta-placement="wrong-cta">'),
+    );
     const siteRoot = path.resolve("templates/client-site");
     const configPath = path.join(siteRoot, "src/site.config.json");
     const selectedPath = path.join(siteRoot, "src/generated-experiences/selected");
@@ -123,9 +149,30 @@ describe("creative candidate promotion", () => {
         reportPath: path.join(root, "preview-report.json"),
         screenshotsDir: path.join(root, "preview-screenshots"),
         preview: true,
+        renderedReferenceEvaluator: async () => ({
+          version: 1,
+          model: "test/model",
+          score: 100,
+          pass: true,
+          audit: {
+            scores: {
+              heroGeometry: 100,
+              typography: 100,
+              spatialRhythm: 100,
+              imagery: 100,
+              servicePresentation: 100,
+              navigation: 100,
+              ctaPlacement: 100,
+              mobileRecomposition: 100,
+              interactionEvidence: 100,
+            },
+            findings: [],
+          },
+        }),
       });
       expect(report.candidates[0].valid).toBe(true);
-      expect(report.candidates[0].eligible).toBe(false);
+      expect(report.candidates[0].referenceFidelity.sourceVisualFindings.length).toBeGreaterThan(0);
+      expect(report.candidates[0].eligible).toBe(true);
       expect(report.selectedCandidateId).toBe("candidate-a");
       expect(report.fallback).toBe(false);
       expect(report.promotionReady).toBe(false);

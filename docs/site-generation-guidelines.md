@@ -40,8 +40,10 @@ graphic treatment. Do not use an attractive but unrelated photograph. Stock
 people cannot be described as the business's team, patients, or customers.
 
 When a client has a missing or partial image set, the contextual-asset stage may
-create up to three draft images through the server-only FAL adapter. Client
-media always wins for its matching placement. Generated prompts may use the
+keep up to three draft images globally across all inspiration routes through
+the server-only FAL adapter. Existing matching assets are reused before any new
+provider request, and each route keeps its own prompt and manifest provenance.
+Client media always wins for its matching placement. Generated prompts may use the
 verified business kind, services, service areas, SEO vocabulary, customer
 questions, and the submitted visual direction, but must not include private
 contact fields or invent a storefront, people, credentials, outcomes, or

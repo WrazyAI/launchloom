@@ -226,10 +226,10 @@ export async function runCreativeBakeoff({
         const motionSource = await fs.readFile(path.join(candidateRoot, candidate.directory, "motion.js"), "utf8");
         const sourceFidelity = candidate.manifest.version >= 2
           ? validateReferenceCandidate({ referenceDna: candidate.manifest.referenceDna, experienceSource, stylesSource, motionSource })
-          : { version: 1, pass: true, score: 100, findings: [], requiredSignatures: [] };
+          : { version: 1, pass: true, visualPass: true, score: 100, findings: [], hardFindings: [], visualFindings: [], requiredSignatures: [] };
         candidateResult.referenceFidelity = sourceFidelity;
         if (!sourceFidelity.pass)
-          candidateResult.failures.push(...sourceFidelity.findings.map((item) => `source: ${item.message}`));
+          candidateResult.failures.push(...sourceFidelity.hardFindings.map((item) => `source: ${item.message}`));
         await promoteCreativeCandidate({ siteDir: root, candidateDir: path.relative(root, path.join(candidateRoot, candidate.directory)) });
         await run("npm", ["run", "build"], root);
         const { server, origin } = await startServer(path.join(root, "dist"));
@@ -258,11 +258,13 @@ export async function runCreativeBakeoff({
               candidateResult.referenceFidelity = {
                 ...candidateResult.referenceFidelity,
                 rendered: renderedFidelity,
-                score: Math.min(candidateResult.referenceFidelity.score, renderedFidelity.score),
-                pass: candidateResult.referenceFidelity.pass && renderedFidelity.pass,
+                renderedVisualFindings: renderedFidelity.visualFindings,
+                pass:
+                  candidateResult.referenceFidelity.pass &&
+                  renderedFidelity.pass,
               };
               if (!renderedFidelity.pass)
-                candidateResult.failures.push(...renderedFidelity.findings.map((item) => `${viewport.name}: ${item.message}`));
+                candidateResult.failures.push(...renderedFidelity.hardFindings.map((item) => `${viewport.name}: ${item.message}`));
             }
             // Keep the requested viewport width while including the complete
             // route so the screenshot-level gate can inspect lower sections,
@@ -285,12 +287,12 @@ export async function runCreativeBakeoff({
           candidateResult.renderedReferenceFidelity = renderedReference;
           candidateResult.referenceFidelity = {
             ...candidateResult.referenceFidelity,
+            sourceContractScore: candidateResult.referenceFidelity?.score ?? 100,
+            sourceVisualFindings:
+              candidateResult.referenceFidelity?.visualFindings || [],
             pixelScore: renderedReference.score,
             pixelPass: renderedReference.pass,
-            score: Math.min(
-              candidateResult.referenceFidelity?.score ?? 100,
-              renderedReference.score,
-            ),
+            score: renderedReference.score,
             pass:
               candidateResult.referenceFidelity?.pass !== false &&
               renderedReference.pass,
@@ -446,10 +448,10 @@ export async function runCreativeBakeoff({
   const previewEligible = results.filter(
     (candidate) =>
       candidate.valid &&
+      candidate.referenceFidelity?.pass !== false &&
       (candidate.manifest.version < 2 || candidate.referenceFidelity?.score >= CREATIVE_PROMOTION_THRESHOLDS.referenceFidelityScore) &&
       candidate.visualScore >= CREATIVE_PROMOTION_THRESHOLDS.visualScore &&
-      candidate.technicalScore >= 100 &&
-      (candidate.manifest.version < 2 || candidate.distinctivenessScore >= CREATIVE_PROMOTION_THRESHOLDS.distinctivenessScore),
+      candidate.technicalScore >= 100,
   );
   const versionTwoCandidates = results.filter(
     (candidate) => candidate.manifest?.version >= 2,
@@ -515,21 +517,22 @@ export async function runCreativeBakeoff({
       source: "legacy-structural-fallback",
     };
   }
-  const diversityPass =
-    !requireDiversity ||
-    (preview && versionTwoCandidates.length === 0) ||
-    (diversity.pass && visualDiversity.pass);
-  const valid = diversityPass
-    ? preview
-      ? previewEligible
-      : results.filter((candidate) => candidate.eligible)
-    : [];
+  const measuredDiversityPass = diversity.pass && visualDiversity.pass;
+  const diversityPass = !requireDiversity || measuredDiversityPass;
+  const valid = preview && !promote
+    ? previewEligible
+    : diversityPass
+      ? results.filter((candidate) => candidate.eligible)
+      : [];
   const winner =
     valid.sort(
       (left, right) =>
         right.score - left.score ||
         left.candidateId.localeCompare(right.candidateId),
     )[0] || null;
+  const selectionPass = Boolean(
+    winner && (preview && !promote ? true : diversityPass),
+  );
 
   const report = {
     version: 1,
@@ -540,18 +543,18 @@ export async function runCreativeBakeoff({
     visualDiversity,
     diversityRequired: requireDiversity,
     candidates: results,
-    selectedCandidateId:
-      winner && diversityPass ? winner.candidateId : null,
-    // In preview mode fallback means that no authored candidate was renderable.
-    // A diversity miss is recorded separately and cannot send the page back to
-    // the legacy renderer.
-    fallback: !winner || !diversityPass,
-    promotionReady: Boolean(winner && diversityPass && winner.eligible),
+    selectedCandidateId: selectionPass ? winner.candidateId : null,
+    // Preview selection depends on candidate quality, while diversity remains
+    // visible in the report and mandatory for production promotion.
+    fallback: !selectionPass,
+    promotionReady: Boolean(
+      winner && measuredDiversityPass && winner.eligible,
+    ),
   };
   await fs.mkdir(path.dirname(reportFile), { recursive: true });
   await fs.writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`);
 
-  if ((promote || preview) && winner && diversityPass) {
+  if ((promote || preview) && selectionPass) {
     await promoteCreativeCandidate({
       siteDir: root,
       candidateDir: path.relative(root, path.join(candidateRoot, winner.directory)),
