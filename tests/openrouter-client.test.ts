@@ -138,6 +138,7 @@ describe("OpenRouter cache-aware client", () => {
     expect(JSON.parse(options.body)).toMatchObject({
       model: "openai/gpt-5.6-luna",
       session_id: "launchloom:test:abc",
+      usage: { include: true },
     });
   });
 
@@ -184,5 +185,19 @@ describe("OpenRouter cache-aware client", () => {
       openRouterCacheMetrics(usage),
     );
     expect(logger.mock.calls[0][0]).toContain("hit_percent=75");
+
+    const priced = {
+      ...usage,
+      cost: 0.42,
+      cache_discount: 0.18,
+    };
+    expect(openRouterCacheMetrics(priced)).toMatchObject({
+      cost: 0.42,
+      cacheDiscount: 0.18,
+    });
+    const pricedLogger = vi.fn();
+    logOpenRouterCacheUsage("creative author", priced, pricedLogger);
+    expect(pricedLogger.mock.calls[0][0]).toContain("cost=0.42");
+    expect(pricedLogger.mock.calls[0][0]).toContain("cache_discount=0.18");
   });
 });
