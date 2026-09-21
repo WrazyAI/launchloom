@@ -529,6 +529,46 @@ function validateMotion(source, route) {
     throw new Error(`Candidate ${route.id} motion must be JavaScript without JSX or React components.`);
 }
 
+/**
+ * @param {{files?: {experience?: string, styles?: string, motion?: string}, route?: Record<string, any>, content?: Record<string, any>}} [options]
+ * @returns {{files: {experience: string, styles: string, motion: string}, referenceFidelity: Record<string, any> | null}}
+ */
+export function validateProductionCandidateFiles({
+  files,
+  route = {},
+  content = {},
+} = {}) {
+  const experience = normalizeAuthoredSource(String(files?.experience || ""));
+  const styles = normalizeAuthoredSource(String(files?.styles || ""));
+  const motion = normalizeAuthoredSource(String(files?.motion || ""));
+  if (!experience || !styles || !motion)
+    throw new Error("A complete creative candidate file bundle is required.");
+  const referenceDna = route.referenceDna
+    ? validateReferenceDna(route.referenceDna, { requireEvidence: true })
+    : null;
+  validateExperience(experience, route, content);
+  validateStyles(styles, route);
+  validateMotion(motion, route);
+  const isolatedStyles = namespaceCreativeCss(styles);
+  let referenceFidelity = null;
+  if (referenceDna) {
+    referenceFidelity = validateReferenceCandidate({
+      referenceDna,
+      experienceSource: experience,
+      stylesSource: isolatedStyles,
+      motionSource: motion,
+    });
+    if (!referenceFidelity.pass)
+      throw new Error(
+        `Reference-safe source validation failed for ${route.id || "candidate"}: ${referenceFidelity.hardFindings.map((item) => item.message).join(" | ")}`,
+      );
+  }
+  return {
+    files: { experience, styles: isolatedStyles, motion },
+    referenceFidelity,
+  };
+}
+
 function authorRules() {
   return [
     "Do not hardcode business facts or marketing copy. Render all visitor-facing business content through the supplied content tokens.",

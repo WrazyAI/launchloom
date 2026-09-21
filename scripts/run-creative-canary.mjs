@@ -4,7 +4,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { buildInspirationPack } from "./inspiration-registry.mjs";
 import { enrichInspirationPack } from "./analyze-reference-dna.mjs";
-import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
+import { runRenderedCreativeRepair } from "./run-rendered-creative-repair.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -116,15 +116,6 @@ async function canaryConfigFrom(original) {
   return config;
 }
 
-async function copyVisualEvidence(sourceDir, candidateId, targetDir) {
-  await fs.mkdir(targetDir, { recursive: true });
-  for (const name of ["desktop", "compact", "mobile"])
-    await fs.copyFile(
-      path.join(sourceDir, `${candidateId}-${name}.png`),
-      path.join(targetDir, `${name}.png`),
-    );
-}
-
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
 
@@ -226,52 +217,24 @@ try {
   );
 
   await fs.writeFile(configPath, `${JSON.stringify(canaryConfig, null, 2)}\n`);
-  const screenshotsDir = path.join(out, "screenshots");
-  const bakeoffReport = await runCreativeBakeoff({
+  const repairResult = await runRenderedCreativeRepair({
     siteDir: siteRoot,
     candidatesDir: isolatedRoot,
-    reportPath: path.join(out, "creative-bakeoff.json"),
-    screenshotsDir,
-    preview: true,
+    outDir: path.join(out, "creative-repair"),
+    mode: "preview",
     requireDiversity: false,
+    visualGateScript: path.join(root, "scripts/visual-quality-gate.mjs"),
   });
+  const bakeoffReport = repairResult.bakeoff;
 
   if (bakeoffReport.selectedCandidateId !== kokoroCandidate.metadata.candidateId)
-    throw new Error("The Luna-authored Kokoro candidate did not pass the creative bakeoff.");
+    throw new Error("The Luna-authored Kokoro candidate did not pass the rendered creative repair loop.");
 
   const selectedConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
   if (selectedConfig.design?.experience?.renderer !== "creative-candidate")
     throw new Error("The canary did not select the creative-candidate renderer.");
 
-  const visualScreenshots = path.join(out, "visual-gate-screenshots");
-  await copyVisualEvidence(
-    screenshotsDir,
-    kokoroCandidate.metadata.candidateId,
-    visualScreenshots,
-  );
-  const visualReportPath = path.join(out, "visual-gate-final.json");
-  await execFileAsync(
-    process.execPath,
-    [
-      path.join(root, "scripts/visual-quality-gate.mjs"),
-      "--mode",
-      "verify",
-      "--config",
-      configPath,
-      "--screenshots",
-      visualScreenshots,
-      "--report",
-      visualReportPath,
-    ],
-    {
-      cwd: siteRoot,
-      env: process.env,
-      maxBuffer: 4 * 1024 * 1024,
-    },
-  );
-  const visualReport = JSON.parse(
-    await fs.readFile(visualReportPath, "utf8"),
-  );
+  const visualReport = repairResult.visualGate;
   const visualMajors = (visualReport.audit?.findings || []).filter((item) =>
     ["critical", "major"].includes(item.severity),
   );
@@ -285,6 +248,7 @@ try {
         .map((item) => item.evidence || item.category)
         .join(" | ") || visualReport.audit?.verdict}`,
     );
+  const screenshotsDir = repairResult.final.screenshotsDir;
 
   const candidateReport = bakeoffReport.candidates.find(
     (candidate) =>

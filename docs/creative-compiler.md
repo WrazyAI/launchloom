@@ -49,13 +49,16 @@ lead endpoint, or ship an unverified layout.
    comparison only; fingerprint distance and unique-dimension counts are
    retained in the report for diagnosis and do not veto a pixel-diverse
    candidate. Legacy candidates keep the structural diversity fallback.
-6. `visual-quality-gate.mjs` remains the final screenshot-level review. It
-   receives the exact bakeoff screenshots, including compact desktop. A
-   repairable finding is sent to `creative-repair-loop.mjs`, which returns the
-   current source and Reference DNA to Luna, rerenders all viewports, and
-   allows no more than two cycles. A creative candidate is repaired by its
-   author or rejected; the visual gate does not rewrite it into a shared
-   renderer.
+6. `run-rendered-creative-repair.mjs` owns the bounded rendered repair loop.
+   Each round runs the real Astro bakeoff, keeps the desktop, compact, and
+   mobile screenshots, applies the screenshot-to-reference judge, and then
+   runs `visual-quality-gate.mjs` against the selected rendered candidate.
+   Repairable findings are returned to Luna with the current source, Reference
+   DNA, and available screenshots. The repaired candidate is never trusted on
+   its own claim: it must rebuild, rerender, and pass the judges on the next
+   round. Each candidate gets at most two repair cycles. Production promotion
+   still requires `promotionReady`, including rendered v2 diversity, plus a
+   passing final visual gate. The loop never falls back to a legacy renderer.
 
 ## Safe rollout
 

@@ -272,50 +272,23 @@ jobs:
             git commit -m "Record authored experience candidates"
             git push origin review/initial
           fi
-      - name: Render creative candidates in the production shell
+      - name: Render and repair creative candidates in the production shell
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
-          PROMOTE=false
-          PREVIEW=false
-          if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then
-            PROMOTE=true
-          else
-            PREVIEW=true
-          fi
-          node "$GITHUB_WORKSPACE/scripts/run-creative-bakeoff.mjs" \
+          node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
             --site-dir "$PWD" \
             --candidates /tmp/generated-experiences \
-            --report .launchloom/creative-bakeoff.json \
-            --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots" \
-            --promote "$PROMOTE" \
-            --preview "$PREVIEW"
-          for REPAIR_ROUND in 1 2; do
-            REPAIR_CANDIDATES=$(jq -r '.candidates[] | select(.valid == false) | .candidateId' .launchloom/creative-bakeoff.json)
-            [ -n "$REPAIR_CANDIDATES" ] || break
-            echo "Creative visual repair round $REPAIR_ROUND"
-            while IFS= read -r CANDIDATE_ID; do
-              [ -n "$CANDIDATE_ID" ] || continue
-              if ! node "$GITHUB_WORKSPACE/scripts/creative-repair-loop.mjs" \
-                --candidate "/tmp/generated-experiences/$CANDIDATE_ID" \
-                --report .launchloom/creative-bakeoff.json \
-                --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-desktop.png,$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-compact.png,$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-mobile.png" \
-                --maxCycles 1; then
-                echo "Creative repair attempt failed for $CANDIDATE_ID; fresh rendered evidence will decide the next round."
-              fi
-            done <<< "$REPAIR_CANDIDATES"
-            rm -rf "$RUNNER_TEMP/creative-bakeoff-screenshots"
-            node "$GITHUB_WORKSPACE/scripts/run-creative-bakeoff.mjs" \
-              --site-dir "$PWD" \
-              --candidates /tmp/generated-experiences \
-              --report .launchloom/creative-bakeoff.json \
-              --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots" \
-              --promote "$PROMOTE" \
-              --preview "$PREVIEW"
-          done
-          git add .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
+            --out .launchloom/creative-repair \
+            --mode "$CREATIVE_EXPERIENCE_MODE" \
+            --max-cycles 2 \
+            --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
+          cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
+          rm -rf .launchloom/generated-experiences
+          cp -R /tmp/generated-experiences .launchloom/generated-experiences
+          git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
-            git commit -m "Render creative experience candidates"
+            git commit -m "Render and repair creative experience candidates"
             git push origin review/initial
           fi
       - name: Build and direct-upload public preview
@@ -328,63 +301,28 @@ jobs:
           CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
           jq -e --arg candidate "$CANDIDATE_ID" '.selectedCandidateId == $candidate and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "No authored creative candidate passed the preview gates"; exit 1; }
           # Service and location detail routes intentionally retain their
-          # deterministic SEO renderer. The new preview path is the homepage;
-          # fail closed only if that deployed entrypoint contains legacy
-          # renderer markers.
-          if grep -I -E -q 'data-experience-pack|legacy-design-family' dist/index.html; then echo "Legacy renderer marker found in creative preview"; exit 1; fi
+          # deterministic SEO renderer. The homepage itself must be the authored
+          # candidate after the fresh production build below.
           git add src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Select reviewed experience candidate"
             git push origin review/initial
           fi
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
+          grep -I -F -q 'data-creative-host="true"' dist/index.html || { echo "Creative host marker missing from fresh build"; exit 1; }
+          grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" dist/index.html || { echo "Fresh build does not contain selected creative candidate $CANDIDATE_ID"; exit 1; }
+          if grep -I -E -q 'data-experience-pack|legacy-design-family' dist/index.html; then echo "Legacy renderer marker found in creative preview"; exit 1; fi
           PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
           CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
-          cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-desktop.png" "$RUNNER_TEMP/initial-screenshots/desktop.png"
-          cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-compact.png" "$RUNNER_TEMP/initial-screenshots/compact.png"
-          cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-mobile.png" "$RUNNER_TEMP/initial-screenshots/mobile.png"
-          GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json"
-          node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode plan --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$GATE_REPORT"
-          for VISUAL_REPAIR_ROUND in 1 2; do
-            if jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$GATE_REPORT" >/dev/null; then
-              break
+          FINAL_REPAIR_GATE=.launchloom/creative-repair/final/visual-gate.json
+          jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_REPAIR_GATE" >/dev/null || { echo "Rendered creative repair did not finish with a passing visual gate"; exit 1; }
+          REPAIR_SCREENSHOTS=.launchloom/creative-repair/final/screenshots
+          for VIEWPORT in desktop compact mobile; do
+            if [ -f "$REPAIR_SCREENSHOTS/${CANDIDATE_ID}-${VIEWPORT}.png" ]; then
+              cp "$REPAIR_SCREENSHOTS/${CANDIDATE_ID}-${VIEWPORT}.png" "$RUNNER_TEMP/initial-screenshots/${VIEWPORT}.png"
             fi
-            REPAIR_CANDIDATE=$(jq -r '.design.experience.candidateId' src/site.config.json)
-            echo "Selected-candidate visual repair round $VISUAL_REPAIR_ROUND for $REPAIR_CANDIDATE"
-            node "$GITHUB_WORKSPACE/scripts/creative-repair-loop.mjs" \
-              --candidate "/tmp/generated-experiences/$REPAIR_CANDIDATE" \
-              --report "$GATE_REPORT" \
-              --screenshots "$RUNNER_TEMP/initial-screenshots/desktop.png,$RUNNER_TEMP/initial-screenshots/compact.png,$RUNNER_TEMP/initial-screenshots/mobile.png" \
-              --maxCycles 1
-            REPAIR_PROMOTE=false
-            REPAIR_PREVIEW=true
-            if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then REPAIR_PROMOTE=true; REPAIR_PREVIEW=false; fi
-            rm -rf "$RUNNER_TEMP/creative-bakeoff-screenshots"
-            node "$GITHUB_WORKSPACE/scripts/run-creative-bakeoff.mjs" \
-              --site-dir "$PWD" --candidates /tmp/generated-experiences \
-              --report .launchloom/creative-bakeoff.json \
-              --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots" \
-              --promote "$REPAIR_PROMOTE" --preview "$REPAIR_PREVIEW"
-            PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
-            export PUBLIC_REVIEW_MODE=true
-            node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
-            CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
-            cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-desktop.png" "$RUNNER_TEMP/initial-screenshots/desktop.png"
-            cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-compact.png" "$RUNNER_TEMP/initial-screenshots/compact.png"
-            cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-mobile.png" "$RUNNER_TEMP/initial-screenshots/mobile.png"
-            GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-repair-${VISUAL_REPAIR_ROUND}.json"
-            node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$GATE_REPORT"
           done
-          jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$GATE_REPORT" >/dev/null || { echo "Creative candidate did not pass the multimodal visual gate"; exit 1; }
-          if jq -e '.changed == true' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null; then
-            PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
-            PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
-            node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
-            FINAL_GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-final.json"
-            node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$FINAL_GATE_REPORT"
-            jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_GATE_REPORT" >/dev/null || { echo "Visual corrections did not pass the final multimodal visual gate"; exit 1; }
-          fi
           rm -rf .launchloom/generated-experiences
           cp -R /tmp/generated-experiences .launchloom/generated-experiences
           git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
@@ -448,6 +386,7 @@ jobs:
           path: |
             ${{ runner.temp }}/creative-bakeoff-screenshots
             ${{ steps.branch.outputs.dir }}/.launchloom/creative-bakeoff.json
+            ${{ steps.branch.outputs.dir }}/.launchloom/creative-repair
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14

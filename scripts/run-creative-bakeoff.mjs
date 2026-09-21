@@ -160,7 +160,7 @@ function hardFailures(evidence, viewport) {
 }
 
 /**
- * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean}} options
+ * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function runCreativeBakeoff({
@@ -170,6 +170,7 @@ export async function runCreativeBakeoff({
   screenshotsDir,
   promote = false,
   preview = false,
+  deferPromotion = false,
   renderedReferenceEvaluator = evaluateRenderedReferenceFidelity,
   renderedDiversityEvaluator = evaluateRenderedDiversity,
   requireDiversity = true,
@@ -588,7 +589,7 @@ export async function runCreativeBakeoff({
   const shouldPublishSelection =
     (promote && report.promotionReady) ||
     (preview && !promote && selectionPass);
-  if (shouldPublishSelection) {
+  if (shouldPublishSelection && !deferPromotion) {
     await promoteCreativeCandidate({
       siteDir: root,
       candidateDir: path.relative(
