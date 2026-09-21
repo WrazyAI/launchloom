@@ -137,9 +137,9 @@ describe("reference fidelity validator", () => {
   });
 
   it("tracks each required token independently", () => {
-    const source = `const { services, faqs } = content; return ${validExperience
-      .replace("{content.services}", "services")
-      .replace("{content.faqs}", "faqs")};`;
+    const source = `return ${validExperience
+      .replace("{content.services}", "[]")
+      .replace("{content.faqs}", "[]")};`;
     expect(tokenFindings(source).map((item: any) => item.message)).toEqual([
       "Required sealed token content.services does not flow into output.",
       "Required sealed token content.faqs does not flow into output.",
