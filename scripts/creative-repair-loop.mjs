@@ -314,7 +314,7 @@ export async function requestRepair({
   findings,
   files,
   screenshots,
-  contentManifest,
+  contentManifest = {},
 }) {
   const humanReview = (findings || []).some(
     (finding) =>
