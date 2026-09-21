@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   logOpenRouterCacheUsage,
+  logOpenRouterResponseCacheUsage,
   openRouterCacheMetrics,
+  openRouterResponseCacheMetrics,
   openRouterChatCompletion,
   openRouterPromptCacheKey,
   openRouterSessionId,
@@ -123,6 +125,29 @@ describe("OpenRouter cache-aware client", () => {
       model: "openai/gpt-5.6-luna",
       session_id: "launchloom:test:abc",
     });
+  });
+
+  it("reports exact response-cache hits from OpenRouter headers", () => {
+    const response = new Response("{}", {
+      headers: {
+        "X-OpenRouter-Cache-Status": "HIT",
+        "X-OpenRouter-Cache-Age": "12",
+        "X-OpenRouter-Cache-TTL": "288",
+        "X-OpenRouter-Cache-Source-Id": "gen-source",
+      },
+    });
+    expect(openRouterResponseCacheMetrics(response)).toEqual({
+      status: "HIT",
+      hit: true,
+      ageSeconds: 12,
+      ttlSeconds: 288,
+      sourceId: "gen-source",
+    });
+    const logger = vi.fn();
+    expect(
+      logOpenRouterResponseCacheUsage("rendered judge", response, logger),
+    ).toMatchObject({ status: "HIT", hit: true });
+    expect(logger.mock.calls[0][0]).toContain("status=HIT");
   });
 
   it("normalizes cache metrics and logging", () => {
