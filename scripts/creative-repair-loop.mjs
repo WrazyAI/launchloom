@@ -26,6 +26,18 @@ const REPAIR_SCHEMA = {
   },
 };
 
+function cacheableReferenceDna(referenceDna) {
+  if (!referenceDna || typeof referenceDna !== "object")
+    return referenceDna;
+  const {
+    analyzedAt: _analyzedAt,
+    generatedAt: _generatedAt,
+    updatedAt: _updatedAt,
+    ...stable
+  } = referenceDna;
+  return stable;
+}
+
 function clean(value, limit = 900) {
   return String(value || "").replace(/[—–]/gu, "-").trim().slice(0, limit);
 }
@@ -333,13 +345,14 @@ export async function requestRepair({
     );
   }
 
+  const stableReferenceDna = cacheableReferenceDna(referenceDna);
   const content = [
     {
       type: "text",
       text: `Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.
 
 ASSIGNED REFERENCE DNA
-${JSON.stringify(referenceDna, null, 2)}`,
+${JSON.stringify(stableReferenceDna, null, 2)}`,
     },
   ];
   const referenceScreenshots = [
@@ -397,7 +410,7 @@ Return complete files. Keep the required data-reference-signature, geometry, sec
   const promptCacheKey = openRouterPromptCacheKey(
     "creative-repair-reference",
     model,
-    referenceDna,
+    stableReferenceDna,
   );
   const response = await openRouterChatCompletion({
     title: "LaunchLoom creative repair",
