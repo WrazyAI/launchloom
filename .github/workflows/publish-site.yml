@@ -44,12 +44,9 @@ jobs:
           NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"
           REVIEW_URL="$PRODUCTION?review=$TOKEN"
           EMAIL_ARGS=(--to "$CLIENT_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience client)
-          REVISION_STAGE=$(node -e 'const x=require("./src/site.config.json"); console.log(x.revisionReport?.stage || "")')
-          if [ "$REVISION_STAGE" = client ]; then
-            node -e 'const fs=require("node:fs"); const x=require("./src/site.config.json"); const feedback=(x.revisionReport?.feedback || []).join("\n\n").trim(); if (feedback) fs.writeFileSync(process.env.RUNNER_TEMP + "/client-approved-feedback.txt", feedback)'
-            if [ -s "$RUNNER_TEMP/client-approved-feedback.txt" ]; then
-              EMAIL_ARGS+=(--feedback-file "$RUNNER_TEMP/client-approved-feedback.txt")
-            fi
+          node -e 'const fs=require("node:fs"); const x=require("./src/site.config.json"); const report=x.revisionReport || {}; const items=Array.isArray(report.clientFeedbackContext) && report.clientFeedbackContext.length ? report.clientFeedbackContext : report.stage === "client" && Array.isArray(report.feedback) ? report.feedback : []; const feedback=[...new Set(items.map(item => String(item || "").trim()).filter(Boolean))].join("\n\n"); if (feedback) fs.writeFileSync(process.env.RUNNER_TEMP + "/client-approved-feedback.txt", feedback)'
+          if [ -s "$RUNNER_TEMP/client-approved-feedback.txt" ]; then
+            EMAIL_ARGS+=(--feedback-file "$RUNNER_TEMP/client-approved-feedback.txt")
           fi
           if ! node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" "${EMAIL_ARGS[@]}"; then
             gh issue comment "$FEEDBACK_ISSUE" --repo "$CLIENT_REPO" --body "<!-- launchloom-client-delivery-failed -->\n\nProduction deployed, but client email delivery failed. The developer has been notified to verify the recipient and send the production review link manually."
