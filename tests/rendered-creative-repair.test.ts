@@ -355,6 +355,122 @@ describe("rendered creative repair orchestration", () => {
     });
   });
 
+  it("forces explicit human feedback through the selected creative source before acceptance", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    const repairs: any[] = [];
+    let humanGateCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      requestedFindings: [
+        {
+          category: "human-review-feedback",
+          message: "Make the hero feel more cinematic and asymmetrical.",
+        },
+      ],
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          report({ candidates: [candidate("candidate-a")] }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      runHumanGateImpl: async ({ feedback }: any) => {
+        humanGateCalls += 1;
+        expect(feedback).toContain("cinematic");
+        return {
+          audit: { verdict: "pass", findings: [], summary: "Request met." },
+        };
+      },
+      repairCandidateImpl: async (options: any) => {
+        repairs.push(options);
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(bakeoffCalls).toBe(2);
+    expect(repairs).toHaveLength(1);
+    expect(repairs[0].findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          category: "human-review-feedback",
+        }),
+      ]),
+    );
+    expect(humanGateCalls).toBe(1);
+    expect(result.humanRevisionPass).toBe(true);
+  });
+
+  it("reruns Luna when the rendered human request gate still sees a mismatch", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let humanGateCalls = 0;
+    let repairCalls = 0;
+    let bakeoffCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      maxCycles: 2,
+      requestedFindings: [
+        {
+          category: "human-review-feedback",
+          message: "Move the CTA below the gallery and make it understated.",
+        },
+      ],
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          report({ candidates: [candidate("candidate-a")] }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      runHumanGateImpl: async () => {
+        humanGateCalls += 1;
+        return humanGateCalls === 1
+          ? {
+              audit: {
+                verdict: "revise",
+                summary: "CTA is still too prominent.",
+                findings: [
+                  {
+                    category: "requirement-mismatch",
+                    severity: "major",
+                    viewport: "desktop",
+                    evidence: "CTA remains above the gallery.",
+                    recommendation:
+                      "Move it below the gallery and reduce its visual weight.",
+                  },
+                ],
+              },
+            }
+          : {
+              audit: {
+                verdict: "pass",
+                summary: "Request met.",
+                findings: [],
+              },
+            };
+      },
+      repairCandidateImpl: async () => {
+        repairCalls += 1;
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(repairCalls).toBe(2);
+    expect(bakeoffCalls).toBe(3);
+    expect(humanGateCalls).toBe(2);
+    expect(result.repairCycles).toEqual({ "candidate-a": 2 });
+  });
+
   it("fails closed after two rendered repair cycles for the same candidate", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     let bakeoffCalls = 0;
