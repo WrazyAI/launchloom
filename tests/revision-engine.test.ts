@@ -256,6 +256,34 @@ describe("revision operations", () => {
     });
   });
 
+  it("blocks fulfilled structured feedback when creative source verification was also required", () => {
+    const draft = config();
+    const report: any = {
+      creativeSourceRepairRequired: true,
+      results: [
+        {
+          feedbackIndex: 0,
+          status: "fulfilled",
+          unresolved: [],
+        },
+      ],
+      expectedArtifacts: [],
+    };
+
+    expect(verifyRevision(draft, report, "<main></main>").failures).toContain(
+      "Creative source repair was required but did not pass rendered human verification.",
+    );
+
+    report.creativeSourceRepairVerified = {
+      pass: true,
+      candidateId: "candidate-a",
+    };
+    expect(verifyRevision(draft, report, "<main></main>")).toEqual({
+      ok: true,
+      failures: [],
+    });
+  });
+
   it("requires the expected rendered artifact before a revision can send", () => {
     const draft = config();
     const [operation] = deterministicOperations("Add testimonials", draft);
