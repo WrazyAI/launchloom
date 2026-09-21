@@ -1317,11 +1317,21 @@ function sectionIdFor(config, type) {
 }
 export function verifyRevision(config, report, html = "") {
   const failures = [];
+  const selectedCandidateId = String(
+    config.design?.experience?.candidateId || "",
+  ).trim();
+  const verifiedCandidateId = String(
+    report.creativeSourceRepairVerified?.candidateId || "",
+  ).trim();
+  const creativeSourceVerified =
+    report.creativeSourceRepairVerified?.pass === true &&
+    Boolean(verifiedCandidateId) &&
+    (!selectedCandidateId || verifiedCandidateId === selectedCandidateId);
   if (!Array.isArray(report.results) || !report.results.length)
     failures.push("Revision has no per-feedback results.");
   if (
     report.creativeSourceRepairRequired === true &&
-    report.creativeSourceRepairVerified?.pass !== true
+    !creativeSourceVerified
   )
     failures.push(
       "Creative source repair was required but did not pass rendered human verification.",
@@ -1330,7 +1340,7 @@ export function verifyRevision(config, report, html = "") {
     const creativeVerified =
       result.status === "creative" &&
       report.creativeSourceRepairRequired === true &&
-      report.creativeSourceRepairVerified?.pass === true;
+      creativeSourceVerified;
     if (result.status !== "fulfilled" && !creativeVerified)
       failures.push(
         `Feedback item ${result.feedbackIndex + 1} is ${result.status}: ${result.unresolved?.join(", ") || "unresolved"}.`,
