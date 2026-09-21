@@ -262,8 +262,11 @@ describe("human creative revision lifecycle", () => {
 
     expect(worker).toContain('claims.stage !== "developer"');
     expect(worker).toContain('await dispatch(env, "publish-site"');
+    expect(worker).toContain("approvedSha: mergeResult.sha");
+    expect(publish).toContain("APPROVED_SHA");
+    expect(publish).toContain('git checkout --detach "$APPROVED_SHA"');
+    expect(publish).toContain('--commit-hash "$APPROVED_SHA"');
     expect(publish).toContain('--to "$CLIENT_EMAIL"');
-    expect(publish).toContain("REVISION_STAGE");
     expect(publish).toContain("client-approved-feedback.txt");
     expect(publish).toContain('--feedback-file "$RUNNER_TEMP/client-approved-feedback.txt"');
   });
