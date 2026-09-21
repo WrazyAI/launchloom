@@ -338,5 +338,5 @@ export const CREATIVE_PROMOTION_THRESHOLDS = Object.freeze({
   minimumFingerprintDistance: 4,
   minimumUniqueDimensions: 4,
   referenceFidelityScore: 80,
-  minimumPairwiseVisualDistance: 0.2,
+  minimumPairwiseVisualDistance: 72,
 });
