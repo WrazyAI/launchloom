@@ -255,10 +255,24 @@ export async function runCreativeBakeoff({
                 motionSource,
                 renderedDom: await page.locator("[data-creative-host]").evaluate((element) => element.outerHTML),
               });
+              const viewportVisualFindings =
+                renderedFidelity.visualFindings.map((item) => ({
+                  ...item,
+                  viewport: viewport.name,
+                }));
               candidateResult.referenceFidelity = {
                 ...candidateResult.referenceFidelity,
                 rendered: renderedFidelity,
-                renderedVisualFindings: renderedFidelity.visualFindings,
+                renderedByViewport: {
+                  ...(candidateResult.referenceFidelity.renderedByViewport ||
+                    {}),
+                  [viewport.name]: renderedFidelity,
+                },
+                renderedVisualFindings: [
+                  ...(candidateResult.referenceFidelity
+                    .renderedVisualFindings || []),
+                  ...viewportVisualFindings,
+                ],
                 pass:
                   candidateResult.referenceFidelity.pass &&
                   renderedFidelity.pass,
@@ -571,10 +585,16 @@ export async function runCreativeBakeoff({
   await fs.mkdir(path.dirname(reportFile), { recursive: true });
   await fs.writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`);
 
-  if ((promote || preview) && selectionPass) {
+  const shouldPublishSelection =
+    (promote && report.promotionReady) ||
+    (preview && !promote && selectionPass);
+  if (shouldPublishSelection) {
     await promoteCreativeCandidate({
       siteDir: root,
-      candidateDir: path.relative(root, path.join(candidateRoot, winner.directory)),
+      candidateDir: path.relative(
+        root,
+        path.join(candidateRoot, winner.directory),
+      ),
       visualScore: winner.visualScore,
       distinctivenessScore: winner.distinctivenessScore,
       selectionMode: promote ? "creative-bakeoff" : "creative-preview",
