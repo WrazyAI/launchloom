@@ -119,6 +119,57 @@ function promptFor(site, route, placement) {
     "digital-experiences-liquid-glass": "abstract atmospheric fields, liquid light, depth and translucent surfaces without readable text",
     "vortex-editorial-studio": "editorial project stills, expressive but credible studio materials, wide moving-strip crops",
   };
+  const familyAssetBriefs = {
+    "kokoro-editorial-architecture": {
+      medium: "photorealistic architectural editorial photography",
+      hero: "Create an architectural tableau with strong negative space, warm material depth, and a crop that can support monumental type without becoming a split hero.",
+      secondary: "Create a vertical or offset interior chapter with tactile material detail and quiet editorial framing.",
+      tertiary: "Create an architectural still life or material study suited to a magazine/archive rhythm.",
+    },
+    "skyelite-cinematic-luxury": {
+      medium: "cinematic premium transport photography",
+      hero: "Create a wide atmospheric horizon scene with motion energy, restrained luxury, and centered copy-safe space.",
+      secondary: "Create a cinematic destination or transport detail with directional movement and broad tonal gradients.",
+      tertiary: "Create a premium material or travel detail that reads as a film still rather than a catalog card.",
+    },
+    "health-portal-masked-mosaic": {
+      medium: "clean modular clinical photography",
+      hero: "Create one coherent clinical or wellness scene that can be cropped into multiple coordinated mask windows while keeping the subject relationship intact.",
+      secondary: "Create a second calm clinical scene with strong crop-safe zones for modular windows.",
+      tertiary: "Create a precise material, tool, or environment detail suitable for a masked mosaic.",
+    },
+    "3d-portfolio-object-led": {
+      medium: "studio object render with realistic materials",
+      hero: "Create a single sculptural service-relevant object on a spatial stage with dramatic negative space and deep-focus lighting.",
+      secondary: "Create a second object-led composition that can anchor a stacked project chapter.",
+      tertiary: "Create a close object/material study with controlled studio depth, not lifestyle photography.",
+    },
+    "veyra-kinetic-typography": {
+      medium: "high-energy documentary action photography",
+      hero: "Create a full-frame action scene with a clear silhouette, directional energy, and large negative zones for oversized condensed type.",
+      secondary: "Create a directional performance scene suitable for horizontal program bands.",
+      tertiary: "Create a tight action or equipment detail with graphic contrast and motion cues.",
+    },
+    "digital-experiences-liquid-glass": {
+      medium: "abstract spatial light composition",
+      hero: "Create an abstract atmospheric field with liquid light, depth, refraction, and quiet negative space for floating interface instruments.",
+      secondary: "Create a layered translucent spatial scene with controlled blur and depth, without literal UI text.",
+      tertiary: "Create a close abstract material/light study that can sit behind structural glass cells.",
+    },
+    "vortex-editorial-studio": {
+      medium: "editorial project photography",
+      hero: "Create a restrained authored image with broad horizontal crop potential for a narrow-column studio composition.",
+      secondary: "Create a wide project still designed for a moving marquee strip.",
+      tertiary: "Create a project/material detail with strong editorial cropping and calm contrast.",
+    },
+  };
+  const familyBrief =
+    familyAssetBriefs[dna.familyId] || {
+      medium: "commercial editorial photography",
+      hero: "Create a distinctive hero scene whose geometry follows the assigned Reference DNA.",
+      secondary: "Create a supporting scene whose crop follows the assigned Reference DNA.",
+      tertiary: "Create a tactile supporting detail whose crop follows the assigned Reference DNA.",
+    };
   const subject = services.length
     ? services.join(", ")
     : safePromptPart(site.businessKind || site.industry || "local service", 100) || "local service";
@@ -136,12 +187,12 @@ function promptFor(site, route, placement) {
   const directionContext = direction ? `Visual direction: ${direction}.` : "";
   const placementBrief =
     placement.id === "hero"
-      ? "Create a wide editorial hero image with a clear subject and calm negative space for website copy."
+      ? familyBrief.hero
       : placement.id === "secondary"
-        ? "Create a supporting scene that shows the service environment, materials, tools, or setting in use."
-        : "Create a tactile detail image that adds a second visual rhythm to the page: material, texture, process, or a meaningful object."
+        ? familyBrief.secondary
+        : familyBrief.tertiary;
   const prompt = [
-    "Use case: photorealistic-natural.",
+    `Visual medium: ${familyBrief.medium}.`,
     `Asset type: ${placement.id} image for a local-business website.`,
     `Primary request: ${placementBrief}.`,
     `Business context: ${subject}.`,
@@ -151,7 +202,7 @@ function promptFor(site, route, placement) {
     directionContext,
     vocabularyContext,
     problemContext,
-    "Style: distinctive editorial art direction, believable materials, natural light, restrained composition, and a polished commercial website photograph.",
+    `Style: follow the assigned family mechanics and crop strategy. Preserve believable materials and production polish appropriate to ${familyBrief.medium}; do not normalize every family into the same editorial photograph.`,
     "Constraints: no readable text, no logos, no watermark, no signage, no invented credentials, no branded products, no medical claims, no identifiable people, no faces, no customer or staff implication, and no copied real-world campaign.",
     "Keep the image useful at the requested crop and avoid tiny details that disappear on mobile.",
     placement.focal,
