@@ -72,7 +72,9 @@ revised.revisionReport = {
     planned.results.some(
       (result) =>
         result.status === "creative" ||
-        result.intents?.includes("layout"),
+        result.intents?.some((intent) =>
+          ["layout", "color", "social-proof", "brand-name"].includes(intent),
+        ),
     ),
   expectedArtifacts: expectedArtifacts(planned.operations, revised).filter(
     (artifact) =>
