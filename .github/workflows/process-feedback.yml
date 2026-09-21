@@ -86,6 +86,34 @@ jobs:
             CHAT_TOKEN=$(node scripts/create-ai-chat-token.mjs --project "$PROJECT" --file "$RUNNER_TEMP/client/src/site.config.json" --origins "$ORIGINS")
             node scripts/enrich-site-config.mjs --file "$RUNNER_TEMP/client/src/site.config.json" --api https://api.launchloom.wrazyos.com --chatToken "$CHAT_TOKEN"
           fi
+      - name: Refine authored creative candidate from developer feedback
+        if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
+        id: creative_revision
+        run: |
+          CLIENT_DIR="$RUNNER_TEMP/client"
+          node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$CLIENT_DIR"
+          RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-revision-candidate.mjs" --client "$CLIENT_DIR" --out "$RUNNER_TEMP/creative-revision-candidates")
+          echo "$RESULT"
+          CREATIVE=$(printf '%s' "$RESULT" | jq -r '.creative // false')
+          REQUIRED=$(printf '%s' "$RESULT" | jq -r '.repairRequired // false')
+          echo "creative=$CREATIVE" >> "$GITHUB_OUTPUT"
+          echo "repair_required=$REQUIRED" >> "$GITHUB_OUTPUT"
+          if [ "$CREATIVE" = true ] && [ "$REQUIRED" = true ]; then
+            node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
+              --site-dir "$CLIENT_DIR" \
+              --candidates "$RUNNER_TEMP/creative-revision-candidates" \
+              --out .launchloom/human-revision \
+              --mode preview \
+              --max-cycles 2 \
+              --require-diversity false \
+              --feedback-file "$RUNNER_TEMP/developer-feedback.txt" \
+              --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
+            SUMMARY="$CLIENT_DIR/.launchloom/human-revision/summary.json"
+            jq -e '.status == "passed" and .visualGatePass == true and .humanRevisionPass == true and (.selectedCandidateId != null)' "$SUMMARY" >/dev/null || { echo "Human creative revision did not pass its acceptance gates"; exit 1; }
+            CANDIDATE=$(jq -r '.selectedCandidateId' "$SUMMARY")
+            CYCLES=$(jq -r '(.repairCycles // {}) | to_entries | map(.value) | add // 0' "$SUMMARY")
+            printf '\nCreative source refinement: candidate %s passed the human request gate after %s repair cycle(s).\n' "$CANDIDATE" "$CYCLES" >> "$RUNNER_TEMP/revision-outcome.txt"
+          fi
       - name: Build and direct-upload revised preview
         if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
         id: deploy
@@ -127,7 +155,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: developer-revision-screenshots
-          path: ${{ runner.temp }}/revision-screenshots
+          path: |
+            ${{ runner.temp }}/revision-screenshots
+            ${{ runner.temp }}/client/.launchloom/human-revision
+          if-no-files-found: warn
           retention-days: 14
       - name: Complete request and start queued revision
         id: complete
@@ -148,6 +179,14 @@ jobs:
           ARGS=(--to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision --audience developer --feedback-file "$RUNNER_TEMP/developer-feedback.txt" --outcome-file "$RUNNER_TEMP/revision-outcome.txt" --idempotency-key "developer-revision-$REVISION_REQUEST_ID")
           if [ -s "$RUNNER_TEMP/queued-feedback.txt" ]; then ARGS+=(--queued-feedback-file "$RUNNER_TEMP/queued-feedback.txt" --queued-stage "${{ steps.complete.outputs.queued_stage }}"); fi
           node scripts/send-preview-email.mjs "${ARGS[@]}"
+      - name: Report downstream developer revision failure
+        if: always() && steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success' && steps.deploy.outcome != 'success'
+        run: |
+          printf '\nRendered creative refinement or downstream verification did not complete successfully. Inspect GitHub Actions run %s.\n' '${{ github.run_id }}' >> "$RUNNER_TEMP/revision-outcome.txt"
+          DETAILS=$(sed -n '1,80p' "$RUNNER_TEMP/revision-outcome.txt")
+          gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-manual-attention:developer -->' '## Manual attention needed' 'The requested feedback was preserved, but the revised preview did not pass every downstream gate. No completion email was sent.' "$DETAILS")"
+          NAME=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/$CLIENT_REPO/pull/$CLIENT_PR" --review "https://github.com/$CLIENT_REPO/pull/$CLIENT_PR" --kind revision-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/developer-feedback.txt" --outcome-file "$RUNNER_TEMP/revision-outcome.txt" --idempotency-key "revision-failed-$REVISION_REQUEST_ID"
       - name: Pause revision queue after workflow failure
         if: always() && steps.claim.outputs.run == 'true' && steps.complete.outcome != 'success'
         env:
