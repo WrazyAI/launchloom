@@ -271,6 +271,34 @@ describe("human creative revision lifecycle", () => {
     expect(publish).toContain('--feedback-file "$RUNNER_TEMP/client-approved-feedback.txt"');
   });
 
+  it("does not complete a revision queue item until the developer email is delivered", () => {
+    const developer = readFileSync(
+      ".github/workflows/process-feedback.yml",
+      "utf8",
+    );
+    const client = readFileSync(
+      ".github/workflows/process-client-feedback.yml",
+      "utf8",
+    );
+
+    for (const workflow of [developer, client]) {
+      const emailIndex = workflow.indexOf(
+        'node scripts/send-preview-email.mjs "${ARGS[@]}"',
+      );
+      const completeIndex = workflow.indexOf(
+        "- name: Complete request and start queued revision",
+      );
+      expect(emailIndex).toBeGreaterThan(-1);
+      expect(completeIndex).toBeGreaterThan(emailIndex);
+      expect(workflow).toContain(
+        "steps.review_delivery.outcome == 'success'",
+      );
+      expect(workflow).toContain(
+        "steps.review_delivery.outcome != 'success'",
+      );
+    }
+  });
+
   it("returns client-requested revisions to the developer with the triggering request in the email", () => {
     const workflow = readFileSync(
       ".github/workflows/process-client-feedback.yml",
