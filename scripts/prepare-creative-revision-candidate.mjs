@@ -26,9 +26,12 @@ if (
   experience.renderer !== "creative-candidate" ||
   !experience.candidateId
 ) {
-  console.log(JSON.stringify({ creative: false }));
+  console.log(JSON.stringify({ creative: false, repairRequired: false }));
   process.exit(0);
 }
+const repairRequired = Boolean(
+  config.revisionReport?.creativeSourceRepairRequired,
+);
 
 const candidateId = String(experience.candidateId);
 const evidenceRoot = path.join(
@@ -77,6 +80,7 @@ for (const file of ["Experience.jsx", "styles.css", "motion.js"])
 console.log(
   JSON.stringify({
     creative: true,
+    repairRequired,
     candidateId,
     candidateDir,
   }),
