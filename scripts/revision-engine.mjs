@@ -2,6 +2,7 @@ import { parseModelJson } from "./model-json.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import {
   logOpenRouterCacheUsage,
+  logOpenRouterResponseCacheUsage,
   openRouterChatCompletion,
   openRouterSessionId,
 } from "./openrouter-client.mjs";
@@ -652,6 +653,7 @@ export async function modelOperations(
     });
     if (!response.ok) continue;
     try {
+      logOpenRouterResponseCacheUsage("revision-operations", response);
       const payload = await response.json();
       logOpenRouterCacheUsage("revision-operations", payload.usage);
       const content = payload.choices?.[0]?.message?.content;
