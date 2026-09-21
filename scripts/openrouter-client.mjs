@@ -182,6 +182,18 @@ export function logOpenRouterResponseCacheUsage(
  * - sessionId enables sticky provider routing from the first successful request.
  * - responseCache is intentionally opt-in and should only be used for
  *   deterministic/idempotent inference such as judges and analyzers.
+ *
+ * @param {{
+ *   apiKey?: string,
+ *   title?: string,
+ *   body?: Record<string, any>,
+ *   sessionId?: string,
+ *   responseCache?: boolean,
+ *   responseCacheTtlSeconds?: number,
+ *   signal?: AbortSignal,
+ *   fetchImpl?: typeof fetch,
+ * }} [options]
+ * @returns {Promise<Response>}
  */
 export async function openRouterChatCompletion({
   apiKey = process.env.OPENROUTER_API_KEY,
