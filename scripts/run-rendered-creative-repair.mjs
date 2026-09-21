@@ -510,6 +510,8 @@ export async function runRenderedCreativeRepair({
     .filter(Boolean)
     .join("\n\n")
     .trim();
+  if (humanFindings.length > 0 && !humanFeedback)
+    throw new Error("Human feedback must contain non-empty request text.");
   let humanRepairPending = humanFindings.length > 0;
   await fs.rm(evidenceRoot, { recursive: true, force: true });
   await fs.mkdir(evidenceRoot, { recursive: true });
