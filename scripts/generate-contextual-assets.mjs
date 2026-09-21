@@ -90,6 +90,11 @@ function clientAssetFor(site, placement) {
   return placement.clientSlots.find((slot) => typeof assets[slot] === "string" && assets[slot].trim());
 }
 
+function clientAssetPath(site, placement) {
+  const slot = clientAssetFor(site, placement);
+  return slot ? site.assets?.[slot] || "" : "";
+}
+
 function visualDirection(site) {
   const style = site.style || {};
   return [style.visualDirection, style.preference, style.tone]
@@ -585,17 +590,17 @@ export async function generateContextualAssets(options = {}) {
     if (!firstRouteSite) firstRouteSite = result.site;
     creativeAssets[route.id] = {
       hero:
-        site.assets?.photoOne ||
+        clientAssetPath(site, PLACEMENTS[0]) ||
         result.site.images?.hero ||
         site.images?.hero ||
         "",
       secondary:
-        site.assets?.photoTwo ||
+        clientAssetPath(site, PLACEMENTS[1]) ||
         result.site.images?.secondary ||
         site.images?.secondary ||
         "",
       tertiary:
-        site.assets?.photoThree ||
+        clientAssetPath(site, PLACEMENTS[2]) ||
         result.site.images?.tertiary ||
         site.images?.tertiary ||
         "",

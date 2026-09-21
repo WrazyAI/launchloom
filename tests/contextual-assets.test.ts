@@ -295,6 +295,26 @@ describe("contextual image generation", () => {
       expect(manifest.placements).toHaveLength(1);
   });
 
+  it("binds the first supplied secondary client asset to every route", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const site = fixture();
+    site.assets = { photoThree: "/uploads/client-gallery.webp" };
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-client-${number}`,
+      signature: `client-secondary-${number}`,
+    }));
+    const result = await generate({
+      site,
+      inspiration: { routes },
+      outputDir,
+      key: "",
+    });
+    for (const route of routes)
+      expect(result.site.creativeAssets[route.id].secondary).toBe(
+        "/uploads/client-gallery.webp",
+      );
+  });
+
   it.each([6, 7])("reserves requests for later routes despite retries with a cap of %i", async (maxRequests) => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const routes = [1, 2, 3].map((number) => ({
