@@ -6,6 +6,7 @@ import { randomBytes } from "node:crypto";
 import sharp from "sharp";
 import {
   HUMAN_REVISION_IMAGE_MAX_BYTES,
+  HUMAN_REVISION_TOTAL_IMAGE_MAX_BYTES,
   runHumanRevisionGate,
 } from "../scripts/human-revision-gate.mjs";
 
@@ -179,10 +180,12 @@ describe("human revision rendered gate", () => {
       (part: any) => part.type === "image_url",
     );
     expect(images).toHaveLength(3);
+    let totalBytes = 0;
     for (const image of images) {
       expect(image.image_url.url).toMatch(/^data:image\/webp;base64,/u);
       const encoded = image.image_url.url.split(",", 2)[1];
       const normalized = Buffer.from(encoded, "base64");
+      totalBytes += normalized.byteLength;
       expect(normalized.byteLength).toBeLessThanOrEqual(
         HUMAN_REVISION_IMAGE_MAX_BYTES,
       );
@@ -190,6 +193,9 @@ describe("human revision rendered gate", () => {
       expect(metadata.width || 0).toBeLessThanOrEqual(1280);
       expect(metadata.height || 0).toBeLessThanOrEqual(1280);
     }
+    expect(totalBytes).toBeLessThanOrEqual(
+      HUMAN_REVISION_TOTAL_IMAGE_MAX_BYTES,
+    );
   });
 
   it("rejects a pass verdict that still contains a major request mismatch", async () => {
