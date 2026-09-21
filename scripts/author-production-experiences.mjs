@@ -12,6 +12,7 @@ import {
   promptCachedMessageContent,
   promptCachedText,
   promptCacheRequestFields,
+  readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
 
@@ -137,7 +138,6 @@ function routePromptPrefix(request) {
         name: item.name,
         source: item.source,
         rights: item.rights,
-        screenshotPath: item.screenshotPath,
         measuredDesignTokens: item.measuredDesignTokens,
         sourceStyles: item.sourceStyles,
         sourceFonts: item.sourceFonts,
@@ -335,19 +335,13 @@ async function requestStage(request) {
               ],
             },
         });
-        let payload = {};
-        let responseBodyError = null;
-        try {
-          payload = await response.json();
-        } catch (error) {
-          responseBodyError = error;
-        }
+        const {
+          payload,
+          rawBody,
+          parseError: responseBodyError,
+        } = await readOpenRouterResponseEnvelope(response);
         if (sharedAbortController.signal.aborted)
           throw new Error("Phase 2 authorship cancelled after a sibling failure.");
-        if (!response.ok)
-          throw new Error(
-            `OpenRouter ${response.status}: ${JSON.stringify(payload).slice(0, 1000)}`,
-          );
         const usageRecord = {
           routeId: request.route.id,
           stage: request.stage,
@@ -363,6 +357,16 @@ async function requestStage(request) {
           durationMs: Date.now() - startedAt,
         };
         usage.push(usageRecord);
+        if (!response.ok) {
+          usageRecord.parseStatus = "http-error";
+          const errorContext =
+            JSON.stringify(payload) !== "{}"
+              ? JSON.stringify(payload).slice(0, 1000)
+              : rawBody || responseBodyError?.message || "empty response";
+          throw new Error(
+            `OpenRouter ${response.status}: ${errorContext}`,
+          );
+        }
         if (responseBodyError) {
           throw new Error("OpenRouter returned an unreadable response body.", {
             cause: responseBodyError,
