@@ -94,7 +94,10 @@ describe("creative repair loop", () => {
     });
 
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    const prompt = body.messages[1].content[0].text;
+    const prompt = body.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
     expect(prompt).toContain(
       "The reviewer is authorized to change composition",
     );
