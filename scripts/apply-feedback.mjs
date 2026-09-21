@@ -51,11 +51,33 @@ if (!feedback.length) {
 const config = JSON.parse(await fs.readFile(configPath, "utf8"));
 const planned = await planRevision(feedback, config);
 const revised = removeEmDashes(planned.config);
+const creativeRenderer =
+  revised.design?.experience?.renderer === "creative-candidate";
+const creativeIgnoredArtifactTypes = new Set([
+  "section",
+  "section-type",
+  "absent-section-type",
+  "order",
+  "variant",
+  "class",
+  "style",
+]);
 revised.revisionReport = {
+  stage,
   feedback,
   operations: planned.operations,
   results: planned.results,
-  expectedArtifacts: expectedArtifacts(planned.operations, revised),
+  creativeSourceRepairRequired:
+    creativeRenderer &&
+    planned.results.some(
+      (result) =>
+        result.status === "creative" ||
+        result.intents?.includes("layout"),
+    ),
+  expectedArtifacts: expectedArtifacts(planned.operations, revised).filter(
+    (artifact) =>
+      !creativeRenderer || !creativeIgnoredArtifactTypes.has(artifact.type),
+  ),
 };
 if (process.env.FEEDBACK_SUMMARY_PATH)
   await fs.writeFile(
@@ -67,10 +89,15 @@ if (process.env.FEEDBACK_OUTCOME_PATH)
   await fs.writeFile(
     process.env.FEEDBACK_OUTCOME_PATH,
     planned.results
-      .map(
-        (result) =>
-          `Item ${result.feedbackIndex + 1}: ${result.status}. ${result.status === "fulfilled" ? `Applied ${result.operationKinds.join(", ")}.` : `Unresolved: ${result.unresolved.join(", ")}.`}`,
-      )
+      .map((result) => {
+        const detail =
+          result.status === "fulfilled"
+            ? `Applied ${result.operationKinds.join(", ") || "verified structured changes"}.`
+            : result.status === "creative"
+              ? "Queued for authored creative source refinement and rendered verification."
+              : `Unresolved: ${result.unresolved.join(", ")}.`;
+        return `Item ${result.feedbackIndex + 1}: ${result.status}. ${detail}`;
+      })
       .join("\n"),
     "utf8",
   );
