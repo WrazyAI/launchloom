@@ -204,6 +204,84 @@ describe("rendered creative repair orchestration", () => {
     expect(result.promotionReady).toBe(true);
   });
 
+  it("repairs each diversity candidate once per rendered round even when multiple pairs fail", async () => {
+    const { root, candidates } = await fixture([
+      "candidate-a",
+      "candidate-b",
+      "candidate-c",
+    ]);
+    let bakeoffCalls = 0;
+    const repairs: string[] = [];
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "promote",
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        const candidatesReport = [
+          candidate("candidate-a"),
+          candidate("candidate-b"),
+          candidate("candidate-c"),
+        ];
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                candidates: candidatesReport,
+                promotionReady: false,
+                visualDiversity: {
+                  pass: false,
+                  pairs: [
+                    {
+                      left: "candidate-a",
+                      right: "candidate-b",
+                      distance: 40,
+                      pass: false,
+                      reason: "A and B share the same hero grammar.",
+                    },
+                    {
+                      left: "candidate-a",
+                      right: "candidate-c",
+                      distance: 42,
+                      pass: false,
+                      reason: "A and C share the same section rhythm.",
+                    },
+                    {
+                      left: "candidate-b",
+                      right: "candidate-c",
+                      distance: 44,
+                      pass: false,
+                      reason: "B and C share the same card treatment.",
+                    },
+                  ],
+                },
+              })
+            : report({ candidates: candidatesReport }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ candidateId }: any) => {
+        repairs.push(candidateId);
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(bakeoffCalls).toBe(2);
+    expect(repairs.sort()).toEqual([
+      "candidate-a",
+      "candidate-b",
+      "candidate-c",
+    ]);
+    expect(result.repairCycles).toEqual({
+      "candidate-a": 1,
+      "candidate-b": 1,
+      "candidate-c": 1,
+    });
+  });
+
   it("fails closed after two rendered repair cycles for the same candidate", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     let bakeoffCalls = 0;
