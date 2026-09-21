@@ -408,11 +408,23 @@ function aggregateCacheUsage(records) {
       cachedTokens: sum.cachedTokens + Number(record.cache?.cachedTokens || 0),
       cacheWriteTokens:
         sum.cacheWriteTokens + Number(record.cache?.cacheWriteTokens || 0),
+      cost: sum.cost + Number(record.cache?.cost || 0),
+      cacheDiscount:
+        sum.cacheDiscount + Number(record.cache?.cacheDiscount || 0),
     }),
-    { promptTokens: 0, cachedTokens: 0, cacheWriteTokens: 0 },
+    {
+      promptTokens: 0,
+      cachedTokens: 0,
+      cacheWriteTokens: 0,
+      cost: 0,
+      cacheDiscount: 0,
+    },
   );
   return {
     ...total,
+    cost: Math.round(total.cost * 1_000_000) / 1_000_000,
+    cacheDiscount:
+      Math.round(total.cacheDiscount * 1_000_000) / 1_000_000,
     cacheHitPercent:
       total.promptTokens > 0
         ? Math.round((total.cachedTokens / total.promptTokens) * 1000) / 10
@@ -499,6 +511,10 @@ try {
   );
   console.log(
     `production_experience_cached_tokens=${cacheSummary.cachedTokens}`,
+  );
+  console.log(`production_experience_cost=${cacheSummary.cost}`);
+  console.log(
+    `production_experience_cache_discount=${cacheSummary.cacheDiscount}`,
   );
   if (result.failures?.length)
     console.error(
