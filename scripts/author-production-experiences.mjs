@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
+import { typographyPalettePrompt } from "./creative-typography.mjs";
 import { authorExperienceCandidates } from "./production-experience-author.mjs";
 
 const args = Object.fromEntries(
@@ -113,6 +114,10 @@ function stagePrompt(request) {
 
 ROUTE
 ${route}
+
+TYPOGRAPHY PALETTE
+${typographyPalettePrompt()}
+Choose typography by role from these locally safe stacks. Do not invent remote font URLs. Preserve the reference's scale, weight contrast, tracking, line-height, and display/body relationship even when an exact proprietary reference font is unavailable.
 
 SEALED CONTENT SHAPE
 ${JSON.stringify(request.contentShape, null, 2)}

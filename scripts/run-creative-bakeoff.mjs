@@ -12,6 +12,10 @@ import {
 } from "./creative-compiler.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import {
+  evaluateRenderedDiversity,
+  evaluateRenderedReferenceFidelity,
+} from "./rendered-reference-fidelity.mjs";
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -166,6 +170,9 @@ export async function runCreativeBakeoff({
   screenshotsDir,
   promote = false,
   preview = false,
+  renderedReferenceEvaluator = evaluateRenderedReferenceFidelity,
+  renderedDiversityEvaluator = evaluateRenderedDiversity,
+  requireDiversity = true,
 } = {}) {
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
@@ -266,6 +273,40 @@ export async function runCreativeBakeoff({
         } finally {
           await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
         }
+        if (candidate.manifest.version >= 2) {
+          const renderedReference = await renderedReferenceEvaluator({
+            referenceDna: candidate.manifest.referenceDna,
+            candidateScreenshots: {
+              desktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop.png`),
+              compact: path.join(evidenceDir, `${candidate.manifest.candidateId}-compact.png`),
+              mobile: path.join(evidenceDir, `${candidate.manifest.candidateId}-mobile.png`),
+            },
+          });
+          candidateResult.renderedReferenceFidelity = renderedReference;
+          candidateResult.referenceFidelity = {
+            ...candidateResult.referenceFidelity,
+            pixelScore: renderedReference.score,
+            pixelPass: renderedReference.pass,
+            score: Math.min(
+              candidateResult.referenceFidelity?.score ?? 100,
+              renderedReference.score,
+            ),
+            pass:
+              candidateResult.referenceFidelity?.pass !== false &&
+              renderedReference.pass,
+          };
+          if (!renderedReference.pass) {
+            const visualFindings = renderedReference.audit?.findings || [];
+            candidateResult.failures.push(
+              ...(visualFindings.length
+                ? visualFindings.map(
+                    (item) =>
+                      `rendered-reference: ${item.evidence || item.category}`,
+                  )
+                : ["rendered-reference: reference fidelity did not pass"]),
+            );
+          }
+        }
       } catch (error) {
         candidateResult.failures.push(error instanceof Error ? error.message : String(error));
       }
@@ -283,15 +324,71 @@ export async function runCreativeBakeoff({
             allEvidence[0].motionPrimitive,
           ].join("|")
         : "";
+      const pixelScores =
+        candidateResult.renderedReferenceFidelity?.audit?.scores || {};
       const visual = {
-        hierarchy: allEvidence.every((viewport) => viewport.h1Count === 1 && viewport.hasHero) ? 100 : 0,
-        composition: desktopEvidence.every((viewport) => viewport.heroBottom <= viewport.viewportHeight + 1 && !viewport.overflow) ? 100 : 0,
-        responsive: Boolean(mobileEvidence && !mobileEvidence.overflow && mobileEvidence.hasHero) ? 100 : 0,
-        industryFit: 80,
-        conversion: allEvidence.every((viewport) => viewport.hasEarlyConversion && viewport.hasLeadForm) ? 100 : 0,
+        hierarchy:
+          candidateResult.manifest.version >= 2
+            ? Math.round(
+                (Number(pixelScores.typography || 0) +
+                  Number(pixelScores.spatialRhythm || 0)) /
+                  2,
+              )
+            : allEvidence.every(
+                  (viewport) => viewport.h1Count === 1 && viewport.hasHero,
+                )
+              ? 100
+              : 0,
+        composition:
+          candidateResult.manifest.version >= 2
+            ? Number(pixelScores.heroGeometry || 0)
+            : desktopEvidence.every(
+                  (viewport) =>
+                    viewport.heroBottom <= viewport.viewportHeight + 1 &&
+                    !viewport.overflow,
+                )
+              ? 100
+              : 0,
+        responsive:
+          candidateResult.manifest.version >= 2
+            ? Number(pixelScores.mobileRecomposition || 0)
+            : Boolean(
+                  mobileEvidence &&
+                    !mobileEvidence.overflow &&
+                    mobileEvidence.hasHero,
+                )
+              ? 100
+              : 0,
+        industryFit:
+          candidateResult.manifest.version >= 2
+            ? Math.round(
+                (Number(pixelScores.imagery || 0) +
+                  Number(pixelScores.servicePresentation || 0)) /
+                  2,
+              )
+            : 80,
+        conversion:
+          allEvidence.every(
+            (viewport) =>
+              viewport.hasEarlyConversion && viewport.hasLeadForm,
+          )
+            ? candidateResult.manifest.version >= 2
+              ? Number(pixelScores.ctaPlacement || 0)
+              : 100
+            : 0,
         referenceFidelity: candidateResult.referenceFidelity?.score ?? 0,
-        motionEvidence: allEvidence.every((viewport) => viewport.motionPrimitive) ? 100 : 0,
-        imageRelevance: allEvidence.every((viewport) => viewport.brokenImages === 0) ? 100 : 0,
+        motionEvidence:
+          candidateResult.manifest.version >= 2
+            ? Number(pixelScores.interactionEvidence || 0)
+            : allEvidence.every((viewport) => viewport.motionPrimitive)
+              ? 100
+              : 0,
+        imageRelevance:
+          allEvidence.every((viewport) => viewport.brokenImages === 0)
+            ? candidateResult.manifest.version >= 2
+              ? Number(pixelScores.imagery || 0)
+              : 100
+            : 0,
       };
       const technical = {
         accessibility: allEvidence.every((viewport) => viewport.missingAlt === 0 && viewport.unnamedControls === 0 && viewport.browserErrors.length === 0) ? 100 : 0,
@@ -354,26 +451,86 @@ export async function runCreativeBakeoff({
       candidate.technicalScore >= 100 &&
       (candidate.manifest.version < 2 || candidate.distinctivenessScore >= CREATIVE_PROMOTION_THRESHOLDS.distinctivenessScore),
   );
-  const valid = preview ? previewEligible : results.filter((candidate) => candidate.eligible);
-  const winner = valid
-    .sort((left, right) => right.score - left.score || left.candidateId.localeCompare(right.candidateId))[0] || null;
-  const visualPairs = [];
-  for (let i = 0; i < results.length; i += 1) {
-    for (let j = i + 1; j < results.length; j += 1) {
-      const distance = results[i].visualFingerprint && results[i].visualFingerprint !== results[j].visualFingerprint ? 1 : 0;
-      visualPairs.push({
-        left: results[i].candidateId,
-        right: results[j].candidateId,
-        distance,
-        pass: distance >= CREATIVE_PROMOTION_THRESHOLDS.minimumPairwiseVisualDistance,
-      });
+  const versionTwoCandidates = results.filter(
+    (candidate) => candidate.manifest?.version >= 2,
+  );
+  const pixelCandidates = versionTwoCandidates.filter((candidate) =>
+    ["desktop", "compact", "mobile"].every((name) =>
+      candidate.viewports.some((viewport) => viewport.name === name),
+    ),
+  );
+  let visualDiversity;
+  if (pixelCandidates.length >= 2) {
+    const judged = await renderedDiversityEvaluator({
+      candidates: pixelCandidates.map((candidate) => ({
+        candidateId: candidate.candidateId,
+        desktop: path.join(evidenceDir, `${candidate.candidateId}-desktop.png`),
+        mobile: path.join(evidenceDir, `${candidate.candidateId}-mobile.png`),
+      })),
+    });
+    visualDiversity = {
+      version: judged.version,
+      model: judged.model,
+      minimumDistance: judged.minimumPairDistance,
+      score: judged.score,
+      pairs: judged.audit?.pairs || [],
+      genericFallbackDetected: Boolean(
+        judged.audit?.genericFallbackDetected,
+      ),
+      summary: judged.audit?.summary || "",
+      pass: judged.pass,
+    };
+  } else if (versionTwoCandidates.length) {
+    visualDiversity = {
+      minimumDistance: 0,
+      pairs: [],
+      pass: false,
+      source: "incomplete-rendered-evidence",
+    };
+  } else {
+    const visualPairs = [];
+    for (let i = 0; i < results.length; i += 1) {
+      for (let j = i + 1; j < results.length; j += 1) {
+        const distance =
+          results[i].visualFingerprint &&
+          results[i].visualFingerprint !== results[j].visualFingerprint
+            ? 100
+            : 0;
+        visualPairs.push({
+          left: results[i].candidateId,
+          right: results[j].candidateId,
+          distance,
+          pass:
+            distance >=
+            CREATIVE_PROMOTION_THRESHOLDS.minimumPairwiseVisualDistance,
+        });
+      }
     }
+    visualDiversity = {
+      minimumDistance: visualPairs.length
+        ? Math.min(...visualPairs.map((pair) => pair.distance))
+        : 100,
+      pairs: visualPairs,
+      pass: visualPairs.every((pair) => pair.pass),
+      source: "legacy-structural-fallback",
+    };
   }
-  const visualDiversity = {
-    minimumDistance: visualPairs.length ? Math.min(...visualPairs.map((pair) => pair.distance)) : 1,
-    pairs: visualPairs,
-    pass: visualPairs.every((pair) => pair.pass),
-  };
+  const diversityPass =
+    !requireDiversity ||
+    (preview && versionTwoCandidates.length === 0) ||
+    (diversity.pass && visualDiversity.pass);
+  const valid = diversityPass
+    ? preview
+      ? previewEligible
+      : results.filter((candidate) => candidate.eligible)
+    : [];
+  const winner =
+    valid.sort(
+      (left, right) =>
+        right.score - left.score ||
+        left.candidateId.localeCompare(right.candidateId),
+    )[0] || null;
+
   const report = {
     version: 1,
     mode: promote ? "promote" : preview ? "preview" : "review",
@@ -381,21 +538,20 @@ export async function runCreativeBakeoff({
     scoreSource: "rendered-structure-and-contract; multimodal visual gate remains required",
     diversity,
     visualDiversity,
+    diversityRequired: requireDiversity,
     candidates: results,
     selectedCandidateId:
-      (preview && winner) || (promote && winner && diversity.pass && visualDiversity.pass)
-        ? winner.candidateId
-        : null,
+      winner && diversityPass ? winner.candidateId : null,
     // In preview mode fallback means that no authored candidate was renderable.
     // A diversity miss is recorded separately and cannot send the page back to
     // the legacy renderer.
-    fallback: !winner || (!preview && (!diversity.pass || !visualDiversity.pass)),
-    promotionReady: Boolean(winner && diversity.pass && visualDiversity.pass && winner.eligible),
+    fallback: !winner || !diversityPass,
+    promotionReady: Boolean(winner && diversityPass && winner.eligible),
   };
   await fs.mkdir(path.dirname(reportFile), { recursive: true });
   await fs.writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`);
 
-  if ((promote || preview) && winner && (preview || (diversity.pass && visualDiversity.pass))) {
+  if ((promote || preview) && winner && diversityPass) {
     await promoteCreativeCandidate({
       siteDir: root,
       candidateDir: path.relative(root, path.join(candidateRoot, winner.directory)),

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import {
   authorExperienceCandidates,
   namespaceCreativeCss,
@@ -177,6 +178,7 @@ describe("production experience author", () => {
     for (const candidate of result.candidates) {
       expect(Object.keys(candidate.files).sort()).toEqual([
         "Experience.jsx",
+        "content-manifest.json",
         "contract.json",
         "metadata.json",
         "motion.js",
@@ -710,4 +712,103 @@ describe("production experience author", () => {
       ),
     ).toHaveLength(2);
   });
+
+  it("emits route-specific content manifests with independently reproducible digests", async () => {
+    const routeSite = {
+      ...site,
+      creativeAssets: {
+        "route-01": {
+          hero: "/images/generated/route-01-hero.webp",
+          secondary: "/images/generated/route-01-secondary.webp",
+          tertiary: "/images/generated/route-01-tertiary.webp",
+        },
+        "route-02": {
+          hero: "/images/generated/route-02-hero.webp",
+          secondary: "/images/generated/route-02-secondary.webp",
+          tertiary: "/images/generated/route-02-tertiary.webp",
+        },
+        "route-03": {
+          hero: "/images/generated/route-03-hero.webp",
+          secondary: "/images/generated/route-03-secondary.webp",
+          tertiary: "/images/generated/route-03-tertiary.webp",
+        },
+      },
+    };
+    const seen = new Map<string, string>();
+    const result = await authorExperienceCandidates({
+      site: routeSite,
+      inspirationPack,
+      generate: async (request) => {
+        seen.set(request.route.id, request.contentShape.hero.image);
+        return safeStage(request);
+      },
+    });
+
+    expect(seen.get("route-01")).toBe(
+      "/images/generated/route-01-hero.webp",
+    );
+    expect(seen.get("route-02")).toBe(
+      "/images/generated/route-02-hero.webp",
+    );
+    expect(seen.get("route-03")).toBe(
+      "/images/generated/route-03-hero.webp",
+    );
+
+    // The digest covers the manifest without its digest field, sorting object
+    // keys recursively while retaining array order.
+    function sortKeys(value: unknown): unknown {
+      if (Array.isArray(value)) return value.map(sortKeys);
+      if (value && typeof value === "object")
+        return Object.fromEntries(
+          Object.entries(value)
+            .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+            .map(([key, item]) => [key, sortKeys(item)]),
+        );
+      return value;
+    }
+    function recomputeDigest(manifest: Record<string, unknown>) {
+      const { digest: _digest, ...payload } = manifest;
+      return createHash("sha256")
+        .update(JSON.stringify(sortKeys(payload)))
+        .digest("hex");
+    }
+
+    expect(result.candidates).toHaveLength(3);
+    expect(result.contentManifest.values.hero).toMatchObject({
+      image: "",
+      secondaryImage: "",
+      tertiaryImage: "",
+    });
+    expect(recomputeDigest(result.contentManifest)).toBe(result.contentManifest.digest);
+    const digests = new Set<string>();
+    for (const candidate of result.candidates) {
+      const metadata = JSON.parse(candidate.files["metadata.json"]);
+      expect(metadata.contentManifestPath).toBe("content-manifest.json");
+      expect(candidate.metadata.contentManifestPath).toBe(metadata.contentManifestPath);
+      const manifest = JSON.parse(candidate.files["content-manifest.json"]);
+      const assets = routeSite.creativeAssets[
+        metadata.routeId as keyof typeof routeSite.creativeAssets
+      ];
+      expect(manifest.values).toEqual({
+        ...result.contentManifest.values,
+        hero: {
+          ...result.contentManifest.values.hero,
+          image: assets.hero,
+          secondaryImage: assets.secondary,
+          tertiaryImage: assets.tertiary,
+        },
+      });
+      expect(manifest.tokens).toEqual(result.contentManifest.tokens);
+      const recomputed = recomputeDigest(manifest);
+      expect(manifest.digest).toBe(recomputed);
+      expect(metadata.contentManifestDigest).toBe(recomputed);
+      expect(candidate.metadata.contentManifestDigest).toBe(recomputed);
+      expect(metadata.creativeManifest.contentManifestDigest).toBe(recomputed);
+      expect(JSON.parse(candidate.files["contract.json"]).creativeManifest.contentManifestDigest).toBe(recomputed);
+      expect(recomputed).not.toBe(result.contentManifest.digest);
+      digests.add(recomputed);
+    }
+    expect(digests.size).toBe(3);
+  });
+
 });

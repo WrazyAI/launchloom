@@ -7,7 +7,7 @@ import { buildRouteContract } from "./creative-compiler.mjs";
 
 export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
 export const DEFAULT_MAX_IMAGES = 3;
-export const DEFAULT_MAX_REQUESTS = 4;
+export const DEFAULT_MAX_REQUESTS = 12;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
 
 const PLACEMENTS = [
@@ -119,6 +119,57 @@ function promptFor(site, route, placement) {
     "digital-experiences-liquid-glass": "abstract atmospheric fields, liquid light, depth and translucent surfaces without readable text",
     "vortex-editorial-studio": "editorial project stills, expressive but credible studio materials, wide moving-strip crops",
   };
+  const familyAssetBriefs = {
+    "kokoro-editorial-architecture": {
+      medium: "photorealistic architectural editorial photography",
+      hero: "Create an architectural tableau with strong negative space, warm material depth, and a crop that can support monumental type without becoming a split hero.",
+      secondary: "Create a vertical or offset interior chapter with tactile material detail and quiet editorial framing.",
+      tertiary: "Create an architectural still life or material study suited to a magazine/archive rhythm.",
+    },
+    "skyelite-cinematic-luxury": {
+      medium: "cinematic premium transport photography",
+      hero: "Create a wide atmospheric horizon scene with motion energy, restrained luxury, and centered copy-safe space.",
+      secondary: "Create a cinematic destination or transport detail with directional movement and broad tonal gradients.",
+      tertiary: "Create a premium material or travel detail that reads as a film still rather than a catalog card.",
+    },
+    "health-portal-masked-mosaic": {
+      medium: "clean modular clinical photography",
+      hero: "Create one coherent clinical or wellness scene that can be cropped into multiple coordinated mask windows while keeping the subject relationship intact.",
+      secondary: "Create a second calm clinical scene with strong crop-safe zones for modular windows.",
+      tertiary: "Create a precise material, tool, or environment detail suitable for a masked mosaic.",
+    },
+    "3d-portfolio-object-led": {
+      medium: "studio object render with realistic materials",
+      hero: "Create a single sculptural service-relevant object on a spatial stage with dramatic negative space and deep-focus lighting.",
+      secondary: "Create a second object-led composition that can anchor a stacked project chapter.",
+      tertiary: "Create a close object/material study with controlled studio depth, not lifestyle photography.",
+    },
+    "veyra-kinetic-typography": {
+      medium: "high-energy documentary action photography",
+      hero: "Create a full-frame action scene with a clear silhouette, directional energy, and large negative zones for oversized condensed type.",
+      secondary: "Create a directional performance scene suitable for horizontal program bands.",
+      tertiary: "Create a tight action or equipment detail with graphic contrast and motion cues.",
+    },
+    "digital-experiences-liquid-glass": {
+      medium: "abstract spatial light composition",
+      hero: "Create an abstract atmospheric field with liquid light, depth, refraction, and quiet negative space for floating interface instruments.",
+      secondary: "Create a layered translucent spatial scene with controlled blur and depth, without literal UI text.",
+      tertiary: "Create a close abstract material/light study that can sit behind structural glass cells.",
+    },
+    "vortex-editorial-studio": {
+      medium: "editorial project photography",
+      hero: "Create a restrained authored image with broad horizontal crop potential for a narrow-column studio composition.",
+      secondary: "Create a wide project still designed for a moving marquee strip.",
+      tertiary: "Create a project/material detail with strong editorial cropping and calm contrast.",
+    },
+  };
+  const familyBrief =
+    familyAssetBriefs[dna.familyId] || {
+      medium: "commercial editorial photography",
+      hero: "Create a distinctive hero scene whose geometry follows the assigned Reference DNA.",
+      secondary: "Create a supporting scene whose crop follows the assigned Reference DNA.",
+      tertiary: "Create a tactile supporting detail whose crop follows the assigned Reference DNA.",
+    };
   const subject = services.length
     ? services.join(", ")
     : safePromptPart(site.businessKind || site.industry || "local service", 100) || "local service";
@@ -136,12 +187,12 @@ function promptFor(site, route, placement) {
   const directionContext = direction ? `Visual direction: ${direction}.` : "";
   const placementBrief =
     placement.id === "hero"
-      ? "Create a wide editorial hero image with a clear subject and calm negative space for website copy."
+      ? familyBrief.hero
       : placement.id === "secondary"
-        ? "Create a supporting scene that shows the service environment, materials, tools, or setting in use."
-        : "Create a tactile detail image that adds a second visual rhythm to the page: material, texture, process, or a meaningful object."
+        ? familyBrief.secondary
+        : familyBrief.tertiary;
   const prompt = [
-    "Use case: photorealistic-natural.",
+    `Visual medium: ${familyBrief.medium}.`,
     `Asset type: ${placement.id} image for a local-business website.`,
     `Primary request: ${placementBrief}.`,
     `Business context: ${subject}.`,
@@ -151,7 +202,7 @@ function promptFor(site, route, placement) {
     directionContext,
     vocabularyContext,
     problemContext,
-    "Style: distinctive editorial art direction, believable materials, natural light, restrained composition, and a polished commercial website photograph.",
+    `Style: follow the assigned family mechanics and crop strategy. Preserve believable materials and production polish appropriate to ${familyBrief.medium}; do not normalize every family into the same editorial photograph.`,
     "Constraints: no readable text, no logos, no watermark, no signage, no invented credentials, no branded products, no medical claims, no identifiable people, no faces, no customer or staff implication, and no copied real-world campaign.",
     "Keep the image useful at the requested crop and avoid tiny details that disappear on mobile.",
     placement.focal,
@@ -283,7 +334,7 @@ function setImage(site, placement, value) {
   site.images = { ...(site.images || {}), [placement.id]: value };
 }
 
-export async function generateContextualAssets({
+async function generateContextualAssetsForRoute({
   site,
   inspiration,
   outputDir,
@@ -433,6 +484,135 @@ export async function generateContextualAssets({
     await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   }
   return { site, manifest, requests };
+}
+
+export async function generateContextualAssets(options = {}) {
+  const site = options.site;
+  if (!site || typeof site !== "object")
+    throw new Error("A site config is required.");
+  const routes = Array.isArray(options.inspiration?.routes)
+    ? options.inspiration.routes
+    : [];
+  if (routes.length <= 1)
+    return generateContextualAssetsForRoute(options);
+
+  const requestBudget = Number(
+    options.maxRequests ??
+      process.env.FAL_IMAGE_MAX_REQUESTS ??
+      DEFAULT_MAX_REQUESTS,
+  );
+  const routeReservation = Math.max(
+    1,
+    Math.floor(Math.max(0, requestBudget) / routes.length),
+  );
+  let remainingRequests = Math.max(0, requestBudget);
+  let totalRequests = 0;
+  const routeManifests = [];
+  const creativeAssets = {};
+  let firstRouteSite;
+
+  for (const route of routes) {
+    const routeSite = structuredClone(site);
+    const result = await generateContextualAssetsForRoute({
+      ...options,
+      site: routeSite,
+      inspiration: { ...(options.inspiration || {}), routes: [route] },
+      manifestPath: undefined,
+      maxRequests: Math.min(routeReservation, remainingRequests),
+    });
+    totalRequests += result.requests;
+    remainingRequests = Math.max(0, remainingRequests - result.requests);
+    routeManifests.push(result.manifest);
+    if (!firstRouteSite) firstRouteSite = result.site;
+    creativeAssets[route.id] = {
+      hero:
+        site.assets?.photoOne ||
+        result.site.images?.hero ||
+        site.images?.hero ||
+        "",
+      secondary:
+        site.assets?.photoTwo ||
+        result.site.images?.secondary ||
+        site.images?.secondary ||
+        "",
+      tertiary:
+        site.assets?.photoThree ||
+        result.site.images?.tertiary ||
+        site.images?.tertiary ||
+        "",
+      familyId: result.manifest.familyId,
+      routeFingerprint: result.manifest.routeFingerprint,
+    };
+  }
+
+  if (firstRouteSite?.images)
+    site.images = { ...(site.images || {}), ...firstRouteSite.images };
+  site.creativeAssets = creativeAssets;
+
+  const existingUsed = Array.isArray(site.assetReport?.used)
+    ? site.assetReport.used.filter((entry) => entry.source !== "fal-generated")
+    : [];
+  const existingSkipped = Array.isArray(site.assetReport?.skipped)
+    ? [...site.assetReport.skipped]
+    : [];
+  site.assetReport = { used: existingUsed, skipped: existingSkipped };
+
+  const placements = [];
+  const skipped = [];
+  for (const manifest of routeManifests) {
+    for (const entry of manifest.placements || []) {
+      placements.push({ ...entry, routeId: manifest.routeId });
+      site.assetReport.used.push({
+        asset: entry.path,
+        placement: entry.placement,
+        routeId: manifest.routeId,
+        familyId: manifest.familyId,
+        source: "fal-generated",
+        provider: "fal.ai",
+        model: manifest.model,
+        license: "fal.ai provider terms; verify current terms before production",
+        subject: entry.alt,
+        promptHash: entry.promptHash,
+        requestId: entry.requestId,
+        sha256: entry.sha256,
+        generatedAt: manifest.generatedAt,
+        width: entry.width,
+        height: entry.height,
+      });
+    }
+    for (const entry of manifest.skipped || []) {
+      skipped.push({ ...entry, routeId: manifest.routeId });
+      site.assetReport.skipped.push({
+        asset: entry.placement,
+        routeId: manifest.routeId,
+        reason: entry.fallback
+          ? `${entry.reason}; fallback selected`
+          : entry.reason,
+      });
+    }
+  }
+
+  const manifest = {
+    version: 3,
+    provider: "fal.ai",
+    model:
+      options.model ||
+      process.env.FAL_IMAGE_MODEL ||
+      DEFAULT_FAL_MODEL,
+    strategy: "client-first-per-route-reference-directed",
+    generatedAt: new Date().toISOString(),
+    routes: routeManifests,
+    placements,
+    skipped,
+  };
+  if (options.manifestPath) {
+    await fs.mkdir(path.dirname(options.manifestPath), { recursive: true });
+    await fs.writeFile(
+      options.manifestPath,
+      `${JSON.stringify(manifest, null, 2)}\n`,
+    );
+  }
+  return { site, manifest, requests: totalRequests };
 }
 
 async function main() {

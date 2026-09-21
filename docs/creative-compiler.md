@@ -10,14 +10,15 @@ lead endpoint, or ship an unverified layout.
 1. `generate-site-config.mjs` and `seo-research.mjs` produce the sealed truth
    layer: business facts, SEO vocabulary, FAQs, service decisions, contact
    details, structured data, and approved assets.
-2. `compile-inspiration-pack.mjs` selects three independent route contracts and
-   compiles Reference DNA for each route. Reference DNA is an evidence-backed
-   contract containing the family, source and rights, required desktop/mobile
-   screenshots, hero and navigation geometry, typography, palette, image crop,
-   section sequence, service and CTA treatment, motion primitive, mobile
-   recomposition, prohibited patterns, required signatures, and acceptance
-   checks. A missing required desktop screenshot fails creative compilation;
-   prose-only inspiration cannot reach Luna.
+2. `compile-inspiration-pack.mjs` selects three independent route contracts with
+   one authoritative visual capsule per route. `analyze-reference-dna.mjs`
+   then inspects the actual desktop/mobile evidence and enriches Reference DNA
+   with measured headline occupancy, image occupancy, navigation and CTA
+   coordinates, content-column width, section-height rhythm, aspect ratios,
+   overlap relationships, surface transitions, and mobile geometry. Family
+   defaults are fallback vocabulary only; screenshot-derived measurements are
+   required in the new-intake workflow. A missing required desktop screenshot
+   fails creative compilation; prose-only inspiration cannot reach Luna.
    3. `author-production-experiences.mjs` asks the visual author for three
    independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
    author receives the complete Reference DNA and its desktop/mobile evidence,
@@ -32,11 +33,14 @@ lead endpoint, or ship an unverified layout.
    check gets at most two author-owned repairs and then fails closed.
 4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders 1536x864 desktop, 1366x768 compact desktop, and
-   390x844 mobile viewports, and records the evidence. A candidate must expose
-   one hero, one early conversion surface, Services, FAQs, Contact, usable
-   fragment targets, no horizontal overflow, no broken images, no em dashes,
-   no browser errors, and a passing source plus rendered Reference DNA report.
-   Reference fidelity and distinctiveness are hard promotion gates.
+   390x844 mobile viewports, and records the evidence. Structural contract
+   compliance remains a cheap preflight, but promotion fidelity comes from
+   `rendered-reference-fidelity.mjs`, which compares candidate pixels directly
+   with the assigned reference pixels across hero geometry, typography,
+   spatial rhythm, imagery, service presentation, navigation, CTA placement,
+   mobile recomposition, and interaction evidence. Screenshot-to-screenshot
+   candidate distance is also a hard preview and promotion gate; different
+   metadata, colors, or copy do not count as visual diversity.
 5. The diversity gate compares route fingerprints. It rejects a bakeoff where
    the candidates differ only in copy or color. Promotion is possible only
    after the pairwise distance and unique-dimension thresholds pass.
@@ -111,13 +115,15 @@ reference rights and a screenshot path. Add a focused compiler test and run a
 preview bakeoff before enabling promotion. Do not add a family that is merely a
 new color palette or a renamed split hero.
 
-## Controlled canary
+## Controlled canaries
 
-`node scripts/run-creative-canary.mjs` runs the Kokoro-style hypothetical
-architecture business through the real Astro shell. It produces the Reference
-DNA artifact, candidate source, desktop/compact/mobile screenshots, a
-reference-fidelity report, a visual-gate input bundle, a multimodal visual-gate
-report, and a promotion report proving `creative-candidate` without touching
-the legacy renderer. It requires `OPENROUTER_API_KEY`, fails closed on a
-critical or major visual finding, and is isolated from client data: the
-template fixture is restored after rendering.
+`node scripts/run-creative-canary.mjs` is the creative-quality canary. It
+derives Reference DNA from Kokoro evidence, asks Luna to author the controlled
+Kokoro route, renders the authored candidate in the real Astro shell, compares
+its pixels to the reference, runs final visual QA, and writes a promotion
+report proving `creative-candidate` with no legacy fallback.
+
+`node scripts/run-creative-renderer-canary.mjs` preserves the deterministic
+hand-authored Kokoro fixture for renderer/runtime plumbing tests. Passing the
+renderer fixture is not evidence that Luna can reproduce the reference
+mechanics.

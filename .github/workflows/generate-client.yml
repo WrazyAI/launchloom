@@ -24,7 +24,7 @@ jobs:
       FAL_KEY: ${{ secrets.FAL_KEY }}
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
       FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
-      FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '4' }}
+      FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '12' }}
       MODEL_AUTHORED_EXPERIENCE_MODEL: ${{ vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
       # Keep truth/configuration generation separate from visual authorship.
       # The creative lane owns the rendered composition and defaults to Luna.
@@ -68,6 +68,8 @@ jobs:
           node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json
           node scripts/generate-site-config.mjs --source /tmp/intake.md --research /tmp/seo-research.json --out /tmp/site.config.json
           node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/intake.md --out /tmp/inspiration-pack.json
+          node scripts/analyze-reference-dna.mjs --inspiration /tmp/inspiration-pack.json --out /tmp/inspiration-pack.json
+          jq -e '.referenceDnaAnalyzed == true and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null))' /tmp/inspiration-pack.json >/dev/null || { echo "Reference DNA was not derived from screenshot evidence"; exit 1; }
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
@@ -288,16 +290,18 @@ jobs:
             --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots" \
             --promote "$PROMOTE" \
             --preview "$PREVIEW"
-          REPAIR_CANDIDATES=$(jq -r '.candidates[] | select(.valid == false) | .candidateId' .launchloom/creative-bakeoff.json)
-          if [ -n "$REPAIR_CANDIDATES" ]; then
+          for REPAIR_ROUND in 1 2; do
+            REPAIR_CANDIDATES=$(jq -r '.candidates[] | select(.valid == false) | .candidateId' .launchloom/creative-bakeoff.json)
+            [ -n "$REPAIR_CANDIDATES" ] || break
+            echo "Creative visual repair round $REPAIR_ROUND"
             while IFS= read -r CANDIDATE_ID; do
               [ -n "$CANDIDATE_ID" ] || continue
               if ! node "$GITHUB_WORKSPACE/scripts/creative-repair-loop.mjs" \
                 --candidate "/tmp/generated-experiences/$CANDIDATE_ID" \
                 --report .launchloom/creative-bakeoff.json \
                 --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-desktop.png,$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-compact.png,$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-mobile.png" \
-                --maxCycles 2; then
-                echo "Creative repair exhausted for $CANDIDATE_ID; the bakeoff rerun remains the promotion gate."
+                --maxCycles 1; then
+                echo "Creative repair attempt failed for $CANDIDATE_ID; fresh rendered evidence will decide the next round."
               fi
             done <<< "$REPAIR_CANDIDATES"
             rm -rf "$RUNNER_TEMP/creative-bakeoff-screenshots"
@@ -308,7 +312,7 @@ jobs:
               --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots" \
               --promote "$PROMOTE" \
               --preview "$PREVIEW"
-          fi
+          done
           git add .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Render creative experience candidates"
@@ -342,13 +346,17 @@ jobs:
           cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-mobile.png" "$RUNNER_TEMP/initial-screenshots/mobile.png"
           GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json"
           node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode plan --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$GATE_REPORT"
-          if ! jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$GATE_REPORT" >/dev/null; then
+          for VISUAL_REPAIR_ROUND in 1 2; do
+            if jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$GATE_REPORT" >/dev/null; then
+              break
+            fi
             REPAIR_CANDIDATE=$(jq -r '.design.experience.candidateId' src/site.config.json)
+            echo "Selected-candidate visual repair round $VISUAL_REPAIR_ROUND for $REPAIR_CANDIDATE"
             node "$GITHUB_WORKSPACE/scripts/creative-repair-loop.mjs" \
               --candidate "/tmp/generated-experiences/$REPAIR_CANDIDATE" \
-              --report "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" \
+              --report "$GATE_REPORT" \
               --screenshots "$RUNNER_TEMP/initial-screenshots/desktop.png,$RUNNER_TEMP/initial-screenshots/compact.png,$RUNNER_TEMP/initial-screenshots/mobile.png" \
-              --maxCycles 2
+              --maxCycles 1
             REPAIR_PROMOTE=false
             REPAIR_PREVIEW=true
             if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then REPAIR_PROMOTE=true; REPAIR_PREVIEW=false; fi
@@ -365,11 +373,9 @@ jobs:
             cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-desktop.png" "$RUNNER_TEMP/initial-screenshots/desktop.png"
             cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-compact.png" "$RUNNER_TEMP/initial-screenshots/compact.png"
             cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-mobile.png" "$RUNNER_TEMP/initial-screenshots/mobile.png"
-            FINAL_GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-final.json"
-            node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$FINAL_GATE_REPORT"
-            jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_GATE_REPORT" >/dev/null || { echo "Creative repair did not pass the final multimodal visual gate"; exit 1; }
-            GATE_REPORT="$FINAL_GATE_REPORT"
-          fi
+            GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-repair-${VISUAL_REPAIR_ROUND}.json"
+            node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$GATE_REPORT"
+          done
           jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$GATE_REPORT" >/dev/null || { echo "Creative candidate did not pass the multimodal visual gate"; exit 1; }
           if jq -e '.changed == true' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null; then
             PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
@@ -378,11 +384,13 @@ jobs:
             FINAL_GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-final.json"
             node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$FINAL_GATE_REPORT"
             jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_GATE_REPORT" >/dev/null || { echo "Visual corrections did not pass the final multimodal visual gate"; exit 1; }
-            git add src/site.config.json
-            if ! git diff --cached --quiet; then
-              git commit -m "Apply GLM visual quality corrections"
-              git push origin review/initial
-            fi
+          fi
+          rm -rf .launchloom/generated-experiences
+          cp -R /tmp/generated-experiences .launchloom/generated-experiences
+          git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record repaired creative candidate"
+            git push origin review/initial
           fi
           # Scan rendered text assets only. Binary generated imagery can contain
           # the UTF-8 byte sequence by coincidence and is not page copy.

@@ -164,4 +164,148 @@ describe("contextual image generation", () => {
     expect(result.manifest.skipped).toHaveLength(3);
     expect(result.site.assetReport.skipped).toHaveLength(3);
   });
+
+  it("generates independent creative assets for every reference route", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const site = fixture();
+    const inspiration = {
+      routes: [
+        {
+          id: "route-01",
+          familyId: "editorial-monument",
+          signature: "editorial route",
+          referenceDna: {
+            familyId: "kokoro-editorial-architecture",
+            heroGeometry: { mode: "typographic-monument" },
+            imageTreatment: { mode: "architectural-tableaux", crop: "vertical-editorial" },
+            palette: { contrastIntent: "dark editorial" },
+          },
+        },
+        {
+          id: "route-02",
+          familyId: "spatial-object",
+          signature: "object route",
+          referenceDna: {
+            familyId: "3d-portfolio-object-led",
+            heroGeometry: { mode: "oversized-wordmark-with-object-focus" },
+            imageTreatment: { mode: "object-led-3d-collage", crop: "deep-focus" },
+            palette: { contrastIntent: "object stage" },
+          },
+        },
+        {
+          id: "route-03",
+          familyId: "cinematic-stage",
+          signature: "cinematic route",
+          referenceDna: {
+            familyId: "skyelite-cinematic-luxury",
+            heroGeometry: { mode: "centered-copy-over-motion-landscape" },
+            imageTreatment: { mode: "atmospheric-motion-background", crop: "wide-cinematic" },
+            palette: { contrastIntent: "quiet premium" },
+          },
+        },
+      ],
+    };
+    let requestNumber = 0;
+    const result = await generate({
+      site,
+      inspiration,
+      outputDir,
+      key: "test-fal-key",
+      maxRequests: 12,
+      falClient: {
+        config() {},
+        async subscribe() {
+          requestNumber += 1;
+          return {
+            requestId: `route-request-${requestNumber}`,
+            data: { images: [{ url: `https://fal.example/generated-${requestNumber}.jpg` }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(Object.keys(result.site.creativeAssets)).toEqual([
+      "route-01",
+      "route-02",
+      "route-03",
+    ]);
+    expect(new Set(Object.values(result.site.creativeAssets).map((assets: any) => assets.hero)).size).toBe(3);
+    expect(result.manifest.strategy).toBe("client-first-per-route-reference-directed");
+    expect(result.manifest.routes).toHaveLength(3);
+    expect(result.manifest.placements).toHaveLength(9);
+  });
+
+  it.each([12, 13])("reserves requests for later routes despite retries with a cap of %i", async (maxRequests) => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-0${number}`,
+      signature: `budget-route-${number}`,
+    }));
+    const calls: string[] = [];
+    const result = await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      key: "test-fal-key",
+      maxRequests,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          calls.push(options.input.prompt.match(/budget-route-\d/)![0]);
+          if (!options.input.prompt.includes("Make the subject simpler"))
+            throw new Error("Retry this placement.");
+          return { data: { images: [{ url: "https://fal.example/retry.jpg" }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(calls).toEqual(routes.flatMap((route) => Array(4).fill(route.signature)));
+    expect(result.requests).toBe(12);
+    expect(result.requests).toBeLessThanOrEqual(maxRequests);
+    for (const manifest of result.manifest.routes) {
+      expect(manifest.placements.map((entry: any) => entry.placement)).toEqual([
+        "hero",
+        "secondary",
+      ]);
+      expect(manifest.skipped).toEqual([
+        expect.objectContaining({ placement: "tertiary", reason: "request-budget-exhausted" }),
+      ]);
+    }
+  });
+
+  it.each([2, 1, 0, -1])("preserves the global cap when the budget is smaller than the route count: %i", async (maxRequests) => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-0${number}`,
+      signature: `budget-route-${number}`,
+    }));
+    const site = fixture();
+    site.images = { hero: "/images/packs/workshop-hero.webp" };
+    const calls: string[] = [];
+    const result = await generate({
+      site,
+      inspiration: { routes },
+      outputDir,
+      key: "test-fal-key",
+      maxRequests,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          calls.push(options.input.prompt.match(/budget-route-\d/)![0]);
+          throw new Error("Provider unavailable.");
+        },
+      },
+    });
+
+    expect(calls).toEqual(routes.slice(0, Math.max(0, maxRequests)).map((route) => route.signature));
+    expect(result.requests).toBe(Math.max(0, maxRequests));
+    expect(result.manifest.routes).toHaveLength(3);
+    expect(result.manifest.placements).toHaveLength(0);
+    expect(result.manifest.skipped).toHaveLength(9);
+    for (const route of routes)
+      expect(result.site.creativeAssets[route.id].hero).toBe(site.images.hero);
+  });
+
 });

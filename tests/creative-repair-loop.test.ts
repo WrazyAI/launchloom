@@ -1,7 +1,132 @@
-import { describe, expect, it } from "vitest";
-import { applyCreativeVisualSafetyRepairs, runCreativeRepairLoop } from "../scripts/creative-repair-loop.mjs";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { applyCreativeVisualSafetyRepairs, requestRepair, resolveReferenceEvidencePath, runCreativeRepairLoop } from "../scripts/creative-repair-loop.mjs";
+
+const roots: string[] = [];
+afterEach(async () => {
+  vi.unstubAllGlobals();
+  await Promise.all(roots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
+});
 
 describe("creative repair loop", () => {
+  it("prefers an accessible absolute reference evidence path", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-evidence-"));
+    roots.push(root);
+    const absolutePath = path.join(root, "reference.png");
+    await fs.writeFile(absolutePath, "reference");
+
+    await expect(resolveReferenceEvidencePath({
+      path: "missing/repository-relative.png",
+      absolutePath,
+    })).resolves.toBe(absolutePath);
+  });
+
+  it("loads reference screenshots through absolute paths when relative paths are unavailable", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    const mobile = path.join(root, "mobile.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    await fs.writeFile(mobile, "mobile-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => new Response(JSON.stringify({
+      choices: [{ message: { content: JSON.stringify(repaired) } }],
+    })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(await requestRepair({
+      model: "test/model",
+      referenceDna: { evidence: {
+        desktopScreenshot: { path: path.join(root, "missing-desktop.png"), absolutePath: desktop },
+        mobileScreenshot: { path: path.join(root, "missing-mobile.png"), absolutePath: mobile },
+      } },
+      findings: [],
+      files: repaired,
+      screenshots: [],
+    })).toEqual(repaired);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const images = body.messages[1].content.filter((part: any) => part.type === "image_url");
+    expect(images.map((part: any) => part.image_url.url)).toEqual([
+      `data:image/png;base64,${Buffer.from("desktop-evidence").toString("base64")}`,
+      `data:image/png;base64,${Buffer.from("mobile-evidence").toString("base64")}`,
+    ]);
+  });
+
+  it.each([
+    undefined,
+    {},
+    { available: true },
+    { available: false, path: "desktop.png" },
+  ])("fails terminally before requesting a repair for invalid desktop evidence %j", async (desktopScreenshot) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const evaluate = vi.fn(async () => ({ pass: true, findings: [] }));
+    await expect(runCreativeRepairLoop({
+      files: { experience: "old", styles: "old", motion: "old" },
+      referenceDna: { evidence: { desktopScreenshot } },
+      findings: [{ evidence: "Hero heading is white-on-white on a light panel." }],
+      generate: (request: any) => requestRepair({ model: "test/model", ...request }),
+      evaluate,
+    })).rejects.toThrow("Creative repair requires desktop reference evidence");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(evaluate).toHaveBeenCalledOnce();
+  });
+
+  it.each([undefined, {}, { available: false, path: "missing-mobile.png" }])("keeps mobile reference evidence optional: %j", async (mobileScreenshot) => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => new Response(JSON.stringify({
+      choices: [{ message: { content: JSON.stringify(repaired) } }],
+    })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(requestRepair({
+      model: "test/model",
+      referenceDna: { evidence: { desktopScreenshot: { path: desktop }, mobileScreenshot } },
+      findings: [],
+      files: repaired,
+      screenshots: [],
+    })).resolves.toEqual(repaired);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.messages[1].content.filter((part: any) => part.type === "image_url")).toHaveLength(1);
+  });
+
+  it.each([
+    ["desktopScreenshot", false],
+    ["desktopScreenshot", true],
+    ["mobileScreenshot", false],
+    ["mobileScreenshot", true],
+  ] as const)("fails terminally for unreadable %s (directory: %s) instead of applying safety repairs", async (kind, directory) => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const evaluate = vi.fn(async () => ({ pass: true, findings: [] }));
+    await expect(runCreativeRepairLoop({
+      files: { experience: "old", styles: "old", motion: "old" },
+      referenceDna: { evidence: {
+        desktopScreenshot: { path: desktop },
+        [kind]: {
+          path: path.join(root, "missing.png"),
+          absolutePath: directory ? root : path.join(root, "also-missing.png"),
+        },
+      } },
+      findings: [{ evidence: "Hero heading is white-on-white on a light panel." }],
+      generate: (request: any) => requestRepair({ model: "test/model", ...request }),
+      evaluate,
+    })).rejects.toThrow("Creative repair cannot load required reference evidence");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(evaluate).toHaveBeenCalledOnce();
+  });
+
   it("repairs at most two cycles and returns the passing source", async () => {
     let calls = 0;
     const result = await runCreativeRepairLoop({
