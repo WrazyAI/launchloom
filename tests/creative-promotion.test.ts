@@ -109,6 +109,118 @@ describe("creative candidate promotion", () => {
     expect(report.selectedCandidateId).toBeNull();
   }, 45_000);
 
+  it("uses rendered diversity as the sole v2 production diversity authority", async () => {
+    const root = await makeFixture();
+    const record = JSON.parse(
+      await fs.readFile("data/inspiration-registry.json", "utf8"),
+    ).records[0];
+    const baseDna = buildReferenceDna(record, { requireEvidence: true });
+
+    const firstMetadataPath = path.join(root, "candidate-a/metadata.json");
+    const firstMetadata = JSON.parse(
+      await fs.readFile(firstMetadataPath, "utf8"),
+    );
+    firstMetadata.version = 2;
+    firstMetadata.referenceDna = baseDna;
+    firstMetadata.creativeManifest = {
+      ...firstMetadata.creativeManifest,
+      version: 2,
+      referenceDna: baseDna,
+    };
+    await fs.writeFile(firstMetadataPath, JSON.stringify(firstMetadata));
+
+    await fs.cp(
+      path.join(root, "candidate-a"),
+      path.join(root, "candidate-b"),
+      { recursive: true },
+    );
+    const secondMetadataPath = path.join(root, "candidate-b/metadata.json");
+    const secondMetadata = JSON.parse(
+      await fs.readFile(secondMetadataPath, "utf8"),
+    );
+    secondMetadata.candidateId = "candidate-b";
+    secondMetadata.creativeManifest = {
+      ...secondMetadata.creativeManifest,
+      candidateId: "candidate-b",
+    };
+    await fs.writeFile(secondMetadataPath, JSON.stringify(secondMetadata));
+
+    const siteRoot = path.resolve("templates/client-site");
+    const configPath = path.join(siteRoot, "src/site.config.json");
+    const selectedPath = path.join(
+      siteRoot,
+      "src/generated-experiences/selected",
+    );
+    const selectedBackup = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-selected-"),
+    );
+    const originalConfig = await fs.readFile(configPath, "utf8");
+    await fs.cp(selectedPath, selectedBackup, { recursive: true });
+
+    const renderedReferenceEvaluator = async () => ({
+      version: 1,
+      model: "test/model",
+      score: 100,
+      pass: true,
+      audit: {
+        scores: {
+          heroGeometry: 100,
+          typography: 100,
+          spatialRhythm: 100,
+          imagery: 100,
+          servicePresentation: 100,
+          navigation: 100,
+          ctaPlacement: 100,
+          mobileRecomposition: 100,
+          interactionEvidence: 100,
+        },
+        findings: [],
+      },
+    });
+
+    try {
+      const report = await runCreativeBakeoff({
+        siteDir: siteRoot,
+        candidatesDir: root,
+        reportPath: path.join(root, "v2-diversity-report.json"),
+        screenshotsDir: path.join(root, "v2-diversity-screenshots"),
+        renderedReferenceEvaluator,
+        renderedDiversityEvaluator: async () => ({
+          version: 1,
+          model: "test/model",
+          score: 92,
+          pass: true,
+          minimumPairDistance: 90,
+          audit: {
+            pairs: [
+              {
+                left: "candidate-a",
+                right: "candidate-b",
+                distance: 90,
+                reason: "Rendered compositions are materially different.",
+              },
+            ],
+            genericFallbackDetected: false,
+            summary: "Rendered candidates are visually distinct.",
+          },
+        }),
+      });
+
+      expect(report.diversity.pass).toBe(false);
+      expect(report.visualDiversity.pass).toBe(true);
+      expect(report.candidates.every((candidate: any) => candidate.eligible)).toBe(
+        true,
+      );
+      expect(report.selectedCandidateId).not.toBeNull();
+      expect(report.promotionReady).toBe(true);
+    } finally {
+      await fs.writeFile(configPath, originalConfig);
+      await fs.rm(selectedPath, { recursive: true, force: true });
+      await fs.cp(selectedBackup, selectedPath, { recursive: true });
+      await fs.rm(selectedBackup, { recursive: true, force: true });
+    }
+  }, 60_000);
+
   it("selects a version-two candidate for preview before diversity promotion", async () => {
     const root = await makeFixture();
     const metadataPath = path.join(root, "candidate-a/metadata.json");
