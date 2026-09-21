@@ -292,7 +292,27 @@ async function imagePart(file) {
 
 async function requestRepair({ model, referenceDna, findings, files, screenshots }) {
   const content = [{ type: "text", text: `Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer. Reference DNA:\n${JSON.stringify(referenceDna, null, 2)}\nFindings:\n${JSON.stringify(findings, null, 2)}\nCurrent Experience.jsx:\n${files.experience}\nCurrent styles.css:\n${files.styles}\nCurrent motion.js:\n${files.motion}\nReturn complete files. Keep the required data-reference-signature, geometry, section, CTA, mobile, and motion markers. Do not add remote URLs, hardcoded business facts, or em dashes.` }];
-  for (const screenshot of screenshots.slice(0, 3)) content.push(await imagePart(screenshot));
+  for (const screenshot of screenshots.slice(0, 3))
+    content.push(await imagePart(screenshot));
+  const referenceScreenshots = [
+    referenceDna?.evidence?.desktopScreenshot?.path,
+    referenceDna?.evidence?.mobileScreenshot?.path,
+  ].filter(Boolean);
+  for (const screenshot of referenceScreenshots) {
+    const resolved = path.resolve(screenshot);
+    try {
+      await fs.access(resolved);
+      content.push({
+        type: "text",
+        text: "Assigned reference evidence:",
+      });
+      content.push(await imagePart(resolved));
+    } catch {
+      throw new Error(
+        `Creative repair cannot load required reference evidence: ${screenshot}`,
+      );
+    }
+  }
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "X-OpenRouter-Title": "LaunchLoom creative repair" },
