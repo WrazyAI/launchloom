@@ -1,3 +1,10 @@
+/* Keep the legacy template skin below model-authored experience layers. A
+   creative candidate owns its composition and typography; the production
+   shell still owns content, forms, metadata, and routing. Without this layer
+   boundary, broad selectors such as `.hero` and `h1` override authored CSS
+   and create the sparse, legacy-shaped opening seen in previews. */
+@layer legacy-site {
+
 :root {
   --brand: #205d51;
   --ink: #14201d;
@@ -2070,4 +2077,6 @@ h2 {
     bottom: 14px;
     right: 14px;
   }
+}
+
 }

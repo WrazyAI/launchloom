@@ -87,6 +87,12 @@ function normalizeRecord(record, index) {
     sourceUrl: cleanText(record.sourceUrl, 500),
     notes: cleanText(record.notes, 320),
     evidenceKind: cleanText(record.evidenceKind, 40) || (rights === "owned" ? "owned-prototype" : "primary-reference"),
+    measuredDesignTokens:
+      record.measuredDesignTokens && typeof record.measuredDesignTokens === "object"
+        ? record.measuredDesignTokens
+        : undefined,
+    sourceStyles: cleanList(record.sourceStyles, 20),
+    sourceFonts: cleanList(record.sourceFonts, 12),
   };
   if (!normalized.id || !normalized.sourceUrl || !normalized.industries.length)
     throw new Error(`Inspiration record ${index + 1} is incomplete.`);
@@ -160,10 +166,14 @@ function evidenceFor(record) {
     referenceName: record.referenceName || record.name,
     referenceNotes: record.referenceNotes || record.notes,
     familyId: record.familyId || undefined,
+    referenceFamilyId: record.familyId || undefined,
     mobileBehavior: record.mobileBehavior || undefined,
     prohibitedPatterns: record.prohibitedPatterns?.length
       ? record.prohibitedPatterns
       : undefined,
+    measuredDesignTokens: record.measuredDesignTokens,
+    sourceStyles: record.sourceStyles?.length ? record.sourceStyles : undefined,
+    sourceFonts: record.sourceFonts?.length ? record.sourceFonts : undefined,
     notes: record.notes || undefined,
     evidenceKind: record.evidenceKind || undefined,
   };
@@ -262,6 +272,7 @@ export function buildInspirationPack(request, rawRegistry) {
       motionOpportunity:
         anchor.motionOpportunities[0] || "restrained-native-motion",
       familyId: anchor.familyId || undefined,
+      referenceFamilyId: anchor.familyId || undefined,
       mobileBehavior: anchor.mobileBehavior || undefined,
       prohibitedPatterns: anchor.prohibitedPatterns || [],
       referenceIds: evidence.map((item) => item.id),

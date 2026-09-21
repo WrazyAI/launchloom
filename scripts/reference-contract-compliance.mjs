@@ -33,8 +33,33 @@ function sourceHasSignature(source, element) {
   return Boolean(value && new RegExp(`data-reference-signature\\s*=\\s*["']?${value}\\b`, "iu").test(source));
 }
 
+function staticStringExpression(source, expression, seen = new Set()) {
+  const value = String(expression || "").trim();
+  if (!value) return "";
+  if ((value.startsWith("\"") && value.endsWith("\"")) ||
+      (value.startsWith("'") && value.endsWith("'")) ||
+      (value.startsWith("`") && value.endsWith("`")))
+    return value.slice(1, -1);
+  if (!/^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/u.test(value) || seen.has(value))
+    return "";
+  seen.add(value);
+  const parts = value.split(".");
+  const root = parts.shift();
+  if (parts.length) {
+    const objectBody = source.match(new RegExp(`(?:const|let|var)\\s+${root}\\s*=\\s*\\{([\\s\\S]*?)\\}\\s*;?`, "u"))?.[1] || "";
+    const objectProperty = objectBody.match(new RegExp(`(?:^|[,\\n]\\s*)${parts[0]}\\s*:\\s*([^,\\n}]+)`, "u"))?.[1] || "";
+    return parts.length === 1 ? staticStringExpression(source, objectProperty, seen) : "";
+  }
+  const declaration = source.match(new RegExp(`(?:const|let|var)\\s+${root}\\s*=\\s*([^;\\n]+)`, "u"))?.[1] || "";
+  if (!declaration) return "";
+  return staticStringExpression(source, declaration, seen);
+}
+
 function attributeValue(source, attribute) {
-  return source.match(new RegExp(`${attribute}=["']([^"']+)["']`, "iu"))?.[1] || "";
+  const literal = source.match(new RegExp(`${attribute}\\s*=\\s*["']([^"']+)["']`, "iu"))?.[1];
+  if (literal) return literal;
+  const expression = source.match(new RegExp(`${attribute}\\s*=\\s*\\{\\s*([^{}]+?)\\s*\\}`, "iu"))?.[1];
+  return staticStringExpression(source, expression);
 }
 
 function markerMatches(source, attribute, expected) {
@@ -50,6 +75,7 @@ function outputContentPaths(source) {
   const scopes = new WeakMap();
   const roots = [];
   const writes = [];
+  const componentDefinitions = new Map();
   const moduleScope = { bindings: new Map(), parent: null, functionScope: true };
   const propertyName = (node) => node && (ts.isIdentifier(node) || ts.isStringLiteral(node) || ts.isNumericLiteral(node)) ? node.text : null;
   const lookup = (scope, name) => {
@@ -68,7 +94,7 @@ function outputContentPaths(source) {
       });
     }
   };
-  const exported = (node) => node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword);
+  const exported = (node) => node.modifiers?.some((modifier) => modifier?.kind === ts.SyntaxKind.ExportKeyword);
   const entryNames = new Set(["Experience"]);
   for (const statement of file.statements)
     if (ts.isExportAssignment(statement) && ts.isIdentifier(statement.expression)) entryNames.add(statement.expression.text);
@@ -96,8 +122,10 @@ function outputContentPaths(source) {
     return expressions;
   };
   const index = (node, scope) => {
-    if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) && node.name)
+    if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) && node.name) {
       bind(node.name, scope, {});
+      if (ts.isFunctionDeclaration(node)) componentDefinitions.set(node.name.text, node);
+    }
     if (ts.isFunctionLike(node)) {
       const entry = isEntryFunction(node);
       scope = { bindings: new Map(), parent: scope, functionScope: true };
@@ -114,10 +142,12 @@ function outputContentPaths(source) {
       if (ts.isVariableDeclarationList(node.parent) && !(node.parent.flags & ts.NodeFlags.BlockScoped))
         while (!target.functionScope) target = target.parent;
       bind(node.name, target, { expression: node.initializer });
+      if (ts.isIdentifier(node.name) && node.initializer && ts.isFunctionLike(node.initializer))
+        componentDefinitions.set(node.name.text, node.initializer);
     }
     if (ts.isImportClause(node) && node.name) bind(node.name, scope, {});
     if (ts.isImportSpecifier(node) || ts.isNamespaceImport(node)) bind(node.name, scope, {});
-    if (ts.isBinaryExpression(node) && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment)
+    if (ts.isBinaryExpression(node) && node.operatorToken?.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken?.kind <= ts.SyntaxKind.LastAssignment)
       writes.push(node.left);
     if ((ts.isPrefixUnaryExpression(node) || ts.isPostfixUnaryExpression(node)) &&
       (node.operator === ts.SyntaxKind.PlusPlusToken || node.operator === ts.SyntaxKind.MinusMinusToken)) writes.push(node.operand);
@@ -149,9 +179,58 @@ function outputContentPaths(source) {
   writes.forEach(invalidate);
   const append = (paths, keys) => paths.map((path) => [path, ...keys].join(".").replace(/^\$props\.content(?=\.|$)/u, "content"));
   const active = new Set();
-  const paths = (node) => {
+  const overrideStack = [];
+  const activeComponents = new Set();
+  const currentOverrides = () => overrideStack.length ? overrideStack[overrideStack.length - 1] : new Map();
+  const componentName = (node) => {
+    const tag = node?.tagName;
+    return tag && ts.isIdentifier(tag) && /^[A-Z]/u.test(tag.text) ? tag.text : "";
+  };
+  const componentBindings = (definition, opening, parentOverrides) => {
+    const props = new Map();
+    for (const attribute of opening.attributes.properties) {
+      if (!ts.isJsxAttribute(attribute) || !ts.isIdentifier(attribute.name)) continue;
+      const initializer = attribute.initializer;
+      if (!initializer) continue;
+      const expression = ts.isJsxExpression(initializer) ? initializer.expression : initializer;
+      if (expression) props.set(attribute.name.text, paths(expression, parentOverrides));
+    }
+    const parameter = definition.parameters?.[0]?.name;
+    const bindings = new Map();
+    const bindProp = (name, key) => {
+      if (!ts.isIdentifier(name)) return;
+      const value = props.get(key);
+      if (value?.length) bindings.set(name.text, value);
+    };
+    if (ts.isIdentifier(parameter)) {
+      if (props.has(parameter.text)) bindProp(parameter, parameter.text);
+      else if (props.has("content")) bindProp(parameter, "content");
+    } else if (ts.isObjectBindingPattern(parameter)) {
+      for (const element of parameter.elements) {
+        if (!ts.isBindingElement(element)) continue;
+        const key = propertyName(element.propertyName || element.name);
+        if (key !== null) bindProp(element.name, key);
+      }
+    }
+    return bindings;
+  };
+  const componentPaths = (node, parentOverrides) => {
+    const name = componentName(node.openingElement || node);
+    const definition = componentDefinitions.get(name);
+    if (!definition || activeComponents.has(definition)) return [];
+    const bindings = componentBindings(definition, node.openingElement || node, parentOverrides);
+    activeComponents.add(definition);
+    overrideStack.push(bindings);
+    const result = returnedExpressions(definition.body).flatMap(paths);
+    overrideStack.pop();
+    activeComponents.delete(definition);
+    return result;
+  };
+  const paths = (node, overrides = currentOverrides()) => {
     if (!node) return [];
+    if (!(overrides instanceof Map)) overrides = currentOverrides();
     if (ts.isIdentifier(node)) {
+      if (overrides.has(node.text)) return overrides.get(node.text);
       const binding = lookup(scopes.get(node), node.text);
       if (!binding) return node.text === "content" ? ["content"] : [];
       if (binding.written || active.has(binding)) return [];
@@ -167,11 +246,12 @@ function outputContentPaths(source) {
     }
     if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isTypeAssertionExpression(node) || ts.isNonNullExpression(node) || ts.isSatisfiesExpression(node))
       return paths(node.expression);
-    if (ts.isJsxElement(node)) return [...paths(node.openingElement), ...node.children.flatMap(paths)];
+    if (ts.isJsxElement(node)) return [...paths(node.openingElement, overrides), ...node.children.flatMap((child) => paths(child, overrides)), ...componentPaths(node, overrides)];
     if (ts.isJsxFragment(node)) return node.children.flatMap(paths);
-    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) return node.attributes.properties.flatMap(paths);
-    if (ts.isJsxAttribute(node)) return paths(node.initializer);
-    if (ts.isJsxExpression(node) || ts.isJsxSpreadAttribute(node) || ts.isSpreadElement(node) || ts.isSpreadAssignment(node)) return paths(node.expression);
+    if (ts.isJsxSelfClosingElement(node)) return [...node.attributes.properties.flatMap((property) => paths(property, overrides)), ...componentPaths(node, overrides)];
+    if (ts.isJsxOpeningElement(node)) return node.attributes.properties.flatMap((property) => paths(property, overrides));
+    if (ts.isJsxAttribute(node)) return paths(node.initializer, overrides);
+    if (ts.isJsxExpression(node) || ts.isJsxSpreadAttribute(node) || ts.isSpreadElement(node) || ts.isSpreadAssignment(node)) return paths(node.expression, overrides);
     if (ts.isCallExpression(node)) {
       const callee = node.expression;
       const mapped = ts.isPropertyAccessExpression(callee) && callee.name.text === "map";
@@ -183,7 +263,7 @@ function outputContentPaths(source) {
     }
     if (ts.isConditionalExpression(node)) return [...paths(node.condition), ...paths(node.whenTrue), ...paths(node.whenFalse)];
     if (ts.isBinaryExpression(node)) {
-      if (node.operatorToken.kind === ts.SyntaxKind.CommaToken || node.operatorToken.kind === ts.SyntaxKind.EqualsToken) return paths(node.right);
+      if (node.operatorToken?.kind === ts.SyntaxKind.CommaToken || node.operatorToken?.kind === ts.SyntaxKind.EqualsToken) return paths(node.right);
       return [...paths(node.left), ...paths(node.right)];
     }
     if (ts.isArrayLiteralExpression(node)) return node.elements.flatMap(paths);
@@ -200,8 +280,12 @@ function outputContentPaths(source) {
 
 function sourceSectionOrder(source) {
   const sections = [];
-  for (const match of source.matchAll(/<section\b[^>]*?(?:data-reference-section=["']([^"']+)["']|id=["']([^"']+)["'])[^>]*>/giu))
-    sections.push(String(match[1] || match[2]).toLowerCase());
+  for (const match of source.matchAll(/<section\b([^>]*)>/giu)) {
+    const attributes = match[1] || "";
+    const reference = attributes.match(/data-reference-section\s*=\s*["']([^"']+)["']/iu)?.[1];
+    const id = attributes.match(/id\s*=\s*["']([^"']+)["']/iu)?.[1];
+    if (reference || id) sections.push(String(reference || id).toLowerCase());
+  }
   return sections;
 }
 
@@ -237,7 +321,9 @@ export function validateReferenceContractCompliance({
   }
   const sections = sourceSectionOrder(experienceSource);
   const expected = referenceDna.sectionSequence.map((item) => slug(item));
-  const matched = expected.filter((item) => sections.includes(item) || source.toLowerCase().includes(item));
+  const matched = expected.filter((item) => sections.some((actual) =>
+    actual === item || actual.includes(item) || item.includes(actual),
+  ) || source.toLowerCase().includes(item));
   if (matched.length < Math.min(3, expected.length))
     findings.push(finding("section-rhythm", "critical", "The authored section sequence does not represent the assigned reference rhythm."));
   if (!/data-hero(?:\s|=)/iu.test(experienceSource) || !/data-hero-geometry=/iu.test(experienceSource))

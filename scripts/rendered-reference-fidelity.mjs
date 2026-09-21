@@ -10,6 +10,7 @@ import {
   promptCachedText,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
+import { promptImagePart } from "./prompt-evidence.mjs";
 
 export const RENDERED_REFERENCE_MODEL =
   process.env.CREATIVE_REFERENCE_JUDGE_MODEL || "openai/gpt-5.6-luna";
@@ -156,13 +157,7 @@ function cacheableReferenceDna(referenceDna) {
 }
 
 async function imagePart(file) {
-  const data = await fs.readFile(file);
-  const extension = path.extname(file).toLowerCase();
-  const mime =
-    extension === ".png" ? "image/png" :
-    extension === ".webp" ? "image/webp" :
-    "image/jpeg";
-  return { type: "image_url", image_url: { url: `data:${mime};base64,${data.toString("base64")}` } };
+  return promptImagePart(file);
 }
 
 async function requestJson({

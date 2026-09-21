@@ -5,6 +5,10 @@ import { promisify } from "node:util";
 import { buildInspirationPack } from "./inspiration-registry.mjs";
 import { enrichInspirationPack } from "./analyze-reference-dna.mjs";
 import { runRenderedCreativeRepair } from "./run-rendered-creative-repair.mjs";
+import {
+  loadA1ReferenceLibrary,
+  mergeInspirationRegistries,
+} from "./a1-reference-library.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -130,8 +134,16 @@ try {
 
 try {
   const canaryConfig = await canaryConfigFrom(originalConfig);
-  const registry = JSON.parse(
+  const baseRegistry = JSON.parse(
     await fs.readFile(path.join(root, "data/inspiration-registry.json"), "utf8"),
+  );
+  const a1Path = path.join(root, "data/a1-reference-library.json");
+  const registry = await fs.access(a1Path).then(
+    async () => mergeInspirationRegistries(
+      baseRegistry,
+      await loadA1ReferenceLibrary(a1Path, { repositoryRoot: root }),
+    ),
+    () => baseRegistry,
   );
   const compiledPack = buildInspirationPack(
     {

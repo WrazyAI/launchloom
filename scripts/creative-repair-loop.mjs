@@ -10,6 +10,7 @@ import {
   promptCachedText,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
+import { promptImagePart } from "./prompt-evidence.mjs";
 
 const REPAIR_SCHEMA = {
   name: "launchloom_creative_repair",
@@ -309,10 +310,7 @@ export async function runCreativeRepairLoop({
 }
 
 async function imagePart(file) {
-  const data = await fs.readFile(file);
-  const extension = path.extname(file).toLowerCase();
-  const mime = extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg";
-  return { type: "image_url", image_url: { url: `data:${mime};base64,${data.toString("base64")}` } };
+  return promptImagePart(file);
 }
 
 export async function resolveReferenceEvidencePath(record) {

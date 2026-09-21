@@ -86,11 +86,11 @@ a legacy preview.
 The model is independently configurable with `CREATIVE_EXPERIENCE_MODEL` and
 `CREATIVE_EXPERIENCE_REASONING_EFFORT`. The truth/configuration lane remains on
 GLM-5.3-Flash, while the rendered creative lane defaults to
-`openai/gpt-5.6-luna` with maximum reasoning. A repository variable can select a
+`openai/gpt-5.6-luna` with `xhigh` reasoning. A repository variable can select a
 different visual author without changing SEO or business-fact generation. When
-Luna exhausts the structured-output budget at maximum effort, the author retries
-that stage at medium and then low effort; this is a format-recovery path, not a
-legacy-renderer fallback.
+Luna exhausts the structured-output budget at `xhigh`, the author retries that
+stage at `high`, `medium`, and then `low` effort; this is a format-recovery path,
+not a legacy-renderer fallback.
 
 ## Shared runtime contract
 

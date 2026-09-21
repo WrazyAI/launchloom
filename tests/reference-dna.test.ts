@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
-import { buildReferenceDna, validateReferenceDna } from "../scripts/reference-dna.mjs";
+import { buildReferenceDna, normalizeSectionSequence, validateReferenceDna } from "../scripts/reference-dna.mjs";
 
 const registry = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8"));
 
@@ -44,5 +44,39 @@ describe("Reference DNA", () => {
   it("does not allow an incomplete registry to compile a creative pack", () => {
     const records = registry.records.slice(0, 3).map((record: any) => ({ ...record, screenshotPath: "", mobileScreenshotPath: "" }));
     expect(() => buildInspirationPack({ seed: "missing-pack", industry: "all", styleTerms: [], recentReferenceIds: [], recentRouteSignatures: [] }, { version: 1, records })).toThrow(/(?:Reference DNA|three structurally independent)/iu);
+  });
+
+  it("normalizes analyzer prose into enforceable family section IDs", () => {
+    expect(normalizeSectionSequence([
+      "hero monument with oversized serif title",
+      "wide horizontal image collage / triptych",
+      "full-width article ledger rows",
+      "full-bleed cinematic architectural image",
+    ], "kokoro-editorial-architecture")).toEqual([
+      "hero",
+      "image-mosaic",
+      "magazine-archive",
+      "closing-scene",
+    ]);
+  });
+
+  it("selects the neighborhood collage contract for food and market cues", () => {
+    const pack = buildInspirationPack({
+      seed: "neighborhood-collage-test",
+      industry: "food",
+      styleTerms: ["neighborhood", "collage", "market", "shelf"],
+      recentReferenceIds: [],
+      recentRouteSignatures: [],
+    }, registry);
+    const route = pack.routes[0];
+    expect(route.label).toBe("Neighborhood Collage");
+    expect(route.referenceDna.familyId).toBe("neighborhood-table-collage");
+    expect(route.familyId).toBe("market-collage");
+    expect(route.referenceDna.requiredSignatureElements).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "collage-hero" }),
+        expect.objectContaining({ id: "seasonal-shelf" }),
+      ]),
+    );
   });
 });

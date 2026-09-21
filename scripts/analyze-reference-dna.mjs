@@ -6,6 +6,7 @@ import {
   openRouterChatCompletion,
   openRouterSessionId,
 } from "./openrouter-client.mjs";
+import { promptImagePart } from "./prompt-evidence.mjs";
 
 const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-5.6-luna";
 
@@ -192,13 +193,6 @@ function argsFrom(argv) {
     index % 2 === 0 ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]] : pairs, []));
 }
 
-async function imagePart(file) {
-  const data = await fs.readFile(file);
-  const extension = path.extname(file).toLowerCase();
-  const mime = extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg";
-  return { type: "image_url", image_url: { url: `data:${mime};base64,${data.toString("base64")}` } };
-}
-
 function parseChoice(payload) {
   const raw = String(payload?.choices?.[0]?.message?.content || "").trim();
   if (!raw) throw new Error("Reference analyzer returned no content.");
@@ -242,8 +236,8 @@ Rules:
 - do not copy branding, copy, proprietary fonts, logos, or trade dress`
     },
     { type: "text", text: "Desktop reference:" },
-    await imagePart(desktop),
-    ...(mobile ? [{ type: "text", text: "Mobile reference:" }, await imagePart(mobile)] : [])
+    await promptImagePart(desktop),
+    ...(mobile ? [{ type: "text", text: "Mobile reference:" }, await promptImagePart(mobile)] : [])
   ];
   const sessionId = openRouterSessionId(
     "reference-dna",

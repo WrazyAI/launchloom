@@ -55,6 +55,36 @@ export const CREATIVE_FAMILIES = Object.freeze({
     defaultMotion: "object-focus-transition",
     prohibitedPatterns: ["unrelated-3d-decoration", "autoplay-scroll-lock"],
   },
+  "market-collage": {
+    label: "Neighborhood product collage",
+    defaultMotion: "collage-depth-parallax",
+    prohibitedPatterns: ["generic-split-hero", "uniform-card-grid", "white-pill-navbar"],
+  },
+  "a1-collage-composition": {
+    label: "A1 collage composition",
+    defaultMotion: "layered-pointer-drift",
+    prohibitedPatterns: ["generic-split-hero", "uniform-card-grid", "heavy-pill-navigation"],
+  },
+  "a1-kinetic-command": {
+    label: "A1 kinetic command",
+    defaultMotion: "velocity-linked-type",
+    prohibitedPatterns: ["generic-split-hero", "soft-editorial-card-grid", "decorative-numbering"],
+  },
+  "a1-object-stage": {
+    label: "A1 object stage",
+    defaultMotion: "object-focus-transition",
+    prohibitedPatterns: ["unrelated-3d-decoration", "generic-bento-grid", "autoplay-scroll-lock"],
+  },
+  "a1-kinetic-founder": {
+    label: "A1 kinetic founder atlas",
+    defaultMotion: "scroll-linked-type-reveal",
+    prohibitedPatterns: ["generic-split-hero", "generic-card-wall", "repeated-accordion"],
+  },
+  "a1-cinematic-3d": {
+    label: "A1 cinematic 3D studio",
+    defaultMotion: "slow-3d-camera-drift",
+    prohibitedPatterns: ["generic-split-hero", "flat-card-grid", "unbounded-autoplay-video"],
+  },
 });
 
 const DEFAULT_PROHIBITED = [
@@ -110,6 +140,7 @@ function inferFamily(route) {
     .map((part) => clean(part, 120).toLowerCase())
     .join(" ");
   if (/monument|magazine|column|narrow-authored|central-portrait/u.test(value)) return "editorial-monument";
+  if (/collage|market|shelf|seasonal|product-collage/u.test(value)) return "market-collage";
   if (/object|museum|spatial|product|artifact/u.test(value)) return "spatial-object";
   if (/archive|rail|collection|marquee/u.test(value)) return "archive-rail";
   if (/diagnostic|utility|problem|command|scoreboard/u.test(value)) return "utility-diagnostic";
@@ -157,6 +188,7 @@ export function buildRouteContract(route, index = 0) {
     intent: clean(route.intent, 500),
     familyId,
     familyLabel: family.label,
+    referenceFamilyId: clean(route.referenceFamilyId, 100) || clean(referenceDna.familyId, 100),
     navigation: clean(route.navigation, 120),
     heroGeometry: clean(route.heroGeometry, 120),
     servicePresentation: clean(route.servicePresentation, 120),
@@ -178,6 +210,9 @@ export function buildRouteContract(route, index = 0) {
           source: clean(item.source, 100),
           rights: clean(item.rights, 30),
           screenshotPath: clean(item.screenshotPath, 300),
+          measuredDesignTokens: item.measuredDesignTokens || undefined,
+          sourceStyles: list(item.sourceStyles, 20),
+          sourceFonts: list(item.sourceFonts, 12),
           notes: clean(item.notes, 320),
         }))
       : [],

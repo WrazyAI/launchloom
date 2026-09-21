@@ -8,6 +8,7 @@ import {
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { chromium } from "playwright";
+import { promptImagePart } from "./prompt-evidence.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -141,14 +142,6 @@ function parseJson(value) {
   );
 }
 
-async function imagePart(file) {
-  const data = await fs.readFile(file);
-  return {
-    type: "image_url",
-    image_url: { url: `data:image/jpeg;base64,${data.toString("base64")}` },
-  };
-}
-
 async function captureFixture(browser, fixture) {
   const fixtureDir = path.join(outputDir, "screenshots", fixture.id);
   await fs.mkdir(fixtureDir, { recursive: true });
@@ -224,9 +217,9 @@ async function audit(model, fixture, captures) {
                   text: `Audit ${fixture.name}, a ${fixture.industry} website. Compare desktop and mobile. These are evaluator focus areas, not guaranteed findings: ${fixture.reviewFocus.join("; ")}. Cite visible evidence for every issue. A page can be attractive and still fail content integrity or conversion clarity.`,
                 },
                 { type: "text", text: "Desktop screenshot:" },
-                await imagePart(captures[0].file),
+                await promptImagePart(captures[0].file),
                 { type: "text", text: "Mobile screenshot:" },
-                await imagePart(captures[1].file),
+                await promptImagePart(captures[1].file),
               ],
             },
           ],

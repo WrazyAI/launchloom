@@ -1,6 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { buildInspirationPack } from "./inspiration-registry.mjs";
+import {
+  loadA1ReferenceLibrary,
+  mergeInspirationRegistries,
+} from "./a1-reference-library.mjs";
 
 function parseArgs(values) {
   const result = {};
@@ -36,18 +40,28 @@ const registryPath = path.resolve(
 const historyPath = path.resolve(
   args.history || path.join(repository, "data/recent-launch-signatures.json"),
 );
+const a1LibraryPath = path.resolve(
+  args["a1-library"] || path.join(repository, "data/a1-reference-library.json"),
+);
 const outputPath = path.resolve(
   args.out || ".launchloom/inspiration-pack.json",
 );
 
-const [config, registry, history, intake] = await Promise.all([
+const [config, baseRegistry, history, intake, a1Library] = await Promise.all([
   fs.readFile(configPath, "utf8").then(JSON.parse),
   fs.readFile(registryPath, "utf8").then(JSON.parse),
   fs.readFile(historyPath, "utf8").then(JSON.parse),
   args.intake
     ? fs.readFile(path.resolve(args.intake), "utf8").then(intakeFromMarkdown)
     : {},
+  fs.access(a1LibraryPath).then(
+    () => loadA1ReferenceLibrary(a1LibraryPath, { repositoryRoot: repository }),
+    () => null,
+  ),
 ]);
+const registry = a1Library
+  ? mergeInspirationRegistries(baseRegistry, a1Library)
+  : baseRegistry;
 const recent = Array.isArray(history.launches)
   ? history.launches.slice(-30)
   : [];
@@ -71,6 +85,7 @@ const pack = buildInspirationPack(
       "launchloom-intake",
     industry,
     styleTerms,
+    referenceCalibration: a1Library?.calibration,
     recentReferenceIds: recent.flatMap((launch) =>
       Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
     ),
@@ -80,6 +95,16 @@ const pack = buildInspirationPack(
   },
   registry,
 );
+pack.referenceLibrary = {
+  a1: a1Library
+    ? {
+        source: a1Library.source,
+        capturedAt: a1Library.capturedAt,
+        recordIds: a1Library.records.map((record) => record.id),
+        calibration: a1Library.calibration,
+      }
+    : null,
+};
 
 await fs.mkdir(path.dirname(outputPath), { recursive: true });
 await fs.writeFile(outputPath, `${JSON.stringify(pack, null, 2)}\n`);

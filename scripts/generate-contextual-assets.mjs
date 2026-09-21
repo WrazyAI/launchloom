@@ -129,6 +129,7 @@ function promptFor(site, route, placement) {
     "veyra-kinetic-typography": "high-energy action documentary framing with clear subject silhouettes and bold negative space",
     "digital-experiences-liquid-glass": "abstract atmospheric fields, liquid light, depth and translucent surfaces without readable text",
     "vortex-editorial-studio": "editorial project stills, expressive but credible studio materials, wide moving-strip crops",
+    "neighborhood-table-collage": "warm neighborhood food market still life, playful flat color blocks, tactile ingredients, local table energy, and crop-safe product compositions",
   };
   const familyAssetBriefs = {
     "kokoro-editorial-architecture": {
@@ -172,6 +173,12 @@ function promptFor(site, route, placement) {
       hero: "Create a restrained authored image with broad horizontal crop potential for a narrow-column studio composition.",
       secondary: "Create a wide project still designed for a moving marquee strip.",
       tertiary: "Create a project/material detail with strong editorial cropping and calm contrast.",
+    },
+    "neighborhood-table-collage": {
+      medium: "warm editorial food and market still-life photography",
+      hero: "Create a loose tabletop collage of bread, pastry, seasonal produce, and a welcoming neighborhood table. Use varied crop-safe product groupings and warm cream, sage, butter, and tomato color relationships rather than a symmetric split hero.",
+      secondary: "Create a tactile pastry shelf or market-counter scene with repeated product rhythm and generous negative space for a seasonal menu row.",
+      tertiary: "Create a close still life of bread, herbs, paper, or serving details with a tactile handmade feeling and an intentional crop for a graphic visit or order band.",
     },
   };
   const familyBrief =

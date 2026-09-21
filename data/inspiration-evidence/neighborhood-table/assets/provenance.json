@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "referenceFamily": "neighborhood-table-collage",
+  "sourceKind": "synthetic-canary-assets",
+  "generatedBy": "OpenAI built-in image generation tool",
+  "generatedAt": "2026-09-21",
+  "rights": "generated-for-LaunchLoom-canary",
+  "assets": [
+    {
+      "file": "market-table.webp",
+      "role": "hero",
+      "description": "Warm neighborhood market table with bread, pastry, and seasonal produce."
+    },
+    {
+      "file": "pastry-shelf.webp",
+      "role": "secondary",
+      "description": "Tactile pastry shelf scene for a seasonal menu rhythm."
+    },
+    {
+      "file": "bread-detail.webp",
+      "role": "tertiary",
+      "description": "Close bread and herb still life for a tactile visit or order band."
+    }
+  ]
+}

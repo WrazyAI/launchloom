@@ -86,6 +86,20 @@ describe("experience-pack compiler", () => {
     expect(lab).toContain("unsupported claims");
   });
 
+  it("uses maximum effort as the default Luna creative reasoning effort", () => {
+    const author = readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    const repair = readFileSync("scripts/creative-repair-loop.mjs", "utf8");
+    expect(author).toContain(
+      '(model === "openai/gpt-5.6-luna" ? "max" : "low")',
+    );
+    expect(repair).toContain(
+      'process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "max"',
+    );
+  });
+
   it("runs a three-viewport internal bakeoff and preserves a safe fallback", () => {
     const bakeoff = readFileSync("scripts/run-experience-bakeoff.mjs", "utf8");
     expect(bakeoff).toContain('width: 1536, height: 864');

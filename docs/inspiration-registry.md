@@ -2,6 +2,29 @@
 
 The inspiration registry is LaunchLoom's cached, reference-only design research library. It converts curated external and owned references into three structurally independent creative routes for each intake.
 
+## A1 Gallery evidence
+
+`data/a1-reference-library.json` is a supplemental, reference-only cache built from
+the A1 Gallery MCP. It stores local desktop screenshot evidence, source URLs,
+visual mechanics, safe typography hints, and measured token calibration. The
+screenshots are prompt and verification evidence only. They are never emitted as
+client assets, and their source copy, branding, imagery, and trade dress must not
+be reproduced.
+
+The compiler merges this cache automatically when it exists:
+
+```sh
+npm run compile:inspiration -- \
+  --config src/site.config.json \
+  --a1-library data/a1-reference-library.json \
+  --out .launchloom/inspiration-pack.json
+```
+
+Each A1 route remains a single authoritative capsule. A route receives its
+source screenshot, family mechanics, and any measured token evidence; it is not
+averaged with another A1 site. If a cached screenshot is missing, compilation
+fails closed rather than falling back to a prose-only reference.
+
 ## Interface
 
 Call `buildInspirationPack(request, registry)`. The returned pack is deterministic for the same seed, registry, style context, and recent-launch history.

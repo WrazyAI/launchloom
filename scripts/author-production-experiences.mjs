@@ -12,6 +12,7 @@ import {
   promptCachedText,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
+import { promptImagePart } from "./prompt-evidence.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -148,6 +149,9 @@ function routePromptPrefix(request) {
         source: item.source,
         rights: item.rights,
         screenshotPath: item.screenshotPath,
+        measuredDesignTokens: item.measuredDesignTokens,
+        sourceStyles: item.sourceStyles,
+        sourceFonts: item.sourceFonts,
         notes: item.notes,
       })),
     },
@@ -267,19 +271,7 @@ async function requestStage(request) {
     for (const screenshotPath of evidencePaths) {
       if (userContent.length >= 3) break;
       try {
-        const data = await fs.readFile(path.resolve(screenshotPath));
-        const extension = path.extname(screenshotPath).toLowerCase();
-        const mime = extension === ".png"
-          ? "image/png"
-          : extension === ".webp"
-            ? "image/webp"
-            : extension === ".svg"
-              ? "image/svg+xml"
-              : "image/jpeg";
-        userContent.push({
-          type: "image_url",
-          image_url: { url: `data:${mime};base64,${data.toString("base64")}` },
-        });
+        userContent.push(await promptImagePart(path.resolve(screenshotPath)));
       } catch (error) {
         throw new Error(`Reference evidence could not be loaded for ${request.route.id}: ${screenshotPath}`, { cause: error });
       }

@@ -24,6 +24,57 @@ const list = (value, limit = 20) => [
   ),
 ].slice(0, limit);
 
+const sectionIdPatterns = Object.freeze({
+  hero: /\b(?:hero|opening|header|poster|field|stage|column|monument)\b/iu,
+  "image-chapter": /\b(?:image\s+chapter|featured\s+(?:image|portrait)|portrait\s+(?:image|chapter)|image\s+spread)\b/iu,
+  "editorial-intro": /\b(?:editorial\s+(?:intro|statement)|intro(?:duction)?|context|about|statement)\b/iu,
+  "image-mosaic": /\b(?:image\s+(?:mosaic|collage|strip)|mosaic|collage|triptych|gallery)\b/iu,
+  "magazine-archive": /\b(?:magazine|archive|ledger|service\s+(?:rows?|index)|ruled\s+(?:service|archive))\b/iu,
+  "closing-scene": /\b(?:closing|final|full[- ]bleed|cinematic\s+(?:image|scene))\b/iu,
+  contact: /\b(?:contact|request|form|conversation|footer)\b/iu,
+  "conversion-band": /\b(?:conversion|reassurance|cta|call[- ]to[- ]action)\b/iu,
+  "program-bands": /\b(?:program|service\s+bands?|horizontal\s+bands?)\b/iu,
+  proof: /\b(?:proof|testimonial|trust|social\s+proof)\b/iu,
+  faq: /\b(?:faq|questions?|accordion)\b/iu,
+  process: /\b(?:process|steps?|workflow)\b/iu,
+  services: /\b(?:services?|capabilities|offerings?)\b/iu,
+  marquee: /\b(?:marquee|scroll(?:ing)?\s+(?:strip|rail)|project\s+strip)\b/iu,
+  pricing: /\b(?:pricing|plans?|packages?)\b/iu,
+  projects: /\b(?:projects?|case\s+stud(?:y|ies)|project\s+stack)\b/iu,
+});
+
+/**
+ * Keep the analyzer's descriptive section observations, but expose stable
+ * IDs to the source/DOM fidelity gate. Model-written prose is useful evidence
+ * and not a reliable machine contract by itself.
+ */
+export function normalizeSectionSequence(value, familyId) {
+  const defaults = [...(FAMILY_DEFAULTS[familyId]?.sectionSequence || [])];
+  const observed = Array.isArray(value)
+    ? value.map((item) => clean(item, 160)).filter(Boolean)
+    : [];
+  if (!observed.length) return defaults;
+  const normalized = [];
+  for (const item of observed) {
+    const direct = item
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gu, "-")
+      .replace(/^-|-$/gu, "");
+    const directMatch = defaults.find(
+      (candidate) => direct === candidate || direct.includes(candidate),
+    );
+    const mapped = directMatch || defaults.find(
+      (candidate) => sectionIdPatterns[candidate]?.test(item),
+    );
+    if (mapped && !normalized.includes(mapped)) normalized.push(mapped);
+  }
+  // If the analyzer used prose that cannot be mapped confidently, retain the
+  // family's reviewed rhythm instead of producing an unverifiable contract.
+  return normalized.length >= Math.min(3, defaults.length)
+    ? normalized
+    : defaults;
+}
+
 const routeText = (route) =>
   [
     route?.id,
@@ -137,6 +188,106 @@ const FAMILY_DEFAULTS = Object.freeze({
     ],
     acceptanceChecks: ["glass treatment is structural rather than decorative", "motion has reduced-motion fallback", "capabilities are not generic cards"],
   },
+  "a1-collage-composition": {
+    referenceName: "A1 collage composition",
+    heroGeometry: { mode: "layered-collage-with-offset-product-stills", alignment: "asymmetric", viewport: "full-width tactile opening" },
+    navigationGeometry: { mode: "floating-tool-nav", placement: "quiet top edge", mobile: "inline utility row" },
+    typography: { display: "serif-and-sans-pair", body: "warm neutral sans", scale: "large editorial title with compact annotations" },
+    palette: { surfaces: ["paper white", "light blue", "soft grey"], ink: "deep ink", accents: ["clear blue", "hand-drawn signal"], contrastIntent: "bright tactile contrast" },
+    imageTreatment: { mode: "hand-drawn-product-collage", crop: "varied rectangular crops with layered offsets", focalPoint: "object-led with negative space" },
+    sectionSequence: ["hero", "feature-atlas", "image-mosaic", "annotation-rail", "conversion-band", "contact"],
+    servicePresentation: { pattern: "annotated-feature-objects", interaction: "layer hover and scroll depth" },
+    ctaPlacement: { primary: "hero-tool", secondary: "conversion-band", early: "inside first collage" },
+    motion: { primitive: "layered-pointer-drift", library: "native-css-and-gsap", reducedMotion: "static collage layers" },
+    mobileRecomposition: { strategy: "stacked-collage-atlas", rules: ["keep offsets intentional", "turn object annotations into touch-safe rows", "preserve the first action above the fold"] },
+    prohibitedPatterns: ["generic-split-hero", "uniform-rounded-card-grid", "heavy-pill-navigation", "cool-blue-saas-palette"],
+    requiredSignatureElements: [
+      { id: "collage-field", selector: "[data-reference-signature=collage-field]", description: "layered collage opening" },
+      { id: "object-annotations", selector: "[data-reference-signature=object-annotations]", description: "annotations anchored to visual objects" },
+      { id: "conversion-band", selector: "[data-reference-signature=conversion-band]", description: "graphic conversion band" },
+    ],
+    acceptanceChecks: ["hero is asymmetrical and layered", "objects have annotations or labels", "the first conversion action is inside the opening narrative", "mobile retains the collage relationship"],
+  },
+  "a1-kinetic-command": {
+    referenceName: "A1 kinetic command",
+    heroGeometry: { mode: "full-viewport-action-poster", alignment: "edge-anchored", viewport: "one-screen kinetic opening" },
+    navigationGeometry: { mode: "performance-command-bar", placement: "top-edge", mobile: "condensed command menu" },
+    typography: { display: "condensed-mono-display", body: "neutral sans", scale: "viewport-linked high-impact type" },
+    palette: { surfaces: ["ink black", "signal orange", "dark blue"], ink: "white", accents: ["orange", "electric blue"], contrastIntent: "high-energy contrast" },
+    imageTreatment: { mode: "full-bleed-action-documentary", crop: "motion-safe cover", focalPoint: "subject-led" },
+    sectionSequence: ["hero", "program-bands", "impact-statements", "proof", "conversion-band", "contact"],
+    servicePresentation: { pattern: "horizontal-program-bands", interaction: "velocity-linked rows" },
+    ctaPlacement: { primary: "hero-command", secondary: "conversion-band", early: "persistent bottom band" },
+    motion: { primitive: "velocity-linked-type", library: "gsap-scrolltrigger", reducedMotion: "freeze at first frame" },
+    mobileRecomposition: { strategy: "stacked-poster-panels", rules: ["preserve type scale hierarchy", "replace horizontal scrubs with swipe-safe rows", "keep the CTA visible without overlap"] },
+    prohibitedPatterns: ["generic-split-hero", "soft-editorial-card-grid", "decorative-numbering", "late-contact-only"],
+    requiredSignatureElements: [
+      { id: "kinetic-command", selector: "[data-reference-signature=kinetic-command]", description: "viewport-filling kinetic hero" },
+      { id: "program-bands", selector: "[data-reference-signature=program-bands]", description: "directional program bands" },
+      { id: "impact-statements", selector: "[data-reference-signature=impact-statements]", description: "large impact statements" },
+    ],
+    acceptanceChecks: ["hero type is visibly motion-led", "service rows have directional interaction", "the opening action remains readable at 100 percent zoom", "mobile keeps a poster hierarchy"],
+  },
+  "a1-object-stage": {
+    referenceName: "A1 object stage",
+    heroGeometry: { mode: "isolated-3d-object-on-deep-stage", alignment: "object-centered", viewport: "full-screen exhibition stage" },
+    navigationGeometry: { mode: "distributed-object-stage-nav", placement: "edge-distributed", mobile: "compact top menu" },
+    typography: { display: "instrument-serif-with-technical-mono", body: "technical sans", scale: "object-first display scale" },
+    palette: { surfaces: ["near black", "deep grey"], ink: "cool white", accents: ["steel blue", "soft highlight"], contrastIntent: "object-stage contrast" },
+    imageTreatment: { mode: "deep-focus-object-render", crop: "isolated object with atmospheric falloff", focalPoint: "object center" },
+    sectionSequence: ["hero", "object-caption", "capability-atlas", "project-stack", "conversion-band", "contact"],
+    servicePresentation: { pattern: "object-led-capability-atlas", interaction: "focus transition" },
+    ctaPlacement: { primary: "hero-edge", secondary: "project-stack", early: "hero caption control" },
+    motion: { primitive: "object-focus-transition", library: "gsap-scrolltrigger", reducedMotion: "static poster and caption" },
+    mobileRecomposition: { strategy: "object-first-stacked-chapters", rules: ["shrink type before cropping the object", "replace sticky scaling with sequential reveals", "keep a static poster fallback"] },
+    prohibitedPatterns: ["unrelated-3d-decoration", "generic-bento-grid", "autoplay-scroll-lock", "hero-copy-wall"],
+    requiredSignatureElements: [
+      { id: "object-stage", selector: "[data-reference-signature=object-stage]", description: "isolated object stage" },
+      { id: "object-caption", selector: "[data-reference-signature=object-caption]", description: "caption tied to the object" },
+      { id: "project-stack", selector: "[data-reference-signature=project-stack]", description: "stacked project narrative" },
+    ],
+    acceptanceChecks: ["the object is the narrative anchor", "capabilities are presented as an atlas rather than a bento wall", "project sections have a scroll relationship", "mobile remains usable without sticky lock-in"],
+  },
+  "a1-kinetic-founder": {
+    referenceName: "A1 kinetic founder atlas",
+    heroGeometry: { mode: "centered-typographic-founder-field", alignment: "centered", viewport: "full-screen statement field" },
+    navigationGeometry: { mode: "compact-pixel-command-nav", placement: "top edge", mobile: "compact inline menu" },
+    typography: { display: "pixel-display-with-mono-microcopy", body: "technical mono", scale: "oversized centered statement" },
+    palette: { surfaces: ["ink black", "dark grey"], ink: "white", accents: ["pale green"], contrastIntent: "expressive dark contrast" },
+    imageTreatment: { mode: "textured-dark-field-with-graphic-accents", crop: "full-bleed atmospheric texture", focalPoint: "type and signal accents" },
+    sectionSequence: ["hero", "goal-atlas", "progress-proof", "testimonials", "conversion-band", "contact"],
+    servicePresentation: { pattern: "goal-atlas-feature-sequence", interaction: "goal-atlas scrub" },
+    ctaPlacement: { primary: "hero-command", secondary: "conversion-band", early: "after statement" },
+    motion: { primitive: "scroll-linked-type-reveal", library: "gsap-scrolltrigger", reducedMotion: "static goal atlas" },
+    mobileRecomposition: { strategy: "centered-statement-stack", rules: ["keep centered type hierarchy", "stack goal atlas items", "replace hover-only reveals with tap-safe disclosure"] },
+    prohibitedPatterns: ["generic-split-hero", "generic-card-wall", "repeated-accordion", "late-contact-only"],
+    requiredSignatureElements: [
+      { id: "founder-field", selector: "[data-reference-signature=founder-field]", description: "centered typographic statement" },
+      { id: "goal-atlas", selector: "[data-reference-signature=goal-atlas]", description: "goal-led feature atlas" },
+      { id: "progress-proof", selector: "[data-reference-signature=progress-proof]", description: "progress and proof section" },
+    ],
+    acceptanceChecks: ["the opening reads as a centered statement rather than a split hero", "goals are presented as an atlas", "motion is tied to reading progress", "mobile uses tap-safe disclosure"],
+  },
+  "a1-cinematic-3d": {
+    referenceName: "A1 cinematic 3D studio",
+    heroGeometry: { mode: "cinematic-3d-studio-field", alignment: "centered", viewport: "full-screen atmospheric field" },
+    navigationGeometry: { mode: "minimal-cinematic-nav", placement: "top overlay", mobile: "minimal overlay menu" },
+    typography: { display: "restrained-modern-sans", body: "light neutral sans", scale: "quiet large type" },
+    palette: { surfaces: ["near black", "dark grey"], ink: "white", accents: ["soft grey"], contrastIntent: "quiet cinematic contrast" },
+    imageTreatment: { mode: "dark-video-and-3d-atmosphere", crop: "cover with atmospheric bleed", focalPoint: "center stage" },
+    sectionSequence: ["hero", "featured-work", "process", "proof", "conversion-band", "contact"],
+    servicePresentation: { pattern: "featured-work-rail", interaction: "work rail reveal" },
+    ctaPlacement: { primary: "hero-centered", secondary: "featured-work", early: "under hero statement" },
+    motion: { primitive: "slow-3d-camera-drift", library: "gsap-scrolltrigger", reducedMotion: "poster frame" },
+    mobileRecomposition: { strategy: "poster-first-stacked-studio", rules: ["use a poster fallback", "stack the work rail", "disable camera drift when reduced motion is requested"] },
+    prohibitedPatterns: ["generic-split-hero", "flat-card-grid", "unbounded-autoplay-video", "dense-utility-nav"],
+    requiredSignatureElements: [
+      { id: "cinematic-studio", selector: "[data-reference-signature=cinematic-studio]", description: "cinematic studio opening" },
+      { id: "featured-work", selector: "[data-reference-signature=featured-work]", description: "featured work rail" },
+      { id: "closing-inquiry", selector: "[data-reference-signature=closing-inquiry]", description: "closing inquiry scene" },
+    ],
+    acceptanceChecks: ["the hero is atmospheric rather than split", "work is shown as a rail or narrative sequence", "motion has a poster fallback", "mobile does not depend on autoplay"],
+  },
   "3d-portfolio-object-led": {
     referenceName: "3D Portfolio object-led showcase",
     heroGeometry: { mode: "oversized-wordmark-with-object-focus", alignment: "edge-and-center", viewport: "full-screen object stage" },
@@ -175,6 +326,27 @@ const FAMILY_DEFAULTS = Object.freeze({
     ],
     acceptanceChecks: ["opening remains a narrow essay rather than split hero", "project imagery moves as a strip", "mobile converts cursor mechanics to touch-safe behavior"],
   },
+  "neighborhood-table-collage": {
+    referenceName: "Neighborhood collage market",
+    heroGeometry: { mode: "loose-product-collage", alignment: "left-copy-with-offset-product-tiles", viewport: "warm full-width opening with an asymmetrical image cluster" },
+    navigationGeometry: { mode: "market-day-navigation", placement: "small linear top row with utility CTA", mobile: "compact top row with inline action" },
+    typography: { display: "friendly-display-serif", body: "warm neutral sans", scale: "large conversational headline with compact utility labels" },
+    palette: { surfaces: ["warm cream", "soft sage", "butter yellow", "tomato orange", "deep cocoa"], ink: "deep cocoa", accents: ["tomato orange", "butter yellow", "sage"], contrastIntent: "warm high-contrast editorial commerce" },
+    imageTreatment: { mode: "overlapping-product-stills", crop: "varied rectangular crops with collage overlap", focalPoint: "product-centered with generous negative space" },
+    sectionSequence: ["hero", "services", "image-mosaic", "conversion-band", "faq", "contact"],
+    servicePresentation: { pattern: "seasonal-shelf-menu", interaction: "quiet row hover and seasonal highlight" },
+    ctaPlacement: { primary: "hero-counter-action", secondary: "visit-band", early: "inside first collage" },
+    motion: { primitive: "collage-depth-parallax", library: "gsap-scrolltrigger", reducedMotion: "static stacked collage" },
+    mobileRecomposition: { strategy: "stacked-product-collage", rules: ["stack product stills into an intentional offset stack", "turn shelf rows into full-width touch targets", "keep the visit action visible without overlaying copy"] },
+    prohibitedPatterns: ["generic-split-hero", "uniform-rounded-card-grid", "cool-blue-saas-palette", "heavy-pill-navigation", "dense-dashboard-services", "monochrome-editorial-black"],
+    requiredSignatureElements: [
+      { id: "collage-hero", selector: "[data-reference-signature=collage-hero]", description: "asymmetrical product collage opening" },
+      { id: "seasonal-shelf", selector: "[data-reference-signature=seasonal-shelf]", description: "seasonal menu or shelf rows" },
+      { id: "visit-band", selector: "[data-reference-signature=visit-band]", description: "graphic band that moves visitors toward a visit or order" },
+      { id: "product-still-overlap", selector: "[data-reference-signature=product-still-overlap]", description: "overlapping product stills with varied crops" },
+    ],
+    acceptanceChecks: ["hero uses a loose product collage rather than a symmetric split", "services read as seasonal shelf rows", "a graphic visit or order band appears before the closing contact", "mobile keeps the collage relationship while stacking safely"],
+  },
 });
 
 function familyForRoute(route) {
@@ -184,6 +356,7 @@ function familyForRoute(route) {
   if (/health|masked|mosaic|clinical/u.test(text)) return "health-portal-masked-mosaic";
   if (/skyelite|horizon|destination|cinematic-stage/u.test(text)) return "skyelite-cinematic-luxury";
   if (/digital-liquid|liquid|glass|capability-cells/u.test(text)) return "digital-experiences-liquid-glass";
+  if (/neighborhood|market-day|seasonal-shelf|product-collage|loose-product/u.test(text)) return "neighborhood-table-collage";
   if (/jack|3d|object|museum|spatial-object/u.test(text)) return "3d-portfolio-object-led";
   if (/viktor|vortex|studio-column|marquee/u.test(text)) return "vortex-editorial-studio";
   return "kokoro-editorial-architecture";
@@ -242,13 +415,25 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
           route.evidence?.[0]?.notes,
         1400,
       ),
+      measuredDesignTokens: route.measuredDesignTokens || route.evidence?.[0]?.measuredDesignTokens || undefined,
+      sourceStyles: list(route.sourceStyles || route.evidence?.[0]?.sourceStyles, 20),
+      sourceFonts: list(route.sourceFonts || route.evidence?.[0]?.sourceFonts, 12),
     },
     heroGeometry: route.referenceDna?.heroGeometry || defaults.heroGeometry,
     navigationGeometry: route.referenceDna?.navigationGeometry || defaults.navigationGeometry,
     typography: route.referenceDna?.typography || defaults.typography,
     palette: route.referenceDna?.palette || defaults.palette,
     imageTreatment: route.referenceDna?.imageTreatment || defaults.imageTreatment,
-    sectionSequence: list(route.referenceDna?.sectionSequence || defaults.sectionSequence, 20),
+    sectionSequence: normalizeSectionSequence(
+      route.referenceDna?.sectionSequence || defaults.sectionSequence,
+      familyId,
+    ),
+    sectionSequenceEvidence: list(
+      route.referenceDna?.sectionSequenceEvidence ||
+        route.referenceDna?.sectionSequence ||
+        defaults.sectionSequence,
+      20,
+    ),
     servicePresentation: route.referenceDna?.servicePresentation || defaults.servicePresentation,
     ctaPlacement: route.referenceDna?.ctaPlacement || defaults.ctaPlacement,
     motion: route.referenceDna?.motion || defaults.motion,

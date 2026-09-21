@@ -20,7 +20,7 @@ async function readJson(file) {
   return JSON.parse(await fs.readFile(file, "utf8"));
 }
 
-function validateAuthoredFiles(candidateId, files, candidateManifest) {
+function validateAuthoredFiles(candidateId, files, candidateManifest, { preview = false } = {}) {
   const experience = files.experience;
   for (const marker of ["data-hero", "data-early-conversion", 'id="services"', 'id="faqs"', 'id="contact"'])
     if (!experience.includes(marker)) throw new Error(`Creative candidate ${candidateId} is missing ${marker}.`);
@@ -39,13 +39,13 @@ function validateAuthoredFiles(candidateId, files, candidateManifest) {
       stylesSource: files.styles,
       motionSource: files.motion,
     });
-    if (!fidelity.pass)
+    if (!fidelity.pass || (!preview && !fidelity.visualPass))
       throw new Error(`Creative candidate ${candidateId} failed reference fidelity: ${fidelity.findings.map((item) => item.message).join(" | ")}`);
   }
 }
 
 /**
- * @param {{siteDir?: string, candidateDir?: string, configPath?: string, visualScore?: number, distinctivenessScore?: number, selectionMode?: string}} options
+ * @param {{siteDir?: string, candidateDir?: string, configPath?: string, visualScore?: number, distinctivenessScore?: number, selectionMode?: string, preview?: boolean}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function promoteCreativeCandidate({
@@ -55,6 +55,7 @@ export async function promoteCreativeCandidate({
   visualScore,
   distinctivenessScore,
   selectionMode = "creative-bakeoff",
+  preview = false,
 } = {}) {
   if (!candidateDir) throw new Error("A candidate directory is required.");
   const root = path.resolve(siteDir);
@@ -70,7 +71,7 @@ export async function promoteCreativeCandidate({
     styles: await fs.readFile(path.join(source, "styles.css"), "utf8"),
     motion: await fs.readFile(path.join(source, "motion.js"), "utf8"),
   };
-  validateAuthoredFiles(candidateManifest.candidateId, files, candidateManifest);
+  validateAuthoredFiles(candidateManifest.candidateId, files, candidateManifest, { preview });
 
   const selected = path.resolve(root, "src/generated-experiences/selected");
   await fs.mkdir(selected, { recursive: true });

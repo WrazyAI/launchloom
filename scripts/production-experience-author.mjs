@@ -125,6 +125,30 @@ function digest(value) {
   return crypto.createHash("sha256").update(stableJson(value)).digest("hex");
 }
 
+/**
+ * Keep model prompts bounded when a local canary or an intake carries an
+ * inline image. The runtime still receives the sealed asset value unchanged;
+ * only the authoring prompt gets a descriptive placeholder.
+ *
+ * @param {unknown} value
+ * @returns {unknown}
+ */
+export function redactPromptValue(value) {
+  if (typeof value === "string") {
+    if (/^data:image\/[\w.+-]+;base64,/iu.test(value))
+      return "[sealed client image asset]";
+    if (value.length > 12_000)
+      return `${value.slice(0, 256)}...[sealed value truncated]`;
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(redactPromptValue);
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, redactPromptValue(item)]),
+    );
+  return value;
+}
+
 function contentShape(site, route) {
   const business = site.business || {};
   const copy = site.copy || {};
@@ -439,7 +463,7 @@ function validateExperience(source, route, content) {
     [/\bfetch\s*\(/iu, "network request"],
     [/\bXMLHttpRequest\b|\bWebSocket\b/iu, "network primitive"],
     [/\beval\s*\(|\bnew\s+Function\b/iu, "dynamic code"],
-    [/<canvas\b|\bthree(?:\.js)?\b/iu, "unapproved rendering engine"],
+    [/<canvas\b|\bthree(?:\s*\.?\s*js)\b/iu, "unapproved rendering engine"],
     [/<script\b/iu, "script element"],
     [/—/u, "em dash"],
   ];
@@ -765,7 +789,13 @@ export async function authorExperienceCandidates({
   // independent candidates, but never put more than two model stages in
   // flight at once. This protects the creative lane without falling back to a
   // deterministic renderer.
-  const limitedGenerate = createGenerationLimiter(generate, 2);
+  const configuredConcurrency = Number(
+    process.env.CREATIVE_EXPERIENCE_MAX_IN_FLIGHT || 2,
+  );
+  const maxConcurrency = Number.isInteger(configuredConcurrency)
+    ? Math.min(2, Math.max(1, configuredConcurrency))
+    : 2;
+  const limitedGenerate = createGenerationLimiter(generate, maxConcurrency);
   const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
       const routeContentManifest = buildCreativeContentManifest(
@@ -871,7 +901,7 @@ export async function authorExperienceCandidates({
       let referenceRepairCycles = 0;
       if (route.referenceDna?.complete) {
         let fidelity = validateReferenceCandidate({ referenceDna: route.referenceDna, experienceSource: experience, stylesSource: styles, motionSource: motion });
-        while (!fidelity.pass && referenceRepairCycles < 2) {
+        while ((!fidelity.pass || !fidelity.visualPass) && referenceRepairCycles < 2) {
           referenceRepairCycles += 1;
           const repaired = await generateStageValue(
             limitedGenerate,
@@ -890,7 +920,7 @@ export async function authorExperienceCandidates({
           validateExperience(experience, route, content);
           fidelity = validateReferenceCandidate({ referenceDna: route.referenceDna, experienceSource: experience, stylesSource: styles, motionSource: motion });
         }
-        if (!fidelity.pass)
+        if (!fidelity.pass || !fidelity.visualPass)
           throw new Error(`Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`);
       }
       const creativeManifest = buildCandidateManifest({

@@ -231,7 +231,14 @@ export async function runCreativeBakeoff({
         candidateResult.referenceFidelity = sourceFidelity;
         if (!sourceFidelity.pass)
           candidateResult.failures.push(...sourceFidelity.hardFindings.map((item) => `source: ${item.message}`));
-        await promoteCreativeCandidate({ siteDir: root, candidateDir: path.relative(root, path.join(candidateRoot, candidate.directory)) });
+        await promoteCreativeCandidate({
+          siteDir: root,
+          candidateDir: path.relative(root, path.join(candidateRoot, candidate.directory)),
+          // Rendering a candidate for the bakeoff must remain available even
+          // when source-level visual findings are present. Production
+          // publication is enforced by the final promotion call below.
+          preview: true,
+        });
         await run("npm", ["run", "build"], root);
         const { server, origin } = await startServer(path.join(root, "dist"));
         try {
@@ -599,6 +606,7 @@ export async function runCreativeBakeoff({
       visualScore: winner.visualScore,
       distinctivenessScore: winner.distinctivenessScore,
       selectionMode: promote ? "creative-bakeoff" : "creative-preview",
+      preview,
     });
   }
   return report;

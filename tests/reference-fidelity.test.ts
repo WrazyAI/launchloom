@@ -59,6 +59,35 @@ describe("reference fidelity validator", () => {
     expect(report.findings).toEqual([]);
   });
 
+  it("resolves static JSX marker constants without executing authored code", () => {
+    const staticMarkers = `const geometry = "typographic-monument";
+const navigation = "quiet-corner-links";
+const services = "magazine-archive-ledger";
+const cta = "after-hero-image";
+const mobile = "single-column-editorial-chapters";
+const motion = "masked-image-reveal";
+${validExperience
+  .replace('data-mobile-recomposition="single-column-editorial-chapters"', "data-mobile-recomposition={mobile}")
+  .replace('data-motion-primitive="masked-image-reveal"', "data-motion-primitive={motion}")
+  .replace('data-navigation-geometry="quiet-corner-links"', "data-navigation-geometry={navigation}")
+  .replace('data-hero-geometry="typographic-monument"', "data-hero-geometry={geometry}")
+  .replace('data-service-presentation="magazine-archive-ledger"', "data-service-presentation={services}")
+  .replace('data-cta-placement="after-hero-image"', "data-cta-placement={cta}")}`;
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: staticMarkers, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.findings).toEqual([]);
+  });
+
+  it("follows sealed content through rendered local component helpers", () => {
+    const source = `function Hero({ content }) { return <section data-hero data-hero-geometry="typographic-monument"><img src={content.hero.image} /></section>; }
+function Services({ content }) { return <section id="services" data-reference-section="magazine-archive" data-service-presentation="magazine-archive-ledger">{content.services}</section>; }
+function Faqs({ content }) { return <section id="faqs">{content.faqs}</section>; }
+export default function Experience({ content }) { return <main data-mobile-recomposition="single-column-editorial-chapters" data-motion-primitive="masked-image-reveal"><nav data-navigation-geometry="quiet-corner-links" /><Hero content={content} /><Services content={content} /><Faqs content={content} /><section id="contact"><a data-early-conversion data-cta-placement="after-hero-image" /></section></main>; }`;
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: source, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.findings).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: "unbound-content-token" }),
+    ]));
+  });
+
   it("accepts destructured sealed collection bindings", () => {
     const destructured = validExperience
       .replace("<main ", "const { services, faqs } = content; return <main ")
