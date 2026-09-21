@@ -183,14 +183,8 @@ jobs:
             ${{ runner.temp }}/client/.launchloom/human-revision
           if-no-files-found: warn
           retention-days: 14
-      - name: Complete request and start queued revision
-        id: complete
-        if: steps.claim.outputs.run == 'true' && steps.deploy.outcome == 'success'
-        env:
-          REVISION_QUEUE_ACTION: complete
-          QUEUED_FEEDBACK_PATH: ${{ runner.temp }}/queued-feedback.txt
-        run: node scripts/revision-queue-client.mjs
       - name: Send the revised preview to the developer
+        id: review_delivery
         if: steps.deploy.outputs.changed == 'true'
         run: |
           node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}"
@@ -201,10 +195,20 @@ jobs:
           gh pr comment "${{ steps.revision.outputs.pr }}" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Client-feedback developer preview' '${{ steps.deploy.outputs.preview }}' "$LINK")"
           gh issue comment "$FEEDBACK_ISSUE" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s' '<!-- launchloom-revision:client -->' 'Client feedback has been incorporated into an internal developer preview.')"
           ARGS=(--to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision --audience developer --feedback-file "$RUNNER_TEMP/client-feedback.txt" --outcome-file "$RUNNER_TEMP/revision-outcome.txt" --idempotency-key "client-revision-$REVISION_REQUEST_ID")
-          if [ -s "$RUNNER_TEMP/queued-feedback.txt" ]; then ARGS+=(--queued-feedback-file "$RUNNER_TEMP/queued-feedback.txt" --queued-stage "${{ steps.complete.outputs.queued_stage }}"); fi
           node scripts/send-preview-email.mjs "${ARGS[@]}"
+      - name: Complete request and start queued revision
+        id: complete
+        if: steps.claim.outputs.run == 'true' && steps.review_delivery.outcome == 'success'
+        env:
+          REVISION_QUEUE_ACTION: complete
+          QUEUED_FEEDBACK_PATH: ${{ runner.temp }}/queued-feedback.txt
+        run: node scripts/revision-queue-client.mjs
+      - name: Record promoted queued revision
+        if: steps.complete.outputs.promoted == 'true' && hashFiles('${{ runner.temp }}/queued-feedback.txt') != ''
+        run: |
+          printf '%s\n' 'A queued revision request has now started after this delivered review.' >> "$RUNNER_TEMP/revision-outcome.txt"
       - name: Report downstream client revision failure
-        if: always() && steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success' && steps.deploy.outcome != 'success'
+        if: always() && steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success' && (steps.deploy.outcome != 'success' || steps.review_delivery.outcome != 'success' || steps.complete.outcome != 'success')
         run: |
           printf '\nRendered creative refinement or downstream verification did not complete successfully. Inspect GitHub Actions run %s.\n' '${{ github.run_id }}' >> "$RUNNER_TEMP/revision-outcome.txt"
           DETAILS=$(sed -n '1,80p' "$RUNNER_TEMP/revision-outcome.txt")
