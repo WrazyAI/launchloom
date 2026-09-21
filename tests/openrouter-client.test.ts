@@ -99,6 +99,12 @@ describe("OpenRouter cache-aware client", () => {
       prompt_cache_options: { mode: "explicit", ttl: "30m" },
     });
     expect(
+      promptCacheRequestFields(
+        "openai/gpt-5.6-luna",
+        "x".repeat(100),
+      ).prompt_cache_key,
+    ).toHaveLength(64);
+    expect(
       promptCacheRequestFields("z-ai/glm-5.3-flash", "ignored"),
     ).toEqual({});
   });
