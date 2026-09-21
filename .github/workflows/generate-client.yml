@@ -286,7 +286,7 @@ jobs:
           cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
           rm -rf .launchloom/generated-experiences
           cp -R /tmp/generated-experiences .launchloom/generated-experiences
-          git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json .launchloom/creative-repair src/generated-experiences/selected src/site.config.json
+          git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Render and repair creative experience candidates"
             git push origin review/initial
