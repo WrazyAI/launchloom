@@ -501,6 +501,10 @@ export async function generateContextualAssets(options = {}) {
       process.env.FAL_IMAGE_MAX_REQUESTS ??
       DEFAULT_MAX_REQUESTS,
   );
+  const routeReservation = Math.max(
+    1,
+    Math.floor(Math.max(0, requestBudget) / routes.length),
+  );
   let remainingRequests = Math.max(0, requestBudget);
   let totalRequests = 0;
   const routeManifests = [];
@@ -514,7 +518,7 @@ export async function generateContextualAssets(options = {}) {
       site: routeSite,
       inspiration: { ...(options.inspiration || {}), routes: [route] },
       manifestPath: undefined,
-      maxRequests: remainingRequests,
+      maxRequests: Math.min(routeReservation, remainingRequests),
     });
     totalRequests += result.requests;
     remainingRequests = Math.max(0, remainingRequests - result.requests);

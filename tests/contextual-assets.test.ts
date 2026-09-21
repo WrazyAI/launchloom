@@ -236,4 +236,76 @@ describe("contextual image generation", () => {
     expect(result.manifest.placements).toHaveLength(9);
   });
 
+  it.each([12, 13])("reserves requests for later routes despite retries with a cap of %i", async (maxRequests) => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-0${number}`,
+      signature: `budget-route-${number}`,
+    }));
+    const calls: string[] = [];
+    const result = await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      key: "test-fal-key",
+      maxRequests,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          calls.push(options.input.prompt.match(/budget-route-\d/)![0]);
+          if (!options.input.prompt.includes("Make the subject simpler"))
+            throw new Error("Retry this placement.");
+          return { data: { images: [{ url: "https://fal.example/retry.jpg" }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(calls).toEqual(routes.flatMap((route) => Array(4).fill(route.signature)));
+    expect(result.requests).toBe(12);
+    expect(result.requests).toBeLessThanOrEqual(maxRequests);
+    for (const manifest of result.manifest.routes) {
+      expect(manifest.placements.map((entry: any) => entry.placement)).toEqual([
+        "hero",
+        "secondary",
+      ]);
+      expect(manifest.skipped).toEqual([
+        expect.objectContaining({ placement: "tertiary", reason: "request-budget-exhausted" }),
+      ]);
+    }
+  });
+
+  it.each([2, 1, 0, -1])("preserves the global cap when the budget is smaller than the route count: %i", async (maxRequests) => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-0${number}`,
+      signature: `budget-route-${number}`,
+    }));
+    const site = fixture();
+    site.images = { hero: "/images/packs/workshop-hero.webp" };
+    const calls: string[] = [];
+    const result = await generate({
+      site,
+      inspiration: { routes },
+      outputDir,
+      key: "test-fal-key",
+      maxRequests,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          calls.push(options.input.prompt.match(/budget-route-\d/)![0]);
+          throw new Error("Provider unavailable.");
+        },
+      },
+    });
+
+    expect(calls).toEqual(routes.slice(0, Math.max(0, maxRequests)).map((route) => route.signature));
+    expect(result.requests).toBe(Math.max(0, maxRequests));
+    expect(result.manifest.routes).toHaveLength(3);
+    expect(result.manifest.placements).toHaveLength(0);
+    expect(result.manifest.skipped).toHaveLength(9);
+    for (const route of routes)
+      expect(result.site.creativeAssets[route.id].hero).toBe(site.images.hero);
+  });
+
 });

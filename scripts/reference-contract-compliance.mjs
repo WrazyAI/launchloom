@@ -49,7 +49,7 @@ function hasProhibitedPattern(source, pattern) {
   const value = slug(pattern);
   if (!value) return false;
   const escaped = value.replace(/-/gu, "[-_ ]?");
-  return new RegExp(`(?:data-reference-pattern|data-layout|data-grammar|className|class)=["'][^"']*${escaped}[^"']*["']|${escaped}`, "iu").test(source);
+  return new RegExp(`\\s(?:data-reference-pattern|data-layout|data-grammar|className|class)\\s*=\\s*["'][^"']*\\b${escaped}\\b[^"']*["']`, "iu").test(source);
 }
 
 /**
@@ -103,7 +103,7 @@ export function validateReferenceContractCompliance({
   else if (!markerMatches(experienceSource, "data-motion-primitive", referenceDna.motion.primitive))
     findings.push(finding("motion-primitive-mismatch", "critical", "The motion primitive does not match Reference DNA."));
   for (const pattern of referenceDna.prohibitedPatterns)
-    if (hasProhibitedPattern(source, pattern))
+    if (hasProhibitedPattern(`${experienceSource}\n${renderedDom}`, pattern))
       findings.push(finding("prohibited-pattern", "critical", `Prohibited pattern detected: ${pattern}.`));
   for (const match of stylesSource.matchAll(/--([a-z][\w-]*)\s*:/giu))
     if (!match[1].startsWith("ll-creative-"))

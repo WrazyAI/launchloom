@@ -856,6 +856,7 @@ export async function authorExperienceCandidates({
         referenceRepairCycles,
         motionFallback: Boolean(motionOutput.fallback),
         contentManifestDigest: routeContentManifest.digest,
+        contentManifestPath: "content-manifest.json",
         allowedImports: [...allowedImports],
         runtimeInstrumentation: {
           rootAttribute: "data-model-experience",
@@ -877,6 +878,7 @@ export async function authorExperienceCandidates({
         directory: candidateDirectories[index],
         metadata,
         files: {
+          "content-manifest.json": `${JSON.stringify(routeContentManifest, null, 2)}\n`,
           "contract.json": `${JSON.stringify(contract, null, 2)}\n`,
           "Experience.jsx": `${experience}\n`,
           "styles.css": `${styles}\n`,

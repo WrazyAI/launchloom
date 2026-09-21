@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -11,7 +11,10 @@ const roots: string[] = [];
 const originalKey = process.env.OPENROUTER_API_KEY;
 
 afterEach(async () => {
-  process.env.OPENROUTER_API_KEY = originalKey;
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+  if (originalKey === undefined) delete process.env.OPENROUTER_API_KEY;
+  else process.env.OPENROUTER_API_KEY = originalKey;
   await Promise.all(
     roots.splice(0).map((root) =>
       fs.rm(root, { recursive: true, force: true }),
@@ -90,6 +93,206 @@ const passingScores = {
   mobileRecomposition: 88,
   interactionEvidence: 76,
 };
+
+describe("rendered reference request retries", () => {
+  const files = {
+    referenceDesktop: "reference-desktop.png",
+    referenceMobile: "reference-mobile.png",
+    candidateDesktop: "candidate-desktop.png",
+    candidateCompact: "candidate-compact.png",
+    candidateMobile: "candidate-mobile.png",
+    secondDesktop: "second-desktop.png",
+    secondMobile: "second-mobile.png",
+  };
+  const audit = {
+    verdict: "pass",
+    overallScore: 89,
+    scores: passingScores,
+    findings: [],
+    summary: "The candidate preserves the reference mechanics.",
+  };
+
+  beforeEach(() => {
+    process.env.OPENROUTER_API_KEY = "test";
+    vi.useFakeTimers();
+    vi.spyOn(fs, "access").mockResolvedValue(undefined);
+    vi.spyOn(fs, "readFile").mockResolvedValue(Buffer.from("pixel-evidence"));
+  });
+
+  function evaluate(fetchImpl: typeof fetch) {
+    return evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      fetchImpl,
+    });
+  }
+
+  function failure(status: number, message = "Provider unavailable") {
+    return new Response(JSON.stringify({ error: { message } }), { status });
+  }
+
+  it.each([408, 429, 500, 502, 503, 599])("retries HTTP %i after a short backoff", async (status) => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(failure(status))
+      .mockResolvedValueOnce(response(audit));
+    const pending = evaluate(fetchImpl);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(499);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect((await pending).pass).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    const signals = fetchImpl.mock.calls.map(([, options]) => options?.signal);
+    expect(signals[0]).toBeInstanceOf(AbortSignal);
+    expect(signals[1]).not.toBe(signals[0]);
+    expect(signals.every((signal) => signal && !signal.aborted)).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("stops after three attempts and preserves the final HTTP error", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(failure(503, "First failure"))
+      .mockResolvedValueOnce(failure(429, "Second failure"))
+      .mockResolvedValueOnce(failure(502, "Final provider failure"));
+    const rejected = expect(evaluate(fetchImpl)).rejects.toThrow(
+      "Rendered reference judge failed (502): Final provider failure",
+    );
+    await vi.advanceTimersByTimeAsync(500);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(999);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(1);
+    await rejected;
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([400, 401, 403, 404, 409, 422, 499])("does not retry HTTP %i", async (status) => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(failure(status));
+    await expect(evaluate(fetchImpl)).rejects.toThrow(
+      `Rendered reference judge failed (${status}): Provider unavailable`,
+    );
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("stops immediately on a non-retryable response after a transient failure", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(failure(503))
+      .mockResolvedValueOnce(failure(401, "Invalid key"));
+    const rejected = expect(evaluate(fetchImpl)).rejects.toThrow(
+      "Rendered reference judge failed (401): Invalid key",
+    );
+    await vi.advanceTimersByTimeAsync(500);
+    await rejected;
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("retries non-JSON transient HTTP responses", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response("Service unavailable", { status: 503 }))
+      .mockResolvedValueOnce(response(audit));
+    const pending = evaluate(fetchImpl);
+    await vi.advanceTimersByTimeAsync(500);
+    expect((await pending).pass).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("preserves network errors without retrying", async () => {
+    const error = new TypeError("Connection reset");
+    const fetchImpl = vi.fn<typeof fetch>().mockRejectedValue(error);
+    await expect(evaluate(fetchImpl)).rejects.toBe(error);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([200, 503])("preserves body read errors for HTTP %i without retrying", async (status) => {
+    const error = new TypeError("Body stream failed");
+    const result = failure(status);
+    vi.spyOn(result, "json").mockRejectedValue(error);
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(result);
+    await expect(evaluate(fetchImpl)).rejects.toBe(error);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("preserves malformed response JSON without retrying", async () => {
+    const error = new SyntaxError("Malformed provider response");
+    const result = response(audit);
+    vi.spyOn(result, "json").mockRejectedValue(error);
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(result);
+    await expect(evaluate(fetchImpl)).rejects.toBe(error);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([
+    [{ choices: [] }, "returned no content"],
+    [{ choices: [{ message: { content: "invalid" } }] }, "returned invalid JSON"],
+    [{ choices: [{ finish_reason: "length", message: { content: "{}" } }] }, "was truncated"],
+  ])("does not retry invalid model output: %j", async (payload, message) => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify(payload)),
+    );
+    await expect(evaluate(fetchImpl)).rejects.toThrow(`Rendered reference judge ${message}`);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each(["headers", "success body", "error body"])("keeps the 180-second timeout active through %s", async (phase) => {
+    let signal: AbortSignal | undefined;
+    const error = new DOMException("Request aborted", "AbortError");
+    const fetchImpl = vi.fn<typeof fetch>(async (_url, options) => {
+      signal = options?.signal as AbortSignal;
+      const aborted = new Promise<never>((_resolve, reject) => {
+        signal!.addEventListener("abort", () => reject(error), { once: true });
+      });
+      if (phase === "headers") return aborted;
+      const result = failure(phase === "success body" ? 200 : 503);
+      vi.spyOn(result, "json").mockReturnValue(aborted);
+      return result;
+    });
+    const rejected = expect(evaluate(fetchImpl)).rejects.toBe(error);
+    await vi.advanceTimersByTimeAsync(179_999);
+    expect(signal?.aborted).toBe(false);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    await rejected;
+    expect(signal?.aborted).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("also retries diversity requests through the shared request helper", async () => {
+    const fetchImpl = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(failure(429))
+      .mockResolvedValueOnce(response({
+        overallDistinctiveness: 90,
+        genericFallbackDetected: false,
+        pairs: [{ left: "a", right: "b", distance: 90, reason: "Distinct layouts." }],
+        summary: "Distinct candidates.",
+      }));
+    const pending = evaluateRenderedDiversity({
+      candidates: [
+        { candidateId: "a", desktop: files.candidateDesktop, mobile: files.candidateMobile },
+        { candidateId: "b", desktop: files.secondDesktop, mobile: files.secondMobile },
+      ],
+      fetchImpl,
+    });
+    await vi.advanceTimersByTimeAsync(500);
+    expect((await pending).pass).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
 
 describe("rendered reference fidelity", () => {
   it("passes only from pixel-level reference scores, not DOM markers", async () => {

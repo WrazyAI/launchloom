@@ -1,23 +1,19 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { applyCreativeVisualSafetyRepairs, resolveReferenceEvidencePath, runCreativeRepairLoop } from "../scripts/creative-repair-loop.mjs";
+import { applyCreativeVisualSafetyRepairs, requestRepair, resolveReferenceEvidencePath, runCreativeRepairLoop } from "../scripts/creative-repair-loop.mjs";
 
-const temporaryRoots: string[] = [];
-
+const roots: string[] = [];
 afterEach(async () => {
-  await Promise.all(
-    temporaryRoots.splice(0).map((root) =>
-      fs.rm(root, { recursive: true, force: true }),
-    ),
-  );
+  vi.unstubAllGlobals();
+  await Promise.all(roots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
 });
 
 describe("creative repair loop", () => {
   it("prefers an accessible absolute reference evidence path", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-evidence-"));
-    temporaryRoots.push(root);
+    roots.push(root);
     const absolutePath = path.join(root, "reference.png");
     await fs.writeFile(absolutePath, "reference");
 
@@ -25,6 +21,58 @@ describe("creative repair loop", () => {
       path: "missing/repository-relative.png",
       absolutePath,
     })).resolves.toBe(absolutePath);
+  });
+
+  it("loads reference screenshots through absolute paths when relative paths are unavailable", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    const mobile = path.join(root, "mobile.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    await fs.writeFile(mobile, "mobile-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => new Response(JSON.stringify({
+      choices: [{ message: { content: JSON.stringify(repaired) } }],
+    })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(await requestRepair({
+      model: "test/model",
+      referenceDna: { evidence: {
+        desktopScreenshot: { path: path.join(root, "missing-desktop.png"), absolutePath: desktop },
+        mobileScreenshot: { path: path.join(root, "missing-mobile.png"), absolutePath: mobile },
+      } },
+      findings: [],
+      files: repaired,
+      screenshots: [],
+    })).toEqual(repaired);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const images = body.messages[1].content.filter((part: any) => part.type === "image_url");
+    expect(images.map((part: any) => part.image_url.url)).toEqual([
+      `data:image/png;base64,${Buffer.from("desktop-evidence").toString("base64")}`,
+      `data:image/png;base64,${Buffer.from("mobile-evidence").toString("base64")}`,
+    ]);
+  });
+
+  it.each(["desktopScreenshot", "mobileScreenshot"])("fails terminally for unreadable %s instead of applying safety repairs", async (kind) => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-"));
+    roots.push(root);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const evaluate = vi.fn(async () => ({ pass: true, findings: [] }));
+    await expect(runCreativeRepairLoop({
+      files: { experience: "old", styles: "old", motion: "old" },
+      referenceDna: { evidence: { [kind]: {
+        path: path.join(root, "missing.png"),
+        absolutePath: root,
+      } } },
+      findings: [{ evidence: "Hero heading is white-on-white on a light panel." }],
+      generate: (request: any) => requestRepair({ model: "test/model", ...request }),
+      evaluate,
+    })).rejects.toThrow("Creative repair cannot load required reference evidence");
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(evaluate).toHaveBeenCalledOnce();
   });
 
   it("repairs at most two cycles and returns the passing source", async () => {

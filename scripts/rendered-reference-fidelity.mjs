@@ -147,39 +147,49 @@ async function imagePart(file) {
 async function requestJson({ model, schema, content, label, fetchImpl = fetch }) {
   if (!process.env.OPENROUTER_API_KEY)
     throw new Error("OPENROUTER_API_KEY is required for rendered reference evaluation.");
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 180_000);
-  try {
-    const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "X-OpenRouter-Title": "LaunchLoom Rendered Reference Judge"
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0,
-        reasoning: { effort: "medium", exclude: true },
-        max_tokens: 7000,
-        response_format: { type: "json_schema", json_schema: schema },
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. Return JSON only."
-          },
-          { role: "user", content }
-        ]
-      })
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok)
-      throw new Error(`${label} failed (${response.status}): ${payload?.error?.message || "unknown error"}`);
-    return { audit: parseChoice(payload, label), usage: payload.usage || null, provider: payload.provider || null };
-  } finally {
-    clearTimeout(timeout);
+  const maxAttempts = 3;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 180_000);
+    try {
+      const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "X-OpenRouter-Title": "LaunchLoom Rendered Reference Judge"
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0,
+          reasoning: { effort: "medium", exclude: true },
+          max_tokens: 7000,
+          response_format: { type: "json_schema", json_schema: schema },
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. Return JSON only."
+            },
+            { role: "user", content }
+          ]
+        })
+      });
+      const payload = await response.json().catch((error) => {
+        if (response.ok || !(error instanceof SyntaxError)) throw error;
+        return {};
+      });
+      if (response.ok)
+        return { audit: parseChoice(payload, label), usage: payload.usage || null, provider: payload.provider || null };
+      const retryable = response.status === 408 || response.status === 429 ||
+        (response.status >= 500 && response.status < 600);
+      if (!retryable || attempt === maxAttempts - 1)
+        throw new Error(`${label} failed (${response.status}): ${payload?.error?.message || "unknown error"}`);
+    } finally {
+      clearTimeout(timeout);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
   }
 }
 

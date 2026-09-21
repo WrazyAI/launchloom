@@ -22,6 +22,26 @@ describe("reference fidelity validator", () => {
     expect(report.findings.map((item: any) => item.code)).toEqual(expect.arrayContaining(["prohibited-pattern", "css-token-collision"]));
   });
 
+  it("ignores prohibited words outside relevant attribute values", () => {
+    const report = validateReferenceCandidate({
+      referenceDna: { ...dna, prohibitedPatterns: [...dna.prohibitedPatterns, "cards", "grid"] },
+      experienceSource: `${validExperience}<p>Browse cards in a grid.</p><div className="gridiron" data-description="cards" />`,
+      stylesSource: `${validStyles} .cards { display: grid; } /* generic-split-hero */`,
+      motionSource: `${validMotion}\n// cards in a grid`,
+    });
+    expect(report.pass).toBe(true);
+  });
+
+  it.each(["data-reference-pattern", "data-layout", "data-grammar", "className", "class"])("detects prohibited patterns in %s values", (attribute) => {
+    const report = validateReferenceCandidate({
+      referenceDna: { ...dna, prohibitedPatterns: [...dna.prohibitedPatterns, "cards"] },
+      experienceSource: `${validExperience}<div ${attribute} = "feature cards" />`,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+    expect(report.findings).toContainEqual(expect.objectContaining({ code: "prohibited-pattern" }));
+  });
+
   it("accepts human-readable marker values that normalize to the contract slugs", () => {
     const humanReadable = validExperience
       .replace("single-column-editorial-chapters", "single column editorial chapters")

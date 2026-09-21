@@ -43,6 +43,8 @@ function appendRepair(styles, marker, css) {
   return `${styles.trim()}\n\n${marker}\n${css.trim()}\n`;
 }
 
+class ReferenceEvidenceError extends Error {}
+
 function isCompleteRepair(value) {
   return Boolean(
     value &&
@@ -245,6 +247,7 @@ export async function runCreativeRepairLoop({
       });
       if (!isCompleteRepair(repaired)) throw new Error(`Creative repair cycle ${cycle} returned incomplete files.`);
     } catch (error) {
+      if (error instanceof ReferenceEvidenceError) throw error;
       // A malformed or unavailable author response must not publish stale
       // output. Preserve the repair budget and give only the evidence-driven
       // safety transforms a chance to recover before failing closed.
@@ -303,7 +306,7 @@ export async function resolveReferenceEvidencePath(record) {
   return "";
 }
 
-async function requestRepair({ model, referenceDna, findings, files, screenshots }) {
+export async function requestRepair({ model, referenceDna, findings, files, screenshots }) {
   const content = [{ type: "text", text: `Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer. Reference DNA:\n${JSON.stringify(referenceDna, null, 2)}\nFindings:\n${JSON.stringify(findings, null, 2)}\nCurrent Experience.jsx:\n${files.experience}\nCurrent styles.css:\n${files.styles}\nCurrent motion.js:\n${files.motion}\nReturn complete files. Keep the required data-reference-signature, geometry, section, CTA, mobile, and motion markers. Do not add remote URLs, hardcoded business facts, or em dashes.` }];
   for (const screenshot of screenshots.slice(0, 3))
     content.push(await imagePart(screenshot));
@@ -313,15 +316,17 @@ async function requestRepair({ model, referenceDna, findings, files, screenshots
   ].filter((record) => record?.available !== false && (record?.path || record?.absolutePath));
   for (const record of referenceScreenshots) {
     const resolved = await resolveReferenceEvidencePath(record);
-    if (!resolved)
-      throw new Error(
+    try {
+      if (!resolved) throw new Error("No accessible reference screenshot.");
+      const image = await imagePart(resolved);
+      content.push({ type: "text", text: "Assigned reference evidence:" });
+      content.push(image);
+    } catch (cause) {
+      throw new ReferenceEvidenceError(
         `Creative repair cannot load required reference evidence: ${record.path || record.absolutePath}`,
+        { cause },
       );
-    content.push({
-      type: "text",
-      text: "Assigned reference evidence:",
-    });
-    content.push(await imagePart(resolved));
+    }
   }
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",

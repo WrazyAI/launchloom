@@ -158,6 +158,7 @@ try {
     reportPath: path.join(out, "creative-bakeoff.json"),
     screenshotsDir: path.join(out, "screenshots"),
     preview: true,
+    requireDiversity: false,
   });
 } finally {
   await fs.writeFile(configPath, originalConfig);

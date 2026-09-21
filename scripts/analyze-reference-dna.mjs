@@ -239,32 +239,42 @@ Rules:
     await imagePart(desktop),
     ...(mobile ? [{ type: "text", text: "Mobile reference:" }, await imagePart(mobile)] : [])
   ];
-  const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      "Content-Type": "application/json",
-      "X-OpenRouter-Title": "LaunchLoom Reference DNA Analyzer"
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0,
-      reasoning: { effort: "medium", exclude: true },
-      max_tokens: 9000,
-      response_format: { type: "json_schema", json_schema: schema },
-      messages: [
-        {
-          role: "system",
-          content: "Return JSON only. You are a senior visual systems designer extracting measurable, transferable design mechanics from screenshots."
-        },
-        { role: "user", content }
-      ]
-    })
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok)
-    throw new Error(`Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`);
-  return parseChoice(payload);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 180_000);
+  try {
+    const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "X-OpenRouter-Title": "LaunchLoom Reference DNA Analyzer"
+      },
+      body: JSON.stringify({
+        model,
+        temperature: 0,
+        reasoning: { effort: "medium", exclude: true },
+        max_tokens: 9000,
+        response_format: { type: "json_schema", json_schema: schema },
+        messages: [
+          {
+            role: "system",
+            content: "Return JSON only. You are a senior visual systems designer extracting measurable, transferable design mechanics from screenshots."
+          },
+          { role: "user", content }
+        ]
+      })
+    });
+    const payload = await response.json().catch((error) => {
+      if (response.ok || !(error instanceof SyntaxError)) throw error;
+      return {};
+    });
+    if (!response.ok)
+      throw new Error(`Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`);
+    return parseChoice(payload);
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
