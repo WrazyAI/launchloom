@@ -172,6 +172,7 @@ export async function runCreativeBakeoff({
   preview = false,
   renderedReferenceEvaluator = evaluateRenderedReferenceFidelity,
   renderedDiversityEvaluator = evaluateRenderedDiversity,
+  requireDiversity = true,
 } = {}) {
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
@@ -446,7 +447,8 @@ export async function runCreativeBakeoff({
       source: "legacy-structural-fallback",
     };
   }
-  const diversityPass = diversity.pass && visualDiversity.pass;
+  const diversityPass =
+    !requireDiversity || (diversity.pass && visualDiversity.pass);
   const valid = diversityPass
     ? preview
       ? previewEligible
@@ -466,6 +468,7 @@ export async function runCreativeBakeoff({
     scoreSource: "rendered-structure-and-contract; multimodal visual gate remains required",
     diversity,
     visualDiversity,
+    diversityRequired: requireDiversity,
     candidates: results,
     selectedCandidateId:
       winner && diversityPass ? winner.candidateId : null,
