@@ -230,6 +230,32 @@ describe("revision operations", () => {
     ]);
   });
 
+  it("accepts a creative-deferred result only after rendered human verification", () => {
+    const draft = config();
+    const report = {
+      creativeSourceRepairRequired: true,
+      results: [
+        {
+          feedbackIndex: 0,
+          status: "creative",
+          unresolved: [],
+        },
+      ],
+      expectedArtifacts: [],
+    };
+
+    expect(verifyRevision(draft, report, "<main></main>").ok).toBe(false);
+
+    report.creativeSourceRepairVerified = {
+      pass: true,
+      candidateId: "candidate-a",
+    };
+    expect(verifyRevision(draft, report, "<main></main>")).toEqual({
+      ok: true,
+      failures: [],
+    });
+  });
+
   it("requires the expected rendered artifact before a revision can send", () => {
     const draft = config();
     const [operation] = deterministicOperations("Add testimonials", draft);
