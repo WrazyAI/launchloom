@@ -529,6 +529,10 @@ function validateMotion(source, route) {
     throw new Error(`Candidate ${route.id} motion must be JavaScript without JSX or React components.`);
 }
 
+/**
+ * @param {{files?: {experience?: string, styles?: string, motion?: string}, route?: Record<string, any>, content?: Record<string, any>}} [options]
+ * @returns {{files: {experience: string, styles: string, motion: string}, referenceFidelity: Record<string, any> | null}}
+ */
 export function validateProductionCandidateFiles({
   files,
   route = {},

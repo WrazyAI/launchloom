@@ -143,6 +143,16 @@ function normalizeRepair(value) {
   return normalized;
 }
 
+/**
+ * @typedef {{mkdir: (path: string, options?: any) => Promise<any>, writeFile: (file: string, data: string) => Promise<any>, rm: (path: string, options?: any) => Promise<any>, rename: (source: string, destination: string) => Promise<any>}} RepairFs
+ */
+
+/**
+ * @param {string} candidateDir
+ * @param {{experience?: string, styles?: string, motion?: string}} files
+ * @param {{fsImpl?: RepairFs}} [options]
+ * @returns {Promise<void>}
+ */
 export async function writeCandidate(
   candidateDir,
   files,
@@ -233,6 +243,11 @@ export async function writeCandidate(
   }
 }
 
+/**
+ * @param {string[]} screenshots
+ * @param {{fsImpl?: Pick<typeof fs, "access">}} [options]
+ * @returns {Promise<string[]>}
+ */
 export async function collectAvailableScreenshots(
   screenshots,
   { fsImpl = fs } = {},
@@ -282,6 +297,10 @@ function spawnCapture(command, args, { cwd, env } = {}) {
   });
 }
 
+/**
+ * @param {{siteDir: string, screenshotsDir: string, reportPath: string, configPath?: string, visualGateScript?: string}} options
+ * @returns {Promise<Record<string, any> & {processExitCode: number}>}
+ */
 export async function runVisualGateProcess({
   siteDir,
   screenshotsDir,
@@ -645,24 +664,6 @@ export async function runRenderedCreativeRepair({
       continue;
     }
 
-    if (requestedMode === "promote") {
-      await promoteImpl({
-        siteDir: root,
-        candidateDir: selectedDirectory,
-        visualScore: selected.visualScore,
-        distinctivenessScore: selected.distinctivenessScore,
-        selectionMode: "creative-bakeoff",
-      });
-    } else {
-      await promoteImpl({
-        siteDir: root,
-        candidateDir: selectedDirectory,
-        visualScore: selected.visualScore,
-        distinctivenessScore: selected.distinctivenessScore,
-        selectionMode: "creative-preview",
-      });
-    }
-
     const finalDir = path.join(evidenceRoot, "final");
     await fs.rm(finalDir, { recursive: true, force: true });
     await fs.mkdir(finalDir, { recursive: true });
@@ -697,6 +698,24 @@ export async function runRenderedCreativeRepair({
       path.join(evidenceRoot, "summary.json"),
       `${JSON.stringify(summary, null, 2)}\n`,
     );
+
+    if (requestedMode === "promote") {
+      await promoteImpl({
+        siteDir: root,
+        candidateDir: selectedDirectory,
+        visualScore: selected.visualScore,
+        distinctivenessScore: selected.distinctivenessScore,
+        selectionMode: "creative-bakeoff",
+      });
+    } else {
+      await promoteImpl({
+        siteDir: root,
+        candidateDir: selectedDirectory,
+        visualScore: selected.visualScore,
+        distinctivenessScore: selected.distinctivenessScore,
+        selectionMode: "creative-preview",
+      });
+    }
     return { ...summary, bakeoff: report, visualGate };
   }
 

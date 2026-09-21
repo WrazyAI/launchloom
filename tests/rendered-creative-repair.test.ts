@@ -142,6 +142,13 @@ describe("rendered creative repair orchestration", () => {
         repairs.push(candidateId);
       },
       promoteImpl: async (options: any) => {
+        await fs.access(
+          path.join(root, "evidence", "final", "creative-bakeoff.json"),
+        );
+        await fs.access(
+          path.join(root, "evidence", "final", "visual-gate.json"),
+        );
+        await fs.access(path.join(root, "evidence", "summary.json"));
         promotions.push(options);
         return { candidateId: "candidate-a" };
       },
