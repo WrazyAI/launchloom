@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { runRenderedCreativeRepair } from "../scripts/run-rendered-creative-repair.mjs";
+import { runRenderedCreativeRepair, runVisualGateProcess, writeCandidate } from "../scripts/run-rendered-creative-repair.mjs";
 
 const roots: string[] = [];
 
@@ -313,6 +313,89 @@ describe("rendered creative repair orchestration", () => {
 
     expect(repairCalls).toBe(2);
     expect(bakeoffCalls).toBe(3);
+  });
+
+  it("rejects a passing visual-gate report when the process exits nonzero", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-visual-gate-exit-"),
+    );
+    roots.push(root);
+    const siteDir = path.join(root, "site");
+    const screenshotsDir = path.join(root, "screenshots");
+    const reportPath = path.join(root, "visual-gate.json");
+    const scriptPath = path.join(root, "fake-visual-gate.mjs");
+    await fs.mkdir(path.join(siteDir, "src"), { recursive: true });
+    await fs.mkdir(screenshotsDir, { recursive: true });
+    await fs.writeFile(
+      path.join(siteDir, "src/site.config.json"),
+      JSON.stringify({ design: { experience: {} } }),
+    );
+    await fs.writeFile(
+      scriptPath,
+      `import fs from "node:fs";
+const args = Object.fromEntries(process.argv.slice(2).reduce((pairs, value, index, all) => index % 2 === 0 ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]] : pairs, []));
+fs.writeFileSync(args.report, JSON.stringify({ status: "ok", blockers: [], audit: { verdict: "pass", findings: [] } }));
+process.exit(1);
+`,
+    );
+
+    await expect(
+      runVisualGateProcess({
+        siteDir,
+        screenshotsDir,
+        reportPath,
+        visualGateScript: scriptPath,
+      }),
+    ).rejects.toThrow(/Creative visual gate could not run/iu);
+  });
+
+  it("restores the original three-file bundle if a staged repair swap fails", async () => {
+    const { candidates } = await fixture(["candidate-a"]);
+    const candidateDir = path.join(candidates, "candidate-a");
+    const originals = Object.fromEntries(
+      await Promise.all(
+        ["Experience.jsx", "styles.css", "motion.js"].map(async (name) => [
+          name,
+          await fs.readFile(path.join(candidateDir, name), "utf8"),
+        ]),
+      ),
+    );
+    const fsImpl = {
+      mkdir: fs.mkdir.bind(fs),
+      writeFile: fs.writeFile.bind(fs),
+      rm: fs.rm.bind(fs),
+      rename: async (source: string, destination: string) => {
+        if (
+          source.includes(".rendered-repair-stage-") &&
+          source.endsWith("styles.css")
+        )
+          throw new Error("simulated staged swap failure");
+        return fs.rename(source, destination);
+      },
+    };
+
+    await expect(
+      writeCandidate(
+        candidateDir,
+        {
+          experience: "export default function Repaired(){ return null; }",
+          styles: ".repaired { display: block; }",
+          motion:
+            "export function mountExperienceMotion(){ return () => {}; }",
+        },
+        { fsImpl },
+      ),
+    ).rejects.toThrow("simulated staged swap failure");
+
+    for (const [name, content] of Object.entries(originals))
+      expect(await fs.readFile(path.join(candidateDir, name), "utf8")).toBe(
+        content,
+      );
+    expect(
+      (await fs.readdir(candidateDir)).some((name) =>
+        name.startsWith(".rendered-repair-"),
+      ),
+    ).toBe(false);
   });
 
   it("never repairs source for a visual-gate infrastructure error", async () => {
