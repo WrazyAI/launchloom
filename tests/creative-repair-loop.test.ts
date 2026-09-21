@@ -1,11 +1,19 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { applyCreativeVisualSafetyRepairs, requestRepair, resolveReferenceEvidencePath, runCreativeRepairLoop } from "../scripts/creative-repair-loop.mjs";
 
 const roots: string[] = [];
+const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
+
+beforeEach(() => {
+  process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+});
+
 afterEach(async () => {
+  if (originalOpenRouterKey === undefined) delete process.env.OPENROUTER_API_KEY;
+  else process.env.OPENROUTER_API_KEY = originalOpenRouterKey;
   vi.unstubAllGlobals();
   await Promise.all(roots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
 });
