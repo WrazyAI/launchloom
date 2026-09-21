@@ -5,6 +5,7 @@ import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
 import { requestRepair } from "./creative-repair-loop.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import { validateProductionCandidateFiles } from "./production-experience-author.mjs";
+import { runHumanRevisionGate } from "./human-revision-gate.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
 const REPAIR_FILES = ["Experience.jsx", "styles.css", "motion.js"];
@@ -465,6 +466,7 @@ async function persistRepairEvidence({
  *   visualGateScript?: string,
  *   runBakeoffImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
  *   runVisualGateImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
+ *   runHumanGateImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
  *   repairCandidateImpl?: (options: Record<string, unknown>) => Promise<Record<string, string> | void> | Record<string, string> | void,
  *   promoteImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
  * }} options
@@ -481,6 +483,7 @@ export async function runRenderedCreativeRepair({
   visualGateScript,
   runBakeoffImpl = runCreativeBakeoff,
   runVisualGateImpl = runVisualGateProcess,
+  runHumanGateImpl = runHumanRevisionGate,
   repairCandidateImpl = defaultRepairCandidate,
   promoteImpl = promoteCreativeCandidate,
 } = {}) {
@@ -495,6 +498,15 @@ export async function runRenderedCreativeRepair({
   const humanFindings = Array.isArray(requestedFindings)
     ? requestedFindings.filter(Boolean)
     : [];
+  const humanFeedback = humanFindings
+    .map((finding) =>
+      typeof finding === "string"
+        ? finding
+        : finding?.message || finding?.evidence || "",
+    )
+    .filter(Boolean)
+    .join("\n\n")
+    .trim();
   let humanRepairPending = humanFindings.length > 0;
   await fs.rm(evidenceRoot, { recursive: true, force: true });
   await fs.mkdir(evidenceRoot, { recursive: true });
@@ -677,6 +689,45 @@ export async function runRenderedCreativeRepair({
       continue;
     }
 
+    if (humanFeedback) {
+      const humanGateReportPath = path.join(
+        roundDir,
+        "human-revision-gate.json",
+      );
+      const humanGate = await runHumanGateImpl({
+        configPath: gateConfigPath,
+        screenshotsDir: gateScreenshots,
+        feedback: humanFeedback,
+        reportPath: humanGateReportPath,
+      });
+      record.humanRevisionVerdict =
+        humanGate.audit?.verdict || "error";
+      if (humanGate.audit?.verdict !== "pass") {
+        const repaired = await repair(
+          selectedId,
+          [
+            ...humanFindings,
+            ...(humanGate.audit?.findings || []).map((finding) => ({
+              category: finding.category,
+              message: finding.evidence,
+              evidence: finding.evidence,
+              recommendation: finding.recommendation,
+            })),
+          ],
+          "human-revision-gate",
+          round,
+          screenshotsDir,
+          selected.directory,
+        );
+        if (!repaired)
+          throw new Error(
+            `Selected candidate ${selectedId} still does not satisfy the human review request after ${cycleLimit} repair cycles.`,
+          );
+        record.repairs.push(selectedId);
+        continue;
+      }
+    }
+
     if (requestedMode === "promote" && !report.promotionReady) {
       const targets = diversityRepairTargets(report);
       if (!targets.length) {
@@ -732,6 +783,9 @@ export async function runRenderedCreativeRepair({
       selectedCandidateId: selectedId,
       promotionReady: Boolean(report.promotionReady),
       visualGatePass: true,
+      humanRevisionPass: humanFeedback
+        ? record.humanRevisionVerdict === "pass"
+        : true,
       visualDiversityPass: Boolean(report.visualDiversity?.pass),
       repairCycles: Object.fromEntries(cycleUse),
       history,
