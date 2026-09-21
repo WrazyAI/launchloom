@@ -66,6 +66,11 @@ Creative repair uses the same pattern: Reference DNA and source-reference
 screenshots precede the breakpoint; findings, current source, and current
 candidate screenshots follow it.
 
+Reference DNA extraction itself is deterministic. Analyzer requests use a
+reference-route-stable session and a 24-hour exact response-cache TTL, so a
+reused static reference can skip provider inference entirely during the cache
+window. File-system paths are not part of the session identity.
+
 ## Observability
 
 All migrated lanes emit an `openrouter_cache` log entry with prompt tokens,
