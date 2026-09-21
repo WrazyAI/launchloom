@@ -164,4 +164,76 @@ describe("contextual image generation", () => {
     expect(result.manifest.skipped).toHaveLength(3);
     expect(result.site.assetReport.skipped).toHaveLength(3);
   });
+
+  it("generates independent creative assets for every reference route", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const site = fixture();
+    const inspiration = {
+      routes: [
+        {
+          id: "route-01",
+          familyId: "editorial-monument",
+          signature: "editorial route",
+          referenceDna: {
+            familyId: "kokoro-editorial-architecture",
+            heroGeometry: { mode: "typographic-monument" },
+            imageTreatment: { mode: "architectural-tableaux", crop: "vertical-editorial" },
+            palette: { contrastIntent: "dark editorial" },
+          },
+        },
+        {
+          id: "route-02",
+          familyId: "spatial-object",
+          signature: "object route",
+          referenceDna: {
+            familyId: "3d-portfolio-object-led",
+            heroGeometry: { mode: "oversized-wordmark-with-object-focus" },
+            imageTreatment: { mode: "object-led-3d-collage", crop: "deep-focus" },
+            palette: { contrastIntent: "object stage" },
+          },
+        },
+        {
+          id: "route-03",
+          familyId: "cinematic-stage",
+          signature: "cinematic route",
+          referenceDna: {
+            familyId: "skyelite-cinematic-luxury",
+            heroGeometry: { mode: "centered-copy-over-motion-landscape" },
+            imageTreatment: { mode: "atmospheric-motion-background", crop: "wide-cinematic" },
+            palette: { contrastIntent: "quiet premium" },
+          },
+        },
+      ],
+    };
+    let requestNumber = 0;
+    const result = await generate({
+      site,
+      inspiration,
+      outputDir,
+      key: "test-fal-key",
+      maxRequests: 12,
+      falClient: {
+        config() {},
+        async subscribe() {
+          requestNumber += 1;
+          return {
+            requestId: `route-request-${requestNumber}`,
+            data: { images: [{ url: `https://fal.example/generated-${requestNumber}.jpg` }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(Object.keys(result.site.creativeAssets)).toEqual([
+      "route-01",
+      "route-02",
+      "route-03",
+    ]);
+    expect(new Set(Object.values(result.site.creativeAssets).map((assets: any) => assets.hero)).size).toBe(3);
+    expect(result.manifest.strategy).toBe("client-first-per-route-reference-directed");
+    expect(result.manifest.routes).toHaveLength(3);
+    expect(result.manifest.placements).toHaveLength(9);
+  });
+
 });
