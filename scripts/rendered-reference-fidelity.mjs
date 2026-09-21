@@ -128,7 +128,7 @@ function parseChoice(payload, label) {
   if (["length", "max_tokens"].includes(choice?.finish_reason))
     throw new Error(`${label} was truncated.`);
   try {
-    return JSON.parse(content.replace(/^\`\`\`(?:json)?\\s*/iu, "").replace(/\\s*\`\`\`$/u, ""));
+    return JSON.parse(content.replace(/^\`\`\`(?:json)?\s*/iu, "").replace(/\s*\`\`\`$/u, ""));
   } catch (error) {
     throw new Error(`${label} returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
   }
