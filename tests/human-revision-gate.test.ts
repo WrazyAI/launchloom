@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { runHumanRevisionGate } from "../scripts/human-revision-gate.mjs";
+import { randomBytes } from "node:crypto";
+import sharp from "sharp";
+import {
+  HUMAN_REVISION_IMAGE_MAX_BYTES,
+  runHumanRevisionGate,
+} from "../scripts/human-revision-gate.mjs";
 
 const roots: string[] = [];
 
@@ -27,11 +32,21 @@ async function fixture() {
   roots.push(root);
   const screenshotsDir = path.join(root, "screenshots");
   await fs.mkdir(screenshotsDir, { recursive: true });
-  for (const viewport of ["desktop", "compact", "mobile"])
-    await fs.writeFile(
-      path.join(screenshotsDir, `${viewport}.png`),
-      `${viewport}-pixels`,
-    );
+  for (const [viewport, width, height] of [
+    ["desktop", 1440, 1000],
+    ["compact", 1366, 768],
+    ["mobile", 390, 844],
+  ] as const)
+    await sharp({
+      create: {
+        width,
+        height,
+        channels: 3,
+        background: { r: 240, g: 242, b: 244 },
+      },
+    })
+      .png()
+      .toFile(path.join(screenshotsDir, `${viewport}.png`));
   const configPath = path.join(root, "site.config.json");
   await fs.writeFile(
     configPath,
@@ -118,6 +133,59 @@ describe("human revision rendered gate", () => {
     expect(user.filter((part: any) => part.type === "image_url")).toHaveLength(
       3,
     );
+  });
+
+  it("normalizes oversized screenshots before sending them to OpenRouter", async () => {
+    const { screenshotsDir, configPath } = await fixture();
+    const width = 1800;
+    const height = 1200;
+    const noisyPixels = randomBytes(width * height * 3);
+    const desktopPath = path.join(screenshotsDir, "desktop.png");
+    await sharp(noisyPixels, {
+      raw: { width, height, channels: 3 },
+    })
+      .png({ compressionLevel: 0 })
+      .toFile(desktopPath);
+    expect((await fs.stat(desktopPath)).size).toBeGreaterThan(
+      HUMAN_REVISION_IMAGE_MAX_BYTES,
+    );
+
+    const fetchImpl = vi.fn(async (_url: string, _options: RequestInit) =>
+      Response.json({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                summary: "The request is satisfied.",
+                verdict: "pass",
+                findings: [],
+              }),
+            },
+          },
+        ],
+      }),
+    );
+
+    await runHumanRevisionGate({
+      configPath,
+      screenshotsDir,
+      feedback: "Keep the visual change as requested.",
+      fetchImpl: fetchImpl as any,
+    });
+
+    const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
+    const images = body.messages[1].content.filter(
+      (part: any) => part.type === "image_url",
+    );
+    expect(images).toHaveLength(3);
+    for (const image of images) {
+      expect(image.image_url.url).toMatch(/^data:image\/webp;base64,/u);
+      const encoded = image.image_url.url.split(",", 2)[1];
+      expect(Buffer.from(encoded, "base64").byteLength).toBeLessThanOrEqual(
+        HUMAN_REVISION_IMAGE_MAX_BYTES,
+      );
+    }
   });
 
   it("rejects a pass verdict that still contains a major request mismatch", async () => {
