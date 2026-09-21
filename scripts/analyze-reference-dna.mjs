@@ -252,8 +252,6 @@ Rules:
       routeId: route.id || "",
       familyId: dna.familyId || route.familyId || "",
       referenceName: dna.referenceName || route.label || "",
-      desktop,
-      mobile,
     },
   );
   const controller = new AbortController();
