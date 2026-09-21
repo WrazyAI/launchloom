@@ -539,14 +539,17 @@ export function validateProductionCandidateFiles({
   const motion = normalizeAuthoredSource(String(files?.motion || ""));
   if (!experience || !styles || !motion)
     throw new Error("A complete creative candidate file bundle is required.");
+  const referenceDna = route.referenceDna
+    ? validateReferenceDna(route.referenceDna, { requireEvidence: true })
+    : null;
   validateExperience(experience, route, content);
   validateStyles(styles, route);
   validateMotion(motion, route);
   const isolatedStyles = namespaceCreativeCss(styles);
   let referenceFidelity = null;
-  if (route.referenceDna?.complete) {
+  if (referenceDna) {
     referenceFidelity = validateReferenceCandidate({
-      referenceDna: route.referenceDna,
+      referenceDna,
       experienceSource: experience,
       stylesSource: isolatedStyles,
       motionSource: motion,
