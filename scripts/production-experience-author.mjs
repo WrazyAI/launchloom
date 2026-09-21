@@ -176,6 +176,15 @@ function contentShape(site, route) {
   };
 }
 
+export function buildCreativeContentManifest(site, route) {
+  const manifest = {
+    version: 1,
+    values: contentShape(site || {}, route),
+    tokens: contentTokenDefinitions.map(([token, type]) => ({ token, type })),
+  };
+  return { ...manifest, digest: digest(manifest) };
+}
+
 function assertInspirationPack(pack) {
   if (!pack || !Array.isArray(pack.routes) || pack.routes.length !== 3)
     throw new Error("Creative authorship requires exactly three inspiration routes.");
@@ -719,13 +728,7 @@ export async function authorExperienceCandidates({
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
-  const baseContent = contentShape(site);
-  const manifest = {
-    version: 1,
-    values: baseContent,
-    tokens: contentTokenDefinitions.map(([token, type]) => ({ token, type })),
-  };
-  const contentManifest = { ...manifest, digest: digest(manifest) };
+  const contentManifest = buildCreativeContentManifest(site);
   const rules = authorRules();
 
   const routes = assertInspirationPack(inspirationPack).map((route) =>
@@ -738,13 +741,11 @@ export async function authorExperienceCandidates({
   const limitedGenerate = createGenerationLimiter(generate, 2);
   const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
-      const content = contentShape(site, route);
-      const routeManifest = {
-        version: 1,
-        values: content,
-        tokens: contentTokenDefinitions.map(([token, type]) => ({ token, type })),
-      };
-      const routeContentManifest = { ...routeManifest, digest: digest(routeManifest) };
+      const routeContentManifest = buildCreativeContentManifest(
+        site,
+        route,
+      );
+      const content = routeContentManifest.values;
       const base = { route, contentTokens, contentShape: content, rules };
       const contractResult = await generateContract(limitedGenerate, {
         ...base,
