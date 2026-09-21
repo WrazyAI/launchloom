@@ -7,8 +7,14 @@ import { buildRouteContract } from "./creative-compiler.mjs";
 
 export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
 export const DEFAULT_MAX_IMAGES = 3;
-export const DEFAULT_MAX_REQUESTS = 12;
+export const DEFAULT_MAX_REQUESTS = 6;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
+
+function configuredNumber(value, fallback) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
 
 const PLACEMENTS = [
   {
@@ -82,6 +88,11 @@ function list(value, limit = 6) {
 function clientAssetFor(site, placement) {
   const assets = site.assets || {};
   return placement.clientSlots.find((slot) => typeof assets[slot] === "string" && assets[slot].trim());
+}
+
+function clientAssetPath(site, placement) {
+  const slot = clientAssetFor(site, placement);
+  return slot ? site.assets?.[slot] || "" : "";
 }
 
 function visualDirection(site) {
@@ -339,10 +350,14 @@ async function generateContextualAssetsForRoute({
   inspiration,
   outputDir,
   manifestPath,
+  reuseManifest,
   key = process.env.FAL_KEY,
   model = process.env.FAL_IMAGE_MODEL || DEFAULT_FAL_MODEL,
   maxImages = Number(process.env.FAL_IMAGE_MAX_IMAGES) || DEFAULT_MAX_IMAGES,
-  maxRequests = Number(process.env.FAL_IMAGE_MAX_REQUESTS) || DEFAULT_MAX_REQUESTS,
+  maxRequests = configuredNumber(
+    process.env.FAL_IMAGE_MAX_REQUESTS,
+    DEFAULT_MAX_REQUESTS,
+  ),
   timeoutMs = Number(process.env.FAL_IMAGE_TIMEOUT_MS) || 120_000,
   falClient = /** @type {any} */ (defaultFal),
   fetchImpl = fetch,
@@ -350,16 +365,20 @@ async function generateContextualAssetsForRoute({
 } = {}) {
   if (!site || typeof site !== "object") throw new Error("A site config is required.");
   await fs.mkdir(outputDir, { recursive: true });
-  const existingManifest = manifestPath
+  const existingManifest = reuseManifest || (manifestPath
     ? await fs
         .readFile(manifestPath, "utf8")
         .then((value) => JSON.parse(value))
         .catch(() => ({}))
-    : {};
+    : {});
   const routes = Array.isArray(inspiration?.routes) ? inspiration.routes : [];
   const route = routes[0] || {};
   const routeContract = buildRouteContract(route);
-  const placements = PLACEMENTS.filter((placement) => !clientAssetFor(site, placement)).slice(0, maxImages);
+  const imageBudget = Math.min(
+    DEFAULT_MAX_IMAGES,
+    Math.max(0, Number(maxImages) || 0),
+  );
+  const placements = PLACEMENTS.filter((placement) => !clientAssetFor(site, placement));
   const manifest = {
     version: 2,
     provider: "fal.ai",
@@ -373,12 +392,25 @@ async function generateContextualAssetsForRoute({
     skipped: [],
   };
   let requests = 0;
+  let filled = 0;
   const canGenerate = Boolean(key && !force);
   if (canGenerate) falClient.config({ credentials: key });
 
   for (const placement of placements) {
     const prompt = promptFor(site, route, placement);
     const promptHash = sha256(prompt);
+
+    if (filled >= imageBudget) {
+      const fallback = fallbackImage(site, placement);
+      if (fallback) setImage(site, placement, fallback);
+      manifest.skipped.push({
+        placement: placement.id,
+        reason: "image-budget-exhausted",
+        fallback,
+      });
+      continue;
+    }
+
     const existing = existingEntry(existingManifest, placement, promptHash, outputDir);
     if (existing) {
       try {
@@ -386,6 +418,7 @@ async function generateContextualAssetsForRoute({
         setImage(site, placement, existing.path);
         const { filePath: _filePath, ...reusedEntry } = existing;
         manifest.placements.push({ ...reusedEntry, reused: true });
+        filled += 1;
         continue;
       } catch {
         // The manifest may outlive its asset directory. Generate or fall back below.
@@ -397,7 +430,9 @@ async function generateContextualAssetsForRoute({
       if (fallback) setImage(site, placement, fallback);
       manifest.skipped.push({
         placement: placement.id,
-        reason: canGenerate ? "request-budget-exhausted" : "FAL_KEY-not-configured",
+        reason: !canGenerate
+          ? "FAL_KEY-not-configured"
+          : "request-budget-exhausted",
         fallback,
       });
       continue;
@@ -441,6 +476,7 @@ async function generateContextualAssetsForRoute({
       }
     }
     if (outcome) {
+      filled += 1;
       setImage(site, placement, outcome.path);
       manifest.placements.push(outcome);
     } else {
@@ -496,47 +532,75 @@ export async function generateContextualAssets(options = {}) {
   if (routes.length <= 1)
     return generateContextualAssetsForRoute(options);
 
-  const requestBudget = Number(
-    options.maxRequests ??
-      process.env.FAL_IMAGE_MAX_REQUESTS ??
-      DEFAULT_MAX_REQUESTS,
+  const requestBudget = configuredNumber(
+    options.maxRequests ?? process.env.FAL_IMAGE_MAX_REQUESTS,
+    DEFAULT_MAX_REQUESTS,
   );
-  const routeReservation = Math.max(
-    1,
-    Math.floor(Math.max(0, requestBudget) / routes.length),
+  const imageBudget = Math.min(
+    DEFAULT_MAX_IMAGES,
+    Math.max(
+      0,
+      Number(
+        options.maxImages ??
+          process.env.FAL_IMAGE_MAX_IMAGES ??
+          DEFAULT_MAX_IMAGES,
+      ) || 0,
+    ),
   );
+  const existingManifest = options.manifestPath
+    ? await fs
+        .readFile(options.manifestPath, "utf8")
+        .then((value) => JSON.parse(value))
+        .catch(() => ({}))
+    : {};
   let remainingRequests = Math.max(0, requestBudget);
+  let remainingImages = imageBudget;
   let totalRequests = 0;
   const routeManifests = [];
   const creativeAssets = {};
   let firstRouteSite;
 
-  for (const route of routes) {
+  for (const [index, route] of routes.entries()) {
+    const remainingRoutes = routes.length - index;
+    const routeRequestBudget = Math.max(
+      0,
+      Math.ceil(remainingRequests / remainingRoutes),
+    );
+    const routeImageBudget = Math.max(
+      0,
+      Math.ceil(remainingImages / remainingRoutes),
+    );
     const routeSite = structuredClone(site);
     const result = await generateContextualAssetsForRoute({
       ...options,
       site: routeSite,
       inspiration: { ...(options.inspiration || {}), routes: [route] },
       manifestPath: undefined,
-      maxRequests: Math.min(routeReservation, remainingRequests),
+      reuseManifest: existingManifest.routes?.find(
+        (manifest) => manifest.routeId === route.id,
+      ),
+      maxImages: routeImageBudget,
+      maxRequests: routeRequestBudget,
     });
+    const retainedRouteImages = result.manifest.placements.length;
     totalRequests += result.requests;
     remainingRequests = Math.max(0, remainingRequests - result.requests);
+    remainingImages = Math.max(0, remainingImages - retainedRouteImages);
     routeManifests.push(result.manifest);
     if (!firstRouteSite) firstRouteSite = result.site;
     creativeAssets[route.id] = {
       hero:
-        site.assets?.photoOne ||
+        clientAssetPath(site, PLACEMENTS[0]) ||
         result.site.images?.hero ||
         site.images?.hero ||
         "",
       secondary:
-        site.assets?.photoTwo ||
+        clientAssetPath(site, PLACEMENTS[1]) ||
         result.site.images?.secondary ||
         site.images?.secondary ||
         "",
       tertiary:
-        site.assets?.photoThree ||
+        clientAssetPath(site, PLACEMENTS[2]) ||
         result.site.images?.tertiary ||
         site.images?.tertiary ||
         "",

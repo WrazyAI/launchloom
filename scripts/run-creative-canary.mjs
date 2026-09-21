@@ -131,9 +131,11 @@ await fs.mkdir(out, { recursive: true });
 const originalConfig = await fs.readFile(configPath, "utf8");
 const selectedBackup = path.join(out, "selected-backup");
 await fs.rm(selectedBackup, { recursive: true, force: true });
-await fs.cp(selectedDir, selectedBackup, { recursive: true, force: true }).catch(
-  () => {},
-);
+try {
+  await fs.cp(selectedDir, selectedBackup, { recursive: true, force: true });
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+}
 
 try {
   const canaryConfig = await canaryConfigFrom(originalConfig);

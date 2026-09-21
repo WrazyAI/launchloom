@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mkdtemp, readFile, stat } from "node:fs/promises";
+import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -136,6 +136,62 @@ describe("contextual image generation", () => {
     expect(result.site.assets.photoTwo).toBe("/uploads/client-secondary.webp");
   });
 
+  it("preserves an explicit zero request budget", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const previous = process.env.FAL_IMAGE_MAX_REQUESTS;
+    process.env.FAL_IMAGE_MAX_REQUESTS = "0";
+    let requests = 0;
+    try {
+      const result = await generate({
+        site: fixture(),
+        inspiration: { routes: [{ id: "route-zero", signature: "zero-budget" }] },
+        outputDir,
+        key: "test-fal-key",
+        falClient: {
+          config() {},
+          async subscribe() {
+            requests += 1;
+            throw new Error("A zero request budget must not call FAL.");
+          },
+        },
+      });
+      expect(requests).toBe(0);
+      expect(result.requests).toBe(0);
+      expect(result.manifest.placements).toHaveLength(0);
+      expect(result.manifest.skipped).toHaveLength(3);
+    } finally {
+      if (previous === undefined) delete process.env.FAL_IMAGE_MAX_REQUESTS;
+      else process.env.FAL_IMAGE_MAX_REQUESTS = previous;
+    }
+  });
+
+  it("falls back to the default request budget for invalid multi-route input", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-invalid-${number}`,
+      signature: `invalid-budget-${number}`,
+    }));
+    let requests = 0;
+    const result = await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      maxRequests: "invalid",
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe() {
+          requests += 1;
+          return { data: { images: [{ url: `https://fal.example/invalid-${requests}.jpg` }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+    expect(requests).toBe(3);
+    expect(result.requests).toBe(3);
+    expect(result.manifest.placements).toHaveLength(3);
+  });
+
   it("fails soft without a key and retains reviewed fallback assets", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const site = fixture();
@@ -211,6 +267,7 @@ describe("contextual image generation", () => {
       inspiration,
       outputDir,
       key: "test-fal-key",
+      maxImages: 99,
       maxRequests: 12,
       falClient: {
         config() {},
@@ -233,10 +290,32 @@ describe("contextual image generation", () => {
     expect(new Set(Object.values(result.site.creativeAssets).map((assets: any) => assets.hero)).size).toBe(3);
     expect(result.manifest.strategy).toBe("client-first-per-route-reference-directed");
     expect(result.manifest.routes).toHaveLength(3);
-    expect(result.manifest.placements).toHaveLength(9);
+    expect(result.manifest.placements).toHaveLength(3);
+    for (const manifest of result.manifest.routes)
+      expect(manifest.placements).toHaveLength(1);
   });
 
-  it.each([12, 13])("reserves requests for later routes despite retries with a cap of %i", async (maxRequests) => {
+  it("binds the first supplied secondary client asset to every route", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const site = fixture();
+    site.assets = { photoThree: "/uploads/client-gallery.webp" };
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-client-${number}`,
+      signature: `client-secondary-${number}`,
+    }));
+    const result = await generate({
+      site,
+      inspiration: { routes },
+      outputDir,
+      key: "",
+    });
+    for (const route of routes)
+      expect(result.site.creativeAssets[route.id].secondary).toBe(
+        "/uploads/client-gallery.webp",
+      );
+  });
+
+  it.each([6, 7])("reserves requests for later routes despite retries with a cap of %i", async (maxRequests) => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const routes = [1, 2, 3].map((number) => ({
       id: `route-0${number}`,
@@ -261,16 +340,16 @@ describe("contextual image generation", () => {
       fetchImpl: async () => fakeImageResponse(),
     });
 
-    expect(calls).toEqual(routes.flatMap((route) => Array(4).fill(route.signature)));
-    expect(result.requests).toBe(12);
+    expect(calls).toEqual(routes.flatMap((route) => Array(2).fill(route.signature)));
+    expect(result.requests).toBe(6);
     expect(result.requests).toBeLessThanOrEqual(maxRequests);
     for (const manifest of result.manifest.routes) {
       expect(manifest.placements.map((entry: any) => entry.placement)).toEqual([
         "hero",
-        "secondary",
       ]);
       expect(manifest.skipped).toEqual([
-        expect.objectContaining({ placement: "tertiary", reason: "request-budget-exhausted" }),
+        expect.objectContaining({ placement: "secondary", reason: "image-budget-exhausted" }),
+        expect.objectContaining({ placement: "tertiary", reason: "image-budget-exhausted" }),
       ]);
     }
   });
@@ -306,6 +385,133 @@ describe("contextual image generation", () => {
     expect(result.manifest.skipped).toHaveLength(9);
     for (const route of routes)
       expect(result.site.creativeAssets[route.id].hero).toBe(site.images.hero);
+  });
+
+  it("counts reused route assets against the global three-image cap", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const manifestPath = join(outputDir, "generated-assets.json");
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-0${number}`,
+      signature: `mixed-reuse-route-${number}`,
+    }));
+
+    let seedRequests = 0;
+    await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe() {
+          seedRequests += 1;
+          return {
+            data: {
+              images: [
+                { url: `https://fal.example/mixed-seed-${seedRequests}.jpg` },
+              ],
+            },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+    expect(seedRequests).toBe(3);
+
+    const seededManifest = JSON.parse(
+      await readFile(manifestPath, "utf8"),
+    );
+    seededManifest.routes = [seededManifest.routes[0]];
+    seededManifest.placements = [
+      ...seededManifest.routes[0].placements.map((entry: any) => ({
+        ...entry,
+        routeId: routes[0].id,
+      })),
+    ];
+    await writeFile(
+      manifestPath,
+      `${JSON.stringify(seededManifest, null, 2)}\n`,
+    );
+
+    let mixedRequests = 0;
+    const mixed = await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe() {
+          mixedRequests += 1;
+          return {
+            data: {
+              images: [
+                { url: `https://fal.example/mixed-new-${mixedRequests}.jpg` },
+              ],
+            },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(mixedRequests).toBe(2);
+    expect(mixed.manifest.placements).toHaveLength(3);
+    expect(
+      mixed.manifest.placements.filter((entry: any) => entry.reused),
+    ).toHaveLength(1);
+    for (const manifest of mixed.manifest.routes)
+      expect(manifest.placements).toHaveLength(1);
+  });
+
+  it("reuses route-specific aggregate manifest assets without new requests", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const manifestPath = join(outputDir, "generated-assets.json");
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-0${number}`,
+      signature: `reuse-route-${number}`,
+    }));
+    let requests = 0;
+    await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe() {
+          requests += 1;
+          return { data: { images: [{ url: `https://fal.example/reuse-${requests}.jpg` }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+    expect(requests).toBe(3);
+
+    let reuseRequests = 0;
+    const reused = await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe() {
+          reuseRequests += 1;
+          throw new Error("Route assets should be reused from the aggregate manifest.");
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(reuseRequests).toBe(0);
+    expect(reused.requests).toBe(0);
+    expect(reused.manifest.placements).toHaveLength(3);
+    expect(reused.manifest.placements.every((entry: any) => entry.reused)).toBe(true);
   });
 
 });

@@ -16,10 +16,12 @@ describe("reference fidelity validator", () => {
     expect(report.score).toBe(100);
   });
 
-  it("blocks a generic pattern and token collision", () => {
+  it("reports visual patterns but blocks only the token collision", () => {
     const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: `${validExperience} <div data-layout="generic-split-hero" />`, stylesSource: `:root { --ink: #fff; }`, motionSource: validMotion });
     expect(report.pass).toBe(false);
-    expect(report.findings.map((item: any) => item.code)).toEqual(expect.arrayContaining(["prohibited-pattern", "css-token-collision"]));
+    expect(report.visualPass).toBe(false);
+    expect(report.visualFindings).toContainEqual(expect.objectContaining({ code: "prohibited-pattern" }));
+    expect(report.hardFindings).toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
   });
 
   it("ignores prohibited words outside relevant attribute values", () => {
@@ -39,7 +41,9 @@ describe("reference fidelity validator", () => {
       stylesSource: validStyles,
       motionSource: validMotion,
     });
-    expect(report.findings).toContainEqual(expect.objectContaining({ code: "prohibited-pattern" }));
+    expect(report.pass).toBe(true);
+    expect(report.visualPass).toBe(false);
+    expect(report.visualFindings).toContainEqual(expect.objectContaining({ code: "prohibited-pattern" }));
   });
 
   it("accepts human-readable marker values that normalize to the contract slugs", () => {
@@ -152,7 +156,9 @@ describe("reference fidelity validator", () => {
       'data-hero-geometry="not-typographic-monument"',
     );
     const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: mismatched, stylesSource: validStyles, motionSource: validMotion });
-    expect(report.findings).toEqual(expect.arrayContaining([
+    expect(report.pass).toBe(true);
+    expect(report.visualPass).toBe(false);
+    expect(report.visualFindings).toEqual(expect.arrayContaining([
       expect.objectContaining({ code: "hero-geometry-mismatch" }),
     ]));
   });

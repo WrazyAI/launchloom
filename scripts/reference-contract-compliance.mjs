@@ -7,6 +7,25 @@ function finding(code, severity, message) {
   return { code, severity, message };
 }
 
+const VISUAL_REFERENCE_CODES = new Set([
+  "missing-signature",
+  "missing-rendered-signature",
+  "section-rhythm",
+  "hero-geometry",
+  "hero-geometry-mismatch",
+  "navigation-geometry",
+  "navigation-geometry-mismatch",
+  "service-presentation",
+  "service-presentation-mismatch",
+  "cta-placement",
+  "cta-placement-mismatch",
+  "mobile-recomposition",
+  "mobile-recomposition-mismatch",
+  "motion-primitive",
+  "motion-primitive-mismatch",
+  "prohibited-pattern",
+]);
+
 function sourceHasSignature(source, element) {
   const selector = String(element.selector || "");
   const match = selector.match(/data-reference-signature\s*=\s*["']?([a-z0-9_-]+)/iu);
@@ -197,6 +216,8 @@ function hasProhibitedPattern(source, pattern) {
  * Checks the authored source before it reaches the Astro shell. This is
  * intentionally evidence-oriented: a model claim in contract.json cannot
  * satisfy a missing signature or mobile recomposition.
+ *
+ * @param {{referenceDna: any, experienceSource?: string, stylesSource?: string, motionSource?: string, renderedDom?: string}} options
  */
 export function validateReferenceContractCompliance({
   referenceDna,
@@ -253,13 +274,22 @@ export function validateReferenceContractCompliance({
   for (const token of ["content.hero.image", "content.services", "content.faqs"])
     if (!contentPaths.some((path) => path === token || path.startsWith(`${token}.`)))
       findings.push(finding("unbound-content-token", "critical", `Required sealed token ${token} does not flow into output.`));
+  const visualFindings = findings.filter((item) =>
+    VISUAL_REFERENCE_CODES.has(item.code),
+  );
+  const hardFindings = findings.filter(
+    (item) => !VISUAL_REFERENCE_CODES.has(item.code),
+  );
   const critical = findings.filter((item) => item.severity === "critical").length;
   const score = Math.max(0, Math.round(100 - critical * 18 - findings.filter((item) => item.severity === "major").length * 8));
   return {
     version: 1,
-    pass: critical === 0,
+    pass: hardFindings.length === 0,
+    visualPass: visualFindings.length === 0,
     score,
     findings,
+    hardFindings,
+    visualFindings,
     requiredSignatures: referenceDna.requiredSignatureElements.map((item) => item.id),
     sectionOrder: sections,
   };

@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { buildCandidateManifest } from "../scripts/creative-compiler.mjs";
+import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 import { promoteCreativeCandidate } from "../scripts/promote-creative-candidate.mjs";
 import { runCreativeBakeoff } from "../scripts/run-creative-bakeoff.mjs";
 
@@ -38,7 +39,7 @@ async function makeFixture() {
     path.join(root, "candidate-a/Experience.jsx"),
     `import { LeadForm } from "@launchloom/runtime";
 export default function Experience({ content, runtime }) {
-  return <main><nav><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav><section data-hero><h1>{content.hero.heading}</h1><button data-early-conversion>{content.hero.primaryLabel}</button></section>
+  return <main><nav><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav><section data-hero><img src={content.hero.image} alt={content.hero.heading} style={{ display: "none" }} /><h1>{content.hero.heading}</h1><button data-early-conversion>{content.hero.primaryLabel}</button></section>
     <section id="services">{content.services.map((service) => <p key={service.name}>{service.name}</p>)}</section>
     <section id="faqs">{content.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary></details>)}</section>
     <section id="contact"><LeadForm content={content} runtime={runtime} /></section></main>;
@@ -108,8 +109,194 @@ describe("creative candidate promotion", () => {
     expect(report.selectedCandidateId).toBeNull();
   }, 45_000);
 
-  it("selects the valid authored candidate for preview before diversity promotion", async () => {
+  it("uses rendered diversity as the sole v2 production diversity authority", async () => {
     const root = await makeFixture();
+    const record = JSON.parse(
+      await fs.readFile("data/inspiration-registry.json", "utf8"),
+    ).records[0];
+    const baseDna = buildReferenceDna(record, { requireEvidence: true });
+
+    const firstMetadataPath = path.join(root, "candidate-a/metadata.json");
+    const firstMetadata = JSON.parse(
+      await fs.readFile(firstMetadataPath, "utf8"),
+    );
+    firstMetadata.version = 2;
+    firstMetadata.referenceDna = baseDna;
+    firstMetadata.referenceEvidence = {
+      desktop: baseDna.evidence.desktopScreenshot.path,
+      mobile: baseDna.evidence.mobileScreenshot?.path || "",
+      complete: true,
+    };
+    firstMetadata.creativeManifest = {
+      ...firstMetadata.creativeManifest,
+      version: 2,
+      referenceDna: baseDna,
+      referenceEvidence: firstMetadata.referenceEvidence,
+    };
+    await fs.writeFile(firstMetadataPath, JSON.stringify(firstMetadata));
+
+    await fs.cp(
+      path.join(root, "candidate-a"),
+      path.join(root, "candidate-b"),
+      { recursive: true },
+    );
+    const secondMetadataPath = path.join(root, "candidate-b/metadata.json");
+    const secondMetadata = JSON.parse(
+      await fs.readFile(secondMetadataPath, "utf8"),
+    );
+    secondMetadata.candidateId = "candidate-b";
+    secondMetadata.creativeManifest = {
+      ...secondMetadata.creativeManifest,
+      candidateId: "candidate-b",
+    };
+    await fs.writeFile(secondMetadataPath, JSON.stringify(secondMetadata));
+
+    const siteRoot = path.resolve("templates/client-site");
+    const configPath = path.join(siteRoot, "src/site.config.json");
+    const selectedPath = path.join(
+      siteRoot,
+      "src/generated-experiences/selected",
+    );
+    const selectedBackup = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-selected-"),
+    );
+    const originalConfig = await fs.readFile(configPath, "utf8");
+    await fs.cp(selectedPath, selectedBackup, { recursive: true });
+
+    const renderedReferenceEvaluator = async () => ({
+      version: 1,
+      model: "test/model",
+      score: 100,
+      pass: true,
+      audit: {
+        scores: {
+          heroGeometry: 100,
+          typography: 100,
+          spatialRhythm: 100,
+          imagery: 100,
+          servicePresentation: 100,
+          navigation: 100,
+          ctaPlacement: 100,
+          mobileRecomposition: 100,
+          interactionEvidence: 100,
+        },
+        findings: [],
+      },
+    });
+
+    try {
+      const report = await runCreativeBakeoff({
+        siteDir: siteRoot,
+        candidatesDir: root,
+        reportPath: path.join(root, "v2-diversity-report.json"),
+        screenshotsDir: path.join(root, "v2-diversity-screenshots"),
+        renderedReferenceEvaluator,
+        renderedDiversityEvaluator: async () => ({
+          version: 1,
+          model: "test/model",
+          score: 92,
+          pass: true,
+          minimumPairDistance: 90,
+          audit: {
+            pairs: [
+              {
+                left: "candidate-a",
+                right: "candidate-b",
+                distance: 90,
+                reason: "Rendered compositions are materially different.",
+              },
+            ],
+            genericFallbackDetected: false,
+            summary: "Rendered candidates are visually distinct.",
+          },
+        }),
+      });
+
+      expect(report.diversity.pass).toBe(false);
+      expect(report.visualDiversity.pass).toBe(true);
+      expect(report.candidates.every((candidate: any) => candidate.eligible)).toBe(
+        true,
+      );
+      expect(report.selectedCandidateId).not.toBeNull();
+      expect(report.promotionReady).toBe(true);
+
+      const blocked = await runCreativeBakeoff({
+        siteDir: siteRoot,
+        candidatesDir: root,
+        reportPath: path.join(root, "v2-diversity-blocked-report.json"),
+        screenshotsDir: path.join(root, "v2-diversity-blocked-screenshots"),
+        promote: true,
+        requireDiversity: false,
+        renderedReferenceEvaluator,
+        renderedDiversityEvaluator: async () => ({
+          version: 1,
+          model: "test/model",
+          score: 40,
+          pass: false,
+          minimumPairDistance: 40,
+          audit: {
+            pairs: [
+              {
+                left: "candidate-a",
+                right: "candidate-b",
+                distance: 40,
+                reason: "Rendered compositions are too similar.",
+              },
+            ],
+            genericFallbackDetected: true,
+            summary: "Rendered diversity failed.",
+          },
+        }),
+      });
+      expect(blocked.selectedCandidateId).not.toBeNull();
+      expect(blocked.promotionReady).toBe(false);
+      const blockedConfig = JSON.parse(
+        await fs.readFile(configPath, "utf8"),
+      );
+      expect(blockedConfig.design?.experience?.renderer).not.toBe(
+        "creative-candidate",
+      );
+    } finally {
+      await fs.writeFile(configPath, originalConfig);
+      await fs.rm(selectedPath, { recursive: true, force: true });
+      await fs.cp(selectedBackup, selectedPath, { recursive: true });
+      await fs.rm(selectedBackup, { recursive: true, force: true });
+    }
+  }, 60_000);
+
+  it("selects a version-two candidate for preview before diversity promotion", async () => {
+    const root = await makeFixture();
+    const metadataPath = path.join(root, "candidate-a/metadata.json");
+    const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+    const record = JSON.parse(
+      await fs.readFile("data/inspiration-registry.json", "utf8"),
+    ).records[0];
+    const baseDna = buildReferenceDna(record, { requireEvidence: true });
+    metadata.version = 2;
+    metadata.referenceDna = baseDna;
+    metadata.referenceEvidence = {
+      desktop: baseDna.evidence.desktopScreenshot.path,
+      mobile: baseDna.evidence.mobileScreenshot?.path || "",
+      complete: true,
+    };
+    metadata.creativeManifest = {
+      ...metadata.creativeManifest,
+      version: 2,
+      referenceDna: baseDna,
+      referenceEvidence: metadata.referenceEvidence,
+    };
+    await fs.writeFile(metadataPath, JSON.stringify(metadata));
+    const experiencePath = path.join(root, "candidate-a/Experience.jsx");
+    const experience = await fs.readFile(experiencePath, "utf8");
+    await fs.writeFile(
+      experiencePath,
+      experience
+        .replace("<main>", '<main data-mobile-recomposition="wrong-layout" data-motion-primitive="wrong-motion">')
+        .replace("<nav>", '<nav data-navigation-geometry="wrong-navigation">')
+        .replace("<section data-hero>", '<section data-hero data-hero-geometry="wrong-hero"><img src={content.hero.image} alt={content.hero.heading} style={{ display: "none" }} />')
+        .replace('<section id="services">', '<section id="services" data-service-presentation="wrong-services">')
+        .replace("<button data-early-conversion>", '<button data-early-conversion data-cta-placement="wrong-cta">'),
+    );
     const siteRoot = path.resolve("templates/client-site");
     const configPath = path.join(siteRoot, "src/site.config.json");
     const selectedPath = path.join(siteRoot, "src/generated-experiences/selected");
@@ -123,9 +310,37 @@ describe("creative candidate promotion", () => {
         reportPath: path.join(root, "preview-report.json"),
         screenshotsDir: path.join(root, "preview-screenshots"),
         preview: true,
+        renderedReferenceEvaluator: async () => ({
+          version: 1,
+          model: "test/model",
+          score: 100,
+          pass: true,
+          audit: {
+            scores: {
+              heroGeometry: 100,
+              typography: 100,
+              spatialRhythm: 100,
+              imagery: 100,
+              servicePresentation: 100,
+              navigation: 100,
+              ctaPlacement: 100,
+              mobileRecomposition: 100,
+              interactionEvidence: 100,
+            },
+            findings: [],
+          },
+        }),
       });
       expect(report.candidates[0].valid).toBe(true);
-      expect(report.candidates[0].eligible).toBe(false);
+      expect(report.candidates[0].referenceFidelity.sourceVisualFindings.length).toBeGreaterThan(0);
+      expect(
+        new Set(
+          report.candidates[0].referenceFidelity.renderedVisualFindings.map(
+            (item: any) => item.viewport,
+          ),
+        ),
+      ).toEqual(new Set(["desktop", "compact", "mobile"]));
+      expect(report.candidates[0].eligible).toBe(true);
       expect(report.selectedCandidateId).toBe("candidate-a");
       expect(report.fallback).toBe(false);
       expect(report.promotionReady).toBe(false);
