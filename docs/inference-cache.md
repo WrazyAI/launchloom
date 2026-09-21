@@ -74,9 +74,11 @@ screenshots precede the breakpoint; findings, current source, and current
 candidate screenshots follow it.
 
 Reference DNA extraction itself is deterministic. Analyzer requests use a
-reference-route-stable session and a 24-hour exact response-cache TTL, so a
-reused static reference can skip provider inference entirely during the cache
-window. File-system paths are not part of the session identity.
+reference-stable session and a 24-hour exact response-cache TTL, so a reused
+static reference can skip provider inference entirely during the cache window.
+Transient route-slot IDs and file-system paths are not part of the session
+identity; the reference family/name carries the sticky routing identity while
+the exact request body still determines response-cache equality.
 
 ## Observability
 
