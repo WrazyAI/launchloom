@@ -9,6 +9,7 @@ import {
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCachedText,
+  promptCachedMessageContent,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 
@@ -314,7 +315,7 @@ async function requestStage(request) {
               messages: [
                 {
                   role: "system",
-                  content: [promptCachedText(model, systemPrompt)],
+                  content: promptCachedMessageContent(model, systemPrompt),
                 },
                 { role: "user", content: userContent },
               ],
