@@ -256,6 +256,36 @@ describe("revision operations", () => {
     });
   });
 
+  it("rejects creative verification from a different selected candidate", () => {
+    const draft = config();
+    draft.design = {
+      experience: { candidateId: "candidate-b" },
+    };
+    const report: any = {
+      creativeSourceRepairRequired: true,
+      creativeSourceRepairVerified: {
+        pass: true,
+        candidateId: "candidate-a",
+      },
+      results: [
+        {
+          feedbackIndex: 0,
+          status: "creative",
+          unresolved: [],
+        },
+      ],
+      expectedArtifacts: [],
+    };
+
+    expect(verifyRevision(draft, report, "<main></main>").ok).toBe(false);
+
+    report.creativeSourceRepairVerified.candidateId = "candidate-b";
+    expect(verifyRevision(draft, report, "<main></main>")).toEqual({
+      ok: true,
+      failures: [],
+    });
+  });
+
   it("blocks fulfilled structured feedback when creative source verification was also required", () => {
     const draft = config();
     const report: any = {
