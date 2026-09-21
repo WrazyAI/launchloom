@@ -12,6 +12,10 @@ import {
 } from "./creative-compiler.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import {
+  evaluateRenderedDiversity,
+  evaluateRenderedReferenceFidelity,
+} from "./rendered-reference-fidelity.mjs";
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -166,6 +170,8 @@ export async function runCreativeBakeoff({
   screenshotsDir,
   promote = false,
   preview = false,
+  renderedReferenceEvaluator = evaluateRenderedReferenceFidelity,
+  renderedDiversityEvaluator = evaluateRenderedDiversity,
 } = {}) {
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
@@ -266,6 +272,40 @@ export async function runCreativeBakeoff({
         } finally {
           await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
         }
+        if (candidate.manifest.version >= 2) {
+          const renderedReference = await renderedReferenceEvaluator({
+            referenceDna: candidate.manifest.referenceDna,
+            candidateScreenshots: {
+              desktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop.png`),
+              compact: path.join(evidenceDir, `${candidate.manifest.candidateId}-compact.png`),
+              mobile: path.join(evidenceDir, `${candidate.manifest.candidateId}-mobile.png`),
+            },
+          });
+          candidateResult.renderedReferenceFidelity = renderedReference;
+          candidateResult.referenceFidelity = {
+            ...candidateResult.referenceFidelity,
+            pixelScore: renderedReference.score,
+            pixelPass: renderedReference.pass,
+            score: Math.min(
+              candidateResult.referenceFidelity?.score ?? 100,
+              renderedReference.score,
+            ),
+            pass:
+              candidateResult.referenceFidelity?.pass !== false &&
+              renderedReference.pass,
+          };
+          if (!renderedReference.pass) {
+            const visualFindings = renderedReference.audit?.findings || [];
+            candidateResult.failures.push(
+              ...(visualFindings.length
+                ? visualFindings.map(
+                    (item) =>
+                      `rendered-reference: ${item.evidence || item.category}`,
+                  )
+                : ["rendered-reference: reference fidelity did not pass"]),
+            );
+          }
+        }
       } catch (error) {
         candidateResult.failures.push(error instanceof Error ? error.message : String(error));
       }
@@ -357,23 +397,58 @@ export async function runCreativeBakeoff({
   const valid = preview ? previewEligible : results.filter((candidate) => candidate.eligible);
   const winner = valid
     .sort((left, right) => right.score - left.score || left.candidateId.localeCompare(right.candidateId))[0] || null;
-  const visualPairs = [];
-  for (let i = 0; i < results.length; i += 1) {
-    for (let j = i + 1; j < results.length; j += 1) {
-      const distance = results[i].visualFingerprint && results[i].visualFingerprint !== results[j].visualFingerprint ? 1 : 0;
-      visualPairs.push({
-        left: results[i].candidateId,
-        right: results[j].candidateId,
-        distance,
-        pass: distance >= CREATIVE_PROMOTION_THRESHOLDS.minimumPairwiseVisualDistance,
-      });
+  const pixelCandidates = results.filter(
+    (candidate) => candidate.manifest?.version >= 2 && candidate.viewports.length,
+  );
+  let visualDiversity;
+  if (pixelCandidates.length >= 2) {
+    const judged = await renderedDiversityEvaluator({
+      candidates: pixelCandidates.map((candidate) => ({
+        candidateId: candidate.candidateId,
+        desktop: path.join(evidenceDir, `${candidate.candidateId}-desktop.png`),
+        mobile: path.join(evidenceDir, `${candidate.candidateId}-mobile.png`),
+      })),
+    });
+    visualDiversity = {
+      version: judged.version,
+      model: judged.model,
+      minimumDistance: judged.minimumPairDistance,
+      score: judged.score,
+      pairs: judged.audit?.pairs || [],
+      genericFallbackDetected: Boolean(
+        judged.audit?.genericFallbackDetected,
+      ),
+      summary: judged.audit?.summary || "",
+      pass: judged.pass,
+    };
+  } else {
+    const visualPairs = [];
+    for (let i = 0; i < results.length; i += 1) {
+      for (let j = i + 1; j < results.length; j += 1) {
+        const distance =
+          results[i].visualFingerprint &&
+          results[i].visualFingerprint !== results[j].visualFingerprint
+            ? 100
+            : 0;
+        visualPairs.push({
+          left: results[i].candidateId,
+          right: results[j].candidateId,
+          distance,
+          pass:
+            distance >=
+            CREATIVE_PROMOTION_THRESHOLDS.minimumPairwiseVisualDistance,
+        });
+      }
     }
+    visualDiversity = {
+      minimumDistance: visualPairs.length
+        ? Math.min(...visualPairs.map((pair) => pair.distance))
+        : 100,
+      pairs: visualPairs,
+      pass: visualPairs.every((pair) => pair.pass),
+      source: "legacy-structural-fallback",
+    };
   }
-  const visualDiversity = {
-    minimumDistance: visualPairs.length ? Math.min(...visualPairs.map((pair) => pair.distance)) : 1,
-    pairs: visualPairs,
-    pass: visualPairs.every((pair) => pair.pass),
-  };
   const report = {
     version: 1,
     mode: promote ? "promote" : preview ? "preview" : "review",
