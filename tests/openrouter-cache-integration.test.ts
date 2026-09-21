@@ -71,6 +71,21 @@ describe("OpenRouter cache integration", () => {
     expect(source).toContain("cacheSummary: aggregateCacheUsage(usage)");
   });
 
+  it("records HTTP-error responses before throwing and keeps prompt paths sanitized", () => {
+    const source = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    const pushIndex = source.indexOf("usage.push(usageRecord)");
+    const httpIndex = source.indexOf('usageRecord.parseStatus = "http-error"');
+    const throwIndex = source.indexOf('OpenRouter ${response.status}: ${errorContext}');
+    expect(pushIndex).toBeGreaterThan(-1);
+    expect(httpIndex).toBeGreaterThan(pushIndex);
+    expect(throwIndex).toBeGreaterThan(httpIndex);
+    expect(source).toContain("readOpenRouterResponseEnvelope(response)");
+    expect(source).not.toContain("screenshotPath: item.screenshotPath");
+  });
+
   it("keeps explicit GPT-5.6 cache breakpoints on repeated large prefixes", () => {
     for (const file of [
       "scripts/author-production-experiences.mjs",
