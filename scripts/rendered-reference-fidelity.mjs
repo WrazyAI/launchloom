@@ -3,6 +3,7 @@ import path from "node:path";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import {
   logOpenRouterCacheUsage,
+  logOpenRouterResponseCacheUsage,
   openRouterChatCompletion,
   openRouterPromptCacheKey,
   openRouterSessionId,
@@ -192,6 +193,7 @@ async function requestJson({
           ]
         },
       });
+      const responseCache = logOpenRouterResponseCacheUsage(label, response);
       const payload = await response.json().catch((error) => {
         if (response.ok || !(error instanceof SyntaxError)) throw error;
         return {};
@@ -202,6 +204,7 @@ async function requestJson({
           audit: parseChoice(payload, label),
           usage: payload.usage || null,
           cache,
+          responseCache,
           provider: payload.provider || null,
         };
       }
