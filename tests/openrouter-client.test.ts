@@ -6,6 +6,7 @@ import {
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCacheRequestFields,
+  promptCachedMessageContent,
   promptCachedText,
   supportsExplicitOpenAiPromptCaching,
 } from "../scripts/openrouter-client.mjs";
@@ -58,6 +59,25 @@ describe("OpenRouter cache-aware client", () => {
       type: "text",
       text: "stable instructions",
     });
+
+    expect(
+      promptCachedMessageContent(
+        "openai/gpt-5.6-luna",
+        "stable instructions",
+      ),
+    ).toEqual([
+      {
+        type: "text",
+        text: "stable instructions",
+        prompt_cache_breakpoint: { mode: "explicit" },
+      },
+    ]);
+    expect(
+      promptCachedMessageContent(
+        "z-ai/glm-5.3-flash",
+        "stable instructions",
+      ),
+    ).toBe("stable instructions");
 
     expect(
       promptCacheRequestFields(
