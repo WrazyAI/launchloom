@@ -642,6 +642,16 @@ export async function runRenderedCreativeRepair({
 
     if (requestedMode === "promote" && !report.promotionReady) {
       const targets = diversityRepairTargets(report);
+      if (!targets.length) {
+        const selectedCandidate = reportCandidate(report, selectedId);
+        const findings = candidateFindings(selectedCandidate);
+        targets.push({
+          candidateId: selectedId,
+          finding:
+            findings.join("\n") ||
+            "Production promotion is not ready. Preserve the assigned Reference DNA and repair the selected candidate's remaining promotion blockers.",
+        });
+      }
       let repairedAny = false;
       for (const target of targets) {
         const repaired = await repair(
@@ -659,7 +669,7 @@ export async function runRenderedCreativeRepair({
       }
       if (!repairedAny)
         throw new Error(
-          `Production promotion is not ready because rendered diversity still fails after the ${cycleLimit}-cycle per-candidate repair budget.`,
+          `Production promotion is not ready after the ${cycleLimit}-cycle per-candidate repair budget.`,
         );
       continue;
     }
@@ -679,7 +689,7 @@ export async function runRenderedCreativeRepair({
 
     const summary = {
       version: 1,
-      status: "passed",
+      status: "promotion-pending",
       mode: requestedMode,
       model,
       selectedCandidateId: selectedId,
@@ -699,24 +709,43 @@ export async function runRenderedCreativeRepair({
       `${JSON.stringify(summary, null, 2)}\n`,
     );
 
-    if (requestedMode === "promote") {
-      await promoteImpl({
-        siteDir: root,
-        candidateDir: selectedDirectory,
-        visualScore: selected.visualScore,
-        distinctivenessScore: selected.distinctivenessScore,
-        selectionMode: "creative-bakeoff",
-      });
-    } else {
-      await promoteImpl({
-        siteDir: root,
-        candidateDir: selectedDirectory,
-        visualScore: selected.visualScore,
-        distinctivenessScore: selected.distinctivenessScore,
-        selectionMode: "creative-preview",
-      });
+    try {
+      if (requestedMode === "promote") {
+        await promoteImpl({
+          siteDir: root,
+          candidateDir: selectedDirectory,
+          visualScore: selected.visualScore,
+          distinctivenessScore: selected.distinctivenessScore,
+          selectionMode: "creative-bakeoff",
+        });
+      } else {
+        await promoteImpl({
+          siteDir: root,
+          candidateDir: selectedDirectory,
+          visualScore: selected.visualScore,
+          distinctivenessScore: selected.distinctivenessScore,
+          selectionMode: "creative-preview",
+        });
+      }
+    } catch (error) {
+      const failedSummary = {
+        ...summary,
+        status: "promotion-failed",
+        promotionError: error?.message || String(error),
+      };
+      await fs.writeFile(
+        path.join(evidenceRoot, "summary.json"),
+        `${JSON.stringify(failedSummary, null, 2)}\n`,
+      );
+      throw error;
     }
-    return { ...summary, bakeoff: report, visualGate };
+
+    const passedSummary = { ...summary, status: "passed" };
+    await fs.writeFile(
+      path.join(evidenceRoot, "summary.json"),
+      `${JSON.stringify(passedSummary, null, 2)}\n`,
+    );
+    return { ...passedSummary, bakeoff: report, visualGate };
   }
 
   throw new Error(

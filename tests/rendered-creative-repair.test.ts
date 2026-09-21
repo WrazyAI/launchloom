@@ -161,6 +161,35 @@ describe("rendered creative repair orchestration", () => {
     expect(result.repairCycles).toEqual({ "candidate-a": 1 });
     expect(promotions).toHaveLength(1);
     expect(promotions[0].selectionMode).toBe("creative-preview");
+    expect(
+      JSON.parse(
+        await fs.readFile(path.join(root, "evidence", "summary.json"), "utf8"),
+      ).status,
+    ).toBe("passed");
+  });
+
+  it("records a failed promotion instead of claiming the run passed", async () => {
+    const { root, candidates } = await fixture();
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(options, report()),
+        runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+        promoteImpl: async () => {
+          throw new Error("promotion filesystem failure");
+        },
+      }),
+    ).rejects.toThrow("promotion filesystem failure");
+
+    const summary = JSON.parse(
+      await fs.readFile(path.join(root, "evidence", "summary.json"), "utf8"),
+    );
+    expect(summary.status).toBe("promotion-failed");
+    expect(summary.promotionError).toContain("promotion filesystem failure");
   });
 
   it("uses rendered diversity findings to repair both v2 candidates before production promotion", async () => {
@@ -213,6 +242,39 @@ describe("rendered creative repair orchestration", () => {
     expect(promotions).toHaveLength(1);
     expect(promotions[0].selectionMode).toBe("creative-bakeoff");
     expect(result.promotionReady).toBe(true);
+  });
+
+  it("repairs the selected candidate when promotion is blocked without diversity pairs", async () => {
+    const { root, candidates } = await fixture();
+    let bakeoffCalls = 0;
+    const repairs: string[] = [];
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "promote",
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                promotionReady: false,
+                visualDiversity: { pass: true, pairs: [] },
+              })
+            : report(),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ candidateId }: any) => {
+        repairs.push(candidateId);
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(repairs).toEqual(["candidate-a"]);
   });
 
   it("repairs each diversity candidate once per rendered round even when multiple pairs fail", async () => {
