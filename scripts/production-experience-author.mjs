@@ -120,11 +120,12 @@ function digest(value) {
   return crypto.createHash("sha256").update(stableJson(value)).digest("hex");
 }
 
-function contentShape(site) {
+function contentShape(site, route) {
   const business = site.business || {};
   const copy = site.copy || {};
   const assets = site.assets || {};
   const images = site.images || {};
+  const routeImages = route?.id ? site.creativeAssets?.[route.id] || {} : {};
   const serviceAreas = Array.isArray(business.serviceAreas)
     ? business.serviceAreas.map(String)
     : [];
@@ -151,9 +152,9 @@ function contentShape(site) {
       heading: String(copy.heroHeading || business.tagline || ""),
       body: String(copy.heroBody || business.description || ""),
       primaryLabel: String(business.primaryCta || ""),
-      image: assets.photoOne || images.hero || images.secondary || "",
-      secondaryImage: assets.photoTwo || images.secondary || "",
-      tertiaryImage: assets.photoThree || images.tertiary || "",
+      image: assets.photoOne || routeImages.hero || images.hero || images.secondary || "",
+      secondaryImage: assets.photoTwo || routeImages.secondary || images.secondary || "",
+      tertiaryImage: assets.photoThree || routeImages.tertiary || images.tertiary || "",
       offer: String(business.offer || ""),
     },
     services: site.services || [],
@@ -678,10 +679,10 @@ export async function authorExperienceCandidates({
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
-  const content = contentShape(site);
+  const baseContent = contentShape(site);
   const manifest = {
     version: 1,
-    values: content,
+    values: baseContent,
     tokens: contentTokenDefinitions.map(([token, type]) => ({ token, type })),
   };
   const contentManifest = { ...manifest, digest: digest(manifest) };
@@ -697,6 +698,13 @@ export async function authorExperienceCandidates({
   const limitedGenerate = createGenerationLimiter(generate, 2);
   const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
+      const content = contentShape(site, route);
+      const routeManifest = {
+        version: 1,
+        values: content,
+        tokens: contentTokenDefinitions.map(([token, type]) => ({ token, type })),
+      };
+      const routeContentManifest = { ...routeManifest, digest: digest(routeManifest) };
       const base = { route, contentTokens, contentShape: content, rules };
       const contractResult = await generateContract(limitedGenerate, {
         ...base,
@@ -821,7 +829,7 @@ export async function authorExperienceCandidates({
         candidate: { candidateId: `candidate-${String.fromCharCode(97 + index)}` },
         route,
         model,
-        contentManifestDigest: contentManifest.digest,
+        contentManifestDigest: routeContentManifest.digest,
         assets: ["content.hero.image", "content.hero.secondaryImage", "content.hero.tertiaryImage"],
       });
       const metadata = {
@@ -847,7 +855,7 @@ export async function authorExperienceCandidates({
         complianceRepaired,
         referenceRepairCycles,
         motionFallback: Boolean(motionOutput.fallback),
-        contentManifestDigest: contentManifest.digest,
+        contentManifestDigest: routeContentManifest.digest,
         allowedImports: [...allowedImports],
         runtimeInstrumentation: {
           rootAttribute: "data-model-experience",
