@@ -92,6 +92,16 @@ function validateAudit(value) {
   return value;
 }
 
+/**
+ * @param {{
+ *   configPath: string,
+ *   screenshotsDir: string,
+ *   feedback: string,
+ *   reportPath?: string,
+ *   model?: string,
+ *   fetchImpl?: typeof fetch,
+ * }} options
+ */
 export async function runHumanRevisionGate({
   configPath,
   screenshotsDir,
