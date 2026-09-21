@@ -6,7 +6,7 @@ import path from "node:path";
  * author.  It deliberately describes mechanics, not a reference site's
  * brand, copy, assets, or trade dress.
  */
-export const REFERENCE_DNA_VERSION = 1;
+export const REFERENCE_DNA_VERSION = 2;
 
 const clean = (value, limit = 260) =>
   String(value || "")
@@ -235,7 +235,13 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
     evidence: {
       desktopScreenshot: desktop,
       mobileScreenshot: mobile.path ? mobile : null,
-      annotatedDescription: clean(route.referenceNotes || route.notes, 900),
+      annotatedDescription: clean(
+        route.referenceNotes ||
+          route.notes ||
+          route.evidence?.[0]?.referenceNotes ||
+          route.evidence?.[0]?.notes,
+        1400,
+      ),
     },
     heroGeometry: route.referenceDna?.heroGeometry || defaults.heroGeometry,
     navigationGeometry: route.referenceDna?.navigationGeometry || defaults.navigationGeometry,
@@ -250,6 +256,10 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
     prohibitedPatterns: list([...(defaults.prohibitedPatterns || []), ...(route.prohibitedPatterns || []), ...(route.referenceDna?.prohibitedPatterns || [])], 30),
     requiredSignatureElements: route.referenceDna?.requiredSignatureElements || defaults.requiredSignatureElements,
     acceptanceChecks: list(route.referenceDna?.acceptanceChecks || defaults.acceptanceChecks, 20),
+    measurements: route.referenceDna?.measurements || null,
+    analyzedFromEvidence: Boolean(route.referenceDna?.analyzedFromEvidence),
+    analyzerModel: clean(route.referenceDna?.analyzerModel, 160),
+    analyzedAt: clean(route.referenceDna?.analyzedAt, 80),
     complete: incompleteReasons.length === 0,
     incompleteReasons,
   };
@@ -267,6 +277,13 @@ export function validateReferenceDna(value, { requireEvidence = true } = {}) {
   if (!Array.isArray(value.prohibitedPatterns) || !value.prohibitedPatterns.length) throw new Error("Reference DNA needs prohibited patterns.");
   if (!Array.isArray(value.requiredSignatureElements) || !value.requiredSignatureElements.length) throw new Error("Reference DNA needs required signature elements.");
   if (!Array.isArray(value.acceptanceChecks) || !value.acceptanceChecks.length) throw new Error("Reference DNA needs acceptance checks.");
+  if (value.analyzedFromEvidence) {
+    if (!value.measurements || typeof value.measurements !== "object")
+      throw new Error("Evidence-analyzed Reference DNA needs measurements.");
+    for (const key of ["headlineWidthRatio", "headlineHeightRatio", "heroImageOccupancyRatio", "contentColumnWidthRatio", "navTopRatio", "navSideInsetRatio", "ctaTopRatio"])
+      if (!Number.isFinite(Number(value.measurements[key])))
+        throw new Error(`Reference DNA measurements are missing ${key}.`);
+  }
   if (requireEvidence && (!value.complete || !value.evidence?.desktopScreenshot?.available)) throw new Error(`Reference DNA ${value.familyId} is incomplete: ${value.incompleteReasons?.join("; ") || "desktop evidence is unavailable"}.`);
   return value;
 }
