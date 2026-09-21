@@ -43,7 +43,9 @@ export function openRouterSessionId(scope, ...identity) {
  * Stable cache key used for explicit GPT-5.6+ prompt caching.
  */
 export function openRouterPromptCacheKey(scope, ...identity) {
-  return `ll:${slug(scope)}:${digest(identity, 40)}`;
+  const scopePart = slug(scope, "cache").slice(0, 20);
+  const prefix = `ll:${scopePart}:`;
+  return `${prefix}${digest(identity, 64 - prefix.length)}`;
 }
 
 export function supportsExplicitOpenAiPromptCaching(model) {
