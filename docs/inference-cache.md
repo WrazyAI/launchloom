@@ -70,7 +70,14 @@ candidate screenshots follow it.
 
 All migrated lanes emit an `openrouter_cache` log entry with prompt tokens,
 cached tokens, cache-write tokens, and hit percentage when usage information is
-available.
+available. Lanes using exact response caching also emit
+`openrouter_response_cache` with the OpenRouter `HIT`/`MISS` status, age,
+and TTL. Exact response-cache hits report zero billable token usage, so this
+header-level signal must be read separately from prompt-cache token metrics.
+
+OpenRouter disables response caching when account-level Zero Data Retention is
+enforced. Cached responses are otherwise API-key scoped and retained only for
+their configured TTL.
 
 Do not treat the aggregate OpenRouter dashboard hit rate as the only signal.
 Break it down by lane: a visual request with new screenshots naturally has a
