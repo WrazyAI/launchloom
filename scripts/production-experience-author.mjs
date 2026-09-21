@@ -95,6 +95,11 @@ const contentTokenDefinitions = [
   ["content.businessDescription", "string"],
   ["content.showLocationMap", "boolean"],
   ["content.hasSocialProof", "boolean"],
+  ["content.socialProof", "object?"],
+  ["content.socialProof.source", "string?"],
+  ["content.socialProof.heading", "string?"],
+  ["content.socialProof.intro", "string?"],
+  ["content.socialProof.points", "array"],
 ];
 const contentTokens = contentTokenDefinitions.map(([token]) => token);
 const requiredExperienceBindings = [
@@ -173,6 +178,28 @@ function contentShape(site, route) {
       socialProofPoints.length > 0 ||
       fallbackProofPoints.length > 0 ||
       hasLiveGoogleProof,
+    socialProof: site.socialProof
+      ? {
+          source: String(site.socialProof.source || ""),
+          heading: String(
+            site.socialProof.heading ||
+              site.socialProof.fallback?.heading ||
+              "",
+          ),
+          intro: String(
+            site.socialProof.intro ||
+              site.socialProof.fallback?.intro ||
+              "",
+          ),
+          points: (
+            site.socialProof.source === "google_reviews"
+              ? fallbackProofPoints
+              : socialProofPoints
+          )
+            .slice(0, 4)
+            .map(String),
+        }
+      : null,
   };
 }
 
