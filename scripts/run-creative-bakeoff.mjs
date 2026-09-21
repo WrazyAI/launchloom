@@ -417,13 +417,27 @@ export async function runCreativeBakeoff({
       candidateResult.technicalScore = technical.accessibility;
       candidateResult.distinctivenessScore = distinctivenessScore;
       candidateResult.minimumFingerprintDistance = minimumDistance;
+      // Structural fingerprint distinctiveness remains diagnostic for v2.
+      // Rendered screenshot diversity is evaluated after all candidates render
+      // and is the sole diversity authority for v2 promotion.
+      const scoringDistinctiveness =
+        candidate.manifest.version >= 2 ? 100 : distinctivenessScore;
       candidateResult.score = scoreCreativeCandidate({
         hardPass: candidateResult.valid,
         visual,
         technical,
-        distinctiveness: distinctivenessScore,
+        distinctiveness: scoringDistinctiveness,
       });
-      candidateResult.eligible = candidateResult.valid && candidateResult.referenceFidelity?.pass !== false && candidateResult.referenceFidelity?.score >= CREATIVE_PROMOTION_THRESHOLDS.referenceFidelityScore && candidateResult.visualScore >= CREATIVE_PROMOTION_THRESHOLDS.visualScore && candidateResult.distinctivenessScore >= CREATIVE_PROMOTION_THRESHOLDS.distinctivenessScore;
+      candidateResult.eligible =
+        candidateResult.valid &&
+        candidateResult.referenceFidelity?.pass !== false &&
+        candidateResult.referenceFidelity?.score >=
+          CREATIVE_PROMOTION_THRESHOLDS.referenceFidelityScore &&
+        candidateResult.visualScore >=
+          CREATIVE_PROMOTION_THRESHOLDS.visualScore &&
+        (candidate.manifest.version >= 2 ||
+          candidateResult.distinctivenessScore >=
+            CREATIVE_PROMOTION_THRESHOLDS.distinctivenessScore);
       results.push(candidateResult);
     }
   } finally {
@@ -517,7 +531,10 @@ export async function runCreativeBakeoff({
       source: "legacy-structural-fallback",
     };
   }
-  const measuredDiversityPass = diversity.pass && visualDiversity.pass;
+  const hasVersionTwoCandidates = versionTwoCandidates.length > 0;
+  const measuredDiversityPass = hasVersionTwoCandidates
+    ? visualDiversity.pass
+    : diversity.pass && visualDiversity.pass;
   const diversityPass = !requireDiversity || measuredDiversityPass;
   const valid = preview && !promote
     ? previewEligible
