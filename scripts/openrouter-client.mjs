@@ -207,6 +207,54 @@ export function logOpenRouterResponseCacheUsage(
 }
 
 /**
+ * Read an OpenRouter response body once, retaining bounded raw text for error
+ * diagnostics while exposing only an object payload to callers.
+ *
+ * @param {Response | { text?: Function, json?: Function }} response
+ * @param {{ maxRawBodyChars?: number }} [options]
+ */
+export async function readOpenRouterResponseEnvelope(
+  response,
+  { maxRawBodyChars = 1000 } = {},
+) {
+  let rawBody = "";
+  let parseError = null;
+  let decoded;
+
+  try {
+    if (typeof response?.text === "function") {
+      rawBody = await response.text();
+      if (!String(rawBody).trim())
+        throw new Error("OpenRouter returned an empty response body.");
+      decoded = JSON.parse(rawBody);
+    } else if (typeof response?.json === "function") {
+      decoded = await response.json();
+      rawBody = JSON.stringify(decoded);
+    } else {
+      throw new Error("OpenRouter response body is unreadable.");
+    }
+  } catch (error) {
+    parseError = error;
+  }
+
+  if (
+    !parseError &&
+    (!decoded || typeof decoded !== "object" || Array.isArray(decoded))
+  ) {
+    parseError = new Error("OpenRouter returned a non-object JSON envelope.");
+  }
+
+  return {
+    payload:
+      !parseError && decoded && typeof decoded === "object" && !Array.isArray(decoded)
+        ? decoded
+        : {},
+    rawBody: String(rawBody || "").slice(0, Math.max(0, maxRawBodyChars)),
+    parseError,
+  };
+}
+
+/**
  * Shared OpenRouter Chat Completions transport.
  *
  * - sessionId enables sticky provider routing from the first successful request.
