@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { runRenderedCreativeRepair, runVisualGateProcess, writeCandidate } from "../scripts/run-rendered-creative-repair.mjs";
+import { collectAvailableScreenshots, runRenderedCreativeRepair, runVisualGateProcess, writeCandidate } from "../scripts/run-rendered-creative-repair.mjs";
 
 const roots: string[] = [];
 
@@ -396,6 +396,118 @@ process.exit(1);
         name.startsWith(".rendered-repair-"),
       ),
     ).toBe(false);
+  });
+
+  it("rejects a stale visual-gate report when the process exits zero without writing a new report", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-stale-visual-gate-"),
+    );
+    roots.push(root);
+    const siteDir = path.join(root, "site");
+    const screenshotsDir = path.join(root, "screenshots");
+    const reportPath = path.join(root, "visual-gate.json");
+    const scriptPath = path.join(root, "silent-visual-gate.mjs");
+    await fs.mkdir(path.join(siteDir, "src"), { recursive: true });
+    await fs.mkdir(screenshotsDir, { recursive: true });
+    await fs.writeFile(
+      path.join(siteDir, "src/site.config.json"),
+      JSON.stringify({ design: { experience: {} } }),
+    );
+    await fs.writeFile(
+      reportPath,
+      JSON.stringify({
+        status: "ok",
+        blockers: [],
+        audit: { verdict: "pass", findings: [] },
+      }),
+    );
+    await fs.writeFile(scriptPath, "process.exit(0);\n");
+
+    await expect(
+      runVisualGateProcess({
+        siteDir,
+        screenshotsDir,
+        reportPath,
+        visualGateScript: scriptPath,
+      }),
+    ).rejects.toThrow(/produced no report/iu);
+  });
+
+  it("propagates unexpected screenshot access failures but ignores missing optional screenshots", async () => {
+    const denied: any = new Error("permission denied");
+    denied.code = "EACCES";
+    await expect(
+      collectAvailableScreenshots(["/tmp/blocked.png"], {
+        fsImpl: {
+          async access() {
+            throw denied;
+          },
+        },
+      }),
+    ).rejects.toBe(denied);
+
+    const missing: any = new Error("missing");
+    missing.code = "ENOENT";
+    await expect(
+      collectAvailableScreenshots(["/tmp/missing.png"], {
+        fsImpl: {
+          async access() {
+            throw missing;
+          },
+        },
+      }),
+    ).resolves.toEqual([]);
+  });
+
+  it("preserves the recovery backup when rollback itself cannot restore an original file", async () => {
+    const { candidates } = await fixture(["candidate-a"]);
+    const candidateDir = path.join(candidates, "candidate-a");
+    const originalExperience = await fs.readFile(
+      path.join(candidateDir, "Experience.jsx"),
+      "utf8",
+    );
+    const fsImpl = {
+      mkdir: fs.mkdir.bind(fs),
+      writeFile: fs.writeFile.bind(fs),
+      rm: fs.rm.bind(fs),
+      rename: async (source: string, destination: string) => {
+        if (
+          source.includes(".rendered-repair-stage-") &&
+          source.endsWith("styles.css")
+        )
+          throw new Error("simulated staged swap failure");
+        if (
+          source.includes(".rendered-repair-backup-") &&
+          source.endsWith("Experience.jsx")
+        )
+          throw new Error("simulated rollback restore failure");
+        return fs.rename(source, destination);
+      },
+    };
+
+    await expect(
+      writeCandidate(
+        candidateDir,
+        {
+          experience: "export default function Repaired(){ return null; }",
+          styles: ".repaired { display: block; }",
+          motion:
+            "export function mountExperienceMotion(){ return () => {}; }",
+        },
+        { fsImpl },
+      ),
+    ).rejects.toThrow(/recovery backup preserved at/iu);
+
+    const recoveryDir = (await fs.readdir(candidateDir)).find((name) =>
+      name.startsWith(".rendered-repair-backup-"),
+    );
+    expect(recoveryDir).toBeTruthy();
+    expect(
+      await fs.readFile(
+        path.join(candidateDir, recoveryDir!, "Experience.jsx"),
+        "utf8",
+      ),
+    ).toBe(originalExperience);
   });
 
   it("never repairs source for a visual-gate infrastructure error", async () => {
