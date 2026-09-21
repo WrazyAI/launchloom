@@ -143,6 +143,8 @@ const contentRequest =
   /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten|simplify|condense).{0,50}\b(faq|question|answer|process|step|hero|opening)\b|\b(faq|question|answer|process|step|hero|opening)\b.{0,50}(?:say|read|explain|mention|shorter|simpler|concise|bloated|too long)\b/i;
 const conversionFeatureRequest =
   /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant|chat)|ai (?:faq )?(?:chat|assistant|chatbot)|chatbot|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
+const creativeVisualRequest =
+  /\b(premium|high[- ]end|polished|cinematic|editorial|distinctive|generic|visual|composition|layout|hierarchy|spacing|whitespace|asymmetr(?:y|ical)|full[- ]bleed|image|imagery|photo|gallery|hero|navigation|navbar|nav|cta|button|card|grid|motion|animation|reveal|scroll|mobile|responsive|typography|font|serif|sans|bold|minimal|modern|immersive)\b/i;
 
 function clean(value, limit = 360) {
   return String(value || "")
@@ -607,6 +609,11 @@ function intentsFor(feedback, config) {
     intents.push("content");
   if (conversionFeatureRequest.test(feedback))
     intents.push("conversion-feature");
+  if (
+    config.design?.experience?.renderer === "creative-candidate" &&
+    creativeVisualRequest.test(feedback)
+  )
+    intents.push("layout");
   return intents.length ? [...new Set(intents)] : ["unknown"];
 }
 export async function modelOperations(
@@ -1145,19 +1152,32 @@ export async function planRevision(
     const fulfilled = intents.filter((intent) =>
       intentSatisfied(intent, operations),
     );
+    const unresolved = intents.filter(
+      (intent) => !fulfilled.includes(intent),
+    );
+    const creativeDeferred =
+      config.design?.experience?.renderer === "creative-candidate"
+        ? unresolved.filter((intent) => intent === "layout")
+        : [];
+    const hardUnresolved = unresolved.filter(
+      (intent) => !creativeDeferred.includes(intent),
+    );
     const status =
-      fulfilled.length === intents.length
-        ? "fulfilled"
-        : fulfilled.length
-          ? "partial"
-          : "manual";
+      hardUnresolved.length === 0 && creativeDeferred.length
+        ? "creative"
+        : fulfilled.length === intents.length
+          ? "fulfilled"
+          : fulfilled.length
+            ? "partial"
+            : "manual";
     return {
       feedbackIndex,
       feedback,
       intents,
       status,
       fulfilled,
-      unresolved: intents.filter((intent) => !fulfilled.includes(intent)),
+      deferred: creativeDeferred,
+      unresolved: hardUnresolved,
       operationKinds: operations.map((operation) => operation.kind),
     };
   });
@@ -1167,7 +1187,9 @@ export async function planRevision(
     results,
     ok:
       results.length > 0 &&
-      results.every((result) => result.status === "fulfilled"),
+      results.every((result) =>
+        ["fulfilled", "creative"].includes(result.status),
+      ),
   };
 }
 export function removeEmDashes(value) {
