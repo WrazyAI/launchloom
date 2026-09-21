@@ -59,6 +59,18 @@ describe("OpenRouter cache integration", () => {
     );
   });
 
+  it("records cache usage even when an authored response cannot be parsed", () => {
+    const source = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    expect(source).toContain("parseStatus: responseBodyError");
+    expect(source).toContain('usageRecord.parseStatus = "missing-content"');
+    expect(source).toContain('usageRecord.parseStatus = "parse-failed"');
+    expect(source).toContain("parseStatusCounts");
+    expect(source).toContain("cacheSummary: aggregateCacheUsage(usage)");
+  });
+
   it("keeps explicit GPT-5.6 cache breakpoints on repeated large prefixes", () => {
     for (const file of [
       "scripts/author-production-experiences.mjs",

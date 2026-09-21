@@ -335,33 +335,54 @@ async function requestStage(request) {
               ],
             },
         });
-        const payload = await response.json().catch(() => ({}));
+        let payload = {};
+        let responseBodyError = null;
+        try {
+          payload = await response.json();
+        } catch (error) {
+          responseBodyError = error;
+        }
         if (sharedAbortController.signal.aborted)
           throw new Error("Phase 2 authorship cancelled after a sibling failure.");
         if (!response.ok)
           throw new Error(
             `OpenRouter ${response.status}: ${JSON.stringify(payload).slice(0, 1000)}`,
           );
-        const content = payload.choices?.[0]?.message?.content;
-        if (!content)
-          throw new Error(
-            `No ${request.stage} content returned for ${request.route.id} (${payload.choices?.[0]?.finish_reason || "unknown"}).`,
-          );
-        const parsed = parseModelJson(content);
-        const cache = logOpenRouterCacheUsage(
-          `creative-author-${request.stage}`,
-          payload.usage,
-        );
-        usage.push({
+        const usageRecord = {
           routeId: request.route.id,
           stage: request.stage,
           provider: payload.provider || null,
           reasoningEffort: effort,
           usage: payload.usage || null,
-          cache,
+          cache: logOpenRouterCacheUsage(
+            `creative-author-${request.stage}`,
+            payload.usage,
+          ),
           sessionId,
+          parseStatus: responseBodyError ? "response-body-error" : "response-received",
           durationMs: Date.now() - startedAt,
-        });
+        };
+        usage.push(usageRecord);
+        if (responseBodyError) {
+          throw new Error("OpenRouter returned an unreadable response body.", {
+            cause: responseBodyError,
+          });
+        }
+        const content = payload.choices?.[0]?.message?.content;
+        if (!content) {
+          usageRecord.parseStatus = "missing-content";
+          throw new Error(
+            `No ${request.stage} content returned for ${request.route.id} (${payload.choices?.[0]?.finish_reason || "unknown"}).`,
+          );
+        }
+        let parsed;
+        try {
+          parsed = parseModelJson(content);
+        } catch (error) {
+          usageRecord.parseStatus = "parse-failed";
+          throw error;
+        }
+        usageRecord.parseStatus = "parsed";
         console.log(
           `production_experience_stage=completed route=${request.route.id} stage=${request.stage} effort=${effort} duration_ms=${Date.now() - startedAt}`,
         );
@@ -383,6 +404,11 @@ async function requestStage(request) {
 }
 
 function aggregateCacheUsage(records) {
+  const parseStatusCounts = records.reduce((counts, record) => {
+    const status = record.parseStatus || "unknown";
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
   const total = records.reduce(
     (sum, record) => ({
       promptTokens: sum.promptTokens + Number(record.cache?.promptTokens || 0),
@@ -403,6 +429,10 @@ function aggregateCacheUsage(records) {
   );
   return {
     ...total,
+    responseCount: records.length,
+    parsedResponseCount: parseStatusCounts.parsed || 0,
+    parseFailureCount: records.length - (parseStatusCounts.parsed || 0),
+    parseStatusCounts,
     cost: Math.round(total.cost * 1_000_000) / 1_000_000,
     cacheDiscount:
       Math.round(total.cacheDiscount * 1_000_000) / 1_000_000,
@@ -464,6 +494,7 @@ async function writeFailure(error) {
         model,
         error: error instanceof Error ? error.message : String(error),
         usage,
+        cacheSummary: aggregateCacheUsage(usage),
       },
       null,
       2,
@@ -494,6 +525,12 @@ try {
     `production_experience_cached_tokens=${cacheSummary.cachedTokens}`,
   );
   console.log(`production_experience_cost=${cacheSummary.cost}`);
+  console.log(
+    `production_experience_response_count=${cacheSummary.responseCount}`,
+  );
+  console.log(
+    `production_experience_parse_failures=${cacheSummary.parseFailureCount}`,
+  );
   console.log(
     `production_experience_cache_discount=${cacheSummary.cacheDiscount}`,
   );
