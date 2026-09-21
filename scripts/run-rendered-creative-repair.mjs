@@ -127,6 +127,7 @@ async function readCandidate(candidateDir) {
   ]);
   return {
     metadata,
+    contentManifest,
     content: contentManifest.values || {},
     files: { experience, styles, motion },
   };
@@ -343,7 +344,8 @@ async function defaultRepairCandidate({
   screenshots,
   model,
 } = {}) {
-  const { metadata, content, files } = await readCandidate(candidateDir);
+  const { metadata, contentManifest, content, files } =
+    await readCandidate(candidateDir);
   const referenceDna =
     metadata.creativeManifest?.referenceDna || metadata.referenceDna;
   if (!referenceDna)
@@ -355,6 +357,7 @@ async function defaultRepairCandidate({
       findings,
       files,
       screenshots,
+      contentManifest,
     }),
   );
   const validated = validateProductionCandidateFiles({
