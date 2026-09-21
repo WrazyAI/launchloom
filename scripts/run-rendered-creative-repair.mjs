@@ -79,29 +79,37 @@ function candidateNeedsRepair(candidate) {
 
 function diversityRepairTargets(report) {
   if (report?.visualDiversity?.pass !== false) return [];
-  const targets = [];
+  const findingsByCandidate = new Map();
+  const add = (candidateId, finding) => {
+    if (!candidateId) return;
+    const findings = findingsByCandidate.get(candidateId) || [];
+    if (!findings.includes(finding)) findings.push(finding);
+    findingsByCandidate.set(candidateId, findings);
+  };
   for (const pair of report.visualDiversity.pairs || []) {
     if (pair.pass === false || Number(pair.distance || 0) < 72) {
-      targets.push({
-        candidateId: pair.left,
-        finding: `Rendered diversity failed against ${pair.right}: ${pair.reason || "candidate visual grammars are too similar"}. Preserve this route's own Reference DNA and make its rendered mechanics more route-specific.`,
-      });
-      targets.push({
-        candidateId: pair.right,
-        finding: `Rendered diversity failed against ${pair.left}: ${pair.reason || "candidate visual grammars are too similar"}. Preserve this route's own Reference DNA and make its rendered mechanics more route-specific.`,
-      });
+      add(
+        pair.left,
+        `Rendered diversity failed against ${pair.right}: ${pair.reason || "candidate visual grammars are too similar"}. Preserve this route's own Reference DNA and make its rendered mechanics more route-specific.`,
+      );
+      add(
+        pair.right,
+        `Rendered diversity failed against ${pair.left}: ${pair.reason || "candidate visual grammars are too similar"}. Preserve this route's own Reference DNA and make its rendered mechanics more route-specific.`,
+      );
     }
   }
-  if (!targets.length) {
+  if (!findingsByCandidate.size) {
     for (const candidate of report.candidates || [])
-      targets.push({
-        candidateId: candidate.candidateId,
-        finding:
-          report.visualDiversity.summary ||
+      add(
+        candidate.candidateId,
+        report.visualDiversity.summary ||
           "Rendered candidates are not visually distinct enough for production promotion. Preserve this candidate's assigned reference mechanics and move away from generic shared grammar.",
-      });
+      );
   }
-  return targets;
+  return [...findingsByCandidate].map(([candidateId, findings]) => ({
+    candidateId,
+    finding: findings.join("\n"),
+  }));
 }
 
 async function readJson(file) {
