@@ -10,6 +10,7 @@ import {
 } from "./visual-quality-gate-lib.mjs";
 import {
   logOpenRouterCacheUsage,
+  logOpenRouterResponseCacheUsage,
   openRouterChatCompletion,
   openRouterSessionId,
 } from "./openrouter-client.mjs";
@@ -199,6 +200,10 @@ async function requestAudit(manifest) {
             ],
           },
       });
+      const responseCache = logOpenRouterResponseCacheUsage(
+        "visual-quality-gate",
+        response,
+      );
       const payload = await response.json();
       if (!response.ok)
         throw new Error(
@@ -210,6 +215,7 @@ async function requestAudit(manifest) {
         audit,
         usage: payload.usage || null,
         cache,
+        responseCache,
         sessionId,
         provider: payload.provider || null,
         attempt,
@@ -259,6 +265,7 @@ const report = {
   audit: result.audit,
   usage: result.usage,
   cache: result.cache,
+  responseCache: result.responseCache,
   sessionId: result.sessionId,
   provider: result.provider,
   attempt: result.attempt,
