@@ -5,6 +5,7 @@ export type CreativeRuntime = {
   reducedMotion?: boolean;
   asset?: (token: string) => string;
   lead?: { apiUrl?: string; token?: string };
+  reviews?: { apiUrl?: string; token?: string };
 };
 
 export type CreativeContent = {
@@ -39,6 +40,12 @@ export type CreativeContent = {
   businessDescription: string;
   showLocationMap: boolean;
   hasSocialProof: boolean;
+  socialProof: {
+    source: string;
+    heading: string;
+    intro: string;
+    points: readonly string[];
+  } | null;
 };
 
 export function useReducedMotion(runtime?: CreativeRuntime) {
@@ -218,6 +225,101 @@ export function LocationMap({ content }: { content: CreativeContent }) {
   );
 }
 
+export function SocialProof({
+  content,
+  runtime,
+}: {
+  content: CreativeContent;
+  runtime?: CreativeRuntime;
+}) {
+  const proof = content.socialProof;
+  const [reviews, setReviews] = useState<
+    Array<{
+      author?: string;
+      authorUrl?: string;
+      mapsUrl?: string;
+      rating?: number;
+      relativeTime?: string;
+      text?: string;
+    }>
+  >([]);
+  useEffect(() => {
+    if (
+      proof?.source !== "google_reviews" ||
+      !runtime?.reviews?.apiUrl ||
+      !runtime.reviews.token
+    ) {
+      setReviews([]);
+      return undefined;
+    }
+    const controller = new AbortController();
+    void fetch(
+      `${runtime.reviews.apiUrl.replace(/\/$/u, "")}/api/google-reviews?token=${encodeURIComponent(runtime.reviews.token)}`,
+      {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      },
+    )
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Reviews are unavailable.");
+        return response.json();
+      })
+      .then((payload) => {
+        setReviews(
+          Array.isArray(payload?.reviews) ? payload.reviews.slice(0, 3) : [],
+        );
+      })
+      .catch((error) => {
+        if (error?.name !== "AbortError") setReviews([]);
+      });
+    return () => controller.abort();
+  }, [proof?.source, runtime?.reviews?.apiUrl, runtime?.reviews?.token]);
+
+  if (!content.hasSocialProof || !proof) return null;
+  return (
+    <section
+      className="launchloom-social-proof"
+      data-runtime="social-proof"
+      data-source={proof.source}
+    >
+      {proof.heading && <h2>{proof.heading}</h2>}
+      {proof.intro && <p>{proof.intro}</p>}
+      {reviews.length > 0 && (
+        <div className="launchloom-google-reviews" aria-live="polite">
+          {reviews.map((review, index) => {
+            const href = review.authorUrl || review.mapsUrl || "";
+            return (
+              <article key={`${review.author || "review"}-${index}`}>
+                {href ? (
+                  <a href={href} target="_blank" rel="noreferrer">
+                    {review.author || "Google Maps reviewer"}
+                  </a>
+                ) : (
+                  <strong>{review.author || "Google Maps reviewer"}</strong>
+                )}
+                <p>
+                  {"★".repeat(
+                    Math.max(0, Math.min(5, Number(review.rating) || 0)),
+                  )}{" "}
+                  {review.relativeTime || ""}
+                </p>
+                {review.text && <p>{review.text}</p>}
+              </article>
+            );
+          })}
+        </div>
+      )}
+      {proof.points.length > 0 && (
+        <div className="launchloom-proof-points">
+          {proof.points.map((point) => (
+            <p key={point}>{point}</p>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function ChatLauncher() {
   return (
     <a className="launchloom-chat-launcher" href="#contact" data-runtime="chat-launcher">
@@ -232,6 +334,7 @@ export default {
   FAQList,
   LeadForm,
   LocationMap,
+  SocialProof,
   resolveAsset,
   useReducedMotion,
 };
