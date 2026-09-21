@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mkdtemp, readFile, stat } from "node:fs/promises";
+import { mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -134,6 +134,35 @@ describe("contextual image generation", () => {
     expect(result.site.images.tertiary).toMatch(/^\/images\/generated\/tertiary-/);
     expect(result.site.assets.photoOne).toBe("/uploads/client-hero.webp");
     expect(result.site.assets.photoTwo).toBe("/uploads/client-secondary.webp");
+  });
+
+  it("preserves an explicit zero request budget", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const previous = process.env.FAL_IMAGE_MAX_REQUESTS;
+    process.env.FAL_IMAGE_MAX_REQUESTS = "0";
+    let requests = 0;
+    try {
+      const result = await generate({
+        site: fixture(),
+        inspiration: { routes: [{ id: "route-zero", signature: "zero-budget" }] },
+        outputDir,
+        key: "test-fal-key",
+        falClient: {
+          config() {},
+          async subscribe() {
+            requests += 1;
+            throw new Error("A zero request budget must not call FAL.");
+          },
+        },
+      });
+      expect(requests).toBe(0);
+      expect(result.requests).toBe(0);
+      expect(result.manifest.placements).toHaveLength(0);
+      expect(result.manifest.skipped).toHaveLength(3);
+    } finally {
+      if (previous === undefined) delete process.env.FAL_IMAGE_MAX_REQUESTS;
+      else process.env.FAL_IMAGE_MAX_REQUESTS = previous;
+    }
   });
 
   it("fails soft without a key and retains reviewed fallback assets", async () => {
@@ -344,7 +373,7 @@ describe("contextual image generation", () => {
     expect(seedRequests).toBe(3);
 
     const seededManifest = JSON.parse(
-      await fs.readFile(manifestPath, "utf8"),
+      await readFile(manifestPath, "utf8"),
     );
     seededManifest.routes = [seededManifest.routes[0]];
     seededManifest.placements = [
@@ -353,7 +382,7 @@ describe("contextual image generation", () => {
         routeId: routes[0].id,
       })),
     ];
-    await fs.writeFile(
+    await writeFile(
       manifestPath,
       `${JSON.stringify(seededManifest, null, 2)}\n`,
     );

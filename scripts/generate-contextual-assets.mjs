@@ -10,6 +10,12 @@ export const DEFAULT_MAX_IMAGES = 3;
 export const DEFAULT_MAX_REQUESTS = 6;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
 
+function configuredNumber(value, fallback) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+}
+
 const PLACEMENTS = [
   {
     id: "hero",
@@ -343,7 +349,10 @@ async function generateContextualAssetsForRoute({
   key = process.env.FAL_KEY,
   model = process.env.FAL_IMAGE_MODEL || DEFAULT_FAL_MODEL,
   maxImages = Number(process.env.FAL_IMAGE_MAX_IMAGES) || DEFAULT_MAX_IMAGES,
-  maxRequests = Number(process.env.FAL_IMAGE_MAX_REQUESTS) || DEFAULT_MAX_REQUESTS,
+  maxRequests = configuredNumber(
+    process.env.FAL_IMAGE_MAX_REQUESTS,
+    DEFAULT_MAX_REQUESTS,
+  ),
   timeoutMs = Number(process.env.FAL_IMAGE_TIMEOUT_MS) || 120_000,
   falClient = /** @type {any} */ (defaultFal),
   fetchImpl = fetch,

@@ -228,6 +228,10 @@ function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
   );
 }
 
+/**
+ * @param {{referenceDna: any, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string}, model?: string, fetchImpl?: typeof fetch}} options
+ * @returns {Promise<Record<string, any>>}
+ */
 export async function evaluateRenderedReferenceFidelity({
   referenceDna,
   candidateScreenshots,
@@ -274,6 +278,10 @@ Compare the candidate to the reference as an independent implementation of the s
   };
 }
 
+/**
+ * @param {{candidates?: Array<{candidateId: string, desktop: string, mobile: string}>, model?: string, fetchImpl?: typeof fetch}} options
+ * @returns {Promise<{version: number, model: string, pass: boolean, score: number, minimumPairDistance?: number, audit: any, [key: string]: any}>}
+ */
 export async function evaluateRenderedDiversity({
   candidates,
   model = RENDERED_REFERENCE_MODEL,

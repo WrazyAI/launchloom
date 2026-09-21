@@ -39,7 +39,7 @@ async function makeFixture() {
     path.join(root, "candidate-a/Experience.jsx"),
     `import { LeadForm } from "@launchloom/runtime";
 export default function Experience({ content, runtime }) {
-  return <main><nav><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav><section data-hero><h1>{content.hero.heading}</h1><button data-early-conversion>{content.hero.primaryLabel}</button></section>
+  return <main><nav><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav><section data-hero><img src={content.hero.image} alt={content.hero.heading} style={{ display: "none" }} /><h1>{content.hero.heading}</h1><button data-early-conversion>{content.hero.primaryLabel}</button></section>
     <section id="services">{content.services.map((service) => <p key={service.name}>{service.name}</p>)}</section>
     <section id="faqs">{content.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary></details>)}</section>
     <section id="contact"><LeadForm content={content} runtime={runtime} /></section></main>;
@@ -122,10 +122,16 @@ describe("creative candidate promotion", () => {
     );
     firstMetadata.version = 2;
     firstMetadata.referenceDna = baseDna;
+    firstMetadata.referenceEvidence = {
+      desktop: baseDna.evidence.desktopScreenshot.path,
+      mobile: baseDna.evidence.mobileScreenshot?.path || "",
+      complete: true,
+    };
     firstMetadata.creativeManifest = {
       ...firstMetadata.creativeManifest,
       version: 2,
       referenceDna: baseDna,
+      referenceEvidence: firstMetadata.referenceEvidence,
     };
     await fs.writeFile(firstMetadataPath, JSON.stringify(firstMetadata));
 
@@ -268,10 +274,16 @@ describe("creative candidate promotion", () => {
     const baseDna = buildReferenceDna(record, { requireEvidence: true });
     metadata.version = 2;
     metadata.referenceDna = baseDna;
+    metadata.referenceEvidence = {
+      desktop: baseDna.evidence.desktopScreenshot.path,
+      mobile: baseDna.evidence.mobileScreenshot?.path || "",
+      complete: true,
+    };
     metadata.creativeManifest = {
       ...metadata.creativeManifest,
       version: 2,
       referenceDna: baseDna,
+      referenceEvidence: metadata.referenceEvidence,
     };
     await fs.writeFile(metadataPath, JSON.stringify(metadata));
     const experiencePath = path.join(root, "candidate-a/Experience.jsx");
@@ -281,7 +293,7 @@ describe("creative candidate promotion", () => {
       experience
         .replace("<main>", '<main data-mobile-recomposition="wrong-layout" data-motion-primitive="wrong-motion">')
         .replace("<nav>", '<nav data-navigation-geometry="wrong-navigation">')
-        .replace("<section data-hero>", '<section data-hero data-hero-geometry="wrong-hero"><img src={content.hero.image} alt={content.hero.heading} />')
+        .replace("<section data-hero>", '<section data-hero data-hero-geometry="wrong-hero"><img src={content.hero.image} alt={content.hero.heading} style={{ display: "none" }} />')
         .replace('<section id="services">', '<section id="services" data-service-presentation="wrong-services">')
         .replace("<button data-early-conversion>", '<button data-early-conversion data-cta-placement="wrong-cta">'),
     );

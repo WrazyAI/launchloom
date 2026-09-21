@@ -414,6 +414,8 @@ export function blockingFindings(audit, { includeMajor = false } = {}) {
  * finds a critical, repairable defect. The authored repair loop consumes the
  * report and the verify pass remains fail-closed. Legacy pages retain the
  * original immediate-failure behavior.
+ *
+ * @param {{rendererType?: string, appliedOperations?: any[], blockers?: any[], verdict?: string}} options
  */
 export function shouldFailVisualPlan({
   rendererType,

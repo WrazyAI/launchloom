@@ -216,6 +216,8 @@ function hasProhibitedPattern(source, pattern) {
  * Checks the authored source before it reaches the Astro shell. This is
  * intentionally evidence-oriented: a model claim in contract.json cannot
  * satisfy a missing signature or mobile recomposition.
+ *
+ * @param {{referenceDna: any, experienceSource?: string, stylesSource?: string, motionSource?: string, renderedDom?: string}} options
  */
 export function validateReferenceContractCompliance({
   referenceDna,

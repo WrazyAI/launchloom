@@ -160,7 +160,7 @@ function hardFailures(evidence, viewport) {
 }
 
 /**
- * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean}} options
+ * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function runCreativeBakeoff({
