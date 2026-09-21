@@ -213,6 +213,43 @@ describe("creative candidate promotion", () => {
       );
       expect(report.selectedCandidateId).not.toBeNull();
       expect(report.promotionReady).toBe(true);
+
+      const blocked = await runCreativeBakeoff({
+        siteDir: siteRoot,
+        candidatesDir: root,
+        reportPath: path.join(root, "v2-diversity-blocked-report.json"),
+        screenshotsDir: path.join(root, "v2-diversity-blocked-screenshots"),
+        promote: true,
+        requireDiversity: false,
+        renderedReferenceEvaluator,
+        renderedDiversityEvaluator: async () => ({
+          version: 1,
+          model: "test/model",
+          score: 40,
+          pass: false,
+          minimumPairDistance: 40,
+          audit: {
+            pairs: [
+              {
+                left: "candidate-a",
+                right: "candidate-b",
+                distance: 40,
+                reason: "Rendered compositions are too similar.",
+              },
+            ],
+            genericFallbackDetected: true,
+            summary: "Rendered diversity failed.",
+          },
+        }),
+      });
+      expect(blocked.selectedCandidateId).not.toBeNull();
+      expect(blocked.promotionReady).toBe(false);
+      const blockedConfig = JSON.parse(
+        await fs.readFile(configPath, "utf8"),
+      );
+      expect(blockedConfig.design?.experience?.renderer).not.toBe(
+        "creative-candidate",
+      );
     } finally {
       await fs.writeFile(configPath, originalConfig);
       await fs.rm(selectedPath, { recursive: true, force: true });
@@ -284,6 +321,13 @@ describe("creative candidate promotion", () => {
       });
       expect(report.candidates[0].valid).toBe(true);
       expect(report.candidates[0].referenceFidelity.sourceVisualFindings.length).toBeGreaterThan(0);
+      expect(
+        new Set(
+          report.candidates[0].referenceFidelity.renderedVisualFindings.map(
+            (item: any) => item.viewport,
+          ),
+        ),
+      ).toEqual(new Set(["desktop", "compact", "mobile"]));
       expect(report.candidates[0].eligible).toBe(true);
       expect(report.selectedCandidateId).toBe("candidate-a");
       expect(report.fallback).toBe(false);
