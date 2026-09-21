@@ -165,6 +165,33 @@ describe("contextual image generation", () => {
     }
   });
 
+  it("falls back to the default request budget for invalid multi-route input", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-invalid-${number}`,
+      signature: `invalid-budget-${number}`,
+    }));
+    let requests = 0;
+    const result = await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      maxRequests: "invalid",
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe() {
+          requests += 1;
+          return { data: { images: [{ url: `https://fal.example/invalid-${requests}.jpg` }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+    expect(requests).toBe(3);
+    expect(result.requests).toBe(3);
+    expect(result.manifest.placements).toHaveLength(3);
+  });
+
   it("fails soft without a key and retains reviewed fallback assets", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const site = fixture();

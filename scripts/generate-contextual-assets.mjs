@@ -13,7 +13,7 @@ export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
 function configuredNumber(value, fallback) {
   if (value === undefined || value === null || value === "") return fallback;
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 const PLACEMENTS = [
@@ -527,10 +527,9 @@ export async function generateContextualAssets(options = {}) {
   if (routes.length <= 1)
     return generateContextualAssetsForRoute(options);
 
-  const requestBudget = Number(
-    options.maxRequests ??
-      process.env.FAL_IMAGE_MAX_REQUESTS ??
-      DEFAULT_MAX_REQUESTS,
+  const requestBudget = configuredNumber(
+    options.maxRequests ?? process.env.FAL_IMAGE_MAX_REQUESTS,
+    DEFAULT_MAX_REQUESTS,
   );
   const imageBudget = Math.min(
     DEFAULT_MAX_IMAGES,
