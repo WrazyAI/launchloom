@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import {
   logOpenRouterCacheUsage,
+  logOpenRouterResponseCacheUsage,
   openRouterChatCompletion,
   openRouterSessionId,
 } from "./openrouter-client.mjs";
@@ -231,6 +232,10 @@ async function audit(model, fixture, captures) {
           ],
         },
     });
+    const responseCache = logOpenRouterResponseCacheUsage(
+      "visual-model-eval",
+      response,
+    );
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(
@@ -256,6 +261,7 @@ async function audit(model, fixture, captures) {
       durationMs: Date.now() - startedAt,
       usage: body.usage || null,
       cache,
+      responseCache,
       sessionId,
       audit: parseJson(content),
     };
