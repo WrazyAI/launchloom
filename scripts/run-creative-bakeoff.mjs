@@ -394,9 +394,6 @@ export async function runCreativeBakeoff({
       candidate.technicalScore >= 100 &&
       (candidate.manifest.version < 2 || candidate.distinctivenessScore >= CREATIVE_PROMOTION_THRESHOLDS.distinctivenessScore),
   );
-  const valid = preview ? previewEligible : results.filter((candidate) => candidate.eligible);
-  const winner = valid
-    .sort((left, right) => right.score - left.score || left.candidateId.localeCompare(right.candidateId))[0] || null;
   const pixelCandidates = results.filter(
     (candidate) => candidate.manifest?.version >= 2 && candidate.viewports.length,
   );
@@ -449,6 +446,19 @@ export async function runCreativeBakeoff({
       source: "legacy-structural-fallback",
     };
   }
+  const diversityPass = diversity.pass && visualDiversity.pass;
+  const valid = diversityPass
+    ? preview
+      ? previewEligible
+      : results.filter((candidate) => candidate.eligible)
+    : [];
+  const winner =
+    valid.sort(
+      (left, right) =>
+        right.score - left.score ||
+        left.candidateId.localeCompare(right.candidateId),
+    )[0] || null;
+
   const report = {
     version: 1,
     mode: promote ? "promote" : preview ? "preview" : "review",
@@ -458,19 +468,17 @@ export async function runCreativeBakeoff({
     visualDiversity,
     candidates: results,
     selectedCandidateId:
-      (preview && winner) || (promote && winner && diversity.pass && visualDiversity.pass)
-        ? winner.candidateId
-        : null,
+      winner && diversityPass ? winner.candidateId : null,
     // In preview mode fallback means that no authored candidate was renderable.
     // A diversity miss is recorded separately and cannot send the page back to
     // the legacy renderer.
-    fallback: !winner || (!preview && (!diversity.pass || !visualDiversity.pass)),
-    promotionReady: Boolean(winner && diversity.pass && visualDiversity.pass && winner.eligible),
+    fallback: !winner || !diversityPass,
+    promotionReady: Boolean(winner && diversityPass && winner.eligible),
   };
   await fs.mkdir(path.dirname(reportFile), { recursive: true });
   await fs.writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`);
 
-  if ((promote || preview) && winner && (preview || (diversity.pass && visualDiversity.pass))) {
+  if ((promote || preview) && winner && diversityPass) {
     await promoteCreativeCandidate({
       siteDir: root,
       candidateDir: path.relative(root, path.join(candidateRoot, winner.directory)),
