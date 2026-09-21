@@ -59,6 +59,7 @@ const auditSchema = {
 };
 
 export const HUMAN_REVISION_IMAGE_MAX_BYTES = 300_000;
+export const HUMAN_REVISION_TOTAL_IMAGE_MAX_BYTES = 900_000;
 export const HUMAN_REVISION_IMAGE_MAX_EDGE = 1280;
 
 const HUMAN_REVISION_IMAGE_PROFILES = [
@@ -186,6 +187,17 @@ Decide whether the rendered revision actually satisfies the triggering review re
     { type: "text", text: "Mobile screenshot:" },
     await imagePart(path.join(screenshotsDir, "mobile.png")),
   ];
+
+  const imagePayloadBytes = userContent.reduce((total, part) => {
+    const url = part?.image_url?.url;
+    if (!url) return total;
+    const encoded = String(url).split(",", 2)[1] || "";
+    return total + Buffer.byteLength(encoded, "base64");
+  }, 0);
+  if (imagePayloadBytes > HUMAN_REVISION_TOTAL_IMAGE_MAX_BYTES)
+    throw new Error(
+      `Human revision screenshot prompt exceeds ${HUMAN_REVISION_TOTAL_IMAGE_MAX_BYTES} bytes after normalization (${imagePayloadBytes} bytes).`,
+    );
 
   let lastError;
   let payload;
