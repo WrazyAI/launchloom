@@ -1,5 +1,10 @@
 import { parseModelJson } from "./model-json.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
+import {
+  logOpenRouterCacheUsage,
+  openRouterChatCompletion,
+  openRouterSessionId,
+} from "./openrouter-client.mjs";
 
 const COPY_FIELDS = new Set([
   "heroKicker",
@@ -616,17 +621,19 @@ export async function modelOperations(
 ) {
   if (!process.env.OPENROUTER_API_KEY) return [];
   const items = Array.isArray(feedbackItems) ? feedbackItems : [feedbackItems];
+  const sessionId = openRouterSessionId("revision-operations", model, {
+    businessName: config.business?.name || "",
+    email: config.business?.email || "",
+    phone: config.business?.phone || "",
+    domain: config.business?.domain || "",
+  });
   for (const reasoningEffort of ["low", "high"]) {
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "X-OpenRouter-Title": "LaunchLoom revision operations",
-        },
-        body: JSON.stringify({
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom revision operations",
+      sessionId,
+      responseCache: true,
+      responseCacheTtlSeconds: 900,
+      body: {
           model,
           reasoning_effort: reasoningEffort,
           temperature: 0.1,
@@ -641,12 +648,13 @@ export async function modelOperations(
               content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
             },
           ],
-        }),
-      },
-    );
+        },
+    });
     if (!response.ok) continue;
     try {
-      const content = (await response.json()).choices?.[0]?.message?.content;
+      const payload = await response.json();
+      logOpenRouterCacheUsage("revision-operations", payload.usage);
+      const content = payload.choices?.[0]?.message?.content;
       const parsed = parseModelJson(content);
       const operations = (
         Array.isArray(parsed.plans) ? parsed.plans : []
