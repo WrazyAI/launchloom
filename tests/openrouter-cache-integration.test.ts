@@ -106,6 +106,9 @@ describe("OpenRouter cache integration", () => {
     expect(source).toContain('openRouterSessionId(\n    "reference-dna"');
     expect(source).toContain("responseCacheTtlSeconds: 86_400");
     expect(source).not.toContain("pack.selectionKey ||");
+    expect(source).not.toMatch(
+      /openRouterSessionId\([\s\S]{0,300}\brouteId\s*:/u,
+    );
     expect(source).not.toMatch(/sessionId[\s\S]{0,300}\bdesktop,\s*\n\s*mobile,/u);
   });
 
