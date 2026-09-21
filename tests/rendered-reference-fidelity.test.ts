@@ -318,6 +318,44 @@ describe("rendered reference fidelity", () => {
     expect(result.score).toBe(89);
   });
 
+  it("keeps volatile analysis timestamps out of reusable reference cache prefixes", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const requests: any[] = [];
+    const reference = {
+      ...dna(files),
+      analyzedAt: "2026-09-21T20:00:00.000Z",
+      generatedAt: "2026-09-21T20:01:00.000Z",
+      updatedAt: "2026-09-21T20:02:00.000Z",
+    };
+    const result = await evaluateRenderedReferenceFidelity({
+      referenceDna: reference,
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      fetchImpl: async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return response({
+          verdict: "pass",
+          overallScore: 89,
+          scores: passingScores,
+          findings: [],
+          summary: "The candidate preserves the reference mechanics.",
+        });
+      },
+    });
+
+    expect(result.pass).toBe(true);
+    expect(requests).toHaveLength(1);
+    const serialized = JSON.stringify(requests[0]);
+    expect(serialized).not.toContain("analyzedAt");
+    expect(serialized).not.toContain("generatedAt");
+    expect(serialized).not.toContain("updatedAt");
+    expect(requests[0].prompt_cache_key).toMatch(/^ll:rendered-reference:/u);
+  });
+
   it("blocks a generic candidate even when it is technically clean", async () => {
     process.env.OPENROUTER_API_KEY = "test";
     const files = await evidence();
