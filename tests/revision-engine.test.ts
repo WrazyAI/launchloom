@@ -550,6 +550,31 @@ describe("revision operations", () => {
     expect(planned.operations).toEqual([]);
   });
 
+  it("routes explicit creative feature changes to authored source refinement", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+      },
+    };
+    const planned = await planRevision(
+      ["Replace the hero image treatment and add a project carousel."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "creative",
+      intents: ["layout"],
+      deferred: ["layout"],
+      unresolved: [],
+    });
+  });
+
   it("keeps copy-only creative feedback on the structured content lane", async () => {
     const draft = {
       ...config(),
