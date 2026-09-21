@@ -57,15 +57,13 @@ jobs:
             PR=$(printf '%s' "$OPEN" | jq -r .number)
             BRANCH=$(printf '%s' "$OPEN" | jq -r .headRefName)
           else
-            BRANCH=review/client-revision
+            SAFE_REQUEST=$(printf '%s' "$REVISION_REQUEST_ID" | tr -cd '[:alnum:]_-' | cut -c1-24)
+            test -n "$SAFE_REQUEST" || SAFE_REQUEST="${GITHUB_RUN_ID}"
+            BRANCH="review/client-revision-$SAFE_REQUEST"
             gh label create launchloom-client-revision --repo "$CLIENT_REPO" --color 1D76DB --description "LaunchLoom client revision awaiting developer approval" --force
             git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
             cd "$RUNNER_TEMP/client"
-            if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
-              git switch --track "origin/$BRANCH"
-            else
-              git switch -c "$BRANCH" origin/main
-            fi
+            git switch -c "$BRANCH" origin/main
             git config user.name "LaunchLoom"
             git config user.email "automation@launchloom.app"
             # GitHub requires a real comparison before a PR can be opened.
