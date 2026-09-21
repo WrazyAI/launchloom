@@ -498,6 +498,46 @@ describe("revision operations", () => {
     });
   });
 
+  it("defers visual feedback on a creative candidate to authored source repair", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+      },
+    };
+    const planned = await planRevision(
+      ["Make the hero feel more cinematic, premium, and asymmetrical."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "creative",
+      intents: ["layout"],
+      deferred: ["layout"],
+      unresolved: [],
+    });
+    expect(planned.operations).toEqual([]);
+  });
+
+  it("does not pretend the same unsupported visual request is fulfilled on a legacy renderer", async () => {
+    const planned = await planRevision(
+      ["Make the hero feel more cinematic, premium, and asymmetrical."],
+      config(),
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(false);
+    expect(planned.results[0]).toMatchObject({
+      status: "manual",
+      unresolved: ["unknown"],
+    });
+  });
+
   it("reports partial mixed feedback instead of claiming the batch was addressed", async () => {
     const planned = await planRevision(
       ["Change the colors and rewrite the hero heading."],
