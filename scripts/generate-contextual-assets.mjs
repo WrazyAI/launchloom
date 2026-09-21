@@ -7,7 +7,7 @@ import { buildRouteContract } from "./creative-compiler.mjs";
 
 export const DEFAULT_FAL_MODEL = "fal-ai/minimax/image-01";
 export const DEFAULT_MAX_IMAGES = 3;
-export const DEFAULT_MAX_REQUESTS = 4;
+export const DEFAULT_MAX_REQUESTS = 12;
 export const DEFAULT_MAX_PROMPT_LENGTH = 1500;
 
 const PLACEMENTS = [
@@ -283,7 +283,7 @@ function setImage(site, placement, value) {
   site.images = { ...(site.images || {}), [placement.id]: value };
 }
 
-export async function generateContextualAssets({
+async function generateContextualAssetsForRoute({
   site,
   inspiration,
   outputDir,
@@ -433,6 +433,131 @@ export async function generateContextualAssets({
     await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   }
   return { site, manifest, requests };
+}
+
+export async function generateContextualAssets(options = {}) {
+  const site = options.site;
+  if (!site || typeof site !== "object")
+    throw new Error("A site config is required.");
+  const routes = Array.isArray(options.inspiration?.routes)
+    ? options.inspiration.routes
+    : [];
+  if (routes.length <= 1)
+    return generateContextualAssetsForRoute(options);
+
+  const requestBudget = Number(
+    options.maxRequests ??
+      process.env.FAL_IMAGE_MAX_REQUESTS ??
+      DEFAULT_MAX_REQUESTS,
+  );
+  let remainingRequests = Math.max(0, requestBudget);
+  let totalRequests = 0;
+  const routeManifests = [];
+  const creativeAssets = {};
+  let firstRouteSite;
+
+  for (const route of routes) {
+    const routeSite = structuredClone(site);
+    const result = await generateContextualAssetsForRoute({
+      ...options,
+      site: routeSite,
+      inspiration: { ...(options.inspiration || {}), routes: [route] },
+      manifestPath: undefined,
+      maxRequests: remainingRequests,
+    });
+    totalRequests += result.requests;
+    remainingRequests = Math.max(0, remainingRequests - result.requests);
+    routeManifests.push(result.manifest);
+    if (!firstRouteSite) firstRouteSite = result.site;
+    creativeAssets[route.id] = {
+      hero:
+        site.assets?.photoOne ||
+        result.site.images?.hero ||
+        site.images?.hero ||
+        "",
+      secondary:
+        site.assets?.photoTwo ||
+        result.site.images?.secondary ||
+        site.images?.secondary ||
+        "",
+      tertiary:
+        site.assets?.photoThree ||
+        result.site.images?.tertiary ||
+        site.images?.tertiary ||
+        "",
+      familyId: result.manifest.familyId,
+      routeFingerprint: result.manifest.routeFingerprint,
+    };
+  }
+
+  if (firstRouteSite?.images)
+    site.images = { ...(site.images || {}), ...firstRouteSite.images };
+  site.creativeAssets = creativeAssets;
+
+  const existingUsed = Array.isArray(site.assetReport?.used)
+    ? site.assetReport.used.filter((entry) => entry.source !== "fal-generated")
+    : [];
+  const existingSkipped = Array.isArray(site.assetReport?.skipped)
+    ? [...site.assetReport.skipped]
+    : [];
+  site.assetReport = { used: existingUsed, skipped: existingSkipped };
+
+  const placements = [];
+  const skipped = [];
+  for (const manifest of routeManifests) {
+    for (const entry of manifest.placements || []) {
+      placements.push({ ...entry, routeId: manifest.routeId });
+      site.assetReport.used.push({
+        asset: entry.path,
+        placement: entry.placement,
+        routeId: manifest.routeId,
+        familyId: manifest.familyId,
+        source: "fal-generated",
+        provider: "fal.ai",
+        model: manifest.model,
+        license: "fal.ai provider terms; verify current terms before production",
+        subject: entry.alt,
+        promptHash: entry.promptHash,
+        requestId: entry.requestId,
+        sha256: entry.sha256,
+        generatedAt: manifest.generatedAt,
+        width: entry.width,
+        height: entry.height,
+      });
+    }
+    for (const entry of manifest.skipped || []) {
+      skipped.push({ ...entry, routeId: manifest.routeId });
+      site.assetReport.skipped.push({
+        asset: entry.placement,
+        routeId: manifest.routeId,
+        reason: entry.fallback
+          ? `${entry.reason}; fallback selected`
+          : entry.reason,
+      });
+    }
+  }
+
+  const manifest = {
+    version: 3,
+    provider: "fal.ai",
+    model:
+      options.model ||
+      process.env.FAL_IMAGE_MODEL ||
+      DEFAULT_FAL_MODEL,
+    strategy: "client-first-per-route-reference-directed",
+    generatedAt: new Date().toISOString(),
+    routes: routeManifests,
+    placements,
+    skipped,
+  };
+  if (options.manifestPath) {
+    await fs.mkdir(path.dirname(options.manifestPath), { recursive: true });
+    await fs.writeFile(
+      options.manifestPath,
+      `${JSON.stringify(manifest, null, 2)}\n`,
+    );
+  }
+  return { site, manifest, requests: totalRequests };
 }
 
 async function main() {
