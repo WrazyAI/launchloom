@@ -1,5 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import {
+  logOpenRouterCacheUsage,
+  openRouterChatCompletion,
+  openRouterSessionId,
+} from "./openrouter-client.mjs";
 
 const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-5.6-luna";
 
@@ -203,7 +208,7 @@ function parseChoice(payload) {
   }
 }
 
-async function analyzeRoute(route, fetchImpl = fetch) {
+async function analyzeRoute(route, fetchImpl = fetch, sessionId) {
   const dna = route.referenceDna || {};
   const desktop = dna.evidence?.desktopScreenshot?.path;
   const mobile = dna.evidence?.mobileScreenshot?.available ? dna.evidence.mobileScreenshot.path : "";
@@ -242,15 +247,14 @@ Rules:
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 180_000);
   try {
-    const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom Reference DNA Analyzer",
       signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "X-OpenRouter-Title": "LaunchLoom Reference DNA Analyzer"
-      },
-      body: JSON.stringify({
+      sessionId,
+      responseCache: true,
+      responseCacheTtlSeconds: 3600,
+      fetchImpl,
+      body: {
         model,
         temperature: 0,
         reasoning: { effort: "medium", exclude: true },
@@ -263,7 +267,7 @@ Rules:
           },
           { role: "user", content }
         ]
-      })
+      },
     });
     const payload = await response.json().catch((error) => {
       if (response.ok || !(error instanceof SyntaxError)) throw error;
@@ -271,6 +275,7 @@ Rules:
     });
     if (!response.ok)
       throw new Error(`Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`);
+    logOpenRouterCacheUsage("reference-dna", payload.usage);
     return parseChoice(payload);
   } finally {
     clearTimeout(timeout);
@@ -283,8 +288,14 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
   if (!Array.isArray(pack?.routes) || !pack.routes.length)
     throw new Error("Reference DNA analysis requires inspiration routes.");
   const routes = [];
+  const sessionId = openRouterSessionId(
+    "reference-dna",
+    model,
+    pack.selectionKey ||
+      pack.routes.map((route) => route.id || route.referenceName || route.label),
+  );
   for (const route of pack.routes) {
-    const analyzed = await analyzeRoute(route, fetchImpl);
+    const analyzed = await analyzeRoute(route, fetchImpl, sessionId);
     routes.push({
       ...route,
       referenceDna: {
