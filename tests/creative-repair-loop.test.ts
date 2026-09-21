@@ -61,7 +61,7 @@ describe("creative repair loop", () => {
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
     const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
-    const fetchMock = vi.fn(async (_url: string, options: RequestInit) =>
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
       new Response(
         JSON.stringify({
           choices: [{ message: { content: JSON.stringify(repaired) } }],
