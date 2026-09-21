@@ -7,6 +7,7 @@ import {
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCachedText,
+  promptCachedMessageContent,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 
@@ -465,7 +466,7 @@ function createOpenRouterResearchModel(apiKey, model = DEFAULT_MODEL) {
         messages: [
           {
             role: "system",
-            content: [promptCachedText(model, systemPrompt)],
+            content: promptCachedMessageContent(model, systemPrompt),
           },
           { role: "user", content: JSON.stringify(payload) },
         ],
