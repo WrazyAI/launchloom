@@ -182,9 +182,13 @@ describe("human revision rendered gate", () => {
     for (const image of images) {
       expect(image.image_url.url).toMatch(/^data:image\/webp;base64,/u);
       const encoded = image.image_url.url.split(",", 2)[1];
-      expect(Buffer.from(encoded, "base64").byteLength).toBeLessThanOrEqual(
+      const normalized = Buffer.from(encoded, "base64");
+      expect(normalized.byteLength).toBeLessThanOrEqual(
         HUMAN_REVISION_IMAGE_MAX_BYTES,
       );
+      const metadata = await sharp(normalized).metadata();
+      expect(metadata.width || 0).toBeLessThanOrEqual(1280);
+      expect(metadata.height || 0).toBeLessThanOrEqual(1280);
     }
   });
 
