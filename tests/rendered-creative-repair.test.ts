@@ -270,7 +270,7 @@ describe("rendered creative repair orchestration", () => {
       'PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build',
     );
     const hostGuardIndex = workflow.indexOf('data-creative-host="true"');
-    const candidateGuardIndex = workflow.indexOf('data-creative-candidate="$CANDIDATE_ID"');
+    const candidateGuardIndex = workflow.indexOf('data-creative-candidate=\\\"$CANDIDATE_ID\\\"');
     expect(buildIndex).toBeGreaterThan(-1);
     expect(hostGuardIndex).toBeGreaterThan(buildIndex);
     expect(candidateGuardIndex).toBeGreaterThan(buildIndex);
