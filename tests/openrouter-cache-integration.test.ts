@@ -98,6 +98,17 @@ describe("OpenRouter cache integration", () => {
     );
   });
 
+  it("keeps static Reference DNA analysis reusable across runs for 24 hours", () => {
+    const source = fs.readFileSync(
+      "scripts/analyze-reference-dna.mjs",
+      "utf8",
+    );
+    expect(source).toContain('openRouterSessionId(\n    "reference-dna"');
+    expect(source).toContain("responseCacheTtlSeconds: 86_400");
+    expect(source).not.toContain("pack.selectionKey ||");
+    expect(source).not.toMatch(/sessionId[\s\S]{0,300}\bdesktop,\s*\n\s*mobile,/u);
+  });
+
   it("limits exact response caching to deterministic control and judge lanes", () => {
     const expectedResponseCached = [
       "scripts/analyze-reference-dna.mjs",
