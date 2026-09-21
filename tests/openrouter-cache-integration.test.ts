@@ -61,6 +61,25 @@ describe("OpenRouter cache integration", () => {
     }
   });
 
+  it("keeps one stable structured-output schema across Luna author stages", () => {
+    const source = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    expect(source).toContain('name: "launchloom_production_author_stage"');
+    expect(source).toContain("json_schema: authorStageSchema");
+    expect(source).not.toContain("schemas[request.stage]");
+    expect(source).toContain(
+      'required: ["stage", "designContract", "designRationale", "content"]',
+    );
+    expect(source).toContain(
+      "For contract: fill designContract and designRationale; return content as an empty string.",
+    );
+    expect(source).toContain(
+      "For experience, styles, or motion: fill content; return designContract and designRationale as empty strings.",
+    );
+  });
+
   it("limits exact response caching to deterministic control and judge lanes", () => {
     const expectedResponseCached = [
       "scripts/analyze-reference-dna.mjs",
