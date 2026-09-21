@@ -159,7 +159,7 @@ const schema = {
           contentColumnWidthRatio: { type: "number", minimum: 0, maximum: 1 },
           navTopRatio: { type: "number", minimum: 0, maximum: 1 },
           navSideInsetRatio: { type: "number", minimum: 0, maximum: 0.5 },
-          ctaTopRatio: { type: "number", minimum: 0, maximum: 1 },
+          ctaTopRatio: { type: "number", minimum: 0, maximum: 4 },
           dominantSectionHeightRatios: { type: "array", minItems: 3, maxItems: 12, items: { type: "number", minimum: 0.1, maximum: 4 } },
           imageAspectRatios: { type: "array", minItems: 1, maxItems: 8, items: { type: "number", minimum: 0.2, maximum: 5 } },
           overlapRelationships: { type: "array", maxItems: 8, items: { type: "string" } },
@@ -171,7 +171,7 @@ const schema = {
             properties: {
               headlineWidthRatio: { type: "number", minimum: 0, maximum: 1 },
               imageOccupancyRatio: { type: "number", minimum: 0, maximum: 1 },
-              ctaTopRatio: { type: "number", minimum: 0, maximum: 1 },
+              ctaTopRatio: { type: "number", minimum: 0, maximum: 4 },
               contentInsetRatio: { type: "number", minimum: 0, maximum: 0.5 }
             }
           }
