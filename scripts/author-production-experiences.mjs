@@ -9,6 +9,7 @@ import {
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCachedMessageContent,
+  promptCachedText,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 
@@ -112,7 +113,7 @@ STAGE SAFETY
 - For experience, styles, or motion: fill content; return designContract and designRationale as empty strings.`;
 }
 
-function stagePrompt(request) {
+function routePromptPrefix(request) {
   const route = JSON.stringify(
     {
       id: request.route.id,
@@ -141,14 +142,6 @@ function stagePrompt(request) {
     null,
     2,
   );
-  const shared = `ROUTE
-${route}
-
-SEALED CONTENT SHAPE
-${JSON.stringify(request.contentShape, null, 2)}
-
-${request.validationError && request.stage !== "experience" ? `BOUNDED FORMAT REPAIR\nThe previous ${request.stage} output failed validation: ${request.validationError}\nReturn the complete corrected ${request.stage} output using the required schema. Preserve the assigned route.\n\nPREVIOUS OUTPUT\n${request.previousSource}\n` : ""}`;
-
   const dna = request.route.referenceDna;
   const referenceMarkers = dna
     ? `
@@ -163,38 +156,68 @@ data-motion-primitive="${markerSlug(dna.motion?.primitive)}"
 Do not substitute the primary or secondary CTA placement for the early CTA marker. The early conversion element must use the exact data-cta-placement value above.`
     : "";
 
+  return `ROUTE
+${route}
+
+SEALED CONTENT SHAPE
+${JSON.stringify(request.contentShape, null, 2)}
+${referenceMarkers}`;
+}
+
+function boundedFormatRepair(request) {
+  if (!request.validationError || request.stage === "experience") return "";
+  return `
+BOUNDED FORMAT REPAIR
+The previous ${request.stage} output failed validation: ${request.validationError}
+Return the complete corrected ${request.stage} output using the required schema. Preserve the assigned route.
+
+PREVIOUS OUTPUT
+${request.previousSource}
+`;
+}
+
+function stagePromptSuffix(request) {
+  const repair = boundedFormatRepair(request);
   if (request.stage === "contract")
-    return `${shared}${referenceMarkers}
-
+    return `${repair}
+CONTRACT STAGE
 Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, hero geometry, early conversion, non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
-  if (request.stage === "experience")
-    return `${shared}${referenceMarkers}
 
-DESIGN CONTRACT
+  if (request.stage === "experience")
+    return `DESIGN CONTRACT
 ${request.designContract}
 
-${request.validationError ? `COMPLIANCE REPAIR\nThe previous JSX failed: ${request.validationError}\nRepair that exact violation without reducing the composition or changing the design contract.\n\nPREVIOUS JSX\n${request.previousSource}\n` : ""}
+${request.validationError ? `COMPLIANCE REPAIR
+The previous JSX failed: ${request.validationError}
+Repair that exact violation without reducing the composition or changing the design contract.
+
+PREVIOUS JSX
+${request.previousSource}
+` : ""}
+EXPERIENCE STAGE
 Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". The hero's early conversion is a compact anchor or button linking to #contact, not the full four-field form. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
 
 Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" to each major section so the compiler can verify the assigned rhythm. Do not invent values: use the slugs from Reference DNA.`;
+
   if (request.stage === "styles")
-    return `${shared}${referenceMarkers}
-
+    return `${repair}
 DESIGN CONTRACT
 ${request.designContract}
 
 AUTHORED EXPERIENCE JSX
 ${request.experienceSource}
 
+STYLES STAGE
 Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. Style the exact markup without changing its structure. The header plus hero must have a measured bounding bottom no greater than the viewport height at 1536x864 and 1366x768 at 100 percent zoom. Use a compact hero composition: one headline, short body, one early CTA, and the image treatment. Do not make the hero grow to accommodate a contact form, service list, or long copy. Avoid large fixed padding and min-heights that exceed the viewport; use min-height: 0 where content can wrap. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
-  return `${shared}${referenceMarkers}
 
+  return `${repair}
 DESIGN CONTRACT
 ${request.designContract}
 
 AUTHORED EXPERIENCE JSX
 ${request.experienceSource}
 
+MOTION STAGE
 Return complete motion.js in content. Return JavaScript text only, never JSX, React components, HTML, CSS, markdown fences, or a second experience implementation. Export mountExperienceMotion(runtime), returning a cleanup function. Use native browser APIs or GSAP only when the assigned motion opportunity materially improves the narrative. Read runtime?.reducedMotion or match prefers-reduced-motion and provide a still equivalent. Use at most one pinned or scrubbed sequence. Do not use network access.`;
 }
 
@@ -222,7 +245,9 @@ async function requestStage(request) {
     Math.min(stageLimitMs, remainingMs),
   );
   try {
-    const userContent = [{ type: "text", text: stagePrompt(request) }];
+    const userContent = [
+      { type: "text", text: routePromptPrefix(request) },
+    ];
     const evidencePaths = [
       request.route.referenceDna?.evidence?.desktopScreenshot?.path,
       request.route.referenceDna?.evidence?.mobileScreenshot?.path,
@@ -247,6 +272,13 @@ async function requestStage(request) {
         throw new Error(`Reference evidence could not be loaded for ${request.route.id}: ${screenshotPath}`, { cause: error });
       }
     }
+    userContent.push(
+      promptCachedText(
+        model,
+        "End reusable route and reference context. Stage-specific work follows.",
+      ),
+    );
+    userContent.push({ type: "text", text: stagePromptSuffix(request) });
     const fallbackEfforts = {
       max: ["max", "medium", "low"],
       xhigh: ["xhigh", "high", "medium", "low"],
