@@ -35,7 +35,15 @@ describe("OpenRouter cache-aware client", () => {
     const key = openRouterPromptCacheKey("creative-author", {
       name: "Maison Orphee",
     });
-    expect(key).toMatch(/^ll:creative-author:[a-f0-9]{40}$/u);
+    expect(key).toMatch(/^ll:creative-author:[a-f0-9]+$/u);
+    expect(key.length).toBeLessThanOrEqual(64);
+
+    const longKey = openRouterPromptCacheKey(
+      "creative-repair-reference-with-an-intentionally-long-scope",
+      { name: "Maison Orphee" },
+    );
+    expect(longKey.length).toBe(64);
+    expect(longKey).toMatch(/^ll:[a-z0-9._-]+:[a-f0-9]+$/u);
   });
 
   it("enables explicit prompt caching only for OpenAI GPT-5.6 and newer", () => {
