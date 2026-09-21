@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { CREATIVE_PROMOTION_THRESHOLDS } from "./creative-compiler.mjs";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
 import { requestRepair } from "./creative-repair-loop.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
@@ -87,7 +88,11 @@ function diversityRepairTargets(report) {
     findingsByCandidate.set(candidateId, findings);
   };
   for (const pair of report.visualDiversity.pairs || []) {
-    if (pair.pass === false || Number(pair.distance || 0) < 72) {
+    if (
+      pair.pass === false ||
+      Number(pair.distance || 0) <
+        CREATIVE_PROMOTION_THRESHOLDS.minimumPairwiseVisualDistance
+    ) {
       add(
         pair.left,
         `Rendered diversity failed against ${pair.right}: ${pair.reason || "candidate visual grammars are too similar"}. Preserve this route's own Reference DNA and make its rendered mechanics more route-specific.`,
@@ -198,6 +203,7 @@ export async function runVisualGateProcess({
   siteDir,
   screenshotsDir,
   reportPath,
+  configPath = path.join(siteDir, "src/site.config.json"),
   visualGateScript = path.resolve("scripts/visual-quality-gate.mjs"),
 } = {}) {
   const result = await spawnCapture(
@@ -207,7 +213,7 @@ export async function runVisualGateProcess({
       "--mode",
       "verify",
       "--config",
-      path.join(siteDir, "src/site.config.json"),
+      configPath,
       "--screenshots",
       screenshotsDir,
       "--report",
@@ -265,6 +271,52 @@ function reportCandidate(report, candidateId) {
   );
 }
 
+function resolveCandidateDirectory(candidateRoot, directory) {
+  if (typeof directory !== "string" || !directory.trim())
+    throw new Error("Creative repair report omitted a candidate directory.");
+  if (path.isAbsolute(directory))
+    throw new Error(`Creative repair candidate directory must be relative: ${directory}`);
+  const root = path.resolve(candidateRoot);
+  const resolved = path.resolve(root, directory);
+  const relative = path.relative(root, resolved);
+  if (
+    !relative ||
+    relative === ".." ||
+    relative.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relative)
+  ) {
+    throw new Error(`Creative repair candidate directory escapes the candidates root: ${directory}`);
+  }
+  return resolved;
+}
+
+async function writeVisualGateConfig({
+  siteDir,
+  roundDir,
+  selected,
+  selectionMode,
+}) {
+  const configPath = path.join(siteDir, "src/site.config.json");
+  const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+  const manifest = selected.manifest || {};
+  config.design ||= {};
+  config.design.experience = {
+    ...(config.design.experience || {}),
+    renderer: "creative-candidate",
+    candidateId: selected.candidateId,
+    familyId: selected.familyId || manifest.familyId,
+    referenceFamilyId:
+      manifest.referenceDna?.familyId || selected.familyId || manifest.familyId,
+    referenceDnaVersion: manifest.referenceDna?.version || null,
+    contractHash: manifest.routeFingerprint,
+    fingerprint: manifest.fingerprint,
+    selectionMode,
+  };
+  const stagedPath = path.join(roundDir, "visual-gate-site.config.json");
+  await fs.writeFile(stagedPath, `${JSON.stringify(config, null, 2)}\n`);
+  return stagedPath;
+}
+
 async function persistRepairEvidence({
   outDir,
   round,
@@ -297,6 +349,21 @@ async function persistRepairEvidence({
  * runCreativeBakeoff. The final visual QA gate is also screenshot-driven.
  * No production promotion occurs until both report.promotionReady and the
  * selected candidate's final visual gate pass.
+ *
+ * @param {{
+ *   siteDir?: string,
+ *   candidatesDir?: string,
+ *   outDir?: string,
+ *   mode?: string,
+ *   model?: string,
+ *   maxCycles?: number,
+ *   requireDiversity?: boolean,
+ *   visualGateScript?: string,
+ *   runBakeoffImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
+ *   runVisualGateImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
+ *   repairCandidateImpl?: (options: Record<string, unknown>) => Promise<Record<string, string> | void> | Record<string, string> | void,
+ *   promoteImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
+ * }} options
  */
 export async function runRenderedCreativeRepair({
   siteDir = "templates/client-site",
@@ -323,10 +390,20 @@ export async function runRenderedCreativeRepair({
   await fs.rm(evidenceRoot, { recursive: true, force: true });
   await fs.mkdir(evidenceRoot, { recursive: true });
 
-  async function repair(candidateId, findings, reason, round, screenshotsDir) {
+  async function repair(
+    candidateId,
+    findings,
+    reason,
+    round,
+    screenshotsDir,
+    candidateDirectory,
+  ) {
     const used = cycleUse.get(candidateId) || 0;
     if (used >= cycleLimit) return false;
-    const candidateDir = path.join(candidateRoot, candidateId);
+    const candidateDir = resolveCandidateDirectory(
+      candidateRoot,
+      candidateDirectory,
+    );
     const screenshots = VIEWPORTS.map((viewport) =>
       path.join(screenshotsDir, `${candidateId}-${viewport}.png`),
     );
@@ -376,6 +453,7 @@ export async function runRenderedCreativeRepair({
       screenshotsDir,
       preview: true,
       promote: false,
+      deferPromotion: true,
       requireDiversity,
     });
     const record = {
@@ -398,6 +476,7 @@ export async function runRenderedCreativeRepair({
           "candidate-render-failure",
           round,
           screenshotsDir,
+          candidate.directory,
         );
         if (repaired) {
           repairedAny = true;
@@ -412,6 +491,20 @@ export async function runRenderedCreativeRepair({
     }
 
     const selectedId = report.selectedCandidateId;
+    const selected = reportCandidate(report, selectedId);
+    if (!selected)
+      throw new Error(`Selected candidate ${selectedId} is missing from the bakeoff report.`);
+    const selectedDirectory = resolveCandidateDirectory(
+      candidateRoot,
+      selected.directory,
+    );
+    const gateConfigPath = await writeVisualGateConfig({
+      siteDir: root,
+      roundDir,
+      selected,
+      selectionMode:
+        requestedMode === "promote" ? "creative-bakeoff" : "creative-preview",
+    });
     const gateScreenshots = path.join(roundDir, "selected-gate-screenshots");
     await copySelectedScreenshots({
       screenshotsDir,
@@ -425,6 +518,7 @@ export async function runRenderedCreativeRepair({
       reportPath: gateReportPath,
       candidateId: selectedId,
       round,
+      configPath: gateConfigPath,
       ...(visualGateScript ? { visualGateScript } : {}),
     });
     record.visualGateVerdict = visualGate.audit?.verdict || "error";
@@ -439,6 +533,7 @@ export async function runRenderedCreativeRepair({
         "selected-visual-gate",
         round,
         screenshotsDir,
+        selected.directory,
       );
       if (!repaired)
         throw new Error(
@@ -458,6 +553,7 @@ export async function runRenderedCreativeRepair({
           "rendered-diversity",
           round,
           screenshotsDir,
+          reportCandidate(report, target.candidateId)?.directory,
         );
         if (repaired) {
           repairedAny = true;
@@ -472,15 +568,20 @@ export async function runRenderedCreativeRepair({
     }
 
     if (requestedMode === "promote") {
-      const selected = reportCandidate(report, selectedId);
-      if (!selected)
-        throw new Error(`Selected candidate ${selectedId} is missing from the bakeoff report.`);
       await promoteImpl({
         siteDir: root,
-        candidateDir: path.join(candidateRoot, selected.directory),
+        candidateDir: selectedDirectory,
         visualScore: selected.visualScore,
         distinctivenessScore: selected.distinctivenessScore,
         selectionMode: "creative-bakeoff",
+      });
+    } else {
+      await promoteImpl({
+        siteDir: root,
+        candidateDir: selectedDirectory,
+        visualScore: selected.visualScore,
+        distinctivenessScore: selected.distinctivenessScore,
+        selectionMode: "creative-preview",
       });
     }
 

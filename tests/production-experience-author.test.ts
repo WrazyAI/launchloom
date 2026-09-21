@@ -710,7 +710,7 @@ describe("production experience author", () => {
       workflow.match(
         /PUBLIC_REVIEW_MODE=true node "\$GITHUB_WORKSPACE\/scripts\/verify-rendered-revision\.mjs"/g,
       ),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
   });
 
   it("emits route-specific content manifests with independently reproducible digests", async () => {

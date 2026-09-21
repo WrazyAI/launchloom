@@ -116,15 +116,6 @@ async function canaryConfigFrom(original) {
   return config;
 }
 
-async function copyVisualEvidence(sourceDir, candidateId, targetDir) {
-  await fs.mkdir(targetDir, { recursive: true });
-  for (const name of ["desktop", "compact", "mobile"])
-    await fs.copyFile(
-      path.join(sourceDir, `${candidateId}-${name}.png`),
-      path.join(targetDir, `${name}.png`),
-    );
-}
-
 await fs.rm(out, { recursive: true, force: true });
 await fs.mkdir(out, { recursive: true });
 

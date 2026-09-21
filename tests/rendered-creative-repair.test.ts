@@ -124,6 +124,7 @@ describe("rendered creative repair orchestration", () => {
     let bakeoffCalls = 0;
     let gateCalls = 0;
     const repairs: string[] = [];
+    const promotions: any[] = [];
 
     const result = await runRenderedCreativeRepair({
       siteDir: root,
@@ -140,8 +141,9 @@ describe("rendered creative repair orchestration", () => {
       repairCandidateImpl: async ({ candidateId }: any) => {
         repairs.push(candidateId);
       },
-      promoteImpl: async () => {
-        throw new Error("preview mode must not production-promote");
+      promoteImpl: async (options: any) => {
+        promotions.push(options);
+        return { candidateId: "candidate-a" };
       },
     });
 
@@ -150,6 +152,8 @@ describe("rendered creative repair orchestration", () => {
     expect(gateCalls).toBe(2);
     expect(repairs).toEqual(["candidate-a"]);
     expect(result.repairCycles).toEqual({ "candidate-a": 1 });
+    expect(promotions).toHaveLength(1);
+    expect(promotions[0].selectionMode).toBe("creative-preview");
   });
 
   it("uses rendered diversity findings to repair both v2 candidates before production promotion", async () => {
@@ -336,6 +340,28 @@ describe("rendered creative repair orchestration", () => {
 
     expect(repairCalls).toBe(0);
   });
+
+  it("rejects a bakeoff candidate directory that escapes the candidates root", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(
+            options,
+            report({
+              candidates: [candidate("candidate-a", { directory: "../outside" })],
+            }),
+          ),
+        runVisualGateImpl: async () => visualGate({}, "pass"),
+        promoteImpl: async () => ({ candidateId: "candidate-a" }),
+      }),
+    ).rejects.toThrow(/escapes the candidates root/iu);
+  });
+
   it("routes the generation workflow through the rendered repair orchestrator and checks the freshly built DOM", () => {
     const workflow = readFileSync(
       new URL("../.github/workflows/generate-client.yml", import.meta.url),
