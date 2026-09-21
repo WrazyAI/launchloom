@@ -179,10 +179,6 @@ jobs:
           REVISION_QUEUE_ACTION: complete
           QUEUED_FEEDBACK_PATH: ${{ runner.temp }}/queued-feedback.txt
         run: node scripts/revision-queue-client.mjs
-      - name: Record promoted queued revision
-        if: steps.complete.outputs.promoted == 'true' && hashFiles('${{ runner.temp }}/queued-feedback.txt') != ''
-        run: |
-          printf '%s\n' 'A queued revision request has now started after this delivered review.' >> "$RUNNER_TEMP/revision-outcome.txt"
       - name: Report downstream developer revision failure
         if: always() && steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success' && (steps.deploy.outcome != 'success' || steps.review_delivery.outcome != 'success' || steps.complete.outcome != 'success')
         run: |
