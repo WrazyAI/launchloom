@@ -311,6 +311,85 @@ describe("contextual image generation", () => {
       expect(result.site.creativeAssets[route.id].hero).toBe(site.images.hero);
   });
 
+  it("counts reused route assets against the global three-image cap", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const manifestPath = join(outputDir, "generated-assets.json");
+    const routes = [1, 2, 3].map((number) => ({
+      id: `route-0${number}`,
+      signature: `mixed-reuse-route-${number}`,
+    }));
+
+    let seedRequests = 0;
+    await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe() {
+          seedRequests += 1;
+          return {
+            data: {
+              images: [
+                { url: `https://fal.example/mixed-seed-${seedRequests}.jpg` },
+              ],
+            },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+    expect(seedRequests).toBe(3);
+
+    const seededManifest = JSON.parse(
+      await fs.readFile(manifestPath, "utf8"),
+    );
+    seededManifest.routes = [seededManifest.routes[0]];
+    seededManifest.placements = [
+      ...seededManifest.routes[0].placements.map((entry: any) => ({
+        ...entry,
+        routeId: routes[0].id,
+      })),
+    ];
+    await fs.writeFile(
+      manifestPath,
+      `${JSON.stringify(seededManifest, null, 2)}\n`,
+    );
+
+    let mixedRequests = 0;
+    const mixed = await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe() {
+          mixedRequests += 1;
+          return {
+            data: {
+              images: [
+                { url: `https://fal.example/mixed-new-${mixedRequests}.jpg` },
+              ],
+            },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(mixedRequests).toBe(2);
+    expect(mixed.manifest.placements).toHaveLength(3);
+    expect(
+      mixed.manifest.placements.filter((entry: any) => entry.reused),
+    ).toHaveLength(1);
+    for (const manifest of mixed.manifest.routes)
+      expect(manifest.placements).toHaveLength(1);
+  });
+
   it("reuses route-specific aggregate manifest assets without new requests", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const manifestPath = join(outputDir, "generated-assets.json");
