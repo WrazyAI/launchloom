@@ -50,37 +50,24 @@ const sharedAbortController = new AbortController();
 if (!process.env.OPENROUTER_API_KEY)
   throw new Error("OPENROUTER_API_KEY is required for Phase 2 authorship.");
 
-const schemas = {
-  contract: {
-    name: "launchloom_production_design_contract",
-    strict: true,
-    schema: {
-      type: "object",
-      additionalProperties: false,
-      required: ["designContract", "designRationale"],
-      properties: {
-        designContract: { type: "string", maxLength: 12000 },
-        designRationale: { type: "string", maxLength: 1600 },
+const authorStageSchema = {
+  name: "launchloom_production_author_stage",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["stage", "designContract", "designRationale", "content"],
+    properties: {
+      stage: {
+        type: "string",
+        enum: ["contract", "experience", "styles", "motion"],
       },
+      designContract: { type: "string", maxLength: 12000 },
+      designRationale: { type: "string", maxLength: 1600 },
+      content: { type: "string" },
     },
   },
-  experience: contentSchema("launchloom_production_experience"),
-  styles: contentSchema("launchloom_production_styles"),
-  motion: contentSchema("launchloom_production_motion"),
 };
-
-function contentSchema(name) {
-  return {
-    name,
-    strict: true,
-    schema: {
-      type: "object",
-      additionalProperties: false,
-      required: ["content"],
-      properties: { content: { type: "string" } },
-    },
-  };
-}
 
 function markerSlug(value) {
   return String(value || "")
@@ -119,7 +106,10 @@ STAGE SAFETY
 - Experience JSX owns semantic structure and sealed content bindings; it must use the shared LeadForm and no remote/network primitives.
 - CSS styles the authored markup without changing structure, remote assets, or viewport safety.
 - motion.js exports mountExperienceMotion(runtime), uses reduced-motion fallbacks, and never creates a second experience implementation.
-- Every stage must preserve Reference DNA mechanics and the same route identity.`;
+- Every stage must preserve Reference DNA mechanics and the same route identity.
+- Every response uses the same shared JSON schema. Set stage to the current stage exactly.
+- For contract: fill designContract and designRationale; return content as an empty string.
+- For experience, styles, or motion: fill content; return designContract and designRationale as empty strings.`;
 }
 
 function stagePrompt(request) {
@@ -301,7 +291,7 @@ async function requestStage(request) {
               reasoning: { effort, exclude: true },
               response_format: {
                 type: "json_schema",
-                json_schema: schemas[request.stage],
+                json_schema: authorStageSchema,
               },
               max_tokens:
                 request.stage === "experience" || request.stage === "styles"
