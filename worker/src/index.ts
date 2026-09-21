@@ -304,6 +304,8 @@ async function currentReviewPr(env: Env, claims: ReviewClaims) {
         head: { sha: string };
         state: string;
         draft: boolean;
+        merged: boolean;
+        merge_commit_sha: string | null;
       }>,
   );
 }
@@ -817,10 +819,16 @@ async function approval(request: Request, env: Env) {
         cors(request, claims.allowedOrigins),
       );
     const current = await currentReviewPr(env, claims);
+    const exactReviewedHead = current.head.sha === claims.headSha;
+    const retryingMergedApproval =
+      exactReviewedHead &&
+      current.state === "closed" &&
+      current.merged === true &&
+      Boolean(current.merge_commit_sha);
     if (
-      current.state !== "open" ||
+      !exactReviewedHead ||
       current.draft ||
-      current.head.sha !== claims.headSha
+      (!retryingMergedApproval && current.state !== "open")
     )
       return json(
         { error: "This preview has changed. Ask for a fresh approval link." },
@@ -851,19 +859,39 @@ async function approval(request: Request, env: Env) {
         409,
         cors(request, claims.allowedOrigins),
       );
-    await github(env, `/repos/${claims.repo}/pulls/${claims.pr!}/merge`, {
-      method: "PUT",
-      body: JSON.stringify({
-        sha: claims.headSha!,
-        merge_method: "squash",
-        commit_title: "LaunchLoom approved site",
-      }),
-    });
+    let approvedSha = retryingMergedApproval
+      ? current.merge_commit_sha!
+      : "";
+    if (!approvedSha) {
+      const mergeResponse = await github(
+        env,
+        `/repos/${claims.repo}/pulls/${claims.pr!}/merge`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            sha: claims.headSha!,
+            merge_method: "squash",
+            commit_title: "LaunchLoom approved site",
+          }),
+        },
+      );
+      const mergeResult = (await mergeResponse.json()) as {
+        merged?: boolean;
+        sha?: string;
+        message?: string;
+      };
+      if (!mergeResult.merged || !mergeResult.sha)
+        throw new Error(
+          `GitHub did not return an approved merge commit: ${clean(mergeResult.message, 200) || "unknown merge result"}`,
+        );
+      approvedSha = mergeResult.sha;
+    }
     await dispatch(env, "publish-site", {
       repo: claims.repo,
       siteId: claims.siteId,
       clientEmail: claims.clientEmail,
       feedbackIssue: claims.feedbackIssue,
+      approvedSha,
     });
     return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
   } catch (error) {

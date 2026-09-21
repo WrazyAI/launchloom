@@ -334,7 +334,18 @@ export async function requestRepair({
   findings,
   files,
   screenshots,
+  contentManifest = {},
 }) {
+  const humanReview = (findings || []).some(
+    (finding) =>
+      finding &&
+      typeof finding === "object" &&
+      finding.category === "human-review-feedback",
+  );
+  const repairInstruction = humanReview
+    ? "Refine this authored LaunchLoom candidate in place to satisfy the explicit human review request. The reviewer is authorized to change composition, presentation, hierarchy, imagery treatment, motion, and safe UI features described in that request. Preserve sealed content bindings, accessibility, factual integrity, and the assigned Reference DNA identity outside the requested change. Do not convert it into a legacy renderer."
+    : "Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.";
+
   const desktopReference = referenceDna?.evidence?.desktopScreenshot;
   if (
     desktopReference?.available === false ||
@@ -346,15 +357,28 @@ export async function requestRepair({
   }
 
   const stableReferenceDna = cacheableReferenceDna(referenceDna);
+  const contentTokens = Array.isArray(contentManifest?.tokens)
+    ? contentManifest.tokens.map((item) => item.token).filter(Boolean)
+    : [];
+  const contentShape = contentManifest?.values || {};
   const content = [
     {
       type: "text",
-      text: `Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.
+      text: `ASSIGNED REFERENCE DNA
+${JSON.stringify(stableReferenceDna, null, 2)}
 
-ASSIGNED REFERENCE DNA
-${JSON.stringify(stableReferenceDna, null, 2)}`,
+SEALED CONTENT TOKENS
+${contentTokens.join("\n") || "(not supplied)"}
+
+CURRENT SEALED CONTENT SHAPE
+${JSON.stringify(contentShape, null, 2)}
+
+TRUSTED @launchloom/runtime HELPERS
+LeadForm, FAQList, ContactLinks, LocationMap, ChatLauncher, SocialProof, resolveAsset, useReducedMotion.
+Use these helpers instead of inventing network calls or duplicating platform behavior. SocialProof is the only supported way for candidate code to present signed live Google reviews; it falls back to verified proof points.`,
     },
   ];
+
   const referenceScreenshots = [
     desktopReference,
     referenceDna?.evidence?.mobileScreenshot,
@@ -384,7 +408,9 @@ ${JSON.stringify(stableReferenceDna, null, 2)}`,
   );
   content.push({
     type: "text",
-    text: `FINDINGS
+    text: `${repairInstruction}
+
+FINDINGS
 ${JSON.stringify(findings, null, 2)}
 
 CURRENT EXPERIENCE.JSX
@@ -396,7 +422,7 @@ ${files.styles}
 CURRENT MOTION.JS
 ${files.motion}
 
-Return complete files. Keep the required data-reference-signature, geometry, section, CTA, mobile, and motion markers. Do not add remote URLs, hardcoded business facts, or em dashes.`,
+Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
   });
   for (const screenshot of screenshots.slice(0, 3))
     content.push(await imagePart(screenshot));

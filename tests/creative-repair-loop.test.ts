@@ -55,6 +55,47 @@ describe("creative repair loop", () => {
     ]);
   });
 
+  it("authorizes requested composition changes only for explicit human review findings", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-human-repair-prompt-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
+      new Response(
+        JSON.stringify({
+          choices: [{ message: { content: JSON.stringify(repaired) } }],
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        {
+          category: "human-review-feedback",
+          message: "Move the CTA below the gallery.",
+        },
+      ],
+      files: repaired,
+      screenshots: [],
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content[0].text;
+    expect(prompt).toContain(
+      "The reviewer is authorized to change composition",
+    );
+    expect(prompt).toContain("Move the CTA below the gallery.");
+    expect(prompt).not.toContain(
+      "Preserve its composition and sealed content bindings.",
+    );
+  });
+
   it.each([
     undefined,
     {},

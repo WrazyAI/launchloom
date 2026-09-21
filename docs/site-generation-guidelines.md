@@ -4,15 +4,18 @@ This is the normative creative and conversion standard for LaunchLoom client
 sites. The implementation evidence and reference-site observations live in
 `local-business-design-direction.md`.
 
-Pipeline integration: initial generation and quality refinement apply these
-rules in `scripts/generate-site-config.mjs`. Both developer and client feedback
-use `scripts/revision-engine.mjs`, which receives the current approved recipe
-and business context. `scripts/sync-client-guidelines.mjs` ships this document
-and an agent entry point into newly generated private repositories. Revision
-workflows refresh the document while preserving existing client instructions.
-These Markdown files stay outside deployed public assets. Prompt rules guide
-the model; typed normalization, supported revision operations, and build checks
-remain responsible for enforcement. Visual review is still required.
+Pipeline integration: truth, SEO, business facts, and structured content are
+compiled through `scripts/generate-site-config.mjs`. New creative homepages are
+authored by Luna as isolated JSX/CSS/motion candidates, rendered in the real
+Astro shell, and promoted only after reference-fidelity and visual-quality
+gates pass. Developer and client feedback still uses
+`scripts/revision-engine.mjs` for factual copy, FAQs, services, and typed
+conversion features, while visual/composition feedback on a creative candidate
+is routed back through the selected candidate's Luna source-repair loop.
+`scripts/sync-client-guidelines.mjs` ships this document and an agent entry
+point into newly generated private repositories. Revision workflows refresh the
+document while preserving existing client instructions. These Markdown files
+stay outside deployed public assets. Visual review remains mandatory.
 
 ## Shared standard
 
@@ -141,27 +144,21 @@ location. A map is location context, not evidence of a storefront.
 
 ## Initial generation and revisions
 
-Initial generation selects one recipe and keeps its section order, typography,
-palette, imagery, and conversion path coherent. The model writes within the
-typed site configuration; it does not generate unrestricted application code.
+Initial generation keeps truth/configuration separate from visual authorship.
+GLM owns verified business facts, SEO, FAQs, and visitor-facing copy. Luna
+authors independent creative candidates against one authoritative Reference DNA
+capsule per route. Each candidate renders inside the production Astro shell at
+desktop, compact desktop, and mobile viewports. The rendered-reference judge,
+technical checks, final visual-quality gate, and bounded repair loop decide
+whether a candidate may become the selected `creative-candidate` renderer.
+Failed creative authorship never falls back to stale legacy output.
 
-New initial generations use the experience-pack compiler for structural
-variation. A compiled experience selects an independent navigation grammar,
-hero composition, immediate conversion mechanic, service presentation, section
-rhythm, mobile behavior, and bounded motion profile. The first version-two
-production packs are `cinematic-narrative`, `bold-utility`, and
-`kinetic-poster`. They keep
-separate Astro markup rather than sharing one broad page DOM. Older sites remain
-on their approved design-family renderer until explicitly migrated. Pack
-selection must be compatible with the submitted assets and business journey.
-Never compensate for missing media by inventing proof or importing a reference
-site's assets.
-
-Every new intake compiles all compatible packs for an internal bakeoff. The
-winning candidate and its versioned structural fingerprint are stored with the
-site configuration. The model may author experimental canaries, but unrestricted
-model JSX and CSS never enter a client repository until that visual language
-has been reviewed and promoted as a registered pack.
+The selected candidate's `Experience.jsx`, `styles.css`, and `motion.js`
+are stored in the private client repository together with the candidate
+evidence/Reference DNA needed for later refinement. Older legacy or
+experience-pack sites remain supported for their existing bounded revision
+path, but new creative sites must not be converted back to those renderers just
+to satisfy a revision.
 
 Treat reference prompts as design evidence, not application architecture.
 LaunchLoom keeps Astro, shared SEO rendering, shared forms, provenance, review
@@ -176,10 +173,39 @@ palette must map to a supported operation and a rendered acceptance check. If
 the request cannot be fulfilled safely by the operation set, flag it for manual
 attention instead of pretending it was completed.
 
+For a selected creative candidate, the revision path is hybrid. Structured
+content and shell-level conversion changes remain typed configuration
+operations. Requests that affect composition, hierarchy, palette presentation,
+brand treatment, social-proof presentation, imagery treatment, navigation,
+motion, responsive behavior, or explicit UI features are sent to Luna against
+the currently selected candidate source. The candidate is rerendered through
+the normal reference and visual gates, then a separate human-revision gate
+checks the exact triggering reviewer request against the new screenshots. A
+revision is not complete merely because the page remains attractive; the
+specific request must be visibly satisfied or the bounded repair loop continues.
+
+Human delivery order is invariant:
+
+1. Every initial generated preview goes to the developer first.
+2. Developer feedback may repeat through the revision loop until the developer
+   approves the exact reviewed SHA.
+3. Only developer approval can publish and create the client review link.
+4. Client feedback creates an internal client-revision branch and revised
+   preview, but that preview returns to the developer first.
+5. The client receives the revised production site only after the developer
+   approves that client-requested revision.
+6. Every revision email sent back to the developer includes the feedback text
+   that triggered that refinement loop plus its revision outcome.
+7. While a revision is active or failed and unresolved, approval remains
+   blocked.
+
 Plan every submitted feedback item independently, including mixed batches.
 Deterministic proof, brand, palette, and layout operations do not suppress
 model planning for a copy request in the same item. Record each item as
-fulfilled, partial, or manual. A partial or manual item blocks preview
+fulfilled, creative, partial, or manual. `creative` means the structured
+planner intentionally deferred a visual request to the authored source-repair
+lane; it is accepted only after `creativeSourceRepairVerified.pass` is written
+by the rendered human-feedback gate. A partial or manual item blocks preview
 deployment and the completion email.
 
 Supported structural revisions may enable or disable optional sections,

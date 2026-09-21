@@ -146,6 +146,12 @@ export function renderLifecycleEmail(input) {
     }
   }
 
+  if (audience === "client" && kind === "published" && feedback) {
+    const label = "Your feedback reflected in this revision";
+    rows += textBlock(label, feedback);
+    textSections.push(`${label.toUpperCase()}\n${feedback}`);
+  }
+
   if (audience === "developer" && kind === "initial" && outcome && !feedback) {
     rows += textBlock("SEO research status", outcome);
     textSections.push(`SEO RESEARCH STATUS\n${outcome}`);

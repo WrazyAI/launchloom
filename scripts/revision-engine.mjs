@@ -149,6 +149,8 @@ const contentRequest =
   /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten|simplify|condense).{0,50}\b(faq|question|answer|process|step|hero|opening)\b|\b(faq|question|answer|process|step|hero|opening)\b.{0,50}(?:say|read|explain|mention|shorter|simpler|concise|bloated|too long)\b/i;
 const conversionFeatureRequest =
   /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant|chat)|ai (?:faq )?(?:chat|assistant|chatbot)|chatbot|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
+const creativeVisualRequest =
+  /\b(premium|high[- ]end|polished|cinematic|editorial|distinctive|generic|visual|composition|layout|hierarchy|spacing|whitespace|asymmetr(?:y|ical)|full[- ]bleed|motion|animation|reveal|scroll|mobile|responsive|typography|font|serif|sans|bold|minimal|modern|immersive|prominent|understated|simpler)\b|\b(move|place|reposition|resize|restyle|hide|remove|show|add|replace|change|swap)\b.{0,70}\b(hero|navigation|navbar|nav|cta|button|card|grid|image|imagery|photo|gallery|section|services?|feature|widget|calculator|carousel|tabs?|comparison|timeline|panel)\b|\b(larger|smaller|taller|shorter|wider|narrower)\b.{0,50}\b(hero|cta|button|image|imagery|photo|gallery|section|services?|feature|widget|panel)\b/i;
 
 function clean(value, limit = 360) {
   return String(value || "")
@@ -613,6 +615,11 @@ function intentsFor(feedback, config) {
     intents.push("content");
   if (conversionFeatureRequest.test(feedback))
     intents.push("conversion-feature");
+  if (
+    config.design?.experience?.renderer === "creative-candidate" &&
+    creativeVisualRequest.test(feedback)
+  )
+    intents.push("layout");
   return intents.length ? [...new Set(intents)] : ["unknown"];
 }
 export async function modelOperations(
@@ -1155,19 +1162,32 @@ export async function planRevision(
     const fulfilled = intents.filter((intent) =>
       intentSatisfied(intent, operations),
     );
+    const unresolved = intents.filter(
+      (intent) => !fulfilled.includes(intent),
+    );
+    const creativeDeferred =
+      config.design?.experience?.renderer === "creative-candidate"
+        ? unresolved.filter((intent) => intent === "layout")
+        : [];
+    const hardUnresolved = unresolved.filter(
+      (intent) => !creativeDeferred.includes(intent),
+    );
     const status =
-      fulfilled.length === intents.length
-        ? "fulfilled"
-        : fulfilled.length
-          ? "partial"
-          : "manual";
+      hardUnresolved.length === 0 && creativeDeferred.length
+        ? "creative"
+        : fulfilled.length === intents.length
+          ? "fulfilled"
+          : fulfilled.length
+            ? "partial"
+            : "manual";
     return {
       feedbackIndex,
       feedback,
       intents,
       status,
       fulfilled,
-      unresolved: intents.filter((intent) => !fulfilled.includes(intent)),
+      deferred: creativeDeferred,
+      unresolved: hardUnresolved,
       operationKinds: operations.map((operation) => operation.kind),
     };
   });
@@ -1177,7 +1197,9 @@ export async function planRevision(
     results,
     ok:
       results.length > 0 &&
-      results.every((result) => result.status === "fulfilled"),
+      results.every((result) =>
+        ["fulfilled", "creative"].includes(result.status),
+      ),
   };
 }
 export function removeEmDashes(value) {
@@ -1305,13 +1327,35 @@ function sectionIdFor(config, type) {
 }
 export function verifyRevision(config, report, html = "") {
   const failures = [];
+  const selectedCandidateId = String(
+    config.design?.experience?.candidateId || "",
+  ).trim();
+  const verifiedCandidateId = String(
+    report.creativeSourceRepairVerified?.candidateId || "",
+  ).trim();
+  const creativeSourceVerified =
+    report.creativeSourceRepairVerified?.pass === true &&
+    Boolean(verifiedCandidateId) &&
+    (!selectedCandidateId || verifiedCandidateId === selectedCandidateId);
   if (!Array.isArray(report.results) || !report.results.length)
     failures.push("Revision has no per-feedback results.");
-  for (const result of report.results || [])
-    if (result.status !== "fulfilled")
+  if (
+    report.creativeSourceRepairRequired === true &&
+    !creativeSourceVerified
+  )
+    failures.push(
+      "Creative source repair was required but did not pass rendered human verification.",
+    );
+  for (const result of report.results || []) {
+    const creativeVerified =
+      result.status === "creative" &&
+      report.creativeSourceRepairRequired === true &&
+      creativeSourceVerified;
+    if (result.status !== "fulfilled" && !creativeVerified)
       failures.push(
         `Feedback item ${result.feedbackIndex + 1} is ${result.status}: ${result.unresolved?.join(", ") || "unresolved"}.`,
       );
+  }
   for (const artifact of report.expectedArtifacts || []) {
     if (artifact.type === "html" && !html.includes(artifact.marker))
       failures.push(`Missing rendered artifact: ${artifact.marker}`);

@@ -30,20 +30,29 @@ jobs:
           CLIENT_REPO: ${{ github.event.client_payload.repo }}
           CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}
           FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
+          APPROVED_SHA: ${{ github.event.client_payload.approvedSha }}
         run: |
+          test -n "$CLIENT_REPO" && test -n "$CLIENT_EMAIL" && test -n "$FEEDBACK_ISSUE" && test -n "$APPROVED_SHA"
           git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
           cd "$RUNNER_TEMP/client"
+          git fetch origin "$APPROVED_SHA"
+          git checkout --detach "$APPROVED_SHA"
+          test "$(git rev-parse HEAD)" = "$APPROVED_SHA" || { echo "Approved commit checkout mismatch"; exit 1; }
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
           PRODUCTION="https://$PROJECT.pages.dev"
           npm ci
           PUBLIC_SITE_URL="$PRODUCTION" PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION"
-          npx wrangler pages deploy dist --project-name "$PROJECT" --commit-hash "$(git rev-parse HEAD)" --commit-message "LaunchLoom approved deployment"
-          test -n "$CLIENT_EMAIL" && test -n "$FEEDBACK_ISSUE"
+          npx wrangler pages deploy dist --project-name "$PROJECT" --commit-hash "$APPROVED_SHA" --commit-message "LaunchLoom approved deployment"
           TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage client --repo "$CLIENT_REPO" --site "$PROJECT" --email "$CLIENT_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$PRODUCTION" --token-only true)
           NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"
           REVIEW_URL="$PRODUCTION?review=$TOKEN"
-          if ! node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$CLIENT_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience client; then
+          EMAIL_ARGS=(--to "$CLIENT_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience client)
+          node -e 'const fs=require("node:fs"); const x=require("./src/site.config.json"); const report=x.revisionReport || {}; const items=Array.isArray(report.clientFeedbackContext) && report.clientFeedbackContext.length ? report.clientFeedbackContext : report.stage === "client" && Array.isArray(report.feedback) ? report.feedback : []; const feedback=[...new Set(items.map(item => String(item || "").trim()).filter(Boolean))].join("\n\n"); if (feedback) fs.writeFileSync(process.env.RUNNER_TEMP + "/client-approved-feedback.txt", feedback)'
+          if [ -s "$RUNNER_TEMP/client-approved-feedback.txt" ]; then
+            EMAIL_ARGS+=(--feedback-file "$RUNNER_TEMP/client-approved-feedback.txt")
+          fi
+          if ! node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" "${EMAIL_ARGS[@]}"; then
             gh issue comment "$FEEDBACK_ISSUE" --repo "$CLIENT_REPO" --body "<!-- launchloom-client-delivery-failed -->\n\nProduction deployed, but client email delivery failed. The developer has been notified to verify the recipient and send the production review link manually."
             node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience delivery-failure || true
             exit 1

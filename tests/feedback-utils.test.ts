@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   feedbackTextFromComment,
+  nextClientFeedbackContext,
   pendingFeedbackFromComments,
   revisionIntakeFromConfig,
 } from "../scripts/feedback-utils.mjs";
@@ -41,6 +42,48 @@ describe("revision feedback", () => {
     expect(intake.businessName).toBe("Daley Hope Health Care");
     expect(intake.services).toBe("Home care");
     expect(intake.assets.logo).toBe("https://assets.example/logo.png");
+  });
+
+  it("carries client feedback through developer refinements on the same revision PR", () => {
+    const clientContext = nextClientFeedbackContext(
+      {
+        revisionPr: "12",
+        stage: "client",
+        feedback: ["Make the gallery more editorial."],
+      },
+      "developer",
+      ["Tighten the CTA after the gallery."],
+      "12",
+    );
+    expect(clientContext).toEqual(["Make the gallery more editorial."]);
+
+    const nextClientContext = nextClientFeedbackContext(
+      {
+        revisionPr: "12",
+        clientFeedbackContext: clientContext,
+      },
+      "client",
+      ["Use a quieter closing section."],
+      "12",
+    );
+    expect(nextClientContext).toEqual([
+      "Make the gallery more editorial.",
+      "Use a quieter closing section.",
+    ]);
+  });
+
+  it("starts a fresh client-feedback context on a different revision PR", () => {
+    expect(
+      nextClientFeedbackContext(
+        {
+          revisionPr: "12",
+          clientFeedbackContext: ["Old published request."],
+        },
+        "client",
+        ["New request."],
+        "18",
+      ),
+    ).toEqual(["New request."]);
   });
 
   it("applies only the exact queued feedback comment when requested", () => {
