@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { pendingFeedbackFromComments } from "./feedback-utils.mjs";
+import { nextClientFeedbackContext, pendingFeedbackFromComments } from "./feedback-utils.mjs";
 import {
   expectedArtifacts,
   planRevision,
@@ -51,6 +51,13 @@ if (!feedback.length) {
 const config = JSON.parse(await fs.readFile(configPath, "utf8"));
 const planned = await planRevision(feedback, config);
 const revised = removeEmDashes(planned.config);
+const previousRevisionReport = config.revisionReport || {};
+const clientFeedbackContext = nextClientFeedbackContext(
+  previousRevisionReport,
+  stage,
+  feedback,
+  pr,
+);
 const creativeRenderer =
   revised.design?.experience?.renderer === "creative-candidate";
 const creativeIgnoredArtifactTypes = new Set([
@@ -64,7 +71,9 @@ const creativeIgnoredArtifactTypes = new Set([
 ]);
 revised.revisionReport = {
   stage,
+  revisionPr: String(pr),
   feedback,
+  clientFeedbackContext,
   operations: planned.operations,
   results: planned.results,
   creativeSourceRepairRequired:
