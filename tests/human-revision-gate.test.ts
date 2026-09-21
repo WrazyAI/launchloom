@@ -78,7 +78,7 @@ async function fixture() {
 describe("human revision rendered gate", () => {
   it("sends the exact triggering feedback and all rendered viewports to the judge", async () => {
     const { screenshotsDir, configPath } = await fixture();
-    const fetchImpl = vi.fn(async (_url: string, options: RequestInit) =>
+    const fetchImpl = vi.fn(async (_url: string, _options: RequestInit) =>
       Response.json({
         choices: [
           {
