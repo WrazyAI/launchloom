@@ -1,3 +1,4 @@
+import { buildCreativeContentManifest } from "./production-experience-author.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 
@@ -76,6 +77,25 @@ for (const file of ["Experience.jsx", "styles.css", "motion.js"])
     path.join(selectedDir, file),
     path.join(candidateDir, file),
   );
+
+const contractPath = path.join(candidateDir, "contract.json");
+const metadataPath = path.join(candidateDir, "metadata.json");
+const contract = JSON.parse(await fs.readFile(contractPath, "utf8"));
+const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+const contentManifest = buildCreativeContentManifest(config, contract.route);
+metadata.contentManifestDigest = contentManifest.digest;
+if (metadata.creativeManifest)
+  metadata.creativeManifest.contentManifestDigest = contentManifest.digest;
+if (contract.creativeManifest)
+  contract.creativeManifest.contentManifestDigest = contentManifest.digest;
+await Promise.all([
+  fs.writeFile(
+    path.join(candidateDir, "content-manifest.json"),
+    `${JSON.stringify(contentManifest, null, 2)}\n`,
+  ),
+  fs.writeFile(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`),
+  fs.writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`),
+]);
 
 console.log(
   JSON.stringify({
