@@ -2,6 +2,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import {
+  logOpenRouterCacheUsage,
+  openRouterChatCompletion,
+  openRouterPromptCacheKey,
+  openRouterSessionId,
+  promptCachedText,
+  promptCacheRequestFields,
+} from "./openrouter-client.mjs";
 
 const REPAIR_SCHEMA = {
   name: "launchloom_creative_repair",
@@ -308,28 +316,45 @@ export async function resolveReferenceEvidencePath(record) {
   return "";
 }
 
-export async function requestRepair({ model, referenceDna, findings, files, screenshots }) {
+export async function requestRepair({
+  model,
+  referenceDna,
+  findings,
+  files,
+  screenshots,
+}) {
   const desktopReference = referenceDna?.evidence?.desktopScreenshot;
   if (
     desktopReference?.available === false ||
     !(desktopReference?.path || desktopReference?.absolutePath)
   ) {
-    throw new ReferenceEvidenceError("Creative repair requires desktop reference evidence.");
+    throw new ReferenceEvidenceError(
+      "Creative repair requires desktop reference evidence.",
+    );
   }
-  const content = [{ type: "text", text: `Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer. Reference DNA:\n${JSON.stringify(referenceDna, null, 2)}\nFindings:\n${JSON.stringify(findings, null, 2)}\nCurrent Experience.jsx:\n${files.experience}\nCurrent styles.css:\n${files.styles}\nCurrent motion.js:\n${files.motion}\nReturn complete files. Keep the required data-reference-signature, geometry, section, CTA, mobile, and motion markers. Do not add remote URLs, hardcoded business facts, or em dashes.` }];
-  for (const screenshot of screenshots.slice(0, 3))
-    content.push(await imagePart(screenshot));
+
+  const content = [
+    {
+      type: "text",
+      text: `Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.
+
+ASSIGNED REFERENCE DNA
+${JSON.stringify(referenceDna, null, 2)}`,
+    },
+  ];
   const referenceScreenshots = [
     desktopReference,
     referenceDna?.evidence?.mobileScreenshot,
-  ].filter((record) => record?.available !== false && (record?.path || record?.absolutePath));
+  ].filter(
+    (record) =>
+      record?.available !== false && (record?.path || record?.absolutePath),
+  );
   for (const record of referenceScreenshots) {
     const resolved = await resolveReferenceEvidencePath(record);
     try {
       if (!resolved) throw new Error("No accessible reference screenshot.");
-      const image = await imagePart(resolved);
       content.push({ type: "text", text: "Assigned reference evidence:" });
-      content.push(image);
+      content.push(await imagePart(resolved));
     } catch (cause) {
       throw new ReferenceEvidenceError(
         `Creative repair cannot load required reference evidence: ${record.path || record.absolutePath}`,
@@ -337,23 +362,72 @@ export async function requestRepair({ model, referenceDna, findings, files, scre
       );
     }
   }
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "X-OpenRouter-Title": "LaunchLoom creative repair" },
-    body: JSON.stringify({
+
+  content.push(
+    promptCachedText(
       model,
+      "End reusable assigned reference evidence. Repair-specific findings and current source follow.",
+    ),
+  );
+  content.push({
+    type: "text",
+    text: `FINDINGS
+${JSON.stringify(findings, null, 2)}
+
+CURRENT EXPERIENCE.JSX
+${files.experience}
+
+CURRENT STYLES.CSS
+${files.styles}
+
+CURRENT MOTION.JS
+${files.motion}
+
+Return complete files. Keep the required data-reference-signature, geometry, section, CTA, mobile, and motion markers. Do not add remote URLs, hardcoded business facts, or em dashes.`,
+  });
+  for (const screenshot of screenshots.slice(0, 3))
+    content.push(await imagePart(screenshot));
+
+  const sessionId = openRouterSessionId(
+    "creative-repair",
+    model,
+    referenceDna?.familyId,
+    referenceDna?.referenceName,
+  );
+  const promptCacheKey = openRouterPromptCacheKey(
+    "creative-repair-reference",
+    model,
+    referenceDna,
+  );
+  const response = await openRouterChatCompletion({
+    title: "LaunchLoom creative repair",
+    sessionId,
+    body: {
+      model,
+      ...promptCacheRequestFields(model, promptCacheKey),
       temperature: 0.35,
-      reasoning: { effort: process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "max", exclude: true },
+      reasoning: {
+        effort: process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "max",
+        exclude: true,
+      },
       response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
       max_tokens: 24_000,
       messages: [
-        { role: "system", content: "Return JSON only. You are repairing your own production frontend against screenshot-level evidence." },
+        {
+          role: "system",
+          content:
+            "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
+        },
         { role: "user", content },
       ],
-    }),
+    },
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(`OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`);
+  if (!response.ok)
+    throw new Error(
+      `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
+    );
+  logOpenRouterCacheUsage("creative-repair", payload.usage);
   return parseModelJson(payload.choices?.[0]?.message?.content || "");
 }
 
