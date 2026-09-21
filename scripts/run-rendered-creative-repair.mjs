@@ -164,6 +164,7 @@ export async function writeCandidate(
   };
   const backedUp = [];
   const installed = [];
+  let preserveBackup = false;
   await fsImpl.mkdir(staging, { recursive: true });
   await fsImpl.mkdir(backup, { recursive: true });
   try {
@@ -215,6 +216,7 @@ export async function writeCandidate(
       }
     }
     if (rollbackErrors.length) {
+      preserveBackup = true;
       const originalMessage = error?.message || String(error);
       const recovery = new Error(
         `${originalMessage} Rollback incomplete; recovery backup preserved at ${backup}. ${rollbackErrors.join(" | ")}`,
@@ -226,8 +228,7 @@ export async function writeCandidate(
     throw error;
   } finally {
     await fsImpl.rm(staging, { recursive: true, force: true }).catch(() => {});
-    const backupEntries = await fsImpl.readdir?.(backup).catch?.(() => []) || [];
-    if (!backupEntries.length)
+    if (!preserveBackup)
       await fsImpl.rm(backup, { recursive: true, force: true }).catch(() => {});
   }
 }
