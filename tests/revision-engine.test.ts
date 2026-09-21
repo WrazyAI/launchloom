@@ -230,6 +230,90 @@ describe("revision operations", () => {
     ]);
   });
 
+  it("accepts a creative-deferred result only after rendered human verification", () => {
+    const draft = config();
+    const report: any = {
+      creativeSourceRepairRequired: true,
+      results: [
+        {
+          feedbackIndex: 0,
+          status: "creative",
+          unresolved: [],
+        },
+      ],
+      expectedArtifacts: [],
+    };
+
+    expect(verifyRevision(draft, report, "<main></main>").ok).toBe(false);
+
+    report.creativeSourceRepairVerified = {
+      pass: true,
+      candidateId: "candidate-a",
+    };
+    expect(verifyRevision(draft, report, "<main></main>")).toEqual({
+      ok: true,
+      failures: [],
+    });
+  });
+
+  it("rejects creative verification from a different selected candidate", () => {
+    const draft = config();
+    draft.design = {
+      experience: { candidateId: "candidate-b" },
+    };
+    const report: any = {
+      creativeSourceRepairRequired: true,
+      creativeSourceRepairVerified: {
+        pass: true,
+        candidateId: "candidate-a",
+      },
+      results: [
+        {
+          feedbackIndex: 0,
+          status: "creative",
+          unresolved: [],
+        },
+      ],
+      expectedArtifacts: [],
+    };
+
+    expect(verifyRevision(draft, report, "<main></main>").ok).toBe(false);
+
+    report.creativeSourceRepairVerified.candidateId = "candidate-b";
+    expect(verifyRevision(draft, report, "<main></main>")).toEqual({
+      ok: true,
+      failures: [],
+    });
+  });
+
+  it("blocks fulfilled structured feedback when creative source verification was also required", () => {
+    const draft = config();
+    const report: any = {
+      creativeSourceRepairRequired: true,
+      results: [
+        {
+          feedbackIndex: 0,
+          status: "fulfilled",
+          unresolved: [],
+        },
+      ],
+      expectedArtifacts: [],
+    };
+
+    expect(verifyRevision(draft, report, "<main></main>").failures).toContain(
+      "Creative source repair was required but did not pass rendered human verification.",
+    );
+
+    report.creativeSourceRepairVerified = {
+      pass: true,
+      candidateId: "candidate-a",
+    };
+    expect(verifyRevision(draft, report, "<main></main>")).toEqual({
+      ok: true,
+      failures: [],
+    });
+  });
+
   it("requires the expected rendered artifact before a revision can send", () => {
     const draft = config();
     const [operation] = deterministicOperations("Add testimonials", draft);
@@ -495,6 +579,104 @@ describe("revision operations", () => {
         primaryColor: "#17324d",
         surfaceColor: "#fbf6ed",
       },
+    });
+  });
+
+  it("defers visual feedback on a creative candidate to authored source repair", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+      },
+    };
+    const planned = await planRevision(
+      ["Make the hero feel more cinematic, premium, and asymmetrical."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "creative",
+      intents: ["layout"],
+      deferred: ["layout"],
+      unresolved: [],
+    });
+    expect(planned.operations).toEqual([]);
+  });
+
+  it("routes explicit creative feature changes to authored source refinement", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+      },
+    };
+    const planned = await planRevision(
+      ["Replace the hero image treatment and add a project carousel."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "creative",
+      intents: ["layout"],
+      deferred: ["layout"],
+      unresolved: [],
+    });
+  });
+
+  it("keeps copy-only creative feedback on the structured content lane", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+      },
+    };
+    const planned = await planRevision(
+      ["Rewrite the hero heading so it is shorter."],
+      draft,
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "set_copy",
+          field: "heroHeading",
+          value: "Clear support at home",
+        },
+      ],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "fulfilled",
+      intents: ["content"],
+      deferred: [],
+      unresolved: [],
+    });
+    expect(planned.config.copy.heroHeading).toBe("Clear support at home");
+  });
+
+  it("does not pretend the same unsupported visual request is fulfilled on a legacy renderer", async () => {
+    const planned = await planRevision(
+      ["Make the hero feel more cinematic, premium, and asymmetrical."],
+      config(),
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(false);
+    expect(planned.results[0]).toMatchObject({
+      status: "manual",
+      unresolved: ["unknown"],
     });
   });
 

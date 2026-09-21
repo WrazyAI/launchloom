@@ -1,0 +1,34 @@
+name: Validate LaunchLoom changes
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install browser runtime
+        run: npx playwright install --with-deps chromium
+      - name: Run application tests
+        run: npm test
+      - name: Run worker tests
+        run: npm run test:worker
+      - name: Check Astro and TypeScript
+        run: |
+          npm run check
+          npm run check:worker
+      - name: Build production bundle
+        run: npm run build

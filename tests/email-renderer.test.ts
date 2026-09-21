@@ -70,6 +70,23 @@ describe("LaunchLoom lifecycle emails", () => {
     expect(email.html).not.toContain("—");
   });
 
+  it("includes the client's own triggering request after an approved client revision", () => {
+    const email = renderLifecycleEmail({
+      audience: "client",
+      kind: "published",
+      clientName: "North Shore Care",
+      previewUrl: "https://north-shore-care.pages.dev",
+      reviewUrl: signedReviewUrl,
+      clientFeedback:
+        "[Layout] Make the gallery feel more editorial and move the CTA below it.",
+    });
+
+    expect(email.html).toContain("Your feedback reflected in this revision");
+    expect(email.text).toContain(
+      "Make the gallery feel more editorial and move the CTA below it.",
+    );
+  });
+
   it("preserves the exact signed review destination in the CTA", () => {
     const email = renderLifecycleEmail({
       audience: "developer",

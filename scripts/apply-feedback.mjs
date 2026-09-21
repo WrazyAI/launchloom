@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { pendingFeedbackFromComments } from "./feedback-utils.mjs";
+import { nextClientFeedbackContext, pendingFeedbackFromComments } from "./feedback-utils.mjs";
 import {
   expectedArtifacts,
   planRevision,
@@ -51,11 +51,50 @@ if (!feedback.length) {
 const config = JSON.parse(await fs.readFile(configPath, "utf8"));
 const planned = await planRevision(feedback, config);
 const revised = removeEmDashes(planned.config);
-revised.revisionReport = {
+const previousRevisionReport = config.revisionReport || {};
+const clientFeedbackContext = nextClientFeedbackContext(
+  previousRevisionReport,
+  stage,
   feedback,
+  pr,
+);
+const creativeRenderer =
+  revised.design?.experience?.renderer === "creative-candidate";
+const creativeIgnoredArtifactTypes = new Set([
+  "section",
+  "section-type",
+  "absent-section-type",
+  "order",
+  "variant",
+  "class",
+  "style",
+]);
+revised.revisionReport = {
+  stage,
+  revisionPr: String(pr),
+  feedback,
+  clientFeedbackContext,
   operations: planned.operations,
   results: planned.results,
-  expectedArtifacts: expectedArtifacts(planned.operations, revised),
+  creativeSourceRepairRequired:
+    creativeRenderer &&
+    planned.results.some(
+      (result) =>
+        result.status === "creative" ||
+        result.intents?.some((intent) =>
+          ["layout", "color", "social-proof", "brand-name"].includes(intent),
+        ),
+    ),
+  creativeSourceRepairVerified: null,
+  expectedArtifacts: expectedArtifacts(planned.operations, revised).filter(
+    (artifact) =>
+      !creativeRenderer ||
+      (!creativeIgnoredArtifactTypes.has(artifact.type) &&
+        !(
+          artifact.type === "html" &&
+          artifact.marker === 'class="wordmark__name"'
+        )),
+  ),
 };
 if (process.env.FEEDBACK_SUMMARY_PATH)
   await fs.writeFile(
@@ -67,10 +106,15 @@ if (process.env.FEEDBACK_OUTCOME_PATH)
   await fs.writeFile(
     process.env.FEEDBACK_OUTCOME_PATH,
     planned.results
-      .map(
-        (result) =>
-          `Item ${result.feedbackIndex + 1}: ${result.status}. ${result.status === "fulfilled" ? `Applied ${result.operationKinds.join(", ")}.` : `Unresolved: ${result.unresolved.join(", ")}.`}`,
-      )
+      .map((result) => {
+        const detail =
+          result.status === "fulfilled"
+            ? `Applied ${result.operationKinds.join(", ") || "verified structured changes"}.`
+            : result.status === "creative"
+              ? "Queued for authored creative source refinement and rendered verification."
+              : `Unresolved: ${result.unresolved.join(", ")}.`;
+        return `Item ${result.feedbackIndex + 1}: ${result.status}. ${detail}`;
+      })
       .join("\n"),
     "utf8",
   );

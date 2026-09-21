@@ -36,6 +36,29 @@ export function pendingFeedbackFromComments(comments, stage, exact = false) {
     .filter(Boolean);
 }
 
+export function nextClientFeedbackContext(
+  previousReport,
+  stage,
+  feedback,
+  revisionPr,
+) {
+  const currentPr = String(revisionPr || "").trim();
+  const previousPr = String(previousReport?.revisionPr || "").trim();
+  const sameRevision =
+    Boolean(currentPr) && Boolean(previousPr) && currentPr === previousPr;
+  const prior = sameRevision
+    ? Array.isArray(previousReport?.clientFeedbackContext)
+      ? previousReport.clientFeedbackContext
+      : previousReport?.stage === "client" &&
+          Array.isArray(previousReport?.feedback)
+        ? previousReport.feedback
+        : []
+    : [];
+  const incoming = Array.isArray(feedback) ? feedback : [];
+  const combined = stage === "client" ? [...prior, ...incoming] : prior;
+  return [...new Set(combined.map((item) => String(item || "").trim()).filter(Boolean))];
+}
+
 export function revisionIntakeFromConfig(config, feedback) {
   return {
     businessName: config.business?.name || "Your business",
