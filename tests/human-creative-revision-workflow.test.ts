@@ -165,6 +165,69 @@ describe("human creative revision lifecycle", () => {
     );
   });
 
+  it("fails before resolving a missing output path and leaves the working directory intact", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-creative-revision-args-"),
+    );
+    roots.push(root);
+    const sentinel = path.join(root, "sentinel.txt");
+    await fs.writeFile(sentinel, "keep");
+
+    expect(() =>
+      execFileSync(
+        process.execPath,
+        [
+          path.resolve("scripts/prepare-creative-revision-candidate.mjs"),
+          "--client",
+          root,
+        ],
+        { cwd: root, encoding: "utf8", stdio: "pipe" },
+      ),
+    ).toThrow();
+    expect(await fs.readFile(sentinel, "utf8")).toBe("keep");
+  });
+
+  it("reports missing creative evidence with the candidate-specific error", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-creative-revision-missing-evidence-"),
+    );
+    roots.push(root);
+    await fs.mkdir(path.join(root, "src/generated-experiences/selected"), {
+      recursive: true,
+    });
+    await fs.writeFile(
+      path.join(root, "src/site.config.json"),
+      JSON.stringify({
+        design: {
+          experience: {
+            renderer: "creative-candidate",
+            candidateId: "candidate-a",
+          },
+        },
+        revisionReport: { creativeSourceRepairRequired: true },
+      }),
+    );
+    for (const file of ["Experience.jsx", "styles.css", "motion.js"])
+      await fs.writeFile(
+        path.join(root, "src/generated-experiences/selected", file),
+        "current",
+      );
+
+    expect(() =>
+      execFileSync(
+        process.execPath,
+        [
+          path.resolve("scripts/prepare-creative-revision-candidate.mjs"),
+          "--client",
+          root,
+          "--out",
+          path.join(root, "prepared"),
+        ],
+        { cwd: process.cwd(), encoding: "utf8", stdio: "pipe" },
+      ),
+    ).toThrow(/Could not find authored candidate evidence for candidate-a/u);
+  });
+
   it("keeps developer and client feedback on the developer-first approval path", () => {
     const developer = readFileSync(
       ".github/workflows/process-feedback.yml",
