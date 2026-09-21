@@ -7,6 +7,7 @@ import {
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCachedText,
+  promptCachedMessageContent,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
@@ -1523,7 +1524,7 @@ async function askModel(intake, effort, model = MODEL) {
       messages: [
         {
           role: "system",
-          content: [promptCachedText(model, systemPrompt)],
+          content: promptCachedMessageContent(model, systemPrompt),
         },
         {
           role: "user",
@@ -1573,7 +1574,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
       messages: [
         {
           role: "system",
-          content: [promptCachedText(model, systemPrompt)],
+          content: promptCachedMessageContent(model, systemPrompt),
         },
         {
           role: "user",
