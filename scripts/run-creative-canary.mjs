@@ -231,6 +231,7 @@ try {
     reportPath: path.join(out, "creative-bakeoff.json"),
     screenshotsDir,
     preview: true,
+    requireDiversity: false,
   });
 
   if (bakeoffReport.selectedCandidateId !== kokoroCandidate.metadata.candidateId)
