@@ -232,7 +232,7 @@ describe("revision operations", () => {
 
   it("accepts a creative-deferred result only after rendered human verification", () => {
     const draft = config();
-    const report = {
+    const report: any = {
       creativeSourceRepairRequired: true,
       results: [
         {
