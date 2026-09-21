@@ -43,9 +43,12 @@ lead endpoint, or ship an unverified layout.
    interaction evidence. Screenshot-to-screenshot candidate distance is
    recorded for preview and is a hard production-promotion gate; different
    metadata, colors, or copy do not count as visual diversity.
-5. The diversity gate compares route fingerprints. It rejects a bakeoff where
-   the candidates differ only in copy or color. Promotion is possible only
-   after the pairwise distance and unique-dimension thresholds pass.
+5. Route fingerprints remain an early compiler diagnostic so independently
+   authored routes do not collapse before rendering. For version-two
+   candidates, production diversity authority comes from rendered screenshot
+   comparison only; fingerprint distance and unique-dimension counts are
+   retained in the report for diagnosis and do not veto a pixel-diverse
+   candidate. Legacy candidates keep the structural diversity fallback.
 6. `visual-quality-gate.mjs` remains the final screenshot-level review. It
    receives the exact bakeoff screenshots, including compact desktop. A
    repairable finding is sent to `creative-repair-loop.mjs`, which returns the
