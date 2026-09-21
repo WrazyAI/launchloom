@@ -524,6 +524,39 @@ describe("revision operations", () => {
     expect(planned.operations).toEqual([]);
   });
 
+  it("keeps copy-only creative feedback on the structured content lane", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+      },
+    };
+    const planned = await planRevision(
+      ["Rewrite the hero heading so it is shorter."],
+      draft,
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "set_copy",
+          field: "heroHeading",
+          value: "Clear support at home",
+        },
+      ],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "fulfilled",
+      intents: ["content"],
+      deferred: [],
+      unresolved: [],
+    });
+    expect(planned.config.copy.heroHeading).toBe("Clear support at home");
+  });
+
   it("does not pretend the same unsupported visual request is fulfilled on a legacy renderer", async () => {
     const planned = await planRevision(
       ["Make the hero feel more cinematic, premium, and asymmetrical."],
