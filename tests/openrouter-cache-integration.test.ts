@@ -54,7 +54,9 @@ describe("OpenRouter cache integration", () => {
       "scripts/creative-repair-loop.mjs",
     ]) {
       const source = fs.readFileSync(file, "utf8");
-      expect(source, file).toContain("promptCachedText");
+      expect(source, file).toMatch(
+        /promptCached(?:MessageContent|Text)/u,
+      );
       expect(source, file).toContain("promptCacheRequestFields");
     }
   });
