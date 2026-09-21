@@ -70,6 +70,18 @@ const authorStageSchema = {
   },
 };
 
+function cacheableReferenceDna(referenceDna) {
+  if (!referenceDna || typeof referenceDna !== "object")
+    return referenceDna;
+  const {
+    analyzedAt: _analyzedAt,
+    generatedAt: _generatedAt,
+    updatedAt: _updatedAt,
+    ...stable
+  } = referenceDna;
+  return stable;
+}
+
 function markerSlug(value) {
   return String(value || "")
     .toLowerCase()
@@ -130,7 +142,7 @@ function routePromptPrefix(request) {
       mobileBehavior: request.route.mobileBehavior,
       prohibitedPatterns: request.route.prohibitedPatterns,
       signature: request.route.signature,
-      referenceDna: request.route.referenceDna,
+      referenceDna: cacheableReferenceDna(request.route.referenceDna),
       evidence: (request.route.evidence || []).map((item) => ({
         name: item.name,
         source: item.source,
