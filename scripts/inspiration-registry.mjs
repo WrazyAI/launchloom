@@ -86,6 +86,7 @@ function normalizeRecord(record, index) {
     referenceNotes: cleanText(record.referenceNotes, 900),
     sourceUrl: cleanText(record.sourceUrl, 500),
     notes: cleanText(record.notes, 320),
+    evidenceKind: cleanText(record.evidenceKind, 40) || (rights === "owned" ? "owned-prototype" : "primary-reference"),
   };
   if (!normalized.id || !normalized.sourceUrl || !normalized.industries.length)
     throw new Error(`Inspiration record ${index + 1} is incomplete.`);
@@ -164,6 +165,7 @@ function evidenceFor(record) {
       ? record.prohibitedPatterns
       : undefined,
     notes: record.notes || undefined,
+    evidenceKind: record.evidenceKind || undefined,
   };
 }
 
@@ -242,16 +244,11 @@ export function buildInspirationPack(request, rawRegistry) {
     );
   const { anchors, ranked } = selection;
 
-  const used = new Set(anchors.map((record) => record.id));
   const routes = anchors.map((anchor, index) => {
-    const supporting = ranked.find(
-      ({ record }) =>
-        !used.has(record.id) &&
-        record.source !== anchor.source &&
-        record.id !== anchor.id,
-    )?.record;
-    if (supporting) used.add(supporting.id);
-    const evidence = [anchor, supporting].filter(Boolean).map(evidenceFor);
+    // One route gets one authoritative visual capsule. Supporting references
+    // must never be mixed into the authoring evidence where they can be
+    // averaged into a generic composition.
+    const evidence = [evidenceFor(anchor)];
     const route = {
       id: `route-${String(index + 1).padStart(2, "0")}`,
       label: anchor.name,
