@@ -29,7 +29,7 @@ jobs:
       # Keep truth/configuration generation separate from visual authorship.
       # The creative lane owns the rendered composition and defaults to Luna.
       CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-5.6-luna' }}
-      CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'max' }}
+      CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh' }}
       # Authored rendering is mandatory for every new intake. The only mode
       # distinction is whether the passing candidate is previewed or promoted;
       # no repository variable can route a new site back to the legacy DOM.
