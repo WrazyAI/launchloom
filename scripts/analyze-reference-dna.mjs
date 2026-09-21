@@ -197,7 +197,7 @@ function parseChoice(payload) {
   const raw = String(payload?.choices?.[0]?.message?.content || "").trim();
   if (!raw) throw new Error("Reference analyzer returned no content.");
   try {
-    return JSON.parse(raw.replace(/^\`\`\`(?:json)?\s*/iu, "").replace(/\s*\`\`\`$/u, ""));
+    return JSON.parse(raw.replace(/^```(?:json)?\s*/iu, "").replace(/\s*```$/u, ""));
   } catch (error) {
     throw new Error(`Reference analyzer returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
   }

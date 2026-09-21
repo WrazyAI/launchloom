@@ -1,7 +1,32 @@
-import { describe, expect, it } from "vitest";
-import { applyCreativeVisualSafetyRepairs, runCreativeRepairLoop } from "../scripts/creative-repair-loop.mjs";
+import { afterEach, describe, expect, it } from "vitest";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { applyCreativeVisualSafetyRepairs, resolveReferenceEvidencePath, runCreativeRepairLoop } from "../scripts/creative-repair-loop.mjs";
+
+const temporaryRoots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(
+    temporaryRoots.splice(0).map((root) =>
+      fs.rm(root, { recursive: true, force: true }),
+    ),
+  );
+});
 
 describe("creative repair loop", () => {
+  it("prefers an accessible absolute reference evidence path", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-evidence-"));
+    temporaryRoots.push(root);
+    const absolutePath = path.join(root, "reference.png");
+    await fs.writeFile(absolutePath, "reference");
+
+    await expect(resolveReferenceEvidencePath({
+      path: "missing/repository-relative.png",
+      absolutePath,
+    })).resolves.toBe(absolutePath);
+  });
+
   it("repairs at most two cycles and returns the passing source", async () => {
     let calls = 0;
     const result = await runCreativeRepairLoop({

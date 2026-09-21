@@ -384,11 +384,13 @@ jobs:
             FINAL_GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-final.json"
             node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$FINAL_GATE_REPORT"
             jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_GATE_REPORT" >/dev/null || { echo "Visual corrections did not pass the final multimodal visual gate"; exit 1; }
-            git add src/site.config.json
-            if ! git diff --cached --quiet; then
-              git commit -m "Apply GLM visual quality corrections"
-              git push origin review/initial
-            fi
+          fi
+          rm -rf .launchloom/generated-experiences
+          cp -R /tmp/generated-experiences .launchloom/generated-experiences
+          git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Record repaired creative candidate"
+            git push origin review/initial
           fi
           # Scan rendered text assets only. Binary generated imagery can contain
           # the UTF-8 byte sequence by coincidence and is not page copy.

@@ -451,8 +451,13 @@ export async function runCreativeBakeoff({
       candidate.technicalScore >= 100 &&
       (candidate.manifest.version < 2 || candidate.distinctivenessScore >= CREATIVE_PROMOTION_THRESHOLDS.distinctivenessScore),
   );
-  const pixelCandidates = results.filter(
-    (candidate) => candidate.manifest?.version >= 2 && candidate.viewports.length,
+  const versionTwoCandidates = results.filter(
+    (candidate) => candidate.manifest?.version >= 2,
+  );
+  const pixelCandidates = versionTwoCandidates.filter((candidate) =>
+    ["desktop", "compact", "mobile"].every((name) =>
+      candidate.viewports.some((viewport) => viewport.name === name),
+    ),
   );
   let visualDiversity;
   if (pixelCandidates.length >= 2) {
@@ -474,6 +479,13 @@ export async function runCreativeBakeoff({
       ),
       summary: judged.audit?.summary || "",
       pass: judged.pass,
+    };
+  } else if (versionTwoCandidates.length) {
+    visualDiversity = {
+      minimumDistance: 0,
+      pairs: [],
+      pass: false,
+      source: "incomplete-rendered-evidence",
     };
   } else {
     const visualPairs = [];
@@ -505,7 +517,7 @@ export async function runCreativeBakeoff({
   }
   const diversityPass =
     !requireDiversity ||
-    (preview && pixelCandidates.length === 0) ||
+    (preview && versionTwoCandidates.length === 0) ||
     (diversity.pass && visualDiversity.pass);
   const valid = diversityPass
     ? preview

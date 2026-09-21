@@ -20,7 +20,22 @@ function attributeValue(source, attribute) {
 function markerMatches(source, attribute, expected) {
   const actual = slug(attributeValue(source, attribute));
   const target = slug(expected);
-  return Boolean(actual && target && actual.includes(target));
+  return Boolean(actual && target && actual === target);
+}
+
+function referencesContentToken(source, token) {
+  if (source.includes(token)) return true;
+  const group = token.replace(/^content\./u, "");
+  if (!group || group.includes(".")) return false;
+  const groupBinding = new RegExp(
+    `(?:const|let)\\s+\\{[^}]*\\b${group}\\b[^}]*\\}\\s*=\\s*content\\b`,
+    "u",
+  );
+  const parameterBinding = new RegExp(
+    `\\bcontent\\s*:\\s*\\{[\\s\\S]{0,500}?\\b${group}\\b`,
+    "u",
+  );
+  return groupBinding.test(source) || parameterBinding.test(source);
 }
 
 function sourceSectionOrder(source) {
@@ -94,7 +109,7 @@ export function validateReferenceContractCompliance({
     if (!match[1].startsWith("ll-creative-"))
       findings.push(finding("css-token-collision", "critical", `Candidate CSS variable --${match[1]} is not isolated.`));
   for (const token of ["content.hero.image", "content.services", "content.faqs"])
-    if (!experienceSource.includes(token))
+    if (!referencesContentToken(experienceSource, token))
       findings.push(finding("unbound-content-token", "critical", `Required sealed token ${token} is not referenced.`));
   const critical = findings.filter((item) => item.severity === "critical").length;
   const score = Math.max(0, Math.round(100 - critical * 18 - findings.filter((item) => item.severity === "major").length * 8));

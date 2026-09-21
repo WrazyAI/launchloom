@@ -34,4 +34,26 @@ describe("reference fidelity validator", () => {
     expect(report.pass).toBe(true);
     expect(report.findings).toEqual([]);
   });
+
+  it("accepts destructured sealed collection bindings", () => {
+    const destructured = validExperience
+      .replace("<main ", "const { services, faqs } = content; return <main ")
+      .replace("{content.services}", "{services}")
+      .replace("{content.faqs}", "{faqs}");
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: destructured, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.findings).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: "unbound-content-token" }),
+    ]));
+  });
+
+  it("rejects marker values that only contain the expected slug", () => {
+    const mismatched = validExperience.replace(
+      'data-hero-geometry="typographic-monument"',
+      'data-hero-geometry="not-typographic-monument"',
+    );
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: mismatched, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: "hero-geometry-mismatch" }),
+    ]));
+  });
 });
