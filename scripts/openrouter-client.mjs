@@ -66,6 +66,16 @@ export function promptCachedText(model, text) {
 }
 
 /**
+ * Preserve legacy plain-string chat content for models without explicit
+ * OpenAI caching while using a cacheable content block on GPT-5.6+.
+ */
+export function promptCachedMessageContent(model, text) {
+  return supportsExplicitOpenAiPromptCaching(model)
+    ? [promptCachedText(model, text)]
+    : String(text || "");
+}
+
+/**
  * Request-level controls for explicit OpenAI prompt caching.
  */
 export function promptCacheRequestFields(
