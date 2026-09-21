@@ -1,4 +1,9 @@
 import fs from "node:fs/promises";
+import {
+  logOpenRouterCacheUsage,
+  openRouterChatCompletion,
+  openRouterSessionId,
+} from "./openrouter-client.mjs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { chromium } from "playwright";
@@ -183,17 +188,18 @@ async function audit(model, fixture, captures) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 180_000);
   try {
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "X-OpenRouter-Title": "LaunchLoom visual model bakeoff",
-        },
-        body: JSON.stringify({
+    const sessionId = openRouterSessionId(
+      "visual-model-eval",
+      model,
+      fixture.id || fixture.name,
+    );
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom visual model bakeoff",
+      signal: controller.signal,
+      sessionId,
+      responseCache: true,
+      responseCacheTtlSeconds: 3600,
+      body: {
           model,
           temperature: 0.1,
           max_tokens: 5_000,
@@ -223,9 +229,8 @@ async function audit(model, fixture, captures) {
               ],
             },
           ],
-        }),
-      },
-    );
+        },
+    });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(
@@ -241,11 +246,17 @@ async function audit(model, fixture, captures) {
         usage: body.usage || null,
         error: `OpenRouter returned no audit content (finish_reason=${body.choices?.[0]?.finish_reason || "unknown"}, reasoning_tokens=${body.usage?.completion_tokens_details?.reasoning_tokens || 0}).`,
       };
+    const cache = logOpenRouterCacheUsage(
+      "visual-model-eval",
+      body.usage,
+    );
     return {
       ok: true,
       model,
       durationMs: Date.now() - startedAt,
       usage: body.usage || null,
+      cache,
+      sessionId,
       audit: parseJson(content),
     };
   } catch (error) {
