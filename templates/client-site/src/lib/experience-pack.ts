@@ -125,6 +125,12 @@ export type ExperienceContent = Readonly<{
   businessDescription: string;
   showLocationMap: boolean;
   hasSocialProof: boolean;
+  socialProof: {
+    source: string;
+    heading: string;
+    intro: string;
+    points: readonly string[];
+  } | null;
 }>;
 
 export type CompiledExperience = Readonly<{
@@ -784,6 +790,24 @@ function contentFor(site: SiteConfig): ExperienceContent {
       socialProofPoints.length > 0 ||
       fallbackProofPoints.length > 0 ||
       hasLiveGoogleProof,
+    socialProof: site.socialProof
+      ? {
+          source: site.socialProof.source,
+          heading:
+            site.socialProof.heading ||
+            site.socialProof.fallback?.heading ||
+            "",
+          intro:
+            site.socialProof.intro ||
+            site.socialProof.fallback?.intro ||
+            "",
+          points: (
+            site.socialProof.source === "google_reviews"
+              ? fallbackProofPoints
+              : socialProofPoints
+          ).slice(0, 4),
+        }
+      : null,
   };
 }
 
