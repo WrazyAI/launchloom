@@ -249,7 +249,6 @@ Rules:
     "reference-dna",
     model,
     {
-      routeId: route.id || "",
       familyId: dna.familyId || route.familyId || "",
       referenceName: dna.referenceName || route.label || "",
     },
