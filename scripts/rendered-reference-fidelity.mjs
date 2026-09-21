@@ -143,6 +143,18 @@ function parseChoice(payload, label) {
   }
 }
 
+function cacheableReferenceDna(referenceDna) {
+  if (!referenceDna || typeof referenceDna !== "object")
+    return referenceDna;
+  const {
+    analyzedAt: _analyzedAt,
+    generatedAt: _generatedAt,
+    updatedAt: _updatedAt,
+    ...stable
+  } = referenceDna;
+  return stable;
+}
+
 async function imagePart(file) {
   const data = await fs.readFile(file);
   const extension = path.extname(file).toLowerCase();
@@ -276,8 +288,9 @@ export async function evaluateRenderedReferenceFidelity({
   const candidateMobile = candidateScreenshots?.mobile;
   for (const [label, file] of [["desktop reference", desktopReference], ["candidate desktop", candidateDesktop], ["candidate compact", candidateCompact], ["candidate mobile", candidateMobile]])
     if (!file) throw new Error(`Rendered reference evaluation is missing ${label}.`);
+  const stableReferenceDna = cacheableReferenceDna(referenceDna);
   const reusableReferencePrefix = `REFERENCE DNA
-${JSON.stringify(referenceDna, null, 2)}
+${JSON.stringify(stableReferenceDna, null, 2)}
 
 Compare the candidate to the reference as an independent implementation of the same design mechanics. Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding. A technically clean but visually generic page must not pass.`;
   const content = [
@@ -305,7 +318,7 @@ Compare the candidate to the reference as an independent implementation of the s
   const promptCacheKey = openRouterPromptCacheKey(
     "rendered-reference",
     model,
-    referenceDna,
+    stableReferenceDna,
   );
   const result = await requestJson({
     model,
