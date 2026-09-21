@@ -1319,6 +1319,13 @@ export function verifyRevision(config, report, html = "") {
   const failures = [];
   if (!Array.isArray(report.results) || !report.results.length)
     failures.push("Revision has no per-feedback results.");
+  if (
+    report.creativeSourceRepairRequired === true &&
+    report.creativeSourceRepairVerified?.pass !== true
+  )
+    failures.push(
+      "Creative source repair was required but did not pass rendered human verification.",
+    );
   for (const result of report.results || []) {
     const creativeVerified =
       result.status === "creative" &&
