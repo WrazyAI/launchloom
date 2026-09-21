@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import {
+  cacheableReferenceDna,
   logOpenRouterCacheUsage,
   logOpenRouterResponseCacheUsage,
   openRouterChatCompletion,
@@ -142,18 +143,6 @@ function parseChoice(payload, label) {
   } catch (error) {
     throw new Error(`${label} returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
   }
-}
-
-function cacheableReferenceDna(referenceDna) {
-  if (!referenceDna || typeof referenceDna !== "object")
-    return referenceDna;
-  const {
-    analyzedAt: _analyzedAt,
-    generatedAt: _generatedAt,
-    updatedAt: _updatedAt,
-    ...stable
-  } = referenceDna;
-  return stable;
 }
 
 async function imagePart(file) {

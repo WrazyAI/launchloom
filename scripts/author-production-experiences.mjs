@@ -4,6 +4,7 @@ import { parseModelJson } from "./model-json.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
 import { authorExperienceCandidates } from "./production-experience-author.mjs";
 import {
+  cacheableReferenceDna,
   logOpenRouterCacheUsage,
   openRouterChatCompletion,
   openRouterPromptCacheKey,
@@ -38,7 +39,7 @@ const model =
   "openai/gpt-5.6-luna";
 const reasoningEffort =
   process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
-  (model === "openai/gpt-5.6-luna" ? "max" : "low");
+  (model === "openai/gpt-5.6-luna" ? "xhigh" : "low");
 const failureMode = args["failure-mode"] || "throw";
 const usage = [];
 const authorDeadline =
@@ -70,18 +71,6 @@ const authorStageSchema = {
     },
   },
 };
-
-function cacheableReferenceDna(referenceDna) {
-  if (!referenceDna || typeof referenceDna !== "object")
-    return referenceDna;
-  const {
-    analyzedAt: _analyzedAt,
-    generatedAt: _generatedAt,
-    updatedAt: _updatedAt,
-    ...stable
-  } = referenceDna;
-  return stable;
-}
 
 function markerSlug(value) {
   return String(value || "")

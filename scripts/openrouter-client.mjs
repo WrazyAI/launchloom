@@ -48,6 +48,36 @@ export function openRouterPromptCacheKey(scope, ...identity) {
   return `${prefix}${digest(identity, 64 - prefix.length)}`;
 }
 
+/**
+ * Remove run-local metadata before Reference DNA is placed in a reusable
+ * prompt prefix or cache key. Evidence is still loaded from the original
+ * object by the caller.
+ */
+export function cacheableReferenceDna(referenceDna) {
+  if (!referenceDna || typeof referenceDna !== "object")
+    return referenceDna;
+  const {
+    analyzedAt: _analyzedAt,
+    generatedAt: _generatedAt,
+    updatedAt: _updatedAt,
+    ...stable
+  } = referenceDna;
+  if (stable.evidence && typeof stable.evidence === "object") {
+    stable.evidence = { ...stable.evidence };
+    for (const key of ["desktopScreenshot", "mobileScreenshot"]) {
+      const record = stable.evidence[key];
+      if (!record || typeof record !== "object") continue;
+      const {
+        path: _path,
+        absolutePath: _absolutePath,
+        ...cacheableRecord
+      } = record;
+      stable.evidence[key] = cacheableRecord;
+    }
+  }
+  return stable;
+}
+
 export function supportsExplicitOpenAiPromptCaching(model) {
   const match = String(model || "").match(/^openai\/gpt-(\d+)(?:\.(\d+))?/u);
   if (!match) return false;

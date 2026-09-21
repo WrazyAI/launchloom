@@ -45,6 +45,20 @@ describe("OpenRouter cache integration", () => {
     }
   });
 
+  it("uses xhigh as the default Luna creative reasoning effort", () => {
+    const author = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    const repair = fs.readFileSync("scripts/creative-repair-loop.mjs", "utf8");
+    expect(author).toContain(
+      '(model === "openai/gpt-5.6-luna" ? "xhigh" : "low")',
+    );
+    expect(repair).toContain(
+      'process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "xhigh"',
+    );
+  });
+
   it("keeps explicit GPT-5.6 cache breakpoints on repeated large prefixes", () => {
     for (const file of [
       "scripts/author-production-experiences.mjs",

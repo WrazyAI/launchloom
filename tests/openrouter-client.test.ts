@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  cacheableReferenceDna,
   logOpenRouterCacheUsage,
   logOpenRouterResponseCacheUsage,
   openRouterCacheMetrics,
@@ -14,6 +15,45 @@ import {
 } from "../scripts/openrouter-client.mjs";
 
 describe("OpenRouter cache-aware client", () => {
+  it("removes volatile timestamps and filesystem paths from Reference DNA cache prefixes", () => {
+    const reference = {
+      familyId: "kokoro-editorial-architecture",
+      analyzedAt: "2026-09-21T20:00:00.000Z",
+      evidence: {
+        desktopScreenshot: {
+          path: "artifacts/reference/desktop.png",
+          absolutePath: "/home/example/launchloom/artifacts/reference/desktop.png",
+          available: true,
+          source: "reference-only",
+        },
+        mobileScreenshot: {
+          path: "artifacts/reference/mobile.png",
+          absolutePath: "/home/example/launchloom/artifacts/reference/mobile.png",
+          available: true,
+        },
+        annotatedDescription: "Editorial image chapters.",
+      },
+    };
+
+    const sanitized = cacheableReferenceDna(reference) as any;
+    expect(sanitized).toEqual({
+      familyId: "kokoro-editorial-architecture",
+      evidence: {
+        desktopScreenshot: {
+          available: true,
+          source: "reference-only",
+        },
+        mobileScreenshot: {
+          available: true,
+        },
+        annotatedDescription: "Editorial image chapters.",
+      },
+    });
+    expect(reference.evidence.desktopScreenshot.path).toBe(
+      "artifacts/reference/desktop.png",
+    );
+  });
+
   it("creates deterministic non-PII session and prompt-cache identifiers", () => {
     const first = openRouterSessionId("creative-author", {
       name: "Maison Orphee",

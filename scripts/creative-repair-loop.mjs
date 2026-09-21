@@ -3,6 +3,7 @@ import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import {
+  cacheableReferenceDna,
   logOpenRouterCacheUsage,
   openRouterChatCompletion,
   openRouterPromptCacheKey,
@@ -26,18 +27,6 @@ const REPAIR_SCHEMA = {
     },
   },
 };
-
-function cacheableReferenceDna(referenceDna) {
-  if (!referenceDna || typeof referenceDna !== "object")
-    return referenceDna;
-  const {
-    analyzedAt: _analyzedAt,
-    generatedAt: _generatedAt,
-    updatedAt: _updatedAt,
-    ...stable
-  } = referenceDna;
-  return stable;
-}
 
 function clean(value, limit = 900) {
   return String(value || "").replace(/[—–]/gu, "-").trim().slice(0, limit);
@@ -444,7 +433,7 @@ Return complete files. Keep required reference signatures and safety/content con
       ...promptCacheRequestFields(model, promptCacheKey),
       temperature: 0.35,
       reasoning: {
-        effort: process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "max",
+        effort: process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "xhigh",
         exclude: true,
       },
       response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
