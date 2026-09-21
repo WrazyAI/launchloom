@@ -204,6 +204,14 @@ apply at most three allowlisted layout operations: section variant, section
 order, and density or typography treatment. It must never rewrite facts, copy,
 contact details, assets, reviews, claims, or credentials.
 
+For new authored creative candidates, rendered repair is author-owned rather
+than a shared layout rewrite. The repair loop must rebuild and capture desktop,
+compact-desktop, and mobile evidence after every Luna repair. A source change is
+not accepted until the rendered reference judge and final visual quality gate
+pass again. Production promotion remains blocked unless the bakeoff report is
+`promotionReady`; v2 screenshot diversity remains authoritative and structural
+fingerprints remain diagnostic only.
+
 When the gate applies a safe correction, rebuild once and run both deterministic
 render verification and the GLM verification pass again. An unresolved critical
 content-integrity, industry-fit, imagery, conversion, overflow, or obstruction
