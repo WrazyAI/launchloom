@@ -385,6 +385,18 @@ async function generateContextualAssetsForRoute({
   for (const placement of placements) {
     const prompt = promptFor(site, route, placement);
     const promptHash = sha256(prompt);
+
+    if (filled >= imageBudget) {
+      const fallback = fallbackImage(site, placement);
+      if (fallback) setImage(site, placement, fallback);
+      manifest.skipped.push({
+        placement: placement.id,
+        reason: "image-budget-exhausted",
+        fallback,
+      });
+      continue;
+    }
+
     const existing = existingEntry(existingManifest, placement, promptHash, outputDir);
     if (existing) {
       try {
@@ -399,16 +411,14 @@ async function generateContextualAssetsForRoute({
       }
     }
 
-    if (!canGenerate || filled >= imageBudget || requests >= maxRequests) {
+    if (!canGenerate || requests >= maxRequests) {
       const fallback = fallbackImage(site, placement);
       if (fallback) setImage(site, placement, fallback);
       manifest.skipped.push({
         placement: placement.id,
         reason: !canGenerate
           ? "FAL_KEY-not-configured"
-          : filled >= imageBudget
-            ? "image-budget-exhausted"
-            : "request-budget-exhausted",
+          : "request-budget-exhausted",
         fallback,
       });
       continue;
@@ -559,12 +569,10 @@ export async function generateContextualAssets(options = {}) {
       maxImages: routeImageBudget,
       maxRequests: routeRequestBudget,
     });
-    const newlyGenerated = result.manifest.placements.filter(
-      (entry) => !entry.reused,
-    ).length;
+    const retainedRouteImages = result.manifest.placements.length;
     totalRequests += result.requests;
     remainingRequests = Math.max(0, remainingRequests - result.requests);
-    remainingImages = Math.max(0, remainingImages - newlyGenerated);
+    remainingImages = Math.max(0, remainingImages - retainedRouteImages);
     routeManifests.push(result.manifest);
     if (!firstRouteSite) firstRouteSite = result.site;
     creativeAssets[route.id] = {
