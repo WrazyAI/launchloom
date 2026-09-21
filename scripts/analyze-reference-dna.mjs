@@ -209,7 +209,7 @@ function parseChoice(payload) {
   }
 }
 
-async function analyzeRoute(route, fetchImpl = fetch, sessionId) {
+async function analyzeRoute(route, fetchImpl = fetch) {
   const dna = route.referenceDna || {};
   const desktop = dna.evidence?.desktopScreenshot?.path;
   const mobile = dna.evidence?.mobileScreenshot?.available ? dna.evidence.mobileScreenshot.path : "";
@@ -245,6 +245,17 @@ Rules:
     await imagePart(desktop),
     ...(mobile ? [{ type: "text", text: "Mobile reference:" }, await imagePart(mobile)] : [])
   ];
+  const sessionId = openRouterSessionId(
+    "reference-dna",
+    model,
+    {
+      routeId: route.id || "",
+      familyId: dna.familyId || route.familyId || "",
+      referenceName: dna.referenceName || route.label || "",
+      desktop,
+      mobile,
+    },
+  );
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 180_000);
   try {
@@ -253,7 +264,7 @@ Rules:
       signal: controller.signal,
       sessionId,
       responseCache: true,
-      responseCacheTtlSeconds: 3600,
+      responseCacheTtlSeconds: 86_400,
       fetchImpl,
       body: {
         model,
@@ -290,14 +301,8 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
   if (!Array.isArray(pack?.routes) || !pack.routes.length)
     throw new Error("Reference DNA analysis requires inspiration routes.");
   const routes = [];
-  const sessionId = openRouterSessionId(
-    "reference-dna",
-    model,
-    pack.selectionKey ||
-      pack.routes.map((route) => route.id || route.referenceName || route.label),
-  );
   for (const route of pack.routes) {
-    const analyzed = await analyzeRoute(route, fetchImpl, sessionId);
+    const analyzed = await analyzeRoute(route, fetchImpl);
     routes.push({
       ...route,
       referenceDna: {
