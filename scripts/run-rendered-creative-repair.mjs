@@ -831,6 +831,24 @@ export async function runRenderedCreativeRepair({
       throw error;
     }
 
+    if (humanFeedback) {
+      const liveConfigPath = path.join(root, "src/site.config.json");
+      const liveConfig = JSON.parse(
+        await fs.readFile(liveConfigPath, "utf8"),
+      );
+      if (liveConfig.revisionReport) {
+        liveConfig.revisionReport.creativeSourceRepairVerified = {
+          pass: true,
+          candidateId: selectedId,
+          repairCycles: Object.fromEntries(cycleUse),
+        };
+        await fs.writeFile(
+          liveConfigPath,
+          `${JSON.stringify(liveConfig, null, 2)}\n`,
+        );
+      }
+    }
+
     const passedSummary = { ...summary, status: "passed" };
     await fs.writeFile(
       path.join(evidenceRoot, "summary.json"),
