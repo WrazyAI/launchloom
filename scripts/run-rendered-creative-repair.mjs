@@ -461,6 +461,7 @@ async function persistRepairEvidence({
  *   model?: string,
  *   maxCycles?: number,
  *   requireDiversity?: boolean,
+ *   requestedFindings?: unknown[],
  *   visualGateScript?: string,
  *   runBakeoffImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
  *   runVisualGateImpl?: (options: Record<string, unknown>) => Promise<Record<string, any>>,
@@ -476,6 +477,7 @@ export async function runRenderedCreativeRepair({
   model = process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna",
   maxCycles = 2,
   requireDiversity = true,
+  requestedFindings = [],
   visualGateScript,
   runBakeoffImpl = runCreativeBakeoff,
   runVisualGateImpl = runVisualGateProcess,
@@ -490,6 +492,10 @@ export async function runRenderedCreativeRepair({
   const history = [];
   const maxRounds = Math.max(1, cycleLimit * 3 + 1);
   const requestedMode = mode === "promote" ? "promote" : "preview";
+  const humanFindings = Array.isArray(requestedFindings)
+    ? requestedFindings.filter(Boolean)
+    : [];
+  let humanRepairPending = humanFindings.length > 0;
   await fs.rm(evidenceRoot, { recursive: true, force: true });
   await fs.mkdir(evidenceRoot, { recursive: true });
 
@@ -562,15 +568,25 @@ export async function runRenderedCreativeRepair({
     };
     history.push(record);
 
+    if (humanRepairPending && (report.candidates || []).length !== 1)
+      throw new Error(
+        "Human creative feedback requires an isolated selected candidate.",
+      );
+
     if (!report.selectedCandidateId) {
       const candidates = (report.candidates || []).filter(candidateNeedsRepair);
       let repairedAny = false;
       for (const candidate of candidates) {
-        const findings = candidateFindings(candidate);
+        const findings = [
+          ...candidateFindings(candidate),
+          ...(humanRepairPending ? humanFindings : []),
+        ];
         const repaired = await repair(
           candidate.candidateId,
           findings.length ? findings : ["Candidate did not pass rendered preview gates."],
-          "candidate-render-failure",
+          humanRepairPending
+            ? "human-review-feedback"
+            : "candidate-render-failure",
           round,
           screenshotsDir,
           candidate.directory,
@@ -580,6 +596,7 @@ export async function runRenderedCreativeRepair({
           record.repairs.push(candidate.candidateId);
         }
       }
+      if (repairedAny && humanRepairPending) humanRepairPending = false;
       if (!repairedAny)
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
@@ -595,6 +612,26 @@ export async function runRenderedCreativeRepair({
       candidateRoot,
       selected.directory,
     );
+
+    if (humanRepairPending) {
+      const repaired = await repair(
+        selectedId,
+        humanFindings,
+        "human-review-feedback",
+        round,
+        screenshotsDir,
+        selected.directory,
+      );
+      if (!repaired)
+        throw new Error(
+          `Human feedback for ${selectedId} could not be applied within the ${cycleLimit}-cycle repair budget.`,
+        );
+      humanRepairPending = false;
+      record.repairs.push(selectedId);
+      record.humanFeedbackApplied = true;
+      continue;
+    }
+
     const gateConfigPath = await writeVisualGateConfig({
       siteDir: root,
       roundDir,
@@ -755,6 +792,18 @@ export async function runRenderedCreativeRepair({
 
 async function main() {
   const args = cliArgs(process.argv);
+  const feedbackFile = String(args["feedback-file"] || "").trim();
+  const requestedFindings = feedbackFile
+    ? [
+        {
+          category: "human-review-feedback",
+          message: await fs.readFile(path.resolve(feedbackFile), "utf8"),
+          evidence: "Explicit developer or client review request.",
+          recommendation:
+            "Refine the authored creative candidate to satisfy this review request while preserving sealed content, Reference DNA, accessibility, and runtime contracts.",
+        },
+      ]
+    : [];
   const result = await runRenderedCreativeRepair({
     siteDir: args["site-dir"] || "templates/client-site",
     candidatesDir: args.candidates || ".launchloom/generated-experiences",
@@ -766,6 +815,7 @@ async function main() {
       "openai/gpt-5.6-luna",
     maxCycles: args["max-cycles"] || 2,
     requireDiversity: args["require-diversity"] !== "false",
+    requestedFindings,
     visualGateScript: args["visual-gate-script"],
   });
   console.log(
