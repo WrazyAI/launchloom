@@ -355,6 +355,26 @@ describe("rendered creative repair orchestration", () => {
     });
   });
 
+  it("rejects programmatic human findings that contain no request text", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        requestedFindings: [{}],
+        runBakeoffImpl: async () => {
+          bakeoffCalls += 1;
+          return report({ candidates: [candidate("candidate-a")] });
+        },
+      }),
+    ).rejects.toThrow(/Human feedback must contain non-empty request text/iu);
+
+    expect(bakeoffCalls).toBe(0);
+  });
+
   it("forces explicit human feedback through the selected creative source before acceptance", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     let bakeoffCalls = 0;
