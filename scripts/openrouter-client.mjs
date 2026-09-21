@@ -131,6 +131,37 @@ export function logOpenRouterCacheUsage(label, usage, logger = console.log) {
   return metrics;
 }
 
+export function openRouterResponseCacheMetrics(response) {
+  const get = (name) => response?.headers?.get?.(name) || null;
+  const status = String(get("x-openrouter-cache-status") || "").toUpperCase();
+  return {
+    status: status || null,
+    hit: status === "HIT",
+    ageSeconds: Number(get("x-openrouter-cache-age") || 0),
+    ttlSeconds: Number(get("x-openrouter-cache-ttl") || 0),
+    sourceId: get("x-openrouter-cache-source-id"),
+  };
+}
+
+export function logOpenRouterResponseCacheUsage(
+  label,
+  response,
+  logger = console.log,
+) {
+  const metrics = openRouterResponseCacheMetrics(response);
+  if (metrics.status)
+    logger(
+      [
+        "openrouter_response_cache",
+        `label=${slug(label, "request")}`,
+        `status=${metrics.status}`,
+        `age_seconds=${metrics.ageSeconds}`,
+        `ttl_seconds=${metrics.ttlSeconds}`,
+      ].join(" "),
+    );
+  return metrics;
+}
+
 /**
  * Shared OpenRouter Chat Completions transport.
  *
