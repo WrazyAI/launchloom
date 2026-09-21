@@ -504,7 +504,9 @@ export async function runCreativeBakeoff({
     };
   }
   const diversityPass =
-    !requireDiversity || (diversity.pass && visualDiversity.pass);
+    !requireDiversity ||
+    (preview && pixelCandidates.length === 0) ||
+    (diversity.pass && visualDiversity.pass);
   const valid = diversityPass
     ? preview
       ? previewEligible
