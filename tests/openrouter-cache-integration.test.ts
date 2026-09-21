@@ -80,6 +80,24 @@ describe("OpenRouter cache integration", () => {
     );
   });
 
+  it("keeps dynamic stage work after the reusable route cache breakpoint", () => {
+    const source = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    expect(source).toContain("routePromptPrefix(request)");
+    expect(source).toContain("stagePromptSuffix(request)");
+    expect(source).toContain(
+      "End reusable route and reference context. Stage-specific work follows.",
+    );
+    expect(source.indexOf("routePromptPrefix(request)")).toBeLessThan(
+      source.indexOf("stagePromptSuffix(request)"),
+    );
+    expect(source).toContain(
+      "referenceDna: cacheableReferenceDna(request.route.referenceDna)",
+    );
+  });
+
   it("limits exact response caching to deterministic control and judge lanes", () => {
     const expectedResponseCached = [
       "scripts/analyze-reference-dna.mjs",
