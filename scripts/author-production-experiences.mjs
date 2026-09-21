@@ -367,6 +367,25 @@ async function requestStage(request) {
   }
 }
 
+function aggregateCacheUsage(records) {
+  const total = records.reduce(
+    (sum, record) => ({
+      promptTokens: sum.promptTokens + Number(record.cache?.promptTokens || 0),
+      cachedTokens: sum.cachedTokens + Number(record.cache?.cachedTokens || 0),
+      cacheWriteTokens:
+        sum.cacheWriteTokens + Number(record.cache?.cacheWriteTokens || 0),
+    }),
+    { promptTokens: 0, cachedTokens: 0, cacheWriteTokens: 0 },
+  );
+  return {
+    ...total,
+    cacheHitPercent:
+      total.promptTokens > 0
+        ? Math.round((total.cachedTokens / total.promptTokens) * 1000) / 10
+        : 0,
+  };
+}
+
 async function writeResult(result) {
   const staging = `${outputPath}.staging-${process.pid}`;
   await fs.rm(staging, { recursive: true, force: true });
@@ -396,6 +415,7 @@ async function writeResult(result) {
         candidates: result.candidates.map((candidate) => candidate.metadata),
         failures: result.failures || [],
         usage,
+        cacheSummary: aggregateCacheUsage(usage),
       },
       null,
       2,
@@ -439,6 +459,13 @@ try {
   console.log(`production_experience_candidates=${outputPath}`);
   console.log(`production_experience_model=${model}`);
   console.log(`production_experience_count=${result.candidates.length}`);
+  const cacheSummary = aggregateCacheUsage(usage);
+  console.log(
+    `production_experience_cache_hit_percent=${cacheSummary.cacheHitPercent}`,
+  );
+  console.log(
+    `production_experience_cached_tokens=${cacheSummary.cachedTokens}`,
+  );
   if (result.failures?.length)
     console.error(
       `production_experience_candidate_failures=${JSON.stringify(result.failures)}`,
