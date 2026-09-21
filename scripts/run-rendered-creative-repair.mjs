@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
-import { CREATIVE_PROMOTION_THRESHOLDS } from "./creative-compiler.mjs";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
 import { requestRepair } from "./creative-repair-loop.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
@@ -88,11 +87,7 @@ function diversityRepairTargets(report) {
     findingsByCandidate.set(candidateId, findings);
   };
   for (const pair of report.visualDiversity.pairs || []) {
-    if (
-      pair.pass === false ||
-      Number(pair.distance || 0) <
-        CREATIVE_PROMOTION_THRESHOLDS.minimumPairwiseVisualDistance
-    ) {
+    if (pair.pass === false) {
       add(
         pair.left,
         `Rendered diversity failed against ${pair.right}: ${pair.reason || "candidate visual grammars are too similar"}. Preserve this route's own Reference DNA and make its rendered mechanics more route-specific.`,
@@ -148,21 +143,67 @@ function normalizeRepair(value) {
   return normalized;
 }
 
-async function writeCandidate(candidateDir, files) {
-  const staging = path.join(candidateDir, `.rendered-repair-${process.pid}`);
-  await fs.mkdir(staging, { recursive: true });
+export async function writeCandidate(
+  candidateDir,
+  files,
+  { fsImpl = fs } = {},
+) {
+  const transactionId = `${process.pid}-${Date.now()}`;
+  const staging = path.join(
+    candidateDir,
+    `.rendered-repair-stage-${transactionId}`,
+  );
+  const backup = path.join(
+    candidateDir,
+    `.rendered-repair-backup-${transactionId}`,
+  );
   const map = {
     "Experience.jsx": files.experience,
     "styles.css": files.styles,
     "motion.js": files.motion,
   };
+  const backedUp = [];
+  const installed = [];
+  await fsImpl.mkdir(staging, { recursive: true });
+  await fsImpl.mkdir(backup, { recursive: true });
   try {
     for (const [name, content] of Object.entries(map))
-      await fs.writeFile(path.join(staging, name), `${content.trim()}\n`);
-    for (const name of REPAIR_FILES)
-      await fs.rename(path.join(staging, name), path.join(candidateDir, name));
+      await fsImpl.writeFile(path.join(staging, name), `${content.trim()}\n`);
+
+    for (const name of REPAIR_FILES) {
+      await fsImpl.rename(
+        path.join(candidateDir, name),
+        path.join(backup, name),
+      );
+      backedUp.push(name);
+    }
+
+    for (const name of REPAIR_FILES) {
+      await fsImpl.rename(
+        path.join(staging, name),
+        path.join(candidateDir, name),
+      );
+      installed.push(name);
+    }
+  } catch (error) {
+    for (const name of [...installed].reverse())
+      await fsImpl.rm(path.join(candidateDir, name), {
+        recursive: true,
+        force: true,
+      }).catch(() => {});
+    for (const name of [...backedUp].reverse()) {
+      const original = path.join(backup, name);
+      const destination = path.join(candidateDir, name);
+      await fsImpl.rm(destination, {
+        recursive: true,
+        force: true,
+      }).catch(() => {});
+      await fsImpl.rename(original, destination).catch(() => {});
+    }
+    throw error;
   } finally {
-    await fs.rm(staging, { recursive: true, force: true });
+    await fsImpl.rm(staging, { recursive: true, force: true });
+    await fsImpl.rm(backup, { recursive: true, force: true });
   }
 }
 
@@ -226,9 +267,9 @@ export async function runVisualGateProcess({
     throw new Error(
       `Creative visual gate produced no report (exit ${result.code}): ${result.stderr.slice(-1200)}`,
     );
-  if (report.status === "error")
+  if (result.code !== 0 || report.status === "error")
     throw new Error(
-      `Creative visual gate could not run: ${report.error || result.stderr.slice(-1200)}`,
+      `Creative visual gate could not run: ${report.error || result.stderr.slice(-1200) || `process exited ${result.code}`}`,
     );
   return { ...report, processExitCode: result.code };
 }
