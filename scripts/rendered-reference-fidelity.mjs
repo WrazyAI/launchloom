@@ -1,6 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { validateReferenceDna } from "./reference-dna.mjs";
+import {
+  logOpenRouterCacheUsage,
+  logOpenRouterResponseCacheUsage,
+  openRouterChatCompletion,
+  openRouterPromptCacheKey,
+  openRouterSessionId,
+  promptCachedText,
+  promptCacheRequestFields,
+} from "./openrouter-client.mjs";
 
 export const RENDERED_REFERENCE_MODEL =
   process.env.CREATIVE_REFERENCE_JUDGE_MODEL || "openai/gpt-5.6-luna";
@@ -134,6 +143,18 @@ function parseChoice(payload, label) {
   }
 }
 
+function cacheableReferenceDna(referenceDna) {
+  if (!referenceDna || typeof referenceDna !== "object")
+    return referenceDna;
+  const {
+    analyzedAt: _analyzedAt,
+    generatedAt: _generatedAt,
+    updatedAt: _updatedAt,
+    ...stable
+  } = referenceDna;
+  return stable;
+}
+
 async function imagePart(file) {
   const data = await fs.readFile(file);
   const extension = path.extname(file).toLowerCase();
@@ -144,7 +165,15 @@ async function imagePart(file) {
   return { type: "image_url", image_url: { url: `data:${mime};base64,${data.toString("base64")}` } };
 }
 
-async function requestJson({ model, schema, content, label, fetchImpl = fetch }) {
+async function requestJson({
+  model,
+  schema,
+  content,
+  label,
+  sessionId,
+  promptCacheKey,
+  fetchImpl = fetch,
+}) {
   if (!process.env.OPENROUTER_API_KEY)
     throw new Error("OPENROUTER_API_KEY is required for rendered reference evaluation.");
   const maxAttempts = 3;
@@ -152,16 +181,16 @@ async function requestJson({ model, schema, content, label, fetchImpl = fetch })
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 180_000);
     try {
-      const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
+      const response = await openRouterChatCompletion({
+        title: "LaunchLoom Rendered Reference Judge",
         signal: controller.signal,
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "X-OpenRouter-Title": "LaunchLoom Rendered Reference Judge"
-        },
-        body: JSON.stringify({
+        sessionId,
+        responseCache: true,
+        responseCacheTtlSeconds: 900,
+        fetchImpl,
+        body: {
           model,
+          ...promptCacheRequestFields(model, promptCacheKey),
           temperature: 0,
           reasoning: { effort: "medium", exclude: true },
           max_tokens: 7000,
@@ -174,14 +203,23 @@ async function requestJson({ model, schema, content, label, fetchImpl = fetch })
             },
             { role: "user", content }
           ]
-        })
+        },
       });
+      const responseCache = logOpenRouterResponseCacheUsage(label, response);
       const payload = await response.json().catch((error) => {
         if (response.ok || !(error instanceof SyntaxError)) throw error;
         return {};
       });
-      if (response.ok)
-        return { audit: parseChoice(payload, label), usage: payload.usage || null, provider: payload.provider || null };
+      if (response.ok) {
+        const cache = logOpenRouterCacheUsage(label, payload.usage);
+        return {
+          audit: parseChoice(payload, label),
+          usage: payload.usage || null,
+          cache,
+          responseCache,
+          provider: payload.provider || null,
+        };
+      }
       const retryable = response.status === 408 || response.status === 429 ||
         (response.status >= 500 && response.status < 600);
       if (!retryable || attempt === maxAttempts - 1)
@@ -250,17 +288,20 @@ export async function evaluateRenderedReferenceFidelity({
   const candidateMobile = candidateScreenshots?.mobile;
   for (const [label, file] of [["desktop reference", desktopReference], ["candidate desktop", candidateDesktop], ["candidate compact", candidateCompact], ["candidate mobile", candidateMobile]])
     if (!file) throw new Error(`Rendered reference evaluation is missing ${label}.`);
-  const content = [
-    {
-      type: "text",
-      text: `REFERENCE DNA
-${JSON.stringify(referenceDna, null, 2)}
+  const stableReferenceDna = cacheableReferenceDna(referenceDna);
+  const reusableReferencePrefix = `REFERENCE DNA
+${JSON.stringify(stableReferenceDna, null, 2)}
 
-Compare the candidate to the reference as an independent implementation of the same design mechanics. Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding. A technically clean but visually generic page must not pass.`
-    },
+Compare the candidate to the reference as an independent implementation of the same design mechanics. Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding. A technically clean but visually generic page must not pass.`;
+  const content = [
+    { type: "text", text: reusableReferencePrefix },
     { type: "text", text: "Reference desktop:" },
     await imagePart(desktopReference),
     ...(mobileReference ? [{ type: "text", text: "Reference mobile:" }, await imagePart(mobileReference)] : []),
+    promptCachedText(
+      model,
+      "End assigned reference evidence. Candidate render evidence follows.",
+    ),
     { type: "text", text: "Candidate desktop 1536x864:" },
     await imagePart(candidateDesktop),
     { type: "text", text: "Candidate compact desktop 1366x768:" },
@@ -268,7 +309,26 @@ Compare the candidate to the reference as an independent implementation of the s
     { type: "text", text: "Candidate mobile 390x844:" },
     await imagePart(candidateMobile)
   ];
-  const result = await requestJson({ model, schema: auditSchema, content, label: "Rendered reference judge", fetchImpl });
+  const sessionId = openRouterSessionId(
+    "rendered-reference",
+    model,
+    referenceDna.familyId,
+    referenceDna.referenceName,
+  );
+  const promptCacheKey = openRouterPromptCacheKey(
+    "rendered-reference",
+    model,
+    stableReferenceDna,
+  );
+  const result = await requestJson({
+    model,
+    schema: auditSchema,
+    content,
+    label: "Rendered reference judge",
+    sessionId,
+    promptCacheKey,
+    fetchImpl,
+  });
   return {
     version: 1,
     model,
@@ -300,7 +360,18 @@ export async function evaluateRenderedDiversity({
     content.push({ type: "text", text: `${candidate.candidateId} mobile:` });
     content.push(await imagePart(candidate.mobile));
   }
-  const result = await requestJson({ model, schema: diversitySchema, content, label: "Rendered diversity judge", fetchImpl });
+  const result = await requestJson({
+    model,
+    schema: diversitySchema,
+    content,
+    label: "Rendered diversity judge",
+    sessionId: openRouterSessionId(
+      "rendered-diversity",
+      model,
+      candidates.map((candidate) => candidate.candidateId).sort(),
+    ),
+    fetchImpl,
+  });
   const minimumPair = result.audit.pairs.length ? Math.min(...result.audit.pairs.map((pair) => Number(pair.distance || 0))) : 100;
   const score = Math.min(Number(result.audit.overallDistinctiveness || 0), minimumPair);
   return {

@@ -1,5 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import {
+  logOpenRouterCacheUsage,
+  logOpenRouterResponseCacheUsage,
+  openRouterChatCompletion,
+  openRouterSessionId,
+} from "./openrouter-client.mjs";
 
 const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-5.6-luna";
 
@@ -239,18 +245,25 @@ Rules:
     await imagePart(desktop),
     ...(mobile ? [{ type: "text", text: "Mobile reference:" }, await imagePart(mobile)] : [])
   ];
+  const sessionId = openRouterSessionId(
+    "reference-dna",
+    model,
+    {
+      familyId: dna.familyId || route.familyId || "",
+      referenceName: dna.referenceName || route.label || "",
+    },
+  );
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 180_000);
   try {
-    const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom Reference DNA Analyzer",
       signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "X-OpenRouter-Title": "LaunchLoom Reference DNA Analyzer"
-      },
-      body: JSON.stringify({
+      sessionId,
+      responseCache: true,
+      responseCacheTtlSeconds: 86_400,
+      fetchImpl,
+      body: {
         model,
         temperature: 0,
         reasoning: { effort: "medium", exclude: true },
@@ -263,14 +276,16 @@ Rules:
           },
           { role: "user", content }
         ]
-      })
+      },
     });
+    logOpenRouterResponseCacheUsage("reference-dna", response);
     const payload = await response.json().catch((error) => {
       if (response.ok || !(error instanceof SyntaxError)) throw error;
       return {};
     });
     if (!response.ok)
       throw new Error(`Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`);
+    logOpenRouterCacheUsage("reference-dna", payload.usage);
     return parseChoice(payload);
   } finally {
     clearTimeout(timeout);

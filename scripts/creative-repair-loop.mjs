@@ -2,6 +2,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import {
+  logOpenRouterCacheUsage,
+  openRouterChatCompletion,
+  openRouterPromptCacheKey,
+  openRouterSessionId,
+  promptCachedText,
+  promptCacheRequestFields,
+} from "./openrouter-client.mjs";
 
 const REPAIR_SCHEMA = {
   name: "launchloom_creative_repair",
@@ -17,6 +25,18 @@ const REPAIR_SCHEMA = {
     },
   },
 };
+
+function cacheableReferenceDna(referenceDna) {
+  if (!referenceDna || typeof referenceDna !== "object")
+    return referenceDna;
+  const {
+    analyzedAt: _analyzedAt,
+    generatedAt: _generatedAt,
+    updatedAt: _updatedAt,
+    ...stable
+  } = referenceDna;
+  return stable;
+}
 
 function clean(value, limit = 900) {
   return String(value || "").replace(/[—–]/gu, "-").trim().slice(0, limit);
@@ -325,20 +345,27 @@ export async function requestRepair({
   const repairInstruction = humanReview
     ? "Refine this authored LaunchLoom candidate in place to satisfy the explicit human review request. The reviewer is authorized to change composition, presentation, hierarchy, imagery treatment, motion, and safe UI features described in that request. Preserve sealed content bindings, accessibility, factual integrity, and the assigned Reference DNA identity outside the requested change. Do not convert it into a legacy renderer."
     : "Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.";
+
   const desktopReference = referenceDna?.evidence?.desktopScreenshot;
   if (
     desktopReference?.available === false ||
     !(desktopReference?.path || desktopReference?.absolutePath)
   ) {
-    throw new ReferenceEvidenceError("Creative repair requires desktop reference evidence.");
+    throw new ReferenceEvidenceError(
+      "Creative repair requires desktop reference evidence.",
+    );
   }
+
+  const stableReferenceDna = cacheableReferenceDna(referenceDna);
   const contentTokens = Array.isArray(contentManifest?.tokens)
     ? contentManifest.tokens.map((item) => item.token).filter(Boolean)
     : [];
   const contentShape = contentManifest?.values || {};
-  const content = [{ type: "text", text: `${repairInstruction}
-Reference DNA:
-${JSON.stringify(referenceDna, null, 2)}
+  const content = [
+    {
+      type: "text",
+      text: `ASSIGNED REFERENCE DNA
+${JSON.stringify(stableReferenceDna, null, 2)}
 
 SEALED CONTENT TOKENS
 ${contentTokens.join("\n") || "(not supplied)"}
@@ -348,34 +375,23 @@ ${JSON.stringify(contentShape, null, 2)}
 
 TRUSTED @launchloom/runtime HELPERS
 LeadForm, FAQList, ContactLinks, LocationMap, ChatLauncher, SocialProof, resolveAsset, useReducedMotion.
-Use these helpers instead of inventing network calls or duplicating platform behavior. SocialProof is the only supported way for candidate code to present signed live Google reviews; it falls back to verified proof points.
+Use these helpers instead of inventing network calls or duplicating platform behavior. SocialProof is the only supported way for candidate code to present signed live Google reviews; it falls back to verified proof points.`,
+    },
+  ];
 
-Findings:
-${JSON.stringify(findings, null, 2)}
-
-Current Experience.jsx:
-${files.experience}
-
-Current styles.css:
-${files.styles}
-
-Current motion.js:
-${files.motion}
-
-Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.` }];
-  for (const screenshot of screenshots.slice(0, 3))
-    content.push(await imagePart(screenshot));
   const referenceScreenshots = [
     desktopReference,
     referenceDna?.evidence?.mobileScreenshot,
-  ].filter((record) => record?.available !== false && (record?.path || record?.absolutePath));
+  ].filter(
+    (record) =>
+      record?.available !== false && (record?.path || record?.absolutePath),
+  );
   for (const record of referenceScreenshots) {
     const resolved = await resolveReferenceEvidencePath(record);
     try {
       if (!resolved) throw new Error("No accessible reference screenshot.");
-      const image = await imagePart(resolved);
       content.push({ type: "text", text: "Assigned reference evidence:" });
-      content.push(image);
+      content.push(await imagePart(resolved));
     } catch (cause) {
       throw new ReferenceEvidenceError(
         `Creative repair cannot load required reference evidence: ${record.path || record.absolutePath}`,
@@ -383,23 +399,74 @@ Return complete files. Keep required reference signatures and safety/content con
       );
     }
   }
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "X-OpenRouter-Title": "LaunchLoom creative repair" },
-    body: JSON.stringify({
+
+  content.push(
+    promptCachedText(
       model,
+      "End reusable assigned reference evidence. Repair-specific findings and current source follow.",
+    ),
+  );
+  content.push({
+    type: "text",
+    text: `${repairInstruction}
+
+FINDINGS
+${JSON.stringify(findings, null, 2)}
+
+CURRENT EXPERIENCE.JSX
+${files.experience}
+
+CURRENT STYLES.CSS
+${files.styles}
+
+CURRENT MOTION.JS
+${files.motion}
+
+Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
+  });
+  for (const screenshot of screenshots.slice(0, 3))
+    content.push(await imagePart(screenshot));
+
+  const sessionId = openRouterSessionId(
+    "creative-repair",
+    model,
+    referenceDna?.familyId,
+    referenceDna?.referenceName,
+  );
+  const promptCacheKey = openRouterPromptCacheKey(
+    "creative-repair-reference",
+    model,
+    stableReferenceDna,
+  );
+  const response = await openRouterChatCompletion({
+    title: "LaunchLoom creative repair",
+    sessionId,
+    body: {
+      model,
+      ...promptCacheRequestFields(model, promptCacheKey),
       temperature: 0.35,
-      reasoning: { effort: process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "max", exclude: true },
+      reasoning: {
+        effort: process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "max",
+        exclude: true,
+      },
       response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
       max_tokens: 24_000,
       messages: [
-        { role: "system", content: "Return JSON only. You are repairing your own production frontend against screenshot-level evidence." },
+        {
+          role: "system",
+          content:
+            "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
+        },
         { role: "user", content },
       ],
-    }),
+    },
   });
   const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(`OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`);
+  if (!response.ok)
+    throw new Error(
+      `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
+    );
+  logOpenRouterCacheUsage("creative-repair", payload.usage);
   return parseModelJson(payload.choices?.[0]?.message?.content || "");
 }
 

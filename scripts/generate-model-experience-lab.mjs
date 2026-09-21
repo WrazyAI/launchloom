@@ -6,6 +6,11 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { parseModelJson } from "./model-json.mjs";
 import {
+  logOpenRouterCacheUsage,
+  openRouterChatCompletion,
+  openRouterSessionId,
+} from "./openrouter-client.mjs";
+import {
   assembleSplitExperience,
   createSplitExperienceStages,
 } from "./model-experience-stages.mjs";
@@ -169,26 +174,24 @@ async function requestJsonStage(model, { messages, stage, temperature }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 360_000);
   try {
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "X-OpenRouter-Title": "LaunchLoom Model Experience Lab",
-        },
-        body: JSON.stringify({
+    const sessionId = openRouterSessionId(
+      "model-experience-lab",
+      model,
+      brief,
+    );
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom Model Experience Lab",
+      signal: controller.signal,
+      sessionId,
+      body: {
           model,
           temperature,
           reasoning: { effort: stage.reasoningEffort, exclude: true },
           response_format: { type: "json_schema", json_schema: stage.schema },
           max_tokens: stage.maxTokens,
           messages,
-        }),
-      },
-    );
+        },
+    });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok)
       throw new Error(
@@ -199,7 +202,16 @@ async function requestJsonStage(model, { messages, stage, temperature }) {
       throw new Error(
         `No content returned for ${stage.id} (${payload.choices?.[0]?.finish_reason || "unknown"}; provider ${payload.provider || "unknown"})`,
       );
-    return { value: parseModelJson(content), usage: payload.usage || null };
+    const cache = logOpenRouterCacheUsage(
+      `model-experience-${stage.id}`,
+      payload.usage,
+    );
+    return {
+      value: parseModelJson(content),
+      usage: payload.usage || null,
+      cache,
+      sessionId,
+    };
   } finally {
     clearTimeout(timeout);
   }

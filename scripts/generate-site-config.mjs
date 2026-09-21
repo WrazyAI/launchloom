@@ -1,6 +1,14 @@
 import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { parseModelJson } from "./model-json.mjs";
+import {
+  logOpenRouterCacheUsage,
+  openRouterChatCompletion,
+  openRouterPromptCacheKey,
+  openRouterSessionId,
+  promptCachedMessageContent,
+  promptCacheRequestFields,
+} from "./openrouter-client.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import {
   defaultHistoryPath,
@@ -1486,76 +1494,100 @@ export function removeEmDashes(value) {
 }
 
 async function askModel(intake, effort, model = MODEL) {
-  const response = await fetch(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "X-OpenRouter-Title": "LaunchLoom",
-      },
-      body: JSON.stringify({
-        model,
-        reasoning_effort: effort,
-        temperature: 0.3,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use its validated queries, customer questions, vocabulary, and page decisions as strategy context. Never present search metrics or SERP language as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`,
-          },
-          {
-            role: "user",
-            content: `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, locations, copy, conversion. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. services is an array of {name, description, slug, decisionSupport:{scope,nextStep,preparation}}. Keep every submitted service name exactly as provided. Each service description is one concrete sentence under 22 words. Each decisionSupport field must answer a different practical buying question using only supported facts and cautious next-step language. locations is an array of {name, description, localNote}; include only submitted service areas, distinguish serving an area from having a physical office there, and avoid interchangeable city-swap copy. copy must include heroKicker, heroHeading, heroBody, servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. heroHeading is a catchy 4-10 word customer promise, not a service inventory. heroBody is one sentence under 28 words. servicesHeading is a short, memorable section promise and servicesIntro is one sentence. aboutBody adds useful context instead of repeating the hero description or proof points. conversion must include process (2–4 concise steps) and faqs (2–5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2–3 sentence customer-facing introduction. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`,
-          },
-        ],
-      }),
-    },
+  const systemPrompt = `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use its validated queries, customer questions, vocabulary, and page decisions as strategy context. Never present search metrics or SERP language as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`;
+  const identity = {
+    businessName: intake.businessName || intake.business?.name || "",
+    email: intake.email || intake.business?.email || "",
+    phone: intake.phone || intake.business?.phone || "",
+    domain:
+      intake.desiredDomain ||
+      intake.domain ||
+      intake.business?.domain ||
+      "",
+  };
+  const sessionId = openRouterSessionId("site-copy", model, identity);
+  const promptCacheKey = openRouterPromptCacheKey(
+    "site-copy-system",
+    model,
+    systemPrompt,
   );
+  const response = await openRouterChatCompletion({
+    title: "LaunchLoom",
+    sessionId,
+    body: {
+      model,
+      ...promptCacheRequestFields(model, promptCacheKey),
+      reasoning_effort: effort,
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: promptCachedMessageContent(model, systemPrompt),
+        },
+        {
+          role: "user",
+          content: `Transform this verified client brief into JSON with keys preset, business, style, services, differentiators, locations, copy, conversion. business must include name, tagline, description, phone, email, address, serviceAreas, hours, primaryCta, offer, domain, leadEmail. services is an array of {name, description, slug, decisionSupport:{scope,nextStep,preparation}}. Keep every submitted service name exactly as provided. Each service description is one concrete sentence under 22 words. Each decisionSupport field must answer a different practical buying question using only supported facts and cautious next-step language. locations is an array of {name, description, localNote}; include only submitted service areas, distinguish serving an area from having a physical office there, and avoid interchangeable city-swap copy. copy must include heroKicker, heroHeading, heroBody, servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. heroHeading is a catchy 4-10 word customer promise, not a service inventory. heroBody is one sentence under 28 words. servicesHeading is a short, memorable section promise and servicesIntro is one sentence. aboutBody adds useful context instead of repeating the hero description or proof points. conversion must include process (2-4 concise steps) and faqs (2-5 {question, answer} objects). The tagline is a concise, differentiated promise; description is a 2-3 sentence customer-facing introduction. Treat submitted business facts as authoritative.\n\n${JSON.stringify(intake)}`,
+        },
+      ],
+    },
+  });
   if (!response.ok)
     throw new Error(
       `OpenRouter returned ${response.status}: ${(await response.text()).slice(0, 500)}`,
     );
   const result = await response.json();
+  logOpenRouterCacheUsage("site-copy", result.usage);
   const content = result.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenRouter returned no content.");
   return parseModelJson(content);
 }
 
 async function refineDraft(intake, draft, report, model = MODEL) {
-  const response = await fetch(
-    "https://openrouter.ai/api/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        "X-OpenRouter-Title": "LaunchLoom quality refinement",
-      },
-      body: JSON.stringify({
-        model,
-        reasoning_effort: "medium",
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-        messages: [
-          {
-            role: "system",
-            content: `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`,
-          },
-          {
-            role: "user",
-            content: `Verified intake facts:\n${JSON.stringify(intake)}\n\nCurrent draft:\n${JSON.stringify(draft)}\n\nQuality issues to fix:\n${report.issues.map((issue, index) => `${index + 1}. ${issue}`).join("\n")}`,
-          },
-        ],
-      }),
-    },
+  const systemPrompt = `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`;
+  const identity = {
+    businessName: intake.businessName || intake.business?.name || "",
+    email: intake.email || intake.business?.email || "",
+    phone: intake.phone || intake.business?.phone || "",
+    domain:
+      intake.desiredDomain ||
+      intake.domain ||
+      intake.business?.domain ||
+      "",
+  };
+  const sessionId = openRouterSessionId("site-copy", model, identity);
+  const promptCacheKey = openRouterPromptCacheKey(
+    "site-refine-system",
+    model,
+    systemPrompt,
   );
+  const response = await openRouterChatCompletion({
+    title: "LaunchLoom quality refinement",
+    sessionId,
+    body: {
+      model,
+      ...promptCacheRequestFields(model, promptCacheKey),
+      reasoning_effort: "medium",
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content: promptCachedMessageContent(model, systemPrompt),
+        },
+        {
+          role: "user",
+          content: `Verified intake facts:\n${JSON.stringify(intake)}\n\nCurrent draft:\n${JSON.stringify(draft)}\n\nQuality issues to fix:\n${report.issues.map((issue, index) => `${index + 1}. ${issue}`).join("\n")}`,
+        },
+      ],
+    },
+  });
   if (!response.ok)
     throw new Error(
       `OpenRouter refinement returned ${response.status}: ${(await response.text()).slice(0, 500)}`,
     );
   const result = await response.json();
+  logOpenRouterCacheUsage("site-refinement", result.usage);
   const content = result.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenRouter refinement returned no content.");
   return parseModelJson(content);

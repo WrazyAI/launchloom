@@ -6,6 +6,12 @@ import {
   buildSafeVisualManifest,
   parseVisualAuditContent,
 } from "./visual-quality-gate-lib.mjs";
+import {
+  logOpenRouterCacheUsage,
+  logOpenRouterResponseCacheUsage,
+  openRouterChatCompletion,
+  openRouterSessionId,
+} from "./openrouter-client.mjs";
 
 const auditSchema = {
   name: "launchloom_human_revision_gate",
@@ -199,23 +205,30 @@ Decide whether the rendered revision actually satisfies the triggering review re
       `Human revision screenshot prompt exceeds ${HUMAN_REVISION_TOTAL_IMAGE_MAX_BYTES} bytes after normalization (${imagePayloadBytes} bytes).`,
     );
 
+  const sessionId = openRouterSessionId(
+    "human-revision-gate",
+    model,
+    {
+      businessName: config.business?.name || "",
+      email: config.business?.email || "",
+      phone: config.business?.phone || "",
+      domain: config.business?.domain || "",
+    },
+  );
   let lastError;
   let payload;
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 180_000);
     try {
-      const response = await fetchImpl(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          method: "POST",
-          signal: controller.signal,
-          headers: {
-            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            "X-OpenRouter-Title": "LaunchLoom human revision gate",
-          },
-          body: JSON.stringify({
+      const response = await openRouterChatCompletion({
+        title: "LaunchLoom human revision gate",
+        signal: controller.signal,
+        sessionId,
+        responseCache: true,
+        responseCacheTtlSeconds: 900,
+        fetchImpl,
+        body: {
             model,
             temperature: 0,
             max_completion_tokens: [5000, 7500, 10000][attempt - 1],
@@ -233,8 +246,11 @@ Decide whether the rendered revision actually satisfies the triggering review re
               },
               { role: "user", content: userContent },
             ],
-          }),
-        },
+          },
+      });
+      const responseCache = logOpenRouterResponseCacheUsage(
+        "human-revision-gate",
+        response,
       );
       payload = await response.json().catch(() => ({}));
       if (!response.ok)
@@ -249,12 +265,19 @@ Decide whether the rendered revision actually satisfies the triggering review re
       const audit = validateAudit(
         parseVisualAuditContent(choice?.message?.content || ""),
       );
+      const cache = logOpenRouterCacheUsage(
+        "human-revision-gate",
+        payload.usage,
+      );
       const report = {
         version: 1,
         model,
         feedback: requestText,
         audit,
         usage: payload.usage || null,
+        cache,
+        responseCache,
+        sessionId,
         provider: payload.provider || null,
         attempt,
       };

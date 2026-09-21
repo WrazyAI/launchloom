@@ -1,6 +1,14 @@
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { parseModelJson } from "./model-json.mjs";
+import {
+  logOpenRouterCacheUsage,
+  openRouterChatCompletion,
+  openRouterPromptCacheKey,
+  openRouterSessionId,
+  promptCachedMessageContent,
+  promptCacheRequestFields,
+} from "./openrouter-client.mjs";
 
 const DEFAULT_MAX_TASKS = 2;
 const DEFAULT_MAX_USD = 0.1;
@@ -429,36 +437,45 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
 
 function createOpenRouterResearchModel(apiKey, model = DEFAULT_MODEL) {
   async function ask(role, payload) {
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-          "X-OpenRouter-Title": `LaunchLoom SEO ${role}`,
-        },
-        body: JSON.stringify({
-          model,
-          temperature: 0.1,
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content:
-                role === "planner"
-                  ? "Return JSON with a queries array of at most 12 concise local-search queries. Use only the supplied services, locations, and customer language. Do not invent services, credentials, or claims."
-                  : "Return JSON with copyVocabulary, customerQuestions, pageDecisions, and validatedQueries. Use only supplied research evidence and confirmed business facts. Page decisions may include only confirmed services or submitted locations. Never invent facts or claims.",
-            },
-            { role: "user", content: JSON.stringify(payload) },
-          ],
-        }),
-        signal: AbortSignal.timeout(45_000),
-      },
+    const systemPrompt =
+      role === "planner"
+        ? "Return JSON with a queries array of at most 12 concise local-search queries. Use only the supplied services, locations, and customer language. Do not invent services, credentials, or claims."
+        : "Return JSON with copyVocabulary, customerQuestions, pageDecisions, and validatedQueries. Use only supplied research evidence and confirmed business facts. Page decisions may include only confirmed services or submitted locations. Never invent facts or claims.";
+    const intake = payload?.intake || {};
+    const sessionId = openRouterSessionId("seo-research", model, {
+      businessName: intake.businessName || intake.business?.name || "",
+      email: intake.email || intake.business?.email || "",
+      phone: intake.phone || intake.business?.phone || "",
+      domain: intake.desiredDomain || intake.domain || "",
+    });
+    const promptCacheKey = openRouterPromptCacheKey(
+      `seo-${role}-system`,
+      model,
+      systemPrompt,
     );
+    const response = await openRouterChatCompletion({
+      apiKey,
+      title: `LaunchLoom SEO ${role}`,
+      sessionId,
+      body: {
+        model,
+        ...promptCacheRequestFields(model, promptCacheKey),
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: promptCachedMessageContent(model, systemPrompt),
+          },
+          { role: "user", content: JSON.stringify(payload) },
+        ],
+      },
+      signal: AbortSignal.timeout(45_000),
+    });
     if (!response.ok)
       throw new Error(`OpenRouter SEO ${role} returned ${response.status}.`);
     const body = await response.json();
+    logOpenRouterCacheUsage(`seo-${role}`, body.usage);
     return parseModelJson(body.choices?.[0]?.message?.content || "{}");
   }
   return {
