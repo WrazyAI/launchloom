@@ -123,7 +123,9 @@ describe("experience-pack compiler", () => {
     expect(workflow).toContain('Authored creative renderer was not selected');
     expect(workflow).toContain('CANDIDATE_ID=$(jq -r');
     expect(workflow).toContain("openai/gpt-5.6-luna");
-    expect(workflow).toContain("CREATIVE_EXPERIENCE_REASONING_EFFORT");
+    expect(workflow).toContain(
+      "vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh'",
+    );
     expect(workflow).toMatch(
       /Upload experience bakeoff evidence[\s\S]*experience-bakeoff-screenshots[\s\S]*\.launchloom\/experience-bakeoff\.json/,
     );
