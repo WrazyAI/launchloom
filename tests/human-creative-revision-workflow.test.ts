@@ -116,6 +116,8 @@ describe("human creative revision lifecycle", () => {
     );
     expect(client).toContain('--to "$LAUNCHLOOM_DEVELOPER_EMAIL"');
     expect(client).not.toContain('--to "$CLIENT_EMAIL"');
+    expect(client).toContain('BRANCH="review/client-revision-$SAFE_REQUEST"');
+    expect(client).not.toContain("BRANCH=review/client-revision\n");
 
     expect(worker).toContain('claims.stage !== "developer"');
     expect(worker).toContain('await dispatch(env, "publish-site"');
