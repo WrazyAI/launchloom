@@ -346,13 +346,17 @@ jobs:
           cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-mobile.png" "$RUNNER_TEMP/initial-screenshots/mobile.png"
           GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json"
           node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode plan --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$GATE_REPORT"
-          if ! jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$GATE_REPORT" >/dev/null; then
+          for VISUAL_REPAIR_ROUND in 1 2; do
+            if jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$GATE_REPORT" >/dev/null; then
+              break
+            fi
             REPAIR_CANDIDATE=$(jq -r '.design.experience.candidateId' src/site.config.json)
+            echo "Selected-candidate visual repair round $VISUAL_REPAIR_ROUND for $REPAIR_CANDIDATE"
             node "$GITHUB_WORKSPACE/scripts/creative-repair-loop.mjs" \
               --candidate "/tmp/generated-experiences/$REPAIR_CANDIDATE" \
-              --report "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" \
+              --report "$GATE_REPORT" \
               --screenshots "$RUNNER_TEMP/initial-screenshots/desktop.png,$RUNNER_TEMP/initial-screenshots/compact.png,$RUNNER_TEMP/initial-screenshots/mobile.png" \
-              --maxCycles 2
+              --maxCycles 1
             REPAIR_PROMOTE=false
             REPAIR_PREVIEW=true
             if [ "$CREATIVE_EXPERIENCE_MODE" = "promote" ]; then REPAIR_PROMOTE=true; REPAIR_PREVIEW=false; fi
@@ -369,11 +373,9 @@ jobs:
             cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-desktop.png" "$RUNNER_TEMP/initial-screenshots/desktop.png"
             cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-compact.png" "$RUNNER_TEMP/initial-screenshots/compact.png"
             cp "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-mobile.png" "$RUNNER_TEMP/initial-screenshots/mobile.png"
-            FINAL_GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-final.json"
-            node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$FINAL_GATE_REPORT"
-            jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_GATE_REPORT" >/dev/null || { echo "Creative repair did not pass the final multimodal visual gate"; exit 1; }
-            GATE_REPORT="$FINAL_GATE_REPORT"
-          fi
+            GATE_REPORT="$RUNNER_TEMP/initial-screenshots/visual-gate-repair-${VISUAL_REPAIR_ROUND}.json"
+            node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/initial-screenshots" --report "$GATE_REPORT"
+          done
           jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$GATE_REPORT" >/dev/null || { echo "Creative candidate did not pass the multimodal visual gate"; exit 1; }
           if jq -e '.changed == true' "$RUNNER_TEMP/initial-screenshots/visual-gate-plan.json" >/dev/null; then
             PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
