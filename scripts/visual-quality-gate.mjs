@@ -8,6 +8,11 @@ import {
   parseVisualAuditChoice,
   shouldFailVisualPlan,
 } from "./visual-quality-gate-lib.mjs";
+import {
+  logOpenRouterCacheUsage,
+  openRouterChatCompletion,
+  openRouterSessionId,
+} from "./openrouter-client.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -150,17 +155,17 @@ async function requestAudit(manifest) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 180_000);
     try {
-      const response = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          method: "POST",
-          signal: controller.signal,
-          headers: {
-            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            "X-OpenRouter-Title": "LaunchLoom visual quality gate",
-          },
-          body: JSON.stringify({
+      const sessionId = openRouterSessionId("visual-quality-gate", model, {
+        business: manifest.business?.name || manifest.brand?.name || "",
+        address: manifest.business?.address || manifest.brand?.address || "",
+      });
+      const response = await openRouterChatCompletion({
+        title: "LaunchLoom visual quality gate",
+        signal: controller.signal,
+        sessionId,
+        responseCache: true,
+        responseCacheTtlSeconds: 900,
+        body: {
             model,
             temperature: 0,
             max_completion_tokens: [6000, 9000, 12000][attempt - 1],
@@ -178,7 +183,11 @@ async function requestAudit(manifest) {
                 content: [
                   {
                     type: "text",
-                    text: `Mode: ${mode}. Public manifest: ${JSON.stringify(manifest)}\nConfirm visible content integrity, industry fit, contextual imagery, conversion clarity, hierarchy, distinctiveness, and mobile layout. In plan mode suggest only bounded layout corrections. In verify mode judge the rebuilt result and return operations as an empty array.`,
+                    text: `Public manifest: ${JSON.stringify(manifest)}\nConfirm visible content integrity, industry fit, contextual imagery, conversion clarity, hierarchy, distinctiveness, and mobile layout.`,
+                  },
+                  {
+                    type: "text",
+                    text: `Mode: ${mode}. In plan mode suggest only bounded layout corrections. In verify mode judge the rebuilt result and return operations as an empty array.`,
                   },
                   { type: "text", text: "Desktop screenshot:" },
                   await imagePart(path.join(screenshotsDir, "desktop.png")),
@@ -188,18 +197,20 @@ async function requestAudit(manifest) {
                 ],
               },
             ],
-          }),
-        },
-      );
+          },
+      });
       const payload = await response.json();
       if (!response.ok)
         throw new Error(
           `OpenRouter visual audit failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
         );
       const audit = parseVisualAuditChoice(payload?.choices?.[0]);
+      const cache = logOpenRouterCacheUsage("visual-quality-gate", payload.usage);
       return {
         audit,
         usage: payload.usage || null,
+        cache,
+        sessionId,
         provider: payload.provider || null,
         attempt,
       };
@@ -247,6 +258,8 @@ const report = {
   blockers,
   audit: result.audit,
   usage: result.usage,
+  cache: result.cache,
+  sessionId: result.sessionId,
   provider: result.provider,
   attempt: result.attempt,
 };
