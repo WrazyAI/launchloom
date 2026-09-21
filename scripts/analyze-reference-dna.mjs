@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   logOpenRouterCacheUsage,
+  logOpenRouterResponseCacheUsage,
   openRouterChatCompletion,
   openRouterSessionId,
 } from "./openrouter-client.mjs";
@@ -269,6 +270,7 @@ Rules:
         ]
       },
     });
+    logOpenRouterResponseCacheUsage("reference-dna", response);
     const payload = await response.json().catch((error) => {
       if (response.ok || !(error instanceof SyntaxError)) throw error;
       return {};
