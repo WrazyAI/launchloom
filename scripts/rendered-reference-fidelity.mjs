@@ -183,6 +183,19 @@ async function requestJson({ model, schema, content, label, fetchImpl = fetch })
   }
 }
 
+async function resolveEvidencePath(record) {
+  for (const candidate of [record?.path, record?.absolutePath].filter(Boolean)) {
+    const resolved = path.resolve(candidate);
+    try {
+      await fs.access(resolved);
+      return resolved;
+    } catch {
+      // Try the next representation.
+    }
+  }
+  return "";
+}
+
 function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
   const scores = audit?.scores || {};
   const major = (audit?.findings || []).filter((item) => item.severity === "critical" || item.severity === "major");
@@ -212,9 +225,11 @@ export async function evaluateRenderedReferenceFidelity({
   fetchImpl = fetch
 } = {}) {
   validateReferenceDna(referenceDna, { requireEvidence: true });
-  const desktopReference = referenceDna.evidence.desktopScreenshot.absolutePath || referenceDna.evidence.desktopScreenshot.path;
+  const desktopReference = await resolveEvidencePath(
+    referenceDna.evidence.desktopScreenshot,
+  );
   const mobileReference = referenceDna.evidence.mobileScreenshot?.available
-    ? referenceDna.evidence.mobileScreenshot.absolutePath || referenceDna.evidence.mobileScreenshot.path
+    ? await resolveEvidencePath(referenceDna.evidence.mobileScreenshot)
     : "";
   const candidateDesktop = candidateScreenshots?.desktop;
   const candidateCompact = candidateScreenshots?.compact;
