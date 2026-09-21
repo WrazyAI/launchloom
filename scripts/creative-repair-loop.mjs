@@ -308,7 +308,14 @@ export async function resolveReferenceEvidencePath(record) {
   return "";
 }
 
-export async function requestRepair({ model, referenceDna, findings, files, screenshots }) {
+export async function requestRepair({
+  model,
+  referenceDna,
+  findings,
+  files,
+  screenshots,
+  contentManifest,
+}) {
   const humanReview = (findings || []).some(
     (finding) =>
       finding &&
@@ -325,7 +332,37 @@ export async function requestRepair({ model, referenceDna, findings, files, scre
   ) {
     throw new ReferenceEvidenceError("Creative repair requires desktop reference evidence.");
   }
-  const content = [{ type: "text", text: `${repairInstruction} Reference DNA:\n${JSON.stringify(referenceDna, null, 2)}\nFindings:\n${JSON.stringify(findings, null, 2)}\nCurrent Experience.jsx:\n${files.experience}\nCurrent styles.css:\n${files.styles}\nCurrent motion.js:\n${files.motion}\nReturn complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.` }];
+  const contentTokens = Array.isArray(contentManifest?.tokens)
+    ? contentManifest.tokens.map((item) => item.token).filter(Boolean)
+    : [];
+  const contentShape = contentManifest?.values || {};
+  const content = [{ type: "text", text: `${repairInstruction}
+Reference DNA:
+${JSON.stringify(referenceDna, null, 2)}
+
+SEALED CONTENT TOKENS
+${contentTokens.join("\n") || "(not supplied)"}
+
+CURRENT SEALED CONTENT SHAPE
+${JSON.stringify(contentShape, null, 2)}
+
+TRUSTED @launchloom/runtime HELPERS
+LeadForm, FAQList, ContactLinks, LocationMap, ChatLauncher, SocialProof, resolveAsset, useReducedMotion.
+Use these helpers instead of inventing network calls or duplicating platform behavior. SocialProof is the only supported way for candidate code to present signed live Google reviews; it falls back to verified proof points.
+
+Findings:
+${JSON.stringify(findings, null, 2)}
+
+Current Experience.jsx:
+${files.experience}
+
+Current styles.css:
+${files.styles}
+
+Current motion.js:
+${files.motion}
+
+Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.` }];
   for (const screenshot of screenshots.slice(0, 3))
     content.push(await imagePart(screenshot));
   const referenceScreenshots = [
