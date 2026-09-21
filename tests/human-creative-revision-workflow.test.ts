@@ -36,6 +36,30 @@ describe("human creative revision lifecycle", () => {
     await fs.writeFile(
       path.join(root, "src/site.config.json"),
       JSON.stringify({
+        business: {
+          name: "Current Business",
+          phone: "555-0100",
+          email: "hello@example.test",
+          address: "Accra",
+          serviceAreas: ["Accra"],
+          primaryCta: "Book now",
+          tagline: "Current tagline",
+          description: "Current description",
+        },
+        services: [
+          {
+            name: "Current service",
+            description: "Current service description",
+          },
+        ],
+        conversion: {
+          process: [],
+          faqs: [],
+        },
+        copy: {
+          heroHeading: "Revised hero heading",
+          heroBody: "Revised hero body",
+        },
         design: {
           experience: {
             renderer: "creative-candidate",
@@ -47,7 +71,27 @@ describe("human creative revision lifecycle", () => {
     );
     await fs.writeFile(
       path.join(evidenceDir, "metadata.json"),
-      JSON.stringify({ candidateId: "candidate-a" }),
+      JSON.stringify({
+        candidateId: "candidate-a",
+        contentManifestDigest: "old-digest",
+        creativeManifest: { contentManifestDigest: "old-digest" },
+      }),
+    );
+    await fs.writeFile(
+      path.join(evidenceDir, "contract.json"),
+      JSON.stringify({
+        route: { id: "route-01" },
+        creativeManifest: { contentManifestDigest: "old-digest" },
+      }),
+    );
+    await fs.writeFile(
+      path.join(evidenceDir, "content-manifest.json"),
+      JSON.stringify({
+        version: 1,
+        digest: "old-digest",
+        values: { hero: { heading: "Old hero heading" } },
+        tokens: [],
+      }),
     );
     for (const [name, original, selected] of [
       ["Experience.jsx", "original experience", "current selected experience"],
@@ -85,6 +129,40 @@ describe("human creative revision lifecycle", () => {
     expect(
       await fs.readFile(path.join(outDir, "candidate-a/styles.css"), "utf8"),
     ).toBe("current selected styles");
+    const refreshedManifest = JSON.parse(
+      await fs.readFile(
+        path.join(outDir, "candidate-a/content-manifest.json"),
+        "utf8",
+      ),
+    );
+    const refreshedMetadata = JSON.parse(
+      await fs.readFile(
+        path.join(outDir, "candidate-a/metadata.json"),
+        "utf8",
+      ),
+    );
+    const refreshedContract = JSON.parse(
+      await fs.readFile(
+        path.join(outDir, "candidate-a/contract.json"),
+        "utf8",
+      ),
+    );
+    expect(refreshedManifest.values.hero.heading).toBe(
+      "Revised hero heading",
+    );
+    expect(refreshedManifest.values.services[0].name).toBe(
+      "Current service",
+    );
+    expect(refreshedManifest.digest).not.toBe("old-digest");
+    expect(refreshedMetadata.contentManifestDigest).toBe(
+      refreshedManifest.digest,
+    );
+    expect(refreshedMetadata.creativeManifest.contentManifestDigest).toBe(
+      refreshedManifest.digest,
+    );
+    expect(refreshedContract.creativeManifest.contentManifestDigest).toBe(
+      refreshedManifest.digest,
+    );
   });
 
   it("keeps developer and client feedback on the developer-first approval path", () => {
