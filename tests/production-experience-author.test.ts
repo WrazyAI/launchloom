@@ -4,8 +4,10 @@ import { createHash } from "node:crypto";
 import {
   authorExperienceCandidates,
   namespaceCreativeCss,
+  validateProductionCandidateFiles,
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
+import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 
 const site = {
   business: {
@@ -138,6 +140,32 @@ describe("production experience author", () => {
     expect(styles).toMatch(
       /\[data-creative-host="true"\]\s*\{[^}]*overflow-x:\s*clip;/u,
     );
+  });
+
+  it("fails closed when a repair route carries present-but-incomplete Reference DNA", () => {
+    const referenceDna = buildReferenceDna({
+      id: "route-incomplete",
+      referenceFamilyId: "kokoro-editorial-architecture",
+      source: "Owned",
+      rights: "owned",
+    });
+    expect(referenceDna.complete).toBe(false);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience: "export default function Experience(){ return null; }",
+          styles: ".candidate { display: block; }",
+          motion:
+            "export function mountExperienceMotion(){ return () => {}; }",
+        },
+        route: {
+          id: "route-incomplete",
+          referenceDna,
+        },
+        content: {},
+      }),
+    ).toThrow(/Reference DNA .* is incomplete/iu);
   });
 
   it("namespaces candidate-owned CSS variables without hiding host tokens", () => {
