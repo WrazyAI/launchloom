@@ -290,16 +290,18 @@ jobs:
             --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots" \
             --promote "$PROMOTE" \
             --preview "$PREVIEW"
-          REPAIR_CANDIDATES=$(jq -r '.candidates[] | select(.valid == false) | .candidateId' .launchloom/creative-bakeoff.json)
-          if [ -n "$REPAIR_CANDIDATES" ]; then
+          for REPAIR_ROUND in 1 2; do
+            REPAIR_CANDIDATES=$(jq -r '.candidates[] | select(.valid == false) | .candidateId' .launchloom/creative-bakeoff.json)
+            [ -n "$REPAIR_CANDIDATES" ] || break
+            echo "Creative visual repair round $REPAIR_ROUND"
             while IFS= read -r CANDIDATE_ID; do
               [ -n "$CANDIDATE_ID" ] || continue
               if ! node "$GITHUB_WORKSPACE/scripts/creative-repair-loop.mjs" \
                 --candidate "/tmp/generated-experiences/$CANDIDATE_ID" \
                 --report .launchloom/creative-bakeoff.json \
                 --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-desktop.png,$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-compact.png,$RUNNER_TEMP/creative-bakeoff-screenshots/${CANDIDATE_ID}-mobile.png" \
-                --maxCycles 2; then
-                echo "Creative repair exhausted for $CANDIDATE_ID; the bakeoff rerun remains the promotion gate."
+                --maxCycles 1; then
+                echo "Creative repair attempt failed for $CANDIDATE_ID; fresh rendered evidence will decide the next round."
               fi
             done <<< "$REPAIR_CANDIDATES"
             rm -rf "$RUNNER_TEMP/creative-bakeoff-screenshots"
@@ -310,7 +312,7 @@ jobs:
               --screenshots "$RUNNER_TEMP/creative-bakeoff-screenshots" \
               --promote "$PROMOTE" \
               --preview "$PREVIEW"
-          fi
+          done
           git add .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Render creative experience candidates"
