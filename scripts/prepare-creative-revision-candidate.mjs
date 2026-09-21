@@ -14,10 +14,12 @@ const args = Object.fromEntries(
     ),
 );
 
-const clientDir = path.resolve(String(args.client || ""));
-const outDir = path.resolve(String(args.out || ""));
-if (!clientDir || !outDir)
+const clientArg = String(args.client || "").trim();
+const outArg = String(args.out || "").trim();
+if (!clientArg || !outArg)
   throw new Error("--client and --out are required.");
+const clientDir = path.resolve(clientArg);
+const outDir = path.resolve(outArg);
 
 const config = JSON.parse(
   await fs.readFile(path.join(clientDir, "src/site.config.json"), "utf8"),
@@ -39,7 +41,13 @@ const evidenceRoot = path.join(
   clientDir,
   ".launchloom/generated-experiences",
 );
-const entries = await fs.readdir(evidenceRoot, { withFileTypes: true });
+let entries;
+try {
+  entries = await fs.readdir(evidenceRoot, { withFileTypes: true });
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+  entries = [];
+}
 let sourceDir = "";
 for (const entry of entries) {
   if (!entry.isDirectory()) continue;
