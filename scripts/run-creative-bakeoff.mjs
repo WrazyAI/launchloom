@@ -324,15 +324,71 @@ export async function runCreativeBakeoff({
             allEvidence[0].motionPrimitive,
           ].join("|")
         : "";
+      const pixelScores =
+        candidateResult.renderedReferenceFidelity?.audit?.scores || {};
       const visual = {
-        hierarchy: allEvidence.every((viewport) => viewport.h1Count === 1 && viewport.hasHero) ? 100 : 0,
-        composition: desktopEvidence.every((viewport) => viewport.heroBottom <= viewport.viewportHeight + 1 && !viewport.overflow) ? 100 : 0,
-        responsive: Boolean(mobileEvidence && !mobileEvidence.overflow && mobileEvidence.hasHero) ? 100 : 0,
-        industryFit: 80,
-        conversion: allEvidence.every((viewport) => viewport.hasEarlyConversion && viewport.hasLeadForm) ? 100 : 0,
+        hierarchy:
+          candidateResult.manifest.version >= 2
+            ? Math.round(
+                (Number(pixelScores.typography || 0) +
+                  Number(pixelScores.spatialRhythm || 0)) /
+                  2,
+              )
+            : allEvidence.every(
+                  (viewport) => viewport.h1Count === 1 && viewport.hasHero,
+                )
+              ? 100
+              : 0,
+        composition:
+          candidateResult.manifest.version >= 2
+            ? Number(pixelScores.heroGeometry || 0)
+            : desktopEvidence.every(
+                  (viewport) =>
+                    viewport.heroBottom <= viewport.viewportHeight + 1 &&
+                    !viewport.overflow,
+                )
+              ? 100
+              : 0,
+        responsive:
+          candidateResult.manifest.version >= 2
+            ? Number(pixelScores.mobileRecomposition || 0)
+            : Boolean(
+                  mobileEvidence &&
+                    !mobileEvidence.overflow &&
+                    mobileEvidence.hasHero,
+                )
+              ? 100
+              : 0,
+        industryFit:
+          candidateResult.manifest.version >= 2
+            ? Math.round(
+                (Number(pixelScores.imagery || 0) +
+                  Number(pixelScores.servicePresentation || 0)) /
+                  2,
+              )
+            : 80,
+        conversion:
+          allEvidence.every(
+            (viewport) =>
+              viewport.hasEarlyConversion && viewport.hasLeadForm,
+          )
+            ? candidateResult.manifest.version >= 2
+              ? Number(pixelScores.ctaPlacement || 0)
+              : 100
+            : 0,
         referenceFidelity: candidateResult.referenceFidelity?.score ?? 0,
-        motionEvidence: allEvidence.every((viewport) => viewport.motionPrimitive) ? 100 : 0,
-        imageRelevance: allEvidence.every((viewport) => viewport.brokenImages === 0) ? 100 : 0,
+        motionEvidence:
+          candidateResult.manifest.version >= 2
+            ? Number(pixelScores.interactionEvidence || 0)
+            : allEvidence.every((viewport) => viewport.motionPrimitive)
+              ? 100
+              : 0,
+        imageRelevance:
+          allEvidence.every((viewport) => viewport.brokenImages === 0)
+            ? candidateResult.manifest.version >= 2
+              ? Number(pixelScores.imagery || 0)
+              : 100
+            : 0,
       };
       const technical = {
         accessibility: allEvidence.every((viewport) => viewport.missingAlt === 0 && viewport.unnamedControls === 0 && viewport.browserErrors.length === 0) ? 100 : 0,
