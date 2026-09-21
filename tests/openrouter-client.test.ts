@@ -11,6 +11,7 @@ import {
   promptCacheRequestFields,
   promptCachedMessageContent,
   promptCachedText,
+  readOpenRouterResponseEnvelope,
   supportsExplicitOpenAiPromptCaching,
 } from "../scripts/openrouter-client.mjs";
 
@@ -179,6 +180,54 @@ describe("OpenRouter cache-aware client", () => {
       model: "openai/gpt-5.6-luna",
       session_id: "launchloom:test:abc",
       usage: { include: true },
+    });
+  });
+
+  it("preserves bounded raw diagnostics for non-JSON OpenRouter errors", async () => {
+    const response = new Response("<html>upstream unavailable</html>", {
+      status: 502,
+      headers: { "Content-Type": "text/html" },
+    });
+    const result = await readOpenRouterResponseEnvelope(response, {
+      maxRawBodyChars: 18,
+    });
+    expect(result.payload).toEqual({});
+    expect(result.parseError).toBeInstanceOf(Error);
+    expect(result.rawBody).toBe("<html>upstream una");
+  });
+
+  it("treats null and other non-object JSON envelopes as malformed safely", async () => {
+    for (const body of ["null", "[]", "\"plain-string\""]) {
+      const result = await readOpenRouterResponseEnvelope(
+        new Response(body, {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+      expect(result.payload).toEqual({});
+      expect(result.parseError).toBeInstanceOf(Error);
+      expect(result.rawBody).toBe(body);
+    }
+  });
+
+  it("preserves normal object JSON envelopes", async () => {
+    const result = await readOpenRouterResponseEnvelope(
+      new Response(
+        JSON.stringify({
+          provider: "OpenAI",
+          usage: { prompt_tokens: 123 },
+          choices: [{ message: { content: "{}" } }],
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      ),
+    );
+    expect(result.parseError).toBeNull();
+    expect(result.payload).toMatchObject({
+      provider: "OpenAI",
+      usage: { prompt_tokens: 123 },
     });
   });
 
