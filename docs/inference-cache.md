@@ -45,6 +45,13 @@ cache data and an aggregate `cacheSummary`. The CLI also prints:
 
 - `production_experience_cache_hit_percent`
 - `production_experience_cached_tokens`
+- `production_experience_cost`
+- `production_experience_cache_discount`
+
+The shared OpenRouter transport requests `usage: { include: true }` by default
+so these metrics are not dependent on provider-default response detail. When
+OpenRouter supplies `usage.cost` or `usage.cache_discount`, both are retained
+in per-request cache telemetry and the creative-run aggregate.
 
 The first call can be a cache write. Judge cache health over repeated calls in
 the same workflow and over multiple generations that share the stable compiler
