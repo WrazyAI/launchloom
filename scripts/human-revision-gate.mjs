@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 import {
   VISUAL_GATE_MODEL,
   buildSafeVisualManifest,
@@ -57,19 +58,42 @@ const auditSchema = {
   },
 };
 
-async function imagePart(file) {
-  const data = await fs.readFile(file);
-  const extension = path.extname(file).toLowerCase();
-  const mime =
-    extension === ".png"
-      ? "image/png"
-      : extension === ".webp"
-        ? "image/webp"
-        : "image/jpeg";
-  return {
-    type: "image_url",
-    image_url: { url: `data:${mime};base64,${data.toString("base64")}` },
-  };
+export const HUMAN_REVISION_IMAGE_MAX_BYTES = 300_000;
+export const HUMAN_REVISION_IMAGE_MAX_EDGE = 1280;
+
+const HUMAN_REVISION_IMAGE_PROFILES = [
+  { edge: 1280, quality: 78 },
+  { edge: 1120, quality: 72 },
+  { edge: 960, quality: 66 },
+  { edge: 800, quality: 58 },
+  { edge: 680, quality: 50 },
+];
+
+export async function imagePart(file) {
+  let lastSize = 0;
+  for (const profile of HUMAN_REVISION_IMAGE_PROFILES) {
+    const data = await sharp(file)
+      .rotate()
+      .resize({
+        width: profile.edge,
+        height: profile.edge,
+        fit: "inside",
+        withoutEnlargement: true,
+      })
+      .webp({ quality: profile.quality, effort: 4 })
+      .toBuffer();
+    lastSize = data.byteLength;
+    if (lastSize <= HUMAN_REVISION_IMAGE_MAX_BYTES)
+      return {
+        type: "image_url",
+        image_url: {
+          url: `data:image/webp;base64,${data.toString("base64")}`,
+        },
+      };
+  }
+  throw new Error(
+    `Human revision screenshot exceeds ${HUMAN_REVISION_IMAGE_MAX_BYTES} bytes after normalization: ${path.basename(file)} (${lastSize} bytes).`,
+  );
 }
 
 function validateAudit(value) {
