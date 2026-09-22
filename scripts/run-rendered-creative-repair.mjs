@@ -504,7 +504,9 @@ export async function runRenderedCreativeRepair({
   const maxRounds = Math.max(1, cycleLimit * 3 + 1);
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession
-    ? validateCreativeSessionConfig(creativeSession)
+    ? validateCreativeSessionConfig(creativeSession, {
+        creativeModel: model,
+      })
     : null;
   const humanFindings = Array.isArray(requestedFindings)
     ? requestedFindings.filter(Boolean)
