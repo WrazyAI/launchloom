@@ -86,10 +86,17 @@ jobs:
             echo "reasoning_mode=$(jq -r '.mode' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
             echo "reasoning_effort=$(jq -r '.reasoningEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
             echo "reasoning_recommended=$(jq -r '.recommendedEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' /tmp/reasoning-preflight.json)
+            echo "reasoning_fallback=$FALLBACK_USED" >> "$GITHUB_OUTPUT"
+            if [ "$FALLBACK_USED" = "true" ]; then
+              FALLBACK_CODE=$(jq -r '.selector.error.code // "selector-error"' /tmp/reasoning-preflight.json)
+              echo "::warning title=Reasoning preflight fallback::TypeSafe/Jev selector fallback is active ($FALLBACK_CODE). This creative session is frozen at max reasoning for quality safety."
+            fi
           else
             echo "reasoning_mode=static" >> "$GITHUB_OUTPUT"
             echo "reasoning_effort=$CREATIVE_EXPERIENCE_REASONING_EFFORT" >> "$GITHUB_OUTPUT"
             echo "reasoning_recommended=static" >> "$GITHUB_OUTPUT"
+            echo "reasoning_fallback=false" >> "$GITHUB_OUTPUT"
           fi
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
