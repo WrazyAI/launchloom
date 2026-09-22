@@ -28,6 +28,18 @@ describe("prompt evidence", () => {
     expect(Buffer.from(part.image_url.url.split(",")[1], "base64").length).toBeLessThan(900_000);
   });
 
+  it("transcodes A1 AVIF reference screenshots into actual JPEG evidence", async () => {
+    const source = path.resolve(
+      "data/inspiration-evidence/a1-gallery/craft-2025/desktop.avif",
+    );
+
+    const part = await promptImagePart(source);
+    const bytes = Buffer.from(part.image_url.url.split(",")[1], "base64");
+
+    expect(part.image_url.url.startsWith("data:image/jpeg;base64,")).toBe(true);
+    expect([...bytes.subarray(0, 3)]).toEqual([0xff, 0xd8, 0xff]);
+  });
+
   it("keeps desktop and mobile evidence and drops redundant compact desktop", () => {
     expect(selectRepairScreenshots([
       "/tmp/candidate-desktop.png",
