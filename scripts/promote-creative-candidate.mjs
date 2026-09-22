@@ -2,7 +2,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { validateCandidateManifest } from "./creative-compiler.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
-import { normalizeCreativeExperienceLinks } from "./creative-source-safety.mjs";
+import {
+  hasStaticJsxStringAttribute,
+  normalizeCreativeExperienceLinks,
+  staticJsxStringAttributePattern,
+} from "./creative-source-safety.mjs";
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -22,8 +26,18 @@ async function readJson(file) {
 
 function validateAuthoredFiles(candidateId, files, candidateManifest, { preview = false } = {}) {
   const experience = files.experience;
-  for (const marker of ["data-hero", "data-early-conversion", 'id="services"', 'id="faqs"', 'id="contact"'])
+  for (const marker of ["data-hero", "data-early-conversion"])
     if (!experience.includes(marker)) throw new Error(`Creative candidate ${candidateId} is missing ${marker}.`);
+  for (const sectionId of ["services", "faqs", "contact"])
+    if (!hasStaticJsxStringAttribute(experience, "id", sectionId))
+      throw new Error(`Creative candidate ${candidateId} is missing id="${sectionId}".`);
+  if (
+    !new RegExp(
+      `${staticJsxStringAttributePattern("id", "contact")}[\\s\\S]{0,5000}<LeadForm\\b`,
+      "u",
+    ).test(experience)
+  )
+    throw new Error(`Creative candidate ${candidateId} must render LeadForm inside the contact section.`);
   if (!/from\s+["']@launchloom\/runtime["']/u.test(experience) || !/\bLeadForm\b/u.test(experience))
     throw new Error(`Creative candidate ${candidateId} must use the shared LeadForm runtime.`);
   if (/https?:\/\/|\bfetch\s*\(|\b(?:XMLHttpRequest|WebSocket)\b|\beval\s*\(|<script\b|—/iu.test(experience))

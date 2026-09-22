@@ -100,8 +100,11 @@ function mergeRepairBundle(value, currentFiles) {
       value[key].trim() ? value[key] : currentFiles[key],
     ]),
   );
-  if (!["experience", "styles", "motion"].some((key) => value[key].trim()))
-    throw new Error("Creative repair did not provide any changed source files.");
+  if (!["experience", "styles", "motion"].some((key) => value[key].trim())) {
+    const error = new Error("Creative repair did not provide any changed source files.");
+    error.code = "CREATIVE_REPAIR_NO_CHANGES";
+    throw error;
+  }
   return merged;
 }
 
@@ -410,7 +413,7 @@ export async function requestRepair({
   );
   const repairInstruction = humanReview
     ? "Refine this authored LaunchLoom candidate in place to satisfy the explicit human review request. The reviewer is authorized to change composition, presentation, hierarchy, imagery treatment, motion, and safe UI features described in that request. Preserve sealed content bindings, accessibility, factual integrity, and the assigned Reference DNA identity outside the requested change. Do not convert it into a legacy renderer."
-    : "Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.";
+    : "Repair this authored LaunchLoom candidate in place against the blocking rendered-reference findings. You are authorized and expected to change composition, hierarchy, sizing, spacing, typography, image treatment, section rhythm, and motion when needed to fix those findings; do not preserve a composition that the visual gate has rejected. Preserve sealed content bindings, required reference signatures, accessibility, factual integrity, and the assigned Reference DNA identity. Do not convert it into a legacy renderer.";
 
   const desktopReference = referenceDna?.evidence?.desktopScreenshot;
   if (
@@ -499,7 +502,7 @@ ${files.styles}
 CURRENT MOTION.JS
 ${files.motion}
 
-Return only files that need to change. For every file that should remain unchanged, return an empty string so the pipeline preserves the original bytes. For changed files, return the complete replacement file, not a diff or ellipsis. Minimize output by changing as few files as possible. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
+Return only files that need to change. For every file that should remain unchanged, return an empty string so the pipeline preserves the original bytes. For changed files, return the complete replacement file, not a diff or ellipsis. Change the smallest set of files that can actually resolve the blocking findings. An all-empty response is not a repair when blocking findings remain. Keep required reference signatures and safety/content contracts; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
   });
   for (const screenshot of screenshots.slice(0, 3)) {
     const label = /desktop-viewport/iu.test(screenshot)
@@ -537,7 +540,9 @@ Return only files that need to change. For every file that should remain unchang
           ...content,
           {
             type: "text",
-            text: "COMPACT RETRY: Your previous repair response hit its output limit or was not valid JSON. Return only the JSON object with exactly three string fields: experience, styles, motion. Return a complete replacement only for files that must change; return an empty string for each unchanged file. Do not repeat unchanged source, add prose, markdown fences, comments, or use ellipses. Preserve all required reference, SEO, safety, and host contracts.",
+            text: lastFormatError?.code === "CREATIVE_REPAIR_NO_CHANGES"
+              ? "REPAIR RETRY: Your previous response contained no changed source files, so none of the blocking rendered-reference findings were repaired. Reinspect the listed findings and screenshots, then make the smallest real JSX/CSS/motion change that resolves them. Return a complete replacement for at least one file that must change; use empty strings only for files that genuinely remain unchanged. Do not claim the design is fixed without changing source. Return only the JSON object with exactly three string fields: experience, styles, motion. No prose, markdown fences, comments, or ellipses. Preserve all required reference, SEO, safety, and host contracts."
+              : "COMPACT RETRY: Your previous repair response hit its output limit or was not valid JSON. Return only the JSON object with exactly three string fields: experience, styles, motion. Return a complete replacement only for files that must change; return an empty string for each unchanged file. Do not repeat unchanged source, add prose, markdown fences, comments, or use ellipses. Preserve all required reference, SEO, safety, and host contracts.",
           },
         ]
       : content;

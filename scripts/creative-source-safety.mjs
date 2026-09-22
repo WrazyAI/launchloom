@@ -19,3 +19,14 @@ export function normalizeCreativeExperienceLinks(source) {
   );
   return normalized;
 }
+
+export function staticJsxStringAttributePattern(attribute, value) {
+  const escapedValue = String(value).replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  return `\\b${attribute}\\s*=\\s*(?:\"${escapedValue}\"|'${escapedValue}'|\\{\\s*\"${escapedValue}\"\\s*\\}|\\{\\s*'${escapedValue}'\\s*\\})`;
+}
+
+export function hasStaticJsxStringAttribute(source, attribute, value) {
+  return new RegExp(staticJsxStringAttributePattern(attribute, value), "u").test(
+    String(source || ""),
+  );
+}

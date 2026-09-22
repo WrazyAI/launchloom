@@ -98,6 +98,14 @@ describe("creative candidate promotion", () => {
 
   it("renders a candidate in the real Astro shell before reporting diversity fallback", async () => {
     const root = await makeFixture();
+    const experiencePath = path.join(root, "candidate-a/Experience.jsx");
+    let experience = await fs.readFile(experiencePath, "utf8");
+    for (const sectionId of ["services", "faqs", "contact"])
+      experience = experience.replace(
+        `id="${sectionId}"`,
+        `id = '${sectionId}'`,
+      );
+    await fs.writeFile(experiencePath, experience);
     const report = await runCreativeBakeoff({
       siteDir: path.resolve("templates/client-site"),
       candidatesDir: root,
@@ -105,6 +113,12 @@ describe("creative candidate promotion", () => {
       screenshotsDir: path.join(root, "screenshots"),
     });
     expect(report.candidates[0].valid).toBe(true);
+    expect(
+      report.candidates[0].viewports.every(
+        (viewport: { hasServices: boolean; hasFaqs: boolean; hasContact: boolean }) =>
+          viewport.hasServices && viewport.hasFaqs && viewport.hasContact,
+      ),
+    ).toBe(true);
     expect(report.candidates[0].eligible).toBe(false);
     expect(report.fallback).toBe(true);
     expect(report.selectedCandidateId).toBeNull();

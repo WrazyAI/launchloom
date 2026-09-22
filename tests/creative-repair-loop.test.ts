@@ -115,6 +115,59 @@ describe("creative repair loop", () => {
     expect(retryBody.messages[1].content.at(-1).text).toContain("COMPACT RETRY");
   });
 
+  it("retries an all-empty repair with unresolved visual findings and requires an actual source change", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-no-changes-retry-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience: "<main data-hero><h1>Pulse</h1></main>",
+      styles: ".hero { min-height: 40vh; }",
+      motion: "export function mount() {}",
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ experience: "", styles: "", motion: "" }) } }],
+      }))
+      .mockResolvedValueOnce(Response.json({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
+          experience: "",
+          styles: ".hero { min-height: 100svh; }",
+          motion: "",
+        }) } }],
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(requestRepairForTest({
+      model: "test/model",
+      referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
+      findings: [{
+        category: "reference-fidelity",
+        severity: "major",
+        message: "The hero is compressed into the upper quarter; the reference uses a tall, image-led opening scene.",
+        recommendation: "Restore the full-height hero and place its primary action near the lower edge of the image.",
+      }],
+      files,
+      screenshots: [],
+    })).resolves.toEqual({
+      experience: files.experience,
+      styles: ".hero { min-height: 100svh; }",
+      motion: files.motion,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const retryBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
+    const retryText = retryBody.messages[1].content.at(-1).text;
+    const fullPrompt = retryBody.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(retryText).toContain("REPAIR RETRY");
+    expect(retryText).toContain("previous response contained no changed source files");
+    expect(fullPrompt).toContain("full-height hero");
+    expect(retryText).toContain("make the smallest real JSX/CSS/motion change");
+  });
+
   it("prefers an accessible absolute reference evidence path", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-evidence-"));
     roots.push(root);
