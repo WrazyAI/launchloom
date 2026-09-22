@@ -144,6 +144,24 @@ describe("adaptive reasoning preflight", () => {
     ]);
   });
 
+  it("accepts sparse Jev score distributions by treating omitted levels as zero", () => {
+    const judgments = normalizeReasoningJudgments(
+      answers({
+        compositionNovelty: scoreAnswer(2.7, 0.92, {
+          "2": 0.3,
+          "3": 0.7,
+        }),
+      }),
+    );
+    expect(judgments.compositionNovelty.probabilities).toEqual({
+      "0": 0,
+      "1": 0,
+      "2": 0.3,
+      "3": 0.7,
+    });
+    expect(decideReasoningEffort(judgments).recommendedEffort).toBe("max");
+  });
+
   it("routes a strong experimental-composition signal to max", () => {
     const judgments = normalizeReasoningJudgments(
       answers({
