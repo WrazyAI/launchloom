@@ -81,7 +81,9 @@ export async function requestSystemOne({
           signal: controller.signal,
           headers: {
             Authorization: `Bearer ${apiKey}`,
+            Accept: "application/json",
             "Content-Type": "application/json",
+            "User-Agent": "LaunchLoom reasoning preflight",
           },
           body: JSON.stringify({ model, state, questions }),
         },
