@@ -131,9 +131,9 @@ describe("rendered reference request retries", () => {
     vi.useFakeTimers();
   });
 
-  function evaluate(fetchImpl: typeof fetch) {
+  function evaluate(fetchImpl: typeof fetch, referenceDna = dna(files)) {
     return evaluateRenderedReferenceFidelity({
-      referenceDna: dna(files),
+      referenceDna,
       candidateScreenshots: {
         desktop: files.candidateDesktop,
         compact: files.candidateCompact,
@@ -153,6 +153,28 @@ describe("rendered reference request retries", () => {
   function failure(status: number, message = "Provider unavailable") {
     return new Response(JSON.stringify({ error: { message } }), { status });
   }
+
+  it("does not let a no-hero-CTA reference erase the required business action", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(response(audit));
+    const referenceDna = {
+      ...dna(files),
+      ctaPlacement: {
+        primary: "inside the later featured-work rail",
+        early: "No conventional hero CTA is required.",
+      },
+    };
+
+    await evaluate(fetchImpl, referenceDna);
+
+    const request = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body));
+    const prompt = request.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(prompt).toContain("every candidate must retain one functional primary action");
+    expect(prompt).toContain("do not recommend deleting or disabling the business action");
+    expect(prompt).toContain("shared-shell \"Got questions?\" assistant launcher");
+  });
 
   it.each([408, 429, 500, 502, 503, 599])("retries HTTP %i after a short backoff", async (status) => {
     const fetchImpl = vi.fn<typeof fetch>()

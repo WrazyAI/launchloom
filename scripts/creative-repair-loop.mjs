@@ -490,6 +490,9 @@ For screenshot repair, compare opening-viewport reference crops only with candid
     type: "text",
     text: `${repairInstruction}
 
+NON-NEGOTIABLE BUSINESS CONVERSION CONTRACT
+Keep exactly one functional primary action using the sealed content.hero.primaryLabel, href="#contact", and data-early-conversion. Reference DNA describes the reference, but it does not authorize removing a required business action. If ctaPlacement.early states that the reference has no conventional hero CTA, keep the primary action understated and place it according to ctaPlacement.primary; do not put it beside the opening copy and do not delete or disable it. Retain the exact data-cta-placement marker required by Reference DNA. Keep the global assistant launcher visually subordinate and prevent it from overlapping the required action or key copy.
+
 FINDINGS
 ${JSON.stringify(findings, null, 2)}
 

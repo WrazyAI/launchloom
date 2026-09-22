@@ -341,12 +341,49 @@ export async function runVisualGateProcess({
   return { ...report, processExitCode: result.code };
 }
 
-async function defaultRepairCandidate({
+async function persistRejectedRepairDraft({
+  repairAttemptDir,
+  metadata,
+  files,
+  error,
+}) {
+  if (!repairAttemptDir) return;
+  await fs.mkdir(repairAttemptDir, { recursive: true });
+  await Promise.all(
+    REPAIR_FILES.map((filename) =>
+      fs.writeFile(
+        path.join(repairAttemptDir, filename),
+        `${files[filename === "Experience.jsx" ? "experience" : filename === "styles.css" ? "styles" : "motion"]}\n`,
+      ),
+    ),
+  );
+  const message = error instanceof Error ? error.message : String(error || "Repair validation failed.");
+  await fs.writeFile(
+    path.join(repairAttemptDir, "failure.json"),
+    `${JSON.stringify({
+      version: 1,
+      status: "rejected-before-render",
+      candidateId: metadata.candidateId || null,
+      routeId: metadata.routeId || null,
+      error: message
+        .replace(/https?:\/\/[^\s"']+/giu, "[redacted URL]")
+        .slice(0, 2400),
+    }, null, 2)}\n`,
+  );
+}
+
+/**
+ * @param {{candidateDir: string, findings: unknown[], screenshots: string[], model: string, repairAttemptDir?: string, requestRepairImpl?: typeof requestRepair, validateCandidateImpl?: typeof validateProductionCandidateFiles}} options
+ */
+export async function defaultRepairCandidate({
   candidateDir,
   findings,
   screenshots,
   model,
-} = {}) {
+  repairAttemptDir,
+  requestRepairImpl = requestRepair,
+  validateCandidateImpl = validateProductionCandidateFiles,
+}) {
   const { metadata, contentManifest, content, files } =
     await readCandidate(candidateDir);
   const referenceDna =
@@ -354,7 +391,7 @@ async function defaultRepairCandidate({
   if (!referenceDna)
     throw new Error(`${metadata.candidateId || candidateDir} has no Reference DNA.`);
   const repaired = normalizeRepair(
-    await requestRepair({
+    await requestRepairImpl({
       model,
       referenceDna,
       findings,
@@ -363,14 +400,25 @@ async function defaultRepairCandidate({
       contentManifest,
     }),
   );
-  const validated = validateProductionCandidateFiles({
-    files: repaired,
-    route: {
-      id: metadata.routeId || metadata.candidateId || "rendered-repair",
-      referenceDna,
-    },
-    content,
-  });
+  let validated;
+  try {
+    validated = validateCandidateImpl({
+      files: repaired,
+      route: {
+        id: metadata.routeId || metadata.candidateId || "rendered-repair",
+        referenceDna,
+      },
+      content,
+    });
+  } catch (error) {
+    await persistRejectedRepairDraft({
+      repairAttemptDir,
+      metadata,
+      files: repaired,
+      error,
+    });
+    throw error;
+  }
   await writeCandidate(candidateDir, validated.files);
   return validated.files;
 }
@@ -434,6 +482,8 @@ async function persistRepairEvidence({
   reason,
   findings,
   cyclesUsed,
+  status = "accepted",
+  error,
 }) {
   const directory = path.join(outDir, `round-${String(round).padStart(2, "0")}`, "repairs");
   await fs.mkdir(directory, { recursive: true });
@@ -445,6 +495,8 @@ async function persistRepairEvidence({
         candidateId,
         reason,
         cycle: cyclesUsed,
+        status,
+        ...(error ? { error: String(error).slice(0, 2400) } : {}),
         findings,
       },
       null,
@@ -528,7 +580,8 @@ export async function runRenderedCreativeRepair({
     candidateDirectory,
   ) {
     const used = cycleUse.get(candidateId) || 0;
-    if (used >= cycleLimit) return false;
+    if (used >= cycleLimit)
+      return { attempted: false, accepted: false, cycle: used };
     const candidateDir = resolveCandidateDirectory(
       candidateRoot,
       candidateDirectory,
@@ -542,25 +595,60 @@ export async function runRenderedCreativeRepair({
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);
     const nextCycle = used + 1;
-    await repairCandidateImpl({
-      candidateDir,
-      candidateId,
-      findings,
-      screenshots: availableScreenshots,
-      model,
-      cycle: nextCycle,
-      maxCycles: cycleLimit,
-    });
     cycleUse.set(candidateId, nextCycle);
-    await persistRepairEvidence({
-      outDir: evidenceRoot,
-      round,
+    const repairAttemptDir = path.join(
+      evidenceRoot,
+      `round-${String(round).padStart(2, "0")}`,
+      "repair-attempts",
       candidateId,
-      reason,
-      findings,
-      cyclesUsed: nextCycle,
-    });
-    return true;
+      `cycle-${nextCycle}`,
+    );
+    try {
+      await repairCandidateImpl({
+        candidateDir,
+        candidateId,
+        findings,
+        screenshots: availableScreenshots,
+        model,
+        cycle: nextCycle,
+        maxCycles: cycleLimit,
+        repairAttemptDir,
+      });
+      await persistRepairEvidence({
+        outDir: evidenceRoot,
+        round,
+        candidateId,
+        reason,
+        findings,
+        cyclesUsed: nextCycle,
+        status: "accepted-for-rerender",
+      });
+      return { attempted: true, accepted: true, cycle: nextCycle };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await fs.mkdir(repairAttemptDir, { recursive: true });
+      await fs.writeFile(
+        path.join(repairAttemptDir, "failure.json"),
+        `${JSON.stringify({
+          version: 1,
+          status: "rejected-before-rerender",
+          candidateId,
+          cycle: nextCycle,
+          error: message.replace(/https?:\/\/[^\s"']+/giu, "[redacted URL]").slice(0, 2400),
+        }, null, 2)}\n`,
+      );
+      await persistRepairEvidence({
+        outDir: evidenceRoot,
+        round,
+        candidateId,
+        reason,
+        findings,
+        cyclesUsed: nextCycle,
+        status: "rejected-before-rerender",
+        error: message,
+      });
+      return { attempted: true, accepted: false, cycle: nextCycle };
+    }
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
@@ -597,13 +685,14 @@ export async function runRenderedCreativeRepair({
 
     if (!report.selectedCandidateId) {
       const candidates = (report.candidates || []).filter(candidateNeedsRepair);
-      let repairedAny = false;
+      let repairAttempted = false;
+      let repairAccepted = false;
       for (const candidate of candidates) {
         const findings = [
           ...candidateFindings(candidate),
           ...(humanRepairPending ? humanFindings : []),
         ];
-        const repaired = await repair(
+        const repairResult = await repair(
           candidate.candidateId,
           findings.length ? findings : ["Candidate did not pass rendered preview gates."],
           humanRepairPending
@@ -613,13 +702,14 @@ export async function runRenderedCreativeRepair({
           screenshotsDir,
           candidate.directory,
         );
-        if (repaired) {
-          repairedAny = true;
-          record.repairs.push(candidate.candidateId);
+        if (repairResult.attempted) {
+          repairAttempted = true;
+          repairAccepted ||= repairResult.accepted;
+          (repairResult.accepted ? record.repairs : record.rejectedRepairs ||= []).push(candidate.candidateId);
         }
       }
-      if (repairedAny && humanRepairPending) humanRepairPending = false;
-      if (!repairedAny)
+      if (repairAccepted && humanRepairPending) humanRepairPending = false;
+      if (!repairAttempted)
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
         );
@@ -636,7 +726,7 @@ export async function runRenderedCreativeRepair({
     );
 
     if (humanRepairPending) {
-      const repaired = await repair(
+      const repairResult = await repair(
         selectedId,
         humanFindings,
         "human-review-feedback",
@@ -644,13 +734,17 @@ export async function runRenderedCreativeRepair({
         screenshotsDir,
         selected.directory,
       );
-      if (!repaired)
+      if (!repairResult.attempted)
         throw new Error(
           `Human feedback for ${selectedId} could not be applied within the ${cycleLimit}-cycle repair budget.`,
         );
-      humanRepairPending = false;
-      record.repairs.push(selectedId);
-      record.humanFeedbackApplied = true;
+      if (repairResult.accepted) {
+        humanRepairPending = false;
+        record.repairs.push(selectedId);
+        record.humanFeedbackApplied = true;
+      } else {
+        (record.rejectedRepairs ||= []).push(selectedId);
+      }
       continue;
     }
 
@@ -680,7 +774,7 @@ export async function runRenderedCreativeRepair({
     record.visualGateVerdict = visualGate.audit?.verdict || "error";
 
     if (!gatePass(visualGate)) {
-      const repaired = await repair(
+      const repairResult = await repair(
         selectedId,
         [
           ...candidateFindings(reportCandidate(report, selectedId)),
@@ -691,11 +785,11 @@ export async function runRenderedCreativeRepair({
         screenshotsDir,
         selected.directory,
       );
-      if (!repaired)
+      if (!repairResult.attempted)
         throw new Error(
           `Selected candidate ${selectedId} still fails rendered visual QA after ${cycleLimit} repair cycles.`,
         );
-      record.repairs.push(selectedId);
+      (repairResult.accepted ? record.repairs : record.rejectedRepairs ||= []).push(selectedId);
       continue;
     }
 
@@ -713,7 +807,7 @@ export async function runRenderedCreativeRepair({
       record.humanRevisionVerdict =
         humanGate.audit?.verdict || "error";
       if (humanGate.audit?.verdict !== "pass") {
-        const repaired = await repair(
+        const repairResult = await repair(
           selectedId,
           [
             ...humanFindings,
@@ -729,11 +823,11 @@ export async function runRenderedCreativeRepair({
           screenshotsDir,
           selected.directory,
         );
-        if (!repaired)
+        if (!repairResult.attempted)
           throw new Error(
             `Selected candidate ${selectedId} still does not satisfy the human review request after ${cycleLimit} repair cycles.`,
           );
-        record.repairs.push(selectedId);
+        (repairResult.accepted ? record.repairs : record.rejectedRepairs ||= []).push(selectedId);
         continue;
       }
     }
@@ -750,9 +844,9 @@ export async function runRenderedCreativeRepair({
             "Production promotion is not ready. Preserve the assigned Reference DNA and repair the selected candidate's remaining promotion blockers.",
         });
       }
-      let repairedAny = false;
+      let repairAttempted = false;
       for (const target of targets) {
-        const repaired = await repair(
+        const repairResult = await repair(
           target.candidateId,
           [target.finding],
           "rendered-diversity",
@@ -760,12 +854,12 @@ export async function runRenderedCreativeRepair({
           screenshotsDir,
           reportCandidate(report, target.candidateId)?.directory,
         );
-        if (repaired) {
-          repairedAny = true;
-          record.repairs.push(target.candidateId);
+        if (repairResult.attempted) {
+          repairAttempted = true;
+          (repairResult.accepted ? record.repairs : record.rejectedRepairs ||= []).push(target.candidateId);
         }
       }
-      if (!repairedAny)
+      if (!repairAttempted)
         throw new Error(
           `Production promotion is not ready after the ${cycleLimit}-cycle per-candidate repair budget.`,
         );

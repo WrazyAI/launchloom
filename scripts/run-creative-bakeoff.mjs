@@ -266,6 +266,17 @@ export async function runCreativeBakeoff({
                 stylesSource,
                 motionSource,
                 renderedDom: await page.locator("[data-creative-host]").evaluate((element) => element.outerHTML),
+                renderedSectionOrder: await page
+                  .locator("[data-creative-host] section")
+                  .evaluateAll((sections) =>
+                    sections
+                      .map(
+                        (section) =>
+                          section.getAttribute("data-reference-section") ||
+                          section.id,
+                      )
+                      .filter(Boolean),
+                  ),
               });
               const viewportVisualFindings =
                 renderedFidelity.visualFindings.map((item) => ({

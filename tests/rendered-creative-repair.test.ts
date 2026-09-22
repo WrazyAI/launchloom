@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { collectAvailableScreenshots, runRenderedCreativeRepair, runVisualGateProcess, writeCandidate } from "../scripts/run-rendered-creative-repair.mjs";
+import { collectAvailableScreenshots, defaultRepairCandidate, runRenderedCreativeRepair, runVisualGateProcess, writeCandidate } from "../scripts/run-rendered-creative-repair.mjs";
 
 const roots: string[] = [];
 
@@ -127,6 +127,109 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("stores rejected repair source privately before returning the validation error", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const candidateDir = path.join(candidates, "candidate-a");
+    await fs.writeFile(
+      path.join(candidateDir, "metadata.json"),
+      JSON.stringify({
+        candidateId: "candidate-a",
+        routeId: "route-01",
+        referenceDna: { familyId: "test-family", evidence: {} },
+      }),
+    );
+    await fs.writeFile(
+      path.join(candidateDir, "content-manifest.json"),
+      JSON.stringify({ values: { hero: { primaryLabel: "Talk to the team" } } }),
+    );
+    const repairAttemptDir = path.join(root, "private-evidence", "cycle-1");
+    const rejectedFiles = {
+      experience: "repaired JSX missing required host instrumentation",
+      styles: ".candidate { color: white; }",
+      motion: "export function mountExperienceMotion(){ return () => {}; }",
+    };
+
+    await expect(defaultRepairCandidate({
+      candidateDir,
+      findings: [],
+      screenshots: [],
+      model: "test/model",
+      repairAttemptDir,
+      requestRepairImpl: async () => rejectedFiles,
+      validateCandidateImpl: () => {
+        throw new Error("Candidate route-01 is missing data-early-conversion.");
+      },
+    })).rejects.toThrow("missing data-early-conversion");
+
+    await expect(fs.readFile(path.join(repairAttemptDir, "Experience.jsx"), "utf8"))
+      .resolves.toContain("missing required host instrumentation");
+    await expect(fs.readFile(path.join(repairAttemptDir, "styles.css"), "utf8"))
+      .resolves.toContain("color: white");
+    const failure = JSON.parse(
+      await fs.readFile(path.join(repairAttemptDir, "failure.json"), "utf8"),
+    );
+    expect(failure).toMatchObject({
+      status: "rejected-before-render",
+      candidateId: "candidate-a",
+      routeId: "route-01",
+    });
+  });
+
+  it("consumes failed repair attempts and retries within the two-cycle budget", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    let repairCalls = 0;
+    const failingCandidate = candidate("candidate-a", {
+      valid: false,
+      eligible: false,
+      referenceFidelity: { pass: false, score: 40 },
+      renderedReferenceFidelity: { pass: false, audit: { findings: [] } },
+    });
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls <= 2
+            ? report({ selectedCandidateId: null, candidates: [failingCandidate] })
+            : report({ candidates: [candidate("candidate-a")] }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ cycle, repairAttemptDir }: any) => {
+        repairCalls += 1;
+        expect(repairAttemptDir).toContain(`cycle-${cycle}`);
+        if (cycle === 1) throw new Error("Rejected: primary marker missing.");
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(repairCalls).toBe(2);
+    const firstAttempt = JSON.parse(
+      await fs.readFile(
+        path.join(root, "evidence", "round-00", "repairs", "candidate-a.json"),
+        "utf8",
+      ),
+    );
+    expect(firstAttempt).toMatchObject({
+      cycle: 1,
+      status: "rejected-before-rerender",
+      error: "Rejected: primary marker missing.",
+    });
+    const failure = JSON.parse(
+      await fs.readFile(
+        path.join(root, "evidence", "round-00", "repair-attempts", "candidate-a", "cycle-1", "failure.json"),
+        "utf8",
+      ),
+    );
+    expect(failure.status).toBe("rejected-before-rerender");
+  });
+
   it("passes the rendered judge's concrete repair recommendation to Luna", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const receivedFindings: unknown[] = [];

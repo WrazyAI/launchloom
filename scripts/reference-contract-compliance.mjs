@@ -496,9 +496,12 @@ function jsxAttributeText(attribute, source, sourceFile) {
 
 function sourceSectionOrder(source) {
   const sections = [];
+  const input = String(source || "").trimStart().startsWith("<")
+    ? `<>${source}</>`
+    : source;
   const file = ts.createSourceFile(
     "Experience.tsx",
-    source,
+    input,
     ts.ScriptTarget.Latest,
     true,
     ts.ScriptKind.TSX,
@@ -531,6 +534,19 @@ function sourceSectionOrder(source) {
   return sections;
 }
 
+function renderedSectionOrderFromHtml(source) {
+  return [...String(source || "").matchAll(/<section\b([^>]*)>/giu)]
+    .map((match) => {
+      const attributes = match[1] || "";
+      const marker = attributes.match(
+        /\bdata-reference-section\s*=\s*(["'])(.*?)\1/iu,
+      )?.[2];
+      const id = attributes.match(/\bid\s*=\s*(["'])(.*?)\1/iu)?.[2];
+      return slug(marker || id);
+    })
+    .filter(Boolean);
+}
+
 function hasProhibitedPattern(source, pattern) {
   const value = slug(pattern);
   if (!value) return false;
@@ -546,7 +562,7 @@ function hasProhibitedPattern(source, pattern) {
  * intentionally evidence-oriented: a model claim in contract.json cannot
  * satisfy a missing signature or mobile recomposition.
  *
- * @param {{referenceDna: any, experienceSource?: string, stylesSource?: string, motionSource?: string, renderedDom?: string}} options
+ * @param {{referenceDna: any, experienceSource?: string, stylesSource?: string, motionSource?: string, renderedDom?: string, renderedSectionOrder?: string[]}} options
  */
 export function validateReferenceContractCompliance({
   referenceDna,
@@ -554,9 +570,9 @@ export function validateReferenceContractCompliance({
   stylesSource = "",
   motionSource = "",
   renderedDom = "",
+  renderedSectionOrder = null,
 } = {}) {
   validateReferenceDna(referenceDna, { requireEvidence: true });
-  const source = `${experienceSource}\n${stylesSource}\n${motionSource}`;
   const findings = [];
   for (const element of referenceDna.requiredSignatureElements) {
     if (!sourceHasSignature(experienceSource, element))
@@ -576,10 +592,19 @@ export function validateReferenceContractCompliance({
         ),
       );
   }
-  const sections = sourceSectionOrder(experienceSource);
+  const sourceSections = sourceSectionOrder(experienceSource);
   const expected = referenceDna.sectionSequence.map((item) => slug(item));
-  const observedContractSections = sections.filter((section) =>
+  const renderedSections = Array.isArray(renderedSectionOrder)
+    ? renderedSectionOrder.map(slug)
+    : renderedDom
+      ? renderedSectionOrderFromHtml(renderedDom)
+      : null;
+  const sectionsForOrder = renderedSections || sourceSections;
+  const observedContractSections = sectionsForOrder.filter((section) =>
     expected.includes(section),
+  );
+  const expectedCountsMatch = expected.every(
+    (section) => sourceSections.filter((item) => item === section).length === 1,
   );
   let sequenceCursor = 0;
   while (
@@ -587,9 +612,14 @@ export function validateReferenceContractCompliance({
     observedContractSections[sequenceCursor] === expected[sequenceCursor]
   )
     sequenceCursor += 1;
+  const renderedOrderMismatch = Boolean(
+    renderedSections &&
+      (observedContractSections.length !== expected.length ||
+        sequenceCursor !== expected.length),
+  );
   if (
-    observedContractSections.length !== expected.length ||
-    sequenceCursor !== expected.length
+    !expectedCountsMatch ||
+    renderedOrderMismatch
   ) {
     const observed = observedContractSections.length
       ? observedContractSections.join(" -> ")
@@ -598,7 +628,9 @@ export function validateReferenceContractCompliance({
       finding(
         "section-rhythm",
         "critical",
-        `Expected ordered sections [${expected.join(" -> ")}]; observed [${observed}]. Matched ${sequenceCursor}/${expected.length} before the first divergence.`,
+        renderedSections
+          ? `Expected rendered sections [${expected.join(" -> ")}]; observed [${observed}]. Matched ${sequenceCursor}/${expected.length} before the first divergence.`
+          : `Candidate source must declare every required reference section exactly once before render-time order verification. Expected [${expected.join(" -> ")}]; found [${sourceSections.filter((section) => expected.includes(section)).join(" -> ")}].`,
       ),
     );
   }
@@ -810,7 +842,8 @@ export function validateReferenceContractCompliance({
     requiredSignatures: referenceDna.requiredSignatureElements.map(
       (item) => item.id,
     ),
-    sectionOrder: sections,
+    sectionOrder: observedContractSections,
+    sectionOrderVerified: Boolean(renderedSections),
   };
 }
 

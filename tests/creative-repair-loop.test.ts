@@ -79,6 +79,43 @@ describe("creative repair loop", () => {
       .toContain("Assigned reference desktop opening viewport");
   });
 
+  it("preserves the required contact action when Reference DNA has no hero CTA", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-cta-contract-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = { experience: "old", styles: "old", motion: "old" };
+    const repaired = { experience: "new", styles: "new", motion: "new" };
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => Response.json({
+      choices: [{ message: { content: JSON.stringify(repaired) } }],
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepairForTest({
+      model: "test/model",
+      referenceDna: {
+        ctaPlacement: {
+          primary: "inside the later featured-work rail",
+          early: "No conventional hero CTA is required.",
+        },
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [{ evidence: "Move the action into the featured-work rail." }],
+      files,
+      screenshots: [],
+    });
+
+    const request = JSON.parse(fetchMock.mock.calls[0]![1]?.body as string);
+    const prompt = request.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(prompt).toContain("NON-NEGOTIABLE BUSINESS CONVERSION CONTRACT");
+    expect(prompt).toContain('href="#contact"');
+    expect(prompt).toContain("do not delete or disable it");
+    expect(prompt).toContain("inside the later featured-work rail");
+  });
+
   it("retries truncated repair output compactly and preserves unchanged files", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-truncated-"));
     roots.push(root);

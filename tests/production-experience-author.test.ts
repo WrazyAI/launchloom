@@ -280,6 +280,16 @@ describe("production experience author", () => {
       requests.every((request) =>
         request.rules.includes("Mark the complete opening hero scene with data-hero"),
       ),
+    ).toBe(false);
+    expect(
+      requests.every((request) =>
+        request.rules.includes("Keep the primary H1 and exactly one functional data-early-conversion action"),
+      ),
+    ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes("Keep the required primary action at its Reference DNA conversion location; do not force it into the hero when the reference places it later."),
+      ),
     ).toBe(true);
   });
 

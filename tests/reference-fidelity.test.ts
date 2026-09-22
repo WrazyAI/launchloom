@@ -97,7 +97,7 @@ describe("reference fidelity validator", () => {
     expect(report.findings).toEqual([]);
   });
 
-  it("rejects reference sections when their authored order drifts from the assigned rhythm", () => {
+  it("defers component-declaration order until the candidate has rendered", () => {
     const reordered = validExperience.replace(
       '<section data-reference-section="image-chapter"></section><section data-reference-section="editorial-intro"></section>',
       '<section data-reference-section="editorial-intro"></section><section data-reference-section="image-chapter"></section>',
@@ -109,6 +109,66 @@ describe("reference fidelity validator", () => {
       motionSource: validMotion,
     });
 
+    expect(report.sectionOrderVerified).toBe(false);
+    expect(report.visualFindings).not.toContainEqual(
+      expect.objectContaining({ code: "section-rhythm" }),
+    );
+  });
+
+  it("does not confuse component definition order with returned page composition", () => {
+    const composed = `
+      function LaterChapter() { return <section data-reference-section="editorial-intro"></section>; }
+      function EarlierChapter() { return <section data-reference-section="image-chapter"></section>; }
+      export default function Experience() {
+        return <main>
+          <section data-reference-section="hero"></section>
+          <EarlierChapter /><LaterChapter />
+          <section data-reference-section="image-mosaic"></section>
+          <section data-reference-section="magazine-archive"></section>
+          <section data-reference-section="closing-scene"></section>
+          <section id="contact"></section>
+        </main>;
+      }
+    `;
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: composed,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+      renderedSectionOrder: [
+        "hero",
+        "image-chapter",
+        "editorial-intro",
+        "image-mosaic",
+        "magazine-archive",
+        "closing-scene",
+        "contact",
+      ],
+    });
+
+    expect(report.sectionOrderVerified).toBe(true);
+    expect(report.visualFindings).not.toContainEqual(
+      expect.objectContaining({ code: "section-rhythm" }),
+    );
+  });
+
+  it("rejects a rendered DOM whose reference sections are out of order", () => {
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+      renderedSectionOrder: [
+        "hero",
+        "editorial-intro",
+        "image-chapter",
+        "image-mosaic",
+        "magazine-archive",
+        "closing-scene",
+      ],
+    });
+
+    expect(report.sectionOrderVerified).toBe(true);
     expect(report.visualFindings).toContainEqual(
       expect.objectContaining({ code: "section-rhythm" }),
     );

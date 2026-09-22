@@ -345,6 +345,7 @@ export async function evaluateRenderedReferenceFidelity({
 ${JSON.stringify(stableReferenceDna, null, 2)}
 
 Compare the candidate to the reference as an independent implementation of the same design mechanics. Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding for mechanics, not for unrelated reference subject matter. A technically clean but visually generic page must not pass.
+BUSINESS CONVERSION REQUIREMENT: every candidate must retain one functional primary action using its sealed primary-action content, linking to contact. Judge its placement and visual weight, not whether it exists. If Reference DNA says there is no conventional hero CTA, do not recommend deleting or disabling the business action. Judge whether it is understated and located at the reference's primary action position; recommend relocating or visually reducing it when needed. The shared-shell "Got questions?" assistant launcher is not candidate-authored composition: do not score it as a navigation, CTA, or reference-family mismatch unless it physically obscures meaningful candidate content.
 ${REFERENCE_SEMANTIC_TRANSFER_GUIDANCE}`;
   const content = [
     { type: "text", text: reusableReferencePrefix },
