@@ -3,14 +3,17 @@ import { validateReferenceDna } from "./reference-dna.mjs";
 
 const slug = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "");
 
-function finding(code, severity, message) {
-  return { code, severity, message };
+function finding(code, severity, message, details = {}) {
+  return { code, severity, message, ...details };
 }
 
 const VISUAL_REFERENCE_CODES = new Set([
   "missing-signature",
   "missing-rendered-signature",
+  "signature-structure",
+  "signature-geometry",
   "section-rhythm",
+  "section-order",
   "hero-geometry",
   "hero-geometry-mismatch",
   "navigation-geometry",
@@ -31,6 +34,79 @@ function sourceHasSignature(source, element) {
   const match = selector.match(/data-reference-signature\s*=\s*["']?([a-z0-9_-]+)/iu);
   const value = match?.[1] || element.id;
   return Boolean(value && new RegExp(`data-reference-signature\\s*=\\s*["']?${value}\\b`, "iu").test(source));
+}
+
+function overlapLayerRoles(source) {
+  return [
+    ...String(source || "").matchAll(
+      /data-reference-overlap-layer\s*=\s*["']([^"']+)["']/giu,
+    ),
+  ].map((match) => slug(match[1]));
+}
+
+function sourceHasSignatureStructure(source, element) {
+  if (element.id !== "lower-edge-product-overlap") return true;
+  const roles = overlapLayerRoles(source);
+  return (
+    roles.includes("product") &&
+    new Set(roles).size >= 3
+  );
+}
+
+function sameOrder(actual, expected) {
+  return (
+    actual.length === expected.length &&
+    actual.every((item, index) => slug(item) === slug(expected[index]))
+  );
+}
+
+function visualRequirements(referenceDna) {
+  return Array.isArray(referenceDna.sectionVisualRequirements)
+    ? referenceDna.sectionVisualRequirements.filter(Boolean)
+    : [];
+}
+
+function signatureGeometryFinding(element, renderedEvidence, viewport) {
+  if (element.id !== "lower-edge-product-overlap") return null;
+  if (!renderedEvidence)
+    return finding(
+      "signature-geometry",
+      "critical",
+      "Required signature lower-edge-product-overlap has no rendered geometry evidence.",
+      {
+        signatureId: element.id,
+        requiredBehavior:
+          element.description ||
+          "A product interface must rise from the lower hero edge and overlap multiple independent collage planes.",
+        viewport: viewport?.name || "",
+      },
+    );
+  const proof = renderedEvidence.signatureGeometry?.[element.id];
+  const relevantViewport =
+    !viewport?.name || viewport.name === "desktop" || viewport.name === "compact";
+  if (!relevantViewport) return null;
+  const pass = Boolean(
+    proof &&
+      proof.productLayerPresent &&
+      proof.layerCount >= 3 &&
+      proof.overlapCount >= 2 &&
+      proof.productAnchoredToHeroBottom &&
+      proof.signatureInLowerHero,
+  );
+  if (pass) return null;
+  return finding(
+    "signature-geometry",
+    "critical",
+    "Required signature lower-edge-product-overlap is declared but the rendered composition does not prove a lower-edge product layer overlapped by at least two independent collage planes.",
+    {
+      signatureId: element.id,
+      requiredBehavior:
+        element.description ||
+        "A product interface must rise from the lower hero edge and overlap multiple independent collage planes.",
+      viewport: viewport?.name || "",
+      renderedEvidence: proof || null,
+    },
+  );
 }
 
 function staticStringExpression(source, expression, seen = new Set()) {
@@ -280,11 +356,12 @@ function outputContentPaths(source) {
 
 function sourceSectionOrder(source) {
   const sections = [];
-  for (const match of source.matchAll(/<section\b([^>]*)>/giu)) {
+  for (const match of String(source || "").matchAll(/<section\b([^>]*)>/giu)) {
     const attributes = match[1] || "";
-    const reference = attributes.match(/data-reference-section\s*=\s*["']([^"']+)["']/iu)?.[1];
-    const id = attributes.match(/id\s*=\s*["']([^"']+)["']/iu)?.[1];
-    if (reference || id) sections.push(String(reference || id).toLowerCase());
+    const reference = attributes.match(
+      /data-reference-section\s*=\s*["']([^"']+)["']/iu,
+    )?.[1];
+    if (reference) sections.push(slug(reference));
   }
   return sections;
 }
@@ -301,7 +378,7 @@ function hasProhibitedPattern(source, pattern) {
  * intentionally evidence-oriented: a model claim in contract.json cannot
  * satisfy a missing signature or mobile recomposition.
  *
- * @param {{referenceDna: any, experienceSource?: string, stylesSource?: string, motionSource?: string, renderedDom?: string}} options
+ * @param {{referenceDna: any, experienceSource?: string, stylesSource?: string, motionSource?: string, renderedDom?: string, renderedEvidence?: any, viewport?: {name?: string, width?: number, height?: number}}} options
  */
 export function validateReferenceContractCompliance({
   referenceDna,
@@ -309,50 +386,181 @@ export function validateReferenceContractCompliance({
   stylesSource = "",
   motionSource = "",
   renderedDom = "",
+  renderedEvidence = null,
+  viewport = null,
 } = {}) {
-  validateReferenceDna(referenceDna, { requireEvidence: true });
+  const dna = validateReferenceDna(referenceDna, { requireEvidence: true });
   const source = `${experienceSource}\n${stylesSource}\n${motionSource}`;
   const findings = [];
-  for (const element of referenceDna.requiredSignatureElements) {
+  for (const element of dna.requiredSignatureElements) {
     if (!sourceHasSignature(experienceSource, element))
-      findings.push(finding("missing-signature", "critical", `Missing required signature ${element.id}.`));
+      findings.push(
+        finding(
+          "missing-signature",
+          "critical",
+          `Missing required signature ${element.id}: ${element.description || "required reference mechanic"}.`,
+          {
+            signatureId: element.id,
+            requiredBehavior: element.description || "",
+          },
+        ),
+      );
+    else if (!sourceHasSignatureStructure(experienceSource, element))
+      findings.push(
+        finding(
+          "signature-structure",
+          "critical",
+          `Signature ${element.id} is only declared; authored source is missing the structural evidence required for ${element.description || "the reference mechanic"}.`,
+          {
+            signatureId: element.id,
+            requiredBehavior: element.description || "",
+          },
+        ),
+      );
     if (renderedDom && !sourceHasSignature(renderedDom, element))
-      findings.push(finding("missing-rendered-signature", "critical", `Rendered DOM is missing signature ${element.id}.`));
+      findings.push(
+        finding(
+          "missing-rendered-signature",
+          "critical",
+          `Rendered DOM is missing signature ${element.id}: ${element.description || "required reference mechanic"}.`,
+          {
+            signatureId: element.id,
+            requiredBehavior: element.description || "",
+            viewport: viewport?.name || "",
+          },
+        ),
+      );
+    if (renderedDom) {
+      const geometryFinding = signatureGeometryFinding(
+        element,
+        renderedEvidence,
+        viewport,
+      );
+      if (geometryFinding) findings.push(geometryFinding);
+    }
   }
   const sections = sourceSectionOrder(experienceSource);
-  const expected = referenceDna.sectionSequence.map((item) => slug(item));
-  const matched = expected.filter((item) => sections.some((actual) =>
-    actual === item || actual.includes(item) || item.includes(actual),
-  ) || source.toLowerCase().includes(item));
-  if (matched.length < Math.min(3, expected.length))
-    findings.push(finding("section-rhythm", "critical", "The authored section sequence does not represent the assigned reference rhythm."));
+  const expected = dna.sectionSequence.map((item) => slug(item));
+  if (!sameOrder(sections, expected))
+    findings.push(
+      finding(
+        "section-order",
+        "critical",
+        `Reference section order mismatch. Expected exactly: ${expected.join(" > ")}. Authored: ${sections.join(" > ") || "(none)"}.`,
+        {
+          expectedSections: expected,
+          actualSections: sections,
+          visualRequirements: visualRequirements(dna),
+        },
+      ),
+    );
+  if (renderedDom) {
+    const renderedSections = sourceSectionOrder(renderedDom);
+    if (!sameOrder(renderedSections, expected))
+      findings.push(
+        finding(
+          "section-order",
+          "critical",
+          `Rendered reference section order mismatch. Expected exactly: ${expected.join(" > ")}. Rendered: ${renderedSections.join(" > ") || "(none)"}.`,
+          {
+            expectedSections: expected,
+            actualSections: renderedSections,
+            visualRequirements: visualRequirements(dna),
+            viewport: viewport?.name || "",
+          },
+        ),
+      );
+  }
   if (!/data-hero(?:\s|=)/iu.test(experienceSource) || !/data-hero-geometry=/iu.test(experienceSource))
     findings.push(finding("hero-geometry", "critical", "The authored hero is missing its explicit reference geometry marker."));
-  else if (!markerMatches(experienceSource, "data-hero-geometry", referenceDna.heroGeometry.mode))
+  else if (!markerMatches(experienceSource, "data-hero-geometry", dna.heroGeometry.mode))
     findings.push(finding("hero-geometry-mismatch", "critical", "The authored hero geometry does not match Reference DNA."));
   if (!/data-navigation-geometry=/iu.test(experienceSource))
     findings.push(finding("navigation-geometry", "major", "The authored navigation is missing its reference geometry marker."));
-  else if (!markerMatches(experienceSource, "data-navigation-geometry", referenceDna.navigationGeometry.mode))
+  else if (!markerMatches(experienceSource, "data-navigation-geometry", dna.navigationGeometry.mode))
     findings.push(finding("navigation-geometry-mismatch", "critical", "The authored navigation geometry does not match Reference DNA."));
   if (!/data-service-presentation=/iu.test(experienceSource))
     findings.push(finding("service-presentation", "critical", "The authored service presentation is missing its reference marker."));
-  else if (!markerMatches(experienceSource, "data-service-presentation", referenceDna.servicePresentation.pattern))
+  else if (!markerMatches(experienceSource, "data-service-presentation", dna.servicePresentation.pattern))
     findings.push(finding("service-presentation-mismatch", "critical", "The authored service presentation does not match Reference DNA."));
   if (!/data-early-conversion(?:=|\s|>)/iu.test(experienceSource) || !/data-cta-placement=/iu.test(experienceSource))
     findings.push(finding("cta-placement", "critical", "The early CTA is missing its explicit reference placement marker."));
-  else if (!markerMatches(experienceSource, "data-cta-placement", referenceDna.ctaPlacement.early))
+  else if (!markerMatches(experienceSource, "data-cta-placement", dna.ctaPlacement.early))
     findings.push(finding("cta-placement-mismatch", "critical", "The early CTA placement does not match Reference DNA."));
   if (!/data-mobile-recomposition=/iu.test(experienceSource) || !/@media/iu.test(stylesSource))
     findings.push(finding("mobile-recomposition", "critical", "The candidate does not declare a mobile recomposition and responsive CSS."));
-  else if (!markerMatches(experienceSource, "data-mobile-recomposition", referenceDna.mobileRecomposition.strategy))
+  else if (!markerMatches(experienceSource, "data-mobile-recomposition", dna.mobileRecomposition.strategy))
     findings.push(finding("mobile-recomposition-mismatch", "critical", "The mobile recomposition does not match Reference DNA."));
   if (!/mountExperienceMotion\s*\(/u.test(motionSource) || !/data-motion-primitive=/iu.test(experienceSource))
     findings.push(finding("motion-primitive", "critical", "The assigned motion primitive is not represented in the authored candidate."));
-  else if (!markerMatches(experienceSource, "data-motion-primitive", referenceDna.motion.primitive))
+  else if (!markerMatches(experienceSource, "data-motion-primitive", dna.motion.primitive))
     findings.push(finding("motion-primitive-mismatch", "critical", "The motion primitive does not match Reference DNA."));
-  for (const pattern of referenceDna.prohibitedPatterns)
+  else if (!/(?:gsap\.|transform|requestAnimationFrame|IntersectionObserver|addEventListener\s*\(|scroll|pointer|mousemove)/iu.test(motionSource))
+    findings.push(finding("motion-primitive", "critical", "The authored motion file declares the primitive but contains no observable motion implementation evidence."));
+  for (const pattern of dna.prohibitedPatterns)
     if (hasProhibitedPattern(`${experienceSource}\n${renderedDom}`, pattern))
       findings.push(finding("prohibited-pattern", "critical", `Prohibited pattern detected: ${pattern}.`));
+  if (renderedDom && renderedEvidence) {
+    if (renderedEvidence.servicePresentationAttachedToServices === false)
+      findings.push(
+        finding(
+          "service-presentation",
+          "critical",
+          "Rendered service-presentation marker is not attached to the services composition.",
+          { viewport: viewport?.name || "" },
+        ),
+      );
+    if (renderedEvidence.ctaPlacementAttachedToEarlyConversion === false)
+      findings.push(
+        finding(
+          "cta-placement",
+          "critical",
+          "Rendered CTA placement marker is not attached to the actual early conversion control.",
+          { viewport: viewport?.name || "" },
+        ),
+      );
+    const measurements = dna.measurements || {};
+    const expectedHeroRatio = Number(
+      measurements.dominantSectionHeightRatios?.[0],
+    );
+    if (
+      Number.isFinite(expectedHeroRatio) &&
+      Number.isFinite(renderedEvidence.heroHeightRatio) &&
+      Math.abs(renderedEvidence.heroHeightRatio - expectedHeroRatio) > 0.3
+    )
+      findings.push(
+        finding(
+          "hero-geometry-mismatch",
+          "critical",
+          `Rendered hero height ratio ${renderedEvidence.heroHeightRatio.toFixed(3)} is outside the reference tolerance around ${expectedHeroRatio.toFixed(3)}.`,
+          { viewport: viewport?.name || "" },
+        ),
+      );
+    const expectedCtaTop = Number(measurements.ctaTopRatio);
+    if (
+      viewport?.name !== "mobile" &&
+      Number.isFinite(expectedCtaTop) &&
+      Number.isFinite(renderedEvidence.ctaTopRatio) &&
+      Math.abs(renderedEvidence.ctaTopRatio - expectedCtaTop) > 0.22
+    )
+      findings.push(
+        finding(
+          "cta-placement-mismatch",
+          "critical",
+          `Rendered early CTA top ratio ${renderedEvidence.ctaTopRatio.toFixed(3)} is outside the reference tolerance around ${expectedCtaTop.toFixed(3)}.`,
+          { viewport: viewport?.name || "" },
+        ),
+      );
+    if (viewport?.name === "mobile" && renderedEvidence.overflow)
+      findings.push(
+        finding(
+          "mobile-recomposition",
+          "critical",
+          "Rendered mobile recomposition has horizontal overflow.",
+          { viewport: viewport.name },
+        ),
+      );
+  }
   for (const match of stylesSource.matchAll(/--([a-z][\w-]*)\s*:/giu))
     if (!match[1].startsWith("ll-creative-"))
       findings.push(finding("css-token-collision", "critical", `Candidate CSS variable --${match[1]} is not isolated.`));
@@ -376,7 +584,7 @@ export function validateReferenceContractCompliance({
     findings,
     hardFindings,
     visualFindings,
-    requiredSignatures: referenceDna.requiredSignatureElements.map((item) => item.id),
+    requiredSignatures: dna.requiredSignatureElements.map((item) => item.id),
     sectionOrder: sections,
   };
 }
