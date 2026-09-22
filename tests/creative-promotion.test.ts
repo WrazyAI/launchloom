@@ -49,7 +49,7 @@ export default function Experience({ content, runtime }) {
     <section id="contact" data-reference-section="contact"><LeadForm content={content} runtime={runtime} /></section></main>;
 }`,
   );
-  await fs.writeFile(path.join(root, "candidate-a/styles.css"), "[data-hero]{min-height:40rem}");
+  await fs.writeFile(path.join(root, "candidate-a/styles.css"), "[data-hero]{min-height:40rem}[data-reference-signature]{display:block;min-height:5rem}");
   await fs.writeFile(path.join(root, "candidate-a/motion.js"), "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {}; return () => {}; }");
   return root;
 }
