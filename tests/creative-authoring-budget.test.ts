@@ -1,15 +1,23 @@
 import { describe, expect, it } from "vitest";
 import {
   authorStageMaxTokens,
+  authorStageTimeoutMs,
   describeAuthorResponseFailure,
 } from "../scripts/creative-authoring-budget.mjs";
 
 describe("creative author output budget", () => {
-  it("reserves completion budget for authored source and motion stages", () => {
-    expect(authorStageMaxTokens("experience")).toBe(18_000);
-    expect(authorStageMaxTokens("styles")).toBe(18_000);
-    expect(authorStageMaxTokens("contract")).toBe(4_000);
-    expect(authorStageMaxTokens("motion")).toBe(12_000);
+  it("leaves ample completion headroom below the model's 128k ceiling", () => {
+    expect(authorStageMaxTokens("experience")).toBe(64_000);
+    expect(authorStageMaxTokens("styles")).toBe(48_000);
+    expect(authorStageMaxTokens("contract")).toBe(16_000);
+    expect(authorStageMaxTokens("motion")).toBe(32_000);
+  });
+
+  it("allows xhigh source and motion stages enough time to finish beyond 90 seconds", () => {
+    expect(authorStageTimeoutMs("contract")).toBe(180_000);
+    expect(authorStageTimeoutMs("experience")).toBe(240_000);
+    expect(authorStageTimeoutMs("styles")).toBe(240_000);
+    expect(authorStageTimeoutMs("motion")).toBe(240_000);
   });
 
   it("reports the reasoning and completion usage when a provider truncates a response", () => {

@@ -130,13 +130,13 @@ describe("production experience author", () => {
     );
 
     expect(styles).toContain(
-      "[data-creative-host=\"true\"] .launchloom-lead-form {",
+      '[data-creative-host="true"] .launchloom-lead-form {',
     );
     expect(styles).toContain("color: var(--ll-creative-ink, currentColor);");
     expect(styles).toContain(
-      "[data-creative-host=\"true\"] .launchloom-lead-form small {\n  color: var(--ll-creative-muted, currentColor);",
+      '[data-creative-host="true"] .launchloom-lead-form small {\n  color: var(--ll-creative-muted, currentColor);',
     );
-    expect(styles).toContain("[data-creative-host=\"true\"] {\n  width: 100%;");
+    expect(styles).toContain('[data-creative-host="true"] {\n  width: 100%;');
     expect(styles).toMatch(
       /\[data-creative-host="true"\]\s*\{[^}]*overflow-x:\s*clip;/u,
     );
@@ -156,8 +156,7 @@ describe("production experience author", () => {
         files: {
           experience: "export default function Experience(){ return null; }",
           styles: ".candidate { display: block; }",
-          motion:
-            "export function mountExperienceMotion(){ return () => {}; }",
+          motion: "export function mountExperienceMotion(){ return () => {}; }",
         },
         route: {
           id: "route-incomplete",
@@ -468,6 +467,29 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("accepts valid single-quoted required section IDs", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage !== "experience" || request.validationError)
+          return value;
+        return {
+          content: String(value.content)
+            .replaceAll('id="services"', "id='services'")
+            .replaceAll('id="faqs"', "id='faqs'")
+            .replaceAll('id="contact"', "id='contact'"),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(
+      result.candidates.every((item) => !item.metadata.complianceRepaired),
+    ).toBe(true);
+  });
+
   it("retries one malformed structured stage response", async () => {
     const attempts = new Map<string, number>();
     const result = await authorExperienceCandidates({
@@ -570,7 +592,9 @@ describe("production experience author", () => {
     expect(result.candidates).toHaveLength(3);
     expect(
       result.candidates.every(
-        (item) => !item.files["motion.js"].includes("<svg") && item.metadata.complianceRepaired,
+        (item) =>
+          !item.files["motion.js"].includes("<svg") &&
+          item.metadata.complianceRepaired,
       ),
     ).toBe(true);
   });
@@ -582,9 +606,13 @@ describe("production experience author", () => {
       generate: async (request) => {
         const value = safeStage(request);
         if (request.stage === "styles" && !request.validationError)
-          return { content: `<!doctype html>\n<html><body></body></html>\n${value.content}\n}\n\"\n}` };
+          return {
+            content: `<!doctype html>\n<html><body></body></html>\n${value.content}\n}\n\"\n}`,
+          };
         if (request.stage === "experience" && !request.validationError)
-          return { content: `${value.content}\n<img src={content.hero.image} alt="" />` };
+          return {
+            content: `${value.content}\n<img src={content.hero.image} alt="" />`,
+          };
         return value;
       },
     });
@@ -605,10 +633,13 @@ describe("production experience author", () => {
           return value;
         return {
           content: String(value.content)
-            .replace("<LeadForm content={content} runtime={runtime} />", "<LeadForm runtime={runtime} />")
-            .replaceAll('href="#services"', 'onClick={() => {}}')
-            .replaceAll('href="#faqs"', 'onClick={() => {}}')
-            .replaceAll('href="#contact"', 'onClick={() => {}}'),
+            .replace(
+              "<LeadForm content={content} runtime={runtime} />",
+              "<LeadForm runtime={runtime} />",
+            )
+            .replaceAll('href="#services"', "onClick={() => {}}")
+            .replaceAll('href="#faqs"', "onClick={() => {}}")
+            .replaceAll('href="#contact"', "onClick={() => {}}"),
         };
       },
     });
@@ -715,8 +746,12 @@ describe("production experience author", () => {
     expect(authorIndex).toBeGreaterThan(inspirationIndex);
     expect(repositoryIndex).toBeGreaterThan(inspirationIndex);
     expect(authorIndex).toBeGreaterThan(repositoryIndex);
-    expect(workflow.indexOf("name: Generate or reuse contextual imagery")).toBeGreaterThan(repositoryIndex);
-    expect(workflow.indexOf("name: Generate or reuse contextual imagery")).toBeLessThan(authorIndex);
+    expect(
+      workflow.indexOf("name: Generate or reuse contextual imagery"),
+    ).toBeGreaterThan(repositoryIndex);
+    expect(
+      workflow.indexOf("name: Generate or reuse contextual imagery"),
+    ).toBeLessThan(authorIndex);
     expect(workflow).toContain("name: authored-experiences-${{");
     const seoEvidence = workflow.slice(
       workflow.indexOf("name: Preserve SEO research evidence"),
@@ -772,15 +807,9 @@ describe("production experience author", () => {
       },
     });
 
-    expect(seen.get("route-01")).toBe(
-      "/images/generated/route-01-hero.webp",
-    );
-    expect(seen.get("route-02")).toBe(
-      "/images/generated/route-02-hero.webp",
-    );
-    expect(seen.get("route-03")).toBe(
-      "/images/generated/route-03-hero.webp",
-    );
+    expect(seen.get("route-01")).toBe("/images/generated/route-01-hero.webp");
+    expect(seen.get("route-02")).toBe("/images/generated/route-02-hero.webp");
+    expect(seen.get("route-03")).toBe("/images/generated/route-03-hero.webp");
 
     // The digest covers the manifest without its digest field, sorting object
     // keys recursively while retaining array order.
@@ -789,7 +818,9 @@ describe("production experience author", () => {
       if (value && typeof value === "object")
         return Object.fromEntries(
           Object.entries(value)
-            .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+            .sort(([left], [right]) =>
+              left < right ? -1 : left > right ? 1 : 0,
+            )
             .map(([key, item]) => [key, sortKeys(item)]),
         );
       return value;
@@ -807,16 +838,21 @@ describe("production experience author", () => {
       secondaryImage: "",
       tertiaryImage: "",
     });
-    expect(recomputeDigest(result.contentManifest)).toBe(result.contentManifest.digest);
+    expect(recomputeDigest(result.contentManifest)).toBe(
+      result.contentManifest.digest,
+    );
     const digests = new Set<string>();
     for (const candidate of result.candidates) {
       const metadata = JSON.parse(candidate.files["metadata.json"]);
       expect(metadata.contentManifestPath).toBe("content-manifest.json");
-      expect(candidate.metadata.contentManifestPath).toBe(metadata.contentManifestPath);
+      expect(candidate.metadata.contentManifestPath).toBe(
+        metadata.contentManifestPath,
+      );
       const manifest = JSON.parse(candidate.files["content-manifest.json"]);
-      const assets = routeSite.creativeAssets[
-        metadata.routeId as keyof typeof routeSite.creativeAssets
-      ];
+      const assets =
+        routeSite.creativeAssets[
+          metadata.routeId as keyof typeof routeSite.creativeAssets
+        ];
       expect(manifest.values).toEqual({
         ...result.contentManifest.values,
         hero: {
@@ -832,11 +868,13 @@ describe("production experience author", () => {
       expect(metadata.contentManifestDigest).toBe(recomputed);
       expect(candidate.metadata.contentManifestDigest).toBe(recomputed);
       expect(metadata.creativeManifest.contentManifestDigest).toBe(recomputed);
-      expect(JSON.parse(candidate.files["contract.json"]).creativeManifest.contentManifestDigest).toBe(recomputed);
+      expect(
+        JSON.parse(candidate.files["contract.json"]).creativeManifest
+          .contentManifestDigest,
+      ).toBe(recomputed);
       expect(recomputed).not.toBe(result.contentManifest.digest);
       digests.add(recomputed);
     }
     expect(digests.size).toBe(3);
   });
-
 });

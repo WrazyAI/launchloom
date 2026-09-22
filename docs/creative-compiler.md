@@ -18,8 +18,7 @@ lead endpoint, or ship an unverified layout.
    overlap relationships, surface transitions, and mobile geometry. Family
    defaults are fallback vocabulary only; screenshot-derived measurements are
    required in the new-intake workflow. A missing required desktop screenshot
-   fails creative compilation; prose-only inspiration cannot reach Luna.
-   3. `author-production-experiences.mjs` asks the visual author for three
+   fails creative compilation; prose-only inspiration cannot reach Luna. 3. `author-production-experiences.mjs` asks the visual author for three
    independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
    author receives the complete Reference DNA and its desktop/mobile evidence,
    then must expose the contract's signatures and geometry markers in the
@@ -31,7 +30,7 @@ lead endpoint, or ship an unverified layout.
    `CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS`; it never turns an expired author
    run into a legacy renderer. A failed reference-fidelity
    check gets at most two author-owned repairs and then fails closed.
-4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
+3. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders 1536x864 desktop, 1366x768 compact desktop, and
    390x844 mobile viewports, and records the evidence. Structural contract
    compliance remains a cheap safety preflight for sealed content and isolated
@@ -43,13 +42,13 @@ lead endpoint, or ship an unverified layout.
    interaction evidence. Screenshot-to-screenshot candidate distance is
    recorded for preview and is a hard production-promotion gate; different
    metadata, colors, or copy do not count as visual diversity.
-5. Route fingerprints remain an early compiler diagnostic so independently
+4. Route fingerprints remain an early compiler diagnostic so independently
    authored routes do not collapse before rendering. For version-two
    candidates, production diversity authority comes from rendered screenshot
    comparison only; fingerprint distance and unique-dimension counts are
    retained in the report for diagnosis and do not veto a pixel-diverse
    candidate. Legacy candidates keep the structural diversity fallback.
-6. `run-rendered-creative-repair.mjs` owns the bounded rendered repair loop.
+5. `run-rendered-creative-repair.mjs` owns the bounded rendered repair loop.
    Each round runs the real Astro bakeoff, keeps the desktop, compact, and
    mobile screenshots, applies the screenshot-to-reference judge, and then
    runs `visual-quality-gate.mjs` against the selected rendered candidate.
@@ -104,14 +103,15 @@ session's reasoning/cache family. Direct legacy developer invocations without a
 reasoning-preflight artifact may still use the bounded static-effort recovery
 ladder for compatibility; the production workflow does not.
 
-Authoring uses stage-specific completion budgets: up to 18,000 tokens for the
-full Experience JSX and styles, 12,000 for motion, and 4,000 for the design
-contract. OpenRouter counts reasoning tokens against `max_tokens` even when
-reasoning is excluded from the returned message, so the JSX, styles, and motion
-budgets reserve room for both reasoning and authored source. Truncated or empty
-responses log their finish reason, completion-token count, reasoning-token
-count, and returned content length; truncation still fails closed and never
-promotes a legacy renderer.
+Authoring uses generous stage-specific completion ceilings below Luna's
+128,000-token maximum: up to 64,000 for Experience JSX, 48,000 for styles,
+32,000 for motion, and 16,000 for the design contract. OpenRouter counts
+reasoning tokens against max_tokens even when reasoning is excluded from the
+returned message, so these are ceilings for reasoning plus authored source, not
+expected spend. Experience, styles, and motion requests may run for up to four
+minutes; the full authoring phase remains bounded at 30 minutes. Truncated,
+empty, and timed-out responses log stage and usage diagnostics; the pipeline
+still fails closed and never promotes a legacy renderer.
 
 ## Shared runtime contract
 

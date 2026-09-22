@@ -1,12 +1,23 @@
 const AUTHOR_STAGE_MAX_TOKENS = Object.freeze({
-  contract: 4_000,
-  experience: 18_000,
-  styles: 18_000,
-  motion: 12_000,
+  contract: 16_000,
+  experience: 64_000,
+  styles: 48_000,
+  motion: 32_000,
+});
+
+const AUTHOR_STAGE_TIMEOUT_MS = Object.freeze({
+  contract: 180_000,
+  experience: 240_000,
+  styles: 240_000,
+  motion: 240_000,
 });
 
 export function authorStageMaxTokens(stage) {
   return AUTHOR_STAGE_MAX_TOKENS[stage] ?? AUTHOR_STAGE_MAX_TOKENS.motion;
+}
+
+export function authorStageTimeoutMs(stage) {
+  return AUTHOR_STAGE_TIMEOUT_MS[stage] ?? AUTHOR_STAGE_TIMEOUT_MS.motion;
 }
 
 export function describeAuthorResponseFailure({ stage, routeId, payload }) {

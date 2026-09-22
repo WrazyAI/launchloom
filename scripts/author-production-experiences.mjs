@@ -5,6 +5,7 @@ import { typographyPalettePrompt } from "./creative-typography.mjs";
 import { authorExperienceCandidates } from "./production-experience-author.mjs";
 import {
   authorStageMaxTokens,
+  authorStageTimeoutMs,
   describeAuthorResponseFailure,
 } from "./creative-authoring-budget.mjs";
 import {
@@ -40,9 +41,7 @@ const outputPath = path.resolve(
   args.out || ".launchloom/generated-experiences",
 );
 const model =
-  args.model ||
-  process.env.CREATIVE_EXPERIENCE_MODEL ||
-  "openai/gpt-5.6-luna";
+  args.model || process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna";
 const sessionPath = args.session ? path.resolve(args.session) : "";
 const creativeSession = sessionPath
   ? validateCreativeSessionConfig(
@@ -60,7 +59,7 @@ const authorDeadline =
   Date.now() +
   Math.max(
     5 * 60_000,
-    Number(process.env.CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS || 20 * 60_000),
+    Number(process.env.CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS || 30 * 60_000),
   );
 const sharedAbortController = new AbortController();
 
@@ -205,13 +204,17 @@ Return a precise implementation contract and a rationale under 220 words. The co
     return `DESIGN CONTRACT
 ${request.designContract}
 
-${request.validationError ? `COMPLIANCE REPAIR
+${
+  request.validationError
+    ? `COMPLIANCE REPAIR
 The previous JSX failed: ${request.validationError}
 Repair that exact violation without reducing the composition or changing the design contract.
 
 PREVIOUS JSX
 ${request.previousSource}
-` : ""}
+`
+    : ""
+}
 EXPERIENCE STAGE
 Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". The hero's early conversion is a compact anchor or button linking to #contact, not the full four-field form. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
 
@@ -251,21 +254,18 @@ async function requestStage(request) {
   sharedAbortController.signal.addEventListener("abort", abortStage, {
     once: true,
   });
-  const stageLimitMs =
-    request.stage === "experience" || request.stage === "styles"
-      ? 150_000
-      : 90_000;
+  const stageLimitMs = authorStageTimeoutMs(request.stage);
   const remainingMs = authorDeadline - Date.now();
   if (remainingMs <= 0)
     throw new Error("Phase 2 authorship exceeded its configured budget.");
-  const timeout = setTimeout(
-    () => controller.abort(),
-    Math.min(stageLimitMs, remainingMs),
-  );
+  const timeoutMs = Math.min(stageLimitMs, remainingMs);
+  let stageTimedOut = false;
+  const timeout = setTimeout(() => {
+    stageTimedOut = true;
+    controller.abort();
+  }, timeoutMs);
   try {
-    const userContent = [
-      { type: "text", text: routePromptPrefix(request) },
-    ];
+    const userContent = [{ type: "text", text: routePromptPrefix(request) }];
     const evidencePaths = [
       request.route.referenceDna?.evidence?.desktopScreenshot?.path,
       request.route.referenceDna?.evidence?.mobileScreenshot?.path,
@@ -275,7 +275,10 @@ async function requestStage(request) {
       try {
         userContent.push(await promptImagePart(path.resolve(screenshotPath)));
       } catch (error) {
-        throw new Error(`Reference evidence could not be loaded for ${request.route.id}: ${screenshotPath}`, { cause: error });
+        throw new Error(
+          `Reference evidence could not be loaded for ${request.route.id}: ${screenshotPath}`,
+          { cause: error },
+        );
       }
     }
     userContent.push(
@@ -330,23 +333,23 @@ async function requestStage(request) {
           signal: controller.signal,
           sessionId,
           body: {
-              model,
-              ...promptCacheRequestFields(model, promptCacheKey),
-              temperature: request.stage === "contract" ? 0.76 : 0.62,
-              reasoning: { effort, exclude: true },
-              response_format: {
-                type: "json_schema",
-                json_schema: authorStageSchema,
-              },
-              max_tokens: authorStageMaxTokens(request.stage),
-              messages: [
-                {
-                  role: "system",
-                  content: promptCachedMessageContent(model, systemPrompt),
-                },
-                { role: "user", content: userContent },
-              ],
+            model,
+            ...promptCacheRequestFields(model, promptCacheKey),
+            temperature: request.stage === "contract" ? 0.76 : 0.62,
+            reasoning: { effort, exclude: true },
+            response_format: {
+              type: "json_schema",
+              json_schema: authorStageSchema,
             },
+            max_tokens: authorStageMaxTokens(request.stage),
+            messages: [
+              {
+                role: "system",
+                content: promptCachedMessageContent(model, systemPrompt),
+              },
+              { role: "user", content: userContent },
+            ],
+          },
         });
         const {
           payload,
@@ -354,7 +357,9 @@ async function requestStage(request) {
           parseError: responseBodyError,
         } = await readOpenRouterResponseEnvelope(response);
         if (sharedAbortController.signal.aborted)
-          throw new Error("Phase 2 authorship cancelled after a sibling failure.");
+          throw new Error(
+            "Phase 2 authorship cancelled after a sibling failure.",
+          );
         const usageRecord = {
           routeId: request.route.id,
           stage: request.stage,
@@ -366,7 +371,9 @@ async function requestStage(request) {
             payload.usage,
           ),
           sessionId,
-          parseStatus: responseBodyError ? "response-body-error" : "response-received",
+          parseStatus: responseBodyError
+            ? "response-body-error"
+            : "response-received",
           durationMs: Date.now() - startedAt,
         };
         usage.push(usageRecord);
@@ -376,14 +383,29 @@ async function requestStage(request) {
             JSON.stringify(payload) !== "{}"
               ? JSON.stringify(payload).slice(0, 1000)
               : rawBody || responseBodyError?.message || "empty response";
-          throw new Error(
-            `OpenRouter ${response.status}: ${errorContext}`,
-          );
+          throw new Error(`OpenRouter ${response.status}: ${errorContext}`);
         }
         if (responseBodyError) {
-          throw new Error("OpenRouter returned an unreadable response body.", {
-            cause: responseBodyError,
-          });
+          const timeoutMessage =
+            "OpenRouter " +
+            request.stage +
+            " response for " +
+            request.route.id +
+            " timed out after " +
+            timeoutMs +
+            "ms.";
+          const errorMessage = stageTimedOut
+            ? timeoutMessage
+            : "OpenRouter returned an unreadable " +
+              request.stage +
+              " response body for " +
+              request.route.id +
+              " (" +
+              (responseBodyError.name || "Error") +
+              ": " +
+              responseBodyError.message +
+              ").";
+          throw new Error(errorMessage, { cause: responseBodyError });
         }
         const content = payload.choices?.[0]?.message?.content;
         const finishReason = payload.choices?.[0]?.finish_reason;
@@ -420,9 +442,21 @@ async function requestStage(request) {
         );
         return parsed;
       } catch (error) {
-        lastError = error;
+        lastError =
+          stageTimedOut && controller.signal.aborted
+            ? new Error(
+                "OpenRouter " +
+                  request.stage +
+                  " request for " +
+                  request.route.id +
+                  " timed out after " +
+                  timeoutMs +
+                  "ms.",
+                { cause: error },
+              )
+            : error;
         if (controller.signal.aborted || effort === requestedEfforts.at(-1))
-          throw error;
+          throw lastError;
         console.warn(
           `production_experience_stage=retry route=${request.route.id} stage=${request.stage} next_effort=${requestedEfforts[requestedEfforts.indexOf(effort) + 1]}`,
         );
@@ -466,8 +500,7 @@ function aggregateCacheUsage(records) {
     parseFailureCount: records.length - (parseStatusCounts.parsed || 0),
     parseStatusCounts,
     cost: Math.round(total.cost * 1_000_000) / 1_000_000,
-    cacheDiscount:
-      Math.round(total.cacheDiscount * 1_000_000) / 1_000_000,
+    cacheDiscount: Math.round(total.cacheDiscount * 1_000_000) / 1_000_000,
     cacheHitPercent:
       total.promptTokens > 0
         ? Math.round((total.cachedTokens / total.promptTokens) * 1000) / 10
