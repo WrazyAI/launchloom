@@ -769,6 +769,7 @@ function createGenerationLimiter(generate, maxConcurrency = 2) {
  *   inspirationPack: Record<string, any>;
  *   generate: (request: AuthorStageRequest) => Promise<Record<string, any>>;
  *   model?: string;
+ *   creativeSession?: Record<string, any> | null;
  * }} input
  */
 export async function authorExperienceCandidates({
@@ -776,6 +777,7 @@ export async function authorExperienceCandidates({
   inspirationPack,
   generate,
   model = "openai/gpt-5.6-luna",
+  creativeSession = null,
 }) {
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
@@ -936,6 +938,16 @@ export async function authorExperienceCandidates({
         routeId: route.id,
         routeLabel: route.label,
         model,
+        reasoning: creativeSession
+          ? {
+              effort: creativeSession.reasoningEffort,
+              recommendedEffort: creativeSession.recommendedEffort,
+              mode: creativeSession.mode,
+              sessionId: creativeSession.sessionId,
+              policyVersion: creativeSession.reasoningPolicyVersion,
+              selectorModelVersion: creativeSession.selectorModelVersion,
+            }
+          : null,
         signature: route.signature,
         navigation: route.navigation,
         heroGeometry: route.heroGeometry,
@@ -967,6 +979,15 @@ export async function authorExperienceCandidates({
         route,
         designContract,
         designRationale,
+        reasoning: creativeSession
+          ? {
+              effort: creativeSession.reasoningEffort,
+              recommendedEffort: creativeSession.recommendedEffort,
+              mode: creativeSession.mode,
+              sessionId: creativeSession.sessionId,
+              policyVersion: creativeSession.reasoningPolicyVersion,
+            }
+          : null,
         rules: rules.split("\n"),
         contentTokens,
         creativeManifest,
