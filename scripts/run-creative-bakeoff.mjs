@@ -134,7 +134,8 @@ async function inspect(page) {
     const signatureGeometry = {};
     for (const element of root?.querySelectorAll("[data-reference-signature]") || []) {
       const id = element.getAttribute("data-reference-signature") || "";
-      if (id !== "lower-edge-product-overlap") continue;
+      if (!["lower-edge-product-overlap", "product-still-overlap"].includes(id))
+        continue;
       const layers = [
         ...element.querySelectorAll("[data-reference-overlap-layer]"),
       ].map((layer) => ({
