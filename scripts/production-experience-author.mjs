@@ -831,7 +831,9 @@ export async function authorExperienceCandidates({
     : 2;
   const limitedGenerate = createGenerationLimiter(generate, maxConcurrency);
   const authoredResults = await Promise.allSettled(
-    routes.map(async (route, index) => {\n      const candidateId = `candidate-${String.fromCharCode(97 + index)}`;\n      const routeContentManifest = buildCreativeContentManifest(
+    routes.map(async (route, index) => {
+      const candidateId = `candidate-${String.fromCharCode(97 + index)}`;
+      const routeContentManifest = buildCreativeContentManifest(
         site,
         route,
       );
