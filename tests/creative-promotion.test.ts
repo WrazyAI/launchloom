@@ -247,9 +247,21 @@ describe("creative candidate promotion", () => {
 
       expect(report.diversity.pass).toBe(false);
       expect(report.visualDiversity.pass).toBe(true);
-      expect(report.candidates.every((candidate: any) => candidate.eligible)).toBe(
-        true,
-      );
+      expect(
+        report.candidates.every((candidate: any) => candidate.eligible),
+        JSON.stringify(
+          report.candidates.map((candidate: any) => ({
+            candidateId: candidate.candidateId,
+            valid: candidate.valid,
+            eligible: candidate.eligible,
+            failures: candidate.failures,
+            referenceFidelity: candidate.referenceFidelity,
+            viewports: candidate.viewports,
+          })),
+          null,
+          2,
+        ),
+      ).toBe(true);
       expect(report.selectedCandidateId).not.toBeNull();
       expect(report.promotionReady).toBe(true);
 
