@@ -496,12 +496,18 @@ async function main() {
   for (const screenshot of screenshotCandidates) {
     try { await fs.access(screenshot); screenshots.push(screenshot); } catch { /* a failed candidate may have no render evidence */ }
   }
-  const model = args.model || process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna";
-  const creativeSession = args.session
+  const sessionConfig = args.session
     ? validateCreativeSessionConfig(
         JSON.parse(await fs.readFile(path.resolve(args.session), "utf8")),
-        { creativeModel: model },
       )
+    : null;
+  const model =
+    args.model ||
+    sessionConfig?.creativeModel ||
+    process.env.CREATIVE_EXPERIENCE_MODEL ||
+    "openai/gpt-6-luna";
+  const creativeSession = sessionConfig
+    ? validateCreativeSessionConfig(sessionConfig, { creativeModel: model })
     : null;
   const result = await runCreativeRepairLoop({
     files,

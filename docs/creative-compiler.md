@@ -85,7 +85,7 @@ a legacy preview.
 
 The model is independently configurable with `CREATIVE_EXPERIENCE_MODEL`. The
 truth/configuration lane remains on GLM-5.3-Flash, while the rendered creative
-lane defaults to `openai/gpt-5.6-luna`.
+lane defaults to `openai/gpt-6-luna`.
 
 After Reference DNA is complete and before the first Luna request, the
 production workflow runs the adaptive reasoning preflight described in

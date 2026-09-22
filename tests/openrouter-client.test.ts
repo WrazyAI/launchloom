@@ -88,7 +88,7 @@ describe("OpenRouter cache-aware client", () => {
   });
 
   it("enables explicit prompt caching only for OpenAI GPT-5.6 and newer", () => {
-    expect(supportsExplicitOpenAiPromptCaching("openai/gpt-5.6-luna")).toBe(
+    expect(supportsExplicitOpenAiPromptCaching("openai/gpt-6-luna")).toBe(
       true,
     );
     expect(supportsExplicitOpenAiPromptCaching("openai/gpt-5.7")).toBe(true);
@@ -98,7 +98,7 @@ describe("OpenRouter cache-aware client", () => {
     );
 
     expect(
-      promptCachedText("openai/gpt-5.6-luna", "stable instructions"),
+      promptCachedText("openai/gpt-6-luna", "stable instructions"),
     ).toEqual({
       type: "text",
       text: "stable instructions",
@@ -113,7 +113,7 @@ describe("OpenRouter cache-aware client", () => {
 
     expect(
       promptCachedMessageContent(
-        "openai/gpt-5.6-luna",
+        "openai/gpt-6-luna",
         "stable instructions",
       ),
     ).toEqual([
@@ -132,7 +132,7 @@ describe("OpenRouter cache-aware client", () => {
 
     expect(
       promptCacheRequestFields(
-        "openai/gpt-5.6-luna",
+        "openai/gpt-6-luna",
         "ll:creative-author:test",
       ),
     ).toEqual({
@@ -141,7 +141,7 @@ describe("OpenRouter cache-aware client", () => {
     });
     expect(
       promptCacheRequestFields(
-        "openai/gpt-5.6-luna",
+        "openai/gpt-6-luna",
         "x".repeat(100),
       ).prompt_cache_key,
     ).toHaveLength(64);
@@ -160,7 +160,7 @@ describe("OpenRouter cache-aware client", () => {
       apiKey: "test-key",
       title: "LaunchLoom Test",
       body: {
-        model: "openai/gpt-5.6-luna",
+        model: "openai/gpt-6-luna",
         messages: [{ role: "user", content: "hello" }],
       },
       sessionId: "launchloom:test:abc",
@@ -177,7 +177,7 @@ describe("OpenRouter cache-aware client", () => {
     expect(options.headers["X-OpenRouter-Cache-TTL"]).toBe("1200");
     expect(options.headers["X-OpenRouter-Title"]).toBe("LaunchLoom Test");
     expect(JSON.parse(options.body)).toMatchObject({
-      model: "openai/gpt-5.6-luna",
+      model: "openai/gpt-6-luna",
       session_id: "launchloom:test:abc",
       usage: { include: true },
     });

@@ -8,6 +8,13 @@ import {
 export const REASONING_POLICY_VERSION = "adaptive-reasoning-v1";
 export const JUDGMENT_SCHEMA_VERSION = "design-complexity-v1";
 export const DEFAULT_PREFLIGHT_MODE = "shadow";
+// Existing client sites may still carry a frozen 5.6 session. New intake
+// workflow runs normalize to GPT-6 Luna, while these old sessions remain valid
+// for their own repair lifecycle.
+const SUPPORTED_CREATIVE_SESSION_MODELS = new Set([
+  "openai/gpt-6-luna",
+  "openai/gpt-5.6-luna",
+]);
 
 const SCORE_IDS = [
   "referenceTranslation",
@@ -426,16 +433,16 @@ export async function createReasoningPreflight({
   mode = DEFAULT_PREFLIGHT_MODE,
   model = process.env.REASONING_PREFLIGHT_MODEL || DEFAULT_TYPESAFE_MODEL,
   creativeModel =
-    process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna",
+    process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-6-luna",
   sessionKey = "",
   apiKey = process.env.TYPESAFE_API_KEY,
   fetchImpl = fetch,
   timeoutMs,
 } = {}) {
   const preflightMode = normalizedMode(mode);
-  if (creativeModel !== "openai/gpt-5.6-luna")
+  if (!SUPPORTED_CREATIVE_SESSION_MODELS.has(creativeModel))
     throw new Error(
-      `Adaptive reasoning preflight currently supports openai/gpt-5.6-luna only, received ${creativeModel}.`,
+      `Adaptive reasoning preflight supports openai/gpt-6-luna and existing openai/gpt-5.6-luna sessions, received ${creativeModel}.`,
     );
   const state = buildReasoningPreflightState(inspirationPack);
   const stateDigest = digest(state);
@@ -558,9 +565,9 @@ export function validateCreativeSessionConfig(
     throw new Error(
       `Creative session recommended effort must be xhigh or max, received ${value.recommendedEffort}.`,
     );
-  if (value.creativeModel !== "openai/gpt-5.6-luna")
+  if (!SUPPORTED_CREATIVE_SESSION_MODELS.has(value.creativeModel))
     throw new Error(
-      `Creative session model must be openai/gpt-5.6-luna, received ${value.creativeModel}.`,
+      `Creative session model must be openai/gpt-6-luna or an existing openai/gpt-5.6-luna session, received ${value.creativeModel}.`,
     );
   if (creativeModel && value.creativeModel !== creativeModel)
     throw new Error(

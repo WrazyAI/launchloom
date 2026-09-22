@@ -105,7 +105,7 @@ describe("experience-pack compiler", () => {
     );
     const repair = readFileSync("scripts/creative-repair-loop.mjs", "utf8");
     expect(author).toContain(
-      '(model === "openai/gpt-5.6-luna" ? "xhigh" : "low")',
+      '(model === "openai/gpt-6-luna" ? "xhigh" : "low")',
     );
     const sessionEffortIndex = repair.indexOf(
       "creativeSession?.reasoningEffort",
@@ -188,7 +188,7 @@ describe("experience-pack compiler", () => {
     expect(creativeRender).not.toContain("continue-on-error: true");
     expect(workflow).toContain("Authored creative renderer was not selected");
     expect(workflow).toContain("CANDIDATE_ID=$(jq -r");
-    expect(workflow).toContain("openai/gpt-5.6-luna");
+    expect(workflow).toContain("openai/gpt-6-luna");
     expect(workflow).toContain(
       "vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh'",
     );

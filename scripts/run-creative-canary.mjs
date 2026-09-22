@@ -183,7 +183,7 @@ try {
     inspirationPack,
     mode: process.env.REASONING_PREFLIGHT_MODE || "shadow",
     model: process.env.REASONING_PREFLIGHT_MODEL || "jev-1.13.0",
-    creativeModel: "openai/gpt-5.6-luna",
+    creativeModel: "openai/gpt-6-luna",
     sessionKey: "creative-canary-kokoro",
   });
   await fs.writeFile(
@@ -210,7 +210,7 @@ try {
       cwd: root,
       env: {
         ...process.env,
-        CREATIVE_EXPERIENCE_MODEL: "openai/gpt-5.6-luna",
+        CREATIVE_EXPERIENCE_MODEL: "openai/gpt-6-luna",
       },
       maxBuffer: 8 * 1024 * 1024,
     },
@@ -252,7 +252,7 @@ try {
     candidatesDir: isolatedRoot,
     outDir: path.join(out, "creative-repair"),
     mode: "preview",
-    model: "openai/gpt-5.6-luna",
+    model: "openai/gpt-6-luna",
     creativeSession,
     requireDiversity: false,
     visualGateScript: path.join(root, "scripts/visual-quality-gate.mjs"),
