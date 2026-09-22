@@ -559,8 +559,33 @@ export function validateCreativeSessionConfig(
     throw new Error(
       `Creative session model ${value.creativeModel} does not match requested model ${creativeModel}.`,
     );
-  if (!String(value.sessionId || "").startsWith("launchloom:creative:"))
+  if (!/^launchloom:creative:[a-f0-9]{40}$/u.test(String(value.sessionId || "")))
     throw new Error("Creative session configuration has an invalid sessionId.");
+  if (value.mode === "shadow" && value.reasoningEffort !== "xhigh")
+    throw new Error(
+      "Shadow reasoning sessions must execute the xhigh baseline.",
+    );
+  if (
+    value.mode === "enforce" &&
+    value.reasoningEffort !== value.recommendedEffort
+  )
+    throw new Error(
+      "Enforced reasoning sessions must execute the frozen recommended effort.",
+    );
+  if (
+    value.decision?.reasoningEffort &&
+    value.decision.reasoningEffort !== value.reasoningEffort
+  )
+    throw new Error(
+      "Creative session decision reasoning effort does not match the frozen session.",
+    );
+  if (
+    value.decision?.recommendedEffort &&
+    value.decision.recommendedEffort !== value.recommendedEffort
+  )
+    throw new Error(
+      "Creative session decision recommendation does not match the frozen session.",
+    );
   if (
     value.reasoningPolicyVersion !== REASONING_POLICY_VERSION ||
     value.judgmentSchemaVersion !== JUDGMENT_SCHEMA_VERSION
