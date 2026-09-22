@@ -24,6 +24,7 @@ import { validateReferenceCandidate } from "./reference-fidelity.mjs";
  */
 
 const candidateDirectories = ["candidate-a", "candidate-b", "candidate-c"];
+const MAX_REPAIR_CONTEXT_CHARS = 1_800;
 const allowedImports = new Set([
   "react",
   "@launchloom/runtime",
@@ -258,6 +259,37 @@ function asText(value, label) {
   if (typeof value !== "string" || !value.trim())
     throw new Error(`Model stage returned no ${label}.`);
   return value.trim();
+}
+
+function boundedRepairContext(value) {
+  const serialized =
+    typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  if (!serialized) return "No valid structured output was returned.";
+  if (serialized.length <= MAX_REPAIR_CONTEXT_CHARS) return serialized;
+
+  const marker = `\n...[${serialized.length - MAX_REPAIR_CONTEXT_CHARS} characters omitted to preserve model context]...\n`;
+  const remaining = Math.max(0, MAX_REPAIR_CONTEXT_CHARS - marker.length);
+  const headLength = Math.ceil(remaining * 0.65);
+  const tailLength = remaining - headLength;
+  return `${serialized.slice(0, headLength)}${marker}${tailLength ? serialized.slice(-tailLength) : ""}`;
+}
+
+function contractRepairSummary(value) {
+  if (!value || typeof value !== "object")
+    return "No valid structured output was returned.";
+  const fields = ["stage", "designContract", "designRationale", "content"]
+    .map((key) => {
+      const field = value[key];
+      const shape =
+        typeof field === "string"
+          ? `${field.trim().length} characters`
+          : field === undefined
+            ? "missing"
+            : typeof field;
+      return `${key}=${shape}`;
+    })
+    .join(", ");
+  return `Prior structured contract response field summary: ${fields}. Regenerate the complete contract fields; do not repeat blank values.`;
 }
 
 function normalizeAuthoredSource(value) {
@@ -658,9 +690,7 @@ async function generateStageValue(generate, request, key, stage) {
     result = await generate({
       ...request,
       validationError: error instanceof Error ? error.message : String(error),
-      previousSource: result
-        ? JSON.stringify(result).slice(0, 12000)
-        : "No valid structured output was returned.",
+      previousSource: boundedRepairContext(result),
     });
     return { value: stageValue(result, key, stage), repaired: true };
   }
@@ -679,9 +709,7 @@ async function generateContract(generate, request) {
     result = await generate({
       ...request,
       validationError: error instanceof Error ? error.message : String(error),
-      previousSource: result
-        ? JSON.stringify(result).slice(0, 12000)
-        : "No valid structured output was returned.",
+      previousSource: contractRepairSummary(result),
     });
     return {
       designContract: stageValue(result, "designContract", "contract"),

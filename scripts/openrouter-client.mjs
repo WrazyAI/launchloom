@@ -207,6 +207,33 @@ export function logOpenRouterResponseCacheUsage(
 }
 
 /**
+ * OpenRouter may return an API error envelope with HTTP 200, especially when
+ * an upstream provider reports a request-level failure. Preserve that error
+ * instead of letting callers misclassify missing choices as empty output.
+ *
+ * @param {Record<string, any> | null | undefined} payload
+ * @param {number} httpStatus
+ * @returns {Error | null}
+ */
+export function openRouterApiError(payload, httpStatus = 0) {
+  const choiceError = Array.isArray(payload?.choices)
+    ? payload.choices.find((choice) => choice?.error)?.error
+    : null;
+  const providerError =
+    payload?.error || choiceError;
+  if (!providerError) return null;
+  const message =
+    typeof providerError === "string"
+      ? providerError
+      : String(providerError.message || "Provider returned an error.");
+  const code = Number(providerError.code) || Number(httpStatus) || 0;
+  const normalizedMessage = message.replace(/\s+/gu, " ").slice(0, 500);
+  return new Error(
+    `OpenRouter${code ? ` ${code}` : ""}: ${normalizedMessage}`,
+  );
+}
+
+/**
  * Read an OpenRouter response body once, retaining bounded raw text for error
  * diagnostics while exposing only an object payload to callers.
  *

@@ -4,6 +4,7 @@ import {
   logOpenRouterCacheUsage,
   logOpenRouterResponseCacheUsage,
   openRouterCacheMetrics,
+  openRouterApiError,
   openRouterResponseCacheMetrics,
   openRouterChatCompletion,
   openRouterPromptCacheKey,
@@ -16,6 +17,39 @@ import {
 } from "../scripts/openrouter-client.mjs";
 
 describe("OpenRouter cache-aware client", () => {
+  it("surfaces a nested provider error even when the HTTP envelope is successful", () => {
+    const error = openRouterApiError(
+      {
+        error: {
+          code: 400,
+          message: "Your input exceeds the context window of this model.",
+        },
+      },
+      200,
+    );
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error?.message).toBe(
+      "OpenRouter 400: Your input exceeds the context window of this model.",
+    );
+    expect(
+      openRouterApiError({
+        choices: [
+          {
+            error: {
+              code: 429,
+              message: "Upstream provider request limit reached.",
+            },
+          },
+        ],
+      }),
+    ).toMatchObject({
+      message: "OpenRouter 429: Upstream provider request limit reached.",
+    });
+    expect(openRouterApiError({ choices: { error: "malformed" } }, 200)).toBeNull();
+    expect(openRouterApiError({ choices: [] }, 200)).toBeNull();
+  });
+
   it("removes volatile timestamps and filesystem paths from Reference DNA cache prefixes", () => {
     const reference = {
       familyId: "kokoro-editorial-architecture",

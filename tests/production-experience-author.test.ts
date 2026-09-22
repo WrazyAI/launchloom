@@ -227,6 +227,40 @@ describe("production experience author", () => {
     }
   });
 
+  it("keeps contract-repair context bounded when a model omits required fields", async () => {
+    const repairRequests: AuthorStageRequest[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        if (request.route.id === "route-01" && request.stage === "contract") {
+          if (!request.validationError)
+            return {
+              stage: "contract",
+              designContract: "",
+              designRationale: "",
+              content: "unexpected contract payload ".repeat(500),
+            };
+          repairRequests.push(request);
+        }
+        return safeStage(request);
+      },
+      model: "openai/gpt-6-luna",
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(repairRequests).toHaveLength(1);
+    expect(repairRequests[0].validationError).toContain(
+      "contract.designContract",
+    );
+    expect(repairRequests[0].previousSource).toBeTruthy();
+    expect(repairRequests[0].previousSource!.length).toBeLessThanOrEqual(1800);
+    expect(repairRequests[0].previousSource).toContain("content=");
+    expect(repairRequests[0].previousSource).not.toContain(
+      "unexpected contract payload",
+    );
+  });
+
   it("limits concurrent model stages to protect the provider in-flight budget", async () => {
     let active = 0;
     let maximumActive = 0;

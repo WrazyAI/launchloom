@@ -5,6 +5,7 @@ import path from "node:path";
 import sharp from "sharp";
 import {
   promptImagePart,
+  selectAuthorReferenceScreenshots,
   selectRepairScreenshots,
 } from "../scripts/prompt-evidence.mjs";
 
@@ -48,6 +49,21 @@ describe("prompt evidence", () => {
     ])).toEqual([
       "/tmp/candidate-desktop.png",
       "/tmp/candidate-mobile.png",
+    ]);
+  });
+
+  it("keeps both reference screenshots on first pass and only desktop bitmap on retries", () => {
+    const reference = {
+      desktop: "/tmp/reference-desktop.png",
+      mobile: "/tmp/reference-mobile.png",
+    };
+
+    expect(selectAuthorReferenceScreenshots(reference)).toEqual([
+      reference.desktop,
+      reference.mobile,
+    ]);
+    expect(selectAuthorReferenceScreenshots(reference, { retry: true })).toEqual([
+      reference.desktop,
     ]);
   });
 });
