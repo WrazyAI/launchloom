@@ -316,6 +316,18 @@ export async function resolveReferenceEvidencePath(record) {
   return "";
 }
 
+/**
+ * @param {{
+ *   model?: string,
+ *   referenceDna?: Record<string, any>,
+ *   findings?: any[],
+ *   files?: {experience?: string, styles?: string, motion?: string},
+ *   screenshots?: string[],
+ *   contentManifest?: Record<string, any>,
+ *   creativeSession?: Record<string, any> | null,
+ * }} [options]
+ * @returns {Promise<Record<string, any>>}
+ */
 export async function requestRepair({
   model,
   referenceDna,
