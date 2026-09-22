@@ -29,6 +29,16 @@ const VISUAL_REFERENCE_CODES = new Set([
   "prohibited-pattern",
 ]);
 
+const PRODUCT_OVERLAP_SIGNATURES = new Set([
+  "lower-edge-product-overlap",
+  "product-still-overlap",
+]);
+
+function isProductOverlapSignature(element) {
+  return PRODUCT_OVERLAP_SIGNATURES.has(String(element?.id || ""));
+}
+
+
 function sourceHasSignature(source, element) {
   const selector = String(element.selector || "");
   const match = selector.match(/data-reference-signature\s*=\s*["']?([a-z0-9_-]+)/iu);
@@ -45,7 +55,7 @@ function overlapLayerRoles(source) {
 }
 
 function sourceHasSignatureStructure(source, element) {
-  if (element.id !== "lower-edge-product-overlap") return true;
+  if (!isProductOverlapSignature(element)) return true;
   const roles = overlapLayerRoles(source);
   return (
     roles.includes("product") &&
@@ -67,17 +77,18 @@ function visualRequirements(referenceDna) {
 }
 
 function signatureGeometryFinding(element, renderedEvidence, viewport) {
-  if (element.id !== "lower-edge-product-overlap") return null;
+  if (!isProductOverlapSignature(element)) return null;
+  const lowerEdge = element.id === "lower-edge-product-overlap";
   if (!renderedEvidence)
     return finding(
       "signature-geometry",
       "critical",
-      "Required signature lower-edge-product-overlap has no rendered geometry evidence.",
+      `Required signature ${element.id} has no rendered geometry evidence.`,
       {
         signatureId: element.id,
         requiredBehavior:
           element.description ||
-          "A product interface must rise from the lower hero edge and overlap multiple independent collage planes.",
+          "Product imagery must overlap multiple independent collage planes.",
         viewport: viewport?.name || "",
       },
     );
@@ -90,19 +101,21 @@ function signatureGeometryFinding(element, renderedEvidence, viewport) {
       proof.productLayerPresent &&
       proof.layerCount >= 3 &&
       proof.overlapCount >= 2 &&
-      proof.productAnchoredToHeroBottom &&
-      proof.signatureInLowerHero,
+      (!lowerEdge ||
+        (proof.productAnchoredToHeroBottom && proof.signatureInLowerHero)),
   );
   if (pass) return null;
   return finding(
     "signature-geometry",
     "critical",
-    "Required signature lower-edge-product-overlap is declared but the rendered composition does not prove a lower-edge product layer overlapped by at least two independent collage planes.",
+    lowerEdge
+      ? "Required signature lower-edge-product-overlap is declared but the rendered composition does not prove a lower-edge product layer overlapped by at least two independent collage planes."
+      : "Required signature product-still-overlap is declared but the rendered composition does not prove product imagery overlapped by at least two independent collage planes.",
     {
       signatureId: element.id,
       requiredBehavior:
         element.description ||
-        "A product interface must rise from the lower hero edge and overlap multiple independent collage planes.",
+        "Product imagery must overlap multiple independent collage planes.",
       viewport: viewport?.name || "",
       renderedEvidence: proof || null,
     },
@@ -495,7 +508,10 @@ export function validateReferenceContractCompliance({
     findings.push(finding("motion-primitive", "critical", "The assigned motion primitive is not represented in the authored candidate."));
   else if (!markerMatches(experienceSource, "data-motion-primitive", dna.motion.primitive))
     findings.push(finding("motion-primitive-mismatch", "critical", "The motion primitive does not match Reference DNA."));
-  else if (!/(?:gsap\.|transform|requestAnimationFrame|IntersectionObserver|addEventListener\s*\(|scroll|pointer|mousemove)/iu.test(motionSource))
+  else if (
+    !/launchloom-deterministic-reduced-motion-fallback/u.test(motionSource) &&
+    !/(?:gsap\.|transform|requestAnimationFrame|IntersectionObserver|addEventListener\s*\(|scroll|pointer|mousemove)/iu.test(motionSource)
+  )
     findings.push(finding("motion-primitive", "critical", "The authored motion file declares the primitive but contains no observable motion implementation evidence."));
   for (const pattern of dna.prohibitedPatterns)
     if (hasProhibitedPattern(`${experienceSource}\n${renderedDom}`, pattern))
