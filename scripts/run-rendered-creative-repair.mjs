@@ -28,23 +28,49 @@ function boundedCycles(value) {
   return Math.max(0, Math.min(2, Math.trunc(parsed)));
 }
 
-function unique(values) {
-  return [...new Set(values.filter(Boolean))];
+function findingText(value) {
+  if (typeof value === "string") return value;
+  if (!value || typeof value !== "object") return "";
+  return (
+    value.message ||
+    value.evidence ||
+    value.recommendation ||
+    value.code ||
+    value.category ||
+    ""
+  );
+}
+
+function findingIdentity(value) {
+  let viewport =
+    value && typeof value === "object" ? String(value.viewport || "") : "";
+  let text = findingText(value).trim();
+  const prefix = text.match(/^(source|desktop|compact|mobile):\s*(.*)$/iu);
+  if (prefix) {
+    if (!viewport && prefix[1].toLowerCase() !== "source")
+      viewport = prefix[1].toLowerCase();
+    text = prefix[2];
+  }
+  return `${viewport.toLowerCase()}|${text
+    .toLowerCase()
+    .replace(/\s+/gu, " ")
+    .trim()}`;
+}
+
+function uniqueFindings(values) {
+  const result = [];
+  const seen = new Set();
+  for (const value of values.filter(Boolean)) {
+    const key = findingIdentity(value);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(value);
+  }
+  return result;
 }
 
 function candidateFindings(candidate) {
-  return unique([
-    ...(candidate?.failures || []),
-    ...(candidate?.renderedReferenceFidelity?.audit?.findings || []).map(
-      (item) => ({
-        category: item.category || "rendered-reference",
-        severity: item.severity || "major",
-        viewport: item.viewport || "all",
-        evidence:
-          item.evidence || item.repair || "Rendered reference mismatch.",
-        recommendation: item.repair || "",
-      }),
-    ),
+  return uniqueFindings([
     ...(candidate?.referenceFidelity?.sourceVisualFindings || []).map(
       (item) => ({
         ...item,
@@ -57,6 +83,17 @@ function candidateFindings(candidate) {
         category: item.code || "reference-contract",
       }),
     ),
+    ...(candidate?.renderedReferenceFidelity?.audit?.findings || []).map(
+      (item) => ({
+        category: item.category || "rendered-reference",
+        severity: item.severity || "major",
+        viewport: item.viewport || "all",
+        evidence:
+          item.evidence || item.repair || "Rendered reference mismatch.",
+        recommendation: item.repair || "",
+      }),
+    ),
+    ...(candidate?.failures || []),
   ]);
 }
 
