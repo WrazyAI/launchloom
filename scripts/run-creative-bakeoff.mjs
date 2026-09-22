@@ -372,10 +372,15 @@ export async function runCreativeBakeoff({
                 ],
                 pass:
                   candidateResult.referenceFidelity.pass &&
-                  renderedFidelity.pass,
+                  renderedFidelity.pass &&
+                  renderedFidelity.visualPass,
               };
-              if (!renderedFidelity.pass)
-                candidateResult.failures.push(...renderedFidelity.hardFindings.map((item) => `${viewport.name}: ${item.message}`));
+              if (!renderedFidelity.pass || !renderedFidelity.visualPass)
+                candidateResult.failures.push(
+                  ...renderedFidelity.findings.map(
+                    (item) => `${viewport.name}: ${item.message}`,
+                  ),
+                );
             }
             // Keep the requested viewport width while including the complete
             // route so the screenshot-level gate can inspect lower sections,
