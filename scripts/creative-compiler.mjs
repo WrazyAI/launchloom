@@ -183,9 +183,9 @@ export function buildRouteContract(route, index = 0) {
       ...list(route.prohibitedPatterns),
     ]),
   ];
-  const referenceDna = route.referenceDna
-    ? normalizeReferenceDnaContract(route.referenceDna)
-    : buildReferenceDna(route);
+  const referenceDna = normalizeReferenceDnaContract(
+    buildReferenceDna(route),
+  );
   return Object.freeze({
     version: CREATIVE_CONTRACT_VERSION,
     id: clean(route.id, 80) || `route-${String(index + 1).padStart(2, "0")}`,
