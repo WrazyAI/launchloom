@@ -322,6 +322,7 @@ export async function requestRepair({
   files,
   screenshots,
   contentManifest = {},
+  creativeSession = null,
 }) {
   const humanReview = (findings || []).some(
     (finding) =>
@@ -414,15 +415,24 @@ Return complete files. Keep required reference signatures and safety/content con
   for (const screenshot of screenshots.slice(0, 3))
     content.push(await imagePart(screenshot));
 
-  const sessionId = openRouterSessionId(
-    "creative-repair",
-    model,
-    referenceDna?.familyId,
-    referenceDna?.referenceName,
-  );
+  const reasoningEffort =
+    creativeSession?.reasoningEffort ||
+    process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
+    "xhigh";
+  const sessionId =
+    creativeSession?.sessionId ||
+    openRouterSessionId(
+      "creative-repair",
+      model,
+      reasoningEffort,
+      referenceDna?.familyId,
+      referenceDna?.referenceName,
+    );
   const promptCacheKey = openRouterPromptCacheKey(
     "creative-repair-reference",
     model,
+    reasoningEffort,
+    creativeSession?.reasoningPolicyVersion || "static-reasoning",
     stableReferenceDna,
   );
   const response = await openRouterChatCompletion({
@@ -433,7 +443,7 @@ Return complete files. Keep required reference signatures and safety/content con
       ...promptCacheRequestFields(model, promptCacheKey),
       temperature: 0.35,
       reasoning: {
-        effort: process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "xhigh",
+        effort: reasoningEffort,
         exclude: true,
       },
       response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
