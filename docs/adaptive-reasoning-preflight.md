@@ -26,6 +26,11 @@ policy against LaunchLoom's rendered quality and cost outcomes.
 The selector uses the direct TypeSafe System One HTTP API with the pinned model
 `jev-1.13.0`.
 
+Only explicit versioned Jev identifiers such as `jev-1.13.0` are accepted.
+Moving aliases such as `jev-latest` are treated as selector configuration
+failure and follow the same max-safe fallback path. Model upgrades therefore
+remain deliberate and observable.
+
 Environment:
 
 - `TYPESAFE_API_KEY` — optional at workflow level because selector failure
@@ -100,6 +105,12 @@ Once the session is created, authoring and rendered creative repair use the
 same `reasoningEffort` and `sessionId`. The author no longer downgrades
 reasoning effort on validation-repair retries when an adaptive session is
 present.
+
+Candidate metadata carries the authored session ID, effort, policy version, and
+selector model version. Rendered repair/promotion checks these fields against
+the persisted preflight artifact before continuing. Adaptive candidates fail
+closed if the artifact is missing, incomplete, or disagrees with their authored
+reasoning binding.
 
 Bounded developer/client revisions reuse the persisted session artifact.
 Structural redesigns that rebuild Reference DNA should create a new preflight
