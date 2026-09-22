@@ -121,6 +121,23 @@ export async function promptImagePart(filePath, { detail = "low" } = {}) {
 }
 
 /**
+ * Keep both reference screenshots on an authoring pass. A repair retry keeps
+ * the desktop image and the complete textual Reference DNA, avoiding another
+ * large visual payload while preserving the analyzed mobile geometry.
+ *
+ * @param {{ desktop?: string, mobile?: string }} reference
+ * @param {{ retry?: boolean }} [options]
+ * @returns {string[]}
+ */
+export function selectAuthorReferenceScreenshots(
+  reference,
+  { retry = false } = {},
+) {
+  const paths = [reference?.desktop, ...(retry ? [] : [reference?.mobile])];
+  return [...new Set(paths.filter(Boolean))].slice(0, 2);
+}
+
+/**
  * Pick the non-redundant screenshots needed for an author repair. Compact
  * desktop repeats most of the desktop composition, while desktop + mobile
  * preserves both geometry regimes with half the image context.

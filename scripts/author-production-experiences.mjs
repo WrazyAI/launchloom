@@ -6,6 +6,7 @@ import { authorExperienceCandidates } from "./production-experience-author.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
+  openRouterApiError,
   openRouterChatCompletion,
   openRouterPromptCacheKey,
   openRouterSessionId,
@@ -14,7 +15,10 @@ import {
   promptCacheRequestFields,
   readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
-import { promptImagePart } from "./prompt-evidence.mjs";
+import {
+  promptImagePart,
+  selectAuthorReferenceScreenshots,
+} from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
 const args = Object.fromEntries(
@@ -261,10 +265,13 @@ async function requestStage(request) {
     const userContent = [
       { type: "text", text: routePromptPrefix(request) },
     ];
-    const evidencePaths = [
-      request.route.referenceDna?.evidence?.desktopScreenshot?.path,
-      request.route.referenceDna?.evidence?.mobileScreenshot?.path,
-    ].filter(Boolean);
+    const evidencePaths = selectAuthorReferenceScreenshots(
+      {
+        desktop: request.route.referenceDna?.evidence?.desktopScreenshot?.path,
+        mobile: request.route.referenceDna?.evidence?.mobileScreenshot?.path,
+      },
+      { retry: Boolean(request.validationError) },
+    );
     for (const screenshotPath of evidencePaths) {
       if (userContent.length >= 3) break;
       try {
@@ -372,8 +379,10 @@ async function requestStage(request) {
           durationMs: Date.now() - startedAt,
         };
         usage.push(usageRecord);
-        if (!response.ok) {
+        const providerError = openRouterApiError(payload, response.status);
+        if (!response.ok || providerError) {
           usageRecord.parseStatus = "http-error";
+          if (providerError) throw providerError;
           const errorContext =
             JSON.stringify(payload) !== "{}"
               ? JSON.stringify(payload).slice(0, 1000)
