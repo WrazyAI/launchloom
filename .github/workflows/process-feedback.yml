@@ -99,6 +99,10 @@ jobs:
           echo "creative=$CREATIVE" >> "$GITHUB_OUTPUT"
           echo "repair_required=$REQUIRED" >> "$GITHUB_OUTPUT"
           if [ "$CREATIVE" = true ] && [ "$REQUIRED" = true ]; then
+            SESSION_ARGS=()
+            if [ -f "$CLIENT_DIR/.launchloom/reasoning-preflight.json" ]; then
+              SESSION_ARGS=(--session "$CLIENT_DIR/.launchloom/reasoning-preflight.json")
+            fi
             node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
               --site-dir "$CLIENT_DIR" \
               --candidates "$RUNNER_TEMP/creative-revision-candidates" \
@@ -107,7 +111,8 @@ jobs:
               --max-cycles 2 \
               --require-diversity false \
               --feedback-file "$RUNNER_TEMP/developer-feedback.txt" \
-              --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
+              --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" \
+              "${SESSION_ARGS[@]}"
             SUMMARY="$CLIENT_DIR/.launchloom/human-revision/summary.json"
             jq -e '.status == "passed" and .visualGatePass == true and .humanRevisionPass == true and (.selectedCandidateId != null)' "$SUMMARY" >/dev/null || { echo "Human creative revision did not pass its acceptance gates"; exit 1; }
             CANDIDATE=$(jq -r '.selectedCandidateId' "$SUMMARY")

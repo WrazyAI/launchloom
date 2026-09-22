@@ -48,6 +48,36 @@ export function openRouterPromptCacheKey(scope, ...identity) {
   return `${prefix}${digest(identity, 64 - prefix.length)}`;
 }
 
+/**
+ * Remove run-local metadata before Reference DNA is placed in a reusable
+ * prompt prefix or cache key. Evidence is still loaded from the original
+ * object by the caller.
+ */
+export function cacheableReferenceDna(referenceDna) {
+  if (!referenceDna || typeof referenceDna !== "object")
+    return referenceDna;
+  const {
+    analyzedAt: _analyzedAt,
+    generatedAt: _generatedAt,
+    updatedAt: _updatedAt,
+    ...stable
+  } = referenceDna;
+  if (stable.evidence && typeof stable.evidence === "object") {
+    stable.evidence = { ...stable.evidence };
+    for (const key of ["desktopScreenshot", "mobileScreenshot"]) {
+      const record = stable.evidence[key];
+      if (!record || typeof record !== "object") continue;
+      const {
+        path: _path,
+        absolutePath: _absolutePath,
+        ...cacheableRecord
+      } = record;
+      stable.evidence[key] = cacheableRecord;
+    }
+  }
+  return stable;
+}
+
 export function supportsExplicitOpenAiPromptCaching(model) {
   const match = String(model || "").match(/^openai\/gpt-(\d+)(?:\.(\d+))?/u);
   if (!match) return false;
@@ -174,6 +204,54 @@ export function logOpenRouterResponseCacheUsage(
       ].join(" "),
     );
   return metrics;
+}
+
+/**
+ * Read an OpenRouter response body once, retaining bounded raw text for error
+ * diagnostics while exposing only an object payload to callers.
+ *
+ * @param {Response | { text?: Function, json?: Function }} response
+ * @param {{ maxRawBodyChars?: number }} [options]
+ */
+export async function readOpenRouterResponseEnvelope(
+  response,
+  { maxRawBodyChars = 1000 } = {},
+) {
+  let rawBody = "";
+  let parseError = null;
+  let decoded;
+
+  try {
+    if (typeof response?.text === "function") {
+      rawBody = await response.text();
+      if (!String(rawBody).trim())
+        throw new Error("OpenRouter returned an empty response body.");
+      decoded = JSON.parse(rawBody);
+    } else if (typeof response?.json === "function") {
+      decoded = await response.json();
+      rawBody = JSON.stringify(decoded);
+    } else {
+      throw new Error("OpenRouter response body is unreadable.");
+    }
+  } catch (error) {
+    parseError = error;
+  }
+
+  if (
+    !parseError &&
+    (!decoded || typeof decoded !== "object" || Array.isArray(decoded))
+  ) {
+    parseError = new Error("OpenRouter returned a non-object JSON envelope.");
+  }
+
+  return {
+    payload:
+      !parseError && decoded && typeof decoded === "object" && !Array.isArray(decoded)
+        ? decoded
+        : {},
+    rawBody: String(rawBody || "").slice(0, Math.max(0, maxRawBodyChars)),
+    parseError,
+  };
 }
 
 /**

@@ -45,6 +45,75 @@ describe("OpenRouter cache integration", () => {
     }
   });
 
+  it("uses xhigh as the default Luna creative reasoning effort", () => {
+    const author = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    const repair = fs.readFileSync("scripts/creative-repair-loop.mjs", "utf8");
+    expect(author).toContain(
+      '(model === "openai/gpt-5.6-luna" ? "xhigh" : "low")',
+    );
+    expect(repair).toContain("creativeSession?.reasoningEffort");
+    expect(repair).toContain(
+      "process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT",
+    );
+    expect(repair).toMatch(
+      /creativeSession\?\.reasoningEffort[\s\S]*process\.env\.CREATIVE_EXPERIENCE_REASONING_EFFORT[\s\S]*"xhigh"/u,
+    );
+  });
+
+  it("records cache usage even when an authored response cannot be parsed", () => {
+    const source = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    expect(source).toContain("parseStatus: responseBodyError");
+    expect(source).toContain('usageRecord.parseStatus = "missing-content"');
+    expect(source).toContain('usageRecord.parseStatus = "parse-failed"');
+    expect(source).toContain("parseStatusCounts");
+    expect(source).toContain("cacheSummary: aggregateCacheUsage(usage)");
+  });
+
+  it("records HTTP-error responses before throwing and keeps prompt paths sanitized", () => {
+    const source = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    const pushIndex = source.indexOf("usage.push(usageRecord)");
+    const httpIndex = source.indexOf('usageRecord.parseStatus = "http-error"');
+    const throwIndex = source.indexOf('OpenRouter ${response.status}: ${errorContext}');
+    expect(pushIndex).toBeGreaterThan(-1);
+    expect(httpIndex).toBeGreaterThan(pushIndex);
+    expect(throwIndex).toBeGreaterThan(httpIndex);
+    expect(source).toContain("readOpenRouterResponseEnvelope(response)");
+    expect(source).not.toContain("screenshotPath: item.screenshotPath");
+  });
+
+  it("freezes adaptive reasoning instead of downgrading effort inside a session", () => {
+    const author = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    const repair = fs.readFileSync(
+      "scripts/creative-repair-loop.mjs",
+      "utf8",
+    );
+    expect(author).toContain(
+      "const requestedEfforts = creativeSession",
+    );
+    expect(author).toContain("? [reasoningEffort]");
+    expect(author).toContain("creativeSession?.sessionId");
+    expect(author).toContain(
+      'creativeSession?.reasoningPolicyVersion || "static-reasoning"',
+    );
+    expect(repair).toContain("creativeSession?.reasoningEffort");
+    expect(repair).toContain("creativeSession?.sessionId");
+    expect(repair).toContain(
+      'creativeSession?.reasoningPolicyVersion || "static-reasoning"',
+    );
+  });
+
   it("keeps explicit GPT-5.6 cache breakpoints on repeated large prefixes", () => {
     for (const file of [
       "scripts/author-production-experiences.mjs",

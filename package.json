@@ -31,7 +31,8 @@
     "build:template-gallery": "node scripts/build-template-variant-gallery.mjs",
     "verify:onboarding-ui": "npm run build && node scripts/verify-onboarding-ui.mjs",
     "test:watch": "vitest",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs"
   },
   "dependencies": {
     "@astrojs/react": "latest",
