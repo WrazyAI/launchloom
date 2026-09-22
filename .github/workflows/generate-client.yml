@@ -99,6 +99,78 @@ jobs:
           name: inspiration-pack-${{ steps.intake.outputs.issue }}
           path: /tmp/inspiration-pack.json
           retention-days: 14
+      - name: Prepare isolated creative preflight
+        id: preflight
+        run: |
+          PRE_DIR="$RUNNER_TEMP/creative-preflight"
+          rm -rf "$PRE_DIR"
+          cp -R templates/client-site "$PRE_DIR"
+          mkdir -p "$PRE_DIR/.launchloom"
+          cp /tmp/site.config.json "$PRE_DIR/src/site.config.json"
+          cp /tmp/seo-research.json "$PRE_DIR/.launchloom/seo-research.json"
+          cp /tmp/inspiration-pack.json "$PRE_DIR/.launchloom/inspiration-pack.json"
+          echo "dir=$PRE_DIR" >> "$GITHUB_OUTPUT"
+      - name: Generate or reuse contextual imagery for creative preflight
+        id: assets
+        timeout-minutes: 12
+        run: |
+          cd "${{ steps.preflight.outputs.dir }}"
+          mkdir -p public/images/generated
+          node "$GITHUB_WORKSPACE/scripts/generate-contextual-assets.mjs" \
+            --config /tmp/site.config.json \
+            --inspiration /tmp/inspiration-pack.json \
+            --output "$PWD/public/images/generated" \
+            --manifest "$PWD/.launchloom/generated-assets.json"
+          cp /tmp/site.config.json src/site.config.json
+          node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
+      - name: Author independent experience candidates
+        timeout-minutes: 25
+        run: >-
+          npm run author:experiences --
+          --config /tmp/site.config.json
+          --inspiration /tmp/inspiration-pack.json
+          --out /tmp/generated-experiences
+          --failure-mode throw
+      - name: Render and repair creative candidates before provisioning
+        timeout-minutes: 45
+        run: |
+          cd "${{ steps.preflight.outputs.dir }}"
+          npm ci
+          node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
+            --site-dir "$PWD" \
+            --candidates /tmp/generated-experiences \
+            --out .launchloom/creative-repair \
+            --mode promote \
+            --max-cycles 2 \
+            --require-diversity true \
+            --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
+          cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
+          jq -e '.promotionReady == true and .fallback == false and (.selectedCandidateId != null) and .visualDiversity.pass == true' .launchloom/creative-bakeoff.json >/dev/null || { echo "Creative candidate did not pass promotion reference/diversity gates"; exit 1; }
+          jq -e '(.design.experience.renderer == "creative-candidate") and (.design.experience.candidateId != null)' src/site.config.json >/dev/null || { echo "Creative candidate was not selected in isolated preflight"; exit 1; }
+          CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
+          PUBLIC_REVIEW_MODE=true npm run build
+          grep -I -F -q 'data-creative-host="true"' dist/index.html || { echo "Creative host marker missing from isolated preflight build"; exit 1; }
+          grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" dist/index.html || { echo "Selected creative candidate missing from isolated preflight build"; exit 1; }
+          if grep -I -E -q 'data-creative-candidate="fallback"|data-experience-pack|legacy-design-family' dist/index.html; then echo "Fallback or legacy renderer found in isolated creative preflight"; exit 1; fi
+          cp src/site.config.json /tmp/site.config.json
+      - name: Prepare private creative failure diagnostics
+        if: always()
+        continue-on-error: true
+        run: |
+          node scripts/prepare-creative-diagnostics.mjs \
+            --candidates /tmp/generated-experiences \
+            --repair "${{ steps.preflight.outputs.dir }}/.launchloom/creative-repair" \
+            --out "$RUNNER_TEMP/creative-failure-diagnostics"
+      - name: Upload private creative diagnostics
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: creative-failure-diagnostics-${{ steps.intake.outputs.issue }}
+          path: ${{ runner.temp }}/creative-failure-diagnostics
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 3
       - name: Create private repository and Cloudflare Pages project
         id: client
         run: |
@@ -202,6 +274,15 @@ jobs:
           mkdir -p .launchloom
           cp /tmp/seo-research.json .launchloom/seo-research.json
           cp /tmp/inspiration-pack.json .launchloom/inspiration-pack.json
+          PRE_DIR="${{ steps.preflight.outputs.dir }}"
+          rm -rf public/images/generated src/generated-experiences/selected .launchloom/generated-experiences .launchloom/creative-repair
+          mkdir -p public/images src/generated-experiences .launchloom
+          cp -R "$PRE_DIR/public/images/generated" public/images/generated
+          cp -R "$PRE_DIR/src/generated-experiences/selected" src/generated-experiences/selected
+          cp -R /tmp/generated-experiences .launchloom/generated-experiences
+          cp "$PRE_DIR/.launchloom/generated-assets.json" .launchloom/generated-assets.json
+          cp "$PRE_DIR/.launchloom/creative-bakeoff.json" .launchloom/creative-bakeoff.json
+          cp -R "$PRE_DIR/.launchloom/creative-repair" .launchloom/creative-repair
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
           git_push_with_retry --set-upstream origin review/initial
@@ -211,86 +292,6 @@ jobs:
           fi
           echo "dir=$CLIENT_DIR" >> "$GITHUB_OUTPUT"
           echo "pr=${PR##*/}" >> "$GITHUB_OUTPUT"
-      - name: Generate or reuse contextual imagery
-        id: assets
-        timeout-minutes: 12
-        run: |
-          cd "${{ steps.branch.outputs.dir }}"
-          mkdir -p public/images/generated
-          node "$GITHUB_WORKSPACE/scripts/generate-contextual-assets.mjs" \
-            --config /tmp/site.config.json \
-            --inspiration /tmp/inspiration-pack.json \
-            --output "$PWD/public/images/generated" \
-            --manifest "$PWD/.launchloom/generated-assets.json"
-          cp /tmp/site.config.json src/site.config.json
-          git add src/site.config.json public/images/generated .launchloom/generated-assets.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Add contextual image assets"
-            git push origin review/initial
-          fi
-          node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
-      - name: Preserve generated asset evidence
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-assets-${{ steps.intake.outputs.issue }}
-          path: |
-            ${{ steps.branch.outputs.dir }}/.launchloom/generated-assets.json
-            ${{ steps.branch.outputs.dir }}/public/images/generated
-          include-hidden-files: true
-          if-no-files-found: warn
-          retention-days: 14
-      - name: Author independent experience candidates
-        # Luna authors three independent candidates in separate stages. Keep
-        # the runner timeout above the author's internal fail-closed budget
-        # so Actions cannot terminate a valid creative run early.
-        timeout-minutes: 25
-        run: >-
-          npm run author:experiences --
-          --config /tmp/site.config.json
-          --inspiration /tmp/inspiration-pack.json
-          --out /tmp/generated-experiences
-          --failure-mode throw
-      - name: Preserve authored experience evidence
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: authored-experiences-${{ steps.intake.outputs.issue }}
-          path: /tmp/generated-experiences
-          if-no-files-found: warn
-          retention-days: 14
-      - name: Commit authored experience evidence
-        run: |
-          cd "${{ steps.branch.outputs.dir }}"
-          mkdir -p .launchloom
-          rm -rf .launchloom/generated-experiences
-          cp -R /tmp/generated-experiences .launchloom/generated-experiences
-          git add .launchloom/generated-experiences
-          if ! git diff --cached --quiet; then
-            git commit -m "Record authored experience candidates"
-            git push origin review/initial
-          fi
-      - name: Render and repair creative candidates in the production shell
-        run: |
-          cd "${{ steps.branch.outputs.dir }}"
-          npm ci
-          node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
-            --site-dir "$PWD" \
-            --candidates /tmp/generated-experiences \
-            --out .launchloom/creative-repair \
-            --mode "$CREATIVE_EXPERIENCE_MODE" \
-            --max-cycles 2 \
-            --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
-          cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
-          rm -rf .launchloom/generated-experiences
-          cp -R /tmp/generated-experiences .launchloom/generated-experiences
-          git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Render and repair creative experience candidates"
-            git push origin review/initial
-          fi
       - name: Build and direct-upload public preview
         id: deploy
         run: |
