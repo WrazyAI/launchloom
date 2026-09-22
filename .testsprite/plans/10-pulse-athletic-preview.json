@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/TestSprite/testsprite-cli/v0.11.0/schemas/plan.schema.json",
+  "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
+  "type": "frontend",
+  "name": "Pulse Athletic Club generated preview",
+  "description": "Check the actual generated Pulse Athletic Club preview on desktop and mobile. Verify its brand, usable Services/FAQs/Contact navigation, early conversion action, and viewport fit. Do not submit the contact form.",
+  "priority": "p1",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Navigate to the Pulse Athletic Club preview URL supplied as the test target and wait for the page to finish loading."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the page visibly identifies the business as Pulse Athletic Club, shows real gym-related page content rather than a placeholder or error, and has a visible primary conversion action."
+    },
+    {
+      "type": "action",
+      "description": "At a desktop viewport of 1536 by 864, inspect the opening viewport and use the Services, FAQs, and Contact navigation links one at a time."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify desktop navigation reaches the matching Services, FAQs, and Contact sections; the primary conversion action is clear; the hero is not clipped; and the document has no horizontal overflow."
+    },
+    {
+      "type": "action",
+      "description": "Switch to a mobile viewport of 390 by 844, reload the page, and open the mobile navigation if the links are behind a menu button."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify Pulse Athletic Club remains identifiable, the mobile menu exposes working Services, FAQs, and Contact links, the primary conversion action remains reachable, and there is no horizontal overflow or clipped hero content."
+    },
+    {
+      "type": "action",
+      "description": "Use the primary conversion action to reach the contact or lead form section, but do not submit the form."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the contact/lead section is present and usable at mobile width, with clearly labeled form fields or truthful contact options and no visible generated placeholder text."
+    }
+  ]
+}

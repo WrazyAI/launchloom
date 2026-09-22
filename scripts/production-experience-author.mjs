@@ -144,7 +144,10 @@ export function redactPromptValue(value) {
   if (Array.isArray(value)) return value.map(redactPromptValue);
   if (value && typeof value === "object")
     return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, redactPromptValue(item)]),
+      Object.entries(value).map(([key, item]) => [
+        key,
+        redactPromptValue(item),
+      ]),
     );
   return value;
 }
@@ -164,8 +167,8 @@ function contentShape(site, route) {
   );
   const hasLiveGoogleProof = Boolean(
     site.socialProof?.source === "google_reviews" &&
-      site.socialProof.google?.apiUrl &&
-      site.socialProof.google?.token,
+    site.socialProof.google?.apiUrl &&
+    site.socialProof.google?.token,
   );
   return {
     brand: {
@@ -181,9 +184,16 @@ function contentShape(site, route) {
       heading: String(copy.heroHeading || business.tagline || ""),
       body: String(copy.heroBody || business.description || ""),
       primaryLabel: String(business.primaryCta || ""),
-      image: assets.photoOne || routeImages.hero || images.hero || images.secondary || "",
-      secondaryImage: assets.photoTwo || routeImages.secondary || images.secondary || "",
-      tertiaryImage: assets.photoThree || routeImages.tertiary || images.tertiary || "",
+      image:
+        assets.photoOne ||
+        routeImages.hero ||
+        images.hero ||
+        images.secondary ||
+        "",
+      secondaryImage:
+        assets.photoTwo || routeImages.secondary || images.secondary || "",
+      tertiaryImage:
+        assets.photoThree || routeImages.tertiary || images.tertiary || "",
       offer: String(business.offer || ""),
     },
     services: site.services || [],
@@ -194,10 +204,13 @@ function contentShape(site, route) {
     copy,
     businessDescription: String(business.description || ""),
     showLocationMap:
-      String(business.primaryCta || "").trim().toLowerCase() ===
-        "get directions" &&
+      String(business.primaryCta || "")
+        .trim()
+        .toLowerCase() === "get directions" &&
       (Boolean(String(business.placeId || "").trim()) ||
-        /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(String(business.address || "").trim())),
+        /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(
+          String(business.address || "").trim(),
+        )),
     hasSocialProof:
       socialProofPoints.length > 0 ||
       fallbackProofPoints.length > 0 ||
@@ -211,14 +224,11 @@ function contentShape(site, route) {
               "",
           ),
           intro: String(
-            site.socialProof.intro ||
-              site.socialProof.fallback?.intro ||
-              "",
+            site.socialProof.intro || site.socialProof.fallback?.intro || "",
           ),
-          points: (
-            site.socialProof.source === "google_reviews"
-              ? fallbackProofPoints
-              : socialProofPoints
+          points: (site.socialProof.source === "google_reviews"
+            ? fallbackProofPoints
+            : socialProofPoints
           )
             .slice(0, 4)
             .map(String),
@@ -238,7 +248,9 @@ export function buildCreativeContentManifest(site, route) {
 
 function assertInspirationPack(pack) {
   if (!pack || !Array.isArray(pack.routes) || pack.routes.length !== 3)
-    throw new Error("Creative authorship requires exactly three inspiration routes.");
+    throw new Error(
+      "Creative authorship requires exactly three inspiration routes.",
+    );
   for (const route of pack.routes) {
     for (const key of requiredRouteKeys)
       if (!String(route[key] || "").trim())
@@ -280,19 +292,21 @@ function syntaxErrorFor(source, route, fileName, jsx) {
     (item) => item.category === ts.DiagnosticCategory.Error,
   );
   if (!diagnostic) return;
-  const message = ts.flattenDiagnosticMessageText(
-    diagnostic.messageText,
-    " ",
+  const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, " ");
+  throw new Error(
+    `Candidate ${route.id} ${fileName} has invalid syntax: ${message}`,
   );
-  throw new Error(`Candidate ${route.id} ${fileName} has invalid syntax: ${message}`);
 }
 
 function bindingPatternContains(pattern, name) {
+  if (!pattern) return false;
   if (ts.isIdentifier(pattern)) return pattern.text === name;
   if (ts.isBindingElement(pattern))
     return bindingPatternContains(pattern.name, name);
   if (ts.isObjectBindingPattern(pattern) || ts.isArrayBindingPattern(pattern))
-    return pattern.elements.some((element) => bindingPatternContains(element, name));
+    return pattern.elements.some((element) =>
+      bindingPatternContains(element, name),
+    );
   return false;
 }
 
@@ -305,7 +319,7 @@ function functionHasParameter(node, name) {
 function functionUsesUnboundContent(node) {
   let found = false;
   const visit = (child) => {
-    if (found) return;
+    if (found || !child) return;
     if (child !== node && ts.isFunctionLike(child)) return;
     if (ts.isIdentifier(child) && child.text === "content") {
       const parent = child.parent;
@@ -481,10 +495,18 @@ function validateExperience(source, route, content) {
       throw new Error(
         `Candidate ${route.id} is missing required marker ${marker}.`,
       );
-  if (!/import\s+\{[^}]*\bLeadForm\b[^}]*\}\s+from\s+["']@launchloom\/runtime["']/u.test(source))
-    throw new Error(`Candidate ${route.id} must use the shared LaunchLoom runtime.`);
+  if (
+    !/import\s+\{[^}]*\bLeadForm\b[^}]*\}\s+from\s+["']@launchloom\/runtime["']/u.test(
+      source,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} must use the shared LaunchLoom runtime.`,
+    );
   if (!/\bLeadForm\b/u.test(source))
-    throw new Error(`Candidate ${route.id} must render the shared LeadForm runtime surface.`);
+    throw new Error(
+      `Candidate ${route.id} must render the shared LeadForm runtime surface.`,
+    );
   const leadFormCount = (source.match(/<LeadForm\b/gu) || []).length;
   if (leadFormCount !== 1)
     throw new Error(
@@ -495,7 +517,9 @@ function validateExperience(source, route, content) {
       `Candidate ${route.id} must pass sealed content to the shared LeadForm runtime surface.`,
     );
   if (/\balt\s*=\s*["']\s*["']/iu.test(source))
-    throw new Error(`Candidate ${route.id} contains an empty image alt attribute.`);
+    throw new Error(
+      `Candidate ${route.id} contains an empty image alt attribute.`,
+    );
   for (const target of ["services", "faqs", "contact"])
     if (!new RegExp(`href\\s*=\\s*["']#${target}["']`, "u").test(source))
       throw new Error(
@@ -525,14 +549,20 @@ function validateExperience(source, route, content) {
 }
 
 function validateStyles(source, route) {
-  if (/<!doctype\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/iu.test(source))
-    throw new Error(`Candidate ${route.id} styles must contain CSS only, not an HTML document.`);
+  if (
+    /<!doctype\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/iu.test(source)
+  )
+    throw new Error(
+      `Candidate ${route.id} styles must contain CSS only, not an HTML document.`,
+    );
   if (/url\s*\(\s*["']?(?:https?:)?\/\//iu.test(source))
     throw new Error(`Candidate ${route.id} CSS contains a remote URL.`);
   if (/—/u.test(source))
     throw new Error(`Candidate ${route.id} CSS contains an em dash.`);
   if (/(?:^|\n)\s*["']\s*\n?\}\s*$/u.test(source))
-    throw new Error(`Candidate ${route.id} CSS contains a malformed trailing wrapper.`);
+    throw new Error(
+      `Candidate ${route.id} CSS contains a malformed trailing wrapper.`,
+    );
 }
 
 /**
@@ -585,8 +615,13 @@ function validateMotion(source, route) {
     throw new Error(
       `Candidate ${route.id} motion must export mountExperienceMotion.`,
     );
-  if (/<[A-Za-z][^>]*>/u.test(source) || /\b(?:React|useState|useEffect|LeadForm)\b/u.test(source))
-    throw new Error(`Candidate ${route.id} motion must be JavaScript without JSX or React components.`);
+  if (
+    /<[A-Za-z][^>]*>/u.test(source) ||
+    /\b(?:React|useState|useEffect|LeadForm)\b/u.test(source)
+  )
+    throw new Error(
+      `Candidate ${route.id} motion must be JavaScript without JSX or React components.`,
+    );
 }
 
 /**
@@ -721,15 +756,26 @@ async function generateValidatedSource({ generate, request, stage, validate }) {
       if (cycle === 2) throw error;
     }
   }
-  throw new Error(`Candidate ${request.route.id} ${stage} validation did not complete.`);
+  throw new Error(
+    `Candidate ${request.route.id} ${stage} validation did not complete.`,
+  );
 }
 
 async function generateMotionSource({ generate, request, validate }) {
   try {
-    return await generateValidatedSource({ generate, request, stage: "motion", validate });
+    return await generateValidatedSource({
+      generate,
+      request,
+      stage: "motion",
+      validate,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (!/(?:No motion content returned|invalid syntax|motion must|motion lacks|motion contains)/iu.test(message))
+    if (
+      !/(?:No motion content returned|invalid syntax|motion must|motion lacks|motion contains)/iu.test(
+        message,
+      )
+    )
       throw error;
     validate(reducedMotionFallback(), request.route);
     return { source: reducedMotionFallback(), repaired: true, fallback: true };
@@ -796,20 +842,21 @@ export async function authorExperienceCandidates({
     ? Math.min(2, Math.max(1, configuredConcurrency))
     : 2;
   const limitedGenerate = createGenerationLimiter(generate, maxConcurrency);
+  const activeStages = new Map();
   const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
-      const routeContentManifest = buildCreativeContentManifest(
-        site,
-        route,
-      );
+      const markStage = (stage) => activeStages.set(route.id, stage);
+      const routeContentManifest = buildCreativeContentManifest(site, route);
       const content = routeContentManifest.values;
       const base = { route, contentTokens, contentShape: content, rules };
+      markStage("contract");
       const contractResult = await generateContract(limitedGenerate, {
         ...base,
         stage: "contract",
       });
       const designContract = contractResult.designContract;
       const designRationale = contractResult.designRationale;
+      markStage("experience");
       const experienceResult = await generateStageValue(
         limitedGenerate,
         { ...base, stage: "experience", designContract },
@@ -820,11 +867,13 @@ export async function authorExperienceCandidates({
       let complianceRepaired =
         contractResult.repaired || experienceResult.repaired;
       try {
+        markStage("experience-validation");
         validateExperience(experience, route, content);
       } catch (error) {
         complianceRepaired = true;
         let repairedExperience;
         try {
+          markStage("experience-repair");
           repairedExperience = await generateStageValue(
             limitedGenerate,
             {
@@ -842,7 +891,9 @@ export async function authorExperienceCandidates({
           validateExperience(experience, route, content);
         } catch (repairError) {
           const repairMessage =
-            repairError instanceof Error ? repairError.message : String(repairError);
+            repairError instanceof Error
+              ? repairError.message
+              : String(repairError);
           if (/empty image alt attribute/iu.test(repairMessage)) {
             experience = replaceEmptyImageAlt(experience);
             validateExperience(experience, route, content);
@@ -864,14 +915,18 @@ export async function authorExperienceCandidates({
               validateExperience(experience, route, content);
             } catch (finalError) {
               const finalMessage =
-                finalError instanceof Error ? finalError.message : String(finalError);
-              if (!/empty image alt attribute/iu.test(finalMessage)) throw finalError;
+                finalError instanceof Error
+                  ? finalError.message
+                  : String(finalError);
+              if (!/empty image alt attribute/iu.test(finalMessage))
+                throw finalError;
               experience = replaceEmptyImageAlt(experience);
               validateExperience(experience, route, content);
             }
           }
         }
       }
+      markStage("styles-and-motion");
       const [stylesOutput, motionOutput] = await Promise.all([
         generateValidatedSource({
           generate: limitedGenerate,
@@ -900,9 +955,19 @@ export async function authorExperienceCandidates({
       complianceRepaired ||= stylesOutput.repaired || motionOutput.repaired;
       let referenceRepairCycles = 0;
       if (route.referenceDna?.complete) {
-        let fidelity = validateReferenceCandidate({ referenceDna: route.referenceDna, experienceSource: experience, stylesSource: styles, motionSource: motion });
-        while ((!fidelity.pass || !fidelity.visualPass) && referenceRepairCycles < 2) {
+        markStage("reference-fidelity");
+        let fidelity = validateReferenceCandidate({
+          referenceDna: route.referenceDna,
+          experienceSource: experience,
+          stylesSource: styles,
+          motionSource: motion,
+        });
+        while (
+          (!fidelity.pass || !fidelity.visualPass) &&
+          referenceRepairCycles < 2
+        ) {
           referenceRepairCycles += 1;
+          markStage(`reference-repair-${referenceRepairCycles}`);
           const repaired = await generateStageValue(
             limitedGenerate,
             {
@@ -917,18 +982,32 @@ export async function authorExperienceCandidates({
           );
           experience = normalizeAuthoredSource(repaired.value);
           complianceRepaired = true;
+          markStage("reference-fidelity");
           validateExperience(experience, route, content);
-          fidelity = validateReferenceCandidate({ referenceDna: route.referenceDna, experienceSource: experience, stylesSource: styles, motionSource: motion });
+          fidelity = validateReferenceCandidate({
+            referenceDna: route.referenceDna,
+            experienceSource: experience,
+            stylesSource: styles,
+            motionSource: motion,
+          });
         }
         if (!fidelity.pass || !fidelity.visualPass)
-          throw new Error(`Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`);
+          throw new Error(
+            `Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
+          );
       }
       const creativeManifest = buildCandidateManifest({
-        candidate: { candidateId: `candidate-${String.fromCharCode(97 + index)}` },
+        candidate: {
+          candidateId: `candidate-${String.fromCharCode(97 + index)}`,
+        },
         route,
         model,
         contentManifestDigest: routeContentManifest.digest,
-        assets: ["content.hero.image", "content.hero.secondaryImage", "content.hero.tertiaryImage"],
+        assets: [
+          "content.hero.image",
+          "content.hero.secondaryImage",
+          "content.hero.tertiaryImage",
+        ],
       });
       const metadata = {
         version: 2,
@@ -997,12 +1076,25 @@ export async function authorExperienceCandidates({
     failures.push({
       routeId: routes[index].id,
       candidateId: `candidate-${String.fromCharCode(97 + index)}`,
-      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+      stage: activeStages.get(routes[index].id) || "unknown",
+      name: result.reason instanceof Error ? result.reason.name : "Error",
+      error:
+        result.reason instanceof Error
+          ? result.reason.message
+          : String(result.reason),
+      diagnostic:
+        result.reason instanceof Error
+          ? String(result.reason.stack || "")
+              .split("\n")
+              .filter((line) => /scripts\/[^ ]+\.mjs:/u.test(line))
+              .slice(0, 3)
+              .join(" <- ")
+          : "",
     });
   }
   if (!candidates.length)
     throw new Error(
-      `All creative candidates failed: ${failures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
+      `All creative candidates failed: ${failures.map((failure) => `${failure.routeId} [${failure.stage}]: ${failure.name}: ${failure.error}${failure.diagnostic ? ` (${failure.diagnostic})` : ""}`).join(" | ")}`,
     );
 
   return {

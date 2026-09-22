@@ -33,9 +33,7 @@ const outputPath = path.resolve(
   args.out || ".launchloom/generated-experiences",
 );
 const model =
-  args.model ||
-  process.env.CREATIVE_EXPERIENCE_MODEL ||
-  "openai/gpt-5.6-luna";
+  args.model || process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna";
 const reasoningEffort =
   process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
   (model === "openai/gpt-5.6-luna" ? "max" : "low");
@@ -72,8 +70,7 @@ const authorStageSchema = {
 };
 
 function cacheableReferenceDna(referenceDna) {
-  if (!referenceDna || typeof referenceDna !== "object")
-    return referenceDna;
+  if (!referenceDna || typeof referenceDna !== "object") return referenceDna;
   const {
     analyzedAt: _analyzedAt,
     generatedAt: _generatedAt,
@@ -111,6 +108,7 @@ REFERENCE FIDELITY RULES
 - Do not average references or drift to a familiar LaunchLoom composition.
 - Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
 - Preserve assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
+- Treat the canonical section sequence as an ordered implementation contract. Render every listed ID exactly once, in order, on its own semantic <section data-reference-section="..."> element.
 - Include every required signature element and expose its data-reference-signature attribute in the rendered DOM.
 - Use one distinctive, purposeful interaction from the assigned family and provide its reduced-motion equivalent.
 - Keep business facts, SEO copy, contact details, and imagery bound to sealed content tokens. Never copy reference branding, copy, assets, or trade dress.
@@ -171,13 +169,19 @@ data-mobile-recomposition="${markerSlug(dna.mobileRecomposition?.strategy)}"
 data-motion-primitive="${markerSlug(dna.motion?.primitive)}"
 Do not substitute the primary or secondary CTA placement for the early CTA marker. The early conversion element must use the exact data-cta-placement value above.`
     : "";
+  const canonicalSections = dna?.sectionSequence?.length
+    ? `
+CANONICAL SECTION SEQUENCE
+${dna.sectionSequence.map(markerSlug).join(" -> ")}
+In Experience.jsx, render one semantic <section> for every listed ID, in exactly this order, with a literal data-reference-section value matching that ID. Do not omit, reorder, duplicate, or mention these IDs only in copy, comments, class names, or another attribute.`
+    : "";
 
   return `ROUTE
 ${route}
 
 SEALED CONTENT SHAPE
 ${JSON.stringify(request.contentShape, null, 2)}
-${referenceMarkers}`;
+${referenceMarkers}${canonicalSections}`;
 }
 
 function boundedFormatRepair(request) {
@@ -203,17 +207,21 @@ Return a precise implementation contract and a rationale under 220 words. The co
     return `DESIGN CONTRACT
 ${request.designContract}
 
-${request.validationError ? `COMPLIANCE REPAIR
+${
+  request.validationError
+    ? `COMPLIANCE REPAIR
 The previous JSX failed: ${request.validationError}
 Repair that exact violation without reducing the composition or changing the design contract.
 
 PREVIOUS JSX
 ${request.previousSource}
-` : ""}
+`
+    : ""
+}
 EXPERIENCE STAGE
 Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". The hero's early conversion is a compact anchor or button linking to #contact, not the full four-field form. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
 
-Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" to each major section so the compiler can verify the assigned rhythm. Do not invent values: use the slugs from Reference DNA.`;
+Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add the exact canonical section sequence IDs, once and in order, to semantic <section data-reference-section="..."> elements. Do not invent values: use Reference DNA.`;
 
   if (request.stage === "styles")
     return `${repair}
@@ -261,9 +269,7 @@ async function requestStage(request) {
     Math.min(stageLimitMs, remainingMs),
   );
   try {
-    const userContent = [
-      { type: "text", text: routePromptPrefix(request) },
-    ];
+    const userContent = [{ type: "text", text: routePromptPrefix(request) }];
     const evidencePaths = [
       request.route.referenceDna?.evidence?.desktopScreenshot?.path,
       request.route.referenceDna?.evidence?.mobileScreenshot?.path,
@@ -273,7 +279,10 @@ async function requestStage(request) {
       try {
         userContent.push(await promptImagePart(path.resolve(screenshotPath)));
       } catch (error) {
-        throw new Error(`Reference evidence could not be loaded for ${request.route.id}: ${screenshotPath}`, { cause: error });
+        throw new Error(
+          `Reference evidence could not be loaded for ${request.route.id}: ${screenshotPath}`,
+          { cause: error },
+        );
       }
     }
     userContent.push(
@@ -321,34 +330,36 @@ async function requestStage(request) {
           signal: controller.signal,
           sessionId,
           body: {
-              model,
-              ...promptCacheRequestFields(model, promptCacheKey),
-              temperature: request.stage === "contract" ? 0.76 : 0.62,
-              reasoning: { effort, exclude: true },
-              response_format: {
-                type: "json_schema",
-                json_schema: authorStageSchema,
-              },
-              max_tokens:
-                request.stage === "experience" || request.stage === "styles"
-                  ? request.stage === "experience"
-                    ? 9000
-                    : 8000
-                  : request.stage === "contract"
-                    ? 4000
-                    : 3500,
-              messages: [
-                {
-                  role: "system",
-                  content: promptCachedMessageContent(model, systemPrompt),
-                },
-                { role: "user", content: userContent },
-              ],
+            model,
+            ...promptCacheRequestFields(model, promptCacheKey),
+            temperature: request.stage === "contract" ? 0.76 : 0.62,
+            reasoning: { effort, exclude: true },
+            response_format: {
+              type: "json_schema",
+              json_schema: authorStageSchema,
             },
+            max_tokens:
+              request.stage === "experience" || request.stage === "styles"
+                ? request.stage === "experience"
+                  ? 9000
+                  : 8000
+                : request.stage === "contract"
+                  ? 4000
+                  : 3500,
+            messages: [
+              {
+                role: "system",
+                content: promptCachedMessageContent(model, systemPrompt),
+              },
+              { role: "user", content: userContent },
+            ],
+          },
         });
         const payload = await response.json().catch(() => ({}));
         if (sharedAbortController.signal.aborted)
-          throw new Error("Phase 2 authorship cancelled after a sibling failure.");
+          throw new Error(
+            "Phase 2 authorship cancelled after a sibling failure.",
+          );
         if (!response.ok)
           throw new Error(
             `OpenRouter ${response.status}: ${JSON.stringify(payload).slice(0, 1000)}`,
@@ -415,8 +426,7 @@ function aggregateCacheUsage(records) {
   return {
     ...total,
     cost: Math.round(total.cost * 1_000_000) / 1_000_000,
-    cacheDiscount:
-      Math.round(total.cacheDiscount * 1_000_000) / 1_000_000,
+    cacheDiscount: Math.round(total.cacheDiscount * 1_000_000) / 1_000_000,
     cacheHitPercent:
       total.promptTokens > 0
         ? Math.round((total.cachedTokens / total.promptTokens) * 1000) / 10
