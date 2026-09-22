@@ -295,11 +295,12 @@ describe("creative candidate promotion", () => {
     await fs.writeFile(
       experiencePath,
       experience
-        .replace("<main>", '<main data-mobile-recomposition="wrong-layout" data-motion-primitive="wrong-motion">')
-        .replace("<nav>", '<nav data-navigation-geometry="wrong-navigation">')
-        .replace("<section data-hero>", '<section data-hero data-hero-geometry="wrong-hero"><img src={content.hero.image} alt={content.hero.heading} style={{ display: "none" }} />')
-        .replace('<section id="services">', '<section id="services" data-service-presentation="wrong-services">')
-        .replace("<button data-early-conversion>", '<button data-early-conversion data-cta-placement="wrong-cta">'),
+        .replace("single-column-editorial-chapters", "wrong-layout")
+        .replace("masked-image-reveal", "wrong-motion")
+        .replace("quiet-corner-links", "wrong-navigation")
+        .replace("typographic-monument", "wrong-hero")
+        .replace("magazine-archive-ledger", "wrong-services")
+        .replace("after-hero-image", "wrong-cta"),
     );
     const siteRoot = path.resolve("templates/client-site");
     const configPath = path.join(siteRoot, "src/site.config.json");
