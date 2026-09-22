@@ -4,6 +4,7 @@ import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { prepareCreativeDiagnostics } from "../scripts/prepare-creative-diagnostics.mjs";
+import { sanitizeDiagnosticText } from "../scripts/diagnostic-sanitizer.mjs";
 
 const roots: string[] = [];
 
@@ -103,6 +104,20 @@ describe("reference authoring pipeline guardrails", () => {
     const start = workflow.indexOf(marker);
     expect(start).toBeGreaterThan(-1);
     expect(workflow.slice(start, start + 500)).toContain("retention-days: 3");
+  });
+
+  it("redacts Basic auth, API-key assignments, and quoted credential fields", () => {
+    const sanitized = sanitizeDiagnosticText(`
+Authorization: Basic dXNlcjpwYXNzd29yZA==
+api_key=abc123456789
+password: "very-secret-password"
+token='quoted-token-value'
+`);
+    expect(sanitized).not.toContain("dXNlcjpwYXNzd29yZA==");
+    expect(sanitized).not.toContain("abc123456789");
+    expect(sanitized).not.toContain("very-secret-password");
+    expect(sanitized).not.toContain("quoted-token-value");
+    expect(sanitized.match(/\[redacted-credential\]/gu)?.length).toBeGreaterThanOrEqual(4);
   });
 
   it("sanitizes candidate diagnostics and omits content manifests", async () => {
