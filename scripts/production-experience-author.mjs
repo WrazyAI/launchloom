@@ -348,7 +348,8 @@ function replaceEmptyImageAlt(source) {
 }
 
 function reducedMotionFallback() {
-  return `export function mountExperienceMotion(runtime) {
+  return `/* launchloom-deterministic-reduced-motion-fallback */
+export function mountExperienceMotion(runtime) {
   const reduced = Boolean(runtime?.reducedMotion) ||
     (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
   if (reduced) return () => {};
