@@ -74,7 +74,7 @@ export default function Experience({ content, runtime }) {
   );
   await fs.writeFile(
     path.join(root, "candidate-a/styles.css"),
-    `:root{--ll-creative-ink:#111}[data-hero]{min-height:40rem}@media(max-width:700px){main{display:block}}`,
+    `:root{--ll-creative-ink:#111}[data-hero]{box-sizing:border-box;height:32rem;min-height:0;overflow:hidden}[data-hero] img{display:block;width:12rem;height:8rem;object-fit:cover}@media(max-width:700px){main{display:block}[data-hero]{height:auto;min-height:24rem}}`,
   );
   await fs.writeFile(
     path.join(root, "candidate-a/motion.js"),
