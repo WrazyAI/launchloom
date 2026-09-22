@@ -189,6 +189,74 @@ describe("reference contract regression for failed A1 intake", () => {
     expect(report.visualPass).toBe(true);
   });
 
+  it("applies overlap structure and geometry checks to product-still-overlap", () => {
+    const neighborhoodDna = {
+      ...dna,
+      requiredSignatureElements: dna.requiredSignatureElements.map(
+        (item: any) =>
+          item.id === "lower-edge-product-overlap"
+            ? {
+                ...item,
+                id: "product-still-overlap",
+                selector:
+                  "[data-reference-signature=product-still-overlap]",
+                description:
+                  "overlapping product stills with varied crops",
+              }
+            : item,
+      ),
+    };
+    const neighborhoodExperience = experience.replaceAll(
+      "lower-edge-product-overlap",
+      "product-still-overlap",
+    );
+    const markerOnly = neighborhoodExperience.replace(
+      /\sdata-reference-overlap-layer="[^"]+"/gu,
+      "",
+    );
+    const sourceFailure = validateReferenceCandidate({
+      referenceDna: neighborhoodDna,
+      experienceSource: markerOnly,
+      stylesSource: styles,
+      motionSource: motion,
+    });
+    expect(sourceFailure.visualFindings).toContainEqual(
+      expect.objectContaining({
+        code: "signature-structure",
+        signatureId: "product-still-overlap",
+      }),
+    );
+
+    const renderedPass = validateReferenceCandidate({
+      referenceDna: neighborhoodDna,
+      experienceSource: neighborhoodExperience,
+      stylesSource: styles,
+      motionSource: motion,
+      renderedDom: neighborhoodExperience,
+      renderedEvidence: {
+        servicePresentationAttachedToServices: true,
+        ctaPlacementAttachedToEarlyConversion: true,
+        overflow: false,
+        signatureGeometry: {
+          "product-still-overlap": {
+            layerCount: 3,
+            productLayerPresent: true,
+            overlapCount: 2,
+            productAnchoredToHeroBottom: false,
+            signatureInLowerHero: false,
+          },
+        },
+      },
+      viewport: { name: "desktop", width: 1536, height: 864 },
+    });
+    expect(renderedPass.visualFindings).not.toContainEqual(
+      expect.objectContaining({
+        code: "signature-geometry",
+        signatureId: "product-still-overlap",
+      }),
+    );
+  });
+
   it("keeps creative CSS variables isolated", () => {
     const report = validate({
       stylesSource: styles + "\n:root { --ink: #000; }",
