@@ -178,6 +178,7 @@ describe("rendered creative repair orchestration", () => {
       reasoningPolicyVersion: "adaptive-reasoning-v1",
       judgmentSchemaVersion: "design-complexity-v1",
       selectorModelVersion: "jev-1.13.0",
+      creativeModel: "openai/gpt-5.6-luna",
       sessionId: "launchloom:creative:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       reasoningEffort: "max",
       recommendedEffort: "max",
