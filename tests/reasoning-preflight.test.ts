@@ -319,7 +319,8 @@ describe("adaptive reasoning preflight", () => {
     });
     expect(shadow.selector.fallbackUsed).toBe(true);
     expect(shadow.recommendedEffort).toBe("max");
-    expect(shadow.reasoningEffort).toBe("xhigh");
+    expect(shadow.reasoningEffort).toBe("max");
+    expect(shadow.decision.shadowOverride).toBe(false);
 
     const enforced = await createReasoningPreflight({
       inspirationPack: pack(),
@@ -350,7 +351,7 @@ describe("adaptive reasoning preflight", () => {
         ...shadow,
         reasoningEffort: "max",
       }),
-    ).toThrow(/Shadow reasoning sessions must execute the xhigh baseline/iu);
+    ).toThrow(/Successful shadow reasoning sessions must execute the xhigh baseline/iu);
 
     const enforced = await createReasoningPreflight({
       inspirationPack: pack(),
@@ -399,6 +400,30 @@ describe("adaptive reasoning preflight", () => {
         },
       }),
     ).toThrow(/decision reasoning effort does not match/iu);
+  });
+
+  it("requires max when a persisted session records selector fallback", async () => {
+    const session = await createReasoningPreflight({
+      inspirationPack: pack(),
+      mode: "shadow",
+      sessionKey: "intake-42",
+      apiKey: "typesafe-test-key",
+      fetchImpl: (async () => {
+        throw new Error("selector unavailable");
+      }) as any,
+    });
+    expect(session.selector.fallbackUsed).toBe(true);
+    expect(session.reasoningEffort).toBe("max");
+    expect(() =>
+      validateCreativeSessionConfig({
+        ...session,
+        reasoningEffort: "xhigh",
+        decision: {
+          ...session.decision,
+          reasoningEffort: "xhigh",
+        },
+      }),
+    ).toThrow(/Selector-fallback reasoning sessions must execute max/iu);
   });
 
   it("treats malformed Jev score distributions as selector failure", async () => {
