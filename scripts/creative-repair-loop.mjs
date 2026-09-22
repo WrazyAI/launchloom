@@ -57,6 +57,20 @@ function appendRepair(styles, marker, css) {
 
 class ReferenceEvidenceError extends Error {}
 
+/**
+ * A creative repair response was returned but could not be trusted as a
+ * complete candidate bundle. This is candidate-local: the rendered
+ * orchestrator may record the failed attempt and continue evaluating the
+ * remaining authored candidates without treating it as a renderer fallback.
+ */
+export class CreativeRepairResponseError extends Error {
+  constructor(message, options = {}) {
+    super(message, options);
+    this.name = "CreativeRepairResponseError";
+    this.code = "CREATIVE_REPAIR_RESPONSE_INVALID";
+  }
+}
+
 function isCompleteRepair(value) {
   return Boolean(
     value &&
@@ -484,7 +498,16 @@ Return complete files. Keep every exact Reference DNA marker and the ordered sec
       `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
     );
   logOpenRouterCacheUsage("creative-repair", payload.usage);
-  return parseModelJson(payload.choices?.[0]?.message?.content || "");
+  try {
+    return parseModelJson(payload.choices?.[0]?.message?.content || "");
+  } catch (error) {
+    throw new CreativeRepairResponseError(
+      error instanceof Error
+        ? error.message
+        : "OpenRouter did not return a valid JSON object.",
+      { cause: error },
+    );
+  }
 }
 
 async function main() {

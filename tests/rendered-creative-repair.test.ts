@@ -3,7 +3,13 @@ import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { collectAvailableScreenshots, runRenderedCreativeRepair, runVisualGateProcess, writeCandidate } from "../scripts/run-rendered-creative-repair.mjs";
+import {
+  collectAvailableScreenshots,
+  runRenderedCreativeRepair,
+  runVisualGateProcess,
+  writeCandidate,
+} from "../scripts/run-rendered-creative-repair.mjs";
+import { CreativeRepairResponseError } from "../scripts/creative-repair-loop.mjs";
 
 const roots: string[] = [];
 
@@ -186,6 +192,82 @@ describe("rendered creative repair orchestration", () => {
         await fs.readFile(path.join(root, "evidence", "summary.json"), "utf8"),
       ).status,
     ).toBe("passed");
+  });
+
+  it("keeps a malformed repair response candidate-local and continues the bakeoff", async () => {
+    const { root, candidates } = await fixture();
+    let bakeoffCalls = 0;
+    const repairs: string[] = [];
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                promotionReady: false,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: ["Repair the assigned composition."],
+                  }),
+                  candidate("candidate-b", {
+                    valid: false,
+                    eligible: false,
+                    failures: ["Repair the assigned composition."],
+                  }),
+                ],
+              })
+            : report(),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ candidateId }: any) => {
+        repairs.push(candidateId);
+        if (candidateId === "candidate-a")
+          throw new CreativeRepairResponseError(
+            "OpenRouter did not return a valid JSON object.",
+          );
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-b" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(bakeoffCalls).toBe(2);
+    expect(repairs).toEqual(["candidate-a", "candidate-b"]);
+    expect(result.repairCycles).toEqual({
+      "candidate-a": 1,
+      "candidate-b": 1,
+    });
+    expect(result.history[0].repairFailures).toEqual([
+      {
+        candidateId: "candidate-a",
+        code: "CREATIVE_REPAIR_RESPONSE_INVALID",
+        message: "OpenRouter did not return a valid JSON object.",
+      },
+    ]);
+    const evidence = JSON.parse(
+      await fs.readFile(
+        path.join(
+          root,
+          "evidence",
+          "round-00",
+          "repairs",
+          "candidate-a.json",
+        ),
+        "utf8",
+      ),
+    );
+    expect(evidence.error).toMatchObject({
+      code: "CREATIVE_REPAIR_RESPONSE_INVALID",
+      message: "OpenRouter did not return a valid JSON object.",
+    });
   });
 
   it("threads one frozen creative session through repairs and summary evidence", async () => {

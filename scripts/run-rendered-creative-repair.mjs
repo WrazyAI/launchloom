@@ -2,7 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
-import { requestRepair } from "./creative-repair-loop.mjs";
+import {
+  CreativeRepairResponseError,
+  requestRepair,
+} from "./creative-repair-loop.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import { validateProductionCandidateFiles } from "./production-experience-author.mjs";
 import { runHumanRevisionGate } from "./human-revision-gate.mjs";
@@ -136,11 +139,15 @@ async function readCandidate(candidateDir) {
 
 function normalizeRepair(value) {
   if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("Creative repair returned an invalid file bundle.");
+    throw new CreativeRepairResponseError(
+      "Creative repair returned an invalid file bundle.",
+    );
   const normalized = {};
   for (const key of ["experience", "styles", "motion"]) {
     if (typeof value[key] !== "string" || !value[key].trim())
-      throw new Error(`Creative repair returned no ${key} source.`);
+      throw new CreativeRepairResponseError(
+        `Creative repair returned no ${key} source.`,
+      );
     normalized[key] = value[key].replace(/[—–]/gu, "-").trim();
   }
   return normalized;
@@ -472,6 +479,7 @@ async function persistRepairEvidence({
   reason,
   findings,
   cyclesUsed,
+  error = null,
 }) {
   const directory = path.join(outDir, `round-${String(round).padStart(2, "0")}`, "repairs");
   await fs.mkdir(directory, { recursive: true });
@@ -484,6 +492,15 @@ async function persistRepairEvidence({
         reason,
         cycle: cyclesUsed,
         findings,
+        ...(error
+          ? {
+              error: {
+                name: error.name || "Error",
+                code: error.code || "CREATIVE_REPAIR_FAILED",
+                message: String(error.message || error).slice(0, 600),
+              },
+            }
+          : {}),
       },
       null,
       2,
@@ -538,6 +555,7 @@ export async function runRenderedCreativeRepair({
   const evidenceRoot = path.resolve(root, outDir);
   const cycleLimit = boundedCycles(maxCycles);
   const cycleUse = new Map();
+  const repairFailures = new Map();
   const history = [];
   const maxRounds = Math.max(1, cycleLimit * 3 + 1);
   const requestedMode = mode === "promote" ? "promote" : "preview";
@@ -589,16 +607,38 @@ export async function runRenderedCreativeRepair({
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);
     const nextCycle = used + 1;
-    await repairCandidateImpl({
-      candidateDir,
-      candidateId,
-      findings,
-      screenshots: availableScreenshots,
-      model,
-      creativeSession: frozenCreativeSession,
-      cycle: nextCycle,
-      maxCycles: cycleLimit,
-    });
+    try {
+      await repairCandidateImpl({
+        candidateDir,
+        candidateId,
+        findings,
+        screenshots: availableScreenshots,
+        model,
+        creativeSession: frozenCreativeSession,
+        cycle: nextCycle,
+        maxCycles: cycleLimit,
+      });
+    } catch (error) {
+      if (!(error instanceof CreativeRepairResponseError)) throw error;
+      // The response consumed one bounded repair attempt. Keep the candidate
+      // fail-closed, record the exact boundary failure, and let the bakeoff
+      // continue with any other independently authored candidates.
+      cycleUse.set(candidateId, nextCycle);
+      repairFailures.set(candidateId, {
+        code: error.code,
+        message: String(error.message || error).slice(0, 600),
+      });
+      await persistRepairEvidence({
+        outDir: evidenceRoot,
+        round,
+        candidateId,
+        reason,
+        findings,
+        cyclesUsed: nextCycle,
+        error,
+      });
+      return false;
+    }
     cycleUse.set(candidateId, nextCycle);
     await persistRepairEvidence({
       outDir: evidenceRoot,
@@ -635,6 +675,7 @@ export async function runRenderedCreativeRepair({
       promotionReady: Boolean(report.promotionReady),
       visualDiversityPass: Boolean(report.visualDiversity?.pass),
       repairs: [],
+      repairFailures: [],
     };
     history.push(record);
 
@@ -664,12 +705,17 @@ export async function runRenderedCreativeRepair({
         if (repaired) {
           repairedAny = true;
           record.repairs.push(candidate.candidateId);
+        } else if (repairFailures.has(candidate.candidateId)) {
+          record.repairFailures.push({
+            candidateId: candidate.candidateId,
+            ...repairFailures.get(candidate.candidateId),
+          });
         }
       }
       if (repairedAny && humanRepairPending) humanRepairPending = false;
       if (!repairedAny)
         throw new Error(
-          `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
+          `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted${repairFailures.size ? ` (${[...repairFailures.values()].map((failure) => failure.message).join("; ")})` : ""}.`,
         );
       continue;
     }
@@ -694,7 +740,7 @@ export async function runRenderedCreativeRepair({
       );
       if (!repaired)
         throw new Error(
-          `Human feedback for ${selectedId} could not be applied within the ${cycleLimit}-cycle repair budget.`,
+          `Human feedback for ${selectedId} could not be applied within the ${cycleLimit}-cycle repair budget${repairFailures.has(selectedId) ? ` (${repairFailures.get(selectedId).message})` : ""}.`,
         );
       humanRepairPending = false;
       record.repairs.push(selectedId);
@@ -741,7 +787,7 @@ export async function runRenderedCreativeRepair({
       );
       if (!repaired)
         throw new Error(
-          `Selected candidate ${selectedId} still fails rendered visual QA after ${cycleLimit} repair cycles.`,
+          `Selected candidate ${selectedId} still fails rendered visual QA after ${cycleLimit} repair cycles${repairFailures.has(selectedId) ? ` (${repairFailures.get(selectedId).message})` : ""}.`,
         );
       record.repairs.push(selectedId);
       continue;
@@ -779,7 +825,7 @@ export async function runRenderedCreativeRepair({
         );
         if (!repaired)
           throw new Error(
-            `Selected candidate ${selectedId} still does not satisfy the human review request after ${cycleLimit} repair cycles.`,
+            `Selected candidate ${selectedId} still does not satisfy the human review request after ${cycleLimit} repair cycles${repairFailures.has(selectedId) ? ` (${repairFailures.get(selectedId).message})` : ""}.`,
           );
         record.repairs.push(selectedId);
         continue;
@@ -811,11 +857,16 @@ export async function runRenderedCreativeRepair({
         if (repaired) {
           repairedAny = true;
           record.repairs.push(target.candidateId);
+        } else if (repairFailures.has(target.candidateId)) {
+          record.repairFailures.push({
+            candidateId: target.candidateId,
+            ...repairFailures.get(target.candidateId),
+          });
         }
       }
       if (!repairedAny)
         throw new Error(
-          `Production promotion is not ready after the ${cycleLimit}-cycle per-candidate repair budget.`,
+          `Production promotion is not ready after the ${cycleLimit}-cycle per-candidate repair budget${repairFailures.size ? ` (${[...repairFailures.values()].map((failure) => failure.message).join("; ")})` : ""}.`,
         );
       continue;
     }
