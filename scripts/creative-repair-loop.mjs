@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import { referenceAuthoringContract } from "./reference-contract-compliance.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
@@ -368,6 +369,9 @@ export async function requestRepair({
       text: `ASSIGNED REFERENCE DNA
 ${JSON.stringify(stableReferenceDna, null, 2)}
 
+ASSIGNED REFERENCE IMPLEMENTATION CONTRACT
+${referenceAuthoringContract(referenceDna)}
+
 SEALED CONTENT TOKENS
 ${contentTokens.join("\n") || "(not supplied)"}
 
@@ -423,7 +427,7 @@ ${files.styles}
 CURRENT MOTION.JS
 ${files.motion}
 
-Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
+Return complete files. Keep every exact Reference DNA marker and the ordered section sequence unchanged unless the assigned Reference DNA itself changes. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
   });
   for (const screenshot of screenshots.slice(0, 3))
     content.push(await imagePart(screenshot));

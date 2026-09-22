@@ -316,6 +316,14 @@ export function referenceSignatureIds(referenceDna) {
 export function referenceAuthoringContract(referenceDna) {
   const sectionMarkers = referenceSectionMarkers(referenceDna);
   const signatureIds = referenceSignatureIds(referenceDna);
+  const exactMarkers = [
+    ["data-hero-geometry", referenceDna?.heroGeometry?.mode],
+    ["data-navigation-geometry", referenceDna?.navigationGeometry?.mode],
+    ["data-service-presentation", referenceDna?.servicePresentation?.pattern],
+    ["data-cta-placement", referenceDna?.ctaPlacement?.early],
+    ["data-mobile-recomposition", referenceDna?.mobileRecomposition?.strategy],
+    ["data-motion-primitive", referenceDna?.motion?.primitive],
+  ].filter(([, value]) => value);
   return `CANONICAL REFERENCE SECTION SEQUENCE
 These are ordered, machine-checked DOM markers. Render the assigned composition in this order and copy each value exactly into a major section's data-reference-section attribute:
 ${sectionMarkers.map((marker, index) => `${index + 1}. data-reference-section="${marker}"`).join("\n")}
@@ -324,7 +332,12 @@ Do not replace these with generic values such as hero, services, projects, faq, 
 REQUIRED SIGNATURE MARKERS
 Place each of these exact values in the rendered DOM as data-reference-signature attributes on the corresponding visual mechanic:
 ${signatureIds.map((id) => `- data-reference-signature="${id}"`).join("\n")}
-Every signature is a required visual mechanic, not a metadata claim.`;
+Every signature is a required visual mechanic, not a metadata claim.
+
+REQUIRED REFERENCE-FIDELITY ATTRIBUTES
+Preserve these exact values on the corresponding authored elements. They are machine-checked implementation markers, not prose:
+${exactMarkers.map(([attribute, value]) => `- ${attribute}="${slug(value)}"`).join("\n")}
+When repairing a candidate, keep every marker above unchanged unless the assigned Reference DNA itself changes.`;
 }
 
 function orderedSectionMatchCount(actual, expected) {

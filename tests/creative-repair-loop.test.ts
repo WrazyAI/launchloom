@@ -108,6 +108,51 @@ describe("creative repair loop", () => {
     expect(body.prompt_cache_key).toMatch(/^ll:creative-repair-refe:/u);
   });
 
+  it("passes the exact Reference DNA marker contract to rendered repairs", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-contract-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
+      new Response(JSON.stringify({
+        choices: [{ message: { content: JSON.stringify(repaired) } }],
+      })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        familyId: "a1-object-stage",
+        referenceName: "A1 object stage",
+        sectionSequence: ["Hero stage", "Capability atlas"],
+        requiredSignatureElements: [{ id: "signature-stage" }],
+        heroGeometry: { mode: "centered stage" },
+        navigationGeometry: { mode: "distributed nav" },
+        servicePresentation: { pattern: "object atlas" },
+        ctaPlacement: { early: "hero controls" },
+        mobileRecomposition: { strategy: "tall sequential stage" },
+        motion: { primitive: "object focus transition" },
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [{ message: "Mobile recomposition drifted." }],
+      files: repaired,
+      screenshots: [],
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(prompt).toContain('data-reference-section="hero-stage"');
+    expect(prompt).toContain('data-reference-signature="signature-stage"');
+    expect(prompt).toContain('data-mobile-recomposition="tall-sequential-stage"');
+    expect(prompt).toContain('data-hero-geometry="centered-stage"');
+    expect(prompt).toContain('data-motion-primitive="object-focus-transition"');
+  });
+
   it("authorizes requested composition changes only for explicit human review findings", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-human-repair-prompt-"));
     roots.push(root);
