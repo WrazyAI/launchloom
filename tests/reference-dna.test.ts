@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
-import { buildReferenceDna, normalizeSectionSequence, validateReferenceDna } from "../scripts/reference-dna.mjs";
+import { buildReferenceDna, normalizeReferenceDna, normalizeSectionSequence, validateReferenceDna } from "../scripts/reference-dna.mjs";
 
 const registry = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8"));
 
@@ -58,6 +58,38 @@ describe("Reference DNA", () => {
       "magazine-archive",
       "closing-scene",
     ]);
+  });
+
+  it("migrates failed analyzer prose to stable IDs and keeps the visual requirements", () => {
+    const migrated = normalizeReferenceDna({
+      version: 2,
+      familyId: "a1-collage-composition",
+      sectionSequence: [
+        "contained layered collage hero",
+        "large off-white breathing space",
+        "centered feature-introduction heading",
+        "five-item annotated capability row with tiny line icons",
+        "centered people-use heading",
+        "colorful portrait/testimonial card row beginning at the fold",
+      ],
+    } as any);
+    expect(migrated.sectionSequence).toEqual([
+      "hero",
+      "feature-atlas",
+      "image-mosaic",
+      "annotation-rail",
+      "conversion-band",
+      "contact",
+    ]);
+    expect(migrated.sectionSequenceEvidence[0]).toBe(
+      "contained layered collage hero",
+    );
+    expect(migrated.sectionBlueprint.map((item: any) => item.id)).toEqual(
+      migrated.sectionSequence,
+    );
+    expect(migrated.sectionBlueprint[0].visualRequirement).toContain(
+      "contained layered collage hero",
+    );
   });
 
   it("selects the neighborhood collage contract for food and market cues", () => {
