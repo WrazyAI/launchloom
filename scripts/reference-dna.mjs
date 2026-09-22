@@ -75,6 +75,50 @@ export function normalizeSectionSequence(value, familyId) {
     : defaults;
 }
 
+function isStableSectionId(value) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(clean(value, 100));
+}
+
+/**
+ * Canonicalize persisted v2 DNA without discarding the analyzer's visual
+ * observations. Older artifacts may contain prose in sectionSequence; that
+ * prose is evidence, not a machine identifier.
+ */
+export function normalizeReferenceDnaContract(value) {
+  if (!value || typeof value !== "object") return value;
+  const familyId = clean(value.familyId, 100);
+  const rawSequence = Array.isArray(value.sectionSequence)
+    ? value.sectionSequence.map((item) => clean(item, 160)).filter(Boolean)
+    : [];
+  const stableSequence = normalizeSectionSequence(rawSequence, familyId);
+  const legacyVisualRequirements = rawSequence.filter(
+    (item) => !isStableSectionId(item),
+  );
+  const sectionVisualRequirements = list(
+    value.sectionVisualRequirements?.length
+      ? value.sectionVisualRequirements
+      : legacyVisualRequirements,
+    20,
+  );
+  const sameSequence =
+    stableSequence.length === rawSequence.length &&
+    stableSequence.every((item, index) => item === rawSequence[index]);
+  const sameVisual =
+    sectionVisualRequirements.length ===
+      (value.sectionVisualRequirements || []).length &&
+    sectionVisualRequirements.every(
+      (item, index) => item === value.sectionVisualRequirements?.[index],
+    );
+  if (sameSequence && sameVisual) return value;
+  return {
+    ...value,
+    sectionSequence: stableSequence,
+    ...(sectionVisualRequirements.length
+      ? { sectionVisualRequirements }
+      : {}),
+  };
+}
+
 const routeText = (route) =>
   [
     route?.id,
@@ -434,6 +478,16 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
         defaults.sectionSequence,
       20,
     ),
+    sectionVisualRequirements: list(
+      route.referenceDna?.sectionVisualRequirements ||
+        (Array.isArray(route.referenceDna?.sectionSequence) &&
+        route.referenceDna.sectionSequence.some(
+          (item) => !isStableSectionId(item),
+        )
+          ? route.referenceDna.sectionSequence
+          : []),
+      20,
+    ),
     servicePresentation: route.referenceDna?.servicePresentation || defaults.servicePresentation,
     ctaPlacement: route.referenceDna?.ctaPlacement || defaults.ctaPlacement,
     motion: route.referenceDna?.motion || defaults.motion,
@@ -455,22 +509,25 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
 
 export function validateReferenceDna(value, { requireEvidence = true } = {}) {
   if (!value || typeof value !== "object") throw new Error("Reference DNA is missing.");
+  const dna = normalizeReferenceDnaContract(value);
   for (const field of ["familyId", "referenceName", "source", "rights", "heroGeometry", "navigationGeometry", "typography", "palette", "imageTreatment", "servicePresentation", "ctaPlacement", "motion", "mobileRecomposition"]) {
-    if (!value[field]) throw new Error(`Reference DNA is missing ${field}.`);
+    if (!dna[field]) throw new Error(`Reference DNA is missing ${field}.`);
   }
-  if (!Array.isArray(value.sectionSequence) || value.sectionSequence.length < 3) throw new Error("Reference DNA needs a section sequence.");
-  if (!Array.isArray(value.prohibitedPatterns) || !value.prohibitedPatterns.length) throw new Error("Reference DNA needs prohibited patterns.");
-  if (!Array.isArray(value.requiredSignatureElements) || !value.requiredSignatureElements.length) throw new Error("Reference DNA needs required signature elements.");
-  if (!Array.isArray(value.acceptanceChecks) || !value.acceptanceChecks.length) throw new Error("Reference DNA needs acceptance checks.");
-  if (value.analyzedFromEvidence) {
-    if (!value.measurements || typeof value.measurements !== "object")
+  if (!Array.isArray(dna.sectionSequence) || dna.sectionSequence.length < 3) throw new Error("Reference DNA needs a section sequence.");
+  if (!dna.sectionSequence.every(isStableSectionId))
+    throw new Error("Reference DNA section IDs must be stable concise identifiers.");
+  if (!Array.isArray(dna.prohibitedPatterns) || !dna.prohibitedPatterns.length) throw new Error("Reference DNA needs prohibited patterns.");
+  if (!Array.isArray(dna.requiredSignatureElements) || !dna.requiredSignatureElements.length) throw new Error("Reference DNA needs required signature elements.");
+  if (!Array.isArray(dna.acceptanceChecks) || !dna.acceptanceChecks.length) throw new Error("Reference DNA needs acceptance checks.");
+  if (dna.analyzedFromEvidence) {
+    if (!dna.measurements || typeof dna.measurements !== "object")
       throw new Error("Evidence-analyzed Reference DNA needs measurements.");
     for (const key of ["headlineWidthRatio", "headlineHeightRatio", "heroImageOccupancyRatio", "contentColumnWidthRatio", "navTopRatio", "navSideInsetRatio", "ctaTopRatio"])
-      if (!Number.isFinite(Number(value.measurements[key])))
+      if (!Number.isFinite(Number(dna.measurements[key])))
         throw new Error(`Reference DNA measurements are missing ${key}.`);
   }
-  if (requireEvidence && (!value.complete || !value.evidence?.desktopScreenshot?.available)) throw new Error(`Reference DNA ${value.familyId} is incomplete: ${value.incompleteReasons?.join("; ") || "desktop evidence is unavailable"}.`);
-  return value;
+  if (requireEvidence && (!dna.complete || !dna.evidence?.desktopScreenshot?.available)) throw new Error(`Reference DNA ${dna.familyId} is incomplete: ${dna.incompleteReasons?.join("; ") || "desktop evidence is unavailable"}.`);
+  return dna;
 }
 
 export function assertReferenceEvidence(routes) {
