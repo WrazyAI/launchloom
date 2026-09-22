@@ -430,7 +430,10 @@ function evidenceRecord(route, kind) {
 }
 
 export function buildReferenceDna(route, { requireEvidence = false } = {}) {
-  const familyId = clean(route.referenceFamilyId, 80) || familyForRoute(route);
+  const familyId =
+    clean(route.referenceFamilyId, 80) ||
+    clean(route.referenceDna?.familyId, 80) ||
+    familyForRoute(route);
   const defaults = FAMILY_DEFAULTS[familyId] || FAMILY_DEFAULTS["kokoro-editorial-architecture"];
   const desktop = evidenceRecord(route, "desktop");
   const mobile = evidenceRecord(route, "mobile");
