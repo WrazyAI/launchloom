@@ -54,8 +54,12 @@ describe("OpenRouter cache integration", () => {
     expect(author).toContain(
       '(model === "openai/gpt-5.6-luna" ? "xhigh" : "low")',
     );
+    expect(repair).toContain("creativeSession?.reasoningEffort");
     expect(repair).toContain(
-      'process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "xhigh"',
+      "process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT",
+    );
+    expect(repair).toMatch(
+      /creativeSession\?\.reasoningEffort[\s\S]*process\.env\.CREATIVE_EXPERIENCE_REASONING_EFFORT[\s\S]*"xhigh"/u,
     );
   });
 
