@@ -7,6 +7,7 @@ import {
   openRouterSessionId,
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
+import { normalizeReferenceDna } from "./reference-dna.mjs";
 
 const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-5.6-luna";
 
@@ -296,9 +297,10 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
     const analyzed = await analyzeRoute(route, fetchImpl);
     routes.push({
       ...route,
-      referenceDna: {
+      referenceDna: normalizeReferenceDna({
         ...route.referenceDna,
         ...analyzed,
+        sectionSequenceEvidence: analyzed.sectionSequence,
         evidence: {
           ...route.referenceDna.evidence,
           annotatedDescription: analyzed.annotatedDescription
@@ -306,7 +308,7 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
         analyzedFromEvidence: true,
         analyzerModel: model,
         analyzedAt: new Date().toISOString()
-      }
+      })
     });
   }
   return { ...pack, referenceDnaAnalyzed: true, referenceDnaAnalyzerModel: model, routes };
