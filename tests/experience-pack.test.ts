@@ -95,8 +95,57 @@ describe("experience-pack compiler", () => {
     expect(author).toContain(
       '(model === "openai/gpt-5.6-luna" ? "xhigh" : "low")',
     );
-    expect(repair).toContain(
-      'process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "xhigh"',
+    const sessionEffortIndex = repair.indexOf(
+      "creativeSession?.reasoningEffort",
+    );
+    const envEffortIndex = repair.indexOf(
+      "process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT",
+    );
+    const xhighFallbackIndex = repair.indexOf('"xhigh";', envEffortIndex);
+    expect(sessionEffortIndex).toBeGreaterThan(-1);
+    expect(envEffortIndex).toBeGreaterThan(sessionEffortIndex);
+    expect(xhighFallbackIndex).toBeGreaterThan(envEffortIndex);
+  });
+
+  it("runs one reasoning preflight before Luna and threads the frozen session through repair", () => {
+    const workflow = readFileSync(
+      ".github/workflows/generate-client.yml",
+      "utf8",
+    );
+    const preflightIndex = workflow.indexOf(
+      "scripts/run-reasoning-preflight.mjs",
+    );
+    const authorIndex = workflow.indexOf("npm run author:experiences");
+    const repairIndex = workflow.indexOf(
+      "scripts/run-rendered-creative-repair.mjs",
+    );
+    expect(preflightIndex).toBeGreaterThan(-1);
+    expect(authorIndex).toBeGreaterThan(preflightIndex);
+    expect(repairIndex).toBeGreaterThan(authorIndex);
+    expect(workflow).toContain(
+      "vars.REASONING_PREFLIGHT_MODE || 'shadow'",
+    );
+    expect(workflow).toContain(
+      "vars.REASONING_PREFLIGHT_MODEL || 'jev-1.13.0'",
+    );
+    expect(workflow).toContain(
+      "TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}",
+    );
+    expect(workflow).toContain("--session /tmp/reasoning-preflight.json");
+    expect(workflow).toContain(
+      '--session "$PWD/.launchloom/reasoning-preflight.json"',
+    );
+    expect(workflow).toContain(
+      "cp /tmp/reasoning-preflight.json .launchloom/reasoning-preflight.json",
+    );
+    expect(workflow).toContain(
+      'echo "reasoning_fallback=$FALLBACK_USED" >> "$GITHUB_OUTPUT"',
+    );
+    expect(workflow).toContain(
+      "::warning title=Reasoning preflight fallback::TypeSafe/Jev selector fallback is active",
+    );
+    expect(workflow).toContain(
+      "This creative session is frozen at max reasoning for quality safety.",
     );
   });
 

@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import { buildInspirationPack } from "./inspiration-registry.mjs";
 import { enrichInspirationPack } from "./analyze-reference-dna.mjs";
 import { runRenderedCreativeRepair } from "./run-rendered-creative-repair.mjs";
+import { createReasoningPreflight } from "./reasoning-preflight-lib.mjs";
 import {
   loadA1ReferenceLibrary,
   mergeInspirationRegistries,
@@ -171,11 +172,23 @@ try {
 
   const canaryConfigPath = path.join(out, "site.config.json");
   const inspirationPath = path.join(out, "inspiration-pack.json");
+  const reasoningPreflightPath = path.join(out, "reasoning-preflight.json");
   const authoredRoot = path.join(out, "generated-experiences");
   await fs.writeFile(canaryConfigPath, `${JSON.stringify(canaryConfig, null, 2)}\n`);
   await fs.writeFile(
     inspirationPath,
     `${JSON.stringify(inspirationPack, null, 2)}\n`,
+  );
+  const creativeSession = await createReasoningPreflight({
+    inspirationPack,
+    mode: process.env.REASONING_PREFLIGHT_MODE || "shadow",
+    model: process.env.REASONING_PREFLIGHT_MODEL || "jev-1.13.0",
+    creativeModel: "openai/gpt-5.6-luna",
+    sessionKey: "creative-canary-kokoro",
+  });
+  await fs.writeFile(
+    reasoningPreflightPath,
+    `${JSON.stringify(creativeSession, null, 2)}\n`,
   );
 
   await execFileAsync(
@@ -188,12 +201,17 @@ try {
       inspirationPath,
       "--out",
       authoredRoot,
+      "--session",
+      reasoningPreflightPath,
       "--failure-mode",
       "throw",
     ],
     {
       cwd: root,
-      env: process.env,
+      env: {
+        ...process.env,
+        CREATIVE_EXPERIENCE_MODEL: "openai/gpt-5.6-luna",
+      },
       maxBuffer: 8 * 1024 * 1024,
     },
   );
@@ -234,6 +252,8 @@ try {
     candidatesDir: isolatedRoot,
     outDir: path.join(out, "creative-repair"),
     mode: "preview",
+    model: "openai/gpt-5.6-luna",
+    creativeSession,
     requireDiversity: false,
     visualGateScript: path.join(root, "scripts/visual-quality-gate.mjs"),
   });
@@ -270,6 +290,13 @@ try {
     version: 2,
     status: "passed",
     authorModel: kokoroCandidate.metadata.model,
+    reasoning: {
+      effort: creativeSession.reasoningEffort,
+      recommendedEffort: creativeSession.recommendedEffort,
+      mode: creativeSession.mode,
+      policyVersion: creativeSession.reasoningPolicyVersion,
+      selectorModelVersion: creativeSession.selectorModelVersion,
+    },
     selectedCandidateId: kokoroCandidate.metadata.candidateId,
     familyId: kokoroCandidate.metadata.familyId,
     referenceFamilyId: kokoroCandidate.metadata.referenceFamilyId,

@@ -6,6 +6,7 @@ import { requestRepair } from "./creative-repair-loop.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import { validateProductionCandidateFiles } from "./production-experience-author.mjs";
 import { runHumanRevisionGate } from "./human-revision-gate.mjs";
+import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
 const REPAIR_FILES = ["Experience.jsx", "styles.css", "motion.js"];
@@ -338,11 +339,50 @@ export async function runVisualGateProcess({
   return { ...report, processExitCode: result.code };
 }
 
+async function validateCandidateReasoningBindings(
+  candidateRoot,
+  creativeSession,
+) {
+  const entries = await fs.readdir(candidateRoot, { withFileTypes: true });
+  for (const entry of entries.filter((item) => item.isDirectory())) {
+    const metadataPath = path.join(candidateRoot, entry.name, "metadata.json");
+    const metadata = await readJson(metadataPath).catch(() => null);
+    const reasoning = metadata?.reasoning || null;
+    if (!reasoning) {
+      if (creativeSession)
+        throw new Error(
+          `Adaptive creative session ${creativeSession.sessionId} cannot be applied to candidate ${metadata?.candidateId || entry.name} because its authored reasoning binding is missing.`,
+        );
+      continue;
+    }
+    if (!reasoning.sessionId)
+      throw new Error(
+        `Candidate ${metadata?.candidateId || entry.name} has incomplete adaptive reasoning metadata and cannot be repaired or promoted.`,
+      );
+    if (!creativeSession)
+      throw new Error(
+        `Candidate ${metadata?.candidateId || entry.name} was authored with adaptive reasoning session ${reasoning.sessionId}, but no reasoning-preflight session was supplied.`,
+      );
+
+    const mismatches = [
+      ["sessionId", reasoning.sessionId, creativeSession.sessionId],
+      ["effort", reasoning.effort, creativeSession.reasoningEffort],
+      ["policyVersion", reasoning.policyVersion, creativeSession.reasoningPolicyVersion],
+      ["selectorModelVersion", reasoning.selectorModelVersion, creativeSession.selectorModelVersion],
+    ].filter(([, actual, expected]) => actual !== expected);
+    if (mismatches.length)
+      throw new Error(
+        `Candidate ${metadata?.candidateId || entry.name} reasoning binding does not match the frozen creative session: ${mismatches.map(([field, actual, expected]) => `${field}=${actual ?? "(missing)"} expected ${expected ?? "(missing)"}`).join(" | ")}`,
+      );
+  }
+}
+
 async function defaultRepairCandidate({
   candidateDir,
   findings,
   screenshots,
   model,
+  creativeSession = null,
 } = {}) {
   const { metadata, contentManifest, content, files } =
     await readCandidate(candidateDir);
@@ -358,6 +398,7 @@ async function defaultRepairCandidate({
       files,
       screenshots,
       contentManifest,
+      creativeSession,
     }),
   );
   const validated = validateProductionCandidateFiles({
@@ -463,6 +504,7 @@ async function persistRepairEvidence({
  *   outDir?: string,
  *   mode?: string,
  *   model?: string,
+ *   creativeSession?: Record<string, any> | null,
  *   maxCycles?: number,
  *   requireDiversity?: boolean,
  *   requestedFindings?: unknown[],
@@ -480,6 +522,7 @@ export async function runRenderedCreativeRepair({
   outDir = ".launchloom/creative-repair",
   mode = "preview",
   model = process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna",
+  creativeSession = null,
   maxCycles = 2,
   requireDiversity = true,
   requestedFindings = [],
@@ -498,6 +541,15 @@ export async function runRenderedCreativeRepair({
   const history = [];
   const maxRounds = Math.max(1, cycleLimit * 3 + 1);
   const requestedMode = mode === "promote" ? "promote" : "preview";
+  const frozenCreativeSession = creativeSession
+    ? validateCreativeSessionConfig(creativeSession, {
+        creativeModel: model,
+      })
+    : null;
+  await validateCandidateReasoningBindings(
+    candidateRoot,
+    frozenCreativeSession,
+  );
   const humanFindings = Array.isArray(requestedFindings)
     ? requestedFindings.filter(Boolean)
     : [];
@@ -543,6 +595,7 @@ export async function runRenderedCreativeRepair({
       findings,
       screenshots: availableScreenshots,
       model,
+      creativeSession: frozenCreativeSession,
       cycle: nextCycle,
       maxCycles: cycleLimit,
     });
@@ -785,6 +838,18 @@ export async function runRenderedCreativeRepair({
       status: "promotion-pending",
       mode: requestedMode,
       model,
+      creativeSession: frozenCreativeSession
+        ? {
+            sessionId: frozenCreativeSession.sessionId,
+            reasoningEffort: frozenCreativeSession.reasoningEffort,
+            recommendedEffort: frozenCreativeSession.recommendedEffort,
+            mode: frozenCreativeSession.mode,
+            reasoningPolicyVersion:
+              frozenCreativeSession.reasoningPolicyVersion,
+            selectorModelVersion:
+              frozenCreativeSession.selectorModelVersion,
+          }
+        : null,
       selectedCandidateId: selectedId,
       promotionReady: Boolean(report.promotionReady),
       visualGatePass: true,
@@ -869,6 +934,12 @@ export async function runRenderedCreativeRepair({
 
 async function main() {
   const args = cliArgs(process.argv);
+  const sessionFile = String(args.session || "").trim();
+  const creativeSession = sessionFile
+    ? validateCreativeSessionConfig(
+        await readJson(path.resolve(sessionFile)),
+      )
+    : null;
   const feedbackFile = String(args["feedback-file"] || "").trim();
   const requestedFindings = feedbackFile
     ? [
@@ -890,6 +961,7 @@ async function main() {
       args.model ||
       process.env.CREATIVE_EXPERIENCE_MODEL ||
       "openai/gpt-5.6-luna",
+    creativeSession,
     maxCycles: args["max-cycles"] || 2,
     requireDiversity: args["require-diversity"] !== "false",
     requestedFindings,
@@ -901,6 +973,8 @@ async function main() {
       selectedCandidateId: result.selectedCandidateId,
       promotionReady: result.promotionReady,
       visualGatePass: result.visualGatePass,
+      reasoningEffort: creativeSession?.reasoningEffort || null,
+      reasoningMode: creativeSession?.mode || null,
       repairCycles: result.repairCycles,
       summary: path.resolve(
         args["site-dir"] || "templates/client-site",

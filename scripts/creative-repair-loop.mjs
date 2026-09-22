@@ -12,6 +12,7 @@ import {
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
+import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
 const REPAIR_SCHEMA = {
   name: "launchloom_creative_repair",
@@ -315,6 +316,18 @@ export async function resolveReferenceEvidencePath(record) {
   return "";
 }
 
+/**
+ * @param {{
+ *   model?: string,
+ *   referenceDna?: Record<string, any>,
+ *   findings?: any[],
+ *   files?: {experience?: string, styles?: string, motion?: string},
+ *   screenshots?: string[],
+ *   contentManifest?: Record<string, any>,
+ *   creativeSession?: Record<string, any> | null,
+ * }} [options]
+ * @returns {Promise<Record<string, any>>}
+ */
 export async function requestRepair({
   model,
   referenceDna,
@@ -322,6 +335,7 @@ export async function requestRepair({
   files,
   screenshots,
   contentManifest = {},
+  creativeSession = null,
 }) {
   const humanReview = (findings || []).some(
     (finding) =>
@@ -414,15 +428,24 @@ Return complete files. Keep required reference signatures and safety/content con
   for (const screenshot of screenshots.slice(0, 3))
     content.push(await imagePart(screenshot));
 
-  const sessionId = openRouterSessionId(
-    "creative-repair",
-    model,
-    referenceDna?.familyId,
-    referenceDna?.referenceName,
-  );
+  const reasoningEffort =
+    creativeSession?.reasoningEffort ||
+    process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
+    "xhigh";
+  const sessionId =
+    creativeSession?.sessionId ||
+    openRouterSessionId(
+      "creative-repair",
+      model,
+      reasoningEffort,
+      referenceDna?.familyId,
+      referenceDna?.referenceName,
+    );
   const promptCacheKey = openRouterPromptCacheKey(
     "creative-repair-reference",
     model,
+    reasoningEffort,
+    creativeSession?.reasoningPolicyVersion || "static-reasoning",
     stableReferenceDna,
   );
   const response = await openRouterChatCompletion({
@@ -433,7 +456,7 @@ Return complete files. Keep required reference signatures and safety/content con
       ...promptCacheRequestFields(model, promptCacheKey),
       temperature: 0.35,
       reasoning: {
-        effort: process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "xhigh",
+        effort: reasoningEffort,
         exclude: true,
       },
       response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
@@ -474,13 +497,20 @@ async function main() {
     try { await fs.access(screenshot); screenshots.push(screenshot); } catch { /* a failed candidate may have no render evidence */ }
   }
   const model = args.model || process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna";
+  const creativeSession = args.session
+    ? validateCreativeSessionConfig(
+        JSON.parse(await fs.readFile(path.resolve(args.session), "utf8")),
+        { creativeModel: model },
+      )
+    : null;
   const result = await runCreativeRepairLoop({
     files,
     referenceDna: metadata.creativeManifest?.referenceDna || metadata.referenceDna,
     findings,
     screenshots,
     maxCycles: Math.min(2, Math.max(0, Number(args.maxCycles || 2))),
-    generate: (request) => requestRepair({ model, ...request }),
+    generate: (request) =>
+      requestRepair({ model, creativeSession, ...request }),
     evaluate: async (candidateFiles) => validateReferenceCandidate({ referenceDna: metadata.creativeManifest?.referenceDna || metadata.referenceDna, experienceSource: candidateFiles.experience, stylesSource: candidateFiles.styles, motionSource: candidateFiles.motion }),
   });
   if (result.cyclesUsed) {
@@ -489,7 +519,28 @@ async function main() {
     await fs.writeFile(path.join(candidateDir, "motion.js"), `${result.files.motion.trim()}\n`);
   }
   const out = path.resolve(args.out || path.join(candidateDir, "repair-report.json"));
-  await fs.writeFile(out, `${JSON.stringify({ version: 1, candidateId: metadata.candidateId, model, ...result }, null, 2)}\n`);
+  await fs.writeFile(
+    out,
+    `${JSON.stringify(
+      {
+        version: 1,
+        candidateId: metadata.candidateId,
+        model,
+        creativeSession: creativeSession
+          ? {
+              sessionId: creativeSession.sessionId,
+              reasoningEffort: creativeSession.reasoningEffort,
+              recommendedEffort: creativeSession.recommendedEffort,
+              mode: creativeSession.mode,
+              reasoningPolicyVersion: creativeSession.reasoningPolicyVersion,
+            }
+          : null,
+        ...result,
+      },
+      null,
+      2,
+    )}\n`,
+  );
   if (!result.pass) throw new Error(`Creative repair exhausted ${result.maxCycles} cycles for ${metadata.candidateId}.`);
   console.log(`creative_repair_pass=true candidate=${metadata.candidateId} cycles=${result.cyclesUsed}`);
 }

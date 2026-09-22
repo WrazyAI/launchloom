@@ -63,6 +63,51 @@ describe("creative repair loop", () => {
     ]);
   });
 
+  it("uses the frozen creative session effort and session id for repairs", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-frozen-repair-session-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
+      new Response(
+        JSON.stringify({
+          choices: [{ message: { content: JSON.stringify(repaired) } }],
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "openai/gpt-5.6-luna",
+      referenceDna: {
+        familyId: "editorial",
+        referenceName: "Editorial reference",
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [],
+      files: repaired,
+      screenshots: [],
+      creativeSession: {
+        sessionId: "launchloom:creative:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        reasoningEffort: "max",
+        recommendedEffort: "max",
+        mode: "enforce",
+        reasoningPolicyVersion: "adaptive-reasoning-v1",
+        selectorModelVersion: "jev-1.13.0",
+      },
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.session_id).toBe(
+      "launchloom:creative:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    );
+    expect(body.reasoning.effort).toBe("max");
+    expect(body.prompt_cache_key).toMatch(/^ll:creative-repair-refe:/u);
+  });
+
   it("authorizes requested composition changes only for explicit human review findings", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-human-repair-prompt-"));
     roots.push(root);
