@@ -426,6 +426,33 @@ describe("adaptive reasoning preflight", () => {
     ).toThrow(/Selector-fallback reasoning sessions must execute max/iu);
   });
 
+  it("treats non-number Jev score values as selector failure", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        JSON.stringify(
+          responsePayload({
+            compositionNovelty: {
+              ...scoreAnswer(),
+              score: null,
+            },
+          }),
+        ),
+        { status: 200 },
+      ),
+    );
+
+    const result = await createReasoningPreflight({
+      inspirationPack: pack(),
+      mode: "enforce",
+      sessionKey: "intake-42",
+      apiKey: "typesafe-test-key",
+      fetchImpl: fetchImpl as any,
+    });
+    expect(result.selector.fallbackUsed).toBe(true);
+    expect(result.recommendedEffort).toBe("max");
+    expect(result.reasoningEffort).toBe("max");
+  });
+
   it("treats malformed Jev score distributions as selector failure", async () => {
     const fetchImpl = vi.fn(async () =>
       new Response(
