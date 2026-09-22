@@ -22,6 +22,8 @@ export async function runReasoningPreflight({
   outPath = ".launchloom/reasoning-preflight.json",
   mode = process.env.REASONING_PREFLIGHT_MODE || DEFAULT_PREFLIGHT_MODE,
   model = process.env.REASONING_PREFLIGHT_MODEL,
+  creativeModel =
+    process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna",
   sessionKey = process.env.LAUNCHLOOM_INTAKE_ID || "",
   apiKey = process.env.TYPESAFE_API_KEY,
   fetchImpl = fetch,
@@ -34,6 +36,7 @@ export async function runReasoningPreflight({
     inspirationPack,
     mode,
     model,
+    creativeModel,
     sessionKey,
     apiKey,
     fetchImpl,
@@ -56,6 +59,10 @@ async function main() {
       process.env.REASONING_PREFLIGHT_MODE ||
       DEFAULT_PREFLIGHT_MODE,
     model: args.model || process.env.REASONING_PREFLIGHT_MODEL,
+    creativeModel:
+      args["creative-model"] ||
+      process.env.CREATIVE_EXPERIENCE_MODEL ||
+      "openai/gpt-5.6-luna",
     sessionKey:
       args["session-key"] ||
       process.env.LAUNCHLOOM_INTAKE_ID ||
@@ -74,8 +81,12 @@ async function main() {
       recommendedEffort: result.recommendedEffort,
       fallbackUsed: result.selector.fallbackUsed,
       selectorModel: result.selectorModelVersion,
+      creativeModel: result.creativeModel,
       selectorLatencyMs: result.selector.latencyMs,
-      selectorCostUsd: result.selector.usage?.estimatedCostUsd ?? null,
+      selectorCostUsd:
+        result.selector.usage?.costUsd ??
+        result.selector.usage?.estimatedCostUsd ??
+        null,
       reasonCodes: result.decision.reasonCodes,
     }),
   );
