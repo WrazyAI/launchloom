@@ -10,6 +10,8 @@ function finding(code, severity, message) {
 const VISUAL_REFERENCE_CODES = new Set([
   "missing-signature",
   "missing-rendered-signature",
+  "rendered-signature-geometry",
+  "signature-composition",
   "section-rhythm",
   "hero-geometry",
   "hero-geometry-mismatch",
@@ -283,8 +285,7 @@ function sourceSectionOrder(source) {
   for (const match of source.matchAll(/<section\b([^>]*)>/giu)) {
     const attributes = match[1] || "";
     const reference = attributes.match(/data-reference-section\s*=\s*["']([^"']+)["']/iu)?.[1];
-    const id = attributes.match(/id\s*=\s*["']([^"']+)["']/iu)?.[1];
-    if (reference || id) sections.push(String(reference || id).toLowerCase());
+    if (reference) sections.push(String(reference).toLowerCase());
   }
   return sections;
 }
@@ -301,7 +302,7 @@ function hasProhibitedPattern(source, pattern) {
  * intentionally evidence-oriented: a model claim in contract.json cannot
  * satisfy a missing signature or mobile recomposition.
  *
- * @param {{referenceDna: any, experienceSource?: string, stylesSource?: string, motionSource?: string, renderedDom?: string}} options
+ * @param {{referenceDna: any, experienceSource?: string, stylesSource?: string, motionSource?: string, renderedDom?: string, renderedEvidence?: any}} options
  */
 export function validateReferenceContractCompliance({
   referenceDna,
@@ -309,6 +310,7 @@ export function validateReferenceContractCompliance({
   stylesSource = "",
   motionSource = "",
   renderedDom = "",
+  renderedEvidence = null,
 } = {}) {
   validateReferenceDna(referenceDna, { requireEvidence: true });
   const source = `${experienceSource}\n${stylesSource}\n${motionSource}`;
@@ -319,13 +321,19 @@ export function validateReferenceContractCompliance({
     if (renderedDom && !sourceHasSignature(renderedDom, element))
       findings.push(finding("missing-rendered-signature", "critical", `Rendered DOM is missing signature ${element.id}.`));
   }
-  const sections = sourceSectionOrder(experienceSource);
+  const sections = sourceSectionOrder(experienceSource).map(slug);
   const expected = referenceDna.sectionSequence.map((item) => slug(item));
-  const matched = expected.filter((item) => sections.some((actual) =>
-    actual === item || actual.includes(item) || item.includes(actual),
-  ) || source.toLowerCase().includes(item));
-  if (matched.length < Math.min(3, expected.length))
-    findings.push(finding("section-rhythm", "critical", "The authored section sequence does not represent the assigned reference rhythm."));
+  if (
+    sections.length !== expected.length ||
+    sections.some((actual, index) => actual !== expected[index])
+  )
+    findings.push(
+      finding(
+        "section-rhythm",
+        "critical",
+        `Reference sections must appear exactly in order. Expected: ${expected.join(" > ")}. Actual: ${sections.join(" > ") || "(none)"}.`,
+      ),
+    );
   if (!/data-hero(?:\s|=)/iu.test(experienceSource) || !/data-hero-geometry=/iu.test(experienceSource))
     findings.push(finding("hero-geometry", "critical", "The authored hero is missing its explicit reference geometry marker."));
   else if (!markerMatches(experienceSource, "data-hero-geometry", referenceDna.heroGeometry.mode))
@@ -350,6 +358,43 @@ export function validateReferenceContractCompliance({
     findings.push(finding("motion-primitive", "critical", "The assigned motion primitive is not represented in the authored candidate."));
   else if (!markerMatches(experienceSource, "data-motion-primitive", referenceDna.motion.primitive))
     findings.push(finding("motion-primitive-mismatch", "critical", "The motion primitive does not match Reference DNA."));
+  if (renderedEvidence) {
+    const renderedSections = (renderedEvidence.referenceSections || []).map(slug);
+    if (
+      renderedSections.length !== expected.length ||
+      renderedSections.some((actual, index) => actual !== expected[index])
+    )
+      findings.push(
+        finding(
+          "section-rhythm",
+          "critical",
+          `Rendered reference sections must appear exactly in order. Expected: ${expected.join(" > ")}. Actual: ${renderedSections.join(" > ") || "(none)"}.`,
+        ),
+      );
+    for (const element of referenceDna.requiredSignatureElements) {
+      const evidence = (renderedEvidence.referenceSignatureEvidence || []).find(
+        (item) => item.id === element.id,
+      );
+      if (!evidence || evidence.width < 4 || evidence.height < 4)
+        findings.push(finding("rendered-signature-geometry", "critical", `Rendered signature ${element.id} has no visible geometry.`));
+      if (
+        element.id === "lower-edge-product-overlap" &&
+        renderedEvidence.viewportName !== "mobile" &&
+        evidence &&
+        (!evidence.insideHero ||
+          evidence.heroTopRatio < 0.4 ||
+          evidence.heroBottomGapRatio > 0.16 ||
+          evidence.overlapCount < 1)
+      )
+        findings.push(
+          finding(
+            "signature-composition",
+            "critical",
+            "lower-edge-product-overlap must be a visible lower-hero product plane that reaches the hero edge and physically overlaps at least one other visual layer.",
+          ),
+        );
+    }
+  }
   for (const pattern of referenceDna.prohibitedPatterns)
     if (hasProhibitedPattern(`${experienceSource}\n${renderedDom}`, pattern))
       findings.push(finding("prohibited-pattern", "critical", `Prohibited pattern detected: ${pattern}.`));
