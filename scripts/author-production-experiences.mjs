@@ -21,6 +21,9 @@ import {
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
+import {
+  referenceAuthoringContract,
+} from "./reference-fidelity.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -170,7 +173,9 @@ data-service-presentation="${markerSlug(dna.servicePresentation?.pattern)}"
 data-cta-placement="${markerSlug(dna.ctaPlacement?.early)}"
 data-mobile-recomposition="${markerSlug(dna.mobileRecomposition?.strategy)}"
 data-motion-primitive="${markerSlug(dna.motion?.primitive)}"
-Do not substitute the primary or secondary CTA placement for the early CTA marker. The early conversion element must use the exact data-cta-placement value above.`
+Do not substitute the primary or secondary CTA placement for the early CTA marker. The early conversion element must use the exact data-cta-placement value above.
+
+${referenceAuthoringContract(dna)}`
     : "";
 
   return `ROUTE

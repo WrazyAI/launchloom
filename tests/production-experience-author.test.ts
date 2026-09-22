@@ -8,6 +8,7 @@ import {
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
+import { referenceAuthoringContract } from "../scripts/reference-fidelity.mjs";
 
 const site = {
   business: {
@@ -123,6 +124,30 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("passes the exact ordered section and signature contract to the author", () => {
+    const referenceDna = buildReferenceDna(
+      {
+        ...inspirationPack.routes[0],
+        desktopScreenshotPath: "data/inspiration-evidence/kokoro/desktop.avif",
+        referenceNotes: "Measured editorial reference.",
+      },
+      { requireEvidence: false },
+    );
+    const prompt = referenceAuthoringContract(referenceDna);
+
+    expect(prompt).toContain("CANONICAL REFERENCE SECTION SEQUENCE");
+    expect(prompt).toContain(
+      'data-reference-section="hero"',
+    );
+    expect(prompt.indexOf('data-reference-section="hero"')).toBeLessThan(
+      prompt.indexOf('data-reference-section="image-chapter"'),
+    );
+    expect(prompt).toContain('data-reference-signature="editorial-monument"');
+    expect(prompt).toContain(
+      "Do not replace these with generic values such as hero, services, projects, faq, or contact.",
+    );
+  });
+
   it("keeps shared creative form helper text on the candidate contrast palette", () => {
     const styles = readFileSync(
       "templates/client-site/src/styles/creative-runtime.css",
@@ -278,6 +303,53 @@ describe("production experience author", () => {
         request.rules.includes("Do not hardcode business facts"),
       ),
     ).toBe(true);
+  });
+
+  it("rejects reference-drifting JSX before paying for styles or motion", async () => {
+    const referenceDna = buildReferenceDna(
+      {
+        id: "reference-route",
+        referenceFamilyId: "kokoro-editorial-architecture",
+        source: "Owned",
+        rights: "owned",
+        desktopScreenshotPath: "data/inspiration-evidence/kokoro/desktop.avif",
+      },
+      { requireEvidence: false },
+    );
+    const referencePack = {
+      ...inspirationPack,
+      routes: inspirationPack.routes.map((route) => ({
+        ...route,
+        referenceDna: {
+          ...referenceDna,
+          complete: true,
+          evidence: {
+            ...referenceDna.evidence,
+            desktopScreenshot: {
+              ...referenceDna.evidence.desktopScreenshot,
+              available: true,
+            },
+          },
+        },
+      })),
+    };
+    const stages: string[] = [];
+
+    await expect(
+      authorExperienceCandidates({
+        site,
+        inspirationPack: referencePack,
+        generate: async (request) => {
+          stages.push(request.stage);
+          return safeStage(request);
+        },
+        model: "test/model",
+      }),
+    ).rejects.toThrow(/Reference fidelity failed/iu);
+
+    expect(stages).not.toContain("styles");
+    expect(stages).not.toContain("motion");
+    expect(stages.filter((stage) => stage === "experience").length).toBe(9);
   });
 
   it("rejects unsafe imports and network-capable authored code", async () => {

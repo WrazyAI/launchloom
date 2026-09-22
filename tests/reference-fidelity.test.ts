@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
-import { validateReferenceCandidate } from "../scripts/reference-fidelity.mjs";
+import {
+  validateReferenceCandidate,
+  validateReferenceExperienceStructure,
+} from "../scripts/reference-fidelity.mjs";
 
 const record = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8")).records[0];
 const dna = buildReferenceDna(record, { requireEvidence: true });
@@ -45,6 +48,35 @@ export function Experience({ content }) {
 
     expect(finding?.message).toContain("Expected markers:");
     expect(finding?.message).toContain("Observed markers:");
+  });
+
+  it("does not accept section names hidden in prose as reference evidence", () => {
+    const proseOnly = validExperience
+      .replace(/\sdata-reference-section="[^"]+"/gu, "")
+      .replace(
+        "</main>",
+        "<p>hero image-chapter editorial-intro image-mosaic magazine-archive closing-scene</p></main>",
+      );
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: proseOnly,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+
+    expect(report.visualFindings).toContainEqual(
+      expect.objectContaining({ code: "section-rhythm" }),
+    );
+  });
+
+  it("can preflight the experience structure before CSS and motion exist", () => {
+    const report = validateReferenceExperienceStructure({
+      referenceDna: dna,
+      experienceSource: validExperience,
+    });
+
+    expect(report.pass).toBe(true);
+    expect(report.findings).toEqual([]);
   });
 
   it("reports visual patterns but blocks only the token collision", () => {

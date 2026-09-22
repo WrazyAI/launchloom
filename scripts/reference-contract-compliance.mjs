@@ -284,9 +284,61 @@ function sourceSectionOrder(source) {
     const attributes = match[1] || "";
     const reference = attributes.match(/data-reference-section\s*=\s*["']([^"']+)["']/iu)?.[1];
     const id = attributes.match(/id\s*=\s*["']([^"']+)["']/iu)?.[1];
-    if (reference || id) sections.push(String(reference || id).toLowerCase());
+    if (reference || id) sections.push(slug(reference || id));
   }
   return sections;
+}
+
+/**
+ * Return the exact section marker values an author must use for a reference.
+ * These are derived from the evidence-backed sequence, rather than from a
+ * route's generic section names. Keeping this helper deterministic gives the
+ * author prompt and the source validator one shared contract.
+ */
+export function referenceSectionMarkers(referenceDna) {
+  return (Array.isArray(referenceDna?.sectionSequence)
+    ? referenceDna.sectionSequence
+    : []
+  )
+    .map((item) => slug(item))
+    .filter(Boolean);
+}
+
+export function referenceSignatureIds(referenceDna) {
+  return (Array.isArray(referenceDna?.requiredSignatureElements)
+    ? referenceDna.requiredSignatureElements
+    : []
+  )
+    .map((item) => slug(item?.id))
+    .filter(Boolean);
+}
+
+export function referenceAuthoringContract(referenceDna) {
+  const sectionMarkers = referenceSectionMarkers(referenceDna);
+  const signatureIds = referenceSignatureIds(referenceDna);
+  return `CANONICAL REFERENCE SECTION SEQUENCE
+These are ordered, machine-checked DOM markers. Render the assigned composition in this order and copy each value exactly into a major section's data-reference-section attribute:
+${sectionMarkers.map((marker, index) => `${index + 1}. data-reference-section="${marker}"`).join("\n")}
+Do not replace these with generic values such as hero, services, projects, faq, or contact. Those generic labels do not satisfy the assigned reference rhythm. Do not mention the markers only in prose or comments: each implemented beat must be represented by its actual section element.
+
+REQUIRED SIGNATURE MARKERS
+Place each of these exact values in the rendered DOM as data-reference-signature attributes on the corresponding visual mechanic:
+${signatureIds.map((id) => `- data-reference-signature="${id}"`).join("\n")}
+Every signature is a required visual mechanic, not a metadata claim.`;
+}
+
+function orderedSectionMatchCount(actual, expected) {
+  let cursor = 0;
+  let matched = 0;
+  for (const value of actual) {
+    const target = expected[cursor];
+    if (!target) break;
+    if (value === target || value.includes(target) || target.includes(value)) {
+      matched += 1;
+      cursor += 1;
+    }
+  }
+  return matched;
 }
 
 function hasProhibitedPattern(source, pattern) {
@@ -309,9 +361,10 @@ export function validateReferenceContractCompliance({
   stylesSource = "",
   motionSource = "",
   renderedDom = "",
+  phase = "full",
 } = {}) {
   validateReferenceDna(referenceDna, { requireEvidence: true });
-  const source = `${experienceSource}\n${stylesSource}\n${motionSource}`;
+  const structureOnly = phase === "experience";
   const findings = [];
   for (const element of referenceDna.requiredSignatureElements) {
     if (!sourceHasSignature(experienceSource, element))
@@ -320,11 +373,9 @@ export function validateReferenceContractCompliance({
       findings.push(finding("missing-rendered-signature", "critical", `Rendered DOM is missing signature ${element.id}.`));
   }
   const sections = sourceSectionOrder(experienceSource);
-  const expected = referenceDna.sectionSequence.map((item) => slug(item));
-  const matched = expected.filter((item) => sections.some((actual) =>
-    actual === item || actual.includes(item) || item.includes(actual),
-  ) || source.toLowerCase().includes(item));
-  if (matched.length < Math.min(3, expected.length))
+  const expected = referenceSectionMarkers(referenceDna);
+  const matched = orderedSectionMatchCount(sections, expected);
+  if (matched < Math.min(3, expected.length))
     findings.push(finding(
       "section-rhythm",
       "critical",
@@ -346,20 +397,21 @@ export function validateReferenceContractCompliance({
     findings.push(finding("cta-placement", "critical", "The early CTA is missing its explicit reference placement marker."));
   else if (!markerMatches(experienceSource, "data-cta-placement", referenceDna.ctaPlacement.early))
     findings.push(finding("cta-placement-mismatch", "critical", "The early CTA placement does not match Reference DNA."));
-  if (!/data-mobile-recomposition=/iu.test(experienceSource) || !/@media/iu.test(stylesSource))
+  if (!/data-mobile-recomposition=/iu.test(experienceSource) || (!structureOnly && !/@media/iu.test(stylesSource)))
     findings.push(finding("mobile-recomposition", "critical", "The candidate does not declare a mobile recomposition and responsive CSS."));
   else if (!markerMatches(experienceSource, "data-mobile-recomposition", referenceDna.mobileRecomposition.strategy))
     findings.push(finding("mobile-recomposition-mismatch", "critical", "The mobile recomposition does not match Reference DNA."));
-  if (!/mountExperienceMotion\s*\(/u.test(motionSource) || !/data-motion-primitive=/iu.test(experienceSource))
+  if ((!structureOnly && !/mountExperienceMotion\s*\(/u.test(motionSource)) || !/data-motion-primitive=/iu.test(experienceSource))
     findings.push(finding("motion-primitive", "critical", "The assigned motion primitive is not represented in the authored candidate."));
   else if (!markerMatches(experienceSource, "data-motion-primitive", referenceDna.motion.primitive))
     findings.push(finding("motion-primitive-mismatch", "critical", "The motion primitive does not match Reference DNA."));
   for (const pattern of referenceDna.prohibitedPatterns)
     if (hasProhibitedPattern(`${experienceSource}\n${renderedDom}`, pattern))
       findings.push(finding("prohibited-pattern", "critical", `Prohibited pattern detected: ${pattern}.`));
-  for (const match of stylesSource.matchAll(/(?:^|[;{])\s*--([a-z][\w-]*)\s*:/gimu))
-    if (!match[1].startsWith("ll-creative-"))
-      findings.push(finding("css-token-collision", "critical", `Candidate CSS variable --${match[1]} is not isolated.`));
+  if (!structureOnly)
+    for (const match of stylesSource.matchAll(/(?:^|[;{])\s*--([a-z][\w-]*)\s*:/gimu))
+      if (!match[1].startsWith("ll-creative-"))
+        findings.push(finding("css-token-collision", "critical", `Candidate CSS variable --${match[1]} is not isolated.`));
   const contentPaths = [...outputContentPaths(experienceSource)];
   for (const token of ["content.hero.image", "content.services", "content.faqs"])
     if (!contentPaths.some((path) => path === token || path.startsWith(`${token}.`)))
@@ -383,6 +435,26 @@ export function validateReferenceContractCompliance({
     requiredSignatures: referenceDna.requiredSignatureElements.map((item) => item.id),
     sectionOrder: sections,
   };
+}
+
+/**
+ * Validate only what is knowable from Experience.jsx. This runs before the
+ * CSS and motion stages so a generic composition is repaired or rejected
+ * before LaunchLoom spends more model calls rendering it.
+ *
+ * @param {{referenceDna: any, experienceSource?: string, renderedDom?: string}} options
+ */
+export function validateReferenceExperienceStructure({
+  referenceDna,
+  experienceSource = "",
+  renderedDom = "",
+} = {}) {
+  return validateReferenceContractCompliance({
+    referenceDna,
+    experienceSource,
+    renderedDom,
+    phase: "experience",
+  });
 }
 
 export function assertReferenceContractCompliance(input) {

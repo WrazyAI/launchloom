@@ -1,6 +1,10 @@
 export {
   assertReferenceCandidate,
   assertReferenceContractCompliance,
+  referenceAuthoringContract,
+  referenceSectionMarkers,
+  referenceSignatureIds,
+  validateReferenceExperienceStructure,
   validateReferenceCandidate,
   validateReferenceContractCompliance,
 } from "./reference-contract-compliance.mjs";

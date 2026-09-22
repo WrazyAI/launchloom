@@ -6,7 +6,10 @@ import {
   buildRouteContract,
 } from "./creative-compiler.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
-import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import {
+  validateReferenceCandidate,
+  validateReferenceExperienceStructure,
+} from "./reference-fidelity.mjs";
 
 /**
  * @typedef {"contract" | "experience" | "styles" | "motion"} AuthorStage
@@ -555,6 +558,21 @@ function validateExperience(source, route, content) {
     );
 }
 
+function validateAuthoredExperience(source, route, content) {
+  validateExperience(source, route, content);
+  if (!route.referenceDna?.complete) return;
+  const fidelity = validateReferenceExperienceStructure({
+    referenceDna: route.referenceDna,
+    experienceSource: source,
+  });
+  if (!fidelity.pass || !fidelity.visualPass)
+    throw new Error(
+      `Reference fidelity failed for ${route.id}: ${fidelity.findings
+        .map((item) => item.message)
+        .join(" | ")}`,
+    );
+}
+
 function validateStyles(source, route) {
   if (
     /<!doctype\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/iu.test(source)
@@ -652,7 +670,7 @@ export function validateProductionCandidateFiles({
   const referenceDna = route.referenceDna
     ? validateReferenceDna(route.referenceDna, { requireEvidence: true })
     : null;
-  validateExperience(experience, route, content);
+  validateAuthoredExperience(experience, route, content);
   validateStyles(styles, route);
   validateMotion(motion, route);
   const isolatedStyles = namespaceCreativeCss(styles);
@@ -876,7 +894,7 @@ export async function authorExperienceCandidates({
       let complianceRepaired =
         contractResult.repaired || experienceResult.repaired;
       try {
-        validateExperience(experience, route, content);
+        validateAuthoredExperience(experience, route, content);
       } catch (error) {
         complianceRepaired = true;
         let repairedExperience;
@@ -895,7 +913,7 @@ export async function authorExperienceCandidates({
             "experience",
           );
           experience = normalizeAuthoredSource(repairedExperience.value);
-          validateExperience(experience, route, content);
+          validateAuthoredExperience(experience, route, content);
         } catch (repairError) {
           const repairMessage =
             repairError instanceof Error
@@ -903,7 +921,7 @@ export async function authorExperienceCandidates({
               : String(repairError);
           if (/empty image alt attribute/iu.test(repairMessage)) {
             experience = replaceEmptyImageAlt(experience);
-            validateExperience(experience, route, content);
+            validateAuthoredExperience(experience, route, content);
           } else {
             const finalRepair = await generateStageValue(
               limitedGenerate,
@@ -919,7 +937,7 @@ export async function authorExperienceCandidates({
             );
             experience = normalizeAuthoredSource(finalRepair.value);
             try {
-              validateExperience(experience, route, content);
+              validateAuthoredExperience(experience, route, content);
             } catch (finalError) {
               const finalMessage =
                 finalError instanceof Error
@@ -928,7 +946,7 @@ export async function authorExperienceCandidates({
               if (!/empty image alt attribute/iu.test(finalMessage))
                 throw finalError;
               experience = replaceEmptyImageAlt(experience);
-              validateExperience(experience, route, content);
+              validateAuthoredExperience(experience, route, content);
             }
           }
         }
@@ -986,7 +1004,7 @@ export async function authorExperienceCandidates({
           );
           experience = normalizeAuthoredSource(repaired.value);
           complianceRepaired = true;
-          validateExperience(experience, route, content);
+          validateAuthoredExperience(experience, route, content);
           fidelity = validateReferenceCandidate({
             referenceDna: route.referenceDna,
             experienceSource: experience,
