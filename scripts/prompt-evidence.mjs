@@ -22,6 +22,9 @@ function looksLikeImage(input) {
     (input.length >= 8 && input[0] === 0x89 && input[1] === 0x50 && input[2] === 0x4e && input[3] === 0x47) ||
     (input.length >= 3 && input[0] === 0xff && input[1] === 0xd8 && input[2] === 0xff) ||
     (input.length >= 12 && input.toString("ascii", 0, 4) === "RIFF" && input.toString("ascii", 8, 12) === "WEBP") ||
+    (input.length >= 12 &&
+      input.toString("ascii", 4, 8) === "ftyp" &&
+      /^(?:avif|avis|heic|heix|hevc|hevx|mif1|msf1)$/u.test(input.toString("ascii", 8, 12))) ||
     (input.length >= 6 && (input.toString("ascii", 0, 6) === "GIF87a" || input.toString("ascii", 0, 6) === "GIF89a"))
   );
 }
@@ -70,13 +73,11 @@ async function preparePromptImage(filePath) {
       .jpeg({ quality, progressive: true, mozjpeg: true })
       .toBuffer();
   } catch (error) {
-    // Unit tests and provider fixtures may use tiny sentinel files instead of
-    // real images. Preserve those bounded bytes so the request shape remains
-    // testable, while still rejecting an oversized unsupported asset.
-    if (input.length > MAX_BYTES) throw error;
-    const result = fallbackPromptImage(resolved, input);
-    preparedCache.set(resolved, result);
-    return result;
+    // A recognized image must never be sent under a mismatched MIME type.
+    // Tiny non-image test fixtures still use the fallback above.
+    throw new Error(`Could not normalize prompt evidence image: ${resolved}`, {
+      cause: error,
+    });
   }
 
   while (output.length > MAX_BYTES && quality > 48) {
