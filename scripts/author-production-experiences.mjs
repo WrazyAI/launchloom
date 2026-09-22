@@ -4,6 +4,10 @@ import { parseModelJson } from "./model-json.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
 import { authorExperienceCandidates } from "./production-experience-author.mjs";
 import {
+  authorStageMaxTokens,
+  describeAuthorResponseFailure,
+} from "./creative-authoring-budget.mjs";
+import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
   openRouterChatCompletion,
@@ -334,14 +338,7 @@ async function requestStage(request) {
                 type: "json_schema",
                 json_schema: authorStageSchema,
               },
-              max_tokens:
-                request.stage === "experience" || request.stage === "styles"
-                  ? request.stage === "experience"
-                    ? 9000
-                    : 8000
-                  : request.stage === "contract"
-                    ? 4000
-                    : 3500,
+              max_tokens: authorStageMaxTokens(request.stage),
               messages: [
                 {
                   role: "system",
@@ -389,10 +386,25 @@ async function requestStage(request) {
           });
         }
         const content = payload.choices?.[0]?.message?.content;
+        const finishReason = payload.choices?.[0]?.finish_reason;
+        if (["length", "max_tokens"].includes(finishReason)) {
+          usageRecord.parseStatus = "truncated";
+          throw new Error(
+            describeAuthorResponseFailure({
+              stage: request.stage,
+              routeId: request.route.id,
+              payload,
+            }),
+          );
+        }
         if (!content) {
           usageRecord.parseStatus = "missing-content";
           throw new Error(
-            `No ${request.stage} content returned for ${request.route.id} (${payload.choices?.[0]?.finish_reason || "unknown"}).`,
+            describeAuthorResponseFailure({
+              stage: request.stage,
+              routeId: request.route.id,
+              payload,
+            }),
           );
         }
         let parsed;
