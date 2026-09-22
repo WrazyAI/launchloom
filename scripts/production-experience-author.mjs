@@ -1036,7 +1036,9 @@ export async function authorExperienceCandidates({
         result.reason instanceof Error
           ? result.reason.message
           : String(result.reason),
-      diagnostic: result.reason?.diagnostic || null,
+      ...(result.reason?.diagnostic
+        ? { diagnostic: result.reason.diagnostic }
+        : {}),
     });
   }
   if (!candidates.length) {
