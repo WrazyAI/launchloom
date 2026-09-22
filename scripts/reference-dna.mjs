@@ -54,25 +54,22 @@ export function normalizeSectionSequence(value, familyId) {
     ? value.map((item) => clean(item, 160)).filter(Boolean)
     : [];
   if (!observed.length) return defaults;
-  const normalized = [];
-  for (const item of observed) {
-    const direct = item
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/gu, "-")
-      .replace(/^-|-$/gu, "");
-    const directMatch = defaults.find(
-      (candidate) => direct === candidate || direct.includes(candidate),
-    );
-    const mapped = directMatch || defaults.find(
-      (candidate) => sectionIdPatterns[candidate]?.test(item),
-    );
-    if (mapped && !normalized.includes(mapped)) normalized.push(mapped);
-  }
-  // If the analyzer used prose that cannot be mapped confidently, retain the
-  // family's reviewed rhythm instead of producing an unverifiable contract.
-  return normalized.length >= Math.min(3, defaults.length)
-    ? normalized
-    : defaults;
+  if (observed.every(isStableSectionId))
+    return [
+      ...new Set(
+        observed.map((item) =>
+          item
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/gu, "-")
+            .replace(/^-|-$/gu, ""),
+        ),
+      ),
+    ];
+  // Analyzer prose is descriptive evidence, not a machine section contract.
+  // Preserve the reviewed family rhythm in sectionSequence and keep prose in
+  // sectionVisualRequirements via normalizeReferenceDnaContract.
+  if (defaults.length) return defaults;
+  return observed.map((item, index) => `section-${String(index + 1).padStart(2, "0")}`);
 }
 
 function isStableSectionId(value) {
