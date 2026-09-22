@@ -357,7 +357,7 @@ export function validateReferenceContractCompliance({
   for (const pattern of referenceDna.prohibitedPatterns)
     if (hasProhibitedPattern(`${experienceSource}\n${renderedDom}`, pattern))
       findings.push(finding("prohibited-pattern", "critical", `Prohibited pattern detected: ${pattern}.`));
-  for (const match of stylesSource.matchAll(/--([a-z][\w-]*)\s*:/giu))
+  for (const match of stylesSource.matchAll(/(?:^|[;{])\s*--([a-z][\w-]*)\s*:/gimu))
     if (!match[1].startsWith("ll-creative-"))
       findings.push(finding("css-token-collision", "critical", `Candidate CSS variable --${match[1]} is not isolated.`));
   const contentPaths = [...outputContentPaths(experienceSource)];

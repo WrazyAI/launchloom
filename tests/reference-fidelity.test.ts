@@ -55,6 +55,18 @@ export function Experience({ content }) {
     expect(report.hardFindings).toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
   });
 
+  it("does not treat BEM pseudo selectors as CSS variable collisions", () => {
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: `${validStyles} .collage-plane--cloud::after { content: ''; }`,
+      motionSource: validMotion,
+    });
+
+    expect(report.pass).toBe(true);
+    expect(report.findings).not.toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
+  });
+
   it("ignores prohibited words outside relevant attribute values", () => {
     const report = validateReferenceCandidate({
       referenceDna: { ...dna, prohibitedPatterns: [...dna.prohibitedPatterns, "cards", "grid"] },

@@ -169,14 +169,17 @@ describe("production experience author", () => {
 
   it("namespaces candidate-owned CSS variables without hiding host tokens", () => {
     const css = namespaceCreativeCss(
-      ":root { --ink: #f5f1e9; --accent: var(--ink); } .hero { color: var(--ink); background: var(--brand); }",
+      ":root { --ink: #f5f1e9; --accent: var(--ink); } @property --cloud { syntax: '<color>'; } .collage-plane--ink::after { color: var(--ink); } .hero { background: var(--brand); }",
     );
 
     expect(css).toContain("--ll-creative-ink: #f5f1e9");
     expect(css).toContain("--ll-creative-accent: var(--ll-creative-ink)");
     expect(css).toContain("color: var(--ll-creative-ink)");
     expect(css).toContain("background: var(--brand)");
-    expect(css).not.toContain("--ink:");
+    expect(css).toContain("@property --ll-creative-cloud");
+    expect(css).toContain(".collage-plane--ink::after");
+    expect(css).not.toContain(".collage-plane--ll-creative-ink");
+    expect(css).not.toMatch(/(?:^|[;{])\s*--ink\s*:/u);
   });
 
   it("authors three sealed and structurally independent candidate bundles", async () => {

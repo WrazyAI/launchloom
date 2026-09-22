@@ -581,16 +581,20 @@ function validateStyles(source, route) {
  */
 export function namespaceCreativeCss(source) {
   const declared = new Set(
-    [...source.matchAll(/(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu)].map(
-      (match) => match[1],
-    ),
+    [
+      ...source.matchAll(/(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu),
+      ...source.matchAll(/@property\s+(--[A-Za-z][\w-]*)\b/gu),
+    ].map((match) => match[1]),
   );
   if (!declared.size) return source;
-  return source.replace(/--[A-Za-z][\w-]*/gu, (token) =>
+  const rename = (token) =>
     declared.has(token) && !token.startsWith("--ll-creative-")
       ? `--ll-creative-${token.slice(2)}`
-      : token,
-  );
+      : token;
+  return source
+    .replace(/(@property\s+)(--[A-Za-z][\w-]*)\b/gu, (_, prefix, token) => `${prefix}${rename(token)}`)
+    .replace(/((?:^|[;{])\s*)(--[A-Za-z][\w-]*)(?=\s*:)/gmu, (_, prefix, token) => `${prefix}${rename(token)}`)
+    .replace(/(var\(\s*)(--[A-Za-z][\w-]*)(?=[\s,)])/gu, (_, prefix, token) => `${prefix}${rename(token)}`);
 }
 
 function validateMotion(source, route) {
