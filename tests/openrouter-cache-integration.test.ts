@@ -86,6 +86,30 @@ describe("OpenRouter cache integration", () => {
     expect(source).not.toContain("screenshotPath: item.screenshotPath");
   });
 
+  it("freezes adaptive reasoning instead of downgrading effort inside a session", () => {
+    const author = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    const repair = fs.readFileSync(
+      "scripts/creative-repair-loop.mjs",
+      "utf8",
+    );
+    expect(author).toContain(
+      "const requestedEfforts = creativeSession",
+    );
+    expect(author).toContain("? [reasoningEffort]");
+    expect(author).toContain("creativeSession?.sessionId");
+    expect(author).toContain(
+      'creativeSession?.reasoningPolicyVersion || "static-reasoning"',
+    );
+    expect(repair).toContain("creativeSession?.reasoningEffort");
+    expect(repair).toContain("creativeSession?.sessionId");
+    expect(repair).toContain(
+      'creativeSession?.reasoningPolicyVersion || "static-reasoning"',
+    );
+  });
+
   it("keeps explicit GPT-5.6 cache breakpoints on repeated large prefixes", () => {
     for (const file of [
       "scripts/author-production-experiences.mjs",
