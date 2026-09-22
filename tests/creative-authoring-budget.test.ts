@@ -5,11 +5,11 @@ import {
 } from "../scripts/creative-authoring-budget.mjs";
 
 describe("creative author output budget", () => {
-  it("reserves a larger completion budget for JSX without changing other stages", () => {
+  it("reserves completion budget for authored source and motion stages", () => {
     expect(authorStageMaxTokens("experience")).toBe(18_000);
-    expect(authorStageMaxTokens("styles")).toBe(8_000);
+    expect(authorStageMaxTokens("styles")).toBe(18_000);
     expect(authorStageMaxTokens("contract")).toBe(4_000);
-    expect(authorStageMaxTokens("motion")).toBe(3_500);
+    expect(authorStageMaxTokens("motion")).toBe(12_000);
   });
 
   it("reports the reasoning and completion usage when a provider truncates a response", () => {

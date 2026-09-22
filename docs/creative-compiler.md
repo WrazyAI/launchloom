@@ -105,13 +105,13 @@ reasoning-preflight artifact may still use the bounded static-effort recovery
 ladder for compatibility; the production workflow does not.
 
 Authoring uses stage-specific completion budgets: up to 18,000 tokens for the
-full Experience JSX, 8,000 for styles, 4,000 for the design contract, and 3,500
-for motion. OpenRouter counts reasoning tokens against `max_tokens` even when
-reasoning is excluded from the returned message, so the JSX budget reserves
-room for both reasoning and authored source. Truncated or empty responses log
-their finish reason, completion-token count, reasoning-token count, and returned
-content length; truncation still fails closed and never promotes a legacy
-renderer.
+full Experience JSX and styles, 12,000 for motion, and 4,000 for the design
+contract. OpenRouter counts reasoning tokens against `max_tokens` even when
+reasoning is excluded from the returned message, so the JSX, styles, and motion
+budgets reserve room for both reasoning and authored source. Truncated or empty
+responses log their finish reason, completion-token count, reasoning-token
+count, and returned content length; truncation still fails closed and never
+promotes a legacy renderer.
 
 ## Shared runtime contract
 

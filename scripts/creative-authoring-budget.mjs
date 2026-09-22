@@ -1,8 +1,8 @@
 const AUTHOR_STAGE_MAX_TOKENS = Object.freeze({
   contract: 4_000,
   experience: 18_000,
-  styles: 8_000,
-  motion: 3_500,
+  styles: 18_000,
+  motion: 12_000,
 });
 
 export function authorStageMaxTokens(stage) {
