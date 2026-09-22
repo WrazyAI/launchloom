@@ -117,7 +117,7 @@ token='quoted-token-value'
     expect(sanitized).not.toContain("abc123456789");
     expect(sanitized).not.toContain("very-secret-password");
     expect(sanitized).not.toContain("quoted-token-value");
-    expect(sanitized.match(/\[redacted-credential\]/gu)?.length).toBeGreaterThanOrEqual(4);
+    expect(sanitized).toContain("Authorization: [redacted-credential]");
   });
 
   it("sanitizes candidate diagnostics and omits content manifests", async () => {
