@@ -15,6 +15,7 @@ import {
   readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
+import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -38,7 +39,14 @@ const model =
   args.model ||
   process.env.CREATIVE_EXPERIENCE_MODEL ||
   "openai/gpt-5.6-luna";
+const sessionPath = args.session ? path.resolve(args.session) : "";
+const creativeSession = sessionPath
+  ? validateCreativeSessionConfig(
+      JSON.parse(await fs.readFile(sessionPath, "utf8")),
+    )
+  : null;
 const reasoningEffort =
+  creativeSession?.reasoningEffort ||
   process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
   (model === "openai/gpt-5.6-luna" ? "xhigh" : "low");
 const failureMode = args["failure-mode"] || "throw";
@@ -284,25 +292,32 @@ async function requestStage(request) {
     // Validation repairs should prioritize a complete structured response over
     // maximum hidden reasoning. A failed max-effort repair must not consume the
     // whole configured authoring budget before trying the proven lower lane.
-    const requestedEfforts = request.validationError
-      ? efforts.slice(1).length
-        ? efforts.slice(1)
-        : efforts
-      : efforts;
+    const requestedEfforts = creativeSession
+      ? [reasoningEffort]
+      : request.validationError
+        ? efforts.slice(1).length
+          ? efforts.slice(1)
+          : efforts
+        : efforts;
     let lastError;
     for (const effort of requestedEfforts) {
       try {
         const systemPrompt = authorSystemPrompt(request);
-        const sessionId = openRouterSessionId(
-          "creative-author",
-          model,
-          request.contentShape?.brand?.name,
-          request.contentShape?.brand?.phone,
-          request.contentShape?.brand?.email,
-        );
+        const sessionId =
+          creativeSession?.sessionId ||
+          openRouterSessionId(
+            "creative-author",
+            model,
+            effort,
+            request.contentShape?.brand?.name,
+            request.contentShape?.brand?.phone,
+            request.contentShape?.brand?.email,
+          );
         const promptCacheKey = openRouterPromptCacheKey(
           "creative-author-system",
           model,
+          effort,
+          creativeSession?.reasoningPolicyVersion || "static-reasoning",
           systemPrompt,
         );
         const response = await openRouterChatCompletion({
@@ -455,6 +470,11 @@ async function writeResult(result) {
     path.join(staging, "content-manifest.json"),
     `${JSON.stringify(result.contentManifest, null, 2)}\n`,
   );
+  if (creativeSession)
+    await fs.writeFile(
+      path.join(staging, "reasoning-preflight.json"),
+      `${JSON.stringify(creativeSession, null, 2)}\n`,
+    );
   for (const candidate of result.candidates) {
     const directory = path.join(staging, candidate.directory);
     await fs.mkdir(directory, { recursive: true });
@@ -475,6 +495,8 @@ async function writeResult(result) {
         contentManifestDigest: result.contentManifest.digest,
         candidates: result.candidates.map((candidate) => candidate.metadata),
         failures: result.failures || [],
+        creativeSession,
+        reasoningEffort,
         usage,
         cacheSummary: aggregateCacheUsage(usage),
       },
@@ -496,6 +518,8 @@ async function writeFailure(error) {
         version: 1,
         status: "failed",
         model,
+        creativeSession,
+        reasoningEffort,
         error: error instanceof Error ? error.message : String(error),
         usage,
         cacheSummary: aggregateCacheUsage(usage),
@@ -516,10 +540,18 @@ try {
     inspirationPack,
     generate: requestStage,
     model,
+    creativeSession,
   });
   await writeResult(result);
   console.log(`production_experience_candidates=${outputPath}`);
   console.log(`production_experience_model=${model}`);
+  console.log(`production_experience_reasoning_effort=${reasoningEffort}`);
+  if (creativeSession) {
+    console.log(`production_experience_reasoning_mode=${creativeSession.mode}`);
+    console.log(
+      `production_experience_reasoning_recommended=${creativeSession.recommendedEffort}`,
+    );
+  }
   console.log(`production_experience_count=${result.candidates.length}`);
   const cacheSummary = aggregateCacheUsage(usage);
   console.log(
