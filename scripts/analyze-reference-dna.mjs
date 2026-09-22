@@ -8,7 +8,7 @@ import {
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
 
-const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-5.6-luna";
+const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-6-luna";
 
 const schema = {
   name: "launchloom_reference_dna_analysis",

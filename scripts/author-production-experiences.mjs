@@ -35,21 +35,20 @@ const inspirationPath = path.resolve(
 const outputPath = path.resolve(
   args.out || ".launchloom/generated-experiences",
 );
-const model =
-  args.model ||
-  process.env.CREATIVE_EXPERIENCE_MODEL ||
-  "openai/gpt-5.6-luna";
+const requestedModel = args.model || process.env.CREATIVE_EXPERIENCE_MODEL;
 const sessionPath = args.session ? path.resolve(args.session) : "";
-const creativeSession = sessionPath
-  ? validateCreativeSessionConfig(
-      JSON.parse(await fs.readFile(sessionPath, "utf8")),
-      { creativeModel: model },
-    )
+const sessionConfig = sessionPath
+  ? JSON.parse(await fs.readFile(sessionPath, "utf8"))
+  : null;
+const model =
+  requestedModel || sessionConfig?.creativeModel || "openai/gpt-6-luna";
+const creativeSession = sessionConfig
+  ? validateCreativeSessionConfig(sessionConfig, { creativeModel: model })
   : null;
 const reasoningEffort =
   creativeSession?.reasoningEffort ||
   process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
-  (model === "openai/gpt-5.6-luna" ? "xhigh" : "low");
+  (model === "openai/gpt-6-luna" ? "xhigh" : "low");
 const failureMode = args["failure-mode"] || "throw";
 const usage = [];
 const authorDeadline =

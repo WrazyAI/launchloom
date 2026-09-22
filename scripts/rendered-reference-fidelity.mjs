@@ -14,7 +14,7 @@ import {
 import { promptImagePart } from "./prompt-evidence.mjs";
 
 export const RENDERED_REFERENCE_MODEL =
-  process.env.CREATIVE_REFERENCE_JUDGE_MODEL || "openai/gpt-5.6-luna";
+  process.env.CREATIVE_REFERENCE_JUDGE_MODEL || "openai/gpt-6-luna";
 
 export const RENDERED_REFERENCE_THRESHOLDS = Object.freeze({
   overall: 82,

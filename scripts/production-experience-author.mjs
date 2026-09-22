@@ -776,7 +776,7 @@ export async function authorExperienceCandidates({
   site,
   inspirationPack,
   generate,
-  model = "openai/gpt-5.6-luna",
+  model = "openai/gpt-6-luna",
   creativeSession = null,
 }) {
   if (typeof generate !== "function")

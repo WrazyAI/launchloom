@@ -521,7 +521,7 @@ export async function runRenderedCreativeRepair({
   candidatesDir = ".launchloom/generated-experiences",
   outDir = ".launchloom/creative-repair",
   mode = "preview",
-  model = process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna",
+  model,
   creativeSession = null,
   maxCycles = 2,
   requireDiversity = true,
@@ -533,6 +533,11 @@ export async function runRenderedCreativeRepair({
   repairCandidateImpl = defaultRepairCandidate,
   promoteImpl = promoteCreativeCandidate,
 } = {}) {
+  const resolvedModel =
+    model ||
+    creativeSession?.creativeModel ||
+    process.env.CREATIVE_EXPERIENCE_MODEL ||
+    "openai/gpt-6-luna";
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
   const evidenceRoot = path.resolve(root, outDir);
@@ -543,7 +548,7 @@ export async function runRenderedCreativeRepair({
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession
     ? validateCreativeSessionConfig(creativeSession, {
-        creativeModel: model,
+        creativeModel: resolvedModel,
       })
     : null;
   await validateCandidateReasoningBindings(
@@ -594,7 +599,7 @@ export async function runRenderedCreativeRepair({
       candidateId,
       findings,
       screenshots: availableScreenshots,
-      model,
+      model: resolvedModel,
       creativeSession: frozenCreativeSession,
       cycle: nextCycle,
       maxCycles: cycleLimit,
@@ -837,7 +842,7 @@ export async function runRenderedCreativeRepair({
       version: 1,
       status: "promotion-pending",
       mode: requestedMode,
-      model,
+      model: resolvedModel,
       creativeSession: frozenCreativeSession
         ? {
             sessionId: frozenCreativeSession.sessionId,
@@ -959,8 +964,9 @@ async function main() {
     mode: args.mode || "preview",
     model:
       args.model ||
+      creativeSession?.creativeModel ||
       process.env.CREATIVE_EXPERIENCE_MODEL ||
-      "openai/gpt-5.6-luna",
+      "openai/gpt-6-luna",
     creativeSession,
     maxCycles: args["max-cycles"] || 2,
     requireDiversity: args["require-diversity"] !== "false",

@@ -81,7 +81,7 @@ describe("creative repair loop", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await requestRepair({
-      model: "openai/gpt-5.6-luna",
+      model: "openai/gpt-6-luna",
       referenceDna: {
         familyId: "editorial",
         referenceName: "Editorial reference",

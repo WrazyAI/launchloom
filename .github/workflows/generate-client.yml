@@ -30,8 +30,9 @@ jobs:
       FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '6' }}
       MODEL_AUTHORED_EXPERIENCE_MODEL: ${{ vars.MODEL_AUTHORED_EXPERIENCE_MODEL || 'z-ai/glm-5.3-flash' }}
       # Keep truth/configuration generation separate from visual authorship.
-      # The creative lane owns the rendered composition and defaults to Luna.
-      CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-5.6-luna' }}
+      # New creative work uses GPT-6 Luna. Translate an old organization or
+      # repository override so it cannot silently keep new intakes on 5.6.
+      CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL == 'openai/gpt-5.6-luna' && 'openai/gpt-6-luna' || vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-6-luna' }}
       CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh' }}
       # Authored rendering is mandatory for every new intake. The only mode
       # distinction is whether the passing candidate is previewed or promoted;
@@ -74,7 +75,7 @@ jobs:
           node scripts/analyze-reference-dna.mjs --inspiration /tmp/inspiration-pack.json --out /tmp/inspiration-pack.json
           jq -e '.referenceDnaAnalyzed == true and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null))' /tmp/inspiration-pack.json >/dev/null || { echo "Reference DNA was not derived from screenshot evidence"; exit 1; }
           rm -f /tmp/reasoning-preflight.json
-          if [ "$CREATIVE_EXPERIENCE_MODEL" = "openai/gpt-5.6-luna" ]; then
+          if [ "$CREATIVE_EXPERIENCE_MODEL" = "openai/gpt-6-luna" ]; then
             node scripts/run-reasoning-preflight.mjs \
               --inspiration /tmp/inspiration-pack.json \
               --out /tmp/reasoning-preflight.json \
@@ -82,7 +83,7 @@ jobs:
               --model "$REASONING_PREFLIGHT_MODEL" \
               --creative-model "$CREATIVE_EXPERIENCE_MODEL" \
               --session-key "$LAUNCHLOOM_INTAKE_ID"
-            jq -e '(.creativeModel == "openai/gpt-5.6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
+            jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
             echo "reasoning_mode=$(jq -r '.mode' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
             echo "reasoning_effort=$(jq -r '.reasoningEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
             echo "reasoning_recommended=$(jq -r '.recommendedEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"

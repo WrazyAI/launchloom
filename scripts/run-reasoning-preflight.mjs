@@ -23,7 +23,7 @@ export async function runReasoningPreflight({
   mode = process.env.REASONING_PREFLIGHT_MODE || DEFAULT_PREFLIGHT_MODE,
   model = process.env.REASONING_PREFLIGHT_MODEL,
   creativeModel =
-    process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna",
+    process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-6-luna",
   sessionKey = process.env.LAUNCHLOOM_INTAKE_ID || "",
   apiKey = process.env.TYPESAFE_API_KEY,
   fetchImpl = fetch,
@@ -62,7 +62,7 @@ async function main() {
     creativeModel:
       args["creative-model"] ||
       process.env.CREATIVE_EXPERIENCE_MODEL ||
-      "openai/gpt-5.6-luna",
+      "openai/gpt-6-luna",
     sessionKey:
       args["session-key"] ||
       process.env.LAUNCHLOOM_INTAKE_ID ||

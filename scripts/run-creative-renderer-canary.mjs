@@ -39,7 +39,7 @@ const route = {
 const manifest = buildCandidateManifest({
   candidate: { candidateId: "kokoro-canary" },
   route,
-  model: "openai/gpt-5.6-luna",
+  model: "openai/gpt-6-luna",
   contentManifestDigest: "kokoro-canary-sealed-content",
   assets: ["content.hero.image", "content.hero.secondaryImage", "content.hero.tertiaryImage"],
 });

@@ -52,7 +52,7 @@ describe("OpenRouter cache integration", () => {
     );
     const repair = fs.readFileSync("scripts/creative-repair-loop.mjs", "utf8");
     expect(author).toContain(
-      '(model === "openai/gpt-5.6-luna" ? "xhigh" : "low")',
+      '(model === "openai/gpt-6-luna" ? "xhigh" : "low")',
     );
     expect(repair).toContain("creativeSession?.reasoningEffort");
     expect(repair).toContain(
