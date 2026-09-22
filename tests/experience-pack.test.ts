@@ -100,6 +100,36 @@ describe("experience-pack compiler", () => {
     );
   });
 
+  it("runs one reasoning preflight before Luna and threads the frozen session through repair", () => {
+    const workflow = readFileSync(
+      ".github/workflows/generate-client.yml",
+      "utf8",
+    );
+    const preflightIndex = workflow.indexOf(
+      "scripts/run-reasoning-preflight.mjs",
+    );
+    const authorIndex = workflow.indexOf("npm run author:experiences");
+    const repairIndex = workflow.indexOf(
+      "scripts/run-rendered-creative-repair.mjs",
+    );
+    expect(preflightIndex).toBeGreaterThan(-1);
+    expect(authorIndex).toBeGreaterThan(preflightIndex);
+    expect(repairIndex).toBeGreaterThan(authorIndex);
+    expect(workflow).toContain(
+      "vars.REASONING_PREFLIGHT_MODE || 'shadow'",
+    );
+    expect(workflow).toContain(
+      "vars.REASONING_PREFLIGHT_MODEL || 'jev-1.13.0'",
+    );
+    expect(workflow).toContain("--session /tmp/reasoning-preflight.json");
+    expect(workflow).toContain(
+      '--session "$PWD/.launchloom/reasoning-preflight.json"',
+    );
+    expect(workflow).toContain(
+      "cp /tmp/reasoning-preflight.json .launchloom/reasoning-preflight.json",
+    );
+  });
+
   it("runs a three-viewport internal bakeoff and preserves a safe fallback", () => {
     const bakeoff = readFileSync("scripts/run-experience-bakeoff.mjs", "utf8");
     expect(bakeoff).toContain('width: 1536, height: 864');
