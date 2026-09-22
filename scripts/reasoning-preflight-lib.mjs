@@ -196,12 +196,16 @@ export function buildReasoningPreflightState(inspirationPack) {
 }
 
 function numeric(value, label, minimum, maximum) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < minimum || parsed > maximum)
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    value < minimum ||
+    value > maximum
+  )
     throw new Error(
       `TypeSafe returned invalid ${label}: ${JSON.stringify(value)}.`,
     );
-  return parsed;
+  return value;
 }
 
 function normalizedProbabilities(value, questionId) {
