@@ -168,6 +168,53 @@ describe("rendered creative repair orchestration", () => {
     ).toBe("passed");
   });
 
+  it("threads one frozen creative session through repairs and summary evidence", async () => {
+    const { root, candidates } = await fixture();
+    let gateCalls = 0;
+    const seenSessions: any[] = [];
+    const creativeSession = {
+      version: 1,
+      mode: "enforce",
+      reasoningPolicyVersion: "adaptive-reasoning-v1",
+      judgmentSchemaVersion: "design-complexity-v1",
+      selectorModelVersion: "jev-1.13.0",
+      sessionId: "launchloom:creative:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      reasoningEffort: "max",
+      recommendedEffort: "max",
+    };
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      creativeSession,
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(options, report()),
+      runVisualGateImpl: async (options: any) => {
+        gateCalls += 1;
+        return visualGate(options, gateCalls === 1 ? "revise" : "pass");
+      },
+      repairCandidateImpl: async ({ creativeSession: seen }: any) => {
+        seenSessions.push(seen);
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(seenSessions).toEqual([creativeSession]);
+    const summary = JSON.parse(
+      await fs.readFile(path.join(root, "evidence", "summary.json"), "utf8"),
+    );
+    expect(summary.creativeSession).toMatchObject({
+      sessionId: creativeSession.sessionId,
+      reasoningEffort: "max",
+      recommendedEffort: "max",
+      mode: "enforce",
+      reasoningPolicyVersion: "adaptive-reasoning-v1",
+      selectorModelVersion: "jev-1.13.0",
+    });
+  });
+
   it("records a failed promotion instead of claiming the run passed", async () => {
     const { root, candidates } = await fixture();
 
