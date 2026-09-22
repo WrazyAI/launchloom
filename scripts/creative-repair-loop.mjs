@@ -12,6 +12,7 @@ import {
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
+import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
 const REPAIR_SCHEMA = {
   name: "launchloom_creative_repair",
@@ -484,13 +485,19 @@ async function main() {
     try { await fs.access(screenshot); screenshots.push(screenshot); } catch { /* a failed candidate may have no render evidence */ }
   }
   const model = args.model || process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna";
+  const creativeSession = args.session
+    ? validateCreativeSessionConfig(
+        JSON.parse(await fs.readFile(path.resolve(args.session), "utf8")),
+      )
+    : null;
   const result = await runCreativeRepairLoop({
     files,
     referenceDna: metadata.creativeManifest?.referenceDna || metadata.referenceDna,
     findings,
     screenshots,
     maxCycles: Math.min(2, Math.max(0, Number(args.maxCycles || 2))),
-    generate: (request) => requestRepair({ model, ...request }),
+    generate: (request) =>
+      requestRepair({ model, creativeSession, ...request }),
     evaluate: async (candidateFiles) => validateReferenceCandidate({ referenceDna: metadata.creativeManifest?.referenceDna || metadata.referenceDna, experienceSource: candidateFiles.experience, stylesSource: candidateFiles.styles, motionSource: candidateFiles.motion }),
   });
   if (result.cyclesUsed) {
@@ -499,7 +506,28 @@ async function main() {
     await fs.writeFile(path.join(candidateDir, "motion.js"), `${result.files.motion.trim()}\n`);
   }
   const out = path.resolve(args.out || path.join(candidateDir, "repair-report.json"));
-  await fs.writeFile(out, `${JSON.stringify({ version: 1, candidateId: metadata.candidateId, model, ...result }, null, 2)}\n`);
+  await fs.writeFile(
+    out,
+    `${JSON.stringify(
+      {
+        version: 1,
+        candidateId: metadata.candidateId,
+        model,
+        creativeSession: creativeSession
+          ? {
+              sessionId: creativeSession.sessionId,
+              reasoningEffort: creativeSession.reasoningEffort,
+              recommendedEffort: creativeSession.recommendedEffort,
+              mode: creativeSession.mode,
+              reasoningPolicyVersion: creativeSession.reasoningPolicyVersion,
+            }
+          : null,
+        ...result,
+      },
+      null,
+      2,
+    )}\n`,
+  );
   if (!result.pass) throw new Error(`Creative repair exhausted ${result.maxCycles} cycles for ${metadata.candidateId}.`);
   console.log(`creative_repair_pass=true candidate=${metadata.candidateId} cycles=${result.cyclesUsed}`);
 }
