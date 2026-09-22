@@ -252,6 +252,7 @@ try {
     candidatesDir: isolatedRoot,
     outDir: path.join(out, "creative-repair"),
     mode: "preview",
+    model: "openai/gpt-5.6-luna",
     creativeSession,
     requireDiversity: false,
     visualGateScript: path.join(root, "scripts/visual-quality-gate.mjs"),
