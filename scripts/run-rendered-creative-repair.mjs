@@ -6,6 +6,7 @@ import { requestRepair } from "./creative-repair-loop.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import { validateProductionCandidateFiles } from "./production-experience-author.mjs";
 import { runHumanRevisionGate } from "./human-revision-gate.mjs";
+import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
 const REPAIR_FILES = ["Experience.jsx", "styles.css", "motion.js"];
@@ -343,6 +344,7 @@ async function defaultRepairCandidate({
   findings,
   screenshots,
   model,
+  creativeSession = null,
 } = {}) {
   const { metadata, contentManifest, content, files } =
     await readCandidate(candidateDir);
@@ -358,6 +360,7 @@ async function defaultRepairCandidate({
       files,
       screenshots,
       contentManifest,
+      creativeSession,
     }),
   );
   const validated = validateProductionCandidateFiles({
@@ -463,6 +466,7 @@ async function persistRepairEvidence({
  *   outDir?: string,
  *   mode?: string,
  *   model?: string,
+ *   creativeSession?: Record<string, any> | null,
  *   maxCycles?: number,
  *   requireDiversity?: boolean,
  *   requestedFindings?: unknown[],
@@ -480,6 +484,7 @@ export async function runRenderedCreativeRepair({
   outDir = ".launchloom/creative-repair",
   mode = "preview",
   model = process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna",
+  creativeSession = null,
   maxCycles = 2,
   requireDiversity = true,
   requestedFindings = [],
@@ -543,6 +548,7 @@ export async function runRenderedCreativeRepair({
       findings,
       screenshots: availableScreenshots,
       model,
+      creativeSession,
       cycle: nextCycle,
       maxCycles: cycleLimit,
     });
@@ -785,6 +791,16 @@ export async function runRenderedCreativeRepair({
       status: "promotion-pending",
       mode: requestedMode,
       model,
+      creativeSession: creativeSession
+        ? {
+            sessionId: creativeSession.sessionId,
+            reasoningEffort: creativeSession.reasoningEffort,
+            recommendedEffort: creativeSession.recommendedEffort,
+            mode: creativeSession.mode,
+            reasoningPolicyVersion: creativeSession.reasoningPolicyVersion,
+            selectorModelVersion: creativeSession.selectorModelVersion,
+          }
+        : null,
       selectedCandidateId: selectedId,
       promotionReady: Boolean(report.promotionReady),
       visualGatePass: true,
@@ -869,6 +885,12 @@ export async function runRenderedCreativeRepair({
 
 async function main() {
   const args = cliArgs(process.argv);
+  const sessionFile = String(args.session || "").trim();
+  const creativeSession = sessionFile
+    ? validateCreativeSessionConfig(
+        await readJson(path.resolve(sessionFile)),
+      )
+    : null;
   const feedbackFile = String(args["feedback-file"] || "").trim();
   const requestedFindings = feedbackFile
     ? [
@@ -890,6 +912,7 @@ async function main() {
       args.model ||
       process.env.CREATIVE_EXPERIENCE_MODEL ||
       "openai/gpt-5.6-luna",
+    creativeSession,
     maxCycles: args["max-cycles"] || 2,
     requireDiversity: args["require-diversity"] !== "false",
     requestedFindings,
@@ -901,6 +924,8 @@ async function main() {
       selectedCandidateId: result.selectedCandidateId,
       promotionReady: result.promotionReady,
       visualGatePass: result.visualGatePass,
+      reasoningEffort: creativeSession?.reasoningEffort || null,
+      reasoningMode: creativeSession?.mode || null,
       repairCycles: result.repairCycles,
       summary: path.resolve(
         args["site-dir"] || "templates/client-site",
