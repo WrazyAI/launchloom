@@ -348,13 +348,17 @@ async function validateCandidateReasoningBindings(
     const metadataPath = path.join(candidateRoot, entry.name, "metadata.json");
     const metadata = await readJson(metadataPath).catch(() => null);
     const reasoning = metadata?.reasoning || null;
-    if (!reasoning?.sessionId) {
+    if (!reasoning) {
       if (creativeSession)
         throw new Error(
           `Adaptive creative session ${creativeSession.sessionId} cannot be applied to candidate ${metadata?.candidateId || entry.name} because its authored reasoning binding is missing.`,
         );
       continue;
     }
+    if (!reasoning.sessionId)
+      throw new Error(
+        `Candidate ${metadata?.candidateId || entry.name} has incomplete adaptive reasoning metadata and cannot be repaired or promoted.`,
+      );
     if (!creativeSession)
       throw new Error(
         `Candidate ${metadata?.candidateId || entry.name} was authored with adaptive reasoning session ${reasoning.sessionId}, but no reasoning-preflight session was supplied.`,
