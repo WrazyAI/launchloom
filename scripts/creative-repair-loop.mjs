@@ -20,9 +20,18 @@ const REPAIR_SCHEMA = {
     additionalProperties: false,
     required: ["experience", "styles", "motion"],
     properties: {
-      experience: { type: "string" },
-      styles: { type: "string" },
-      motion: { type: "string" },
+      experience: {
+        type: "string",
+        description: "Complete replacement Experience.jsx, or empty string to keep it byte-for-byte unchanged.",
+      },
+      styles: {
+        type: "string",
+        description: "Complete replacement styles.css, or empty string to keep it byte-for-byte unchanged.",
+      },
+      motion: {
+        type: "string",
+        description: "Complete replacement motion.js, or empty string to keep it byte-for-byte unchanged.",
+      },
     },
   },
 };
@@ -60,7 +69,7 @@ function repairOutputDiagnostic(choice, payload) {
 
   if (finishReason === "length")
     return new Error(
-      `OpenRouter creative repair response was truncated (finish_reason=length, completion_tokens=${completionTokens}, max_tokens=24000).`,
+      `OpenRouter creative repair response was truncated (finish_reason=length, content_chars=${contentChars}, completion_tokens=${completionTokens}).`,
     );
   if (message.refusal)
     return new Error(
@@ -71,15 +80,27 @@ function repairOutputDiagnostic(choice, payload) {
   );
 }
 
-function completeRepairBundle(value) {
-  return Boolean(
+function mergeRepairBundle(value, currentFiles) {
+  const isValid = Boolean(
     value &&
       typeof value === "object" &&
       !Array.isArray(value) &&
       ["experience", "styles", "motion"].every(
-        (key) => typeof value[key] === "string" && value[key].trim(),
+        (key) => typeof value[key] === "string",
       ),
   );
+  if (!isValid)
+    throw new Error("Creative repair JSON omitted one or more source fields.");
+
+  const merged = Object.fromEntries(
+    ["experience", "styles", "motion"].map((key) => [
+      key,
+      value[key].trim() ? value[key] : currentFiles[key],
+    ]),
+  );
+  if (!["experience", "styles", "motion"].some((key) => value[key].trim()))
+    throw new Error("Creative repair did not provide any changed source files.");
+  return merged;
 }
 
 function clean(value, limit = 900) {
@@ -463,7 +484,7 @@ ${files.styles}
 CURRENT MOTION.JS
 ${files.motion}
 
-Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
+Return only files that need to change. For every file that should remain unchanged, return an empty string so the pipeline preserves the original bytes. For changed files, return the complete replacement file, not a diff or ellipsis. Minimize output by changing as few files as possible. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
   });
   for (const screenshot of screenshots.slice(0, 3))
     content.push(await imagePart(screenshot));
@@ -492,7 +513,7 @@ Return complete files. Keep required reference signatures and safety/content con
           ...content,
           {
             type: "text",
-            text: "FORMAT RETRY: Your previous response was not valid JSON. Return only the complete JSON object with exactly these string fields: experience, styles, motion. Do not add prose, markdown fences, comments, or omit any file.",
+            text: "COMPACT RETRY: Your previous repair response hit its output limit or was not valid JSON. Return only the JSON object with exactly three string fields: experience, styles, motion. Return a complete replacement only for files that must change; return an empty string for each unchanged file. Do not repeat unchanged source, add prose, markdown fences, comments, or use ellipses. Preserve all required reference, SEO, safety, and host contracts.",
           },
         ]
       : content;
@@ -508,7 +529,7 @@ Return complete files. Keep required reference signatures and safety/content con
           exclude: true,
         },
         response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
-        max_tokens: 24_000,
+        max_completion_tokens: attempt ? 32_000 : 24_000,
         messages: [
           systemMessage,
           { role: "user", content: retryContent },
@@ -524,16 +545,23 @@ Return complete files. Keep required reference signatures and safety/content con
 
     const choice = payload.choices?.[0];
     if (!choice) throw repairOutputDiagnostic(undefined, payload);
-    if (choice.finish_reason === "length" || choice.message?.refusal)
+    if (choice.message?.refusal)
       throw repairOutputDiagnostic(choice, payload);
+
+    if (choice.finish_reason === "length") {
+      lastFormatError = repairOutputDiagnostic(choice, payload);
+      if (attempt === 0) {
+        console.log(
+          "creative_repair_json_retry attempt=1 reason=output-truncated",
+        );
+        continue;
+      }
+      throw lastFormatError;
+    }
 
     try {
       const result = parseModelJson(choice.message?.content || "");
-      if (!completeRepairBundle(result))
-        throw new Error(
-          "Creative repair JSON omitted one or more complete source files.",
-        );
-      return result;
+      return mergeRepairBundle(result, files);
     } catch (error) {
       lastFormatError = error;
       if (attempt === 0) {
@@ -544,7 +572,7 @@ Return complete files. Keep required reference signatures and safety/content con
       }
       const diagnostic = repairOutputDiagnostic(choice, payload);
       throw new Error(
-        `${diagnostic.message} A single bounded format retry also failed.`,
+        `${diagnostic.message} A single bounded compact retry also failed.`,
         { cause: lastFormatError },
       );
     }

@@ -47,30 +47,44 @@ describe("creative repair loop", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const retryBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
     const retryText = retryBody.messages[1].content.at(-1).text;
-    expect(retryText).toContain("previous response was not valid JSON");
-    expect(retryText).toContain("Return only the complete JSON object");
+    expect(retryText).toContain("COMPACT RETRY");
+    expect(retryText).toContain("return an empty string for each unchanged file");
   });
 
-  it("reports truncated repair output safely without logging client source", async () => {
+  it("retries truncated repair output compactly and preserves unchanged files", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-truncated-"));
     roots.push(root);
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
-    const fetchMock = vi.fn(async () => Response.json({
-      choices: [{ finish_reason: "length", message: { content: '{"experience":' } }],
-      usage: { completion_tokens: 24_000 },
-    }));
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({
+        choices: [{ finish_reason: "length", message: { content: '{"experience":' } }],
+        usage: { completion_tokens: 24_000 },
+      }))
+      .mockResolvedValueOnce(Response.json({
+        choices: [{ finish_reason: "stop", message: {
+          content: JSON.stringify({ experience: "repaired experience", styles: "", motion: "" }),
+        } }],
+        usage: { completion_tokens: 100 },
+      }));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(requestRepair({
       model: "test/model",
       referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
       findings: [],
-      files: { experience: "private client source", styles: "private styles", motion: "private motion" },
+      files: { experience: "old experience", styles: "unchanged private styles", motion: "unchanged private motion" },
       screenshots: [],
-    })).rejects.toThrow(/truncated.*finish_reason=length.*completion_tokens=24000/i);
+    })).resolves.toEqual({
+      experience: "repaired experience",
+      styles: "unchanged private styles",
+      motion: "unchanged private motion",
+    });
 
-    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const retryBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
+    expect(retryBody.max_completion_tokens).toBe(32_000);
+    expect(retryBody.messages[1].content.at(-1).text).toContain("COMPACT RETRY");
   });
 
   it("prefers an accessible absolute reference evidence path", async () => {
