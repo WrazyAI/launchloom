@@ -404,6 +404,18 @@ function usageSummary(usage) {
  * session. Shadow mode records the Jev recommendation while executing xhigh;
  * enforce mode executes the recommendation. Any selector failure recommends
  * max and enforce mode therefore fails safe to max.
+ *
+ * @param {{
+ *   inspirationPack?: Record<string, any>,
+ *   mode?: string,
+ *   model?: string,
+ *   creativeModel?: string,
+ *   sessionKey?: string,
+ *   apiKey?: string,
+ *   fetchImpl?: typeof fetch,
+ *   timeoutMs?: number,
+ * }} [options]
+ * @returns {Promise<Record<string, any>>}
  */
 export async function createReasoningPreflight({
   inspirationPack,
