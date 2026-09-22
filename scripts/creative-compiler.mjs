@@ -180,9 +180,9 @@ export function buildRouteContract(route, index = 0) {
       ...list(route.prohibitedPatterns),
     ]),
   ];
-  const referenceDna = route.referenceDna
-    ? validateReferenceDna(route.referenceDna, { requireEvidence: false })
-    : buildReferenceDna(route);
+  const referenceDna = validateReferenceDna(buildReferenceDna(route), {
+    requireEvidence: false,
+  });
   return Object.freeze({
     version: CREATIVE_CONTRACT_VERSION,
     id: clean(route.id, 80) || `route-${String(index + 1).padStart(2, "0")}`,
