@@ -12,8 +12,10 @@ cost policy.
 
 `REASONING_PREFLIGHT_MODE` supports:
 
-- `shadow` — default. Jev records the effort it would recommend, while the
-  frozen production session executes at `xhigh`.
+- `shadow` — default. A successful Jev preflight records the effort it would
+  recommend, while the frozen production session executes at `xhigh`. If the
+  selector itself fails, the session executes `max` as the quality-safe
+  fallback.
 - `enforce` — the frozen production session executes the Jev-backed
   deterministic routing result: `xhigh` or `max`.
 
@@ -80,8 +82,8 @@ returns invalid score distributions:
 
 - the recommendation becomes `max`;
 - `fallbackUsed` is recorded;
-- enforce mode executes `max`;
-- shadow mode still executes its fixed `xhigh` baseline.
+- both enforce and shadow mode execute `max` for that failed-selector session;
+- successful shadow sessions still execute the fixed `xhigh` baseline.
 
 There is no selector retry cascade.
 
