@@ -372,6 +372,9 @@ ${JSON.stringify(stableReferenceDna, null, 2)}
 ASSIGNED REFERENCE IMPLEMENTATION CONTRACT
 ${referenceAuthoringContract(referenceDna)}
 
+REFERENCE CAPTURE FRAME
+Reference screenshots may be full-page captures. Treat numeric ratios in Reference DNA as screenshot-canvas measurements unless explicitly labeled as CSS viewport units. Use the actual evidence to preserve the opening browser-viewport composition; do not turn a canvas ratio such as 0.5 into a shallow half-height hero automatically. Keep the assigned reference sequence intact, then retain the required sealed Services, process, proof, FAQs, location, and Contact surfaces after it.
+
 SEALED CONTENT TOKENS
 ${contentTokens.join("\n") || "(not supplied)"}
 

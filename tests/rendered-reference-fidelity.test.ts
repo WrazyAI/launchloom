@@ -354,6 +354,8 @@ describe("rendered reference fidelity", () => {
     expect(serialized).not.toContain("generatedAt");
     expect(serialized).not.toContain("updatedAt");
     expect(requests[0].prompt_cache_key).toMatch(/^ll:rendered-reference:/u);
+    expect(serialized).toContain("full-page captures");
+    expect(serialized).toContain("sealed Services");
   });
 
   it("blocks a generic candidate even when it is technically clean", async () => {

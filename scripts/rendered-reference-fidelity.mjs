@@ -276,7 +276,7 @@ export async function evaluateRenderedReferenceFidelity({
   const reusableReferencePrefix = `REFERENCE DNA
 ${JSON.stringify(stableReferenceDna, null, 2)}
 
-Compare the candidate to the reference as an independent implementation of the same design mechanics. Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding. A technically clean but visually generic page must not pass.`;
+Compare the candidate to the reference as an independent implementation of the same design mechanics. Reference screenshots are commonly full-page captures, so distinguish screenshot-canvas measurements from the opening browser viewport. Evaluate the opening hero, navigation, CTA, typography, image occupancy and crops, assigned section sequence, mobile recomposition, and visible interaction evidence first. Acceptance checks are binding. A technically clean but visually generic page must not pass. The production shell must also retain sealed Services, process, proof, FAQs, location, and Contact surfaces after the assigned reference-led sequence; do not mark those required downstream surfaces as a reference mismatch merely because the source reference ends earlier or presents them differently. Penalize downstream content only when it intrudes into or replaces the assigned opening composition, or contradicts an explicitly assigned service presentation pattern.`;
   const content = [
     { type: "text", text: reusableReferencePrefix },
     { type: "text", text: "Reference desktop:" },

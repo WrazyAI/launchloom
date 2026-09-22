@@ -22,8 +22,16 @@ async function readJson(file) {
 
 function validateAuthoredFiles(candidateId, files, candidateManifest, { preview = false } = {}) {
   const experience = files.experience;
-  for (const marker of ["data-hero", "data-early-conversion", 'id="services"', 'id="faqs"', 'id="contact"'])
+  for (const marker of ["data-hero", "data-early-conversion"])
     if (!experience.includes(marker)) throw new Error(`Creative candidate ${candidateId} is missing ${marker}.`);
+  for (const sectionId of ["services", "faqs", "contact"]) {
+    const sectionIdPattern = new RegExp(
+      "id\\s*=\\s*(?:\\{\\s*)?([\"'])" + sectionId + "\\1\\s*\\}?",
+      "u",
+    );
+    if (!sectionIdPattern.test(experience))
+      throw new Error(`Creative candidate ${candidateId} is missing id="${sectionId}".`);
+  }
   if (!/from\s+["']@launchloom\/runtime["']/u.test(experience) || !/\bLeadForm\b/u.test(experience))
     throw new Error(`Creative candidate ${candidateId} must use the shared LeadForm runtime.`);
   if (/https?:\/\/|\bfetch\s*\(|\b(?:XMLHttpRequest|WebSocket)\b|\beval\s*\(|<script\b|—/iu.test(experience))

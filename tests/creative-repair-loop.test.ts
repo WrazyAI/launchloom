@@ -151,6 +151,8 @@ describe("creative repair loop", () => {
     expect(prompt).toContain('data-mobile-recomposition="tall-sequential-stage"');
     expect(prompt).toContain('data-hero-geometry="centered-stage"');
     expect(prompt).toContain('data-motion-primitive="object-focus-transition"');
+    expect(prompt).toContain("full-page captures");
+    expect(prompt).toContain("required sealed Services");
   });
 
   it("authorizes requested composition changes only for explicit human review findings", async () => {

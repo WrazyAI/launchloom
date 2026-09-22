@@ -112,6 +112,11 @@ ${request.rules}
 
 Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. The candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, Reference DNA, mobile behavior, and prohibited patterns as binding design constraints, not suggestions.
 
+REFERENCE CAPTURE FRAME
+- Reference screenshots may be full-page captures rather than a browser viewport. Treat numeric ratios in Reference DNA as measurements of the reference image canvas unless the contract explicitly says otherwise; never turn a value such as 0.5 or 52% into a literal half-height CSS hero automatically.
+- Use the visible reference evidence to decide the opening viewport geometry. When the reference establishes a dominant first-screen hero, implement a deliberate viewport-filling stage with 100svh/100dvh or an equivalent header-aware height, then continue into the assigned sequence.
+- Preserve the assigned sequence as the opening visual narrative. After that sequence, append the required sealed Services, process, FAQs, proof, location, and Contact surfaces without letting generic downstream content replace or intrude into the reference-led opening.
+
 REFERENCE FIDELITY RULES
 - Do not average references or drift to a familiar LaunchLoom composition.
 - Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.

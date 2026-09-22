@@ -228,7 +228,8 @@ ${JSON.stringify({
 
 Rules:
 - infer geometry from the screenshots, not from familiar templates
-- describe ratios relative to viewport size
+- these inputs are usually full-page captures, so describe measurements relative to the screenshot canvas and label them as canvas-relative; do not silently express a full-page ratio as CSS vh
+- separately describe the opening browser-viewport intent when it is visually evident (for example, a hero that fills the first screen)
 - identify image occupancy, crop strategy, whitespace rhythm, overlap, section-height rhythm, and surface transitions
 - infer only motion that is visually supported by the screenshots or the route's documented motion opportunity
 - required signatures must be design mechanics that can be independently implemented

@@ -65,6 +65,23 @@ describe("creative candidate promotion", () => {
     expect(config.design.experience.familyId).toBe("editorial-monument");
   });
 
+  it("accepts JSX section markers written with single quotes", async () => {
+    const root = await makeFixture();
+    const file = path.join(root, "candidate-a/Experience.jsx");
+    const source = await fs.readFile(file, "utf8");
+    await fs.writeFile(
+      file,
+      source.replace(/id="(services|faqs|contact)"/gu, "id='$1'"),
+    );
+
+    const result = await promoteCreativeCandidate({
+      siteDir: root,
+      candidateDir: "candidate-a",
+    });
+
+    expect(result.candidateId).toBe("candidate-a");
+  });
+
   it("normalizes service slug fragments to real SEO routes before promotion", async () => {
     const root = await makeFixture();
     const file = path.join(root, "candidate-a/Experience.jsx");
