@@ -135,6 +135,15 @@ describe("experience-pack compiler", () => {
     expect(workflow).toContain(
       "cp /tmp/reasoning-preflight.json .launchloom/reasoning-preflight.json",
     );
+    expect(workflow).toContain(
+      'echo "reasoning_fallback=$FALLBACK_USED" >> "$GITHUB_OUTPUT"',
+    );
+    expect(workflow).toContain(
+      "::warning title=Reasoning preflight fallback::TypeSafe/Jev selector fallback is active",
+    );
+    expect(workflow).toContain(
+      "This creative session is frozen at max reasoning for quality safety.",
+    );
   });
 
   it("runs a three-viewport internal bakeoff and preserves a safe fallback", () => {
