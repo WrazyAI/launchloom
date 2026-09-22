@@ -147,15 +147,25 @@ location. A map is location context, not evidence of a storefront.
 Initial generation keeps truth/configuration separate from visual authorship.
 GLM owns verified business facts, SEO, FAQs, and visitor-facing copy. Luna
 authors independent creative candidates against one authoritative Reference DNA
-capsule per route. Each candidate renders inside the production Astro shell at
-desktop, compact desktop, and mobile viewports. The rendered-reference judge,
-technical checks, final visual-quality gate, and bounded repair loop decide
-whether a candidate may become the selected `creative-candidate` renderer.
-Failed creative authorship never falls back to stale legacy output.
+capsule per route. Reference DNA uses stable concise machine section IDs for
+source/DOM ordering and keeps screenshot-derived visual descriptions separately;
+natural-language section prose is never an implementation ID. Each candidate
+renders inside the production Astro shell at desktop, compact desktop, and
+mobile viewports. Deterministic source/DOM checks require exact section order and
+real signature structure/geometry, while screenshot reference fidelity,
+technical checks, final visual-quality QA, and rendered candidate distinctiveness
+remain hard promotion gates. A signature marker cannot substitute for the
+described composition. Failed creative authorship never falls back to stale
+legacy output.
 
 The selected candidate's `Experience.jsx`, `styles.css`, and `motion.js`
 are stored in the private client repository together with the candidate
-evidence/Reference DNA needed for later refinement. Older legacy or
+evidence/Reference DNA needed for later refinement. For new intake generation,
+that repository and its review PR are not created until an isolated creative
+preflight has already passed the required reference, diversity, visual QA, and
+fresh-build renderer checks. If preflight fails, no fallback/legacy review PR or
+client preview may be created; only sanitized private diagnostic evidence with a
+short retention window is allowed. Older legacy or
 experience-pack sites remain supported for their existing bounded revision
 path, but new creative sites must not be converted back to those renderers just
 to satisfy a revision.
