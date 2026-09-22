@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { sanitizeDiagnosticText } from "./diagnostic-sanitizer.mjs";
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -11,20 +12,6 @@ function argsFrom(argv) {
       [],
     ),
   );
-}
-
-function sanitizeText(value) {
-  return String(value || "")
-    .replace(
-      /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu,
-      "[redacted-email]",
-    )
-    .replace(/\+?\d[\d\s().-]{7,}\d/gu, "[redacted-phone]")
-    .replace(/https?:\/\/[^\s"']+/giu, "[redacted-url]")
-    .replace(
-      /(?:Bearer\s+|token\s*[:=]\s*["']?)[A-Za-z0-9._~-]{12,}/giu,
-      "[redacted-token]",
-    );
 }
 
 function sanitizeValue(value, key = "") {
@@ -39,7 +26,7 @@ function sanitizeValue(value, key = "") {
         sanitizeValue(child, childKey),
       ]),
     );
-  if (typeof value === "string") return sanitizeText(value);
+  if (typeof value === "string") return sanitizeDiagnosticText(value);
   return value;
 }
 
@@ -57,7 +44,7 @@ async function writeSanitizedText(source, destination) {
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.writeFile(
     destination,
-    sanitizeText(await fs.readFile(source, "utf8")) + "\n",
+    sanitizeDiagnosticText(await fs.readFile(source, "utf8")) + "\n",
   );
 }
 
