@@ -16,6 +16,39 @@ describe("reference fidelity validator", () => {
     expect(report.score).toBe(100);
   });
 
+  it("allows only the marked deterministic no-motion fallback to skip authored motion evidence", () => {
+    const fallbackMotion = `/* launchloom-deterministic-reduced-motion-fallback */
+export function mountExperienceMotion(runtime) {
+  const reduced = Boolean(runtime?.reducedMotion) ||
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (reduced) return () => {};
+  return () => {};
+}`;
+    const fallbackReport = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: validStyles,
+      motionSource: fallbackMotion,
+    });
+    expect(fallbackReport.visualFindings).not.toContainEqual(
+      expect.objectContaining({ code: "motion-primitive" }),
+    );
+
+    const authoredNoop = fallbackMotion.replace(
+      "/* launchloom-deterministic-reduced-motion-fallback */\n",
+      "",
+    );
+    const authoredReport = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: validStyles,
+      motionSource: authoredNoop,
+    });
+    expect(authoredReport.visualFindings).toContainEqual(
+      expect.objectContaining({ code: "motion-primitive" }),
+    );
+  });
+
   it("reports visual patterns but blocks only the token collision", () => {
     const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: `${validExperience} <div data-layout="generic-split-hero" />`, stylesSource: `:root { --ink: #fff; }`, motionSource: validMotion });
     expect(report.pass).toBe(false);
