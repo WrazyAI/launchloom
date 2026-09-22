@@ -1,5 +1,8 @@
 import crypto from "node:crypto";
-import { buildReferenceDna, validateReferenceDna } from "./reference-dna.mjs";
+import {
+  buildReferenceDna,
+  normalizeReferenceDnaContract,
+} from "./reference-dna.mjs";
 
 /**
  * The creative compiler is the narrow seam between verified site data and a
@@ -180,9 +183,9 @@ export function buildRouteContract(route, index = 0) {
       ...list(route.prohibitedPatterns),
     ]),
   ];
-  const referenceDna = validateReferenceDna(buildReferenceDna(route), {
-    requireEvidence: false,
-  });
+  const referenceDna = route.referenceDna
+    ? normalizeReferenceDnaContract(route.referenceDna)
+    : buildReferenceDna(route);
   return Object.freeze({
     version: CREATIVE_CONTRACT_VERSION,
     id: clean(route.id, 80) || `route-${String(index + 1).padStart(2, "0")}`,
