@@ -211,12 +211,16 @@ function normalizedProbabilities(value, questionId) {
     );
   const probabilities = {};
   for (let level = 0; level < 4; level += 1) {
-    probabilities[String(level)] = numeric(
-      value[String(level)] ?? value[level],
-      `${questionId}.probabilities.${level}`,
-      0,
-      1,
-    );
+    const raw = value[String(level)] ?? value[level];
+    probabilities[String(level)] =
+      raw === undefined
+        ? 0
+        : numeric(
+            raw,
+            `${questionId}.probabilities.${level}`,
+            0,
+            1,
+          );
   }
   const total = Object.values(probabilities).reduce(
     (sum, probability) => sum + probability,
