@@ -83,14 +83,26 @@ Authoring failures stop before rendering and deployment with the provider
 error attached to the run. The workflow never turns an empty candidate set into
 a legacy preview.
 
-The model is independently configurable with `CREATIVE_EXPERIENCE_MODEL` and
-`CREATIVE_EXPERIENCE_REASONING_EFFORT`. The truth/configuration lane remains on
-GLM-5.3-Flash, while the rendered creative lane defaults to
-`openai/gpt-5.6-luna` with `xhigh` reasoning. A repository variable can select a
-different visual author without changing SEO or business-fact generation. When
-Luna exhausts the structured-output budget at `xhigh`, the author retries that
-stage at `high`, `medium`, and then `low` effort; this is a format-recovery path,
-not a legacy-renderer fallback.
+The model is independently configurable with `CREATIVE_EXPERIENCE_MODEL`. The
+truth/configuration lane remains on GLM-5.3-Flash, while the rendered creative
+lane defaults to `openai/gpt-5.6-luna`.
+
+After Reference DNA is complete and before the first Luna request, the
+production workflow runs the adaptive reasoning preflight described in
+[`docs/adaptive-reasoning-preflight.md`](./adaptive-reasoning-preflight.md).
+It writes one frozen creative-session decision for the complete author/repair
+lifecycle. The workflow defaults to `shadow` mode: Jev records whether the
+deterministic policy would choose `xhigh` or `max`, while the actual session
+continues at `xhigh`. In `enforce` mode, the selected session effort is
+`xhigh` or `max`.
+
+Once an adaptive session exists, every contract, JSX, CSS, motion, validation
+repair, and rendered creative repair uses that exact reasoning effort and the
+same creative session identity. The author must not downgrade from `xhigh` or
+`max` to another effort inside that session because doing so would split the
+session's reasoning/cache family. Direct legacy developer invocations without a
+reasoning-preflight artifact may still use the bounded static-effort recovery
+ladder for compatibility; the production workflow does not.
 
 ## Shared runtime contract
 
