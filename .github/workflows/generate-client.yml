@@ -73,16 +73,24 @@ jobs:
           node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/intake.md --out /tmp/inspiration-pack.json
           node scripts/analyze-reference-dna.mjs --inspiration /tmp/inspiration-pack.json --out /tmp/inspiration-pack.json
           jq -e '.referenceDnaAnalyzed == true and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null))' /tmp/inspiration-pack.json >/dev/null || { echo "Reference DNA was not derived from screenshot evidence"; exit 1; }
-          node scripts/run-reasoning-preflight.mjs \
-            --inspiration /tmp/inspiration-pack.json \
-            --out /tmp/reasoning-preflight.json \
-            --mode "$REASONING_PREFLIGHT_MODE" \
-            --model "$REASONING_PREFLIGHT_MODEL" \
-            --session-key "$LAUNCHLOOM_INTAKE_ID"
-          jq -e '(.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
-          echo "reasoning_mode=$(jq -r '.mode' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
-          echo "reasoning_effort=$(jq -r '.reasoningEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
-          echo "reasoning_recommended=$(jq -r '.recommendedEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+          rm -f /tmp/reasoning-preflight.json
+          if [ "$CREATIVE_EXPERIENCE_MODEL" = "openai/gpt-5.6-luna" ]; then
+            node scripts/run-reasoning-preflight.mjs \
+              --inspiration /tmp/inspiration-pack.json \
+              --out /tmp/reasoning-preflight.json \
+              --mode "$REASONING_PREFLIGHT_MODE" \
+              --model "$REASONING_PREFLIGHT_MODEL" \
+              --creative-model "$CREATIVE_EXPERIENCE_MODEL" \
+              --session-key "$LAUNCHLOOM_INTAKE_ID"
+            jq -e '(.creativeModel == "openai/gpt-5.6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
+            echo "reasoning_mode=$(jq -r '.mode' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            echo "reasoning_effort=$(jq -r '.reasoningEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            echo "reasoning_recommended=$(jq -r '.recommendedEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+          else
+            echo "reasoning_mode=static" >> "$GITHUB_OUTPUT"
+            echo "reasoning_effort=$CREATIVE_EXPERIENCE_REASONING_EFFORT" >> "$GITHUB_OUTPUT"
+            echo "reasoning_recommended=static" >> "$GITHUB_OUTPUT"
+          fi
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
@@ -118,6 +126,7 @@ jobs:
         with:
           name: reasoning-preflight-${{ steps.intake.outputs.issue }}
           path: /tmp/reasoning-preflight.json
+          if-no-files-found: ignore
           retention-days: 14
       - name: Create private repository and Cloudflare Pages project
         id: client
@@ -266,13 +275,17 @@ jobs:
         # the runner timeout above the author's internal fail-closed budget
         # so Actions cannot terminate a valid creative run early.
         timeout-minutes: 25
-        run: >-
-          npm run author:experiences --
-          --config /tmp/site.config.json
-          --inspiration /tmp/inspiration-pack.json
-          --out /tmp/generated-experiences
-          --session /tmp/reasoning-preflight.json
-          --failure-mode throw
+        run: |
+          SESSION_ARGS=()
+          if [ -f /tmp/reasoning-preflight.json ]; then
+            SESSION_ARGS=(--session /tmp/reasoning-preflight.json)
+          fi
+          npm run author:experiences -- \
+            --config /tmp/site.config.json \
+            --inspiration /tmp/inspiration-pack.json \
+            --out /tmp/generated-experiences \
+            "${SESSION_ARGS[@]}" \
+            --failure-mode throw
       - name: Preserve authored experience evidence
         if: always()
         continue-on-error: true
@@ -288,8 +301,11 @@ jobs:
           mkdir -p .launchloom
           rm -rf .launchloom/generated-experiences
           cp -R /tmp/generated-experiences .launchloom/generated-experiences
-          cp /tmp/reasoning-preflight.json .launchloom/reasoning-preflight.json
-          git add .launchloom/generated-experiences .launchloom/reasoning-preflight.json
+          git add .launchloom/generated-experiences
+          if [ -f /tmp/reasoning-preflight.json ]; then
+            cp /tmp/reasoning-preflight.json .launchloom/reasoning-preflight.json
+            git add .launchloom/reasoning-preflight.json
+          fi
           if ! git diff --cached --quiet; then
             git commit -m "Record authored experience candidates"
             git push origin review/initial
@@ -298,12 +314,16 @@ jobs:
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
+          SESSION_ARGS=()
+          if [ -f "$PWD/.launchloom/reasoning-preflight.json" ]; then
+            SESSION_ARGS=(--session "$PWD/.launchloom/reasoning-preflight.json")
+          fi
           node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
             --site-dir "$PWD" \
             --candidates /tmp/generated-experiences \
             --out .launchloom/creative-repair \
             --mode "$CREATIVE_EXPERIENCE_MODE" \
-            --session "$PWD/.launchloom/reasoning-preflight.json" \
+            "${SESSION_ARGS[@]}" \
             --max-cycles 2 \
             --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
           cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
