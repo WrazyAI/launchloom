@@ -284,6 +284,26 @@ describe("adaptive reasoning preflight", () => {
     expect(first.sessionId).toMatch(/^launchloom:creative:[a-f0-9]{40}$/u);
   });
 
+  it("rejects moving Jev aliases and records a max-safe selector fallback", async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new Error("should not call provider for an unpinned model");
+    });
+    const result = await createReasoningPreflight({
+      inspirationPack: pack(),
+      mode: "enforce",
+      model: "jev-latest",
+      sessionKey: "intake-42",
+      apiKey: "typesafe-test-key",
+      fetchImpl: fetchImpl as any,
+    });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(result.selector.fallbackUsed).toBe(true);
+    expect(result.selector.error).toMatchObject({
+      code: "unpinned-model",
+    });
+    expect(result.reasoningEffort).toBe("max");
+  });
+
   it("falls back safely when Jev is unavailable", async () => {
     const failingFetch = vi.fn(async () => {
       throw new Error("network down");
