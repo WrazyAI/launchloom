@@ -18,8 +18,9 @@ jobs:
       - run: npm ci
       - run: npm run evaluate:models -- --out artifacts/model-evaluation.json
       - name: Upload blinded evaluation packet
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: launchloom-model-evaluation-review
           path: artifacts/model-evaluation.json.md
-          retention-days: 14
+          retention-days: 3

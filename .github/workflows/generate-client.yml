@@ -111,30 +111,6 @@ jobs:
           echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
           echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "No externally validated queries")')" >> "$GITHUB_OUTPUT"
           node -e 'const x=require("/tmp/seo-research.json"); const state=x.mode === "researched" ? "Research complete. Production approval is available." : "Research is incomplete. This preview can be reviewed, but production approval is blocked until research succeeds."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}\nValidated queries: ${(x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "None"}\nRecorded research cost: $${Number(x.cost?.usd || 0).toFixed(5)}`)'
-      - name: Preserve SEO research evidence
-        # Evidence is useful but must not block a client preview when the
-        # repository's Actions artifact quota is temporarily exhausted.
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: seo-research-${{ steps.intake.outputs.issue }}
-          path: /tmp/seo-research.json
-          retention-days: 14
-      - name: Preserve inspiration evidence
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: inspiration-pack-${{ steps.intake.outputs.issue }}
-          path: /tmp/inspiration-pack.json
-          retention-days: 14
-      - name: Preserve reasoning preflight evidence
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: reasoning-preflight-${{ steps.intake.outputs.issue }}
-          path: /tmp/reasoning-preflight.json
-          if-no-files-found: ignore
-          retention-days: 14
       - name: Create private repository and Cloudflare Pages project
         id: client
         run: |
@@ -265,18 +241,6 @@ jobs:
             git push origin review/initial
           fi
           node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
-      - name: Preserve generated asset evidence
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-assets-${{ steps.intake.outputs.issue }}
-          path: |
-            ${{ steps.branch.outputs.dir }}/.launchloom/generated-assets.json
-            ${{ steps.branch.outputs.dir }}/public/images/generated
-          include-hidden-files: true
-          if-no-files-found: warn
-          retention-days: 14
       - name: Author independent experience candidates
         # Luna authors three independent candidates in separate stages. Keep
         # the runner timeout above the author's internal fail-closed budget
@@ -293,15 +257,6 @@ jobs:
             --out /tmp/generated-experiences \
             "${SESSION_ARGS[@]}" \
             --failure-mode throw
-      - name: Preserve authored experience evidence
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: authored-experiences-${{ steps.intake.outputs.issue }}
-          path: /tmp/generated-experiences
-          if-no-files-found: warn
-          retention-days: 14
       - name: Commit authored experience evidence
         run: |
           cd "${{ steps.branch.outputs.dir }}"
@@ -406,40 +361,6 @@ jobs:
           git fetch origin main
           git rebase origin/main
           git push origin HEAD:main
-      - name: Upload rendered initial evidence
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: initial-site-screenshots
-          path: ${{ runner.temp }}/initial-screenshots
-          if-no-files-found: warn
-          retention-days: 14
-      - name: Upload experience bakeoff evidence
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: experience-bakeoff-screenshots
-          path: |
-            ${{ runner.temp }}/experience-bakeoff-screenshots
-            ${{ steps.branch.outputs.dir }}/.launchloom/experience-bakeoff.json
-          include-hidden-files: true
-          if-no-files-found: warn
-          retention-days: 14
-      - name: Upload creative bakeoff evidence
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: creative-bakeoff-${{ steps.intake.outputs.issue }}
-          path: |
-            ${{ runner.temp }}/creative-bakeoff-screenshots
-            ${{ steps.branch.outputs.dir }}/.launchloom/creative-bakeoff.json
-            ${{ steps.branch.outputs.dir }}/.launchloom/creative-repair
-          include-hidden-files: true
-          if-no-files-found: warn
-          retention-days: 14
       - name: Track pending developer delivery
         run: |
           gh label create launchloom-delivery-pending --repo "${{ steps.client.outputs.repo }}" --color e4e669 --force
@@ -491,3 +412,21 @@ jobs:
           printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$RUNNER_TEMP/generation-failure-feedback.txt"
           printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/WrazyAI/launchloom/issues/$ISSUE" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$ISSUE-${{ github.run_id }}"
+      - name: Preserve compact generation failure diagnostics
+        # Successful runs preserve source, SEO/reference inputs, reasoning
+        # preflight, generated assets, and the promotion report in the private
+        # client repository. Retain partial author output only on failure.
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: generation-diagnostics-${{ steps.intake.outputs.issue }}-${{ github.run_id }}
+          path: |
+            /tmp/seo-research.json
+            /tmp/inspiration-pack.json
+            /tmp/reasoning-preflight.json
+            /tmp/generated-experiences
+            ${{ runner.temp }}/generation-failure-feedback.txt
+            ${{ runner.temp }}/generation-failure-outcome.txt
+          if-no-files-found: warn
+          retention-days: 3

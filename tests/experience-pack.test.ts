@@ -32,7 +32,11 @@ function site(name: string, packId?: string): SiteConfig {
     },
     style: { primaryColor: "#9a6d32", tone: "editorial" },
     services: [
-      { name: "Residential design", description: "Plan a home around its site and daily routines.", slug: "residential-design" },
+      {
+        name: "Residential design",
+        description: "Plan a home around its site and daily routines.",
+        slug: "residential-design",
+      },
     ],
     differentiators: [],
     locations: [],
@@ -55,26 +59,34 @@ describe("experience-pack compiler", () => {
       "indexHtml",
     ]);
     expect(stages.every((stage) => stage.maxTokens <= 10000)).toBe(true);
-    expect(stages.every((stage) => stage.schema.schema.required.length <= 2)).toBe(true);
+    expect(
+      stages.every((stage) => stage.schema.schema.required.length <= 2),
+    ).toBe(true);
 
     expect(
       assembleSplitExperience({
-        contract: { designContract: "A coherent contract", designRationale: "Distinct." },
+        contract: {
+          designContract: "A coherent contract",
+          designRationale: "Distinct.",
+        },
         appJsx: { content: "export default function App(){}" },
         stylesCss: { content: "body{}" },
-        indexHtml: { content: "<div id=\"root\"></div>" },
+        indexHtml: { content: '<div id="root"></div>' },
       }),
     ).toEqual({
       appJsx: "export default function App(){}",
       stylesCss: "body{}",
-      indexHtml: "<div id=\"root\"></div>",
+      indexHtml: '<div id="root"></div>',
       designRationale: "Distinct.",
       designContract: "A coherent contract",
     });
   });
 
   it("keeps model authorship behind deterministic release gates", () => {
-    const lab = readFileSync("scripts/generate-model-experience-lab.mjs", "utf8");
+    const lab = readFileSync(
+      "scripts/generate-model-experience-lab.mjs",
+      "utf8",
+    );
     expect(lab).toContain('"z-ai/glm-5.3');
     expect(lab).toContain("moonshotai/kimi-k2.6");
     expect(lab).toContain("qwen/qwen3.6-27b");
@@ -122,9 +134,7 @@ describe("experience-pack compiler", () => {
     expect(preflightIndex).toBeGreaterThan(-1);
     expect(authorIndex).toBeGreaterThan(preflightIndex);
     expect(repairIndex).toBeGreaterThan(authorIndex);
-    expect(workflow).toContain(
-      "vars.REASONING_PREFLIGHT_MODE || 'shadow'",
-    );
+    expect(workflow).toContain("vars.REASONING_PREFLIGHT_MODE || 'shadow'");
     expect(workflow).toContain(
       "vars.REASONING_PREFLIGHT_MODEL || 'jev-1.13.0'",
     );
@@ -151,41 +161,48 @@ describe("experience-pack compiler", () => {
 
   it("runs a three-viewport internal bakeoff and preserves a safe fallback", () => {
     const bakeoff = readFileSync("scripts/run-experience-bakeoff.mjs", "utf8");
-    expect(bakeoff).toContain('width: 1536, height: 864');
-    expect(bakeoff).toContain('width: 1366, height: 768');
-    expect(bakeoff).toContain('width: 390, height: 844');
-    expect(bakeoff).toContain('delete finalConfig.design.experience');
+    expect(bakeoff).toContain("width: 1536, height: 864");
+    expect(bakeoff).toContain("width: 1366, height: 768");
+    expect(bakeoff).toContain("width: 390, height: 844");
+    expect(bakeoff).toContain("delete finalConfig.design.experience");
     expect(bakeoff).toContain('selectionMode: "internal-bakeoff"');
-    expect(bakeoff).toContain('hero exceeds desktop viewport');
-    expect(bakeoff).toContain('experience_bakeoff_candidate=');
-    const workflow = readFileSync(".github/workflows/generate-client.yml", "utf8");
+    expect(bakeoff).toContain("hero exceeds desktop viewport");
+    expect(bakeoff).toContain("experience_bakeoff_candidate=");
+    const workflow = readFileSync(
+      ".github/workflows/generate-client.yml",
+      "utf8",
+    );
     expect(workflow).toContain(".launchloom/creative-bakeoff.json");
     expect(workflow).toContain("vars.CREATIVE_EXPERIENCE_MODE == 'promote'");
     expect(workflow).not.toContain("vars.CREATIVE_EXPERIENCE_MODE == 'legacy'");
     expect(workflow).not.toContain("run-experience-bakeoff.mjs");
-    expect(workflow).not.toContain("if: env.CREATIVE_EXPERIENCE_MODE != 'legacy'");
+    expect(workflow).not.toContain(
+      "if: env.CREATIVE_EXPERIENCE_MODE != 'legacy'",
+    );
     const creativeRender = workflow.slice(
-      workflow.indexOf("name: Render creative candidates in the production shell"),
+      workflow.indexOf(
+        "name: Render creative candidates in the production shell",
+      ),
       workflow.indexOf("name: Build and direct-upload public preview"),
     );
     expect(creativeRender).not.toContain("continue-on-error: true");
-    expect(workflow).toContain('Authored creative renderer was not selected');
-    expect(workflow).toContain('CANDIDATE_ID=$(jq -r');
+    expect(workflow).toContain("Authored creative renderer was not selected");
+    expect(workflow).toContain("CANDIDATE_ID=$(jq -r");
     expect(workflow).toContain("openai/gpt-5.6-luna");
     expect(workflow).toContain(
       "vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh'",
     );
-    expect(workflow).toMatch(
-      /Upload experience bakeoff evidence[\s\S]*experience-bakeoff-screenshots[\s\S]*\.launchloom\/experience-bakeoff\.json/,
-    );
-    expect(workflow).toMatch(
-      /Upload experience bakeoff evidence[\s\S]*include-hidden-files: true/,
-    );
+    expect(workflow).toContain(".launchloom/creative-bakeoff.json");
+    expect(workflow).not.toContain("experience-bakeoff-screenshots");
+    expect(workflow).not.toContain("Upload experience bakeoff evidence");
   });
 
   it("defines a factual, visually distinct second-business canary", () => {
     const fixture = JSON.parse(
-      readFileSync("fixtures/model-experience-businesses/portland-arborist.json", "utf8"),
+      readFileSync(
+        "fixtures/model-experience-businesses/portland-arborist.json",
+        "utf8",
+      ),
     );
     expect(fixture.businessBrief).toContain("Northline Tree Response");
     expect(fixture.assignedDirection).toContain("Bright Swiss utility");
@@ -196,7 +213,10 @@ describe("experience-pack compiler", () => {
 
   it("defines a separate gym canary with its own assets and interaction", () => {
     const fixture = JSON.parse(
-      readFileSync("fixtures/model-experience-businesses/oakland-bouldering-gym.json", "utf8"),
+      readFileSync(
+        "fixtures/model-experience-businesses/oakland-bouldering-gym.json",
+        "utf8",
+      ),
     );
     expect(fixture.businessBrief).toContain("Crux Commons");
     expect(fixture.assignedDirection).toContain("Playful neo-brutalism");
@@ -228,7 +248,7 @@ describe("experience-pack compiler", () => {
     );
 
     expect(component).toContain(
-      "{copy.contactHeading || hero.primaryLabel || \"Continue the conversation.\"}",
+      '{copy.contactHeading || hero.primaryLabel || "Continue the conversation."}',
     );
     expect(styles).toContain(".xp-guide__hero figcaption");
     expect(styles).toContain("z-index: 2;");
@@ -270,10 +290,7 @@ describe("experience-pack compiler", () => {
   it("compiles a requested pack behind one stable interface", () => {
     const requestedSite = site("Alder and Ash", "cinematic-narrative");
     requestedSite.images.hero = "/images/hero.webp";
-    const compiled = compileExperiencePack(
-      requestedSite,
-      "general-editorial",
-    );
+    const compiled = compileExperiencePack(requestedSite, "general-editorial");
     expect(compiled.source).toBe("requested");
     expect(compiled.program.sectionOrder.slice(0, 3)).toEqual([
       "hero",
@@ -286,17 +303,31 @@ describe("experience-pack compiler", () => {
   });
 
   it("selects reproducibly and can avoid a recent structural fingerprint", () => {
-    const first = compileExperiencePack(site("North Star"), "general-editorial");
-    const repeated = compileExperiencePack(site("North Star"), "general-editorial");
+    const first = compileExperiencePack(
+      site("North Star"),
+      "general-editorial",
+    );
+    const repeated = compileExperiencePack(
+      site("North Star"),
+      "general-editorial",
+    );
     expect(repeated.program.fingerprint).toBe(first.program.fingerprint);
-    const alternative = compileExperiencePack(site("North Star"), "general-editorial", {
-      recentFingerprints: [first.program.fingerprint],
-    });
+    const alternative = compileExperiencePack(
+      site("North Star"),
+      "general-editorial",
+      {
+        recentFingerprints: [first.program.fingerprint],
+      },
+    );
     expect(alternative.program.fingerprint).not.toBe(first.program.fingerprint);
   });
 
   it("keeps all three structural packs reachable for each recipe", () => {
-    for (const recipe of ["care-editorial", "local-trades", "general-editorial"] as const) {
+    for (const recipe of [
+      "care-editorial",
+      "local-trades",
+      "general-editorial",
+    ] as const) {
       const selected = new Set(
         Array.from({ length: 200 }, (_, index) =>
           selectExperiencePackId({ recipe, seed: `${recipe}|intake-${index}` }),
@@ -320,7 +351,9 @@ describe("experience-pack compiler", () => {
       "bold-utility",
       "kinetic-poster",
     ] as const) {
-      expect(candidates.filter((candidate) => candidate.packId === packId)).toHaveLength(2);
+      expect(
+        candidates.filter((candidate) => candidate.packId === packId),
+      ).toHaveLength(2);
     }
     for (const candidate of candidates.filter(
       (item) => item.packId === "cinematic-narrative",
@@ -328,9 +361,9 @@ describe("experience-pack compiler", () => {
       expect(candidate.diagnostics).toContain(
         "This experience requires a verified business-relevant image.",
       );
-    expect(compileExperiencePack(input, "general-editorial").program.packId).not.toBe(
-      "cinematic-narrative",
-    );
+    expect(
+      compileExperiencePack(input, "general-editorial").program.packId,
+    ).not.toBe("cinematic-narrative");
   });
 
   it("maps legacy pack IDs to their reviewed version-two replacements", () => {
@@ -366,7 +399,13 @@ describe("experience-pack compiler", () => {
     expect(compiled.source).toBe("selected");
     expect(compiled.diagnostics[0]).toContain("Unknown experience pack");
     expect(compiled.program.sectionOrder).toEqual(
-      expect.arrayContaining(["hero", "conversion", "services", "faq", "contact"]),
+      expect.arrayContaining([
+        "hero",
+        "conversion",
+        "services",
+        "faq",
+        "contact",
+      ]),
     );
   });
 
@@ -383,15 +422,18 @@ describe("experience-pack compiler", () => {
       expect(new Set(pack.variants.map((variant) => variant.hero)).size).toBe(
         pack.variants.length,
       );
-      expect(new Set(pack.variants.map((variant) => variant.services)).size).toBe(
-        pack.variants.length,
-      );
+      expect(
+        new Set(pack.variants.map((variant) => variant.services)).size,
+      ).toBe(pack.variants.length);
     }
   });
 
   it("compiles a requested variant behind the same stable interface", () => {
     const input = site("Variant Request", "bold-utility");
-    input.design!.experience = { packId: "bold-utility", variantId: "portrait" };
+    input.design!.experience = {
+      packId: "bold-utility",
+      variantId: "portrait",
+    };
     const compiled = compileExperiencePack(input, "general-editorial");
     expect(compiled.source).toBe("requested");
     expect(compiled.program.packId).toBe("bold-utility");
@@ -422,7 +464,9 @@ describe("experience-pack compiler", () => {
       maxCandidates: 4,
     });
     expect(candidates).toHaveLength(4);
-    expect(new Set(candidates.map((candidate) => candidate.packId)).size).toBe(3);
+    expect(new Set(candidates.map((candidate) => candidate.packId)).size).toBe(
+      3,
+    );
   });
 
   it("front-loads one candidate per inspiration route", () => {
@@ -496,9 +540,7 @@ describe("experience-pack compiler", () => {
       avoidPackIds: avoid,
     });
     const baseline = compileExperienceCandidates(input, "general-editorial");
-    const findBold = (
-      list: ReturnType<typeof compileExperienceCandidates>,
-    ) =>
+    const findBold = (list: ReturnType<typeof compileExperienceCandidates>) =>
       list.find(
         (candidate) =>
           candidate.packId === "bold-utility" &&
@@ -525,8 +567,7 @@ describe("experience-pack compiler", () => {
         return compileExperienceCandidates(input, "general-editorial")
           .filter((candidate) => candidate.packId === "bold-utility")
           .sort(
-            (left, right) =>
-              right.compatibilityScore - left.compatibilityScore,
+            (left, right) => right.compatibilityScore - left.compatibilityScore,
           )[0].variantId;
       }),
     );
@@ -539,7 +580,8 @@ describe("experience-pack compiler", () => {
     const baseline = compileExperienceCandidates(input, "general-editorial");
     const boldStandard = baseline.find(
       (candidate) =>
-        candidate.packId === "bold-utility" && candidate.variantId === "standard",
+        candidate.packId === "bold-utility" &&
+        candidate.variantId === "standard",
     );
     expect(boldStandard).toBeDefined();
     const penalized = compileExperienceCandidates(input, "general-editorial", {
@@ -547,7 +589,8 @@ describe("experience-pack compiler", () => {
     });
     const penalizedBold = penalized.find(
       (candidate) =>
-        candidate.packId === "bold-utility" && candidate.variantId === "standard",
+        candidate.packId === "bold-utility" &&
+        candidate.variantId === "standard",
     );
     expect(penalizedBold!.compatibilityScore).toBeLessThan(
       boldStandard!.compatibilityScore,
