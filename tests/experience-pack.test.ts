@@ -128,6 +128,9 @@ describe("experience-pack compiler", () => {
     expect(workflow).toContain(
       "vars.REASONING_PREFLIGHT_MODEL || 'jev-1.13.0'",
     );
+    expect(workflow).toContain(
+      "TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}",
+    );
     expect(workflow).toContain("--session /tmp/reasoning-preflight.json");
     expect(workflow).toContain(
       '--session "$PWD/.launchloom/reasoning-preflight.json"',

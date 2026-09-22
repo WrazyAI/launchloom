@@ -21,7 +21,7 @@ jobs:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}
       REASONING_PREFLIGHT_MODE: ${{ vars.REASONING_PREFLIGHT_MODE || 'shadow' }}
       REASONING_PREFLIGHT_MODEL: ${{ vars.REASONING_PREFLIGHT_MODEL || 'jev-1.13.0' }}
       FAL_KEY: ${{ secrets.FAL_KEY }}

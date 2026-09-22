@@ -35,7 +35,9 @@ remain deliberate and observable.
 
 Environment:
 
-- `TYPESAFE_API_KEY` — optional at workflow level because selector failure
+- `TYPESAFE_API_KEY` — runtime environment variable. The generation workflow
+  reads the `TYPESAFE_API_KEY` repository secret first, then falls back to the
+  existing `JEV_API_KEY` secret. It remains optional because selector failure
   must not block generation.
 - `TYPESAFE_BASE_URL` — defaults to `https://api.typesafe.ai`.
 - `REASONING_PREFLIGHT_MODEL` — defaults to `jev-1.13.0`.
