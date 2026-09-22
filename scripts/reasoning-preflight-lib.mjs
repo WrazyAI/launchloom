@@ -409,12 +409,18 @@ export async function createReasoningPreflight({
   inspirationPack,
   mode = DEFAULT_PREFLIGHT_MODE,
   model = process.env.REASONING_PREFLIGHT_MODEL || DEFAULT_TYPESAFE_MODEL,
+  creativeModel =
+    process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna",
   sessionKey = "",
   apiKey = process.env.TYPESAFE_API_KEY,
   fetchImpl = fetch,
   timeoutMs,
 } = {}) {
   const preflightMode = normalizedMode(mode);
+  if (creativeModel !== "openai/gpt-5.6-luna")
+    throw new Error(
+      `Adaptive reasoning preflight currently supports openai/gpt-5.6-luna only, received ${creativeModel}.`,
+    );
   const state = buildReasoningPreflightState(inspirationPack);
   const stateDigest = digest(state);
   const startedAt = Date.now();
@@ -439,7 +445,7 @@ export async function createReasoningPreflight({
     };
     selector = {
       provider: "typesafe",
-      model,
+      model: response.model || model,
       latencyMs: Number(response.latencyMs || Date.now() - startedAt),
       fallbackUsed: false,
       requestId: response.request_id || response.requestId || null,
@@ -478,6 +484,7 @@ export async function createReasoningPreflight({
     {
       sessionKey: digest(String(sessionKey || "local"), 24),
       stateDigest,
+      creativeModel,
       reasoningEffort,
       policyVersion: REASONING_POLICY_VERSION,
       judgmentSchemaVersion: JUDGMENT_SCHEMA_VERSION,
@@ -490,7 +497,8 @@ export async function createReasoningPreflight({
     mode: preflightMode,
     reasoningPolicyVersion: REASONING_POLICY_VERSION,
     judgmentSchemaVersion: JUDGMENT_SCHEMA_VERSION,
-    selectorModelVersion: model,
+    selectorModelVersion: selector.model || model,
+    creativeModel,
     stateDigest,
     sessionId,
     reasoningEffort,
@@ -513,12 +521,31 @@ export async function createReasoningPreflight({
   };
 }
 
-export function validateCreativeSessionConfig(value) {
+export function validateCreativeSessionConfig(
+  value,
+  { creativeModel = "" } = {},
+) {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("Creative session configuration is missing.");
+  if (!["shadow", "enforce"].includes(value.mode))
+    throw new Error(
+      `Creative session mode must be shadow or enforce, received ${value.mode}.`,
+    );
   if (!["xhigh", "max"].includes(value.reasoningEffort))
     throw new Error(
       `Creative session reasoning effort must be xhigh or max, received ${value.reasoningEffort}.`,
+    );
+  if (!["xhigh", "max"].includes(value.recommendedEffort))
+    throw new Error(
+      `Creative session recommended effort must be xhigh or max, received ${value.recommendedEffort}.`,
+    );
+  if (value.creativeModel !== "openai/gpt-5.6-luna")
+    throw new Error(
+      `Creative session model must be openai/gpt-5.6-luna, received ${value.creativeModel}.`,
+    );
+  if (creativeModel && value.creativeModel !== creativeModel)
+    throw new Error(
+      `Creative session model ${value.creativeModel} does not match requested model ${creativeModel}.`,
     );
   if (!String(value.sessionId || "").startsWith("launchloom:creative:"))
     throw new Error("Creative session configuration has an invalid sessionId.");
