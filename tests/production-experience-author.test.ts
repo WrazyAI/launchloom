@@ -839,4 +839,16 @@ describe("production experience author", () => {
     expect(digests.size).toBe(3);
   });
 
+
+  it("requires Reference DNA IDs and the actual composition in author prompts", () => {
+    const author = readFileSync(
+      new URL("../scripts/author-production-experiences.mjs", import.meta.url),
+      "utf8",
+    );
+    expect(author).toContain("sectionBlueprint IDs exactly and in order");
+    expect(author).toContain("implement the composition");
+    expect(author).toContain("marker strings");
+    expect(author).toContain("referenceDna: cacheableReferenceDna(request.route.referenceDna)");
+  });
+
 });
