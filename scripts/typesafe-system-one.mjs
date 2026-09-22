@@ -57,6 +57,11 @@ export async function requestSystemOne({
       "TYPESAFE_API_KEY is unavailable for reasoning preflight.",
       { code: "missing-api-key" },
     );
+  if (!/^jev-\d+\.\d+\.\d+$/u.test(String(model || "")))
+    throw new TypeSafeSystemOneError(
+      `Reasoning preflight requires a pinned Jev model version, received ${model || "(empty)"}.`,
+      { code: "unpinned-model" },
+    );
   if (!questions || typeof questions !== "object" || Array.isArray(questions))
     throw new TypeSafeSystemOneError(
       "TypeSafe reasoning preflight requires a questions object.",
