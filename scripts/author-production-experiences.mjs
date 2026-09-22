@@ -43,6 +43,7 @@ const sessionPath = args.session ? path.resolve(args.session) : "";
 const creativeSession = sessionPath
   ? validateCreativeSessionConfig(
       JSON.parse(await fs.readFile(sessionPath, "utf8")),
+      { creativeModel: model },
     )
   : null;
 const reasoningEffort =
