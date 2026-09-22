@@ -711,28 +711,30 @@ describe("production experience author", () => {
       "name: Create private repository and Cloudflare Pages project",
     );
 
+    const assetsIndex = workflow.indexOf(
+      "name: Generate or reuse contextual imagery for creative preflight",
+    );
+    const repairIndex = workflow.indexOf(
+      "name: Render and repair creative candidates before provisioning",
+    );
     expect(inspirationIndex).toBeGreaterThan(-1);
-    expect(authorIndex).toBeGreaterThan(inspirationIndex);
-    expect(repositoryIndex).toBeGreaterThan(inspirationIndex);
-    expect(authorIndex).toBeGreaterThan(repositoryIndex);
-    expect(workflow.indexOf("name: Generate or reuse contextual imagery")).toBeGreaterThan(repositoryIndex);
-    expect(workflow.indexOf("name: Generate or reuse contextual imagery")).toBeLessThan(authorIndex);
-    expect(workflow).toContain("name: authored-experiences-${{");
+    expect(assetsIndex).toBeGreaterThan(inspirationIndex);
+    expect(authorIndex).toBeGreaterThan(assetsIndex);
+    expect(repairIndex).toBeGreaterThan(authorIndex);
+    expect(repositoryIndex).toBeGreaterThan(repairIndex);
+    expect(workflow).toContain("name: creative-failure-diagnostics-${{");
+    expect(workflow).toContain("retention-days: 3");
     const seoEvidence = workflow.slice(
       workflow.indexOf("name: Preserve SEO research evidence"),
       workflow.indexOf("name: Preserve inspiration evidence"),
     );
     expect(seoEvidence).toContain("continue-on-error: true");
-    const authoredEvidence = workflow.slice(
-      workflow.indexOf("name: Preserve authored experience evidence"),
-      workflow.indexOf("name: Commit authored experience evidence"),
-    );
-    expect(authoredEvidence).toContain("continue-on-error: true");
-    expect(authoredEvidence).toContain("if-no-files-found: warn");
     expect(workflow).toContain(
       "cp -R /tmp/generated-experiences .launchloom/generated-experiences",
     );
     expect(workflow).toContain("--failure-mode throw");
+    expect(workflow).toContain("--mode promote");
+    expect(workflow).toContain(".promotionReady == true");
     expect(workflow).not.toContain("--failure-mode record");
     expect(
       workflow.match(
