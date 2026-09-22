@@ -424,6 +424,54 @@ function aggregateCacheUsage(records) {
   };
 }
 
+function diagnosticSummary(failure) {
+  return {
+    routeId: failure?.routeId || "",
+    candidateId: failure?.candidateId || "",
+    error: String(failure?.error || "").slice(0, 4000),
+  };
+}
+
+function sanitizeDiagnosticSource(value) {
+  return String(value || "")
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[redacted-email]")
+    .replace(/\+?\d[\d\s().-]{7,}\d/gu, "[redacted-phone]")
+    .replace(/https?:\/\/[^\s"'\`]+/giu, "[redacted-url]")
+    .replace(/(?:Bearer\s+|token\s*[:=]\s*["']?)[A-Za-z0-9._~-]{16,}/giu, "[redacted-token]");
+}
+
+async function writeDiagnostics(root, failures = []) {
+  for (const failure of failures) {
+    const diagnostic = failure?.diagnostic;
+    if (!diagnostic?.files) continue;
+    const candidateId = String(failure.candidateId || diagnostic.candidateId || "candidate")
+      .replace(/[^a-z0-9_-]+/giu, "-");
+    const directory = path.join(root, "diagnostics", candidateId);
+    await fs.mkdir(directory, { recursive: true });
+    for (const [name, source] of Object.entries({
+      "Experience.jsx": diagnostic.files.experience,
+      "styles.css": diagnostic.files.styles,
+      "motion.js": diagnostic.files.motion,
+    }))
+      if (source)
+        await fs.writeFile(
+          path.join(directory, name),
+          `${sanitizeDiagnosticSource(source)}\n`,
+        );
+    await fs.writeFile(
+      path.join(directory, "reference-fidelity.json"),
+      `${JSON.stringify(
+        {
+          ...diagnosticSummary(failure),
+          findings: diagnostic.referenceFidelity?.findings || [],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  }
+}
+
 async function writeResult(result) {
   const staging = `${outputPath}.staging-${process.pid}`;
   await fs.rm(staging, { recursive: true, force: true });
@@ -441,6 +489,7 @@ async function writeResult(result) {
       ),
     );
   }
+  await writeDiagnostics(staging, result.failures || []);
   await fs.writeFile(
     path.join(staging, "creative-run.json"),
     `${JSON.stringify(
@@ -451,7 +500,7 @@ async function writeResult(result) {
         selectionKey: result.selectionKey,
         contentManifestDigest: result.contentManifest.digest,
         candidates: result.candidates.map((candidate) => candidate.metadata),
-        failures: result.failures || [],
+        failures: (result.failures || []).map(diagnosticSummary),
         usage,
         cacheSummary: aggregateCacheUsage(usage),
       },
@@ -464,22 +513,29 @@ async function writeResult(result) {
 }
 
 async function writeFailure(error) {
-  await fs.rm(outputPath, { recursive: true, force: true });
-  await fs.mkdir(outputPath, { recursive: true });
+  const staging = `${outputPath}.failure-${process.pid}`;
+  await fs.rm(staging, { recursive: true, force: true });
+  await fs.mkdir(staging, { recursive: true });
+  const failures = Array.isArray(error?.failures) ? error.failures : [];
+  await writeDiagnostics(staging, failures);
   await fs.writeFile(
-    path.join(outputPath, "creative-run.json"),
+    path.join(staging, "creative-run.json"),
     `${JSON.stringify(
       {
         version: 1,
         status: "failed",
         model,
         error: error instanceof Error ? error.message : String(error),
+        failures: failures.map(diagnosticSummary),
         usage,
+        cacheSummary: aggregateCacheUsage(usage),
       },
       null,
       2,
     )}\n`,
   );
+  await fs.rm(outputPath, { recursive: true, force: true });
+  await fs.rename(staging, outputPath);
 }
 
 try {
@@ -514,9 +570,9 @@ try {
     );
 } catch (error) {
   sharedAbortController.abort();
-  if (failureMode !== "record") throw error;
   await writeFailure(error);
   console.error(
     `production_experience_status=failed ${error instanceof Error ? error.message : String(error)}`,
   );
+  if (failureMode !== "record") throw error;
 }
