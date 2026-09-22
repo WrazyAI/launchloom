@@ -16,6 +16,37 @@ describe("reference fidelity validator", () => {
     expect(report.score).toBe(100);
   });
 
+  it("does not crash when a rendered helper component has no props", () => {
+    const experienceSource = `function Ornament() { return <span aria-hidden="true" />; }
+export function Experience({ content }) {
+  return ${validExperience.replace("</main>", "<Ornament /></main>")};
+}`;
+
+    expect(() => validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    })).not.toThrow();
+  });
+
+  it("reports expected and observed markers when section rhythm is missing", () => {
+    const missingSequence = validExperience
+      .replace(/\sdata-reference-section="[^"]+"/gu, "")
+      .replace(/\sdata-reference-signature="[^"]+"/gu, "")
+      .replace("magazine-archive-ledger", "ledger");
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: missingSequence,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+    const finding = report.findings.find((item) => item.code === "section-rhythm");
+
+    expect(finding?.message).toContain("Expected markers:");
+    expect(finding?.message).toContain("Observed markers:");
+  });
+
   it("reports visual patterns but blocks only the token collision", () => {
     const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: `${validExperience} <div data-layout="generic-split-hero" />`, stylesSource: `:root { --ink: #fff; }`, motionSource: validMotion });
     expect(report.pass).toBe(false);

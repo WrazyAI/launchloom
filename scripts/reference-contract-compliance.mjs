@@ -202,10 +202,10 @@ function outputContentPaths(source) {
       const value = props.get(key);
       if (value?.length) bindings.set(name.text, value);
     };
-    if (ts.isIdentifier(parameter)) {
+    if (parameter && ts.isIdentifier(parameter)) {
       if (props.has(parameter.text)) bindProp(parameter, parameter.text);
       else if (props.has("content")) bindProp(parameter, "content");
-    } else if (ts.isObjectBindingPattern(parameter)) {
+    } else if (parameter && ts.isObjectBindingPattern(parameter)) {
       for (const element of parameter.elements) {
         if (!ts.isBindingElement(element)) continue;
         const key = propertyName(element.propertyName || element.name);
@@ -325,7 +325,11 @@ export function validateReferenceContractCompliance({
     actual === item || actual.includes(item) || item.includes(actual),
   ) || source.toLowerCase().includes(item));
   if (matched.length < Math.min(3, expected.length))
-    findings.push(finding("section-rhythm", "critical", "The authored section sequence does not represent the assigned reference rhythm."));
+    findings.push(finding(
+      "section-rhythm",
+      "critical",
+      `The authored section sequence does not represent the assigned reference rhythm. Expected markers: ${expected.join(" -> ")}. Observed markers: ${sections.join(" -> ") || "(none)"}.`,
+    ));
   if (!/data-hero(?:\s|=)/iu.test(experienceSource) || !/data-hero-geometry=/iu.test(experienceSource))
     findings.push(finding("hero-geometry", "critical", "The authored hero is missing its explicit reference geometry marker."));
   else if (!markerMatches(experienceSource, "data-hero-geometry", referenceDna.heroGeometry.mode))
