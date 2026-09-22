@@ -21,6 +21,10 @@ describe("reference authoring pipeline guardrails", () => {
       "scripts/author-production-experiences.mjs",
       "utf8",
     );
+    const core = fs.readFileSync(
+      "scripts/production-experience-author.mjs",
+      "utf8",
+    );
     expect(author).toContain(
       "A marker alone is not evidence: implement the signature description as real structure and composition.",
     );
@@ -30,11 +34,11 @@ describe("reference authoring pipeline guardrails", () => {
     expect(author).toContain(
       'data-reference-overlap-layer="product"',
     );
-    expect(author).toContain(
+    expect(core).toContain(
       "full Reference DNA, and your current JSX are included in this repair request",
     );
-    expect(author).toContain("expectedSectionIds");
-    expect(author).toContain("requiredSignatures");
+    expect(core).toContain("expectedSectionIds");
+    expect(core).toContain("requiredSignatures");
   });
 
   it("keeps structured reference findings, screenshots, DNA, and current source in the rendered repair lane", () => {
@@ -47,7 +51,7 @@ describe("reference authoring pipeline guardrails", () => {
       "utf8",
     );
     expect(orchestrator).toContain(
-      "...candidate?.referenceFidelity?.renderedVisualFindings",
+      "candidate?.referenceFidelity?.renderedVisualFindings",
     );
     expect(orchestrator).toContain("screenshots: availableScreenshots");
     expect(orchestrator).toContain("maxCycles = 2");
