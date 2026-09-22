@@ -148,6 +148,11 @@ export async function requestSystemOne({
         "TypeSafe returned an invalid System One envelope.",
         { status: response.status, code: "invalid-envelope" },
       );
+    if (payload.model && payload.model !== model)
+      throw new TypeSafeSystemOneError(
+        `TypeSafe returned model ${payload.model} for pinned request ${model}.`,
+        { status: response.status, code: "model-mismatch" },
+      );
 
     return {
       ...payload,
