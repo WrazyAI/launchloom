@@ -58,7 +58,7 @@ export default function Experience({ content, runtime }) {
   return <main data-mobile-recomposition="single-column-editorial-chapters" data-motion-primitive="masked-image-reveal">
     <nav data-navigation-geometry="quiet-corner-links"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
     <section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument">
-      <img src={content.hero.image} alt={content.hero.heading} />
+      {content.hero.image ? <img src={content.hero.image} alt={content.hero.heading} /> : null}
       <h1>{content.hero.heading}</h1>
       <a href="#contact" data-early-conversion data-cta-placement="after-hero-image">{content.hero.primaryLabel}</a>
     </section>
@@ -378,7 +378,7 @@ describe("creative candidate promotion", () => {
       expect(report.fallback).toBe(true);
       expect(report.promotionReady).toBe(false);
       const config = JSON.parse(await fs.readFile(configPath, "utf8"));
-      expect(config.design.experience?.renderer).not.toBe("creative-candidate");
+      expect(config.design?.experience?.renderer).not.toBe("creative-candidate");
     } finally {
       await fs.writeFile(configPath, originalConfig);
       await fs.rm(selectedPath, { recursive: true, force: true });
