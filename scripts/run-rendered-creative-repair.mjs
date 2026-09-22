@@ -503,6 +503,9 @@ export async function runRenderedCreativeRepair({
   const history = [];
   const maxRounds = Math.max(1, cycleLimit * 3 + 1);
   const requestedMode = mode === "promote" ? "promote" : "preview";
+  const frozenCreativeSession = creativeSession
+    ? validateCreativeSessionConfig(creativeSession)
+    : null;
   const humanFindings = Array.isArray(requestedFindings)
     ? requestedFindings.filter(Boolean)
     : [];
@@ -548,7 +551,7 @@ export async function runRenderedCreativeRepair({
       findings,
       screenshots: availableScreenshots,
       model,
-      creativeSession,
+      creativeSession: frozenCreativeSession,
       cycle: nextCycle,
       maxCycles: cycleLimit,
     });
@@ -791,14 +794,16 @@ export async function runRenderedCreativeRepair({
       status: "promotion-pending",
       mode: requestedMode,
       model,
-      creativeSession: creativeSession
+      creativeSession: frozenCreativeSession
         ? {
-            sessionId: creativeSession.sessionId,
-            reasoningEffort: creativeSession.reasoningEffort,
-            recommendedEffort: creativeSession.recommendedEffort,
-            mode: creativeSession.mode,
-            reasoningPolicyVersion: creativeSession.reasoningPolicyVersion,
-            selectorModelVersion: creativeSession.selectorModelVersion,
+            sessionId: frozenCreativeSession.sessionId,
+            reasoningEffort: frozenCreativeSession.reasoningEffort,
+            recommendedEffort: frozenCreativeSession.recommendedEffort,
+            mode: frozenCreativeSession.mode,
+            reasoningPolicyVersion:
+              frozenCreativeSession.reasoningPolicyVersion,
+            selectorModelVersion:
+              frozenCreativeSession.selectorModelVersion,
           }
         : null,
       selectedCandidateId: selectedId,
