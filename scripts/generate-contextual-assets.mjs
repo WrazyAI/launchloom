@@ -122,6 +122,8 @@ function promptFor(site, route, placement) {
   const direction = visualDirection(site);
   const dna = route?.referenceDna || {};
   const familyImageDirection = {
+    "a1-object-stage": "isolated object-stage imagery with a decisive diagonal silhouette, generous deep-black containment, restrained cyan or blue edge highlights, and a low sculptural grounding form; translate the reference's object-stage mechanics to one subject native to this business, never force an unrelated phone, laptop, or consumer device",
+    "a1-cinematic-3d": "dark cinematic 3D atmosphere with precise subject separation, sculptural depth, controlled specular highlights, and image crops that support restrained typography",
     "kokoro-editorial-architecture": "warm architectural interiors, editorial still life, restrained dark palette, tactile natural materials",
     "skyelite-cinematic-luxury": "luxury transport atmosphere, wide cinematic framing, soft horizon light, premium restraint",
     "health-portal-masked-mosaic": "modular clinical imagery, calm human-safe materials, mask-friendly windows, clean neutral surfaces",
@@ -132,6 +134,18 @@ function promptFor(site, route, placement) {
     "neighborhood-table-collage": "warm neighborhood food market still life, playful flat color blocks, tactile ingredients, local table energy, and crop-safe product compositions",
   };
   const familyAssetBriefs = {
+    "a1-object-stage": {
+      medium: "photorealistic isolated studio-object render",
+      hero: "Create one large, diagonally oriented object that is genuinely native to this client's business and services, isolated on a deep near-black stage with a readable silhouette, subtle cool highlights, and low sculptural grounding. Use the supplied business context to choose the object. Do not use a phone, laptop, unrelated consumer device, person, or framed photograph unless that is literally what the business sells.",
+      secondary: "Create a low sculptural ground or supporting material form that belongs to the same dark object stage, with no new focal subject and generous black negative space.",
+      tertiary: "Create a close material study of the business-relevant object with restrained cool highlights, deep shadows, and no people or product-card framing.",
+    },
+    "a1-cinematic-3d": {
+      medium: "dark cinematic 3D scene with realistic materials",
+      hero: "Create a cinematic scene whose main subject is selected from the client's real business context. Use a clear silhouette, layered depth, controlled highlights, and broad crop-safe negative space; avoid generic SaaS gradients and split-hero compositions.",
+      secondary: "Create a darker supporting scene or material detail that can introduce the next visual chapter without becoming a uniform card.",
+      tertiary: "Create a close-up cinematic study of a relevant material, tool, or setting with deliberate directional light and no invented people or business claims.",
+    },
     "kokoro-editorial-architecture": {
       medium: "photorealistic architectural editorial photography",
       hero: "Create an architectural tableau with strong negative space, warm material depth, and a crop that can support monumental type without becoming a split hero.",

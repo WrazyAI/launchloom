@@ -13,6 +13,7 @@ import {
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
+import { REFERENCE_SEMANTIC_TRANSFER_GUIDANCE } from "./reference-semantic-transfer.mjs";
 
 export const RENDERED_REFERENCE_MODEL =
   process.env.CREATIVE_REFERENCE_JUDGE_MODEL || "openai/gpt-5.6-luna";
@@ -343,7 +344,8 @@ export async function evaluateRenderedReferenceFidelity({
   const reusableReferencePrefix = `REFERENCE DNA
 ${JSON.stringify(stableReferenceDna, null, 2)}
 
-Compare the candidate to the reference as an independent implementation of the same design mechanics. Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding. A technically clean but visually generic page must not pass.`;
+Compare the candidate to the reference as an independent implementation of the same design mechanics. Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding for mechanics, not for unrelated reference subject matter. A technically clean but visually generic page must not pass.
+${REFERENCE_SEMANTIC_TRANSFER_GUIDANCE}`;
   const content = [
     { type: "text", text: reusableReferencePrefix },
     { type: "text", text: "Reference desktop opening viewport:" },

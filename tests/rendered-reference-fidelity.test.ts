@@ -380,6 +380,13 @@ describe("rendered reference fidelity", () => {
     expect(labels).toContain("Candidate desktop full-page overview:");
     expect(content.filter((part: any) => part.type === "image_url")).toHaveLength(8);
     expect(requestBody.messages[0].content).toContain("compare the candidate viewport screenshot to the reference opening crop");
+    const referencePrompt = content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(referencePrompt).toContain("not for unrelated reference subject matter");
+    expect(referencePrompt).toContain("Do not reward or require literal subject copying");
+    expect(referencePrompt).toContain("composition");
   });
 
   it("keeps volatile analysis timestamps out of reusable reference cache prefixes", async () => {

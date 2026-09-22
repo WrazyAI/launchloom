@@ -245,7 +245,9 @@ jobs:
         # Luna authors three independent candidates in separate stages. Keep
         # the runner timeout above the author's internal fail-closed budget
         # so Actions cannot terminate a valid creative run early.
-        timeout-minutes: 25
+        timeout-minutes: 30
+        env:
+          CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS: 1500000
         run: >-
           npm run author:experiences --
           --config /tmp/site.config.json

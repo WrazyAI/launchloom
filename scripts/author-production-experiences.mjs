@@ -2,7 +2,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
-import { authorExperienceCandidates } from "./production-experience-author.mjs";
+import { REFERENCE_SEMANTIC_TRANSFER_GUIDANCE } from "./reference-semantic-transfer.mjs";
+import {
+  failureSummary,
+  writeFailedCandidateDrafts,
+} from "./creative-authoring-diagnostics.mjs";
+import {
+  authorExperienceCandidates,
+  sectionOrderRepairInstruction,
+} from "./production-experience-author.mjs";
 import {
   logOpenRouterCacheUsage,
   openRouterChatCompletion,
@@ -103,6 +111,7 @@ RELEASE RULES
 ${request.rules}
 
 Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. The candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, Reference DNA, mobile behavior, and prohibited patterns as binding design constraints, not suggestions.
+${REFERENCE_SEMANTIC_TRANSFER_GUIDANCE}
 
 REFERENCE FIDELITY RULES
 - Do not average references or drift to a familiar LaunchLoom composition.
@@ -203,7 +212,7 @@ function stagePromptSuffix(request) {
 CONTRACT STAGE
 Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, hero geometry, early conversion, non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
 
-  if (request.stage === "experience")
+  if (request.stage === "experience") {
     return `DESIGN CONTRACT
 ${request.designContract}
 
@@ -212,6 +221,7 @@ ${
     ? `COMPLIANCE REPAIR
 The previous JSX failed: ${request.validationError}
 Repair that exact violation without reducing the composition or changing the design contract.
+${sectionOrderRepairInstruction(request)}
 If a required section ID was missing, place the exact static JSX attribute id="services", id="faqs", or id="contact" on its semantic section. Single-quoted and quoted JSX-expression values are also valid. Do not rely on navigation text, hrefs, comments, data-reference-section values, or inferred section names as substitutes.
 
 PREVIOUS JSX
@@ -223,6 +233,7 @@ EXPERIENCE STAGE
 Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". The hero's early conversion is a compact anchor or button linking to #contact, not the full four-field form. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Mark the complete opening hero scene with data-hero. That element must contain exactly one H1 and the primary data-early-conversion action, so browser verification can measure the actual hero rather than only the navigation. Keep services, FAQs, and contact outside that measured hero region. If the opening composition uses multiple semantic sections, wrap those opening sections in one data-hero element while retaining the exact canonical data-reference-section markers on their semantic section children. Do not put data-hero on the nav alone. Include data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
 
 Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add the exact canonical section sequence IDs, once and in order, to semantic <section data-reference-section="..."> elements. Do not invent values: use Reference DNA.`;
+  }
 
   if (request.stage === "styles")
     return `${repair}
@@ -452,6 +463,7 @@ async function writeResult(result) {
       ),
     );
   }
+  await writeFailedCandidateDrafts(staging, result.failures || []);
   await fs.writeFile(
     path.join(staging, "creative-run.json"),
     `${JSON.stringify(
@@ -462,7 +474,7 @@ async function writeResult(result) {
         selectionKey: result.selectionKey,
         contentManifestDigest: result.contentManifest.digest,
         candidates: result.candidates.map((candidate) => candidate.metadata),
-        failures: result.failures || [],
+        failures: (result.failures || []).map(failureSummary),
         usage,
         cacheSummary: aggregateCacheUsage(usage),
       },
@@ -477,6 +489,8 @@ async function writeResult(result) {
 async function writeFailure(error) {
   await fs.rm(outputPath, { recursive: true, force: true });
   await fs.mkdir(outputPath, { recursive: true });
+  const failures = error?.creativeDiagnostics?.failures || [];
+  await writeFailedCandidateDrafts(outputPath, failures);
   await fs.writeFile(
     path.join(outputPath, "creative-run.json"),
     `${JSON.stringify(
@@ -485,6 +499,7 @@ async function writeFailure(error) {
         status: "failed",
         model,
         error: error instanceof Error ? error.message : String(error),
+        failures: failures.map(failureSummary),
         usage,
       },
       null,

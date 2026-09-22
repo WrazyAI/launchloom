@@ -7,6 +7,7 @@ import {
   openRouterSessionId,
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
+import { REFERENCE_SEMANTIC_TRANSFER_GUIDANCE } from "./reference-semantic-transfer.mjs";
 
 const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-5.6-luna";
 
@@ -203,15 +204,9 @@ function parseChoice(payload) {
   }
 }
 
-async function analyzeRoute(route, fetchImpl = fetch) {
+export function referenceAnalysisPrompt(route) {
   const dna = route.referenceDna || {};
-  const desktop = dna.evidence?.desktopScreenshot?.path;
-  const mobile = dna.evidence?.mobileScreenshot?.available ? dna.evidence.mobileScreenshot.path : "";
-  if (!desktop) throw new Error(`Reference route ${route.id} has no desktop screenshot.`);
-  const content = [
-    {
-      type: "text",
-      text: `Analyze this design reference as implementation mechanics, not as brand identity. Produce measured Reference DNA for an independent implementation. Existing route hints are context only and may be corrected by the pixels.
+  return `Analyze this design reference as implementation mechanics, not as brand identity. Produce measured Reference DNA for an independent implementation. Existing route hints are context only and may be corrected by the pixels.
 
 ROUTE HINTS
 ${JSON.stringify({
@@ -233,7 +228,19 @@ Rules:
 - infer only motion that is visually supported by the screenshots or the route's documented motion opportunity
 - required signatures must be design mechanics that can be independently implemented
 - prohibited patterns should name generic fallbacks that would visibly break this reference family
-- do not copy branding, copy, proprietary fonts, logos, or trade dress`
+- do not copy branding, copy, proprietary fonts, logos, or trade dress
+${REFERENCE_SEMANTIC_TRANSFER_GUIDANCE}`;
+}
+
+async function analyzeRoute(route, fetchImpl = fetch) {
+  const dna = route.referenceDna || {};
+  const desktop = dna.evidence?.desktopScreenshot?.path;
+  const mobile = dna.evidence?.mobileScreenshot?.available ? dna.evidence.mobileScreenshot.path : "";
+  if (!desktop) throw new Error(`Reference route ${route.id} has no desktop screenshot.`);
+  const content = [
+    {
+      type: "text",
+      text: referenceAnalysisPrompt(route)
     },
     { type: "text", text: "Desktop reference:" },
     await promptImagePart(desktop),

@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import {
   authorExperienceCandidates,
   namespaceCreativeCss,
+  sectionOrderRepairInstruction,
   validateProductionCandidateFiles,
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
@@ -386,6 +387,56 @@ describe("production experience author", () => {
     expect(result.failures[0].diagnostic).toContain(
       "production-experience-author.mjs:",
     );
+  });
+
+  it("keeps a failed route's last authored source for private diagnostics", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        if (request.route.id === "route-02" && request.stage === "styles")
+          throw new Error("simulated styles-stage failure");
+        return safeStage(request);
+      },
+    });
+
+    expect(result.candidates).toHaveLength(2);
+    expect(result.failures[0].draft).toMatchObject({
+      candidateId: "candidate-b",
+      routeId: "route-02",
+      stage: "styles-and-motion",
+    });
+    expect(result.failures[0].draft.experience).toContain(
+      "content.hero.heading",
+    );
+    expect(result.failures[0].draft.designContract).toContain(
+      "Fashion Archive",
+    );
+  });
+
+  it("gives structural repair the exact canonical JSX section order", () => {
+    const registry = JSON.parse(
+      readFileSync("data/inspiration-registry.json", "utf8"),
+    );
+    const referenceDna = buildReferenceDna(registry.records[0], {
+      requireEvidence: true,
+    });
+    const instruction = sectionOrderRepairInstruction({
+      route: { referenceDna },
+      validationError:
+        "Expected ordered sections [nav -> hero]; observed [hero -> nav].",
+    });
+
+    expect(instruction).toContain("ORDERED SECTION REPAIR");
+    for (const section of referenceDna.sectionSequence) {
+      expect(instruction).toContain(
+        section.toLowerCase().replace(/[^a-z0-9]+/gu, "-"),
+      );
+    }
+    expect(instruction).toContain("Do not use CSS order");
+    expect(
+      sectionOrderRepairInstruction({ validationError: "not section order" }),
+    ).toBe("");
   });
 
   it("accepts sealed content destructured in the component parameter", async () => {
@@ -795,6 +846,10 @@ describe("production experience author", () => {
     const repositoryIndex = workflow.indexOf(
       "name: Create private repository and Cloudflare Pages project",
     );
+    const authoredStep = workflow.slice(
+      authorIndex,
+      workflow.indexOf("name: Preserve authored experience evidence"),
+    );
 
     expect(inspirationIndex).toBeGreaterThan(-1);
     expect(authorIndex).toBeGreaterThan(inspirationIndex);
@@ -823,6 +878,10 @@ describe("production experience author", () => {
     );
     expect(workflow).toContain("--failure-mode throw");
     expect(workflow).not.toContain("--failure-mode record");
+    expect(authoredStep).toContain("timeout-minutes: 30");
+    expect(authoredStep).toContain(
+      "CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS: 1500000",
+    );
     expect(
       workflow.match(
         /PUBLIC_REVIEW_MODE=true node "\$GITHUB_WORKSPACE\/scripts\/verify-rendered-revision\.mjs"/g,

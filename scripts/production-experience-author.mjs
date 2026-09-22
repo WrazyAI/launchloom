@@ -115,6 +115,28 @@ const requiredExperienceBindings = [
   { token: "content.faqs", aliases: ["content.faqs"] },
 ];
 
+/**
+ * Add a focused, canonical-order instruction when structural repair failed.
+ * @param {{route?: Record<string, any>, validationError?: string}} request
+ */
+export function sectionOrderRepairInstruction(request = {}) {
+  if (!/Expected ordered sections \[/u.test(request.validationError || ""))
+    return "";
+  const expected = (request.route?.referenceDna?.sectionSequence || []).map(
+    (item) =>
+      String(item || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/gu, "-")
+        .replace(/^-|-$/gu, ""),
+  );
+  return `
+ORDERED SECTION REPAIR
+The JSX section order is a blocking structural failure. Reorder the complete semantic <section> elements in the source tree to this exact canonical order:
+${expected.map((item) => `- ${item}`).join("\n")}
+Keep each section's existing content, IDs, signatures, styling hooks, and visual layer relationships. Do not use CSS order, absolute positioning, or duplicate markers to simulate source order. Do not change other parts of the composition unless required to keep the moved sections valid.
+`;
+}
+
 function stableJson(value) {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
   if (value && typeof value === "object")
@@ -852,12 +874,30 @@ export async function authorExperienceCandidates({
     : 2;
   const limitedGenerate = createGenerationLimiter(generate, maxConcurrency);
   const activeStages = new Map();
+  const routeDrafts = Array(routes.length);
   const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
-      const markStage = (stage) => activeStages.set(route.id, stage);
+      let draft;
+      const markStage = (stage) => {
+        activeStages.set(route.id, stage);
+        if (draft) draft.stage = stage;
+      };
       const routeContentManifest = buildCreativeContentManifest(site, route);
       const content = routeContentManifest.values;
       const base = { route, contentTokens, contentShape: content, rules };
+      draft = {
+        candidateId: `candidate-${String.fromCharCode(97 + index)}`,
+        routeId: route.id,
+        routeLabel: route.label,
+        familyId: route.familyId,
+        stage: "contract",
+        designContract: "",
+        designRationale: "",
+        experience: "",
+        styles: "",
+        motion: "",
+      };
+      routeDrafts[index] = draft;
       markStage("contract");
       const contractResult = await generateContract(limitedGenerate, {
         ...base,
@@ -865,6 +905,8 @@ export async function authorExperienceCandidates({
       });
       const designContract = contractResult.designContract;
       const designRationale = contractResult.designRationale;
+      draft.designContract = designContract;
+      draft.designRationale = designRationale;
       markStage("experience");
       const experienceResult = await generateStageValue(
         limitedGenerate,
@@ -873,6 +915,7 @@ export async function authorExperienceCandidates({
         "experience",
       );
       let experience = normalizeAuthoredSource(experienceResult.value);
+      draft.experience = experience;
       let complianceRepaired =
         contractResult.repaired || experienceResult.repaired;
       try {
@@ -897,6 +940,7 @@ export async function authorExperienceCandidates({
             "experience",
           );
           experience = normalizeAuthoredSource(repairedExperience.value);
+          draft.experience = experience;
           validateExperience(experience, route, content);
         } catch (repairError) {
           const repairMessage =
@@ -905,6 +949,7 @@ export async function authorExperienceCandidates({
               : String(repairError);
           if (/empty image alt attribute/iu.test(repairMessage)) {
             experience = replaceEmptyImageAlt(experience);
+            draft.experience = experience;
             validateExperience(experience, route, content);
           } else {
             const finalRepair = await generateStageValue(
@@ -920,6 +965,7 @@ export async function authorExperienceCandidates({
               "experience",
             );
             experience = normalizeAuthoredSource(finalRepair.value);
+            draft.experience = experience;
             try {
               validateExperience(experience, route, content);
             } catch (finalError) {
@@ -930,6 +976,7 @@ export async function authorExperienceCandidates({
               if (!/empty image alt attribute/iu.test(finalMessage))
                 throw finalError;
               experience = replaceEmptyImageAlt(experience);
+              draft.experience = experience;
               validateExperience(experience, route, content);
             }
           }
@@ -961,6 +1008,8 @@ export async function authorExperienceCandidates({
       ]);
       const styles = stylesOutput.source;
       const motion = motionOutput.source;
+      draft.styles = styles;
+      draft.motion = motion;
       complianceRepaired ||= stylesOutput.repaired || motionOutput.repaired;
       let referenceRepairCycles = 0;
       if (route.referenceDna?.complete) {
@@ -992,6 +1041,7 @@ export async function authorExperienceCandidates({
           experience = replaceEmptyImageAlt(
             normalizeAuthoredSource(repaired.value),
           );
+          draft.experience = experience;
           complianceRepaired = true;
           markStage("reference-fidelity");
           validateExperience(experience, route, content);
@@ -1052,6 +1102,7 @@ export async function authorExperienceCandidates({
         },
         creativeManifest,
       };
+      draft.stage = "complete";
       const contract = {
         version: 2,
         route,
@@ -1101,12 +1152,16 @@ export async function authorExperienceCandidates({
               .slice(0, 3)
               .join(" <- ")
           : "",
+      draft: routeDrafts[index],
     });
   }
-  if (!candidates.length)
-    throw new Error(
+  if (!candidates.length) {
+    const error = new Error(
       `All creative candidates failed: ${failures.map((failure) => `${failure.routeId} [${failure.stage}]: ${failure.name}: ${failure.error}${failure.diagnostic ? ` (${failure.diagnostic})` : ""}`).join(" | ")}`,
     );
+    error.creativeDiagnostics = { failures };
+    throw error;
+  }
 
   return {
     version: 1,

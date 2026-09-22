@@ -295,6 +295,51 @@ describe("contextual image generation", () => {
       expect(manifest.placements).toHaveLength(1);
   });
 
+  it("translates A1 object-stage imagery into a business-relevant isolated subject", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const prompts: string[] = [];
+    await generate({
+      site: fixture(),
+      inspiration: {
+        routes: [
+          {
+            id: "route-object-stage",
+            familyId: "a1-object-stage",
+            signature: "isolated object stage",
+            referenceDna: {
+              familyId: "a1-object-stage",
+              heroGeometry: { mode: "centered-isolated-object-stage" },
+              imageTreatment: {
+                mode: "isolated object render",
+                crop: "diagonal object with dark grounding",
+              },
+              palette: { contrastIntent: "near-black stage with cool edge light" },
+            },
+          },
+        ],
+      },
+      outputDir,
+      key: "test-fal-key",
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          prompts.push(options.input.prompt);
+          return {
+            data: {
+              images: [{ url: `https://fal.example/object-${prompts.length}.jpg` }],
+            },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(prompts[0]).toContain("Create one large, diagonally oriented object");
+    expect(prompts[0]).toContain("Precision bicycle fitting, Workshop diagnostics");
+    expect(prompts[0]).toContain("never force an unrelated phone");
+    expect(prompts[0]).toContain("isolated object-stage imagery");
+  });
+
   it("binds the first supplied secondary client asset to every route", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const site = fixture();
