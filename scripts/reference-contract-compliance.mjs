@@ -381,9 +381,9 @@ export function validateReferenceContractCompliance({
         element.id === "lower-edge-product-overlap" &&
         renderedEvidence.viewportName !== "mobile" &&
         evidence &&
-        (!evidence.insideHero ||
+        (!evidence.overlapsHero ||
+          !evidence.reachesHeroLowerEdge ||
           evidence.heroTopRatio < 0.4 ||
-          evidence.heroBottomGapRatio > 0.16 ||
           evidence.overlapCount < 1)
       )
         findings.push(
