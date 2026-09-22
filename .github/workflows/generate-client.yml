@@ -291,6 +291,27 @@ jobs:
             git commit -m "Render and repair creative experience candidates"
             git push origin review/initial
           fi
+      - name: Preserve failed creative repair diagnostics
+        if: failure()
+        continue-on-error: true
+        run: |
+          SITE_DIR="${{ steps.branch.outputs.dir }}"
+          if [ -z "$SITE_DIR" ] || [ ! -d "$SITE_DIR" ]; then
+            echo "No private site directory is available for repair diagnostics."
+            exit 0
+          fi
+          cd "$SITE_DIR"
+          if [ ! -d .launchloom/creative-repair ]; then
+            echo "No rendered repair diagnostics were produced."
+            exit 0
+          fi
+          git add .launchloom/creative-repair .launchloom/generated-experiences
+          if git diff --cached --quiet; then
+            echo "Rendered repair diagnostics are already preserved."
+            exit 0
+          fi
+          git commit -m "Preserve failed creative repair diagnostics"
+          git push origin review/initial
       - name: Build and direct-upload public preview
         id: deploy
         run: |

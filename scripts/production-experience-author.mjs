@@ -989,7 +989,9 @@ export async function authorExperienceCandidates({
             "content",
             "experience",
           );
-          experience = normalizeAuthoredSource(repaired.value);
+          experience = replaceEmptyImageAlt(
+            normalizeAuthoredSource(repaired.value),
+          );
           complianceRepaired = true;
           markStage("reference-fidelity");
           validateExperience(experience, route, content);

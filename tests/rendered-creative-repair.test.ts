@@ -127,6 +127,55 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("passes the rendered judge's concrete repair recommendation to Luna", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const receivedFindings: unknown[] = [];
+    let bakeoffCalls = 0;
+    const failingCandidate = candidate("candidate-a", {
+      valid: false,
+      eligible: false,
+      referenceFidelity: { pass: false, score: 52 },
+      renderedReferenceFidelity: {
+        pass: false,
+        audit: {
+          findings: [{
+            severity: "major",
+            category: "hero-geometry",
+            viewport: "desktop",
+            evidence: "The main copy starts at 9% of viewport width instead of 26%.",
+            repair: "Move the editorial column to 24-27% and keep the left field empty.",
+          }],
+        },
+      },
+    });
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({ selectedCandidateId: null, candidates: [failingCandidate] })
+            : report({ candidates: [candidate("candidate-a")] }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ findings }: any) => {
+        receivedFindings.push(...findings);
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(receivedFindings).toEqual(expect.arrayContaining([
+      expect.stringContaining("The main copy starts at 9% of viewport width"),
+      expect.stringContaining("Move the editorial column to 24-27%"),
+    ]));
+  });
+
   it("repairs the selected source only after a rendered visual failure and rerenders before passing", async () => {
     const { root, candidates } = await fixture();
     let bakeoffCalls = 0;

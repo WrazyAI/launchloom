@@ -610,6 +610,51 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("normalizes empty image alts returned by Reference DNA repair stages", async () => {
+    const registry = JSON.parse(
+      readFileSync("data/inspiration-registry.json", "utf8"),
+    );
+    const referenceDna = buildReferenceDna(registry.records[0], {
+      requireEvidence: true,
+    });
+    const packWithReference = {
+      ...inspirationPack,
+      routes: inspirationPack.routes.map((route) =>
+        route.id === "route-01" ? { ...route, referenceDna } : route,
+      ),
+    };
+    let referenceRepairCalls = 0;
+
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack: packWithReference,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (
+          request.route.id === "route-01" &&
+          request.stage === "experience" &&
+          request.validationError?.includes("Reference fidelity repair")
+        ) {
+          referenceRepairCalls += 1;
+          return {
+            content: `${value.content}\n<img src={content.hero.image} alt="" />`,
+          };
+        }
+        return value;
+      },
+    });
+
+    expect(referenceRepairCalls).toBe(2);
+    expect(result.candidates).toHaveLength(2);
+    expect(result.failures).toEqual([
+      expect.objectContaining({
+        routeId: "route-01",
+        stage: "reference-fidelity",
+        error: expect.not.stringContaining("empty image alt attribute"),
+      }),
+    ]);
+  });
+
   it("repairs missing LeadForm content and anchor navigation bindings", async () => {
     const result = await authorExperienceCandidates({
       site,
@@ -783,6 +828,30 @@ describe("production experience author", () => {
         /PUBLIC_REVIEW_MODE=true node "\$GITHUB_WORKSPACE\/scripts\/verify-rendered-revision\.mjs"/g,
       ),
     ).toHaveLength(1);
+  });
+
+  it("preserves failed rendered-repair evidence in the private site repo", () => {
+    const workflow = readFileSync(
+      new URL("../.github/workflows/generate-client.yml", import.meta.url),
+      "utf8",
+    );
+    const renderIndex = workflow.indexOf(
+      "name: Render and repair creative candidates in the production shell",
+    );
+    const diagnosticsIndex = workflow.indexOf(
+      "name: Preserve failed creative repair diagnostics",
+    );
+    const deployIndex = workflow.indexOf("name: Build and direct-upload public preview");
+    const diagnosticsStep = workflow.slice(diagnosticsIndex, deployIndex);
+
+    expect(renderIndex).toBeGreaterThan(-1);
+    expect(diagnosticsIndex).toBeGreaterThan(renderIndex);
+    expect(deployIndex).toBeGreaterThan(diagnosticsIndex);
+    expect(diagnosticsStep).toContain("if: failure()");
+    expect(diagnosticsStep).toContain(".launchloom/creative-repair");
+    expect(diagnosticsStep).toContain(".launchloom/generated-experiences");
+    expect(diagnosticsStep).toContain("git push origin review/initial");
+    expect(diagnosticsStep).toContain("continue-on-error: true");
   });
 
   it("emits route-specific content manifests with independently reproducible digests", async () => {

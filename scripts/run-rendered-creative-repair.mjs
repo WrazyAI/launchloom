@@ -36,8 +36,11 @@ function candidateFindings(candidate) {
   return unique([
     ...(candidate?.failures || []),
     ...(candidate?.renderedReferenceFidelity?.audit?.findings || []).map(
-      (item) =>
-        `${item.severity || "major"} ${item.category || "reference"} ${item.viewport || "all"}: ${item.evidence || item.repair || "Rendered reference mismatch."}`,
+      (item) => {
+        const evidence = item.evidence || "Rendered reference mismatch.";
+        const recommendation = item.repair || item.recommendation;
+        return `${item.severity || "major"} ${item.category || "reference"} ${item.viewport || "all"}: Evidence: ${evidence}${recommendation ? ` Required repair: ${recommendation}` : ""}`;
+      },
     ),
     ...(candidate?.referenceFidelity?.renderedVisualFindings || []).map(
       (item) => item.message || item.code || "Reference contract mismatch.",
