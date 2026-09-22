@@ -105,7 +105,7 @@ describe("creative repair loop", () => {
       "launchloom:creative:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     );
     expect(body.reasoning.effort).toBe("max");
-    expect(body.prompt_cache_key).toMatch(/^ll:creative-repair-ref:/u);
+    expect(body.prompt_cache_key).toMatch(/^ll:creative-repair-refe:/u);
   });
 
   it("authorizes requested composition changes only for explicit human review findings", async () => {
