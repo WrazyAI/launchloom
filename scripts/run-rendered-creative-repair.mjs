@@ -339,6 +339,40 @@ export async function runVisualGateProcess({
   return { ...report, processExitCode: result.code };
 }
 
+async function validateCandidateReasoningBindings(
+  candidateRoot,
+  creativeSession,
+) {
+  const entries = await fs.readdir(candidateRoot, { withFileTypes: true });
+  for (const entry of entries.filter((item) => item.isDirectory())) {
+    const metadataPath = path.join(candidateRoot, entry.name, "metadata.json");
+    const metadata = await readJson(metadataPath).catch(() => null);
+    const reasoning = metadata?.reasoning || null;
+    if (!reasoning?.sessionId) {
+      if (creativeSession)
+        throw new Error(
+          `Adaptive creative session ${creativeSession.sessionId} cannot be applied to candidate ${metadata?.candidateId || entry.name} because its authored reasoning binding is missing.`,
+        );
+      continue;
+    }
+    if (!creativeSession)
+      throw new Error(
+        `Candidate ${metadata?.candidateId || entry.name} was authored with adaptive reasoning session ${reasoning.sessionId}, but no reasoning-preflight session was supplied.`,
+      );
+
+    const mismatches = [
+      ["sessionId", reasoning.sessionId, creativeSession.sessionId],
+      ["effort", reasoning.effort, creativeSession.reasoningEffort],
+      ["policyVersion", reasoning.policyVersion, creativeSession.reasoningPolicyVersion],
+      ["selectorModelVersion", reasoning.selectorModelVersion, creativeSession.selectorModelVersion],
+    ].filter(([, actual, expected]) => actual !== expected);
+    if (mismatches.length)
+      throw new Error(
+        `Candidate ${metadata?.candidateId || entry.name} reasoning binding does not match the frozen creative session: ${mismatches.map(([field, actual, expected]) => `${field}=${actual ?? "(missing)"} expected ${expected ?? "(missing)"}`).join(" | ")}`,
+      );
+  }
+}
+
 async function defaultRepairCandidate({
   candidateDir,
   findings,
@@ -508,6 +542,10 @@ export async function runRenderedCreativeRepair({
         creativeModel: model,
       })
     : null;
+  await validateCandidateReasoningBindings(
+    candidateRoot,
+    frozenCreativeSession,
+  );
   const humanFindings = Array.isArray(requestedFindings)
     ? requestedFindings.filter(Boolean)
     : [];
