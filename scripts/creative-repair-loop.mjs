@@ -30,6 +30,10 @@ const REPAIR_SCHEMA = {
   },
 };
 
+// Repairs return the complete candidate bundle (JSX, CSS, and motion). Keep
+// enough completion headroom for visible source plus xhigh reasoning tokens.
+export const CREATIVE_REPAIR_MAX_TOKENS = 64_000;
+
 function clean(value, limit = 900) {
   return String(value || "").replace(/[—–]/gu, "-").trim().slice(0, limit);
 }
@@ -78,6 +82,50 @@ function isCompleteRepair(value) {
       !Array.isArray(value) &&
       ["experience", "styles", "motion"].every((key) => typeof value[key] === "string"),
   );
+}
+
+function responseText(content) {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content))
+    return content
+      .filter((part) => part?.type === "text" && typeof part.text === "string")
+      .map((part) => part.text)
+      .join("");
+  return "";
+}
+
+/** Describe response health without logging generated source or business PII. */
+export function describeCreativeRepairResponseFailure(payload) {
+  const choice = payload?.choices?.[0] || {};
+  const message = choice.message || {};
+  const usage = payload?.usage || {};
+  const finishReason =
+    typeof choice.finish_reason === "string" && choice.finish_reason
+      ? choice.finish_reason
+      : "unknown";
+  const completionTokens = Number.isFinite(usage.completion_tokens)
+    ? usage.completion_tokens
+    : "unknown";
+  const reasoningTokens = Number.isFinite(
+    usage.completion_tokens_details?.reasoning_tokens,
+  )
+    ? usage.completion_tokens_details.reasoning_tokens
+    : "unknown";
+  const contentChars = responseText(message.content).length;
+  const contentShape =
+    typeof message.content === "string"
+      ? "string"
+      : Array.isArray(message.content)
+        ? "array"
+        : message.content == null
+          ? "empty"
+          : typeof message.content;
+  const refusal = Boolean(message.refusal);
+  const issue = ["length", "max_tokens"].includes(finishReason)
+    ? "was truncated"
+    : "was unusable";
+
+  return `OpenRouter creative repair response ${issue} (finish_reason=${finishReason}, completion_tokens=${completionTokens}, reasoning_tokens=${reasoningTokens}, content_shape=${contentShape}, content_chars=${contentChars}, refusal=${refusal}).`;
 }
 
 /**
@@ -481,7 +529,7 @@ Return complete files. Keep every exact Reference DNA marker and the ordered sec
         exclude: true,
       },
       response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
-      max_tokens: 24_000,
+      max_tokens: CREATIVE_REPAIR_MAX_TOKENS,
       messages: [
         {
           role: "system",
@@ -498,13 +546,21 @@ Return complete files. Keep every exact Reference DNA marker and the ordered sec
       `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
     );
   logOpenRouterCacheUsage("creative-repair", payload.usage);
+  const choice = payload?.choices?.[0] || {};
+  if (["length", "max_tokens"].includes(choice.finish_reason))
+    throw new CreativeRepairResponseError(
+      describeCreativeRepairResponseFailure(payload),
+    );
   try {
-    return parseModelJson(payload.choices?.[0]?.message?.content || "");
+    const parsed = parseModelJson(choice.message?.content || "");
+    if (!isCompleteRepair(parsed))
+      throw new Error(
+        "OpenRouter creative repair returned an incomplete file bundle.",
+      );
+    return parsed;
   } catch (error) {
     throw new CreativeRepairResponseError(
-      error instanceof Error
-        ? error.message
-        : "OpenRouter did not return a valid JSON object.",
+      `${error instanceof Error ? error.message : "OpenRouter did not return a valid JSON object."} ${describeCreativeRepairResponseFailure(payload)}`,
       { cause: error },
     );
   }

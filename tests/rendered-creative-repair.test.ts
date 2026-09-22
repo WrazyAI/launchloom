@@ -9,9 +9,57 @@ import {
   runVisualGateProcess,
   writeCandidate,
 } from "../scripts/run-rendered-creative-repair.mjs";
-import { CreativeRepairResponseError } from "../scripts/creative-repair-loop.mjs";
+import {
+  CREATIVE_REPAIR_MAX_TOKENS,
+  CreativeRepairResponseError,
+  describeCreativeRepairResponseFailure,
+} from "../scripts/creative-repair-loop.mjs";
 
 const roots: string[] = [];
+
+describe("creative repair provider response budget", () => {
+  it("reserves the full source-bundle budget used by other creative authoring stages", () => {
+    expect(CREATIVE_REPAIR_MAX_TOKENS).toBe(64_000);
+  });
+
+  it("identifies truncation and token usage without exposing generated content", () => {
+    expect(
+      describeCreativeRepairResponseFailure({
+        choices: [
+          {
+            finish_reason: "length",
+            message: { content: null },
+          },
+        ],
+        usage: {
+          completion_tokens: 24_000,
+          completion_tokens_details: { reasoning_tokens: 8_100 },
+        },
+      }),
+    ).toBe(
+      "OpenRouter creative repair response was truncated (finish_reason=length, completion_tokens=24000, reasoning_tokens=8100, content_shape=empty, content_chars=0, refusal=false).",
+    );
+  });
+
+  it("describes malformed structured text without logging its contents", () => {
+    expect(
+      describeCreativeRepairResponseFailure({
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: [{ type: "text", text: "private generated source" }],
+              refusal: null,
+            },
+          },
+        ],
+        usage: { completion_tokens: 12 },
+      }),
+    ).toBe(
+      "OpenRouter creative repair response was unusable (finish_reason=stop, completion_tokens=12, reasoning_tokens=unknown, content_shape=array, content_chars=24, refusal=false).",
+    );
+  });
+});
 
 afterEach(async () => {
   await Promise.all(

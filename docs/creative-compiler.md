@@ -105,12 +105,14 @@ ladder for compatibility; the production workflow does not.
 
 Authoring uses generous stage-specific completion ceilings below Luna's
 128,000-token maximum: up to 64,000 for Experience JSX, 48,000 for styles,
-32,000 for motion, and 16,000 for the design contract. OpenRouter counts
+32,000 for motion, 16,000 for the design contract, and 64,000 for a rendered
+repair that returns the complete JSX/CSS/motion bundle. OpenRouter counts
 reasoning tokens against max_tokens even when reasoning is excluded from the
 returned message, so these are ceilings for reasoning plus authored source, not
 expected spend. Experience, styles, and motion requests may run for up to four
-minutes; the full authoring phase remains bounded at 30 minutes. Truncated,
-empty, and timed-out responses log stage and usage diagnostics; the pipeline
+minutes; the full authoring phase remains bounded at 30 minutes. Rendered
+repair remains bounded to two cycles per candidate. Truncated, empty, and
+timed-out authoring responses log stage and usage diagnostics; the pipeline
 still fails closed and never promotes a legacy renderer.
 
 ## Shared runtime contract
