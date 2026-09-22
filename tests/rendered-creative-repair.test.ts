@@ -265,6 +265,30 @@ describe("rendered creative repair orchestration", () => {
     ).rejects.toThrow(/authored with adaptive reasoning session/iu);
   });
 
+  it("fails closed on incomplete adaptive reasoning metadata", async () => {
+    const { root, candidates } = await fixture();
+    const metadataPath = path.join(candidates, "candidate-a", "metadata.json");
+    const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+    metadata.reasoning = {
+      effort: "xhigh",
+      policyVersion: "adaptive-reasoning-v1",
+      selectorModelVersion: "jev-1.13.0",
+    };
+    await fs.writeFile(metadataPath, JSON.stringify(metadata));
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(options, report()),
+        runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+        promoteImpl: async () => ({ candidateId: "candidate-a" }),
+      }),
+    ).rejects.toThrow(/incomplete adaptive reasoning metadata/iu);
+  });
+
   it("fails closed when candidate reasoning metadata disagrees with the frozen session", async () => {
     const { root, candidates } = await fixture();
     const creativeSession = {
