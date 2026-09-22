@@ -6,6 +6,7 @@ import {
   normalizeReasoningJudgments,
   REASONING_PREFLIGHT_QUESTIONS,
   REASONING_POLICY_VERSION,
+  validateCreativeSessionConfig,
 } from "../scripts/reasoning-preflight-lib.mjs";
 
 function pack() {
@@ -331,6 +332,73 @@ describe("adaptive reasoning preflight", () => {
     expect(enforced.recommendedEffort).toBe("max");
     expect(enforced.reasoningEffort).toBe("max");
     expect(enforced.decision.reasonCodes).toEqual(["selector-fallback:max"]);
+  });
+
+  it("fails closed when a persisted creative session contradicts its rollout mode", async () => {
+    const shadow = await createReasoningPreflight({
+      inspirationPack: pack(),
+      mode: "shadow",
+      sessionKey: "intake-42",
+      apiKey: "typesafe-test-key",
+      fetchImpl: (async () =>
+        new Response(JSON.stringify(responsePayload()), {
+          status: 200,
+        })) as any,
+    });
+    expect(() =>
+      validateCreativeSessionConfig({
+        ...shadow,
+        reasoningEffort: "max",
+      }),
+    ).toThrow(/Shadow reasoning sessions must execute the xhigh baseline/iu);
+
+    const enforced = await createReasoningPreflight({
+      inspirationPack: pack(),
+      mode: "enforce",
+      sessionKey: "intake-42",
+      apiKey: "typesafe-test-key",
+      fetchImpl: (async () =>
+        new Response(JSON.stringify(responsePayload()), {
+          status: 200,
+        })) as any,
+    });
+    expect(() =>
+      validateCreativeSessionConfig({
+        ...enforced,
+        reasoningEffort:
+          enforced.recommendedEffort === "max" ? "xhigh" : "max",
+      }),
+    ).toThrow(/must execute the frozen recommended effort/iu);
+  });
+
+  it("rejects malformed session ids and contradictory embedded decisions", async () => {
+    const session = await createReasoningPreflight({
+      inspirationPack: pack(),
+      mode: "shadow",
+      sessionKey: "intake-42",
+      apiKey: "typesafe-test-key",
+      fetchImpl: (async () =>
+        new Response(JSON.stringify(responsePayload()), {
+          status: 200,
+        })) as any,
+    });
+
+    expect(() =>
+      validateCreativeSessionConfig({
+        ...session,
+        sessionId: "launchloom:creative:not-a-digest",
+      }),
+    ).toThrow(/invalid sessionId/iu);
+
+    expect(() =>
+      validateCreativeSessionConfig({
+        ...session,
+        decision: {
+          ...session.decision,
+          reasoningEffort: "max",
+        },
+      }),
+    ).toThrow(/decision reasoning effort does not match/iu);
   });
 
   it("treats malformed Jev score distributions as selector failure", async () => {
