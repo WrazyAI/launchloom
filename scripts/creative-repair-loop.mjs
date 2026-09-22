@@ -488,6 +488,7 @@ async function main() {
   const creativeSession = args.session
     ? validateCreativeSessionConfig(
         JSON.parse(await fs.readFile(path.resolve(args.session), "utf8")),
+        { creativeModel: model },
       )
     : null;
   const result = await runCreativeRepairLoop({
