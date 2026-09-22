@@ -95,9 +95,16 @@ describe("experience-pack compiler", () => {
     expect(author).toContain(
       '(model === "openai/gpt-5.6-luna" ? "xhigh" : "low")',
     );
-    expect(repair).toContain(
-      'process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "xhigh"',
+    const sessionEffortIndex = repair.indexOf(
+      "creativeSession?.reasoningEffort",
     );
+    const envEffortIndex = repair.indexOf(
+      "process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT",
+    );
+    const xhighFallbackIndex = repair.indexOf('"xhigh";', envEffortIndex);
+    expect(sessionEffortIndex).toBeGreaterThan(-1);
+    expect(envEffortIndex).toBeGreaterThan(sessionEffortIndex);
+    expect(xhighFallbackIndex).toBeGreaterThan(envEffortIndex);
   });
 
   it("runs one reasoning preflight before Luna and threads the frozen session through repair", () => {
