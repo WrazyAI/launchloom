@@ -36,7 +36,7 @@ const model =
   args.model || process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-5.6-luna";
 const reasoningEffort =
   process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT ||
-  (model === "openai/gpt-5.6-luna" ? "max" : "low");
+  (model === "openai/gpt-5.6-luna" ? "xhigh" : "low");
 const failureMode = args["failure-mode"] || "throw";
 const usage = [];
 const authorDeadline =
@@ -302,7 +302,7 @@ async function requestStage(request) {
     };
     const efforts = fallbackEfforts[reasoningEffort] || [reasoningEffort];
     // Validation repairs should prioritize a complete structured response over
-    // maximum hidden reasoning. A failed max-effort repair must not consume the
+    // maximum hidden reasoning. A failed high-effort repair must not consume the
     // whole configured authoring budget before trying the proven lower lane.
     const requestedEfforts = request.validationError
       ? efforts.slice(1).length

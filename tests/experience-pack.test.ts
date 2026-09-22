@@ -86,17 +86,24 @@ describe("experience-pack compiler", () => {
     expect(lab).toContain("unsupported claims");
   });
 
-  it("uses maximum effort as the default Luna creative reasoning effort", () => {
+  it("uses xhigh as the default Luna creative reasoning effort", () => {
     const author = readFileSync(
       "scripts/author-production-experiences.mjs",
       "utf8",
     );
     const repair = readFileSync("scripts/creative-repair-loop.mjs", "utf8");
     expect(author).toContain(
-      '(model === "openai/gpt-5.6-luna" ? "max" : "low")',
+      '(model === "openai/gpt-5.6-luna" ? "xhigh" : "low")',
     );
     expect(repair).toContain(
-      'process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "max"',
+      'process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "xhigh"',
+    );
+    const workflow = readFileSync(
+      ".github/workflows/generate-client.yml",
+      "utf8",
+    );
+    expect(workflow).toContain(
+      "CREATIVE_EXPERIENCE_REASONING_EFFORT: ${{ vars.CREATIVE_EXPERIENCE_REASONING_EFFORT || 'xhigh' }}",
     );
   });
 

@@ -30,6 +30,10 @@ describe("model JSON response parsing", () => {
         { type: "text", text: "\n```" },
       ],
     ],
+    [
+      "output_text content parts",
+      [{ type: "output_text", text: JSON.stringify(expected) }],
+    ],
   ])("accepts %s", (_label, content) => {
     expect(parseModelJson(content)).toEqual(expected);
   });

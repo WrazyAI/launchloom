@@ -39,6 +39,49 @@ function cacheableReferenceDna(referenceDna) {
   return stable;
 }
 
+function repairOutputDiagnostic(choice, payload) {
+  const message = choice?.message || {};
+  const content = message.content;
+  const contentType = Array.isArray(content) ? "array" : typeof content;
+  const contentChars =
+    typeof content === "string"
+      ? content.length
+      : Array.isArray(content)
+        ? content.reduce(
+            (total, part) =>
+              total + (typeof part?.text === "string" ? part.text.length : 0),
+            0,
+          )
+        : 0;
+  const completionTokens = Number.isFinite(payload?.usage?.completion_tokens)
+    ? payload.usage.completion_tokens
+    : "unknown";
+  const finishReason = String(choice?.finish_reason || "unknown");
+
+  if (finishReason === "length")
+    return new Error(
+      `OpenRouter creative repair response was truncated (finish_reason=length, completion_tokens=${completionTokens}, max_tokens=24000).`,
+    );
+  if (message.refusal)
+    return new Error(
+      `OpenRouter refused creative repair (finish_reason=${finishReason}).`,
+    );
+  return new Error(
+    `OpenRouter creative repair returned invalid structured output (finish_reason=${finishReason}, content_type=${contentType}, content_chars=${contentChars}, completion_tokens=${completionTokens}).`,
+  );
+}
+
+function completeRepairBundle(value) {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      ["experience", "styles", "motion"].every(
+        (key) => typeof value[key] === "string" && value[key].trim(),
+      ),
+  );
+}
+
 function clean(value, limit = 900) {
   return String(value || "").replace(/[—–]/gu, "-").trim().slice(0, limit);
 }
@@ -436,36 +479,80 @@ Return complete files. Keep required reference signatures and safety/content con
     model,
     stableReferenceDna,
   );
-  const response = await openRouterChatCompletion({
-    title: "LaunchLoom creative repair",
-    sessionId,
-    body: {
-      model,
-      ...promptCacheRequestFields(model, promptCacheKey),
-      temperature: 0.35,
-      reasoning: {
-        effort: process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "max",
-        exclude: true,
-      },
-      response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
-      max_tokens: 24_000,
-      messages: [
-        {
-          role: "system",
-          content:
-            "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
+  const systemMessage = {
+    role: "system",
+    content:
+      "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
+  };
+  let lastFormatError;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const retryContent = attempt
+      ? [
+          ...content,
+          {
+            type: "text",
+            text: "FORMAT RETRY: Your previous response was not valid JSON. Return only the complete JSON object with exactly these string fields: experience, styles, motion. Do not add prose, markdown fences, comments, or omit any file.",
+          },
+        ]
+      : content;
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom creative repair",
+      sessionId,
+      body: {
+        model,
+        ...promptCacheRequestFields(model, promptCacheKey),
+        temperature: attempt ? 0.2 : 0.35,
+        reasoning: {
+          effort: process.env.CREATIVE_EXPERIENCE_REASONING_EFFORT || "xhigh",
+          exclude: true,
         },
-        { role: "user", content },
-      ],
-    },
+        response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
+        max_tokens: 24_000,
+        messages: [
+          systemMessage,
+          { role: "user", content: retryContent },
+        ],
+      },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok)
+      throw new Error(
+        `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
+      );
+    logOpenRouterCacheUsage("creative-repair", payload.usage);
+
+    const choice = payload.choices?.[0];
+    if (!choice) throw repairOutputDiagnostic(undefined, payload);
+    if (choice.finish_reason === "length" || choice.message?.refusal)
+      throw repairOutputDiagnostic(choice, payload);
+
+    try {
+      const result = parseModelJson(choice.message?.content || "");
+      if (!completeRepairBundle(result))
+        throw new Error(
+          "Creative repair JSON omitted one or more complete source files.",
+        );
+      return result;
+    } catch (error) {
+      lastFormatError = error;
+      if (attempt === 0) {
+        console.log(
+          "creative_repair_json_retry attempt=1 reason=invalid-structured-output",
+        );
+        continue;
+      }
+      const diagnostic = repairOutputDiagnostic(choice, payload);
+      throw new Error(
+        `${diagnostic.message} A single bounded format retry also failed.`,
+        { cause: lastFormatError },
+      );
+    }
+  }
+
+  throw new Error("Creative repair exhausted its bounded format retry.", {
+    cause: lastFormatError,
   });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok)
-    throw new Error(
-      `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
-    );
-  logOpenRouterCacheUsage("creative-repair", payload.usage);
-  return parseModelJson(payload.choices?.[0]?.message?.content || "");
 }
 
 async function main() {

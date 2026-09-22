@@ -19,6 +19,60 @@ afterEach(async () => {
 });
 
 describe("creative repair loop", () => {
+  it("retries malformed structured repair output once with a format correction", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-json-retry-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({
+        choices: [{ finish_reason: "stop", message: { content: "I will repair the files." } }],
+        usage: { completion_tokens: 12 },
+      }))
+      .mockResolvedValueOnce(Response.json({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify(repaired) } }],
+        usage: { completion_tokens: 40 },
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(requestRepair({
+      model: "test/model",
+      referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
+      findings: [{ evidence: "The primary action is clipped." }],
+      files: repaired,
+      screenshots: [],
+    })).resolves.toEqual(repaired);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const retryBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
+    const retryText = retryBody.messages[1].content.at(-1).text;
+    expect(retryText).toContain("previous response was not valid JSON");
+    expect(retryText).toContain("Return only the complete JSON object");
+  });
+
+  it("reports truncated repair output safely without logging client source", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-truncated-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn(async () => Response.json({
+      choices: [{ finish_reason: "length", message: { content: '{"experience":' } }],
+      usage: { completion_tokens: 24_000 },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(requestRepair({
+      model: "test/model",
+      referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
+      findings: [],
+      files: { experience: "private client source", styles: "private styles", motion: "private motion" },
+      screenshots: [],
+    })).rejects.toThrow(/truncated.*finish_reason=length.*completion_tokens=24000/i);
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it("prefers an accessible absolute reference evidence path", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-evidence-"));
     roots.push(root);

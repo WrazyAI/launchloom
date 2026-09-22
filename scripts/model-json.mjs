@@ -2,7 +2,11 @@ function contentText(content) {
   if (typeof content === "string") return content;
   if (Array.isArray(content))
     return content
-      .filter((part) => part?.type === "text" && typeof part.text === "string")
+      .filter(
+        (part) =>
+          ["text", "output_text"].includes(part?.type) &&
+          typeof part.text === "string",
+      )
       .map((part) => part.text)
       .join("");
   return "";
