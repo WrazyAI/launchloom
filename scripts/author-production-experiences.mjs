@@ -13,6 +13,7 @@ import {
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
+import { sanitizeDiagnosticText } from "./diagnostic-sanitizer.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -432,14 +433,6 @@ function diagnosticSummary(failure) {
   };
 }
 
-function sanitizeDiagnosticSource(value) {
-  return String(value || "")
-    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu, "[redacted-email]")
-    .replace(/\+?\d[\d\s().-]{7,}\d/gu, "[redacted-phone]")
-    .replace(/https?:\/\/[^\s"'\`]+/giu, "[redacted-url]")
-    .replace(/(?:Bearer\s+|token\s*[:=]\s*["']?)[A-Za-z0-9._~-]{16,}/giu, "[redacted-token]");
-}
-
 async function writeDiagnostics(root, failures = []) {
   for (const failure of failures) {
     const diagnostic = failure?.diagnostic;
@@ -456,7 +449,7 @@ async function writeDiagnostics(root, failures = []) {
       if (source)
         await fs.writeFile(
           path.join(directory, name),
-          `${sanitizeDiagnosticSource(source)}\n`,
+          `${sanitizeDiagnosticText(source)}\n`,
         );
     await fs.writeFile(
       path.join(directory, "reference-fidelity.json"),
