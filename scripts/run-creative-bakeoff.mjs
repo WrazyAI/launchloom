@@ -126,7 +126,30 @@ async function inspect(page) {
       brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
       emDashes: (text.match(/—/gu) || []).length,
       referenceSignatures: [...new Set([...document.querySelectorAll("[data-reference-signature]")].map((element) => element.getAttribute("data-reference-signature")).filter(Boolean))],
-      referenceSections: [...document.querySelectorAll("[data-reference-section]")].map((element) => element.getAttribute("data-reference-section")).filter(Boolean),
+      referenceSections: [...root?.querySelectorAll("[data-reference-section]") || []].map((element) => element.getAttribute("data-reference-section")).filter(Boolean),
+      referenceSignatureEvidence: [...root?.querySelectorAll("[data-reference-signature]") || []].map((element) => {
+        const rect = element.getBoundingClientRect();
+        const heroRect = hero?.getBoundingClientRect();
+        const candidates = hero
+          ? [...hero.querySelectorAll("img, picture, svg, canvas, video, [data-collage-layer], [data-product-layer], [data-reference-signature]")]
+          : [];
+        const overlaps = candidates.filter((other) => {
+          if (other === element || element.contains(other) || other.contains(element)) return false;
+          const otherRect = other.getBoundingClientRect();
+          const width = Math.max(0, Math.min(rect.right, otherRect.right) - Math.max(rect.left, otherRect.left));
+          const height = Math.max(0, Math.min(rect.bottom, otherRect.bottom) - Math.max(rect.top, otherRect.top));
+          return width * height >= Math.max(16, Math.min(rect.width * rect.height, otherRect.width * otherRect.height) * 0.02);
+        });
+        return {
+          id: element.getAttribute("data-reference-signature") || "",
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          insideHero: Boolean(hero && hero.contains(element)),
+          heroTopRatio: heroRect?.height ? (rect.top - heroRect.top) / heroRect.height : -1,
+          heroBottomGapRatio: heroRect?.height ? Math.abs(heroRect.bottom - rect.bottom) / heroRect.height : 1,
+          overlapCount: overlaps.length,
+        };
+      }),
       heroGeometry: root?.querySelector("[data-hero]")?.getAttribute("data-hero-geometry") || "",
       navigationGeometry: root?.querySelector("[data-navigation-geometry]")?.getAttribute("data-navigation-geometry") || "",
       servicePresentation: root?.querySelector("[data-service-presentation]")?.getAttribute("data-service-presentation") || "",
@@ -262,6 +285,7 @@ export async function runCreativeBakeoff({
                 stylesSource,
                 motionSource,
                 renderedDom: await page.locator("[data-creative-host]").evaluate((element) => element.outerHTML),
+                renderedEvidence: { ...evidence, viewportName: viewport.name },
               });
               const viewportVisualFindings =
                 renderedFidelity.visualFindings.map((item) => ({
@@ -315,8 +339,14 @@ export async function runCreativeBakeoff({
             pixelScore: renderedReference.score,
             pixelPass: renderedReference.pass,
             score: renderedReference.score,
+            renderedContractPass: Object.values(
+              candidateResult.referenceFidelity?.renderedByViewport || {},
+            ).every((viewportReport) => viewportReport.visualPass !== false),
             pass:
               candidateResult.referenceFidelity?.pass !== false &&
+              Object.values(
+                candidateResult.referenceFidelity?.renderedByViewport || {},
+              ).every((viewportReport) => viewportReport.visualPass !== false) &&
               renderedReference.pass,
           };
           if (!renderedReference.pass) {
