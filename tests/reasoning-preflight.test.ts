@@ -66,7 +66,12 @@ function pack() {
 function scoreAnswer(
   score = 1,
   confidence = 0.9,
-  probabilities = { "0": 0.05, "1": 0.85, "2": 0.08, "3": 0.02 },
+  probabilities: Record<string, number> = {
+    "0": 0.05,
+    "1": 0.85,
+    "2": 0.08,
+    "3": 0.02,
+  },
 ) {
   return {
     type: "score",
