@@ -371,19 +371,27 @@ function usageSummary(usage) {
   const outputTokens = Number(
     usage?.output_tokens ?? usage?.outputTokens ?? 0,
   );
+  const actualCostUsd = Number(
+    usage?.cost_usd ?? usage?.costUsd ?? usage?.cost,
+  );
   const pricePerMillion = Number(
     process.env.TYPESAFE_INPUT_USD_PER_MILLION || 0.042,
   );
+  const estimatedCostUsd =
+    Number.isFinite(inputTokens) &&
+    Number.isFinite(pricePerMillion) &&
+    inputTokens >= 0 &&
+    pricePerMillion >= 0
+      ? rounded((inputTokens / 1_000_000) * pricePerMillion, 8)
+      : null;
   return {
     inputTokens: Number.isFinite(inputTokens) ? inputTokens : 0,
     outputTokens: Number.isFinite(outputTokens) ? outputTokens : 0,
-    estimatedCostUsd:
-      Number.isFinite(inputTokens) &&
-      Number.isFinite(pricePerMillion) &&
-      inputTokens >= 0 &&
-      pricePerMillion >= 0
-        ? rounded((inputTokens / 1_000_000) * pricePerMillion, 8)
-        : null,
+    costUsd:
+      Number.isFinite(actualCostUsd) && actualCostUsd >= 0
+        ? rounded(actualCostUsd, 8)
+        : estimatedCostUsd,
+    estimatedCostUsd,
     pricePerMillionInputUsd:
       Number.isFinite(pricePerMillion) && pricePerMillion >= 0
         ? pricePerMillion
