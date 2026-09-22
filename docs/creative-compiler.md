@@ -15,15 +15,25 @@ lead endpoint, or ship an unverified layout.
    then inspects the actual desktop/mobile evidence and enriches Reference DNA
    with measured headline occupancy, image occupancy, navigation and CTA
    coordinates, content-column width, section-height rhythm, aspect ratios,
-   overlap relationships, surface transitions, and mobile geometry. Family
-   defaults are fallback vocabulary only; screenshot-derived measurements are
-   required in the new-intake workflow. A missing required desktop screenshot
-   fails creative compilation; prose-only inspiration cannot reach Luna.
+   overlap relationships, surface transitions, and mobile geometry. Reference
+   DNA stores machine-readable section order in stable concise
+   `sectionSequence` IDs and keeps screenshot-derived prose separately in
+   `sectionVisualRequirements`; visual descriptions must never become DOM IDs.
+   Existing v2 DNA that accidentally persisted prose in `sectionSequence` is
+   migrated to the reviewed family sequence while retaining that prose as visual
+   evidence. Family defaults are fallback vocabulary only; screenshot-derived
+   measurements are required in the new-intake workflow. A missing required
+   desktop screenshot fails creative compilation; prose-only inspiration cannot
+   reach Luna.
    3. `author-production-experiences.mjs` asks the visual author for three
    independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
    author receives the complete Reference DNA and its desktop/mobile evidence,
-   then must expose the contract's signatures and geometry markers in the
-   rendered DOM. It can use React, the shared runtime, GSAP, and ScrollTrigger,
+   then must implement the exact stable section order plus each signature's
+   described visual mechanic. Signature and geometry attributes declare the
+   contract but never prove it. Signatures with measurable mechanics, such as a
+   lower-edge product overlap, must expose the participating layers so the real
+   browser render can prove overlap and edge anchoring. It can use React, the
+   shared runtime, GSAP, and ScrollTrigger,
    but not network access, remote code, canvas, or Three.js by default. Model
    stages are globally limited to two in-flight requests so a three-candidate
    bakeoff does not exhaust the provider budget. The authoring budget defaults
@@ -34,10 +44,12 @@ lead endpoint, or ship an unverified layout.
 4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders 1536x864 desktop, 1366x768 compact desktop, and
    390x844 mobile viewports, and records the evidence. Structural contract
-   compliance remains a cheap safety preflight for sealed content and isolated
-   CSS. Reference geometry and signature markers remain diagnostic evidence,
-   while promotion fidelity comes from `rendered-reference-fidelity.mjs`, which
-   judges the candidate screenshots against the assigned reference screenshots
+   compliance remains the deterministic source/DOM gate for sealed content,
+   isolated CSS, exact section order, declared geometry, signature structure,
+   CTA/service attachment, mobile overflow, and measurable signature geometry.
+   A marker-only implementation is ineligible. Pixel-level promotion fidelity is
+   an additional hard gate from `rendered-reference-fidelity.mjs`, which judges
+   the candidate screenshots against the assigned reference screenshots
    across hero geometry, typography, spatial rhythm, imagery, service
    presentation, navigation, CTA placement, mobile recomposition, and
    interaction evidence. Screenshot-to-screenshot candidate distance is
@@ -61,6 +73,14 @@ lead endpoint, or ship an unverified layout.
    passing final visual gate. The loop never falls back to a legacy renderer.
 
 ## Safe rollout
+
+Every new intake completes creative authorship, rendered repair, production-level
+reference fidelity, rendered diversity, and a fresh `creative-candidate` build
+inside an isolated runner workspace **before** LaunchLoom creates a client
+repository, Cloudflare Pages project, review branch, review PR, or public
+preview. A failed creative preflight may write a sanitized private diagnostic
+artifact with a short retention window, but it must not expose the fallback
+scaffold as client output or provision external client resources.
 
 Every new intake uses the authored pipeline. The workflow variable
 `CREATIVE_EXPERIENCE_MODE` has only two supported outcomes:

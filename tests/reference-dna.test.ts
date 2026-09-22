@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
-import { buildReferenceDna, normalizeSectionSequence, validateReferenceDna } from "../scripts/reference-dna.mjs";
+import { buildReferenceDna, normalizeReferenceDnaContract, normalizeSectionSequence, validateReferenceDna } from "../scripts/reference-dna.mjs";
 
 const registry = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8"));
 
@@ -54,10 +54,63 @@ describe("Reference DNA", () => {
       "full-bleed cinematic architectural image",
     ], "kokoro-editorial-architecture")).toEqual([
       "hero",
+      "image-chapter",
+      "editorial-intro",
       "image-mosaic",
       "magazine-archive",
       "closing-scene",
+      "contact",
     ]);
+  });
+
+  it("migrates the failed A1 prose sequence into stable IDs without losing visual requirements", () => {
+    const legacy = buildReferenceDna({
+      ...registry.records[0],
+      id: "route-01",
+      referenceFamilyId: "a1-collage-composition",
+      referenceDna: {
+        sectionSequence: [
+          "contained layered collage hero",
+          "large off-white breathing space",
+          "centered feature-introduction heading",
+          "five-item annotated capability row with tiny line icons",
+          "centered people-use heading",
+          "colorful portrait/testimonial card row beginning at the fold",
+        ],
+      },
+    });
+    const migrated = normalizeReferenceDnaContract(legacy);
+    expect(migrated.sectionSequence).toEqual([
+      "hero",
+      "feature-atlas",
+      "image-mosaic",
+      "annotation-rail",
+      "conversion-band",
+      "contact",
+    ]);
+    expect(migrated.sectionVisualRequirements).toEqual([
+      "contained layered collage hero",
+      "large off-white breathing space",
+      "centered feature-introduction heading",
+      "five-item annotated capability row with tiny line icons",
+      "centered people-use heading",
+      "colorful portrait/testimonial card row beginning at the fold",
+    ]);
+    expect(migrated.sectionSequence.every((item: string) => !item.includes(" "))).toBe(true);
+  });
+
+  it("preserves existing stable section IDs during migration", () => {
+    const stable = [
+      "hero",
+      "feature-atlas",
+      "image-mosaic",
+      "annotation-rail",
+      "conversion-band",
+      "contact",
+    ];
+    expect(normalizeSectionSequence(stable, "a1-collage-composition")).toEqual(
+      stable,
+    );
   });
 
   it("selects the neighborhood collage contract for food and market cues", () => {

@@ -107,6 +107,71 @@ async function inspect(page) {
     const text = [document.title, document.body.innerText].join("\n");
     const anchors = [...document.querySelectorAll("nav a")];
     const requiredTargets = ["#services", "#faqs", "#contact"];
+    const rect = (element) => {
+      if (!element) return null;
+      const bounds = element.getBoundingClientRect();
+      return {
+        left: bounds.left,
+        top: bounds.top,
+        right: bounds.right,
+        bottom: bounds.bottom,
+        width: bounds.width,
+        height: bounds.height,
+      };
+    };
+    const intersectionArea = (left, right) => {
+      if (!left || !right) return 0;
+      const width = Math.max(
+        0,
+        Math.min(left.right, right.right) - Math.max(left.left, right.left),
+      );
+      const height = Math.max(
+        0,
+        Math.min(left.bottom, right.bottom) - Math.max(left.top, right.top),
+      );
+      return width * height;
+    };
+    const signatureGeometry = {};
+    for (const element of root?.querySelectorAll("[data-reference-signature]") || []) {
+      const id = element.getAttribute("data-reference-signature") || "";
+      if (!["lower-edge-product-overlap", "product-still-overlap"].includes(id))
+        continue;
+      const layers = [
+        ...element.querySelectorAll("[data-reference-overlap-layer]"),
+      ].map((layer) => ({
+        role: layer.getAttribute("data-reference-overlap-layer") || "",
+        rect: rect(layer),
+      }));
+      const product = layers.find((layer) => layer.role === "product");
+      const others = layers.filter((layer) => layer !== product);
+      const productRect = product?.rect || null;
+      const heroRect = rect(hero);
+      signatureGeometry[id] = {
+        layerCount: layers.length,
+        productLayerPresent: Boolean(productRect),
+        overlapCount: productRect
+          ? others.filter(
+              (layer) => intersectionArea(productRect, layer.rect) >= 64,
+            ).length
+          : 0,
+        productAnchoredToHeroBottom: Boolean(
+          productRect &&
+            heroRect &&
+            productRect.top < heroRect.bottom - 24 &&
+            productRect.bottom >= heroRect.bottom - 12,
+        ),
+        signatureInLowerHero: Boolean(
+          heroRect &&
+            rect(element) &&
+            rect(element).top >= heroRect.top + heroRect.height * 0.35,
+        ),
+      };
+    }
+    const serviceMarker = root?.querySelector("[data-service-presentation]");
+    const servicesSection = root?.querySelector("#services");
+    const earlyConversion = root?.querySelector("[data-early-conversion]");
+    const ctaMarker = root?.querySelector("[data-cta-placement]");
+    const earlyBounds = earlyConversion?.getBoundingClientRect();
     return {
       h1Count: document.querySelectorAll("h1").length,
       hasHero: Boolean(hero),
@@ -122,7 +187,28 @@ async function inspect(page) {
       unnamedControls: [...document.querySelectorAll("button, a")].filter((element) => !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
       heroBottom: Math.round(heroBounds?.bottom || 0),
       viewportHeight: window.innerHeight,
+      heroHeightRatio: heroBounds
+        ? Math.round((heroBounds.height / window.innerHeight) * 1000) / 1000
+        : null,
+      ctaTopRatio: earlyBounds
+        ? Math.round((earlyBounds.top / window.innerHeight) * 1000) / 1000
+        : null,
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      servicePresentationAttachedToServices: Boolean(
+        serviceMarker &&
+          servicesSection &&
+          (serviceMarker === servicesSection ||
+            serviceMarker.contains(servicesSection) ||
+            servicesSection.contains(serviceMarker)),
+      ),
+      ctaPlacementAttachedToEarlyConversion: Boolean(
+        ctaMarker &&
+          earlyConversion &&
+          (ctaMarker === earlyConversion ||
+            ctaMarker.contains(earlyConversion) ||
+            earlyConversion.contains(ctaMarker)),
+      ),
+      signatureGeometry,
       brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
       emDashes: (text.match(/—/gu) || []).length,
       referenceSignatures: [...new Set([...document.querySelectorAll("[data-reference-signature]")].map((element) => element.getAttribute("data-reference-signature")).filter(Boolean))],
@@ -261,7 +347,11 @@ export async function runCreativeBakeoff({
                 experienceSource,
                 stylesSource,
                 motionSource,
-                renderedDom: await page.locator("[data-creative-host]").evaluate((element) => element.outerHTML),
+                renderedDom: await page
+                  .locator("[data-creative-host]")
+                  .evaluate((element) => element.outerHTML),
+                renderedEvidence: evidence,
+                viewport,
               });
               const viewportVisualFindings =
                 renderedFidelity.visualFindings.map((item) => ({
@@ -283,10 +373,15 @@ export async function runCreativeBakeoff({
                 ],
                 pass:
                   candidateResult.referenceFidelity.pass &&
-                  renderedFidelity.pass,
+                  renderedFidelity.pass &&
+                  renderedFidelity.visualPass,
               };
-              if (!renderedFidelity.pass)
-                candidateResult.failures.push(...renderedFidelity.hardFindings.map((item) => `${viewport.name}: ${item.message}`));
+              if (!renderedFidelity.pass || !renderedFidelity.visualPass)
+                candidateResult.failures.push(
+                  ...renderedFidelity.findings.map(
+                    (item) => `${viewport.name}: ${item.message}`,
+                  ),
+                );
             }
             // Keep the requested viewport width while including the complete
             // route so the screenshot-level gate can inspect lower sections,

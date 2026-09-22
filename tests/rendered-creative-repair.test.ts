@@ -119,6 +119,85 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("deduplicates equivalent source and viewport repair findings while preserving viewport-specific evidence", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    const repairs: any[] = [];
+    const mismatch = "Reference section order mismatch.";
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                fallback: true,
+                promotionReady: false,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: [
+                      `source: ${mismatch}`,
+                      `desktop: ${mismatch}`,
+                      `compact: ${mismatch}`,
+                    ],
+                    referenceFidelity: {
+                      pass: false,
+                      score: 70,
+                      sourceVisualFindings: [
+                        {
+                          code: "section-order",
+                          severity: "critical",
+                          message: mismatch,
+                        },
+                      ],
+                      renderedVisualFindings: [
+                        {
+                          code: "section-order",
+                          severity: "critical",
+                          viewport: "desktop",
+                          message: mismatch,
+                        },
+                      ],
+                    },
+                  }),
+                ],
+              })
+            : report({ candidates: [candidate("candidate-a")] }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async (options: any) => {
+        repairs.push(options);
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(repairs).toHaveLength(1);
+    expect(repairs[0].findings).toHaveLength(3);
+    expect(repairs[0].findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          category: "section-order",
+          message: mismatch,
+        }),
+        expect.objectContaining({
+          category: "section-order",
+          viewport: "desktop",
+          message: mismatch,
+        }),
+        `compact: ${mismatch}`,
+      ]),
+    );
+  });
+
   it("repairs the selected source only after a rendered visual failure and rerenders before passing", async () => {
     const { root, candidates } = await fixture();
     let bakeoffCalls = 0;
@@ -773,8 +852,14 @@ process.exit(1);
     const buildIndex = workflow.indexOf(
       'PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build',
     );
-    const hostGuardIndex = workflow.indexOf('data-creative-host="true"');
-    const candidateGuardIndex = workflow.indexOf('data-creative-candidate=\\\"$CANDIDATE_ID\\\"');
+    const hostGuardIndex = workflow.indexOf(
+      'data-creative-host="true"',
+      buildIndex,
+    );
+    const candidateGuardIndex = workflow.indexOf(
+      'data-creative-candidate=\\\"$CANDIDATE_ID\\\"',
+      buildIndex,
+    );
     expect(buildIndex).toBeGreaterThan(-1);
     expect(hostGuardIndex).toBeGreaterThan(buildIndex);
     expect(candidateGuardIndex).toBeGreaterThan(buildIndex);

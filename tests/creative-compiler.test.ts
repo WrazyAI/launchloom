@@ -58,6 +58,29 @@ describe("creative compiler", () => {
     expect(new Set(contracts.map((route) => route.fingerprint)).size).toBe(3);
   });
 
+  it("completes partial Reference DNA from the supplied reference family", () => {
+    const contract = buildRouteContract({
+      ...routes[0],
+      referenceDna: {
+        familyId: "a1-collage-composition",
+        heroGeometry: { mode: "custom-layered-collage" },
+      },
+    });
+    expect(contract.referenceDna.familyId).toBe("a1-collage-composition");
+    expect(contract.referenceDna.referenceName).toBe("A1 collage composition");
+    expect(contract.referenceDna.heroGeometry.mode).toBe(
+      "custom-layered-collage",
+    );
+    expect(contract.referenceDna.sectionSequence).toEqual([
+      "hero",
+      "feature-atlas",
+      "image-mosaic",
+      "annotation-rail",
+      "conversion-band",
+      "contact",
+    ]);
+  });
+
   it("rejects a route set that only changes copy", () => {
     expect(() => assertIndependentRoutes(routes.map((route) => ({
       ...route,

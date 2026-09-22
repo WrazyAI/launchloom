@@ -13,6 +13,7 @@ import {
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
+import { sanitizeDiagnosticText } from "./diagnostic-sanitizer.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -111,7 +112,7 @@ REFERENCE FIDELITY RULES
 - Do not average references or drift to a familiar LaunchLoom composition.
 - Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
 - Preserve assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
-- Include every required signature element and expose its data-reference-signature attribute in the rendered DOM.
+- Include every required signature element and expose its data-reference-signature attribute in the rendered DOM. A marker alone is not evidence: implement the signature description as real structure and composition.
 - Use one distinctive, purposeful interaction from the assigned family and provide its reduced-motion equivalent.
 - Keep business facts, SEO copy, contact details, and imagery bound to sealed content tokens. Never copy reference branding, copy, assets, or trade dress.
 
@@ -213,7 +214,7 @@ ${request.previousSource}
 EXPERIENCE STAGE
 Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". The hero's early conversion is a compact anchor or button linking to #contact, not the full four-field form. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
 
-Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" to each major section so the compiler can verify the assigned rhythm. Do not invent values: use the slugs from Reference DNA.`;
+Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" only from Reference DNA sectionSequence, exactly once each and in exactly that order; sectionVisualRequirements are descriptive evidence, never IDs. Do not invent values: use the slugs from Reference DNA. If lower-edge-product-overlap or product-still-overlap is required, implement real overlapping child planes inside that signature container and mark them with data-reference-overlap-layer values. One layer must be data-reference-overlap-layer="product" and at least two additional independently positioned planes must overlap it at desktop and compact desktop. lower-edge-product-overlap must additionally keep the product anchored into the hero's lower edge; the signature attribute by itself will fail.`;
 
   if (request.stage === "styles")
     return `${repair}
@@ -424,6 +425,46 @@ function aggregateCacheUsage(records) {
   };
 }
 
+function diagnosticSummary(failure) {
+  return {
+    routeId: failure?.routeId || "",
+    candidateId: failure?.candidateId || "",
+    error: String(failure?.error || "").slice(0, 4000),
+  };
+}
+
+async function writeDiagnostics(root, failures = []) {
+  for (const failure of failures) {
+    const diagnostic = failure?.diagnostic;
+    if (!diagnostic?.files) continue;
+    const candidateId = String(failure.candidateId || diagnostic.candidateId || "candidate")
+      .replace(/[^a-z0-9_-]+/giu, "-");
+    const directory = path.join(root, "diagnostics", candidateId);
+    await fs.mkdir(directory, { recursive: true });
+    for (const [name, source] of Object.entries({
+      "Experience.jsx": diagnostic.files.experience,
+      "styles.css": diagnostic.files.styles,
+      "motion.js": diagnostic.files.motion,
+    }))
+      if (source)
+        await fs.writeFile(
+          path.join(directory, name),
+          `${sanitizeDiagnosticText(source)}\n`,
+        );
+    await fs.writeFile(
+      path.join(directory, "reference-fidelity.json"),
+      `${JSON.stringify(
+        {
+          ...diagnosticSummary(failure),
+          findings: diagnostic.referenceFidelity?.findings || [],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+  }
+}
+
 async function writeResult(result) {
   const staging = `${outputPath}.staging-${process.pid}`;
   await fs.rm(staging, { recursive: true, force: true });
@@ -441,6 +482,7 @@ async function writeResult(result) {
       ),
     );
   }
+  await writeDiagnostics(staging, result.failures || []);
   await fs.writeFile(
     path.join(staging, "creative-run.json"),
     `${JSON.stringify(
@@ -451,7 +493,7 @@ async function writeResult(result) {
         selectionKey: result.selectionKey,
         contentManifestDigest: result.contentManifest.digest,
         candidates: result.candidates.map((candidate) => candidate.metadata),
-        failures: result.failures || [],
+        failures: (result.failures || []).map(diagnosticSummary),
         usage,
         cacheSummary: aggregateCacheUsage(usage),
       },
@@ -464,22 +506,29 @@ async function writeResult(result) {
 }
 
 async function writeFailure(error) {
-  await fs.rm(outputPath, { recursive: true, force: true });
-  await fs.mkdir(outputPath, { recursive: true });
+  const staging = `${outputPath}.failure-${process.pid}`;
+  await fs.rm(staging, { recursive: true, force: true });
+  await fs.mkdir(staging, { recursive: true });
+  const failures = Array.isArray(error?.failures) ? error.failures : [];
+  await writeDiagnostics(staging, failures);
   await fs.writeFile(
-    path.join(outputPath, "creative-run.json"),
+    path.join(staging, "creative-run.json"),
     `${JSON.stringify(
       {
         version: 1,
         status: "failed",
         model,
         error: error instanceof Error ? error.message : String(error),
+        failures: failures.map(diagnosticSummary),
         usage,
+        cacheSummary: aggregateCacheUsage(usage),
       },
       null,
       2,
     )}\n`,
   );
+  await fs.rm(outputPath, { recursive: true, force: true });
+  await fs.rename(staging, outputPath);
 }
 
 try {
@@ -514,9 +563,9 @@ try {
     );
 } catch (error) {
   sharedAbortController.abort();
-  if (failureMode !== "record") throw error;
   await writeFailure(error);
   console.error(
     `production_experience_status=failed ${error instanceof Error ? error.message : String(error)}`,
   );
+  if (failureMode !== "record") throw error;
 }

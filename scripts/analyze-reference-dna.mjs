@@ -7,6 +7,7 @@ import {
   openRouterSessionId,
 } from "./openrouter-client.mjs";
 import { promptImagePart } from "./prompt-evidence.mjs";
+import { normalizeSectionSequence } from "./reference-dna.mjs";
 
 const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-5.6-luna";
 
@@ -23,7 +24,7 @@ const schema = {
       "typography",
       "palette",
       "imageTreatment",
-      "sectionSequence",
+      "sectionVisualRequirements",
       "servicePresentation",
       "ctaPlacement",
       "motion",
@@ -86,7 +87,7 @@ const schema = {
           focalPoint: { type: "string" }
         }
       },
-      sectionSequence: { type: "array", minItems: 4, maxItems: 16, items: { type: "string" } },
+      sectionVisualRequirements: { type: "array", minItems: 4, maxItems: 16, items: { type: "string" } },
       servicePresentation: {
         type: "object",
         additionalProperties: false,
@@ -230,6 +231,7 @@ Rules:
 - infer geometry from the screenshots, not from familiar templates
 - describe ratios relative to viewport size
 - identify image occupancy, crop strategy, whitespace rhythm, overlap, section-height rhythm, and surface transitions
+- describe observed section rhythm in sectionVisualRequirements as visual prose, not IDs; LaunchLoom assigns stable machine section IDs separately
 - infer only motion that is visually supported by the screenshots or the route's documented motion opportunity
 - required signatures must be design mechanics that can be independently implemented
 - prohibited patterns should name generic fallbacks that would visibly break this reference family
@@ -294,11 +296,27 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
   const routes = [];
   for (const route of pack.routes) {
     const analyzed = await analyzeRoute(route, fetchImpl);
+    const visualRequirements = analyzed.sectionVisualRequirements || [];
+    const familyId =
+      route.referenceDna?.familyId ||
+      route.referenceFamilyId ||
+      route.familyId ||
+      "";
+    const sectionSequence = normalizeSectionSequence(
+      visualRequirements,
+      familyId,
+    );
     routes.push({
       ...route,
       referenceDna: {
         ...route.referenceDna,
         ...analyzed,
+        sectionSequence,
+        sectionVisualRequirements: visualRequirements,
+        sectionSequenceEvidence:
+          route.referenceDna?.sectionSequenceEvidence?.length
+            ? route.referenceDna.sectionSequenceEvidence
+            : sectionSequence,
         evidence: {
           ...route.referenceDna.evidence,
           annotatedDescription: analyzed.annotatedDescription

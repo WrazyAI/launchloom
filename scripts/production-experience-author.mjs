@@ -348,7 +348,8 @@ function replaceEmptyImageAlt(source) {
 }
 
 function reducedMotionFallback() {
-  return `export function mountExperienceMotion(runtime) {
+  return `/* launchloom-deterministic-reduced-motion-fallback */
+export function mountExperienceMotion(runtime) {
   const reduced = Boolean(runtime?.reducedMotion) ||
     (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
   if (reduced) return () => {};
@@ -736,6 +737,40 @@ async function generateMotionSource({ generate, request, validate }) {
   }
 }
 
+function referenceRepairBrief(fidelity, referenceDna, cycle) {
+  return JSON.stringify(
+    {
+      cycle,
+      maxCycles: 2,
+      expectedSectionIds: referenceDna.sectionSequence || [],
+      sectionVisualRequirements: referenceDna.sectionVisualRequirements || [],
+      requiredSignatures: (referenceDna.requiredSignatureElements || []).map(
+        (item) => ({
+          id: item.id,
+          requiredBehavior: item.description || "",
+        }),
+      ),
+      findings: (fidelity.findings || []).map((item) => ({
+        code: item.code,
+        severity: item.severity,
+        message: item.message,
+        expectedSections: item.expectedSections,
+        actualSections: item.actualSections,
+        signatureId: item.signatureId,
+        requiredBehavior: item.requiredBehavior,
+      })),
+    },
+    null,
+    2,
+  );
+}
+
+function candidateFailure(message, diagnostic) {
+  const error = new Error(message);
+  error.diagnostic = diagnostic;
+  return error;
+}
+
 function createGenerationLimiter(generate, maxConcurrency = 2) {
   const queue = [];
   let active = 0;
@@ -798,6 +833,7 @@ export async function authorExperienceCandidates({
   const limitedGenerate = createGenerationLimiter(generate, maxConcurrency);
   const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
+      const candidateId = `candidate-${String.fromCharCode(97 + index)}`;
       const routeContentManifest = buildCreativeContentManifest(
         site,
         route,
@@ -910,7 +946,7 @@ export async function authorExperienceCandidates({
               stage: "experience",
               designContract,
               previousSource: experience,
-              validationError: `Reference fidelity repair cycle ${referenceRepairCycles}/2. Fix every finding without simplifying the assigned composition: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
+              validationError: `Reference fidelity repair cycle ${referenceRepairCycles}/2. Fix the exact machine contract below without simplifying the assigned composition. The reference screenshot(s), full Reference DNA, and your current JSX are included in this repair request.\n${referenceRepairBrief(fidelity, route.referenceDna, referenceRepairCycles)}`,
             },
             "content",
             "experience",
@@ -924,7 +960,7 @@ export async function authorExperienceCandidates({
           throw new Error(`Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`);
       }
       const creativeManifest = buildCandidateManifest({
-        candidate: { candidateId: `candidate-${String.fromCharCode(97 + index)}` },
+        candidate: { candidateId },
         route,
         model,
         contentManifestDigest: routeContentManifest.digest,
@@ -932,7 +968,7 @@ export async function authorExperienceCandidates({
       });
       const metadata = {
         version: 2,
-        candidateId: `candidate-${String.fromCharCode(97 + index)}`,
+        candidateId,
         routeId: route.id,
         routeLabel: route.label,
         model,
@@ -972,7 +1008,7 @@ export async function authorExperienceCandidates({
         creativeManifest,
       };
       return {
-        id: metadata.candidateId,
+        id: candidateId,
         directory: candidateDirectories[index],
         metadata,
         files: {
@@ -997,13 +1033,23 @@ export async function authorExperienceCandidates({
     failures.push({
       routeId: routes[index].id,
       candidateId: `candidate-${String.fromCharCode(97 + index)}`,
-      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+      error:
+        result.reason instanceof Error
+          ? result.reason.message
+          : String(result.reason),
+      ...(result.reason?.diagnostic
+        ? { diagnostic: result.reason.diagnostic }
+        : {}),
     });
   }
-  if (!candidates.length)
-    throw new Error(
+  if (!candidates.length) {
+    const error = new Error(
       `All creative candidates failed: ${failures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
     );
+    error.failures = failures;
+    error.contentManifest = contentManifest;
+    throw error;
+  }
 
   return {
     version: 1,
