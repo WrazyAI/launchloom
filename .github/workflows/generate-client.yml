@@ -246,7 +246,7 @@ jobs:
         # Luna authors three independent candidates in separate stages. Keep
         # the runner timeout above the author's internal fail-closed budget
         # so Actions cannot terminate a valid creative run early.
-        timeout-minutes: 25
+        timeout-minutes: 55
         run: |
           SESSION_ARGS=()
           if [ -f /tmp/reasoning-preflight.json ]; then

@@ -20,6 +20,11 @@ import {
   selectAuthorReferenceScreenshots,
 } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
+import {
+  AUTHORING_STAGE_BUDGETS,
+  authoringCompletionDiagnostics,
+  formatAuthoringCompletionDiagnostics,
+} from "./creative-authoring-output.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -59,7 +64,7 @@ const authorDeadline =
   Date.now() +
   Math.max(
     5 * 60_000,
-    Number(process.env.CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS || 20 * 60_000),
+    Number(process.env.CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS || 45 * 60_000),
   );
 const sharedAbortController = new AbortController();
 
@@ -250,10 +255,10 @@ async function requestStage(request) {
   sharedAbortController.signal.addEventListener("abort", abortStage, {
     once: true,
   });
-  const stageLimitMs =
-    request.stage === "experience" || request.stage === "styles"
-      ? 150_000
-      : 90_000;
+  const stageBudget = AUTHORING_STAGE_BUDGETS[request.stage];
+  if (!stageBudget)
+    throw new Error(`Unsupported creative authoring stage: ${request.stage}`);
+  const stageLimitMs = stageBudget.timeoutMs;
   const remainingMs = authorDeadline - Date.now();
   if (remainingMs <= 0)
     throw new Error("Phase 2 authorship exceeded its configured budget.");
@@ -340,14 +345,7 @@ async function requestStage(request) {
                 type: "json_schema",
                 json_schema: authorStageSchema,
               },
-              max_tokens:
-                request.stage === "experience" || request.stage === "styles"
-                  ? request.stage === "experience"
-                    ? 9000
-                    : 8000
-                  : request.stage === "contract"
-                    ? 4000
-                    : 3500,
+              max_tokens: stageBudget.maxTokens,
               messages: [
                 {
                   role: "system",
@@ -397,10 +395,21 @@ async function requestStage(request) {
           });
         }
         const content = payload.choices?.[0]?.message?.content;
+        const completionDiagnostics = authoringCompletionDiagnostics({
+          stage: request.stage,
+          routeId: request.route.id,
+          maxTokens: stageBudget.maxTokens,
+          payload,
+          content,
+        });
+        usageRecord.completion = completionDiagnostics;
+        console.info(
+          `production_experience_response route=${request.route.id} stage=${request.stage} ${formatAuthoringCompletionDiagnostics(completionDiagnostics)}`,
+        );
         if (!content) {
           usageRecord.parseStatus = "missing-content";
           throw new Error(
-            `No ${request.stage} content returned for ${request.route.id} (${payload.choices?.[0]?.finish_reason || "unknown"}).`,
+            `No ${request.stage} content returned for ${request.route.id} (${formatAuthoringCompletionDiagnostics(completionDiagnostics)}).`,
           );
         }
         let parsed;
@@ -408,7 +417,10 @@ async function requestStage(request) {
           parsed = parseModelJson(content);
         } catch (error) {
           usageRecord.parseStatus = "parse-failed";
-          throw error;
+          throw new Error(
+            `Invalid ${request.stage} JSON returned for ${request.route.id} (${formatAuthoringCompletionDiagnostics(completionDiagnostics)}).`,
+            { cause: error },
+          );
         }
         usageRecord.parseStatus = "parsed";
         console.log(

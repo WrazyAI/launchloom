@@ -27,9 +27,15 @@ lead endpoint, or ship an unverified layout.
    but not network access, remote code, canvas, or Three.js by default. Model
    stages are globally limited to two in-flight requests so a three-candidate
    bakeoff does not exhaust the provider budget. The authoring budget defaults
-   to 20 minutes and can be bounded with
+   to 45 minutes and can be bounded with
    `CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS`; it never turns an expired author
-   run into a legacy renderer. A failed reference-fidelity
+   run into a legacy renderer. Completion ceilings are stage-specific: 24k
+   tokens for the design contract, 48k for JSX, 40k for CSS, and 24k for
+   motion, with up to 5 minutes for contract/motion and 8 minutes for JSX/CSS.
+   These are upper bounds, not reserved spend. The author logs finish reason,
+   completion/reasoning token usage, and returned content length on every
+   response so output truncation is distinguishable from input-context errors.
+   A failed reference-fidelity
    check gets at most two author-owned repairs and then fails closed.
 4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders 1536x864 desktop, 1366x768 compact desktop, and
