@@ -155,16 +155,6 @@ jobs:
           echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
           echo "preview=https://$BRANCH_SAFE.$PROJECT.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Upload rendered revision evidence
-        if: always() && steps.claim.outputs.run == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: developer-revision-screenshots
-          path: |
-            ${{ runner.temp }}/revision-screenshots
-            ${{ runner.temp }}/client/.launchloom/human-revision
-          if-no-files-found: warn
-          retention-days: 14
       - name: Post and email revised review link
         id: review_delivery
         if: steps.deploy.outputs.changed == 'true'
@@ -200,3 +190,12 @@ jobs:
           DETAILS=$(test -f "$RUNNER_TEMP/revision-outcome.txt" && tr '\n' ' ' < "$RUNNER_TEMP/revision-outcome.txt" || printf '%s' 'No validated revision outcome was produced.')
           export REVISION_FAILURE_REASON="Developer revision workflow failed. $DETAILS Inspect GitHub Actions run ${{ github.run_id }}."
           node scripts/revision-queue-client.mjs
+      - name: Preserve failed revision evidence
+        if: failure() && steps.claim.outputs.run == 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: developer-revision-failure-${{ github.run_id }}
+          path: ${{ runner.temp }}/revision-screenshots
+          if-no-files-found: warn
+          retention-days: 3
