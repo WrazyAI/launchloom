@@ -212,6 +212,7 @@ ${
     ? `COMPLIANCE REPAIR
 The previous JSX failed: ${request.validationError}
 Repair that exact violation without reducing the composition or changing the design contract.
+If a required section ID was missing, place the exact static JSX attribute id="services", id="faqs", or id="contact" on its semantic section. Single-quoted and quoted JSX-expression values are also valid. Do not rely on navigation text, hrefs, comments, data-reference-section values, or inferred section names as substitutes.
 
 PREVIOUS JSX
 ${request.previousSource}

@@ -463,6 +463,18 @@ function referencesContentPath(source, token) {
   return memberBinding.test(source);
 }
 
+function staticJsxStringAttributePattern(attribute, value) {
+  const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  return `\\b${attribute}\\s*=\\s*(?:\"${escapedValue}\"|'${escapedValue}'|\\{\\s*\"${escapedValue}\"\\s*\\}|\\{\\s*'${escapedValue}'\\s*\\})`;
+}
+
+function hasStaticJsxStringAttribute(source, attribute, value) {
+  return new RegExp(
+    staticJsxStringAttributePattern(attribute, value),
+    "u",
+  ).test(source);
+}
+
 function validateExperience(source, route, content) {
   syntaxErrorFor(source, route, "Experience.jsx", true);
   const scopeError = scopeErrorFor(source, route);
@@ -484,16 +496,15 @@ function validateExperience(source, route, content) {
   for (const [pattern, label] of forbidden)
     if (pattern.test(source))
       throw new Error(`Candidate ${route.id} contains forbidden ${label}.`);
-  for (const marker of [
-    "data-hero",
-    "data-early-conversion",
-    'id="services"',
-    'id="faqs"',
-    'id="contact"',
-  ])
+  for (const marker of ["data-hero", "data-early-conversion"])
     if (!source.includes(marker))
       throw new Error(
         `Candidate ${route.id} is missing required marker ${marker}.`,
+      );
+  for (const sectionId of ["services", "faqs", "contact"])
+    if (!hasStaticJsxStringAttribute(source, "id", sectionId))
+      throw new Error(
+        `Candidate ${route.id} is missing required marker id="${sectionId}". Use a static JSX id attribute with a quoted value.`,
       );
   if (
     !/import\s+\{[^}]*\bLeadForm\b[^}]*\}\s+from\s+["']@launchloom\/runtime["']/u.test(
@@ -525,7 +536,12 @@ function validateExperience(source, route, content) {
       throw new Error(
         `Candidate ${route.id} navigation must expose href="#${target}".`,
       );
-  if (!/id\s*=\s*["']contact["'][\s\S]{0,5000}<LeadForm\b/u.test(source))
+  if (
+    !new RegExp(
+      `${staticJsxStringAttributePattern("id", "contact")}[\\s\\S]{0,5000}<LeadForm\\b`,
+      "u",
+    ).test(source)
+  )
     throw new Error(
       `Candidate ${route.id} must render the shared LeadForm inside the contact section, not in the hero.`,
     );

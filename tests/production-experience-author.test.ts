@@ -637,6 +637,28 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("accepts equivalent static JSX section IDs used by model-authored markup", async () => {
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.stage !== "experience") return value;
+        return {
+          content: String(value.content)
+            .replace('id="services"', "id = 'services'")
+            .replace('id="faqs"', 'id={"faqs"}')
+            .replace('id="contact"', "id={'contact'}"),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(
+      result.candidates.every((item) => !item.metadata.complianceRepaired),
+    ).toBe(true);
+  });
+
   it("repairs helpers with unbound sealed content and wrong runtime imports", async () => {
     const result = await authorExperienceCandidates({
       site,
