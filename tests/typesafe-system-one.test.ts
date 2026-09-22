@@ -118,6 +118,29 @@ describe("TypeSafe System One transport", () => {
     expect(error.body.length).toBeLessThanOrEqual(1500);
   });
 
+  it("fails closed if TypeSafe answers with a different Jev model", async () => {
+    await expect(
+      requestSystemOne({
+        apiKey: "typesafe-test-key",
+        model: "jev-1.13.0",
+        state: {},
+        questions,
+        fetchImpl: (async () =>
+          new Response(
+            JSON.stringify({
+              model: "jev-1.14.0",
+              answers: { complexity: {} },
+              usage: { input_tokens: 10, output_tokens: 1 },
+            }),
+            { status: 200 },
+          )) as any,
+      }),
+    ).rejects.toMatchObject({
+      code: "model-mismatch",
+      status: 200,
+    });
+  });
+
   it("fails closed on malformed or invalid successful response envelopes", async () => {
     await expect(
       requestSystemOne({
