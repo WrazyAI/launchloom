@@ -301,6 +301,10 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
         ...route.referenceDna,
         ...analyzed,
         sectionSequenceEvidence: analyzed.sectionSequence,
+        // Rebuild the blueprint from the new pixel-derived observations so
+        // stable IDs stay machine-readable while visual requirements carry
+        // the analyzer's descriptive evidence.
+        sectionBlueprint: undefined,
         evidence: {
           ...route.referenceDna.evidence,
           annotatedDescription: analyzed.annotatedDescription
