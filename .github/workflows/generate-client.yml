@@ -21,6 +21,9 @@ jobs:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+      REASONING_PREFLIGHT_MODE: ${{ vars.REASONING_PREFLIGHT_MODE || 'shadow' }}
+      REASONING_PREFLIGHT_MODEL: ${{ vars.REASONING_PREFLIGHT_MODEL || 'jev-1.13.0' }}
       FAL_KEY: ${{ secrets.FAL_KEY }}
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
       FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
@@ -70,6 +73,16 @@ jobs:
           node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/intake.md --out /tmp/inspiration-pack.json
           node scripts/analyze-reference-dna.mjs --inspiration /tmp/inspiration-pack.json --out /tmp/inspiration-pack.json
           jq -e '.referenceDnaAnalyzed == true and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null))' /tmp/inspiration-pack.json >/dev/null || { echo "Reference DNA was not derived from screenshot evidence"; exit 1; }
+          node scripts/run-reasoning-preflight.mjs \
+            --inspiration /tmp/inspiration-pack.json \
+            --out /tmp/reasoning-preflight.json \
+            --mode "$REASONING_PREFLIGHT_MODE" \
+            --model "$REASONING_PREFLIGHT_MODEL" \
+            --session-key "$LAUNCHLOOM_INTAKE_ID"
+          jq -e '(.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
+          echo "reasoning_mode=$(jq -r '.mode' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+          echo "reasoning_effort=$(jq -r '.reasoningEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+          echo "reasoning_recommended=$(jq -r '.recommendedEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
@@ -98,6 +111,13 @@ jobs:
         with:
           name: inspiration-pack-${{ steps.intake.outputs.issue }}
           path: /tmp/inspiration-pack.json
+          retention-days: 14
+      - name: Preserve reasoning preflight evidence
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: reasoning-preflight-${{ steps.intake.outputs.issue }}
+          path: /tmp/reasoning-preflight.json
           retention-days: 14
       - name: Create private repository and Cloudflare Pages project
         id: client
@@ -251,6 +271,7 @@ jobs:
           --config /tmp/site.config.json
           --inspiration /tmp/inspiration-pack.json
           --out /tmp/generated-experiences
+          --session /tmp/reasoning-preflight.json
           --failure-mode throw
       - name: Preserve authored experience evidence
         if: always()
@@ -267,7 +288,8 @@ jobs:
           mkdir -p .launchloom
           rm -rf .launchloom/generated-experiences
           cp -R /tmp/generated-experiences .launchloom/generated-experiences
-          git add .launchloom/generated-experiences
+          cp /tmp/reasoning-preflight.json .launchloom/reasoning-preflight.json
+          git add .launchloom/generated-experiences .launchloom/reasoning-preflight.json
           if ! git diff --cached --quiet; then
             git commit -m "Record authored experience candidates"
             git push origin review/initial
@@ -281,6 +303,7 @@ jobs:
             --candidates /tmp/generated-experiences \
             --out .launchloom/creative-repair \
             --mode "$CREATIVE_EXPERIENCE_MODE" \
+            --session "$PWD/.launchloom/reasoning-preflight.json" \
             --max-cycles 2 \
             --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
           cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
