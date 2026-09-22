@@ -102,14 +102,16 @@ async function startServer(root) {
 async function inspect(page) {
   return page.evaluate(() => {
     const root = document.querySelector("[data-creative-candidate]");
-    const hero = root?.querySelector("[data-hero]");
-    const heroBounds = hero?.getBoundingClientRect();
+      const hero = root?.querySelector("[data-hero]");
+      const heroBounds = hero?.getBoundingClientRect();
     const text = [document.title, document.body.innerText].join("\n");
     const anchors = [...document.querySelectorAll("nav a")];
     const requiredTargets = ["#services", "#faqs", "#contact"];
     return {
       h1Count: document.querySelectorAll("h1").length,
       hasHero: Boolean(hero),
+      heroHasHeading: Boolean(hero?.querySelector("h1")),
+      heroHasEarlyConversion: Boolean(hero?.querySelector("[data-early-conversion]")),
       hasEarlyConversion: Boolean(root?.querySelector("[data-early-conversion]")),
       hasServices: Boolean(document.querySelector("#services")),
       hasFaqs: Boolean(document.querySelector("#faqs")),
@@ -138,11 +140,13 @@ async function inspect(page) {
   });
 }
 
-function hardFailures(evidence, viewport) {
+export function hardFailures(evidence, viewport, requireMeasuredHero = false) {
   return [
     evidence.h1Count !== 1 && "expected one H1",
     !evidence.hasHero && "missing hero marker",
     !evidence.hasEarlyConversion && "missing early conversion marker",
+    requireMeasuredHero && !evidence.heroHasHeading && "measured hero does not contain the primary H1",
+    requireMeasuredHero && !evidence.heroHasEarlyConversion && "measured hero does not contain the primary early conversion",
     !evidence.hasServices && "missing services section",
     !evidence.hasFaqs && "missing FAQs section",
     !evidence.hasContact && "missing contact section",
@@ -252,7 +256,7 @@ export async function runCreativeBakeoff({
             page.on("pageerror", (error) => browserErrors.push(error.message));
             await page.goto(origin, { waitUntil: "networkidle" });
             const evidence = await inspect(page);
-            const failures = [...hardFailures(evidence, viewport), browserErrors.length > 0 && "browser error"].filter(Boolean);
+            const failures = [...hardFailures(evidence, viewport, candidate.manifest.version >= 2), browserErrors.length > 0 && "browser error"].filter(Boolean);
             candidateResult.failures.push(...failures.map((failure) => `${viewport.name}: ${failure}`));
             candidateResult.viewports.push({ ...viewport, ...evidence, browserErrors });
             if (candidate.manifest.version >= 2) {
@@ -288,10 +292,11 @@ export async function runCreativeBakeoff({
               if (!renderedFidelity.pass)
                 candidateResult.failures.push(...renderedFidelity.hardFindings.map((item) => `${viewport.name}: ${item.message}`));
             }
-            // Keep the requested viewport width while including the complete
-            // route so the screenshot-level gate can inspect lower sections,
-            // FAQs, and the contact handoff as well as the hero.
-            await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}.png`), fullPage: true });
+            const screenshotStem = path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}`);
+            await page.screenshot({ path: `${screenshotStem}-viewport.png` });
+            // Keep the established full-page filename for the repair loop and
+            // visual gate; viewport captures have an explicit suffix.
+            await page.screenshot({ path: `${screenshotStem}.png`, fullPage: true });
             await page.close();
           }
         } finally {
@@ -301,9 +306,10 @@ export async function runCreativeBakeoff({
           const renderedReference = await renderedReferenceEvaluator({
             referenceDna: candidate.manifest.referenceDna,
             candidateScreenshots: {
-              desktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop.png`),
-              compact: path.join(evidenceDir, `${candidate.manifest.candidateId}-compact.png`),
-              mobile: path.join(evidenceDir, `${candidate.manifest.candidateId}-mobile.png`),
+              desktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop-viewport.png`),
+              compact: path.join(evidenceDir, `${candidate.manifest.candidateId}-compact-viewport.png`),
+              mobile: path.join(evidenceDir, `${candidate.manifest.candidateId}-mobile-viewport.png`),
+              desktopFullPage: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop.png`),
             },
           });
           candidateResult.renderedReferenceFidelity = renderedReference;
@@ -502,8 +508,8 @@ export async function runCreativeBakeoff({
     const judged = await renderedDiversityEvaluator({
       candidates: pixelCandidates.map((candidate) => ({
         candidateId: candidate.candidateId,
-        desktop: path.join(evidenceDir, `${candidate.candidateId}-desktop.png`),
-        mobile: path.join(evidenceDir, `${candidate.candidateId}-mobile.png`),
+        desktop: path.join(evidenceDir, `${candidate.candidateId}-desktop-viewport.png`),
+        mobile: path.join(evidenceDir, `${candidate.candidateId}-mobile-viewport.png`),
       })),
     });
     visualDiversity = {

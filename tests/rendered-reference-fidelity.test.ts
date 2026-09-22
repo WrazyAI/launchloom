@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import sharp from "sharp";
 import {
+  createReferenceViewportEvidence,
   evaluateRenderedDiversity,
   evaluateRenderedReferenceFidelity,
 } from "../scripts/rendered-reference-fidelity.mjs";
@@ -31,12 +33,23 @@ async function evidence() {
     candidateDesktop: path.join(root, "candidate-desktop.png"),
     candidateCompact: path.join(root, "candidate-compact.png"),
     candidateMobile: path.join(root, "candidate-mobile.png"),
+    candidateDesktopFullPage: path.join(root, "candidate-desktop-fullpage.png"),
     secondDesktop: path.join(root, "second-desktop.png"),
     secondMobile: path.join(root, "second-mobile.png"),
   };
-  await Promise.all(
-    Object.values(files).map((file) => fs.writeFile(file, Buffer.from("pixel-evidence"))),
-  );
+  const screenshots = [
+    [files.referenceDesktop, 1401, 2102, { r: 18, g: 24, b: 21 }],
+    [files.referenceMobile, 390, 1688, { r: 18, g: 24, b: 21 }],
+    [files.candidateDesktop, 1536, 864, { r: 18, g: 24, b: 21 }],
+    [files.candidateCompact, 1366, 768, { r: 18, g: 24, b: 21 }],
+    [files.candidateMobile, 390, 844, { r: 18, g: 24, b: 21 }],
+    [files.candidateDesktopFullPage, 1536, 2600, { r: 18, g: 24, b: 21 }],
+    [files.secondDesktop, 1536, 864, { r: 40, g: 24, b: 21 }],
+    [files.secondMobile, 390, 844, { r: 40, g: 24, b: 21 }],
+  ] as const;
+  await Promise.all(screenshots.map(([file, width, height, background]) =>
+    sharp({ create: { width, height, channels: 3, background } }).png().toFile(file),
+  ));
   return files;
 }
 
@@ -103,6 +116,7 @@ describe("rendered reference request retries", () => {
     candidateMobile: "candidate-mobile.png",
     secondDesktop: "second-desktop.png",
     secondMobile: "second-mobile.png",
+    candidateDesktopFullPage: "candidate-desktop-fullpage.png",
   };
   const audit = {
     verdict: "pass",
@@ -115,8 +129,6 @@ describe("rendered reference request retries", () => {
   beforeEach(() => {
     process.env.OPENROUTER_API_KEY = "test";
     vi.useFakeTimers();
-    vi.spyOn(fs, "access").mockResolvedValue(undefined);
-    vi.spyOn(fs, "readFile").mockResolvedValue(Buffer.from("pixel-evidence"));
   });
 
   function evaluate(fetchImpl: typeof fetch) {
@@ -127,6 +139,13 @@ describe("rendered reference request retries", () => {
         compact: files.candidateCompact,
         mobile: files.candidateMobile,
       },
+      prepareReferenceViewportEvidence: async () => ({
+        desktopFullPage: files.referenceDesktop,
+        desktopOpening: files.referenceDesktop,
+        mobileFullPage: files.referenceMobile,
+        mobileOpening: files.referenceMobile,
+      }),
+      imagePartImpl: async (file: string) => ({ type: "text", text: `mock image ${file}` }),
       fetchImpl,
     });
   }
@@ -285,6 +304,7 @@ describe("rendered reference request retries", () => {
         { candidateId: "a", desktop: files.candidateDesktop, mobile: files.candidateMobile },
         { candidateId: "b", desktop: files.secondDesktop, mobile: files.secondMobile },
       ],
+      imagePartImpl: async (file: string) => ({ type: "text", text: `mock image ${file}` }),
       fetchImpl,
     });
     await vi.advanceTimersByTimeAsync(500);
@@ -295,27 +315,71 @@ describe("rendered reference request retries", () => {
 });
 
 describe("rendered reference fidelity", () => {
+  it("derives top-of-page reference crops at the compared viewport aspect ratios", async () => {
+    const files = await evidence();
+    const desktop = await sharp(files.referenceDesktop)
+      .composite([{
+        input: await sharp({
+          create: { width: 1401, height: 1300, channels: 3, background: { r: 20, g: 40, b: 220 } },
+        }).png().toBuffer(),
+        left: 0,
+        top: 802,
+      }])
+      .png()
+      .toBuffer();
+    await fs.writeFile(files.referenceDesktop, desktop);
+
+    const prepared = await createReferenceViewportEvidence(
+      dna(files),
+      path.dirname(files.referenceDesktop),
+    );
+    const desktopMetadata = await sharp(prepared.desktopOpening).metadata();
+    const mobileMetadata = await sharp(prepared.mobileOpening).metadata();
+    const desktopSample = await sharp(prepared.desktopOpening).extract({ left: 10, top: 10, width: 1, height: 1 }).raw().toBuffer();
+    const sourceBelowFold = await sharp(files.referenceDesktop).extract({ left: 10, top: 1000, width: 1, height: 1 }).raw().toBuffer();
+
+    expect(desktopMetadata).toMatchObject({ width: 1200, height: 675 });
+    expect(mobileMetadata).toMatchObject({ width: 390, height: 844 });
+    expect(desktopSample[2]).toBeLessThan(50);
+    expect(sourceBelowFold[2]).toBeGreaterThan(sourceBelowFold[0]);
+    expect(prepared.desktopFullPage).toBe(files.referenceDesktop);
+  });
+
   it("passes only from pixel-level reference scores, not DOM markers", async () => {
     process.env.OPENROUTER_API_KEY = "test";
     const files = await evidence();
+    let requestBody: any;
     const result = await evaluateRenderedReferenceFidelity({
       referenceDna: dna(files),
       candidateScreenshots: {
         desktop: files.candidateDesktop,
         compact: files.candidateCompact,
         mobile: files.candidateMobile,
+        desktopFullPage: files.candidateDesktopFullPage,
       },
-      fetchImpl: async () =>
-        response({
+      fetchImpl: async (_url, options) => {
+        requestBody = JSON.parse(String(options?.body || "{}"));
+        return response({
           verdict: "pass",
           overallScore: 89,
           scores: passingScores,
           findings: [],
           summary: "The candidate preserves the reference mechanics.",
-        }),
+        });
+      },
     });
     expect(result.pass).toBe(true);
     expect(result.score).toBe(89);
+    const content = requestBody.messages[1].content;
+    const labels = content.filter((part: any) => part.type === "text").map((part: any) => part.text);
+    expect(labels).toContain("Reference desktop opening viewport:");
+    expect(labels).toContain("Reference desktop full-page overview:");
+    expect(labels).toContain("Candidate desktop viewport 1536x864:");
+    expect(labels).toContain("Candidate compact desktop viewport 1366x768:");
+    expect(labels).toContain("Candidate mobile viewport 390x844:");
+    expect(labels).toContain("Candidate desktop full-page overview:");
+    expect(content.filter((part: any) => part.type === "image_url")).toHaveLength(8);
+    expect(requestBody.messages[0].content).toContain("compare the candidate viewport screenshot to the reference opening crop");
   });
 
   it("keeps volatile analysis timestamps out of reusable reference cache prefixes", async () => {

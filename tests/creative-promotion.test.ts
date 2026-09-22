@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import sharp from "sharp";
 import { buildCandidateManifest } from "../scripts/creative-compiler.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 import { promoteCreativeCandidate } from "../scripts/promote-creative-candidate.mjs";
@@ -107,6 +108,16 @@ describe("creative candidate promotion", () => {
     expect(report.candidates[0].eligible).toBe(false);
     expect(report.fallback).toBe(true);
     expect(report.selectedCandidateId).toBeNull();
+    const viewportScreenshot = path.join(
+      root,
+      "screenshots/candidate-a-desktop-viewport.png",
+    );
+    const fullPageScreenshot = path.join(root, "screenshots/candidate-a-desktop.png");
+    expect(await sharp(viewportScreenshot).metadata()).toMatchObject({
+      width: 1536,
+      height: 864,
+    });
+    expect((await sharp(fullPageScreenshot).metadata()).height).toBeGreaterThan(864);
   }, 45_000);
 
   it("uses rendered diversity as the sole v2 production diversity authority", async () => {

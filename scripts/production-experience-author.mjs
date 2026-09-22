@@ -671,6 +671,7 @@ function authorRules() {
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
     "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
     "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; use a compact anchor CTA for early conversion and do not fake a form or create a second lead endpoint.",
+    "Mark the complete opening hero scene with data-hero, and put the primary H1 and data-early-conversion action inside that measured region. Do not put data-hero on the navigation alone. When the opening composition spans multiple semantic sections, wrap those opening sections in one data-hero container while retaining each ordered data-reference-section on its semantic section child. Keep services, FAQs, and contact outside the hero region.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",
     "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact: no full LeadForm, service list, or long-copy block in the first fold.",

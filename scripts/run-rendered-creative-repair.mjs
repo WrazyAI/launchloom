@@ -530,9 +530,11 @@ export async function runRenderedCreativeRepair({
       candidateRoot,
       candidateDirectory,
     );
-    const screenshots = VIEWPORTS.map((viewport) =>
-      path.join(screenshotsDir, `${candidateId}-${viewport}.png`),
-    );
+    const screenshots = [
+      path.join(screenshotsDir, `${candidateId}-desktop-viewport.png`),
+      path.join(screenshotsDir, `${candidateId}-mobile-viewport.png`),
+      path.join(screenshotsDir, `${candidateId}-desktop.png`),
+    ];
     // A build failure can legitimately leave an ENOENT screenshot, but
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);

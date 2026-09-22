@@ -1,7 +1,9 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import { createReferenceViewportEvidence } from "./rendered-reference-fidelity.mjs";
 import {
   logOpenRouterCacheUsage,
   openRouterChatCompletion,
@@ -397,6 +399,8 @@ export async function requestRepair({
   files,
   screenshots,
   contentManifest = {},
+  prepareReferenceViewportEvidenceImpl = createReferenceViewportEvidence,
+  imagePartImpl = imagePart,
 }) {
   const humanReview = (findings || []).some(
     (finding) =>
@@ -437,29 +441,40 @@ ${JSON.stringify(contentShape, null, 2)}
 
 TRUSTED @launchloom/runtime HELPERS
 LeadForm, FAQList, ContactLinks, LocationMap, ChatLauncher, SocialProof, resolveAsset, useReducedMotion.
-Use these helpers instead of inventing network calls or duplicating platform behavior. SocialProof is the only supported way for candidate code to present signed live Google reviews; it falls back to verified proof points.`,
+Use these helpers instead of inventing network calls or duplicating platform behavior. SocialProof is the only supported way for candidate code to present signed live Google reviews; it falls back to verified proof points.
+
+For screenshot repair, compare opening-viewport reference crops only with candidate viewport screenshots. Use a candidate full-page overview only for section sequence and pacing, never to infer first-viewport scale.`,
     },
   ];
 
-  const referenceScreenshots = [
-    desktopReference,
-    referenceDna?.evidence?.mobileScreenshot,
-  ].filter(
-    (record) =>
-      record?.available !== false && (record?.path || record?.absolutePath),
-  );
-  for (const record of referenceScreenshots) {
-    const resolved = await resolveReferenceEvidencePath(record);
-    try {
-      if (!resolved) throw new Error("No accessible reference screenshot.");
-      content.push({ type: "text", text: "Assigned reference evidence:" });
-      content.push(await imagePart(resolved));
-    } catch (cause) {
-      throw new ReferenceEvidenceError(
-        `Creative repair cannot load required reference evidence: ${record.path || record.absolutePath}`,
-        { cause },
-      );
+  const evidenceDir = prepareReferenceViewportEvidenceImpl === createReferenceViewportEvidence
+    ? await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-reference-"))
+    : "";
+  try {
+    const referenceEvidence = await prepareReferenceViewportEvidenceImpl(
+      referenceDna,
+      evidenceDir,
+    );
+    content.push({
+      type: "text",
+      text: "Assigned reference desktop opening viewport (top crop, matched to the candidate viewport aspect ratio):",
+    });
+    content.push(await imagePartImpl(referenceEvidence.desktopOpening));
+    if (referenceEvidence.mobileOpening) {
+      content.push({
+        type: "text",
+        text: "Assigned reference mobile opening viewport (top crop, matched to the candidate viewport aspect ratio):",
+      });
+      content.push(await imagePartImpl(referenceEvidence.mobileOpening));
     }
+  } catch (cause) {
+    throw new ReferenceEvidenceError(
+      `Creative repair cannot load required reference evidence: ${desktopReference.path || desktopReference.absolutePath}`,
+      { cause },
+    );
+  } finally {
+    if (evidenceDir)
+      await fs.rm(evidenceDir, { recursive: true, force: true });
   }
 
   content.push(
@@ -486,8 +501,17 @@ ${files.motion}
 
 Return only files that need to change. For every file that should remain unchanged, return an empty string so the pipeline preserves the original bytes. For changed files, return the complete replacement file, not a diff or ellipsis. Minimize output by changing as few files as possible. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
   });
-  for (const screenshot of screenshots.slice(0, 3))
-    content.push(await imagePart(screenshot));
+  for (const screenshot of screenshots.slice(0, 3)) {
+    const label = /desktop-viewport/iu.test(screenshot)
+      ? "Candidate desktop opening viewport:"
+      : /mobile-viewport/iu.test(screenshot)
+        ? "Candidate mobile opening viewport:"
+        : /fullpage|desktop\.png/iu.test(screenshot)
+          ? "Candidate desktop full-page overview:"
+          : "Candidate rendered screenshot:";
+    content.push({ type: "text", text: label });
+    content.push(await imagePartImpl(screenshot));
+  }
 
   const sessionId = openRouterSessionId(
     "creative-repair",

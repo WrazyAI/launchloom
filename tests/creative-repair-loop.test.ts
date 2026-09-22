@@ -2,10 +2,36 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import sharp from "sharp";
 import { applyCreativeVisualSafetyRepairs, requestRepair, resolveReferenceEvidencePath, runCreativeRepairLoop } from "../scripts/creative-repair-loop.mjs";
 
 const roots: string[] = [];
 const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
+
+async function prepareReferenceViewports(referenceDna: any) {
+  const desktopOpening = await resolveReferenceEvidencePath(
+    referenceDna?.evidence?.desktopScreenshot,
+  );
+  if (!desktopOpening) throw new Error("No accessible desktop reference screenshot.");
+  const mobileRecord = referenceDna?.evidence?.mobileScreenshot;
+  const mobileOpening = mobileRecord?.available === false || !mobileRecord
+    ? ""
+    : await resolveReferenceEvidencePath(mobileRecord);
+  if (
+    mobileRecord?.available !== false &&
+    (mobileRecord?.path || mobileRecord?.absolutePath) &&
+    !mobileOpening
+  )
+    throw new Error("No accessible mobile reference screenshot.");
+  return { desktopOpening, mobileOpening };
+}
+
+function requestRepairForTest(options: any) {
+  return requestRepair({
+    ...options,
+    prepareReferenceViewportEvidenceImpl: prepareReferenceViewports,
+  });
+}
 
 beforeEach(() => {
   process.env.OPENROUTER_API_KEY = "test-openrouter-key";
@@ -36,7 +62,7 @@ describe("creative repair loop", () => {
       }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(requestRepair({
+    await expect(requestRepairForTest({
       model: "test/model",
       referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
       findings: [{ evidence: "The primary action is clipped." }],
@@ -49,6 +75,8 @@ describe("creative repair loop", () => {
     const retryText = retryBody.messages[1].content.at(-1).text;
     expect(retryText).toContain("COMPACT RETRY");
     expect(retryText).toContain("return an empty string for each unchanged file");
+    expect(retryBody.messages[1].content.map((part: any) => part.text || "").join("\n"))
+      .toContain("Assigned reference desktop opening viewport");
   });
 
   it("retries truncated repair output compactly and preserves unchanged files", async () => {
@@ -69,7 +97,7 @@ describe("creative repair loop", () => {
       }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(requestRepair({
+    await expect(requestRepairForTest({
       model: "test/model",
       referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
       findings: [],
@@ -112,7 +140,7 @@ describe("creative repair loop", () => {
     })));
     vi.stubGlobal("fetch", fetchMock);
 
-    expect(await requestRepair({
+    expect(await requestRepairForTest({
       model: "test/model",
       referenceDna: { evidence: {
         desktopScreenshot: { path: path.join(root, "missing-desktop.png"), absolutePath: desktop },
@@ -131,6 +159,51 @@ describe("creative repair loop", () => {
     ]);
   });
 
+  it("repairs from matched opening-viewport evidence and keeps one full-page overview", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-viewport-evidence-"));
+    roots.push(root);
+    const files = {
+      desktopReference: path.join(root, "reference-desktop.png"),
+      mobileReference: path.join(root, "reference-mobile.png"),
+      desktop: path.join(root, "candidate-desktop-viewport.png"),
+      mobile: path.join(root, "candidate-mobile-viewport.png"),
+      overview: path.join(root, "candidate-desktop.png"),
+    };
+    await Promise.all([
+      sharp({ create: { width: 1401, height: 2102, channels: 3, background: "#15211c" } }).png().toFile(files.desktopReference),
+      sharp({ create: { width: 390, height: 1688, channels: 3, background: "#15211c" } }).png().toFile(files.mobileReference),
+      sharp({ create: { width: 1536, height: 864, channels: 3, background: "#15211c" } }).png().toFile(files.desktop),
+      sharp({ create: { width: 390, height: 844, channels: 3, background: "#15211c" } }).png().toFile(files.mobile),
+      sharp({ create: { width: 1536, height: 2400, channels: 3, background: "#15211c" } }).png().toFile(files.overview),
+    ]);
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => new Response(JSON.stringify({
+      choices: [{ message: { content: JSON.stringify(repaired) } }],
+    })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: { evidence: {
+        desktopScreenshot: { path: files.desktopReference, available: true },
+        mobileScreenshot: { path: files.mobileReference, available: true },
+      } },
+      findings: [{ evidence: "The primary heading is too small." }],
+      files: repaired,
+      screenshots: [files.desktop, files.mobile, files.overview],
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const content = body.messages[1].content;
+    const labels = content.filter((part: any) => part.type === "text").map((part: any) => part.text).join("\n");
+    expect(labels).toContain("Assigned reference desktop opening viewport");
+    expect(labels).toContain("Assigned reference mobile opening viewport");
+    expect(labels).toContain("Candidate desktop opening viewport:");
+    expect(labels).toContain("Candidate mobile opening viewport:");
+    expect(labels).toContain("Candidate desktop full-page overview:");
+    expect(content.filter((part: any) => part.type === "image_url")).toHaveLength(5);
+  });
+
   it("authorizes requested composition changes only for explicit human review findings", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-human-repair-prompt-"));
     roots.push(root);
@@ -146,7 +219,7 @@ describe("creative repair loop", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await requestRepair({
+    await requestRepairForTest({
       model: "test/model",
       referenceDna: {
         evidence: { desktopScreenshot: { path: desktop } },
@@ -188,7 +261,7 @@ describe("creative repair loop", () => {
       files: { experience: "old", styles: "old", motion: "old" },
       referenceDna: { evidence: { desktopScreenshot } },
       findings: [{ evidence: "Hero heading is white-on-white on a light panel." }],
-      generate: (request: any) => requestRepair({ model: "test/model", ...request }),
+      generate: (request: any) => requestRepairForTest({ model: "test/model", ...request }),
       evaluate,
     })).rejects.toThrow("Creative repair requires desktop reference evidence");
     expect(fetchMock).not.toHaveBeenCalled();
@@ -206,7 +279,7 @@ describe("creative repair loop", () => {
     })));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(requestRepair({
+    await expect(requestRepairForTest({
       model: "test/model",
       referenceDna: { evidence: { desktopScreenshot: { path: desktop }, mobileScreenshot } },
       findings: [],
@@ -240,7 +313,7 @@ describe("creative repair loop", () => {
         },
       } },
       findings: [{ evidence: "Hero heading is white-on-white on a light panel." }],
-      generate: (request: any) => requestRepair({ model: "test/model", ...request }),
+      generate: (request: any) => requestRepairForTest({ model: "test/model", ...request }),
       evaluate,
     })).rejects.toThrow("Creative repair cannot load required reference evidence");
     expect(fetchMock).not.toHaveBeenCalled();

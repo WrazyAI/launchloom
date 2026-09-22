@@ -75,7 +75,7 @@ function report(overrides: Record<string, unknown> = {}) {
 async function writeBakeoffEvidence(options: any, value: any) {
   await fs.mkdir(options.screenshotsDir, { recursive: true });
   for (const item of value.candidates || []) {
-    for (const viewport of ["desktop", "compact", "mobile"])
+    for (const viewport of ["desktop", "compact", "mobile"]) {
       await fs.writeFile(
         path.join(
           options.screenshotsDir,
@@ -83,6 +83,14 @@ async function writeBakeoffEvidence(options: any, value: any) {
         ),
         "pixels",
       );
+      await fs.writeFile(
+        path.join(
+          options.screenshotsDir,
+          `${item.candidateId}-${viewport}-viewport.png`,
+        ),
+        "viewport pixels",
+      );
+    }
   }
   await fs.mkdir(path.dirname(options.reportPath), { recursive: true });
   await fs.writeFile(options.reportPath, JSON.stringify(value));
@@ -124,6 +132,7 @@ describe("rendered creative repair orchestration", () => {
     let bakeoffCalls = 0;
     let gateCalls = 0;
     const repairs: string[] = [];
+    let repairScreenshotNames: string[] = [];
     const promotions: any[] = [];
 
     const result = await runRenderedCreativeRepair({
@@ -138,8 +147,9 @@ describe("rendered creative repair orchestration", () => {
         gateCalls += 1;
         return visualGate(options, gateCalls === 1 ? "revise" : "pass");
       },
-      repairCandidateImpl: async ({ candidateId }: any) => {
+      repairCandidateImpl: async ({ candidateId, screenshots }: any) => {
         repairs.push(candidateId);
+        repairScreenshotNames = screenshots.map((item: string) => path.basename(item));
       },
       promoteImpl: async (options: any) => {
         await fs.access(
@@ -158,6 +168,11 @@ describe("rendered creative repair orchestration", () => {
     expect(bakeoffCalls).toBe(2);
     expect(gateCalls).toBe(2);
     expect(repairs).toEqual(["candidate-a"]);
+    expect(repairScreenshotNames).toEqual([
+      "candidate-a-desktop-viewport.png",
+      "candidate-a-mobile-viewport.png",
+      "candidate-a-desktop.png",
+    ]);
     expect(result.repairCycles).toEqual({ "candidate-a": 1 });
     expect(promotions).toHaveLength(1);
     expect(promotions[0].selectionMode).toBe("creative-preview");

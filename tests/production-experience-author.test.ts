@@ -275,6 +275,11 @@ describe("production experience author", () => {
         request.rules.includes("Do not hardcode business facts"),
       ),
     ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes("Mark the complete opening hero scene with data-hero"),
+      ),
+    ).toBe(true);
   });
 
   it("rejects unsafe imports and network-capable authored code", async () => {
