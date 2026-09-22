@@ -195,7 +195,7 @@ function stagePromptSuffix(request) {
   if (request.stage === "contract")
     return `${repair}
 CONTRACT STAGE
-Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, hero geometry, early conversion, non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
+Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, class vocabulary, navigation behavior, hero geometry, early conversion, non-card service treatment, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Use the canonical Reference DNA sectionBlueprint IDs exactly and in order; do not invent, rename, merge, or omit them. For each ID, explicitly state how its visualRequirement is implemented. Do not return source files.`;
 
   if (request.stage === "experience")
     return `DESIGN CONTRACT
@@ -211,7 +211,7 @@ ${request.previousSource}
 EXPERIENCE STAGE
 Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". The hero's early conversion is a compact anchor or button linking to #contact, not the full four-field form. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
 
-Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" to each major section so the compiler can verify the assigned rhythm. Do not invent values: use the slugs from Reference DNA.`;
+Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the element that physically implements that mechanic. A signature marker on an empty, hidden, or unrelated element is invalid. Add data-reference-section="<section sequence id>" to exactly one major section for every canonical Reference DNA sectionBlueprint entry, in the same order. You must implement the composition described by the matching visualRequirement; do not use marker strings as a substitute for the composition. Do not invent values: use the IDs and slugs from Reference DNA.`;
 
   if (request.stage === "styles")
     return `${repair}
@@ -577,8 +577,8 @@ try {
     );
 } catch (error) {
   sharedAbortController.abort();
-  if (failureMode !== "record") throw error;
   await writeFailure(error);
+  if (failureMode !== "record") throw error;
   console.error(
     `production_experience_status=failed ${error instanceof Error ? error.message : String(error)}`,
   );

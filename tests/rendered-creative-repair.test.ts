@@ -933,4 +933,26 @@ process.exit(1);
     expect(candidateGuardIndex).toBeGreaterThan(buildIndex);
   });
 
+
+  it("keeps client PR and preview provisioning behind rendered creative approval", () => {
+    const workflow = readFileSync(
+      new URL("../.github/workflows/generate-client.yml", import.meta.url),
+      "utf8",
+    );
+    const repairIndex = workflow.indexOf(
+      "Render and repair creative candidates in the production shell",
+    );
+    const provisionIndex = workflow.indexOf("Provision approved review resources");
+    const prIndex = workflow.indexOf("gh pr create");
+    const projectIndex = workflow.indexOf("wrangler pages project create");
+    const publicDeployIndex = workflow.indexOf("wrangler pages deploy dist");
+    expect(repairIndex).toBeGreaterThan(-1);
+    expect(provisionIndex).toBeGreaterThan(repairIndex);
+    expect(prIndex).toBeGreaterThan(provisionIndex);
+    expect(projectIndex).toBeGreaterThan(provisionIndex);
+    expect(publicDeployIndex).toBeGreaterThan(provisionIndex);
+    expect(workflow).toContain("creative-diagnostics-");
+    expect(workflow).toContain("retention-days: 3");
+  });
+
 });

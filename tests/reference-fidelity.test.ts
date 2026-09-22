@@ -5,7 +5,7 @@ import { validateReferenceCandidate } from "../scripts/reference-fidelity.mjs";
 
 const record = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8")).records[0];
 const dna = buildReferenceDna(record, { requireEvidence: true });
-const validExperience = `<main data-mobile-recomposition="single-column-editorial-chapters" data-motion-primitive="masked-image-reveal"><nav data-navigation-geometry="quiet-corner-links"></nav><section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument"><h1>{content.hero.heading}</h1><img src={content.hero.image} /></section><section data-reference-section="image-chapter"></section><section data-reference-section="editorial-intro"></section><section data-reference-section="image-mosaic"></section><section id="services" data-reference-section="magazine-archive" data-service-presentation="magazine-archive-ledger" data-reference-signature="magazine-archive">{content.services}</section><section data-reference-section="closing-scene" data-reference-signature="closing-scene"></section><section id="faqs">{content.faqs}</section><section id="contact"><a data-early-conversion data-cta-placement="after-hero-image"></a></section></main>`;
+const validExperience = `<main data-mobile-recomposition="single-column-editorial-chapters" data-motion-primitive="masked-image-reveal"><nav data-navigation-geometry="quiet-corner-links"></nav><section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument"><h1>{content.hero.heading}</h1><img src={content.hero.image} /></section><section data-reference-section="image-chapter"></section><section data-reference-section="editorial-intro"></section><section data-reference-section="image-mosaic"></section><section id="services" data-reference-section="magazine-archive" data-service-presentation="magazine-archive-ledger" data-reference-signature="magazine-archive">{content.services}</section><section data-reference-section="closing-scene" data-reference-signature="closing-scene"></section><section id="faqs">{content.faqs}</section><section id="contact" data-reference-section="contact"><a data-early-conversion data-cta-placement="after-hero-image"></a></section></main>`;
 const validStyles = `:root { --ll-creative-ink: #fff; } @media (max-width: 700px) { main { display:block; } }`;
 const validMotion = `export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }`;
 
@@ -191,4 +191,68 @@ export default function Experience({ content }) { return <main data-mobile-recom
       expect.objectContaining({ code: "hero-geometry-mismatch" }),
     ]));
   });
+
+  it("requires canonical reference sections in exact order", () => {
+    const outOfOrder = validExperience
+      .replace('data-reference-section="image-chapter"', 'data-reference-section="swap-a"')
+      .replace('data-reference-section="editorial-intro"', 'data-reference-section="image-chapter"')
+      .replace('data-reference-section="swap-a"', 'data-reference-section="editorial-intro"');
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: outOfOrder,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+    expect(report.visualPass).toBe(false);
+    expect(report.visualFindings).toContainEqual(
+      expect.objectContaining({
+        code: "section-rhythm",
+        message: expect.stringContaining("Expected:"),
+      }),
+    );
+  });
+
+  it("rejects a lower-edge-product-overlap marker without real rendered overlap geometry", () => {
+    const overlapDna = {
+      ...dna,
+      requiredSignatureElements: [
+        {
+          id: "lower-edge-product-overlap",
+          selector: "[data-reference-signature=lower-edge-product-overlap]",
+          description: "A product plane rises through the hero lower edge.",
+        },
+      ],
+    };
+    const source = validExperience.replace(
+      'data-reference-signature="editorial-monument"',
+      'data-reference-signature="lower-edge-product-overlap"',
+    );
+    const report = validateReferenceCandidate({
+      referenceDna: overlapDna,
+      experienceSource: source,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+      renderedDom: source,
+      renderedEvidence: {
+        viewportName: "desktop",
+        referenceSections: overlapDna.sectionSequence,
+        referenceSignatureEvidence: [
+          {
+            id: "lower-edge-product-overlap",
+            width: 320,
+            height: 180,
+            overlapsHero: true,
+            reachesHeroLowerEdge: false,
+            heroTopRatio: 0.1,
+            overlapCount: 0,
+          },
+        ],
+      },
+    });
+    expect(report.visualPass).toBe(false);
+    expect(report.visualFindings).toContainEqual(
+      expect.objectContaining({ code: "signature-composition" }),
+    );
+  });
+
 });

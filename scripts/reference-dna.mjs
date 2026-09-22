@@ -51,7 +51,7 @@ const sectionIdPatterns = Object.freeze({
 export function normalizeSectionSequence(value, familyId) {
   const defaults = [...(FAMILY_DEFAULTS[familyId]?.sectionSequence || [])];
   const observed = Array.isArray(value)
-    ? value.map((item) => clean(item, 160)).filter(Boolean)
+    ? value.map((item) => clean(typeof item === "object" ? item?.id : item, 160)).filter(Boolean)
     : [];
   if (!observed.length) return defaults;
   const normalized = [];
@@ -60,19 +60,93 @@ export function normalizeSectionSequence(value, familyId) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/gu, "-")
       .replace(/^-|-$/gu, "");
-    const directMatch = defaults.find(
-      (candidate) => direct === candidate || direct.includes(candidate),
-    );
+    const directMatch = defaults.find((candidate) => direct === candidate);
     const mapped = directMatch || defaults.find(
       (candidate) => sectionIdPatterns[candidate]?.test(item),
     );
-    if (mapped && !normalized.includes(mapped)) normalized.push(mapped);
+    if (!mapped) return defaults;
+    if (!normalized.includes(mapped)) normalized.push(mapped);
   }
-  // If the analyzer used prose that cannot be mapped confidently, retain the
-  // family's reviewed rhythm instead of producing an unverifiable contract.
   return normalized.length >= Math.min(3, defaults.length)
     ? normalized
     : defaults;
+}
+
+function sectionRequirement(value, fallback) {
+  return clean(value, 420) || fallback;
+}
+
+export function normalizeSectionBlueprint(
+  value,
+  familyId,
+  sectionSequenceEvidence = [],
+) {
+  const defaults = [...(FAMILY_DEFAULTS[familyId]?.sectionSequence || [])];
+  const raw = Array.isArray(value) ? value : [];
+  const rawIds = raw
+    .map((item) => clean(typeof item === "object" ? item?.id : item, 160))
+    .filter(Boolean);
+  const evidence = Array.isArray(sectionSequenceEvidence)
+    ? sectionSequenceEvidence.map((item) => clean(item, 420)).filter(Boolean)
+    : [];
+  const ids = normalizeSectionSequence(rawIds.length ? rawIds : evidence, familyId);
+  const explicit = new Map(
+    raw
+      .filter((item) => item && typeof item === "object")
+      .map((item) => [
+        clean(item.id, 160),
+        sectionRequirement(
+          item.visualRequirement || item.requirement || item.description,
+          "",
+        ),
+      ])
+      .filter(([id]) => id),
+  );
+  const evidenceLooksCanonical =
+    evidence.length > 0 &&
+    evidence.every((item) =>
+      defaults.includes(
+        item
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/gu, "-")
+          .replace(/^-|-$/gu, ""),
+      ),
+    );
+  return ids.map((id, index) => ({
+    id,
+    visualRequirement: sectionRequirement(
+      explicit.get(id) || (!evidenceLooksCanonical ? evidence[index] : ""),
+      `Implement the ${id} chapter with the measured reference rhythm and composition.`,
+    ),
+  }));
+}
+
+export function normalizeReferenceDna(value) {
+  if (!value || typeof value !== "object") return value;
+  const familyId = clean(value.familyId, 80);
+  const sequenceEvidence = list(
+    value.sectionSequenceEvidence?.length
+      ? value.sectionSequenceEvidence
+      : value.sectionSequence,
+    20,
+  );
+  const sectionSequence = normalizeSectionSequence(
+    value.sectionBlueprint?.length
+      ? value.sectionBlueprint
+      : value.sectionSequence,
+    familyId,
+  );
+  const sectionBlueprint = normalizeSectionBlueprint(
+    value.sectionBlueprint?.length ? value.sectionBlueprint : sectionSequence,
+    familyId,
+    sequenceEvidence,
+  );
+  return {
+    ...value,
+    sectionSequence,
+    sectionSequenceEvidence: sequenceEvidence,
+    sectionBlueprint,
+  };
 }
 
 const routeText = (route) =>
@@ -434,6 +508,15 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
         defaults.sectionSequence,
       20,
     ),
+    sectionBlueprint: normalizeSectionBlueprint(
+      route.referenceDna?.sectionBlueprint ||
+        route.referenceDna?.sectionSequence ||
+        defaults.sectionSequence,
+      familyId,
+      route.referenceDna?.sectionSequenceEvidence ||
+        route.referenceDna?.sectionSequence ||
+        defaults.sectionSequence,
+    ),
     servicePresentation: route.referenceDna?.servicePresentation || defaults.servicePresentation,
     ctaPlacement: route.referenceDna?.ctaPlacement || defaults.ctaPlacement,
     motion: route.referenceDna?.motion || defaults.motion,
@@ -455,10 +538,15 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
 
 export function validateReferenceDna(value, { requireEvidence = true } = {}) {
   if (!value || typeof value !== "object") throw new Error("Reference DNA is missing.");
+  Object.assign(value, normalizeReferenceDna(value));
   for (const field of ["familyId", "referenceName", "source", "rights", "heroGeometry", "navigationGeometry", "typography", "palette", "imageTreatment", "servicePresentation", "ctaPlacement", "motion", "mobileRecomposition"]) {
     if (!value[field]) throw new Error(`Reference DNA is missing ${field}.`);
   }
   if (!Array.isArray(value.sectionSequence) || value.sectionSequence.length < 3) throw new Error("Reference DNA needs a section sequence.");
+  if (!Array.isArray(value.sectionBlueprint) || value.sectionBlueprint.length !== value.sectionSequence.length)
+    throw new Error("Reference DNA needs a visual requirement for every section ID.");
+  if (!value.sectionBlueprint.every((item, index) => item?.id === value.sectionSequence[index] && item?.visualRequirement))
+    throw new Error("Reference DNA section requirements must match the canonical section order.");
   if (!Array.isArray(value.prohibitedPatterns) || !value.prohibitedPatterns.length) throw new Error("Reference DNA needs prohibited patterns.");
   if (!Array.isArray(value.requiredSignatureElements) || !value.requiredSignatureElements.length) throw new Error("Reference DNA needs required signature elements.");
   if (!Array.isArray(value.acceptanceChecks) || !value.acceptanceChecks.length) throw new Error("Reference DNA needs acceptance checks.");

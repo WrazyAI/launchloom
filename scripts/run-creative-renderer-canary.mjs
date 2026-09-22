@@ -55,7 +55,7 @@ export default function Experience({ content, runtime }) {
     <section data-reference-section="image-mosaic"><div>{content.hero.tertiaryImage ? <img src={content.hero.tertiaryImage} alt="Material detail" /> : null}</div></section>
     <section id="services" data-reference-section="magazine-archive" data-service-presentation="magazine-archive-ledger" data-reference-signature="magazine-archive"><h2>{content.copy?.servicesHeading || content.hero.heading}</h2>{services.map((service) => <article key={service.name}><h3>{service.name}</h3><p>{service.description}</p></article>)}</section>
     <section data-reference-section="closing-scene" data-reference-signature="closing-scene"><h2>{content.copy?.contactHeading || content.hero.heading}</h2><p>{content.copy?.processIntro}</p><ol>{(content.process || []).map((step, index) => <li key={step}><span>{String(index + 1).padStart(2, "0")}</span><p>{step}</p></li>)}</ol></section>
-    <section id="faqs" data-reference-section="faq">{faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
+    <section id="faqs">{faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
     <section id="contact" data-reference-section="contact"><LeadForm content={content} runtime={runtime} /></section>
   </main>;
 }`.replaceAll("—", "-");

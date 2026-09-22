@@ -36,6 +36,10 @@ function unique(values) {
 function candidateFindings(candidate) {
   return unique([
     ...(candidate?.failures || []),
+    ...(candidate?.referenceFidelity?.sourceVisualFindings || []).map(
+      (item) =>
+        `${item.code || "reference"}: ${item.message || "Source reference contract mismatch."}`,
+    ),
     ...(candidate?.renderedReferenceFidelity?.audit?.findings || []).map(
       (item) =>
         `${item.severity || "major"} ${item.category || "reference"} ${item.viewport || "all"}: ${item.evidence || item.repair || "Rendered reference mismatch."}`,

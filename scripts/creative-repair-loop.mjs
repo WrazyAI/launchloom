@@ -423,7 +423,7 @@ ${files.styles}
 CURRENT MOTION.JS
 ${files.motion}
 
-Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
+Return complete files. For section-order findings, use every Reference DNA sectionBlueprint id exactly once and in order, and implement its visualRequirement. For signature findings, repair the actual visible geometry/composition; adding or moving a data-reference-signature marker without the required mechanic is not a fix. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
   });
   for (const screenshot of screenshots.slice(0, 3))
     content.push(await imagePart(screenshot));

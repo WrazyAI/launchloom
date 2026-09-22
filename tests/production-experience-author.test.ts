@@ -696,7 +696,7 @@ describe("production experience author", () => {
     ).rejects.toThrow(/unsupported claim literal/i);
   });
 
-  it("generates contextual assets before authored preview and preserves both evidence sets", () => {
+  it("generates contextual assets before authoring and provisions review resources only after rendered approval", () => {
     const workflow = readFileSync(
       new URL("../.github/workflows/generate-client.yml", import.meta.url),
       "utf8",
@@ -704,19 +704,24 @@ describe("production experience author", () => {
     const inspirationIndex = workflow.indexOf(
       "name: Preserve inspiration evidence",
     );
+    const assetsIndex = workflow.indexOf(
+      "name: Generate or reuse contextual imagery",
+    );
     const authorIndex = workflow.indexOf(
       "name: Author independent experience candidates",
     );
+    const renderIndex = workflow.indexOf(
+      "name: Render and repair creative candidates in the production shell",
+    );
     const repositoryIndex = workflow.indexOf(
-      "name: Create private repository and Cloudflare Pages project",
+      "name: Provision approved review resources",
     );
 
     expect(inspirationIndex).toBeGreaterThan(-1);
-    expect(authorIndex).toBeGreaterThan(inspirationIndex);
-    expect(repositoryIndex).toBeGreaterThan(inspirationIndex);
-    expect(authorIndex).toBeGreaterThan(repositoryIndex);
-    expect(workflow.indexOf("name: Generate or reuse contextual imagery")).toBeGreaterThan(repositoryIndex);
-    expect(workflow.indexOf("name: Generate or reuse contextual imagery")).toBeLessThan(authorIndex);
+    expect(assetsIndex).toBeGreaterThan(inspirationIndex);
+    expect(authorIndex).toBeGreaterThan(assetsIndex);
+    expect(renderIndex).toBeGreaterThan(authorIndex);
+    expect(repositoryIndex).toBeGreaterThan(renderIndex);
     expect(workflow).toContain("name: authored-experiences-${{");
     const seoEvidence = workflow.slice(
       workflow.indexOf("name: Preserve SEO research evidence"),
@@ -724,8 +729,8 @@ describe("production experience author", () => {
     );
     expect(seoEvidence).toContain("continue-on-error: true");
     const authoredEvidence = workflow.slice(
-      workflow.indexOf("name: Preserve authored experience evidence"),
-      workflow.indexOf("name: Commit authored experience evidence"),
+      workflow.indexOf("name: Preserve authored experience diagnostics"),
+      workflow.indexOf("name: Stage authored experience evidence"),
     );
     expect(authoredEvidence).toContain("continue-on-error: true");
     expect(authoredEvidence).toContain("if-no-files-found: warn");
@@ -837,6 +842,18 @@ describe("production experience author", () => {
       digests.add(recomputed);
     }
     expect(digests.size).toBe(3);
+  });
+
+
+  it("requires Reference DNA IDs and the actual composition in author prompts", () => {
+    const author = readFileSync(
+      new URL("../scripts/author-production-experiences.mjs", import.meta.url),
+      "utf8",
+    );
+    expect(author).toContain("sectionBlueprint IDs exactly and in order");
+    expect(author).toContain("implement the composition");
+    expect(author).toContain("marker strings");
+    expect(author).toContain("referenceDna: cacheableReferenceDna(request.route.referenceDna)");
   });
 
 });

@@ -901,29 +901,19 @@ export async function authorExperienceCandidates({
       const motion = motionOutput.source;
       complianceRepaired ||= stylesOutput.repaired || motionOutput.repaired;
       let referenceRepairCycles = 0;
+      let sourceReferenceFindings = [];
       if (route.referenceDna?.complete) {
-        let fidelity = validateReferenceCandidate({ referenceDna: route.referenceDna, experienceSource: experience, stylesSource: styles, motionSource: motion });
-        while ((!fidelity.pass || !fidelity.visualPass) && referenceRepairCycles < 2) {
-          referenceRepairCycles += 1;
-          const repaired = await generateStageValue(
-            limitedGenerate,
-            {
-              ...base,
-              stage: "experience",
-              designContract,
-              previousSource: experience,
-              validationError: `Reference fidelity repair cycle ${referenceRepairCycles}/2. Fix every finding without simplifying the assigned composition: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
-            },
-            "content",
-            "experience",
+        const fidelity = validateReferenceCandidate({
+          referenceDna: route.referenceDna,
+          experienceSource: experience,
+          stylesSource: styles,
+          motionSource: motion,
+        });
+        if (!fidelity.pass)
+          throw new Error(
+            `Reference contract failed for ${route.id}: ${fidelity.hardFindings.map((item) => item.message).join(" | ")}`,
           );
-          experience = normalizeAuthoredSource(repaired.value);
-          complianceRepaired = true;
-          validateExperience(experience, route, content);
-          fidelity = validateReferenceCandidate({ referenceDna: route.referenceDna, experienceSource: experience, stylesSource: styles, motionSource: motion });
-        }
-        if (!fidelity.pass || !fidelity.visualPass)
-          throw new Error(`Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`);
+        sourceReferenceFindings = fidelity.visualFindings;
       }
       const creativeManifest = buildCandidateManifest({
         candidate: { candidateId: `candidate-${String.fromCharCode(97 + index)}` },
@@ -964,6 +954,7 @@ export async function authorExperienceCandidates({
         fingerprint: creativeManifest.fingerprint,
         complianceRepaired,
         referenceRepairCycles,
+        sourceReferenceFindings,
         motionFallback: Boolean(motionOutput.fallback),
         contentManifestDigest: routeContentManifest.digest,
         contentManifestPath: "content-manifest.json",
