@@ -773,8 +773,14 @@ process.exit(1);
     const buildIndex = workflow.indexOf(
       'PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build',
     );
-    const hostGuardIndex = workflow.indexOf('data-creative-host="true"');
-    const candidateGuardIndex = workflow.indexOf('data-creative-candidate=\\\"$CANDIDATE_ID\\\"');
+    const hostGuardIndex = workflow.indexOf(
+      'data-creative-host="true"',
+      buildIndex,
+    );
+    const candidateGuardIndex = workflow.indexOf(
+      'data-creative-candidate=\\\"$CANDIDATE_ID\\\"',
+      buildIndex,
+    );
     expect(buildIndex).toBeGreaterThan(-1);
     expect(hostGuardIndex).toBeGreaterThan(buildIndex);
     expect(candidateGuardIndex).toBeGreaterThan(buildIndex);
