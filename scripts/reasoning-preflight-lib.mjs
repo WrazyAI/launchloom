@@ -401,9 +401,9 @@ function usageSummary(usage) {
 
 /**
  * Run one Jev preflight and freeze the reasoning effort for the creative
- * session. Shadow mode records the Jev recommendation while executing xhigh;
- * enforce mode executes the recommendation. Any selector failure recommends
- * max and enforce mode therefore fails safe to max.
+ * session. Successful shadow mode records the Jev recommendation while
+ * executing xhigh; enforce mode executes the recommendation. Any selector
+ * failure executes max in both modes as the quality-safe fallback.
  *
  * @param {{
  *   inspirationPack?: Record<string, any>,
@@ -490,8 +490,11 @@ export async function createReasoningPreflight({
     };
   }
 
-  const reasoningEffort =
-    preflightMode === "shadow" ? "xhigh" : decision.recommendedEffort;
+  const reasoningEffort = decision.fallbackUsed
+    ? "max"
+    : preflightMode === "shadow"
+      ? "xhigh"
+      : decision.recommendedEffort;
   const sessionId = `launchloom:creative:${digest(
     {
       sessionKey: digest(String(sessionKey || "local"), 24),
@@ -561,9 +564,20 @@ export function validateCreativeSessionConfig(
     );
   if (!/^launchloom:creative:[a-f0-9]{40}$/u.test(String(value.sessionId || "")))
     throw new Error("Creative session configuration has an invalid sessionId.");
-  if (value.mode === "shadow" && value.reasoningEffort !== "xhigh")
+  if (
+    value.mode === "shadow" &&
+    !value.selector?.fallbackUsed &&
+    value.reasoningEffort !== "xhigh"
+  )
     throw new Error(
-      "Shadow reasoning sessions must execute the xhigh baseline.",
+      "Successful shadow reasoning sessions must execute the xhigh baseline.",
+    );
+  if (
+    value.selector?.fallbackUsed &&
+    value.reasoningEffort !== "max"
+  )
+    throw new Error(
+      "Selector-fallback reasoning sessions must execute max.",
     );
   if (
     value.mode === "enforce" &&
