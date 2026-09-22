@@ -140,13 +140,23 @@ async function inspect(page) {
           const height = Math.max(0, Math.min(rect.bottom, otherRect.bottom) - Math.max(rect.top, otherRect.top));
           return width * height >= Math.max(16, Math.min(rect.width * rect.height, otherRect.width * otherRect.height) * 0.02);
         });
+        const heroIntersectionHeight = heroRect
+          ? Math.max(0, Math.min(rect.bottom, heroRect.bottom) - Math.max(rect.top, heroRect.top))
+          : 0;
+        const heroIntersectionWidth = heroRect
+          ? Math.max(0, Math.min(rect.right, heroRect.right) - Math.max(rect.left, heroRect.left))
+          : 0;
         return {
           id: element.getAttribute("data-reference-signature") || "",
           width: Math.round(rect.width),
           height: Math.round(rect.height),
-          insideHero: Boolean(hero && hero.contains(element)),
+          overlapsHero: heroIntersectionWidth * heroIntersectionHeight > 16,
+          reachesHeroLowerEdge: Boolean(
+            heroRect?.height &&
+              rect.top <= heroRect.bottom &&
+              rect.bottom >= heroRect.bottom - heroRect.height * 0.16,
+          ),
           heroTopRatio: heroRect?.height ? (rect.top - heroRect.top) / heroRect.height : -1,
-          heroBottomGapRatio: heroRect?.height ? Math.abs(heroRect.bottom - rect.bottom) / heroRect.height : 1,
           overlapCount: overlaps.length,
         };
       }),
