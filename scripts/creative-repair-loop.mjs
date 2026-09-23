@@ -5,6 +5,7 @@ import {
   authoringCompletionDiagnostics,
   completionLimitRequestField,
   formatAuthoringCompletionDiagnostics,
+  referenceImplementationChecklist,
 } from "./creative-authoring-output.mjs";
 import { parseModelJson } from "./model-json.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
@@ -409,6 +410,8 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     }
   }
 
+  const structuralChecklist = referenceImplementationChecklist(referenceDna);
+
   content.push(
     promptCachedText(
       model,
@@ -430,6 +433,10 @@ ${files.styles}
 
 CURRENT MOTION.JS
 ${files.motion}
+
+REQUIRED STRUCTURAL CHECKLIST
+${structuralChecklist}
+Keep each required ID and section marker on its semantically matching visible section, in the exact specified DOM order, while making the requested repair. Do not remove or rename them.
 
 Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
   });

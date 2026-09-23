@@ -6,6 +6,7 @@ import { applyCreativeVisualSafetyRepairs, requestRepair, resolveReferenceEviden
 
 const roots: string[] = [];
 const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
+const repairSectionSequence = ["hero", "services", "faqs", "contact"];
 
 beforeEach(() => {
   process.env.OPENROUTER_API_KEY = "test-openrouter-key";
@@ -39,7 +40,10 @@ describe("creative repair loop", () => {
 
     await requestRepair({
       model: "test/model",
-      referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
       findings: [],
       files: repaired,
       screenshots: [],
@@ -53,6 +57,53 @@ describe("creative repair loop", () => {
       "creative_completion stage=creative-repair finish_reason=stop max_completion_tokens=48000 completion_tokens=3456 reasoning_tokens=321",
     );
     expect(diagnostics.join(" ")).not.toContain('"experience":"fixed"');
+  });
+
+  it("keeps required section IDs and reference marker order explicit during repairs", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-reference-checklist-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
+      new Response(JSON.stringify({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify(repaired) } }],
+      })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: ["hero", "services", "faqs", "contact"],
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [],
+      files: repaired,
+      screenshots: [],
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: { type: string; text?: string }) => part.type === "text")
+      .map((part: { text?: string }) => part.text || "")
+      .join("\n");
+    expect(prompt).toContain('id="services"');
+    expect(prompt).toContain('id="faqs"');
+    expect(prompt).toContain('id="contact"');
+    expect(prompt).toContain('data-reference-section="hero"');
+    expect(prompt).toContain('data-reference-section="services"');
+    expect(prompt).toContain('data-reference-section="faqs"');
+    expect(prompt).toContain('data-reference-section="contact"');
+    expect(prompt.indexOf('data-reference-section="hero"')).toBeLessThan(
+      prompt.indexOf('data-reference-section="services"'),
+    );
+    expect(prompt.indexOf('data-reference-section="services"')).toBeLessThan(
+      prompt.indexOf('data-reference-section="faqs"'),
+    );
+    expect(prompt.indexOf('data-reference-section="faqs"')).toBeLessThan(
+      prompt.indexOf('data-reference-section="contact"'),
+    );
   });
 
   it("classifies a length-limited repair response instead of reporting generic invalid JSON", async () => {
@@ -73,7 +124,10 @@ describe("creative repair loop", () => {
 
     await expect(requestRepair({
       model: "test/model",
-      referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
       findings: [],
       files: { experience: "old", styles: "old", motion: "old" },
       screenshots: [],
@@ -97,7 +151,10 @@ describe("creative repair loop", () => {
 
     await expect(requestRepair({
       model: "test/model",
-      referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
       findings: [],
       files: { experience: "old", styles: "old", motion: "old" },
       screenshots: [],
@@ -133,10 +190,13 @@ describe("creative repair loop", () => {
 
     expect(await requestRepair({
       model: "test/model",
-      referenceDna: { evidence: {
-        desktopScreenshot: { path: path.join(root, "missing-desktop.png"), absolutePath: desktop },
-        mobileScreenshot: { path: path.join(root, "missing-mobile.png"), absolutePath: mobile },
-      } },
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: {
+          desktopScreenshot: { path: path.join(root, "missing-desktop.png"), absolutePath: desktop },
+          mobileScreenshot: { path: path.join(root, "missing-mobile.png"), absolutePath: mobile },
+        },
+      },
       findings: [],
       files: repaired,
       screenshots: [],
@@ -172,6 +232,7 @@ describe("creative repair loop", () => {
       referenceDna: {
         familyId: "editorial",
         referenceName: "Editorial reference",
+        sectionSequence: repairSectionSequence,
         evidence: { desktopScreenshot: { path: desktop } },
       },
       findings: [],
@@ -213,6 +274,7 @@ describe("creative repair loop", () => {
     await requestRepair({
       model: "test/model",
       referenceDna: {
+        sectionSequence: repairSectionSequence,
         evidence: { desktopScreenshot: { path: desktop } },
       },
       findings: [
@@ -272,7 +334,10 @@ describe("creative repair loop", () => {
 
     await expect(requestRepair({
       model: "test/model",
-      referenceDna: { evidence: { desktopScreenshot: { path: desktop }, mobileScreenshot } },
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop }, mobileScreenshot },
+      },
       findings: [],
       files: repaired,
       screenshots: [],
