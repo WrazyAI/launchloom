@@ -218,6 +218,47 @@ describe("production experience author", () => {
     ).not.toThrow();
   });
 
+  it("counts the trusted FAQList helper as a sealed FAQ binding", () => {
+    const route = { id: "route-runtime-faq-binding" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    )
+      .replace(
+        'import { LeadForm } from "@launchloom/runtime";',
+        'import { FAQList, LeadForm } from "@launchloom/runtime";',
+      )
+      .replace(
+        /<section id="faqs">\{content\.faqs\.map\(\(faq\) => <details key=\{faq\.question\}><summary>\{faq\.question\}<\/summary><p>\{faq\.answer\}<\/p><\/details>\)\}<\/section>/u,
+        '<section id="faqs"><FAQList content={content} /></section>',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(experience).not.toContain("content.faqs");
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+
+    const misplacedFaqList = experience.replace(
+      '<section id="faqs"><FAQList content={content} /></section>',
+      '<section id="faqs"></section><FAQList content={content} />',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: misplacedFaqList, styles, motion },
+        route,
+      }),
+    ).toThrow(/missing required sealed binding content\.faqs/iu);
+  });
+
   it("restores required anchors only on uniquely identifiable semantic sections", () => {
     const source = `<main>
       <section data-hero><h1>{content.hero.heading}</h1></section>

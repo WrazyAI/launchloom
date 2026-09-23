@@ -475,6 +475,7 @@ function validateContentBoundRuntimeHelpers(source, route) {
   const { file, elements } = collectJsxElements(source);
   const namedHelpers = new Map();
   const runtimeNamespaces = new Set();
+  const sealedBindings = new Set();
 
   for (const statement of file.statements) {
     if (
@@ -525,7 +526,16 @@ function validateContentBoundRuntimeHelpers(source, route) {
       throw new Error(
         `Candidate ${route.id} runtime helper ${localName} must receive sealed content through content={content}.`,
       );
+    // FAQList is a trusted runtime adapter that reads content.faqs itself.
+    // Count that as the FAQ token binding only when it is inside the required
+    // FAQ section; unrelated helpers and unbound helper calls cannot satisfy it.
+    if (
+      helperName === "FAQList" &&
+      isInsideSemanticSection(opening, "faqs", file)
+    )
+      sealedBindings.add("content.faqs");
   }
+  return sealedBindings;
 }
 
 function bindingPatternNames(name) {
@@ -737,6 +747,30 @@ function semanticSectionMatch(element, sectionName, file) {
         identity,
       )
     );
+  return false;
+}
+
+function isInsideSemanticSection(node, sectionName, file) {
+  let current = node.parent;
+  while (current) {
+    if (ts.isJsxElement(current)) {
+      const body = current.closingElement
+        ? file.text.slice(
+            current.openingElement.end,
+            current.closingElement.getStart(file),
+          )
+        : "";
+      if (
+        semanticSectionMatch(
+          { opening: current.openingElement, body },
+          sectionName,
+          file,
+        )
+      )
+        return true;
+    }
+    current = current.parent;
+  }
   return false;
 }
 
@@ -1301,7 +1335,10 @@ function validateExperience(source, route, content) {
     throw new Error(
       `Candidate ${route.id} must pass sealed content to the shared LeadForm runtime surface.`,
     );
-  validateContentBoundRuntimeHelpers(source, route);
+  const helperSealedBindings = validateContentBoundRuntimeHelpers(
+    source,
+    route,
+  );
   for (const { opening } of collectJsxElements(source).elements) {
     if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
     const altAttribute = jsxAttribute(opening, "alt");
@@ -1327,7 +1364,10 @@ function validateExperience(source, route, content) {
         `Candidate ${route.id} navigation must expose href="#${target}".`,
       );
   for (const binding of requiredExperienceBindings)
-    if (!binding.aliases.some((token) => referencesContentPath(source, token)))
+    if (
+      !helperSealedBindings.has(binding.token) &&
+      !binding.aliases.some((token) => referencesContentPath(source, token))
+    )
       throw new Error(
         `Candidate ${route.id} is missing required sealed binding ${binding.token}.`,
       );
