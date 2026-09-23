@@ -201,10 +201,12 @@ export default function Experience({ content, runtime }) {
     <section id='contact'><LeadForm content={content} runtime={runtime} /></section>
   </main>;
 }`;
-    const repairedExperience = initialExperience.replace(
-      '<section data-reference-section="image-chapter"></section>',
-      '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.image} alt="" /></section></section>',
-    );
+    const repairedExperience = initialExperience
+      .replace(" data-early-conversion", "")
+      .replace(
+        '<section data-reference-section="image-chapter"></section>',
+        '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.image} alt="" /></section></section>',
+      );
     const candidateDir = path.join(candidates, "candidate-a");
     const metadataPath = path.join(candidateDir, "metadata.json");
     const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
@@ -278,6 +280,9 @@ export default function Experience({ content, runtime }) {
     );
     expect(repaired).toContain(
       '<section id="services" data-reference-section="magazine-archive"',
+    );
+    expect(repaired).toContain(
+      'href="#contact" data-early-conversion>{content.hero.primaryLabel}',
     );
     expect(repaired).toContain(
       '<section className="service-note"><p>A note about the services chapter.</p>',

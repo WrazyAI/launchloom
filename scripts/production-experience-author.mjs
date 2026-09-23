@@ -453,6 +453,7 @@ function collectJsxElements(source) {
   const visit = (node) => {
     if (ts.isJsxElement(node))
       elements.push({
+        node,
         opening: node.openingElement,
         body: source.slice(
           node.openingElement.end,
@@ -460,11 +461,55 @@ function collectJsxElements(source) {
         ),
       });
     else if (ts.isJsxSelfClosingElement(node))
-      elements.push({ opening: node, body: "" });
+      elements.push({ node, opening: node, body: "" });
     ts.forEachChild(node, visit);
   };
   visit(file);
   return { file, elements };
+}
+
+function jsxChildrenContainBinding(children, binding, file) {
+  for (const child of children || []) {
+    if (
+      ts.isJsxExpression(child) &&
+      child.expression?.getText(file).replace(/\s+/gu, "") === binding
+    )
+      return true;
+    if (
+      ts.isJsxElement(child) &&
+      jsxChildrenContainBinding(child.children, binding, file)
+    )
+      return true;
+    if (
+      ts.isJsxFragment(child) &&
+      jsxChildrenContainBinding(child.children, binding, file)
+    )
+      return true;
+  }
+  return false;
+}
+
+function jsxDescendantElementContainsBinding(
+  container,
+  descendantName,
+  binding,
+  file,
+) {
+  if (!ts.isJsxElement(container)) return false;
+  const visit = (children) => {
+    for (const child of children || []) {
+      if (ts.isJsxElement(child)) {
+        if (
+          jsxOpeningName(child.openingElement) === descendantName &&
+          jsxChildrenContainBinding(child.children, binding, file)
+        )
+          return true;
+        if (visit(child.children)) return true;
+      } else if (ts.isJsxFragment(child) && visit(child.children)) return true;
+    }
+    return false;
+  };
+  return visit(container.children);
 }
 
 function jsxAttributeInsertionPoint(source, opening, file) {
@@ -687,6 +732,113 @@ export function restoreImageAltsFromOriginal(repairedSource, originalSource) {
       edits.push({ start: insertAt, end: insertAt, text: ` ${reviewedAlt}` });
     }
   }
+  let restored = repairedSource;
+  for (const edit of edits.sort((a, b) => b.start - a.start))
+    restored = `${restored.slice(0, edit.start)}${edit.text}${restored.slice(edit.end)}`;
+  return restored;
+}
+
+/**
+ * Restore lost opening-scene markers only when the repaired JSX still has a
+ * unique semantic hero and contact-bound primary action. Otherwise validation
+ * remains fail-closed instead of attaching markers to arbitrary elements.
+ */
+export function restoreRequiredExperienceMarkers(
+  repairedSource,
+  originalSource,
+  route = { id: "candidate" },
+) {
+  const original = collectJsxElements(originalSource);
+  const repaired = collectJsxElements(repairedSource);
+  const edits = [];
+  const markerSpecs = [
+    {
+      name: "data-hero",
+      targets: () => {
+        const matches = repaired.elements.filter((element) => {
+          if (jsxOpeningName(element.opening) !== "section") return false;
+          return jsxDescendantElementContainsBinding(
+            element.node,
+            "h1",
+            "content.hero.heading",
+            repaired.file,
+          );
+        });
+        return matches.filter(
+          (candidate) =>
+            !matches.some(
+              (other) =>
+                other !== candidate &&
+                other.node.getStart(repaired.file) >
+                  candidate.node.getStart(repaired.file) &&
+                other.node.end < candidate.node.end,
+            ),
+        );
+      },
+    },
+    {
+      name: "data-early-conversion",
+      targets: () =>
+        repaired.elements.filter((element) => {
+          if (jsxOpeningName(element.opening) !== "a") return false;
+          const href = jsxAttributeValue(
+            jsxAttribute(element.opening, "href"),
+            repaired.file,
+          ).trim();
+          return (
+            href === "#contact" &&
+            ts.isJsxElement(element.node) &&
+            jsxChildrenContainBinding(
+              element.node.children,
+              "content.hero.primaryLabel",
+              repaired.file,
+            )
+          );
+        }),
+    },
+  ];
+
+  for (const { name, targets } of markerSpecs) {
+    const originalMatches = original.elements.filter(({ opening }) =>
+      jsxAttribute(opening, name),
+    );
+    if (originalMatches.length !== 1)
+      throw new Error(
+        `Candidate ${route.id} cannot safely restore ${name}: original source has ${originalMatches.length} matching markers.`,
+      );
+    const candidates = targets();
+    if (candidates.length !== 1)
+      throw new Error(
+        `Candidate ${route.id} cannot safely restore ${name}: found ${candidates.length} semantic targets.`,
+      );
+    const existing = repaired.elements.filter(({ opening }) =>
+      jsxAttribute(opening, name),
+    );
+    if (existing.length > 1)
+      throw new Error(
+        `Candidate ${route.id} cannot safely restore ${name}: repaired source has ${existing.length} matching markers.`,
+      );
+    if (existing.length === 1 && existing[0] === candidates[0]) continue;
+    if (existing.length === 1) {
+      const misplaced = jsxAttribute(existing[0].opening, name);
+      edits.push({
+        start: misplaced.getStart(repaired.file),
+        end: misplaced.end,
+        text: "",
+      });
+    }
+    const insertAt = jsxAttributeInsertionPoint(
+      repairedSource,
+      candidates[0].opening,
+      repaired.file,
+    );
+    if (insertAt < 0)
+      throw new Error(
+        `Candidate ${route.id} has an invalid opening tag for ${name}.`,
+      );
+    edits.push({ start: insertAt, end: insertAt, text: ` ${name}` });
+  }
+
   let restored = repairedSource;
   for (const edit of edits.sort((a, b) => b.start - a.start))
     restored = `${restored.slice(0, edit.start)}${edit.text}${restored.slice(edit.end)}`;

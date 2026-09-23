@@ -6,6 +6,7 @@ import { requestRepair } from "./creative-repair-loop.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import {
   restoreImageAltsFromOriginal,
+  restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
   validateProductionCandidateFiles,
 } from "./production-experience-author.mjs";
@@ -425,9 +426,13 @@ async function defaultRepairCandidate({
   const repaired = {
     ...modelRepaired,
     experience: restoreImageAltsFromOriginal(
-      restoreRequiredSectionIdsOnSemanticSections(modelRepaired.experience, {
-        id: metadata.routeId || metadata.candidateId || "rendered-repair",
-      }),
+      restoreRequiredExperienceMarkers(
+        restoreRequiredSectionIdsOnSemanticSections(modelRepaired.experience, {
+          id: metadata.routeId || metadata.candidateId || "rendered-repair",
+        }),
+        files.experience,
+        { id: metadata.routeId || metadata.candidateId || "rendered-repair" },
+      ),
       files.experience,
     ),
   };

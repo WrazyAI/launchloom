@@ -6,6 +6,7 @@ import {
   authorExperienceCandidates,
   namespaceCreativeCss,
   restoreImageAltsFromOriginal,
+  restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
   validateProductionCandidateFiles,
   type AuthorStageRequest,
@@ -153,6 +154,64 @@ describe("production experience author", () => {
         { id: "route-ambiguous" },
       ),
     ).toThrow(/found 2 matching semantic sections/iu);
+  });
+
+  it("restores required hero markers only on unique semantic targets", () => {
+    const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
+    const repaired = original
+      .replace(" data-hero", "")
+      .replace(" data-early-conversion", "");
+
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-01",
+    });
+
+    expect(restored).toContain('data-reference-section="hero" data-hero');
+    expect(restored).toContain('href="#contact" data-early-conversion');
+
+    const misplaced = repaired.replace(
+      "</section>",
+      "</section><section data-hero></section>",
+    );
+    const relocated = restoreRequiredExperienceMarkers(
+      misplaced,
+      original,
+      { id: "route-01" },
+    );
+    expect(relocated).toContain('data-reference-section="hero" data-hero');
+    expect(relocated).not.toContain("<section data-hero></section>");
+
+    const ambiguous = repaired.replace(
+      "</a>",
+      '</a><a href="#contact">{content.hero.primaryLabel}</a>',
+    );
+    expect(() =>
+      restoreRequiredExperienceMarkers(ambiguous, original, { id: "route-01" }),
+    ).toThrow(/found 2 semantic targets/iu);
+  });
+
+  it("does not treat JSX text or comments as sealed hero content bindings", () => {
+    const original = `<section data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
+    const deceptive = `<section>{/* <h1>{content.hero.heading}</h1> */}<h1>content.hero.heading</h1><a href="#contact">{/* {content.hero.primaryLabel} */}content.hero.primaryLabel</a></section>`;
+
+    expect(() =>
+      restoreRequiredExperienceMarkers(deceptive, original, { id: "route-01" }),
+    ).toThrow(/found 0 semantic targets/iu);
+  });
+
+  it("places the hero marker on the innermost section containing the hero binding", () => {
+    const original = `<section data-hero><div><section><h1>{content.hero.heading}</h1></section><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></div></section>`;
+    const repaired = original
+      .replace(" data-hero", "")
+      .replace(" data-early-conversion", "");
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-01",
+    });
+
+    expect(restored).toMatch(
+      /<section><div><section data-hero><h1>\{content\.hero\.heading\}<\/h1><\/section>/u,
+    );
+    expect(restored).not.toMatch(/<section data-hero><div>/u);
   });
 
   it("restores only reviewed image alt text from the same original src binding", () => {
