@@ -178,6 +178,46 @@ describe("production experience author", () => {
       ).toThrow(/must have a usable alt attribute/iu);
   });
 
+  it("requires sealed content when a content-bound runtime helper is used", () => {
+    const route = { id: "route-runtime-helper-content" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const imported = experience.replace(
+      'import { LeadForm } from "@launchloom/runtime";',
+      'import { FAQList as FAQs, LeadForm } from "@launchloom/runtime";',
+    );
+    const missingContent = imported.replace(
+      '<section id="faqs">',
+      '<section id="faqs"><FAQs />',
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: missingContent, styles, motion },
+        route,
+      }),
+    ).toThrow(/FAQs.*must receive sealed content.*content=\{content\}/iu);
+
+    const boundContent = missingContent.replace(
+      "<FAQs />",
+      "<FAQs content={content} />",
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: boundContent, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+  });
+
   it("restores required anchors only on uniquely identifiable semantic sections", () => {
     const source = `<main>
       <section data-hero><h1>{content.hero.heading}</h1></section>
@@ -549,6 +589,13 @@ describe("production experience author", () => {
     expect(
       requests.every((request) =>
         request.rules.includes("Do not hardcode business facts"),
+      ),
+    ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes(
+          "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}",
+        ),
       ),
     ).toBe(true);
   });

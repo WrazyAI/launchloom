@@ -125,6 +125,9 @@ describe("creative repair loop", () => {
     expect(prompt).toContain('data-reference-section="services"');
     expect(prompt).toContain('data-reference-section="faqs"');
     expect(prompt).toContain('data-reference-section="contact"');
+    expect(prompt).toContain(
+      "<FAQList content={content} />, <ContactLinks content={content} />, <LocationMap content={content} />, and <SocialProof content={content} runtime={runtime} />",
+    );
     expect(prompt.indexOf('data-reference-section="hero"')).toBeLessThan(
       prompt.indexOf('data-reference-section="services"'),
     );

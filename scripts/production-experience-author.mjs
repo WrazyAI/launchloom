@@ -464,6 +464,70 @@ function collectJsxElements(source) {
   return { file, elements };
 }
 
+const contentBoundRuntimeHelpers = new Set([
+  "ContactLinks",
+  "FAQList",
+  "LocationMap",
+  "SocialProof",
+]);
+
+function validateContentBoundRuntimeHelpers(source, route) {
+  const { file, elements } = collectJsxElements(source);
+  const namedHelpers = new Map();
+  const runtimeNamespaces = new Set();
+
+  for (const statement of file.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      statement.moduleSpecifier.text !== "@launchloom/runtime"
+    )
+      continue;
+
+    const bindings = statement.importClause?.namedBindings;
+    if (!bindings) continue;
+    if (ts.isNamespaceImport(bindings)) {
+      runtimeNamespaces.add(bindings.name.text);
+      continue;
+    }
+    if (!ts.isNamedImports(bindings)) continue;
+
+    for (const specifier of bindings.elements) {
+      const importedName = specifier.propertyName?.text || specifier.name.text;
+      if (contentBoundRuntimeHelpers.has(importedName))
+        namedHelpers.set(specifier.name.text, importedName);
+    }
+  }
+
+  for (const { opening } of elements) {
+    let localName = jsxOpeningName(opening);
+    let helperName = namedHelpers.get(localName);
+    const tagName = opening.tagName;
+    if (
+      !helperName &&
+      tagName &&
+      ts.isPropertyAccessExpression(tagName) &&
+      ts.isIdentifier(tagName.expression) &&
+      ts.isIdentifier(tagName.name) &&
+      runtimeNamespaces.has(tagName.expression.text) &&
+      contentBoundRuntimeHelpers.has(tagName.name.text)
+    ) {
+      localName = `${tagName.expression.text}.${tagName.name.text}`;
+      helperName = tagName.name.text;
+    }
+    if (!helperName) continue;
+
+    const contentValue = jsxAttributeValue(
+      jsxAttribute(opening, "content"),
+      file,
+    );
+    if (contentValue !== "content")
+      throw new Error(
+        `Candidate ${route.id} runtime helper ${localName} must receive sealed content through content={content}.`,
+      );
+  }
+}
+
 function bindingPatternNames(name) {
   if (ts.isIdentifier(name)) return [name.text];
   if (ts.isObjectBindingPattern(name) || ts.isArrayBindingPattern(name))
@@ -1237,6 +1301,7 @@ function validateExperience(source, route, content) {
     throw new Error(
       `Candidate ${route.id} must pass sealed content to the shared LeadForm runtime surface.`,
     );
+  validateContentBoundRuntimeHelpers(source, route);
   for (const { opening } of collectJsxElements(source).elements) {
     if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
     const altAttribute = jsxAttribute(opening, "alt");
@@ -1403,6 +1468,7 @@ function authorRules() {
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
     "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
     "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; use a compact anchor CTA for early conversion and do not fake a form or create a second lead endpoint.",
+    "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",

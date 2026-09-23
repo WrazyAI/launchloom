@@ -9,6 +9,7 @@ import {
   runVisualGateProcess,
   writeCandidate,
 } from "../scripts/run-rendered-creative-repair.mjs";
+import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 
 const roots: string[] = [];
@@ -251,7 +252,7 @@ describe("rendered creative repair orchestration", () => {
     ).toBe(rejectedCandidateSource);
   });
 
-  it("re-bakes onto a sibling when the selected preview candidate repair is rejected", async () => {
+  it("rejects a repaired FAQList with missing sealed content and selects a passing sibling", async () => {
     const { root, candidates } = await fixture(["candidate-a", "candidate-b"]);
     const bakeoffExclusions: string[][] = [];
     const repairCalls: string[] = [];
@@ -284,8 +285,35 @@ describe("rendered creative repair orchestration", () => {
       },
       repairCandidateImpl: async ({ candidateId }: any) => {
         repairCalls.push(candidateId);
+        const malformedRepair = {
+          experience: `import { FAQList, LeadForm } from "@launchloom/runtime";
+export default function Experience({ content, runtime }) {
+  return <main>
+    <nav><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
+    <section data-hero><h1>{content.hero.heading}</h1><a data-early-conversion href="#contact">{content.hero.primaryLabel}</a></section>
+    <section id="services">{content.services.map((service) => <p key={service.name}>{service.name} {service.description}</p>)}</section>
+    <section id="faqs"><p>{content.faqs.length}</p><FAQList /></section>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`,
+          styles: "[data-hero] { color: inherit; }",
+          motion:
+            "export function mountExperienceMotion() { return () => {}; }",
+        };
+        let validationError: Error | undefined;
+        try {
+          validateProductionCandidateFiles({
+            files: malformedRepair,
+            route: { id: candidateId },
+          });
+        } catch (error) {
+          validationError = error as Error;
+        }
+        expect(validationError?.message).toMatch(
+          /FAQList.*must receive sealed content.*content=\{content\}/iu,
+        );
         const error = new Error(
-          "Creative repair output rejected by source validation: Required sealed token content.hero.image does not flow into output.",
+          `Creative repair output rejected by source validation: ${validationError?.message}`,
         );
         Object.assign(error, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
         throw error;
@@ -303,7 +331,7 @@ describe("rendered creative repair orchestration", () => {
     expect(repairCalls).toEqual(["candidate-a"]);
     expect(bakeoffExclusions[1]).toEqual(["candidate-a"]);
     expect(result.rejectedCandidates["candidate-a"]).toMatch(
-      /content\.hero\.image/iu,
+      /FAQList.*content=\{content\}/iu,
     );
     expect(promotions).toEqual(["candidate-b"]);
   });
