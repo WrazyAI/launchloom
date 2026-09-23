@@ -201,7 +201,9 @@ describe("production experience author", () => {
         files: { experience, styles, motion },
         route,
       }),
-    ).toThrow('Candidate route-02 navigation must expose href="#faqs".');
+    ).toThrow(
+      'Candidate route-02 navigation must expose literal <a href="#faqs"> inside a visible native <nav>.',
+    );
   });
 
   it("does not count anchors inside statically unreachable JSX branches", () => {
@@ -226,7 +228,7 @@ describe("production experience author", () => {
         route,
       }),
     ).toThrow(
-      'Candidate route-unreachable-navigation navigation must expose href="#faqs".',
+      'Candidate route-unreachable-navigation navigation must expose literal <a href="#faqs"> inside a visible native <nav>.',
     );
   });
 
@@ -259,7 +261,7 @@ describe("production experience author", () => {
         route,
       }),
     ).toThrow(
-      'Candidate route-native-navigation navigation must expose href="#services".',
+      'Candidate route-native-navigation navigation must expose literal <a href="#services"> inside a visible native <nav>.',
     );
     expect(() =>
       validateProductionCandidateFiles({
@@ -267,7 +269,7 @@ describe("production experience author", () => {
         route,
       }),
     ).toThrow(
-      'Candidate route-native-navigation navigation must expose href="#faqs".',
+      'Candidate route-native-navigation navigation must expose literal <a href="#faqs"> inside a visible native <nav>.',
     );
   });
 
@@ -323,6 +325,14 @@ describe("production experience author", () => {
       '<nav aria-label="Main navigation">',
       '<nav {...{ style: { display: "none" } }} aria-label="Main navigation">',
     );
+    const dynamicDisplayProperty = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav style={{ [displayProperty]: "none" }} aria-label="Main navigation">',
+    );
+    const dynamicStyleProperty = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav {...{ [styleProperty]: { display: "none" } }} aria-label="Main navigation">',
+    );
     const explicitlyVisibleNavigation = original.replace(
       '<nav aria-label="Main navigation">',
       '<nav hidden={false} aria-label="Main navigation">',
@@ -342,6 +352,8 @@ describe("production experience author", () => {
       displayNoneNavigation,
       displayNoneAnchor,
       displayNoneSpread,
+      dynamicDisplayProperty,
+      dynamicStyleProperty,
     ])
       expect(() =>
         validateProductionCandidateFiles({
@@ -349,7 +361,7 @@ describe("production experience author", () => {
           route,
         }),
       ).toThrow(
-        'Candidate route-hidden-navigation navigation must expose href="#services".',
+        'Candidate route-hidden-navigation navigation must expose literal <a href="#services"> inside a visible native <nav>.',
       );
 
     expect(() =>

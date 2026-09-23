@@ -1279,15 +1279,22 @@ function styleObjectDisplayNone(expression) {
   for (const property of expression.properties) {
     if (ts.isSpreadAssignment(property)) return undefined;
     const name = property.name;
-    const key = name && ts.isComputedPropertyName(name) ? name.expression : name;
-    if (
-      !key ||
-      (!ts.isIdentifier(key) &&
+    if (name && ts.isComputedPropertyName(name)) {
+      const key = name.expression;
+      if (
         !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key))
-    )
+        !ts.isNoSubstitutionTemplateLiteral(key)
+      )
+        return undefined;
+      if (key.text !== "display") continue;
+    } else if (
+      !name ||
+      (!ts.isIdentifier(name) &&
+        !ts.isStringLiteral(name) &&
+        !ts.isNoSubstitutionTemplateLiteral(name))
+    ) {
       return undefined;
-    if (key.text !== "display") continue;
+    } else if (name.text !== "display") continue;
     if (!ts.isPropertyAssignment(property)) return undefined;
     const value = property.initializer;
     if (
@@ -1310,15 +1317,22 @@ function staticSpreadDisplayNone(attribute) {
   for (const property of expression.properties) {
     if (ts.isSpreadAssignment(property)) return undefined;
     const name = property.name;
-    const key = name && ts.isComputedPropertyName(name) ? name.expression : name;
-    if (
-      !key ||
-      (!ts.isIdentifier(key) &&
+    if (name && ts.isComputedPropertyName(name)) {
+      const key = name.expression;
+      if (
         !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key))
-    )
+        !ts.isNoSubstitutionTemplateLiteral(key)
+      )
+        return undefined;
+      if (key.text !== "style") continue;
+    } else if (
+      !name ||
+      (!ts.isIdentifier(name) &&
+        !ts.isStringLiteral(name) &&
+        !ts.isNoSubstitutionTemplateLiteral(name))
+    ) {
       return undefined;
-    if (key.text !== "style") continue;
+    } else if (name.text !== "style") continue;
     foundStyle = true;
     if (!ts.isPropertyAssignment(property)) return undefined;
     const value = property.initializer;
@@ -1591,7 +1605,7 @@ function validateExperience(source, route, content) {
       )
     )
       throw new Error(
-        `Candidate ${route.id} navigation must expose href="#${target}".`,
+        `Candidate ${route.id} navigation must expose literal <a href="#${target}"> inside a visible native <nav>.`,
       );
   for (const binding of requiredExperienceBindings)
     if (
