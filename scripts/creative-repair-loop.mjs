@@ -1,5 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import {
+  CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
+  authoringCompletionDiagnostics,
+  completionLimitRequestField,
+  formatAuthoringCompletionDiagnostics,
+} from "./creative-authoring-output.mjs";
 import { parseModelJson } from "./model-json.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import {
@@ -325,6 +331,7 @@ export async function resolveReferenceEvidencePath(record) {
  *   screenshots?: string[],
  *   contentManifest?: Record<string, any>,
  *   creativeSession?: Record<string, any> | null,
+ *   logger?: (message: string) => void,
  * }} [options]
  * @returns {Promise<Record<string, any>>}
  */
@@ -336,6 +343,7 @@ export async function requestRepair({
   screenshots,
   contentManifest = {},
   creativeSession = null,
+  logger = console.log,
 }) {
   const humanReview = (findings || []).some(
     (finding) =>
@@ -460,7 +468,7 @@ Return complete files. Keep required reference signatures and safety/content con
         exclude: true,
       },
       response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
-      max_tokens: 24_000,
+      ...completionLimitRequestField(CREATIVE_REPAIR_MAX_COMPLETION_TOKENS),
       messages: [
         {
           role: "system",
@@ -477,7 +485,28 @@ Return complete files. Keep required reference signatures and safety/content con
       `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
     );
   logOpenRouterCacheUsage("creative-repair", payload.usage);
-  return parseModelJson(payload.choices?.[0]?.message?.content || "");
+  const responseContent = payload.choices?.[0]?.message?.content || "";
+  const diagnostics = authoringCompletionDiagnostics({
+    stage: "creative-repair",
+    routeId: "repair",
+    maxTokens: CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
+    payload,
+    content: responseContent,
+  });
+  const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
+  logger(`creative_completion stage=creative-repair ${diagnosticText}`);
+  if (["length", "max_tokens"].includes(diagnostics.finishReason))
+    throw new Error(
+      `Creative repair response was truncated (${diagnosticText}).`,
+    );
+  try {
+    return parseModelJson(responseContent);
+  } catch (cause) {
+    throw new Error(
+      `Creative repair response was malformed (${diagnosticText}).`,
+      { cause },
+    );
+  }
 }
 
 async function main() {

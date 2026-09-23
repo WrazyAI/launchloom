@@ -62,7 +62,9 @@ lead endpoint, or ship an unverified layout.
    Repairable findings are returned to Luna with the current source, Reference
    DNA, and available screenshots. The repaired candidate is never trusted on
    its own claim: it must rebuild, rerender, and pass the judges on the next
-   round. Each candidate gets at most two repair cycles. Production promotion
+   round. Each repair response has a 48k completion ceiling and records its
+   finish reason plus completion/reasoning token counts without logging source
+   content. Each candidate gets at most two repair cycles. Production promotion
    still requires `promotionReady`, including rendered v2 diversity, plus a
    passing final visual gate. The loop never falls back to a legacy renderer.
 

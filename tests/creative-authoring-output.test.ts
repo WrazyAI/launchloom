@@ -2,10 +2,20 @@ import { describe, expect, it } from "vitest";
 import {
   AUTHORING_STAGE_BUDGETS,
   authoringCompletionDiagnostics,
+  completionLimitRequestField,
   referenceImplementationChecklist,
 } from "../scripts/creative-authoring-output.mjs";
 
 describe("creative authoring output budgets", () => {
+  it("uses OpenRouter's current completion limit request field", () => {
+    expect(completionLimitRequestField(48000)).toEqual({
+      max_completion_tokens: 48000,
+    });
+    expect(() => completionLimitRequestField(0)).toThrow(
+      /positive integer/u,
+    );
+  });
+
   it("gives each authoring stage generous output and time headroom", () => {
     expect(AUTHORING_STAGE_BUDGETS).toEqual({
       contract: { maxTokens: 24000, timeoutMs: 300000 },

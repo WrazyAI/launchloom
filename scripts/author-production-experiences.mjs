@@ -23,6 +23,7 @@ import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import {
   AUTHORING_STAGE_BUDGETS,
   authoringCompletionDiagnostics,
+  completionLimitRequestField,
   formatAuthoringCompletionDiagnostics,
   referenceImplementationChecklist,
 } from "./creative-authoring-output.mjs";
@@ -355,7 +356,7 @@ async function requestStage(request) {
                 type: "json_schema",
                 json_schema: authorStageSchema,
               },
-              max_tokens: stageBudget.maxTokens,
+              ...completionLimitRequestField(stageBudget.maxTokens),
               messages: [
                 {
                   role: "system",

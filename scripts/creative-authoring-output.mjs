@@ -5,6 +5,14 @@ export const AUTHORING_STAGE_BUDGETS = Object.freeze({
   motion: Object.freeze({ maxTokens: 24_000, timeoutMs: 5 * 60_000 }),
 });
 
+export const CREATIVE_REPAIR_MAX_COMPLETION_TOKENS = 48_000;
+
+export function completionLimitRequestField(tokens) {
+  if (!Number.isSafeInteger(tokens) || tokens < 1)
+    throw new Error("OpenRouter completion-token limit must be a positive integer.");
+  return { max_completion_tokens: tokens };
+}
+
 export function referenceImplementationChecklist(referenceDna) {
   const sections = Array.isArray(referenceDna?.sectionSequence)
     ? referenceDna.sectionSequence
@@ -72,7 +80,7 @@ export function authoringCompletionDiagnostics({
 export function formatAuthoringCompletionDiagnostics(diagnostics) {
   return [
     `finish_reason=${diagnostics.finishReason}`,
-    `max_tokens=${diagnostics.maxTokens}`,
+    `max_completion_tokens=${diagnostics.maxTokens}`,
     `completion_tokens=${diagnostics.completionTokens ?? "not-reported"}`,
     `reasoning_tokens=${diagnostics.reasoningTokens ?? "not-reported"}`,
     `content_chars=${diagnostics.contentChars}`,

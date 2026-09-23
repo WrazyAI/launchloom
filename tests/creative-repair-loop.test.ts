@@ -19,6 +19,93 @@ afterEach(async () => {
 });
 
 describe("creative repair loop", () => {
+  it("uses a generous repair completion budget and reports bounded response diagnostics", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-budget-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
+      new Response(JSON.stringify({
+        choices: [{ finish_reason: "stop", message: { content: JSON.stringify(repaired) } }],
+        usage: {
+          completion_tokens: 3456,
+          completion_tokens_details: { reasoning_tokens: 321 },
+        },
+      })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const diagnostics: string[] = [];
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
+      findings: [],
+      files: repaired,
+      screenshots: [],
+      logger: (line: string) => diagnostics.push(line),
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(body.max_completion_tokens).toBe(48000);
+    expect(body).not.toHaveProperty("max_tokens");
+    expect(diagnostics.join(" ")).toContain(
+      "creative_completion stage=creative-repair finish_reason=stop max_completion_tokens=48000 completion_tokens=3456 reasoning_tokens=321",
+    );
+    expect(diagnostics.join(" ")).not.toContain('"experience":"fixed"');
+  });
+
+  it("classifies a length-limited repair response instead of reporting generic invalid JSON", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-truncation-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
+      new Response(JSON.stringify({
+        choices: [{ finish_reason: "length", message: { content: "{" } }],
+        usage: {
+          completion_tokens: 48000,
+          completion_tokens_details: { reasoning_tokens: 47000 },
+        },
+      })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(requestRepair({
+      model: "test/model",
+      referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
+      findings: [],
+      files: { experience: "old", styles: "old", motion: "old" },
+      screenshots: [],
+    })).rejects.toThrow(
+      "Creative repair response was truncated (finish_reason=length max_completion_tokens=48000 completion_tokens=48000 reasoning_tokens=47000 content_chars=1).",
+    );
+  });
+
+  it("classifies malformed non-truncated repair JSON with usage diagnostics", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-malformed-json-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
+      new Response(JSON.stringify({
+        choices: [{ finish_reason: "stop", message: { content: "not json" } }],
+        usage: { completion_tokens: 810, completion_tokens_details: { reasoning_tokens: 200 } },
+      })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(requestRepair({
+      model: "test/model",
+      referenceDna: { evidence: { desktopScreenshot: { path: desktop } } },
+      findings: [],
+      files: { experience: "old", styles: "old", motion: "old" },
+      screenshots: [],
+    })).rejects.toThrow(
+      "Creative repair response was malformed (finish_reason=stop max_completion_tokens=48000 completion_tokens=810 reasoning_tokens=200 content_chars=8).",
+    );
+  });
+
   it("prefers an accessible absolute reference evidence path", async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-evidence-"));
     roots.push(root);
