@@ -55,6 +55,36 @@ afterEach(async () => {
 });
 
 describe("creative candidate promotion", () => {
+  it("omits validator-rejected candidates from a later bakeoff", async () => {
+    const root = await makeFixture();
+
+    await expect(
+      runCreativeBakeoff({
+        siteDir: root,
+        candidatesDir: ".",
+        reportPath: path.join(root, "excluded-report.json"),
+        screenshotsDir: path.join(root, "excluded-screenshots"),
+        preview: true,
+        excludedCandidateIds: ["candidate-a"],
+      }),
+    ).rejects.toThrow(
+      /No creative candidates remain after exclusions.*candidate-a/iu,
+    );
+  });
+
+  it("does not allow candidate exclusions during promotion", async () => {
+    const root = await makeFixture();
+
+    await expect(
+      runCreativeBakeoff({
+        siteDir: root,
+        candidatesDir: ".",
+        promote: true,
+        excludedCandidateIds: ["candidate-a"],
+      }),
+    ).rejects.toThrow(/only supported for non-promoting preview reruns/iu);
+  });
+
   it("copies a validated candidate and switches the site renderer", async () => {
     const root = await makeFixture();
     const result = await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });

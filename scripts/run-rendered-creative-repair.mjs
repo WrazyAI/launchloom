@@ -356,7 +356,11 @@ async function validateCandidateReasoningBindings(
   creativeSession,
 ) {
   const entries = await fs.readdir(candidateRoot, { withFileTypes: true });
-  for (const entry of entries.filter((item) => item.isDirectory())) {
+  const directoryEntries = entries.filter((item) => item.isDirectory());
+  const candidateCount = directoryEntries.filter((item) =>
+    /^candidate-[a-z0-9]+$/u.test(item.name),
+  ).length;
+  for (const entry of directoryEntries) {
     const metadataPath = path.join(candidateRoot, entry.name, "metadata.json");
     const metadata = await readJson(metadataPath).catch(() => null);
     const reasoning = metadata?.reasoning || null;
@@ -395,6 +399,7 @@ async function validateCandidateReasoningBindings(
         `Candidate ${metadata?.candidateId || entry.name} reasoning binding does not match the frozen creative session: ${mismatches.map(([field, actual, expected]) => `${field}=${actual ?? "(missing)"} expected ${expected ?? "(missing)"}`).join(" | ")}`,
       );
   }
+  return candidateCount;
 }
 
 async function defaultRepairCandidate({
@@ -412,39 +417,46 @@ async function defaultRepairCandidate({
     throw new Error(
       `${metadata.candidateId || candidateDir} has no Reference DNA.`,
     );
-  const modelRepaired = normalizeRepair(
-    await requestRepair({
-      model,
-      referenceDna,
-      findings,
-      files,
-      screenshots,
-      contentManifest,
-      creativeSession,
-    }),
-  );
-  const repaired = {
-    ...modelRepaired,
-    experience: restoreImageAltsFromOriginal(
-      restoreRequiredExperienceMarkers(
-        restoreRequiredSectionIdsOnSemanticSections(modelRepaired.experience, {
-          id: metadata.routeId || metadata.candidateId || "rendered-repair",
-        }),
-        files.experience,
-        { id: metadata.routeId || metadata.candidateId || "rendered-repair" },
-      ),
-      files.experience,
-      content,
-    ),
-  };
-  const validated = validateProductionCandidateFiles({
-    files: repaired,
-    route: {
-      id: metadata.routeId || metadata.candidateId || "rendered-repair",
-      referenceDna,
-    },
-    content,
+  const repairResponse = await requestRepair({
+    model,
+    referenceDna,
+    findings,
+    files,
+    screenshots,
+    contentManifest,
+    creativeSession,
   });
+  let validated;
+  try {
+    const modelRepaired = normalizeRepair(repairResponse);
+    const repaired = {
+      ...modelRepaired,
+      experience: restoreImageAltsFromOriginal(
+        restoreRequiredExperienceMarkers(
+          restoreRequiredSectionIdsOnSemanticSections(
+            modelRepaired.experience,
+            {
+              id: metadata.routeId || metadata.candidateId || "rendered-repair",
+            },
+          ),
+          files.experience,
+          { id: metadata.routeId || metadata.candidateId || "rendered-repair" },
+        ),
+        files.experience,
+        content,
+      ),
+    };
+    validated = validateProductionCandidateFiles({
+      files: repaired,
+      route: {
+        id: metadata.routeId || metadata.candidateId || "rendered-repair",
+        referenceDna,
+      },
+      content,
+    });
+  } catch (error) {
+    throw repairOutputRejected(error);
+  }
   await writeCandidate(candidateDir, validated.files);
   return validated.files;
 }
@@ -512,6 +524,8 @@ async function persistRepairEvidence({
   reason,
   findings,
   cyclesUsed,
+  status = "repaired",
+  error,
 }) {
   const directory = path.join(
     outDir,
@@ -527,12 +541,31 @@ async function persistRepairEvidence({
         candidateId,
         reason,
         cycle: cyclesUsed,
+        status,
+        ...(error ? { error } : {}),
         findings,
       },
       null,
       2,
     )}\n`,
   );
+}
+
+function repairOutputRejected(error) {
+  const rejected = new Error(
+    `Creative repair output rejected by source validation: ${error?.message || String(error)}`,
+    { cause: error instanceof Error ? error : undefined },
+  );
+  rejected.code = "CREATIVE_REPAIR_OUTPUT_REJECTED";
+  return rejected;
+}
+
+function safeRepairRejectionMessage(error) {
+  return String(
+    error?.message || error || "Creative repair output was rejected.",
+  )
+    .replace(/\s+/gu, " ")
+    .slice(0, 800);
 }
 
 /**
@@ -588,17 +621,17 @@ export async function runRenderedCreativeRepair({
   const cycleLimit = boundedCycles(maxCycles);
   const cycleUse = new Map();
   const history = [];
-  const maxRounds = Math.max(1, cycleLimit * 3 + 1);
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession
     ? validateCreativeSessionConfig(creativeSession, {
         creativeModel: resolvedModel,
       })
     : null;
-  await validateCandidateReasoningBindings(
+  const candidateCount = await validateCandidateReasoningBindings(
     candidateRoot,
     frozenCreativeSession,
   );
+  const maxRounds = Math.max(1, candidateCount * (cycleLimit + 1) + 1);
   const humanFindings = Array.isArray(requestedFindings)
     ? requestedFindings.filter(Boolean)
     : [];
@@ -614,6 +647,9 @@ export async function runRenderedCreativeRepair({
   if (humanFindings.length > 0 && !humanFeedback)
     throw new Error("Human feedback must contain non-empty request text.");
   let humanRepairPending = humanFindings.length > 0;
+  const excludedCandidateIds = new Set();
+  /** @type {Record<string, string>} */
+  const rejectedCandidates = {};
   await fs.rm(evidenceRoot, { recursive: true, force: true });
   await fs.mkdir(evidenceRoot, { recursive: true });
 
@@ -626,7 +662,7 @@ export async function runRenderedCreativeRepair({
     candidateDirectory,
   ) {
     const used = cycleUse.get(candidateId) || 0;
-    if (used >= cycleLimit) return false;
+    if (used >= cycleLimit) return { status: "exhausted" };
     const candidateDir = resolveCandidateDirectory(
       candidateRoot,
       candidateDirectory,
@@ -638,16 +674,39 @@ export async function runRenderedCreativeRepair({
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);
     const nextCycle = used + 1;
-    await repairCandidateImpl({
-      candidateDir,
-      candidateId,
-      findings,
-      screenshots: availableScreenshots,
-      model: resolvedModel,
-      creativeSession: frozenCreativeSession,
-      cycle: nextCycle,
-      maxCycles: cycleLimit,
-    });
+    try {
+      await repairCandidateImpl({
+        candidateDir,
+        candidateId,
+        findings,
+        screenshots: availableScreenshots,
+        model: resolvedModel,
+        creativeSession: frozenCreativeSession,
+        cycle: nextCycle,
+        maxCycles: cycleLimit,
+      });
+    } catch (error) {
+      const mayIsolate =
+        requestedMode === "preview" &&
+        !humanFeedback &&
+        error?.code === "CREATIVE_REPAIR_OUTPUT_REJECTED";
+      if (!mayIsolate) throw error;
+      const message = safeRepairRejectionMessage(error);
+      cycleUse.set(candidateId, nextCycle);
+      excludedCandidateIds.add(candidateId);
+      rejectedCandidates[candidateId] = message;
+      await persistRepairEvidence({
+        outDir: evidenceRoot,
+        round,
+        candidateId,
+        reason,
+        findings,
+        cyclesUsed: nextCycle,
+        status: "rejected",
+        error: message,
+      });
+      return { status: "rejected", error: message };
+    }
     cycleUse.set(candidateId, nextCycle);
     await persistRepairEvidence({
       outDir: evidenceRoot,
@@ -657,7 +716,7 @@ export async function runRenderedCreativeRepair({
       findings,
       cyclesUsed: nextCycle,
     });
-    return true;
+    return { status: "repaired" };
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
@@ -677,6 +736,7 @@ export async function runRenderedCreativeRepair({
       promote: false,
       deferPromotion: true,
       requireDiversity,
+      excludedCandidateIds: [...excludedCandidateIds].sort(),
     });
     const record = {
       round,
@@ -684,6 +744,7 @@ export async function runRenderedCreativeRepair({
       promotionReady: Boolean(report.promotionReady),
       visualDiversityPass: Boolean(report.visualDiversity?.pass),
       repairs: [],
+      rejectedCandidates: [],
     };
     history.push(record);
 
@@ -695,6 +756,7 @@ export async function runRenderedCreativeRepair({
     if (!report.selectedCandidateId) {
       const candidates = (report.candidates || []).filter(candidateNeedsRepair);
       let repairedAny = false;
+      let rejectedAny = false;
       for (const candidate of candidates) {
         const findings = [
           ...candidateFindings(candidate),
@@ -712,13 +774,16 @@ export async function runRenderedCreativeRepair({
           screenshotsDir,
           candidate.directory,
         );
-        if (repaired) {
+        if (repaired.status === "repaired") {
           repairedAny = true;
           record.repairs.push(candidate.candidateId);
+        } else if (repaired.status === "rejected") {
+          rejectedAny = true;
+          record.rejectedCandidates.push(candidate.candidateId);
         }
       }
       if (repairedAny && humanRepairPending) humanRepairPending = false;
-      if (!repairedAny)
+      if (!repairedAny && !rejectedAny)
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
         );
@@ -745,7 +810,7 @@ export async function runRenderedCreativeRepair({
         screenshotsDir,
         selected.directory,
       );
-      if (!repaired)
+      if (repaired.status !== "repaired")
         throw new Error(
           `Human feedback for ${selectedId} could not be applied within the ${cycleLimit}-cycle repair budget.`,
         );
@@ -792,7 +857,11 @@ export async function runRenderedCreativeRepair({
         screenshotsDir,
         selected.directory,
       );
-      if (!repaired)
+      if (repaired.status === "rejected") {
+        record.rejectedCandidates.push(selectedId);
+        continue;
+      }
+      if (repaired.status !== "repaired")
         throw new Error(
           `Selected candidate ${selectedId} still fails rendered visual QA after ${cycleLimit} repair cycles.`,
         );
@@ -829,7 +898,7 @@ export async function runRenderedCreativeRepair({
           screenshotsDir,
           selected.directory,
         );
-        if (!repaired)
+        if (repaired.status !== "repaired")
           throw new Error(
             `Selected candidate ${selectedId} still does not satisfy the human review request after ${cycleLimit} repair cycles.`,
           );
@@ -860,7 +929,7 @@ export async function runRenderedCreativeRepair({
           screenshotsDir,
           reportCandidate(report, target.candidateId)?.directory,
         );
-        if (repaired) {
+        if (repaired.status === "repaired") {
           repairedAny = true;
           record.repairs.push(target.candidateId);
         }
@@ -909,6 +978,7 @@ export async function runRenderedCreativeRepair({
         : true,
       visualDiversityPass: Boolean(report.visualDiversity?.pass),
       repairCycles: Object.fromEntries(cycleUse),
+      rejectedCandidates,
       history,
       final: {
         bakeoffReport: path.join(finalDir, "creative-bakeoff.json"),
@@ -1024,6 +1094,7 @@ async function main() {
       reasoningEffort: creativeSession?.reasoningEffort || null,
       reasoningMode: creativeSession?.mode || null,
       repairCycles: result.repairCycles,
+      rejectedCandidates: result.rejectedCandidates,
       summary: path.resolve(
         args["site-dir"] || "templates/client-site",
         args.out || ".launchloom/creative-repair",

@@ -156,6 +156,301 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("keeps preview available when one candidate repair violates its sealed-content contract", async () => {
+    const { root, candidates } = await fixture([
+      "candidate-a",
+      "candidate-b",
+      "candidate-c",
+    ]);
+    const rejectedCandidateSource = await fs.readFile(
+      path.join(candidates, "candidate-c", "Experience.jsx"),
+      "utf8",
+    );
+    const firstPass = ["candidate-a", "candidate-b", "candidate-c"].map(
+      (candidateId) =>
+        candidate(candidateId, {
+          valid: false,
+          eligible: false,
+          referenceFidelity: { pass: false, score: 30 },
+          renderedReferenceFidelity: { pass: false, audit: { findings: [] } },
+          failures: ["Rendered candidate needs repair."],
+        }),
+    );
+    const bakeoffExclusions: string[][] = [];
+    const repairCalls: string[] = [];
+    const promotions: string[] = [];
+    let bakeoffCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        bakeoffExclusions.push(options.excludedCandidateIds || []);
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({ selectedCandidateId: null, candidates: firstPass })
+            : report({
+                selectedCandidateId: "candidate-b",
+                candidates: [
+                  candidate("candidate-a"),
+                  candidate("candidate-b"),
+                ],
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ candidateId }: any) => {
+        repairCalls.push(candidateId);
+        if (candidateId === "candidate-c") {
+          const error = new Error(
+            "Reference-safe source validation failed: Required sealed token content.hero.image does not flow into output.",
+          );
+          Object.assign(error, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+          throw error;
+        }
+      },
+      promoteImpl: async ({ candidateDir }: any) => {
+        promotions.push(path.basename(candidateDir));
+        return { candidateId: "candidate-b" };
+      },
+    });
+
+    expect(result.status).toBe("passed");
+    expect(result.selectedCandidateId).toBe("candidate-b");
+    expect(bakeoffCalls).toBe(2);
+    expect(repairCalls).toEqual(["candidate-a", "candidate-b", "candidate-c"]);
+    expect(bakeoffExclusions[1]).toEqual(["candidate-c"]);
+    expect(promotions).toEqual(["candidate-b"]);
+    expect(result.rejectedCandidates["candidate-c"]).toMatch(
+      /content\.hero\.image/iu,
+    );
+    expect(
+      JSON.parse(
+        await fs.readFile(
+          path.join(
+            root,
+            "evidence",
+            "round-00",
+            "repairs",
+            "candidate-c.json",
+          ),
+          "utf8",
+        ),
+      ),
+    ).toMatchObject({ status: "rejected", candidateId: "candidate-c" });
+    expect(
+      await fs.readFile(
+        path.join(candidates, "candidate-c", "Experience.jsx"),
+        "utf8",
+      ),
+    ).toBe(rejectedCandidateSource);
+  });
+
+  it("re-bakes onto a sibling when the selected preview candidate repair is rejected", async () => {
+    const { root, candidates } = await fixture(["candidate-a", "candidate-b"]);
+    const bakeoffExclusions: string[][] = [];
+    const repairCalls: string[] = [];
+    const promotions: string[] = [];
+    let bakeoffCalls = 0;
+    let visualCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        bakeoffExclusions.push(options.excludedCandidateIds || []);
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({ selectedCandidateId: "candidate-a" })
+            : report({
+                selectedCandidateId: "candidate-b",
+                candidates: [candidate("candidate-b")],
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => {
+        visualCalls += 1;
+        return visualGate(options, visualCalls === 1 ? "revise" : "pass");
+      },
+      repairCandidateImpl: async ({ candidateId }: any) => {
+        repairCalls.push(candidateId);
+        const error = new Error(
+          "Creative repair output rejected by source validation: Required sealed token content.hero.image does not flow into output.",
+        );
+        Object.assign(error, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+        throw error;
+      },
+      promoteImpl: async ({ candidateDir }: any) => {
+        promotions.push(path.basename(candidateDir));
+        return { candidateId: "candidate-b" };
+      },
+    });
+
+    expect(result.status).toBe("passed");
+    expect(result.selectedCandidateId).toBe("candidate-b");
+    expect(bakeoffCalls).toBe(2);
+    expect(visualCalls).toBe(2);
+    expect(repairCalls).toEqual(["candidate-a"]);
+    expect(bakeoffExclusions[1]).toEqual(["candidate-a"]);
+    expect(result.rejectedCandidates["candidate-a"]).toMatch(
+      /content\.hero\.image/iu,
+    );
+    expect(promotions).toEqual(["candidate-b"]);
+  });
+
+  it("bounds preview rounds using the available candidate count", async () => {
+    const candidateIds = [
+      "candidate-1",
+      "candidate-2",
+      "candidate-3",
+      "candidate-4",
+      "candidate-5",
+    ];
+    const { root, candidates } = await fixture(candidateIds);
+    const exclusionsByRound: string[][] = [];
+    const promotions: string[] = [];
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        const excluded = options.excludedCandidateIds || [];
+        exclusionsByRound.push(excluded);
+        const available = candidateIds.filter((id) => !excluded.includes(id));
+        return writeBakeoffEvidence(
+          options,
+          report({
+            selectedCandidateId: available[0],
+            candidates: available.map((id) => candidate(id)),
+          }),
+        );
+      },
+      runVisualGateImpl: (options: any) =>
+        visualGate(
+          options,
+          options.candidateId === "candidate-5" ? "pass" : "revise",
+        ),
+      repairCandidateImpl: async () => {
+        const error = new Error(
+          "Creative repair output rejected by source validation: Required sealed token content.hero.image does not flow into output.",
+        );
+        Object.assign(error, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+        throw error;
+      },
+      promoteImpl: async ({ candidateDir }: any) => {
+        promotions.push(path.basename(candidateDir));
+        return { candidateId: "candidate-5" };
+      },
+    });
+
+    expect(result.status).toBe("passed");
+    expect(result.selectedCandidateId).toBe("candidate-5");
+    expect(exclusionsByRound).toEqual([
+      [],
+      ["candidate-1"],
+      ["candidate-1", "candidate-2"],
+      ["candidate-1", "candidate-2", "candidate-3"],
+      ["candidate-1", "candidate-2", "candidate-3", "candidate-4"],
+    ]);
+    expect(promotions).toEqual(["candidate-5"]);
+  });
+
+  it("fails closed on the same validator rejection in promotion mode", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const bakeoffOptions: any[] = [];
+    const promotions: string[] = [];
+    const rejection = new Error(
+      "Creative repair output rejected by source validation: Required sealed token content.hero.image does not flow into output.",
+    );
+    Object.assign(rejection, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "promote",
+        maxCycles: 1,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffOptions.push(options);
+          return writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          );
+        },
+        repairCandidateImpl: async () => {
+          throw rejection;
+        },
+        promoteImpl: async ({ candidateDir }: any) => {
+          promotions.push(path.basename(candidateDir));
+          return { candidateId: "candidate-a" };
+        },
+      }),
+    ).rejects.toThrow(/content\.hero\.image/iu);
+
+    expect(bakeoffOptions).toHaveLength(1);
+    expect(bakeoffOptions[0].excludedCandidateIds).toEqual([]);
+    expect(promotions).toEqual([]);
+  });
+
+  it("does not isolate a rejected repair when applying human feedback", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const rejection = new Error(
+      "Creative repair output rejected by source validation: Required sealed token content.hero.image does not flow into output.",
+    );
+    Object.assign(rejection, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 1,
+        requestedFindings: ["Keep the supplied hero image visible."],
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          ),
+        repairCandidateImpl: async () => {
+          throw rejection;
+        },
+      }),
+    ).rejects.toThrow(/content\.hero\.image/iu);
+  });
+
   it("restores split-heading hero markers and reviewed image alt text in the full repair flow", async () => {
     process.env.OPENROUTER_API_KEY = "test-openrouter-key";
     const { root, candidates } = await fixture(["candidate-a"]);
