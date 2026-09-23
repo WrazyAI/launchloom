@@ -1202,11 +1202,13 @@ function assertRequiredSectionAnchors(source, route) {
     );
 }
 
+/** Check that a navigation subtree contains a renderable literal section link. */
 function hasLiteralNavigationAnchor(elements, navigation, target) {
   return elements.some(({ node, opening }) => {
     if (
-      jsxOpeningName(opening).toLowerCase() !== "a" ||
-      !isDescendantOf(node, navigation.node)
+      jsxOpeningName(opening) !== "a" ||
+      !isDescendantOf(node, navigation.node) ||
+      isStaticallyUnreachable(node)
     )
       return false;
 
@@ -1217,9 +1219,63 @@ function hasLiteralNavigationAnchor(elements, navigation, target) {
   });
 }
 
+/** Return whether node is nested below ancestor in the parsed JSX tree. */
 function isDescendantOf(node, ancestor) {
   for (let parent = node.parent; parent; parent = parent.parent)
     if (parent === ancestor) return true;
+  return false;
+}
+
+/** Return whether node is ancestor itself or one of its descendants. */
+function isWithinOrSelf(node, ancestor) {
+  return node === ancestor || isDescendantOf(node, ancestor);
+}
+
+/** Match a boolean literal after removing harmless expression parentheses. */
+function isBooleanLiteral(expression, value) {
+  let unwrapped = expression;
+  while (ts.isParenthesizedExpression(unwrapped))
+    unwrapped = unwrapped.expression;
+  return (
+    unwrapped.kind ===
+    (value ? ts.SyntaxKind.TrueKeyword : ts.SyntaxKind.FalseKeyword)
+  );
+}
+
+/** Detect JSX nested in branches proven unreachable by literal booleans. */
+function isStaticallyUnreachable(node) {
+  for (let current = node; current?.parent; current = current.parent) {
+    const parent = current.parent;
+    if (ts.isBinaryExpression(parent)) {
+      const inRight = isWithinOrSelf(current, parent.right);
+      if (
+        inRight &&
+        ((parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+          isBooleanLiteral(parent.left, false)) ||
+          (parent.operatorToken.kind === ts.SyntaxKind.BarBarToken &&
+            isBooleanLiteral(parent.left, true)))
+      )
+        return true;
+    }
+    if (ts.isConditionalExpression(parent)) {
+      if (
+        (isWithinOrSelf(current, parent.whenTrue) &&
+          isBooleanLiteral(parent.condition, false)) ||
+        (isWithinOrSelf(current, parent.whenFalse) &&
+          isBooleanLiteral(parent.condition, true))
+      )
+        return true;
+    }
+    if (
+      ts.isIfStatement(parent) &&
+      ((isWithinOrSelf(current, parent.thenStatement) &&
+        isBooleanLiteral(parent.expression, false)) ||
+        (parent.elseStatement &&
+          isWithinOrSelf(current, parent.elseStatement) &&
+          isBooleanLiteral(parent.expression, true)))
+    )
+      return true;
+  }
   return false;
 }
 
@@ -1378,7 +1434,7 @@ function validateExperience(source, route, content) {
   }
   const { elements } = collectJsxElements(source);
   const navigations = elements.filter(
-    ({ opening }) => jsxOpeningName(opening).toLowerCase() === "nav",
+    ({ opening }) => jsxOpeningName(opening) === "nav",
   );
   for (const target of ["services", "faqs", "contact"])
     if (

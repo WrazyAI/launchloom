@@ -204,6 +204,73 @@ describe("production experience author", () => {
     ).toThrow('Candidate route-02 navigation must expose href="#faqs".');
   });
 
+  it("does not count anchors inside statically unreachable JSX branches", () => {
+    const route = { id: "route-unreachable-navigation" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace(
+      '<a href="#faqs">FAQs</a>',
+      '{false && <a href="#faqs">FAQs</a>}',
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).toThrow(
+      'Candidate route-unreachable-navigation navigation must expose href="#faqs".',
+    );
+  });
+
+  it("requires native lowercase nav and anchor elements for navigation", () => {
+    const route = { id: "route-native-navigation" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const original = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const nonNativeNavigation = original
+      .replace(
+        '<nav aria-label="Main navigation">',
+        '<Nav aria-label="Main navigation">',
+      )
+      .replace("</nav>", "</Nav>");
+    const componentAnchor = original.replace(
+      '<a href="#faqs">FAQs</a>',
+      '<A href="#faqs">FAQs</A>',
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: nonNativeNavigation, styles, motion },
+        route,
+      }),
+    ).toThrow(
+      'Candidate route-native-navigation navigation must expose href="#services".',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: componentAnchor, styles, motion },
+        route,
+      }),
+    ).toThrow(
+      'Candidate route-native-navigation navigation must expose href="#faqs".',
+    );
+  });
+
   it("requires sealed content when a content-bound runtime helper is used", () => {
     const route = { id: "route-runtime-helper-content" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
