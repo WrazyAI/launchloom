@@ -145,7 +145,7 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
-  it("keeps the canonical services anchor when repair adds a secondary services section", async () => {
+  it("keeps anchors and reviewed image alt text through a sealed asset fallback in the full repair flow", async () => {
     process.env.OPENROUTER_API_KEY = "test-openrouter-key";
     const { root, candidates } = await fixture(["candidate-a"]);
     const registry = JSON.parse(
@@ -154,7 +154,7 @@ describe("rendered creative repair orchestration", () => {
         "utf8",
       ),
     );
-    const referenceDna = buildReferenceDna(registry.records[0], {
+    const referenceDna = buildReferenceDna(registry.records[1], {
       requireEvidence: true,
     });
     const content = {
@@ -172,6 +172,7 @@ describe("rendered creative repair orchestration", () => {
         body: "A clear first conversation about what you need.",
         primaryLabel: "Start a conversation",
         image: "/images/hero.webp",
+        secondaryImage: "",
       },
       services: [
         {
@@ -205,12 +206,12 @@ export default function Experience({ content, runtime }) {
       .replace(" data-early-conversion", "")
       .replace(
         '<section data-reference-section="image-chapter"></section>',
-        '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.image} alt="" /></section></section>',
+        '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.image} alt="" /><img src={content.hero.secondaryImage || content.hero.image} alt="" /></section></section>',
       );
     const candidateDir = path.join(candidates, "candidate-a");
     const metadataPath = path.join(candidateDir, "metadata.json");
     const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
-    metadata.routeId = "route-03";
+    metadata.routeId = "route-02";
     metadata.referenceDna = referenceDna;
     await fs.writeFile(metadataPath, JSON.stringify(metadata));
     await fs.writeFile(
@@ -292,7 +293,7 @@ export default function Experience({ content, runtime }) {
     );
     expect(
       repaired.match(/alt="Still-life image for the studio"/gu),
-    ).toHaveLength(3);
+    ).toHaveLength(4);
   });
 
   it("repairs the selected source only after a rendered visual failure and rerenders before passing", async () => {

@@ -434,6 +434,7 @@ async function defaultRepairCandidate({
         { id: metadata.routeId || metadata.candidateId || "rendered-repair" },
       ),
       files.experience,
+      content,
     ),
   };
   const validated = validateProductionCandidateFiles({

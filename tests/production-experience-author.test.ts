@@ -257,6 +257,21 @@ describe("production experience author", () => {
     ).toEqual([]);
   });
 
+  it("does not infer alt text through an unresolved asset fallback", () => {
+    const original =
+      '<img src={content.hero.image} alt="Reviewed image description" />';
+    const repaired =
+      '<img src={unresolvedAsset || content.hero.image} alt="" />';
+
+    const restored = restoreImageAltsFromOriginal(repaired, original, {
+      hero: { image: "/images/hero.webp" },
+    });
+
+    expect(restored).toContain(
+      'src={unresolvedAsset || content.hero.image} alt=""',
+    );
+  });
+
   it("reuses reviewed alt text for repeated, reformatted uses of the same sealed image", () => {
     const original =
       `<div><img src={content.hero.image} alt="Still-life image in the studio" /></div>`;

@@ -686,12 +686,79 @@ export function restoreRequiredSectionIdsOnSemanticSections(
   return restored;
 }
 
+function resolveSealedImageExpression(node, content) {
+  if (!node) return { resolved: false };
+  if (ts.isParenthesizedExpression(node))
+    return resolveSealedImageExpression(node.expression, content);
+  if (ts.isAsExpression(node) || ts.isTypeAssertionExpression(node))
+    return resolveSealedImageExpression(node.expression, content);
+  if (ts.isSatisfiesExpression(node))
+    return resolveSealedImageExpression(node.expression, content);
+  if (ts.isIdentifier(node))
+    return node.text === "content"
+      ? { resolved: true, value: content }
+      : { resolved: false };
+  if (ts.isPropertyAccessExpression(node)) {
+    const base = resolveSealedImageExpression(node.expression, content);
+    if (!base.resolved) return { resolved: false };
+    if (base.value == null && node.questionDotToken)
+      return { resolved: true, value: undefined };
+    if (base.value == null || typeof base.value !== "object")
+      return { resolved: false };
+    if (!Object.prototype.hasOwnProperty.call(base.value, node.name.text)) {
+      if (
+        Object.prototype.hasOwnProperty.call(Object.prototype, node.name.text)
+      )
+        return { resolved: false };
+      return { resolved: true, value: undefined };
+    }
+    return { resolved: true, value: base.value[node.name.text] };
+  }
+  if (ts.isBinaryExpression(node)) {
+    const left = resolveSealedImageExpression(node.left, content);
+    if (!left.resolved) return { resolved: false };
+    if (node.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+      return left.value
+        ? left
+        : resolveSealedImageExpression(node.right, content);
+    if (node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+      return left.value == null
+        ? resolveSealedImageExpression(node.right, content)
+        : left;
+  }
+  return { resolved: false };
+}
+
+function resolvedImageValue(attribute, content) {
+  if (!content) return undefined;
+  const initializer = attribute?.initializer;
+  if (ts.isJsxExpression(initializer) && initializer.expression) {
+    const result = resolveSealedImageExpression(
+      initializer.expression,
+      content,
+    );
+    return result.resolved &&
+      typeof result.value === "string" &&
+      result.value.trim()
+      ? result.value
+      : undefined;
+  }
+  return undefined;
+}
+
 /**
- * Restore an image's reviewed alt text only when the repaired source retains
- * the exact original src binding. New or ambiguous images are left untouched
- * so the normal accessibility validator can fail closed.
+ * Restore reviewed alt text from the exact original src binding, or from an
+ * unambiguous image URL resolved through sealed content tokens. New and
+ * ambiguous images remain untouched so accessibility validation fails closed.
+ * @param {string} repairedSource
+ * @param {string} originalSource
+ * @param {Record<string, any> | null} [content=null]
  */
-export function restoreImageAltsFromOriginal(repairedSource, originalSource) {
+export function restoreImageAltsFromOriginal(
+  repairedSource,
+  originalSource,
+  content = null,
+) {
   const original = collectJsxElements(originalSource);
   const repaired = collectJsxElements(repairedSource);
   const originalAlts = new Map();
@@ -720,6 +787,21 @@ export function restoreImageAltsFromOriginal(repairedSource, originalSource) {
     originalAlts.set(srcKey, queue);
   }
 
+  const originalAltsByResolvedSource = new Map();
+  if (content) {
+    for (const { opening } of original.elements) {
+      if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
+      const src = jsxAttribute(opening, "src");
+      const alt = jsxAttribute(opening, "alt");
+      const value = resolvedImageValue(src, content);
+      const altValue = jsxAttributeValue(alt, original.file);
+      if (!value || !alt || !altValue.trim()) continue;
+      const alts = originalAltsByResolvedSource.get(value) || new Set();
+      alts.add(alt.getText(original.file));
+      originalAltsByResolvedSource.set(value, alts);
+    }
+  }
+
   const used = new Map();
   const edits = [];
   for (const { opening } of repaired.elements) {
@@ -731,9 +813,17 @@ export function restoreImageAltsFromOriginal(repairedSource, originalSource) {
       continue;
     const queue = originalAlts.get(srcKey) || [];
     const index = used.get(srcKey) || 0;
-    const reviewedAlt =
+    let reviewedAlt =
       queue[index] ||
       (queue.length > 0 && new Set(queue).size === 1 ? queue[0] : undefined);
+    if (!reviewedAlt) {
+      const value = resolvedImageValue(src, content);
+      const resolvedAlts = value
+        ? originalAltsByResolvedSource.get(value)
+        : undefined;
+      if (resolvedAlts?.size === 1)
+        reviewedAlt = resolvedAlts.values().next().value;
+    }
     if (!reviewedAlt) continue;
     if (index < queue.length) used.set(srcKey, index + 1);
     if (alt)
