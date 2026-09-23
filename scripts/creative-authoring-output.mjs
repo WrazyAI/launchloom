@@ -5,6 +5,35 @@ export const AUTHORING_STAGE_BUDGETS = Object.freeze({
   motion: Object.freeze({ maxTokens: 24_000, timeoutMs: 5 * 60_000 }),
 });
 
+export function referenceImplementationChecklist(referenceDna) {
+  const sections = Array.isArray(referenceDna?.sectionSequence)
+    ? referenceDna.sectionSequence
+    : [];
+  const sectionIds = sections.map((section) => {
+    const id = String(section || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gu, "-")
+      .replace(/^-|-$/gu, "");
+    return id;
+  });
+  if (
+    sectionIds.length < 3 ||
+    sectionIds.some((id) => !id) ||
+    new Set(sectionIds).size !== sectionIds.length
+  )
+    throw new Error(
+      "Reference DNA sectionSequence must contain at least three unique, non-empty marker IDs.",
+    );
+  return [
+    'REQUIRED LITERAL SECTION IDS: put id="services", id="faqs", and id="contact" on the actual matching content sections. These must be literal JSX string attributes, not variables, expressions, aliases, or empty anchor elements.',
+    'REFERENCE SECTION ORDER: put each data-reference-section value on its corresponding visible <section> element, in this exact DOM order:',
+    ...sectionIds.map(
+      (id, index) => `${index + 1}. data-reference-section="${id}"`,
+    ),
+    'Before returning Experience.jsx, check that all three required IDs exist literally and that every reference section marker appears once, on the semantically matching section, in this order.',
+  ].join("\n");
+}
+
 function finiteNumberOrNull(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }

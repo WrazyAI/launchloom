@@ -24,6 +24,7 @@ import {
   AUTHORING_STAGE_BUDGETS,
   authoringCompletionDiagnostics,
   formatAuthoringCompletionDiagnostics,
+  referenceImplementationChecklist,
 } from "./creative-authoring-output.mjs";
 
 const args = Object.fromEntries(
@@ -114,6 +115,12 @@ ${request.rules}
 
 Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. The candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, Reference DNA, mobile behavior, and prohibited patterns as binding design constraints, not suggestions.
 
+STRUCTURAL OUTPUT CHECK
+- The Experience.jsx source must contain literal id="services", id="faqs", and id="contact" attributes on the actual matching visible sections.
+- Do not use computed IDs, JavaScript variables, aria labels, empty anchors, or hidden elements as substitutes for those section IDs.
+- Put each required data-reference-section value on its corresponding visible section, exactly once, and preserve the explicit order supplied in the route checklist.
+- Before returning JSX, verify every required ID and section marker is present in the source and in the expected DOM order.
+
 REFERENCE FIDELITY RULES
 - Do not average references or drift to a familiar LaunchLoom composition.
 - Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
@@ -165,6 +172,7 @@ function routePromptPrefix(request) {
     2,
   );
   const dna = request.route.referenceDna;
+  const implementationChecklist = referenceImplementationChecklist(dna);
   const referenceMarkers = dna
     ? `
 CANONICAL REFERENCE MARKERS
@@ -178,12 +186,14 @@ data-motion-primitive="${markerSlug(dna.motion?.primitive)}"
 Do not substitute the primary or secondary CTA placement for the early CTA marker. The early conversion element must use the exact data-cta-placement value above.`
     : "";
 
-  return `ROUTE
+return `ROUTE
 ${route}
 
 SEALED CONTENT SHAPE
 ${JSON.stringify(request.contentShape, null, 2)}
-${referenceMarkers}`;
+${referenceMarkers}
+
+${implementationChecklist}`;
 }
 
 function boundedFormatRepair(request) {

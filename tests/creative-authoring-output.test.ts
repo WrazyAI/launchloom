@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AUTHORING_STAGE_BUDGETS,
   authoringCompletionDiagnostics,
+  referenceImplementationChecklist,
 } from "../scripts/creative-authoring-output.mjs";
 
 describe("creative authoring output budgets", () => {
@@ -41,5 +42,35 @@ describe("creative authoring output budgets", () => {
       contentChars: 0,
     });
     expect(JSON.stringify(diagnostics)).not.toContain("content=");
+  });
+
+  it("prints required section anchors and the assigned marker order explicitly", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "image chapter", "magazine archive", "contact"],
+    });
+
+    expect(checklist).toContain('id="services"');
+    expect(checklist).toContain('id="faqs"');
+    expect(checklist).toContain('id="contact"');
+    expect(checklist.indexOf('data-reference-section="hero"')).toBeLessThan(
+      checklist.indexOf('data-reference-section="image-chapter"'),
+    );
+    expect(checklist.indexOf('data-reference-section="image-chapter"')).toBeLessThan(
+      checklist.indexOf('data-reference-section="magazine-archive"'),
+    );
+    expect(checklist).toContain("semantically matching section");
+  });
+
+  it("rejects empty or colliding normalized section marker IDs", () => {
+    expect(() =>
+      referenceImplementationChecklist({
+        sectionSequence: ["hero", "!!!", "contact"],
+      }),
+    ).toThrow(/unique, non-empty marker IDs/u);
+    expect(() =>
+      referenceImplementationChecklist({
+        sectionSequence: ["hero", "Hero", "contact"],
+      }),
+    ).toThrow(/unique, non-empty marker IDs/u);
   });
 });
