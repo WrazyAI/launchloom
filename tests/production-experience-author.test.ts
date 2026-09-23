@@ -178,12 +178,17 @@ describe("production experience author", () => {
       ).toThrow(/must have a usable alt attribute/iu);
   });
 
-  it("rejects candidate navigation that replaces the FAQ anchor with a click handler", () => {
+  it("requires FAQ navigation anchors inside nav even when an unrelated FAQ link remains", () => {
     const route = { id: "route-02" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
     const experience = String(
       safeStage({ ...request, stage: "experience" }).content || "",
-    ).replace('href="#faqs"', "onClick={() => {}}");
+    )
+      .replace('href="#faqs"', "onClick={() => {}}")
+      .replace(
+        "<main>",
+        '<main><a href="#faqs">An unrelated FAQ link</a>',
+      );
     const styles = String(
       safeStage({ ...request, stage: "styles" }).content || "",
     );

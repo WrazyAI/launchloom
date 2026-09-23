@@ -1202,6 +1202,27 @@ function assertRequiredSectionAnchors(source, route) {
     );
 }
 
+function hasLiteralNavigationAnchor(elements, navigation, target) {
+  return elements.some(({ node, opening }) => {
+    if (
+      jsxOpeningName(opening).toLowerCase() !== "a" ||
+      !isDescendantOf(node, navigation.node)
+    )
+      return false;
+
+    const href = jsxAttribute(opening, "href")?.initializer;
+    return Boolean(
+      href && ts.isStringLiteral(href) && href.text === `#${target}`,
+    );
+  });
+}
+
+function isDescendantOf(node, ancestor) {
+  for (let parent = node.parent; parent; parent = parent.parent)
+    if (parent === ancestor) return true;
+  return false;
+}
+
 function unsupportedClaimLiterals(source) {
   const withoutImports = source.replace(/^\s*import[^;]+;?\s*$/gmu, "");
   const textNodes = [...withoutImports.matchAll(/>([^<>{}\n]+)</gu)].map(
@@ -1355,8 +1376,16 @@ function validateExperience(source, route, content) {
         `Candidate ${route.id} has an image that must have a usable alt attribute; use alt="" only for decorative or redundant imagery.`,
       );
   }
+  const { elements } = collectJsxElements(source);
+  const navigations = elements.filter(
+    ({ opening }) => jsxOpeningName(opening).toLowerCase() === "nav",
+  );
   for (const target of ["services", "faqs", "contact"])
-    if (!new RegExp(`href\\s*=\\s*["']#${target}["']`, "u").test(source))
+    if (
+      !navigations.some((navigation) =>
+        hasLiteralNavigationAnchor(elements, navigation, target),
+      )
+    )
       throw new Error(
         `Candidate ${route.id} navigation must expose href="#${target}".`,
       );
