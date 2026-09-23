@@ -778,6 +778,52 @@ button {
 .review-card form {
   margin-top: 30px;
 }
+.creative-repair-panel {
+  margin-top: 28px;
+  padding: clamp(18px, 3vw, 26px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--paper) 72%, white);
+}
+.creative-repair-panel .review-divider {
+  margin: 10px 0 24px;
+}
+.creative-repair-panel a {
+  color: var(--ink);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+.creative-repair-findings {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0 24px;
+  padding: 0;
+  list-style: none;
+}
+.creative-repair-findings li {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid var(--line);
+  line-height: 1.45;
+}
+.creative-repair-findings strong {
+  text-transform: capitalize;
+  font-size: 0.88rem;
+}
+.creative-repair-findings small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.creative-repair-panel .field {
+  margin: 22px 0 14px;
+}
+.creative-repair-panel .button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 .review-divider {
   border-top: 1px solid var(--line);
   margin: 36px 0;

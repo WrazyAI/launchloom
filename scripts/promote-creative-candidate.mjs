@@ -117,6 +117,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     siteDir: args["site-dir"] || ".",
     candidateDir: args.candidate,
     configPath: args.config || "src/site.config.json",
+    visualScore: Number.isFinite(Number(args["visual-score"]))
+      ? Number(args["visual-score"])
+      : undefined,
+    distinctivenessScore: Number.isFinite(Number(args["distinctiveness-score"]))
+      ? Number(args["distinctiveness-score"])
+      : undefined,
+    selectionMode: args["selection-mode"] || "creative-bakeoff",
+    preview: args.preview === "true",
   });
   console.log(JSON.stringify(result));
 }

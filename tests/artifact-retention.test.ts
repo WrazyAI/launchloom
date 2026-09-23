@@ -8,25 +8,12 @@ const readWorkflow = (name: string) =>
   );
 
 describe("GitHub Actions artifact retention", () => {
-  it("keeps only one short-lived, failure-only generation bundle", () => {
+  it("keeps generated client diagnostics out of public Actions artifacts", () => {
     const workflow = readWorkflow("generate-client.yml");
     const uploads = workflow.match(/uses: actions\/upload-artifact@v4/g) || [];
-    const diagnosticsIndex = workflow.indexOf(
-      "name: Preserve compact generation failure diagnostics",
-    );
-    const diagnostics = workflow.slice(diagnosticsIndex);
-
-    expect(uploads).toHaveLength(1);
-    expect(diagnosticsIndex).toBeGreaterThan(-1);
-    expect(diagnostics).toContain("if: failure()");
-    expect(diagnostics).toContain("continue-on-error: true");
-    expect(diagnostics).toContain("retention-days: 3");
-    expect(diagnostics).toContain("/tmp/seo-research.json");
-    expect(diagnostics).toContain("/tmp/inspiration-pack.json");
-    expect(diagnostics).toContain("/tmp/reasoning-preflight.json");
-    expect(diagnostics).toContain("/tmp/generated-experiences");
-    expect(diagnostics).not.toContain("public/images/generated");
-    expect(diagnostics).not.toContain("initial-screenshots");
+    expect(uploads).toHaveLength(0);
+    expect(workflow).toContain("Preserve failed creative review evidence");
+    expect(workflow).toContain(".launchloom/creative-repair");
   });
 
   it("uploads revision evidence only after failures and expires it quickly", () => {

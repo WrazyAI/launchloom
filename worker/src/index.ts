@@ -1,6 +1,8 @@
 import { renderLeadEmail } from "../../emails/render-email.mjs";
 import {
   RevisionCoordinator,
+  type CreativeRepairFinding,
+  type CreativeRepairSessionInput,
   type RevisionRequestInput,
 } from "./revision-coordinator";
 import {
@@ -41,6 +43,8 @@ type ReviewClaims = {
   clientEmail: string;
   pr?: number;
   headSha?: string;
+  previewUrl?: string;
+  creativeRepairSessionId?: string;
   feedbackIssue?: number;
   expiresAt: number;
   allowedOrigins?: string[];
@@ -638,6 +642,15 @@ async function feedback(request: Request, env: Env) {
       !claims.allowedOrigins?.length
     )
       throw new Error("Invalid review link.");
+    if (claims.creativeRepairSessionId)
+      return json(
+        {
+          error:
+            "This diagnostic review link is for the one-time creative repair. Use its repair control or open the resulting review link.",
+        },
+        409,
+        cors(request, claims.allowedOrigins),
+      );
     assertClaimOrigin(request, claims.allowedOrigins, String(pageUrl || ""));
     const note = clean(comment, 5000);
     const submittedEmail = clean(email, 240).toLowerCase();
@@ -742,6 +755,179 @@ async function feedback(request: Request, env: Env) {
   }
 }
 
+function safeCreativeRepairUrl(value: unknown) {
+  if (typeof value !== "string" || !value) return null;
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      !url.hostname.endsWith(".pages.dev") ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    )
+      return null;
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function safeCreativeRepairFindings(value: unknown): CreativeRepairFinding[] {
+  if (!Array.isArray(value)) return [];
+  const severities = new Set(["critical", "major", "minor", "info"]);
+  return value
+    .slice(0, 20)
+    .map((raw) => {
+      if (!raw || typeof raw !== "object") return null;
+      const item = raw as Record<string, unknown>;
+      const severity = clean(item.severity, 20) as CreativeRepairFinding["severity"];
+      const category = clean(item.category, 80);
+      const evidence = clean(item.evidence, 600);
+      if (!category || !evidence || !severities.has(severity)) return null;
+      const recommendation = clean(item.recommendation, 600);
+      return {
+        category,
+        severity,
+        evidence,
+        ...(recommendation ? { recommendation } : {}),
+      };
+    })
+    .filter((finding): finding is CreativeRepairFinding => Boolean(finding));
+}
+
+function validClientRepository(value: unknown) {
+  const repo = clean(value, 240);
+  return /^WrazyAI\/launchloom-[0-9]+-[a-z0-9-]+$/iu.test(repo);
+}
+
+async function creativeRepair(request: Request, env: Env) {
+  const headers = cors(request, platformOrigins(env));
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers });
+  if (request.method !== "POST")
+    return new Response("Method not allowed", { status: 405, headers });
+  let sessionId = "";
+  let coordinator: DurableObjectStub<RevisionCoordinator> | undefined;
+  try {
+    const body = (await request.json()) as Record<string, unknown>;
+    const claims = await verifyHmac<ReviewClaims>(
+      String(body.token || ""),
+      env.REVIEW_SIGNING_SECRET,
+    );
+    sessionId = clean(claims.creativeRepairSessionId, 100);
+    if (
+      claims.stage !== "developer" ||
+      !validClientRepository(claims.repo) ||
+      !claims.siteId ||
+      !claims.pr ||
+      !/^[a-f0-9]{40}$/iu.test(claims.headSha || "") ||
+      !/^[a-f0-9]{32}$/iu.test(sessionId) ||
+      !claims.reviewerEmail ||
+      !claims.clientEmail ||
+      claims.expiresAt < Date.now() ||
+      !claims.allowedOrigins?.length
+    )
+      throw new Error("Invalid creative repair link.");
+    const reviewedHeadSha = String(claims.headSha);
+    const reviewedPr = Number(claims.pr);
+    assertClaimOrigin(request, claims.allowedOrigins, clean(body.pageUrl, 4_000));
+    coordinator = env.REVISION_COORDINATOR.getByName(claims.repo.toLowerCase());
+    const action = clean(body.action, 20);
+    if (action === "status") {
+      const status = await coordinator.getCreativeRepair(
+        sessionId,
+        claims.repo,
+        reviewedPr,
+        reviewedHeadSha,
+      );
+      if (!status)
+        return json(
+          { error: "This creative repair session is unavailable." },
+          404,
+          cors(request, claims.allowedOrigins),
+        );
+      return json(status, 200, {
+        ...cors(request, claims.allowedOrigins),
+        "Cache-Control": "no-store",
+      });
+    }
+    if (action !== "retry")
+      return json(
+        { error: "Unsupported creative repair action." },
+        400,
+        cors(request, claims.allowedOrigins),
+      );
+    if (
+      clean(body.email, 240).toLowerCase() !==
+      claims.reviewerEmail.toLowerCase()
+    )
+      return json(
+        { error: "Use the developer email that received this review link." },
+        403,
+        cors(request, claims.allowedOrigins),
+      );
+
+    const current = await currentReviewPr(env, claims);
+    if (
+      current.state !== "open" ||
+      current.draft ||
+      current.head.sha !== reviewedHeadSha
+    )
+      return json(
+        { error: "This preview has changed. Use the latest developer review link." },
+        409,
+        cors(request, claims.allowedOrigins),
+      );
+    const attempt = await coordinator.beginCreativeRepair(
+      sessionId,
+      claims.repo,
+      reviewedPr,
+      reviewedHeadSha,
+    );
+    if (!attempt.started)
+      return json(
+        {
+          error:
+            attempt.status === "missing"
+              ? "This creative repair session is unavailable."
+              : "The one-time creative repair has already been used or is unavailable.",
+          status: attempt.status,
+        },
+        409,
+        cors(request, claims.allowedOrigins),
+      );
+    try {
+      await dispatch(env, "repair-creative-candidate", {
+        repo: claims.repo,
+        sessionId,
+        pr: reviewedPr,
+        headSha: reviewedHeadSha,
+      });
+      await coordinator.creativeRepairDispatched(sessionId);
+    } catch (error) {
+      await coordinator.failCreativeRepair(
+        sessionId,
+        error instanceof Error ? error.message : "Repair could not be queued.",
+      );
+      throw error;
+    }
+    return json(
+      { ok: true, status: "queued", attemptConsumed: true },
+      202,
+      { ...cors(request, claims.allowedOrigins), "Cache-Control": "no-store" },
+    );
+  } catch (error) {
+    console.error("Creative repair request failed", error);
+    return json(
+      { error: error instanceof Error ? error.message : "Creative repair is unavailable." },
+      403,
+      headers,
+    );
+  }
+}
+
 async function revisionCoordinator(request: Request, env: Env) {
   if (request.method !== "POST")
     return json({ error: "Method not allowed" }, 405);
@@ -787,6 +973,122 @@ async function revisionCoordinator(request: Request, env: Env) {
   }
 }
 
+async function creativeRepairCoordinator(request: Request, env: Env) {
+  if (request.method !== "POST")
+    return json({ error: "Method not allowed" }, 405);
+  const authorization = request.headers.get("Authorization") || "";
+  const supplied = authorization.startsWith("Bearer ")
+    ? authorization.slice(7)
+    : "";
+  if (
+    !env.REVISION_COORDINATOR_SECRET ||
+    !constantTimeEqual(supplied, env.REVISION_COORDINATOR_SECRET)
+  )
+    return json({ error: "Unauthorized" }, 401);
+  try {
+    const body = (await request.json()) as Record<string, unknown>;
+    const action = clean(body.action, 30);
+    const sessionId = clean(body.sessionId, 100);
+    const repo = clean(body.repo, 240);
+    if (
+      !validClientRepository(repo) ||
+      !/^[a-f0-9]{32}$/iu.test(sessionId)
+    )
+      return json({ error: "Invalid creative repair session." }, 400);
+    const coordinator = env.REVISION_COORDINATOR.getByName(repo.toLowerCase());
+    if (action === "register") {
+      const raw = body.session as Record<string, unknown> | undefined;
+      if (!raw || raw.sessionId !== sessionId || raw.repo !== repo)
+        return json({ error: "Invalid creative repair registration." }, 400);
+      const previewUrl = raw.previewUrl
+        ? safeCreativeRepairUrl(raw.previewUrl)
+        : null;
+      if (
+        !Number.isInteger(raw.pr) ||
+        Number(raw.pr) < 1 ||
+        !/^[a-f0-9]{40}$/iu.test(String(raw.headSha || "")) ||
+        !/^[a-z0-9][a-z0-9-]{0,62}$/iu.test(String(raw.siteId || "")) ||
+        !/^candidate-[a-z0-9]+$/iu.test(String(raw.candidateId || "")) ||
+        (raw.previewUrl && !previewUrl)
+      )
+        return json({ error: "Invalid creative repair session fields." }, 400);
+      const session: CreativeRepairSessionInput = {
+        sessionId,
+        repo,
+        pr: Number(raw.pr),
+        siteId: clean(raw.siteId, 63),
+        headSha: clean(raw.headSha, 40),
+        candidateId: clean(raw.candidateId, 80),
+        repairAvailable: raw.repairAvailable === true,
+        previewUrl,
+        findings: safeCreativeRepairFindings(raw.findings),
+      };
+      return json(await coordinator.registerCreativeRepair(session), 200, {
+        "Cache-Control": "no-store",
+      });
+    }
+    if (action === "claim") {
+      const current = await coordinator.getCreativeRepair(
+        sessionId,
+        repo,
+        Number(body.pr),
+        clean(body.headSha, 40),
+      );
+      if (!current)
+        return json({ run: false, status: "stale" }, 409, {
+          "Cache-Control": "no-store",
+        });
+      const pull = await currentReviewPr(env, {
+        stage: "developer",
+        repo,
+        pr: Number(body.pr),
+        headSha: clean(body.headSha, 40),
+      } as ReviewClaims);
+      if (
+        pull.state !== "open" ||
+        pull.draft ||
+        pull.head.sha !== clean(body.headSha, 40)
+      ) {
+        await coordinator.failCreativeRepair(sessionId, "The review branch changed before repair started.");
+        return json({ run: false, status: "stale" }, 409, {
+          "Cache-Control": "no-store",
+        });
+      }
+      return json(await coordinator.claimCreativeRepair(sessionId), 200, {
+        "Cache-Control": "no-store",
+      });
+    }
+    if (action === "complete") {
+      const previewUrl = body.previewUrl
+        ? safeCreativeRepairUrl(body.previewUrl)
+        : null;
+      const reviewUrl = body.reviewUrl ? clean(body.reviewUrl, 4_000) : null;
+      if ((body.previewUrl && !previewUrl) || (reviewUrl && !/^https:\/\//iu.test(reviewUrl)))
+        return json({ error: "Invalid repair result URL." }, 400);
+      await coordinator.completeCreativeRepair(sessionId, {
+        outcome: clean(body.outcome, 80) || "completed",
+        previewUrl,
+        reviewUrl,
+        ...(Array.isArray(body.findings)
+          ? { findings: safeCreativeRepairFindings(body.findings) }
+          : {}),
+      });
+      return json({ ok: true });
+    }
+    if (action === "fail") {
+      await coordinator.failCreativeRepair(
+        sessionId,
+        clean(body.reason, 500) || "Final creative repair failed.",
+      );
+      return json({ ok: true });
+    }
+    return json({ error: "Unsupported creative repair action." }, 400);
+  } catch (error) {
+    console.error("Creative repair coordination failed", error);
+    return json({ error: "Creative repair coordination failed." }, 500);
+  }
+}
+
 async function approval(request: Request, env: Env) {
   const headers = cors(request, platformOrigins(env));
   if (request.method === "OPTIONS")
@@ -811,6 +1113,12 @@ async function approval(request: Request, env: Env) {
       !claims.allowedOrigins?.length
     )
       throw new Error("Invalid review link.");
+    if (claims.creativeRepairSessionId)
+      return json(
+        { error: "Diagnostic previews cannot be approved. Use the resulting developer review link." },
+        409,
+        cors(request, claims.allowedOrigins),
+      );
     assertClaimOrigin(request, claims.allowedOrigins, String(pageUrl || ""));
     if (clean(email, 240).toLowerCase() !== claims.reviewerEmail.toLowerCase())
       return json(
@@ -1105,8 +1413,11 @@ export default {
     if (path === "/api/places") return places(request, env);
     if (path === "/api/google-reviews") return googleReviews(request, env);
     if (path === "/api/feedback") return feedback(request, env);
+    if (path === "/api/creative-repair") return creativeRepair(request, env);
     if (path === "/api/internal/revisions")
       return revisionCoordinator(request, env);
+    if (path === "/api/internal/creative-repairs")
+      return creativeRepairCoordinator(request, env);
     if (path === "/api/approval") return approval(request, env);
     if (path === "/api/lead") return lead(request, env);
     if (path === "/api/chat") return aiChat(request, env);

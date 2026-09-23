@@ -50,6 +50,7 @@ jobs:
       SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '2' }}
       SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.10' }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+      REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
       LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -325,6 +326,7 @@ jobs:
             git push origin review/initial
           fi
       - name: Render and repair creative candidates in the production shell
+        id: creative_render
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           npm ci
@@ -348,6 +350,107 @@ jobs:
             git commit -m "Render and repair creative experience candidates"
             git push origin review/initial
           fi
+      - name: Prepare private creative-recovery report
+        id: creative_recovery
+        if: failure() && steps.creative_render.outcome == 'failure' && steps.branch.outputs.dir != ''
+        continue-on-error: true
+        run: |
+          cd "${{ steps.branch.outputs.dir }}"
+          git config user.name "LaunchLoom"
+          git config user.email "automation@launchloom.app"
+          # Keep source, screenshots, and findings in the client's private repo.
+          # They must not be uploaded as artifacts from this public repository.
+          mkdir -p .launchloom/generated-experiences
+          cp -R /tmp/generated-experiences/. .launchloom/generated-experiences/
+          git add .launchloom/generated-experiences
+          if [ -d .launchloom/creative-repair ]; then git add .launchloom/creative-repair; fi
+          if ! git diff --cached --quiet; then
+            git commit -m "Preserve failed creative review evidence"
+            git push origin review/initial
+          fi
+          RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-recovery.mjs" \
+            --site-dir "$PWD" \
+            --candidates .launchloom/generated-experiences \
+            --repair-root .launchloom/creative-repair)
+          echo "candidate=$(printf '%s' "$RESULT" | jq -r '.candidateId')" >> "$GITHUB_OUTPUT"
+          echo "repair_available=$(printf '%s' "$RESULT" | jq -r '.repairAvailable')" >> "$GITHUB_OUTPUT"
+          echo "diagnostic_eligible=$(printf '%s' "$RESULT" | jq -r '.diagnosticPreviewEligible')" >> "$GITHUB_OUTPUT"
+          git add .launchloom/creative-recovery.json src/site.config.json src/generated-experiences/selected
+          if ! git diff --cached --quiet; then
+            git commit -m "Prepare private creative recovery review"
+            git push origin review/initial
+          fi
+      - name: Build and deploy noindex diagnostic preview
+        id: diagnostic_preview
+        if: always() && steps.creative_recovery.outputs.repair_available == 'true' && steps.creative_recovery.outputs.diagnostic_eligible == 'true'
+        continue-on-error: true
+        run: |
+          cd "${{ steps.branch.outputs.dir }}"
+          PUBLIC_REVIEW_MODE=true PUBLIC_CREATIVE_DIAGNOSTIC=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
+          node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" \
+            --dist dist \
+            --candidate "${{ steps.creative_recovery.outputs.candidate }}" \
+            --screenshots .launchloom/creative-repair/diagnostic/screenshots
+          git add .launchloom/creative-repair/diagnostic
+          if ! git diff --cached --quiet; then
+            git commit -m "Record noindex diagnostic preview checks"
+            git push origin review/initial
+          fi
+          PROJECT="${{ steps.client.outputs.project }}"
+          npx wrangler pages deploy dist --project-name "$PROJECT" --branch creative-diagnostic --commit-hash "$(git rev-parse HEAD)" --commit-message "Private diagnostic design preview"
+          PREVIEW="https://creative-diagnostic.$PROJECT.pages.dev"
+          node "$GITHUB_WORKSPACE/scripts/wait-for-pages-preview.mjs" --url "$PREVIEW"
+          echo "preview=$PREVIEW" >> "$GITHUB_OUTPUT"
+      - name: Register one-time repair session and create signed review link
+        id: creative_repair_link
+        if: always() && steps.creative_recovery.outputs.repair_available == 'true'
+        env:
+          CLIENT_REPO: ${{ steps.client.outputs.repo }}
+          CLIENT_PR: ${{ steps.branch.outputs.pr }}
+          CLIENT_SITE: ${{ steps.client.outputs.project }}
+          CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
+          FEEDBACK_ISSUE: ${{ steps.client.outputs.feedback_issue }}
+          DIAGNOSTIC_PREVIEW_URL: ${{ steps.diagnostic_preview.outputs.preview }}
+        run: |
+          test -n "$REVISION_COORDINATOR_SECRET" || { echo "Missing recovery coordinator credential" >&2; exit 1; }
+          CLIENT_DIR="${{ steps.branch.outputs.dir }}"
+          HEAD_SHA=$(git -C "$CLIENT_DIR" rev-parse HEAD)
+          CANDIDATE="${{ steps.creative_recovery.outputs.candidate }}"
+          SESSION_ID=$(printf '%s' "$CLIENT_REPO:$CLIENT_PR:$HEAD_SHA:$CANDIDATE" | sha256sum | cut -c1-32)
+          PREVIEW_ORIGIN="https://$CLIENT_SITE.pages.dev"
+          ORIGINS="$PREVIEW_ORIGIN"
+          if [ -n "$DIAGNOSTIC_PREVIEW_URL" ]; then ORIGINS="$DIAGNOSTIC_PREVIEW_URL,$ORIGINS"; fi
+          TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" \
+            --stage developer \
+            --repo "$CLIENT_REPO" \
+            --pr "$CLIENT_PR" \
+            --sha "$HEAD_SHA" \
+            --site "$CLIENT_SITE" \
+            --email "$LAUNCHLOOM_DEVELOPER_EMAIL" \
+            --client-email "$CLIENT_EMAIL" \
+            --feedback-issue "$FEEDBACK_ISSUE" \
+            --origins "$ORIGINS" \
+            --creative-repair-session "$SESSION_ID" \
+            --token-only true)
+          REVIEW_LINK="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
+          SESSION_JSON=$(jq --arg session "$SESSION_ID" \
+            --arg repo "$CLIENT_REPO" \
+            --argjson pr "$CLIENT_PR" \
+            --arg site "$CLIENT_SITE" \
+            --arg sha "$HEAD_SHA" \
+            --arg candidate "$CANDIDATE" \
+            --arg preview "$DIAGNOSTIC_PREVIEW_URL" \
+            '. + {sessionId:$session,repo:$repo,pr:$pr,siteId:$site,headSha:$sha,candidateId:$candidate,repairAvailable:true,previewUrl:(if $preview == "" then null else $preview end)} | {action:"register",repo:$repo,sessionId:$session,session:.}' \
+            "$CLIENT_DIR/.launchloom/creative-recovery.json")
+          curl --fail-with-body --silent --show-error \
+            -X POST "$LAUNCHLOOM_API_URL/api/internal/creative-repairs" \
+            -H "Authorization: Bearer $REVISION_COORDINATOR_SECRET" \
+            -H "Content-Type: application/json" \
+            --data "$SESSION_JSON" > "$RUNNER_TEMP/creative-repair-registration.json"
+          jq -e '.status == "available" and .repairAvailable == true' "$RUNNER_TEMP/creative-repair-registration.json" >/dev/null
+          gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-creative-recovery -->' '## Creative preview needs another pass' 'The authored candidate did not clear all quality checks. Review the rendered findings and request the single final repair here:' "$REVIEW_LINK")"
+          echo "link=$REVIEW_LINK" >> "$GITHUB_OUTPUT"
+          echo "preview=$DIAGNOSTIC_PREVIEW_URL" >> "$GITHUB_OUTPUT"
       - name: Build and direct-upload public preview
         id: deploy
         run: |
@@ -459,29 +562,17 @@ jobs:
         if: failure()
         env:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
+          REPAIR_LINK: ${{ steps.creative_repair_link.outputs.link }}
+          DIAGNOSTIC_PREVIEW: ${{ steps.creative_repair_link.outputs.preview }}
         run: |
           NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
-          printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$RUNNER_TEMP/generation-failure-feedback.txt"
-          printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/WrazyAI/launchloom/issues/$ISSUE" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$ISSUE-${{ github.run_id }}"
-      - name: Preserve compact generation failure diagnostics
-        # Successful runs preserve source, SEO/reference inputs, reasoning
-        # preflight, generated assets, and the promotion report in the private
-        # client repository. Retain partial author output and rendered-repair
-        # evidence on failure so candidate-specific rejection reasons survive
-        # even when the generation stops before writing its final summary.
-        if: failure()
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: generation-diagnostics-${{ steps.intake.outputs.issue }}-${{ github.run_id }}
-          path: |
-            /tmp/seo-research.json
-            /tmp/inspiration-pack.json
-            /tmp/reasoning-preflight.json
-            /tmp/generated-experiences
-            ${{ steps.branch.outputs.dir }}/.launchloom/creative-repair
-            ${{ runner.temp }}/generation-failure-feedback.txt
-            ${{ runner.temp }}/generation-failure-outcome.txt
-          if-no-files-found: warn
-          retention-days: 3
+          if [ -n "$REPAIR_LINK" ]; then
+            printf 'The authored design missed one or more quality checks. Review the findings and request its single final repair here:\n%s\n' "$REPAIR_LINK" > "$RUNNER_TEMP/generation-failure-feedback.txt"
+            if [ -n "$DIAGNOSTIC_PREVIEW" ]; then printf 'Diagnostic-only preview (not approved for publication): %s\n' "$DIAGNOSTIC_PREVIEW" >> "$RUNNER_TEMP/generation-failure-feedback.txt"; fi
+            printf 'The original generation was not promoted. The final repair is one-shot and will be checked again before a new review link is issued.\n' > "$RUNNER_TEMP/generation-failure-outcome.txt"
+            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-https://github.com/WrazyAI/launchloom/issues/$ISSUE}" --review "$REPAIR_LINK" --kind revision --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$ISSUE-${{ github.run_id }}"
+          else
+            printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$RUNNER_TEMP/generation-failure-feedback.txt"
+            printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
+            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/WrazyAI/launchloom/issues/$ISSUE" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$ISSUE-${{ github.run_id }}"
+          fi
