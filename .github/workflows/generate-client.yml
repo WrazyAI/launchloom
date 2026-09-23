@@ -467,7 +467,9 @@ jobs:
       - name: Preserve compact generation failure diagnostics
         # Successful runs preserve source, SEO/reference inputs, reasoning
         # preflight, generated assets, and the promotion report in the private
-        # client repository. Retain partial author output only on failure.
+        # client repository. Retain partial author output and rendered-repair
+        # evidence on failure so candidate-specific rejection reasons survive
+        # even when the generation stops before writing its final summary.
         if: failure()
         continue-on-error: true
         uses: actions/upload-artifact@v4
@@ -478,6 +480,7 @@ jobs:
             /tmp/inspiration-pack.json
             /tmp/reasoning-preflight.json
             /tmp/generated-experiences
+            ${{ steps.branch.outputs.dir }}/.launchloom/creative-repair
             ${{ runner.temp }}/generation-failure-feedback.txt
             ${{ runner.temp }}/generation-failure-outcome.txt
           if-no-files-found: warn

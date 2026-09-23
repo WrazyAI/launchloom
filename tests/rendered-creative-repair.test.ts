@@ -336,6 +336,67 @@ export default function Experience({ content, runtime }) {
     expect(promotions).toEqual(["candidate-b"]);
   });
 
+  it("preserves candidate rejection reasons when every preview candidate is excluded", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    const rejection = new Error(
+      "Creative repair output rejected by source validation: FAQList must receive sealed content through content={content}.",
+    );
+    Object.assign(rejection, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 1,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffCalls += 1;
+          if (bakeoffCalls > 1)
+            throw new Error(
+              "No creative candidates remain after exclusions: candidate-a.",
+            );
+          return writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          );
+        },
+        repairCandidateImpl: async () => {
+          throw rejection;
+        },
+      }),
+    ).rejects.toThrow(/candidate-a.*FAQList.*content=\{content\}/iu);
+
+    expect(bakeoffCalls).toBe(2);
+    expect(
+      JSON.parse(
+        await fs.readFile(
+          path.join(
+            root,
+            "evidence",
+            "round-00",
+            "repairs",
+            "candidate-a.json",
+          ),
+          "utf8",
+        ),
+      ),
+    ).toMatchObject({
+      status: "rejected",
+      error: expect.stringMatching(/FAQList.*content=\{content\}/iu),
+    });
+  });
+
   it("bounds preview rounds using the available candidate count", async () => {
     const candidateIds = [
       "candidate-1",

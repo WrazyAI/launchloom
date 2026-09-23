@@ -727,17 +727,35 @@ export async function runRenderedCreativeRepair({
     const screenshotsDir = path.join(roundDir, "screenshots");
     const reportPath = path.join(roundDir, "creative-bakeoff.json");
     await fs.mkdir(roundDir, { recursive: true });
-    const report = await runBakeoffImpl({
-      siteDir: root,
-      candidatesDir: candidateRoot,
-      reportPath,
-      screenshotsDir,
-      preview: true,
-      promote: false,
-      deferPromotion: true,
-      requireDiversity,
-      excludedCandidateIds: [...excludedCandidateIds].sort(),
-    });
+    let report;
+    try {
+      report = await runBakeoffImpl({
+        siteDir: root,
+        candidatesDir: candidateRoot,
+        reportPath,
+        screenshotsDir,
+        preview: true,
+        promote: false,
+        deferPromotion: true,
+        requireDiversity,
+        excludedCandidateIds: [...excludedCandidateIds].sort(),
+      });
+    } catch (error) {
+      const isExhaustedPreview =
+        requestedMode === "preview" &&
+        /No creative candidates remain after exclusions:/u.test(
+          String(error?.message || error),
+        );
+      const rejectionDetails = Object.entries(rejectedCandidates)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([candidateId, message]) => `- ${candidateId}: ${message}`)
+        .join("\n");
+      if (!isExhaustedPreview || !rejectionDetails) throw error;
+      throw new Error(
+        `${error.message}\nRejected candidate details:\n${rejectionDetails}`,
+        { cause: error },
+      );
+    }
     const record = {
       round,
       selectedCandidateId: report.selectedCandidateId,
