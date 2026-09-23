@@ -512,6 +512,26 @@ function jsxDescendantElementContainsBinding(
   return visit(container.children);
 }
 
+function jsxAncestorAttributeValue(node, attributeName, file) {
+  let current = node;
+  while (current) {
+    const opening = ts.isJsxElement(current)
+      ? current.openingElement
+      : ts.isJsxSelfClosingElement(current)
+        ? current
+        : undefined;
+    if (opening) {
+      const value = jsxAttributeValue(
+        jsxAttribute(opening, attributeName),
+        file,
+      ).trim();
+      if (value) return value;
+    }
+    current = current.parent;
+  }
+  return "";
+}
+
 function jsxAttributeInsertionPoint(source, opening, file) {
   const close = source.lastIndexOf(">", opening.end - 1);
   if (close < opening.getStart(file)) return -1;
@@ -778,6 +798,7 @@ export function restoreRequiredExperienceMarkers(
     },
     {
       name: "data-early-conversion",
+      targetAttributes: ["data-cta-placement", "className"],
       targets: () =>
         repaired.elements.filter((element) => {
           if (jsxOpeningName(element.opening) !== "a") return false;
@@ -798,7 +819,7 @@ export function restoreRequiredExperienceMarkers(
     },
   ];
 
-  for (const { name, targets } of markerSpecs) {
+  for (const { name, targetAttributes = [], targets } of markerSpecs) {
     const originalMatches = original.elements.filter(({ opening }) =>
       jsxAttribute(opening, name),
     );
@@ -806,7 +827,34 @@ export function restoreRequiredExperienceMarkers(
       throw new Error(
         `Candidate ${route.id} cannot safely restore ${name}: original source has ${originalMatches.length} matching markers.`,
       );
-    const candidates = targets();
+    let candidates = targets();
+    for (const attributeName of targetAttributes) {
+      if (candidates.length <= 1) break;
+      const originalValue = jsxAttributeValue(
+        jsxAttribute(originalMatches[0].opening, attributeName),
+        original.file,
+      ).trim();
+      const signatureValue =
+        attributeName === "data-cta-placement"
+          ? jsxAncestorAttributeValue(
+              originalMatches[0].node,
+              attributeName,
+              original.file,
+            )
+          : originalValue;
+      if (!signatureValue) continue;
+      const matching = candidates.filter(({ node, opening }) => {
+        const value =
+          attributeName === "data-cta-placement"
+            ? jsxAncestorAttributeValue(node, attributeName, repaired.file)
+            : jsxAttributeValue(
+                jsxAttribute(opening, attributeName),
+                repaired.file,
+              ).trim();
+        return value === signatureValue;
+      });
+      if (matching.length > 0) candidates = matching;
+    }
     if (candidates.length !== 1)
       throw new Error(
         `Candidate ${route.id} cannot safely restore ${name}: found ${candidates.length} semantic targets.`,

@@ -214,6 +214,22 @@ describe("production experience author", () => {
     expect(restored).not.toMatch(/<section data-hero><div>/u);
   });
 
+  it("uses reviewed CTA placement ahead of a matching nav class", () => {
+    const original = `<section data-reference-section="hero" data-cta-placement="hero-action-row" data-hero><h1>{content.hero.heading}</h1><a className="hero-action" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
+    const repaired = `<header><a className="hero-action" href="#contact">{content.hero.primaryLabel}</a></header><section data-reference-section="hero" data-cta-placement="hero-action-row"><h1>{content.hero.heading}</h1><a className="changed-action" href="#contact">{content.hero.primaryLabel}</a></section>`;
+
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-02",
+    });
+
+    expect(restored).toContain(
+      '<a className="hero-action" href="#contact">{content.hero.primaryLabel}</a>',
+    );
+    expect(restored).toContain(
+      '<a className="changed-action" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a>',
+    );
+  });
+
   it("restores only reviewed image alt text from the same original src binding", () => {
     const original = `<div><img src={content.hero.image} alt="A close view of a flowering plant" /></div>`;
     const repaired = `<div><img src={content.hero.image} alt="" /><img src={content.hero.secondaryImage} alt="" /></div>`;

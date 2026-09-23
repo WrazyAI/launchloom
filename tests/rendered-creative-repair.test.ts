@@ -190,8 +190,8 @@ describe("rendered creative repair orchestration", () => {
     const initialExperience = `import { LeadForm } from "@launchloom/runtime";
 export default function Experience({ content, runtime }) {
   return <main data-mobile-recomposition="single-column-editorial-chapters" data-motion-primitive="masked-image-reveal">
-    <nav data-navigation-geometry="quiet-corner-links"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
-    <section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument"><h1>{content.hero.heading}</h1><img src={content.hero.image} alt="Still-life image for the studio" /><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>
+    <nav data-navigation-geometry="quiet-corner-links"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a><a className="nav-cta" href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument"><h1>{content.hero.heading}</h1><img src={content.hero.image} alt="Still-life image for the studio" /><a className="hero-cta" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>
     <section data-reference-section="image-chapter"></section>
     <section data-reference-section="editorial-intro"></section>
     <section data-reference-section="image-mosaic"></section>
@@ -282,7 +282,10 @@ export default function Experience({ content, runtime }) {
       '<section id="services" data-reference-section="magazine-archive"',
     );
     expect(repaired).toContain(
-      'href="#contact" data-early-conversion>{content.hero.primaryLabel}',
+      '<a className="nav-cta" href="#contact">{content.hero.primaryLabel}</a>',
+    );
+    expect(repaired).toContain(
+      '<a className="hero-cta" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a>',
     );
     expect(repaired).toContain(
       '<section className="service-note"><p>A note about the services chapter.</p>',
