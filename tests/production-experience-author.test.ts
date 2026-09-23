@@ -299,12 +299,35 @@ describe("production experience author", () => {
         '<nav aria-label="Main navigation"><div hidden>',
       )
       .replace("</nav>", "</div></nav>");
+    const hiddenAnchor = original.replace(
+      '<a href="#services">Services</a>',
+      '<a {...{ hidden: true }} href="#services">Services</a>',
+    );
+    const spreadOverridesFalse = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav hidden={false} {...{ hidden: true }} aria-label="Main navigation">',
+    );
+    const dynamicSpreadAfterFalse = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav hidden={false} {...navProps} aria-label="Main navigation">',
+    );
     const explicitlyVisibleNavigation = original.replace(
       '<nav aria-label="Main navigation">',
       '<nav hidden={false} aria-label="Main navigation">',
     );
+    const safeStaticSpread = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav {...{ id: "main-navigation" }} aria-label="Main navigation">',
+    );
 
-    for (const experience of [hiddenNavigation, hiddenParent, hiddenChild])
+    for (const experience of [
+      hiddenNavigation,
+      hiddenParent,
+      hiddenChild,
+      hiddenAnchor,
+      spreadOverridesFalse,
+      dynamicSpreadAfterFalse,
+    ])
       expect(() =>
         validateProductionCandidateFiles({
           files: { experience, styles, motion },
@@ -317,6 +340,12 @@ describe("production experience author", () => {
     expect(() =>
       validateProductionCandidateFiles({
         files: { experience: explicitlyVisibleNavigation, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: safeStaticSpread, styles, motion },
         route,
       }),
     ).not.toThrow();

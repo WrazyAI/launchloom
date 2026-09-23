@@ -1231,16 +1231,69 @@ function isNavigationAnchorHidden(navigation, anchor, elements) {
     )
       return false;
 
-    const hidden = jsxAttribute(opening, "hidden");
-    if (!hidden) return false;
-    const initializer = hidden.initializer;
-    return !(
-      initializer &&
-      ts.isJsxExpression(initializer) &&
-      initializer.expression &&
-      isBooleanLiteral(initializer.expression, false)
-    );
+    return hasPotentiallyHiddenJsxAttribute(opening);
   });
+}
+
+/** Preserve JSX prop order while detecting hidden values from attributes/spreads. */
+function hasPotentiallyHiddenJsxAttribute(opening) {
+  let hidden = false;
+  for (const attribute of jsxAttributes(opening)) {
+    if (ts.isJsxAttribute(attribute) && attribute.name.getText() === "hidden") {
+      const initializer = attribute.initializer;
+      hidden = Boolean(
+        !initializer ||
+          !ts.isJsxExpression(initializer) ||
+          !initializer.expression ||
+          !isBooleanLiteral(initializer.expression, false),
+      );
+      continue;
+    }
+    if (ts.isJsxSpreadAttribute(attribute)) {
+      const spreadHidden = staticSpreadHiddenValue(attribute);
+      if (spreadHidden !== null) hidden = spreadHidden;
+    }
+  }
+  return hidden !== false;
+}
+
+/** Return a known hidden value, null when absent, or undefined when dynamic. */
+function staticSpreadHiddenValue(attribute) {
+  const expression = attribute.expression;
+  if (!ts.isObjectLiteralExpression(expression)) return undefined;
+
+  let foundHidden = false;
+  let hidden;
+  for (const property of expression.properties) {
+    if (ts.isSpreadAssignment(property)) return undefined;
+    const name = property.name;
+    if (name && ts.isComputedPropertyName(name)) {
+      const key = name.expression;
+      if (
+        !ts.isStringLiteral(key) &&
+        !ts.isNoSubstitutionTemplateLiteral(key)
+      )
+        return undefined;
+      if (key.text !== "hidden") continue;
+    } else if (
+      !name ||
+      (!ts.isIdentifier(name) &&
+        !ts.isStringLiteral(name) &&
+        !ts.isNoSubstitutionTemplateLiteral(name))
+    ) {
+      return undefined;
+    } else if (name.text !== "hidden") continue;
+
+    foundHidden = true;
+    if (!ts.isPropertyAssignment(property)) {
+      hidden = undefined;
+      continue;
+    }
+    if (isBooleanLiteral(property.initializer, true)) hidden = true;
+    else if (isBooleanLiteral(property.initializer, false)) hidden = false;
+    else hidden = undefined;
+  }
+  return foundHidden ? hidden : null;
 }
 
 /** Return whether node is nested below ancestor in the parsed JSX tree. */
