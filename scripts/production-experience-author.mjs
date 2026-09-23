@@ -522,6 +522,21 @@ function idAttributeValue(element, file) {
   return { attribute, value: jsxAttributeValue(attribute, file) };
 }
 
+function explicitSemanticSectionMatch(element, sectionName, file) {
+  const attrs = jsxAttributes(element.opening).filter(ts.isJsxAttribute);
+  const attrValue = (name) =>
+    jsxAttributeValue(
+      attrs.find((attribute) => attribute.name.getText() === name),
+      file,
+    );
+  if (sectionName === "services")
+    return Boolean(attrValue("data-service-presentation"));
+  if (sectionName === "faqs")
+    return attrValue("data-reference-section")?.trim().toLowerCase() === "faqs";
+  if (sectionName === "contact") return /<LeadForm\b/u.test(element.body);
+  return false;
+}
+
 function assertSectionIdIsNotOverridden(element, attribute, route, id) {
   if (!attribute) return;
   const laterSpread = jsxAttributes(element.opening).some(
@@ -553,11 +568,22 @@ export function restoreRequiredSectionIdsOnSemanticSections(
     const semantic = sections.filter((element) =>
       semanticSectionMatch(element, id, file),
     );
-    if (semantic.length !== 1)
+    const explicitlyAnchored = semantic.filter(
+      (element) => idAttributeValue(element, file).value === id,
+    );
+    const explicitlyIdentified = semantic.filter((element) =>
+      explicitSemanticSectionMatch(element, id, file),
+    );
+    const preferred = explicitlyAnchored.length
+      ? explicitlyAnchored
+      : explicitlyIdentified.length
+        ? explicitlyIdentified
+        : semantic;
+    if (preferred.length !== 1)
       throw new Error(
         `Candidate ${route.id} cannot safely restore id="${id}": found ${semantic.length} matching semantic sections.`,
       );
-    const target = semantic[0];
+    const target = preferred[0];
     const assigned = elements.filter(({ opening }) => {
       const { value } = idAttributeValue({ opening }, file);
       return value === id;

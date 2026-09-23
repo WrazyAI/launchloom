@@ -1,13 +1,19 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { collectAvailableScreenshots, runRenderedCreativeRepair, runVisualGateProcess, writeCandidate } from "../scripts/run-rendered-creative-repair.mjs";
+import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 
 const roots: string[] = [];
+const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
 
 afterEach(async () => {
+  if (originalOpenRouterKey === undefined)
+    delete process.env.OPENROUTER_API_KEY;
+  else process.env.OPENROUTER_API_KEY = originalOpenRouterKey;
+  vi.unstubAllGlobals();
   await Promise.all(
     roots.splice(0).map((root) =>
       fs.rm(root, { recursive: true, force: true }),
@@ -139,6 +145,145 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("keeps the canonical services anchor when repair adds a secondary services section", async () => {
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const registry = JSON.parse(
+      readFileSync(
+        new URL("../data/inspiration-registry.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const referenceDna = buildReferenceDna(registry.records[0], {
+      requireEvidence: true,
+    });
+    const content = {
+      brand: {
+        name: "Test Studio",
+        logo: "",
+        phone: "(555) 555-0100",
+        email: "hello@example.com",
+        address: "",
+        serviceAreas: [],
+      },
+      hero: {
+        kicker: "A considered service",
+        heading: "Thoughtful work, made personal",
+        body: "A clear first conversation about what you need.",
+        primaryLabel: "Start a conversation",
+        image: "/images/hero.webp",
+      },
+      services: [
+        {
+          name: "Consultation",
+          description: "A focused first step.",
+          slug: "consultation",
+        },
+      ],
+      faqs: [
+        {
+          question: "What happens first?",
+          answer: "We start with a conversation.",
+        },
+      ],
+    };
+    const initialExperience = `import { LeadForm } from "@launchloom/runtime";
+export default function Experience({ content, runtime }) {
+  return <main data-mobile-recomposition="single-column-editorial-chapters" data-motion-primitive="masked-image-reveal">
+    <nav data-navigation-geometry="quiet-corner-links"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
+    <section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument"><h1>{content.hero.heading}</h1><img src={content.hero.image} alt={content.hero.heading} /><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>
+    <section data-reference-section="image-chapter"></section>
+    <section data-reference-section="editorial-intro"></section>
+    <section data-reference-section="image-mosaic"></section>
+    <section id='services' data-reference-section="magazine-archive" data-service-presentation="magazine-archive-ledger" data-reference-signature="magazine-archive">{content.services}</section>
+    <section data-reference-section="closing-scene" data-reference-signature="closing-scene"></section>
+    <section id='faqs'>{content.faqs}</section>
+    <section id='contact'><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`;
+    const repairedExperience = initialExperience.replace(
+      '<section data-reference-section="image-chapter"></section>',
+      '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p></section></section>',
+    );
+    const candidateDir = path.join(candidates, "candidate-a");
+    const metadataPath = path.join(candidateDir, "metadata.json");
+    const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+    metadata.routeId = "route-03";
+    metadata.referenceDna = referenceDna;
+    await fs.writeFile(metadataPath, JSON.stringify(metadata));
+    await fs.writeFile(
+      path.join(candidateDir, "content-manifest.json"),
+      JSON.stringify({
+        tokens: [
+          { token: "content.hero.heading" },
+          { token: "content.services" },
+          { token: "content.faqs" },
+        ],
+        values: content,
+      }),
+    );
+    await fs.writeFile(
+      path.join(candidateDir, "Experience.jsx"),
+      initialExperience,
+    );
+
+    const repairBundle = {
+      experience: repairedExperience,
+      styles:
+        ":root { --ll-creative-ink: #fff; } @media (max-width: 700px) { main { display: block; } }",
+      motion:
+        "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
+    };
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(repairBundle) },
+              },
+            ],
+            usage: { completion_tokens: 32 },
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    let visualGateCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      model: "test/model",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(
+          options,
+          report({ candidates: [candidate("candidate-a")] }),
+        ),
+      runVisualGateImpl: async (options: any) => {
+        visualGateCalls += 1;
+        return visualGate(options, visualGateCalls === 1 ? "revise" : "pass");
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(visualGateCalls).toBe(2);
+    const repaired = await fs.readFile(
+      path.join(candidateDir, "Experience.jsx"),
+      "utf8",
+    );
+    expect(repaired).toContain(
+      '<section id="services" data-reference-section="magazine-archive"',
+    );
+    expect(repaired).toContain(
+      '<section className="service-note"><p>A note about the services chapter.</p></section>',
+    );
+  });
+
   it("repairs the selected source only after a rendered visual failure and rerenders before passing", async () => {
     const { root, candidates } = await fixture();
     let bakeoffCalls = 0;
