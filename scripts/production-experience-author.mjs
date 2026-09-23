@@ -1238,6 +1238,7 @@ function isNavigationAnchorHidden(navigation, anchor, elements) {
 /** Preserve JSX prop order while detecting hidden values from attributes/spreads. */
 function hasPotentiallyHiddenJsxAttribute(opening) {
   let hidden = false;
+  let displayNone = false;
   for (const attribute of jsxAttributes(opening)) {
     if (ts.isJsxAttribute(attribute) && attribute.name.getText() === "hidden") {
       const initializer = attribute.initializer;
@@ -1249,12 +1250,82 @@ function hasPotentiallyHiddenJsxAttribute(opening) {
       );
       continue;
     }
+    if (ts.isJsxAttribute(attribute) && attribute.name.getText() === "style") {
+      displayNone = inlineStyleDisplayNone(attribute.initializer);
+      continue;
+    }
     if (ts.isJsxSpreadAttribute(attribute)) {
       const spreadHidden = staticSpreadHiddenValue(attribute);
       if (spreadHidden !== null) hidden = spreadHidden;
+      const spreadDisplayNone = staticSpreadDisplayNone(attribute);
+      if (spreadDisplayNone !== null) displayNone = spreadDisplayNone;
     }
   }
-  return hidden !== false;
+  return hidden !== false || displayNone !== false;
+}
+
+/** Return inline `display: none`, treating dynamic style objects as unsafe. */
+function inlineStyleDisplayNone(initializer) {
+  if (!initializer || !ts.isJsxExpression(initializer)) return undefined;
+  return styleObjectDisplayNone(initializer.expression);
+}
+
+function styleObjectDisplayNone(expression) {
+  if (!expression) return undefined;
+  if (expression.kind === ts.SyntaxKind.NullKeyword) return false;
+  if (!ts.isObjectLiteralExpression(expression)) return undefined;
+
+  let displayNone = false;
+  for (const property of expression.properties) {
+    if (ts.isSpreadAssignment(property)) return undefined;
+    const name = property.name;
+    const key = name && ts.isComputedPropertyName(name) ? name.expression : name;
+    if (
+      !key ||
+      (!ts.isIdentifier(key) &&
+        !ts.isStringLiteral(key) &&
+        !ts.isNoSubstitutionTemplateLiteral(key))
+    )
+      return undefined;
+    if (key.text !== "display") continue;
+    if (!ts.isPropertyAssignment(property)) return undefined;
+    const value = property.initializer;
+    if (
+      !ts.isStringLiteral(value) &&
+      !ts.isNoSubstitutionTemplateLiteral(value)
+    )
+      return undefined;
+    displayNone = value.text.trim().toLowerCase() === "none";
+  }
+  return displayNone;
+}
+
+/** Return display visibility from a static JSX props object spread. */
+function staticSpreadDisplayNone(attribute) {
+  const expression = attribute.expression;
+  if (!ts.isObjectLiteralExpression(expression)) return undefined;
+
+  let foundStyle = false;
+  let displayNone;
+  for (const property of expression.properties) {
+    if (ts.isSpreadAssignment(property)) return undefined;
+    const name = property.name;
+    const key = name && ts.isComputedPropertyName(name) ? name.expression : name;
+    if (
+      !key ||
+      (!ts.isIdentifier(key) &&
+        !ts.isStringLiteral(key) &&
+        !ts.isNoSubstitutionTemplateLiteral(key))
+    )
+      return undefined;
+    if (key.text !== "style") continue;
+    foundStyle = true;
+    if (!ts.isPropertyAssignment(property)) return undefined;
+    const value = property.initializer;
+    if (value.kind === ts.SyntaxKind.NullKeyword) displayNone = false;
+    else displayNone = styleObjectDisplayNone(value);
+  }
+  return foundStyle ? displayNone : null;
 }
 
 /** Return a known hidden value, null when absent, or undefined when dynamic. */

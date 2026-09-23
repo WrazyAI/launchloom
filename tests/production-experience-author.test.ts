@@ -311,6 +311,18 @@ describe("production experience author", () => {
       '<nav aria-label="Main navigation">',
       '<nav hidden={false} {...navProps} aria-label="Main navigation">',
     );
+    const displayNoneNavigation = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav hidden={false} style={{ display: "none" }} aria-label="Main navigation">',
+    );
+    const displayNoneAnchor = original.replace(
+      '<a href="#services">Services</a>',
+      '<a style={{ display: "none" }} href="#services">Services</a>',
+    );
+    const displayNoneSpread = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav {...{ style: { display: "none" } }} aria-label="Main navigation">',
+    );
     const explicitlyVisibleNavigation = original.replace(
       '<nav aria-label="Main navigation">',
       '<nav hidden={false} aria-label="Main navigation">',
@@ -327,6 +339,9 @@ describe("production experience author", () => {
       hiddenAnchor,
       spreadOverridesFalse,
       dynamicSpreadAfterFalse,
+      displayNoneNavigation,
+      displayNoneAnchor,
+      displayNoneSpread,
     ])
       expect(() =>
         validateProductionCandidateFiles({
