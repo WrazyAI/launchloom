@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
+import ts from "typescript";
 import {
   authorExperienceCandidates,
   namespaceCreativeCss,
+  restoreImageAltsFromOriginal,
+  restoreRequiredSectionIdsOnSemanticSections,
   validateProductionCandidateFiles,
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
@@ -123,6 +126,62 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("restores required anchors only on uniquely identifiable semantic sections", () => {
+    const source = `<main>
+      <section data-hero><h1>{content.hero.heading}</h1></section>
+      <section data-early-conversion><a>{content.hero.primaryLabel}</a></section>
+      <section className='service-atlas' data-service-presentation='object-led'>{content.services}</section>
+      <section className='faq-section'><details>{content.faqs}</details></section>
+      <section className='contact-band'><LeadForm content={content} /></section>
+    </main>`;
+
+    const restored = restoreRequiredSectionIdsOnSemanticSections(source, {
+      id: "route-01",
+    });
+
+    expect(restored).toContain(
+      "data-service-presentation='object-led' id=\"services\"",
+    );
+    expect(restored).toContain("className='faq-section' id=\"faqs\"");
+    expect(restored).toContain("className='contact-band' id=\"contact\"");
+    expect(() =>
+      restoreRequiredSectionIdsOnSemanticSections(
+        source.replace(
+          "</section>\n      <section className='faq-section'>",
+          "</section>\n      <section className='service-index' data-service-presentation='second'>{content.services}</section>\n      <section className='faq-section'>",
+        ),
+        { id: "route-ambiguous" },
+      ),
+    ).toThrow(/found 2 matching semantic sections/iu);
+  });
+
+  it("restores only reviewed image alt text from the same original src binding", () => {
+    const original = `<div><img src={content.hero.image} alt="A close view of a flowering plant" /></div>`;
+    const repaired = `<div><img src={content.hero.image} alt="" /><img src={content.hero.secondaryImage} alt="" /></div>`;
+
+    const restored = restoreImageAltsFromOriginal(repaired, original);
+
+    expect(restored).toContain(
+      'src={content.hero.image} alt="A close view of a flowering plant"',
+    );
+    expect(restored).toContain('src={content.hero.secondaryImage} alt=""');
+    expect(restored).toMatch(/alt="A close view of a flowering plant"\s*\/>/u);
+    const diagnostics = ts.transpileModule(restored, {
+      fileName: "Experience.jsx",
+      compilerOptions: {
+        allowJs: true,
+        jsx: ts.JsxEmit.ReactJSX,
+        target: ts.ScriptTarget.ES2020,
+      },
+      reportDiagnostics: true,
+    }).diagnostics;
+    expect(
+      diagnostics?.filter(
+        (item) => item.category === ts.DiagnosticCategory.Error,
+      ),
+    ).toEqual([]);
+  });
+
   it("keeps shared creative form helper text on the candidate contrast palette", () => {
     const styles = readFileSync(
       "templates/client-site/src/styles/creative-runtime.css",

@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
   authoringCompletionDiagnostics,
@@ -37,13 +38,21 @@ const REPAIR_SCHEMA = {
 };
 
 function clean(value, limit = 900) {
-  return String(value || "").replace(/[—–]/gu, "-").trim().slice(0, limit);
+  return String(value || "")
+    .replace(/[—–]/gu, "-")
+    .trim()
+    .slice(0, limit);
 }
 
 function findingText(finding) {
   if (typeof finding === "string") return finding;
   if (!finding || typeof finding !== "object") return "";
-  return [finding.category, finding.message, finding.evidence, finding.recommendation]
+  return [
+    finding.category,
+    finding.message,
+    finding.evidence,
+    finding.recommendation,
+  ]
     .filter(Boolean)
     .join(" ");
 }
@@ -66,9 +75,11 @@ class ReferenceEvidenceError extends Error {}
 function isCompleteRepair(value) {
   return Boolean(
     value &&
-      typeof value === "object" &&
-      !Array.isArray(value) &&
-      ["experience", "styles", "motion"].every((key) => typeof value[key] === "string"),
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    ["experience", "styles", "motion"].every(
+      (key) => typeof value[key] === "string",
+    ),
   );
 }
 
@@ -80,7 +91,12 @@ function isCompleteRepair(value) {
  */
 export function applyCreativeVisualSafetyRepairs(files, findings = []) {
   let styles = String(files?.styles || "");
-  if (hasFinding(findings, /footer[\s\S]*(?:unreadable|contrast|dark tone|clipped)|(?:unreadable|contrast|dark tone|clipped)[\s\S]*footer/iu)) {
+  if (
+    hasFinding(
+      findings,
+      /footer[\s\S]*(?:unreadable|contrast|dark tone|clipped)|(?:unreadable|contrast|dark tone|clipped)[\s\S]*footer/iu,
+    )
+  ) {
     styles = appendRepair(
       styles,
       "/* launchloom-visual-repair: footer-contrast */",
@@ -97,7 +113,12 @@ export function applyCreativeVisualSafetyRepairs(files, findings = []) {
 `,
     );
   }
-  if (hasFinding(findings, /hero[\s\S]*(?:white-on-white|unreadable|invisible|contrast|light panel)|(?:white-on-white|unreadable|invisible|contrast|light panel)[\s\S]*hero/iu)) {
+  if (
+    hasFinding(
+      findings,
+      /hero[\s\S]*(?:white-on-white|unreadable|invisible|contrast|light panel)|(?:white-on-white|unreadable|invisible|contrast|light panel)[\s\S]*hero/iu,
+    )
+  ) {
     styles = appendRepair(
       styles,
       "/* launchloom-visual-repair: hero-host-collision */",
@@ -116,7 +137,12 @@ export function applyCreativeVisualSafetyRepairs(files, findings = []) {
 `,
     );
   }
-  if (hasFinding(findings, /(?:sticky|floating|pill|cta)[\s\S]*(?:overlap|collision|cover)|(?:overlap|collision|cover)[\s\S]*(?:sticky|floating|pill|cta)/iu)) {
+  if (
+    hasFinding(
+      findings,
+      /(?:sticky|floating|pill|cta)[\s\S]*(?:overlap|collision|cover)|(?:overlap|collision|cover)[\s\S]*(?:sticky|floating|pill|cta)/iu,
+    )
+  ) {
     styles = appendRepair(
       styles,
       "/* launchloom-visual-repair: conversion-clearance */",
@@ -147,7 +173,12 @@ body:has([data-creative-host="true"]) .quick-answers {
 `,
     );
   }
-  if (hasFinding(findings, /(?:service|services)[\s\S]*(?:oversized|overlong|display heading|five-line|dwarf)|(?:oversized|overlong|display heading|five-line|dwarf)[\s\S]*(?:service|services)/iu)) {
+  if (
+    hasFinding(
+      findings,
+      /(?:service|services)[\s\S]*(?:oversized|overlong|display heading|five-line|dwarf)|(?:oversized|overlong|display heading|five-line|dwarf)[\s\S]*(?:service|services)/iu,
+    )
+  ) {
     styles = appendRepair(
       styles,
       "/* launchloom-visual-repair: service-intro-hierarchy */",
@@ -168,7 +199,12 @@ body:has([data-creative-host="true"]) .quick-answers {
 `,
     );
   }
-  if (hasFinding(findings, /(?:service|services|title|heading)[\s\S]*(?:astrophotograph|long unbroken|right viewport edge|final letters|clipped|overflow)|(?:astrophotograph|long unbroken|right viewport edge|final letters|clipped|overflow)[\s\S]*(?:service|services|title|heading)/iu)) {
+  if (
+    hasFinding(
+      findings,
+      /(?:service|services|title|heading)[\s\S]*(?:astrophotograph|long unbroken|right viewport edge|final letters|clipped|overflow)|(?:astrophotograph|long unbroken|right viewport edge|final letters|clipped|overflow)[\s\S]*(?:service|services|title|heading)/iu,
+    )
+  ) {
     styles = appendRepair(
       styles,
       "/* launchloom-visual-repair: mobile-service-title-fit */",
@@ -191,7 +227,12 @@ body:has([data-creative-host="true"]) .quick-answers {
 `,
     );
   }
-  if (hasFinding(findings, /(?:mobile|small)[\s\S]*(?:navigation|nav|menu)[\s\S]*(?:absent|missing|not visible|hidden)|(?:navigation|nav|menu)[\s\S]*(?:absent|missing|not visible|hidden)[\s\S]*(?:mobile|small)/iu)) {
+  if (
+    hasFinding(
+      findings,
+      /(?:mobile|small)[\s\S]*(?:navigation|nav|menu)[\s\S]*(?:absent|missing|not visible|hidden)|(?:navigation|nav|menu)[\s\S]*(?:absent|missing|not visible|hidden)[\s\S]*(?:mobile|small)/iu,
+    )
+  ) {
     styles = appendRepair(
       styles,
       "/* launchloom-visual-repair: mobile-navigation-visibility */",
@@ -240,9 +281,12 @@ export async function runCreativeRepairLoop({
   evaluate,
   maxCycles = 2,
 } = {}) {
-  if (!files || typeof files !== "object") throw new Error("Creative repair requires candidate files.");
-  if (typeof generate !== "function") throw new Error("Creative repair requires a generation adapter.");
-  if (typeof evaluate !== "function") throw new Error("Creative repair requires an evaluator.");
+  if (!files || typeof files !== "object")
+    throw new Error("Creative repair requires candidate files.");
+  if (typeof generate !== "function")
+    throw new Error("Creative repair requires a generation adapter.");
+  if (typeof evaluate !== "function")
+    throw new Error("Creative repair requires an evaluator.");
   let current = { ...files };
   const cycles = [];
   let result = await evaluate(current);
@@ -250,7 +294,11 @@ export async function runCreativeRepairLoop({
   let authorAttempts = 0;
   let generationFailures = 0;
   let repairCycles = 0;
-  while ((!result.pass || forcedRepair) && authorAttempts < maxCycles && repairCycles < maxCycles) {
+  while (
+    (!result.pass || forcedRepair) &&
+    authorAttempts < maxCycles &&
+    repairCycles < maxCycles
+  ) {
     repairCycles += 1;
     const cycle = repairCycles;
     const cycleFindings = mergeFindings(findings, result.findings);
@@ -265,7 +313,10 @@ export async function runCreativeRepairLoop({
         screenshots,
         files: current,
       });
-      if (!isCompleteRepair(repaired)) throw new Error(`Creative repair cycle ${cycle} returned incomplete files.`);
+      if (!isCompleteRepair(repaired))
+        throw new Error(
+          `Creative repair cycle ${cycle} returned incomplete files.`,
+        );
     } catch (error) {
       if (error instanceof ReferenceEvidenceError) throw error;
       // A malformed or unavailable author response must not publish stale
@@ -279,20 +330,30 @@ export async function runCreativeRepairLoop({
         cycle,
         pass: Boolean(result.pass),
         findings: result.findings || [],
-        generationError: clean(error instanceof Error ? error.message : error, 600),
+        generationError: clean(
+          error instanceof Error ? error.message : error,
+          600,
+        ),
       });
       continue;
     }
     authorAttempts += 1;
     current = {
-      experience: clean(repaired.experience || current.experience, Number.MAX_SAFE_INTEGER),
+      experience: clean(
+        repaired.experience || current.experience,
+        Number.MAX_SAFE_INTEGER,
+      ),
       styles: clean(repaired.styles || current.styles, Number.MAX_SAFE_INTEGER),
       motion: clean(repaired.motion || current.motion, Number.MAX_SAFE_INTEGER),
     };
     current = applyCreativeVisualSafetyRepairs(current, cycleFindings);
     result = await evaluate(current);
     forcedRepair = false;
-    cycles.push({ cycle, pass: Boolean(result.pass), findings: result.findings || [] });
+    cycles.push({
+      cycle,
+      pass: Boolean(result.pass),
+      findings: result.findings || [],
+    });
   }
   return {
     pass: Boolean(result.pass),
@@ -311,7 +372,16 @@ async function imagePart(file) {
 }
 
 export async function resolveReferenceEvidencePath(record) {
-  for (const candidate of [record?.absolutePath, record?.path].filter(Boolean)) {
+  const repositoryRoot = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+  );
+  const candidates = [
+    record?.absolutePath,
+    record?.path,
+    record?.path && path.resolve(repositoryRoot, record.path),
+  ].filter(Boolean);
+  for (const candidate of candidates) {
     const candidatePath = path.resolve(candidate);
     try {
       await fs.access(candidatePath);
@@ -352,9 +422,28 @@ export async function requestRepair({
       typeof finding === "object" &&
       finding.category === "human-review-feedback",
   );
+  const referenceMismatch = (findings || []).some((finding) => {
+    const detail =
+      typeof finding === "string"
+        ? finding
+        : [
+            finding?.category,
+            finding?.code,
+            finding?.evidence,
+            finding?.message,
+            finding?.recommendation,
+          ]
+            .filter(Boolean)
+            .join(" ");
+    return /reference|composition|geometry|distinctiveness|diversity|generic|layout|section order|hero fit|image crop|visual mismatch/iu.test(
+      detail,
+    );
+  });
   const repairInstruction = humanReview
     ? "Refine this authored LaunchLoom candidate in place to satisfy the explicit human review request. The reviewer is authorized to change composition, presentation, hierarchy, imagery treatment, motion, and safe UI features described in that request. Preserve sealed content bindings, accessibility, factual integrity, and the assigned Reference DNA identity outside the requested change. Do not convert it into a legacy renderer."
-    : "Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.";
+    : referenceMismatch
+      ? "Repair this authored LaunchLoom candidate to address the measured rendered-reference and visual findings. You may change composition, layout, hierarchy, section rhythm, image placement or crop, navigation geometry, and motion where needed to fix those findings. Do not preserve any composition or design mechanic explicitly identified as failing. Preserve verified business facts, sealed content bindings, accessibility, required functionality, and the assigned Reference DNA family and signature intent. Do not convert it into a legacy renderer."
+      : "Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.";
 
   const desktopReference = referenceDna?.evidence?.desktopScreenshot;
   if (
@@ -517,20 +606,52 @@ Return complete files. Keep required reference signatures and safety/content con
 }
 
 async function main() {
-  const args = Object.fromEntries(process.argv.slice(2).reduce((pairs, value, index, all) => index % 2 === 0 ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]] : pairs, []));
+  const args = Object.fromEntries(
+    process.argv
+      .slice(2)
+      .reduce(
+        (pairs, value, index, all) =>
+          index % 2 === 0
+            ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
+            : pairs,
+        [],
+      ),
+  );
   const candidateDir = path.resolve(args.candidate);
-  const metadata = JSON.parse(await fs.readFile(path.join(candidateDir, "metadata.json"), "utf8"));
+  const metadata = JSON.parse(
+    await fs.readFile(path.join(candidateDir, "metadata.json"), "utf8"),
+  );
   const files = {
-    experience: await fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
+    experience: await fs.readFile(
+      path.join(candidateDir, "Experience.jsx"),
+      "utf8",
+    ),
     styles: await fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
     motion: await fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
   };
-  const report = args.report ? JSON.parse(await fs.readFile(path.resolve(args.report), "utf8")) : {};
-  const findings = report.findings || report.audit?.findings || report.candidates?.find((candidate) => candidate.candidateId === metadata.candidateId)?.failures || [];
-  const screenshotCandidates = (args.screenshots || "").split(",").map((item) => item.trim()).filter(Boolean).map((item) => path.resolve(item));
+  const report = args.report
+    ? JSON.parse(await fs.readFile(path.resolve(args.report), "utf8"))
+    : {};
+  const findings =
+    report.findings ||
+    report.audit?.findings ||
+    report.candidates?.find(
+      (candidate) => candidate.candidateId === metadata.candidateId,
+    )?.failures ||
+    [];
+  const screenshotCandidates = (args.screenshots || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => path.resolve(item));
   const screenshots = [];
   for (const screenshot of screenshotCandidates) {
-    try { await fs.access(screenshot); screenshots.push(screenshot); } catch { /* a failed candidate may have no render evidence */ }
+    try {
+      await fs.access(screenshot);
+      screenshots.push(screenshot);
+    } catch {
+      /* a failed candidate may have no render evidence */
+    }
   }
   const sessionConfig = args.session
     ? validateCreativeSessionConfig(
@@ -547,20 +668,39 @@ async function main() {
     : null;
   const result = await runCreativeRepairLoop({
     files,
-    referenceDna: metadata.creativeManifest?.referenceDna || metadata.referenceDna,
+    referenceDna:
+      metadata.creativeManifest?.referenceDna || metadata.referenceDna,
     findings,
     screenshots,
     maxCycles: Math.min(2, Math.max(0, Number(args.maxCycles || 2))),
     generate: (request) =>
       requestRepair({ model, creativeSession, ...request }),
-    evaluate: async (candidateFiles) => validateReferenceCandidate({ referenceDna: metadata.creativeManifest?.referenceDna || metadata.referenceDna, experienceSource: candidateFiles.experience, stylesSource: candidateFiles.styles, motionSource: candidateFiles.motion }),
+    evaluate: async (candidateFiles) =>
+      validateReferenceCandidate({
+        referenceDna:
+          metadata.creativeManifest?.referenceDna || metadata.referenceDna,
+        experienceSource: candidateFiles.experience,
+        stylesSource: candidateFiles.styles,
+        motionSource: candidateFiles.motion,
+      }),
   });
   if (result.cyclesUsed) {
-    await fs.writeFile(path.join(candidateDir, "Experience.jsx"), `${result.files.experience.trim()}\n`);
-    await fs.writeFile(path.join(candidateDir, "styles.css"), `${result.files.styles.trim()}\n`);
-    await fs.writeFile(path.join(candidateDir, "motion.js"), `${result.files.motion.trim()}\n`);
+    await fs.writeFile(
+      path.join(candidateDir, "Experience.jsx"),
+      `${result.files.experience.trim()}\n`,
+    );
+    await fs.writeFile(
+      path.join(candidateDir, "styles.css"),
+      `${result.files.styles.trim()}\n`,
+    );
+    await fs.writeFile(
+      path.join(candidateDir, "motion.js"),
+      `${result.files.motion.trim()}\n`,
+    );
   }
-  const out = path.resolve(args.out || path.join(candidateDir, "repair-report.json"));
+  const out = path.resolve(
+    args.out || path.join(candidateDir, "repair-report.json"),
+  );
   await fs.writeFile(
     out,
     `${JSON.stringify(
@@ -583,8 +723,13 @@ async function main() {
       2,
     )}\n`,
   );
-  if (!result.pass) throw new Error(`Creative repair exhausted ${result.maxCycles} cycles for ${metadata.candidateId}.`);
-  console.log(`creative_repair_pass=true candidate=${metadata.candidateId} cycles=${result.cyclesUsed}`);
+  if (!result.pass)
+    throw new Error(
+      `Creative repair exhausted ${result.maxCycles} cycles for ${metadata.candidateId}.`,
+    );
+  console.log(
+    `creative_repair_pass=true candidate=${metadata.candidateId} cycles=${result.cyclesUsed}`,
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await main();

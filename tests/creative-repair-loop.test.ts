@@ -2,7 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { applyCreativeVisualSafetyRepairs, requestRepair, resolveReferenceEvidencePath, runCreativeRepairLoop } from "../scripts/creative-repair-loop.mjs";
+import {
+  applyCreativeVisualSafetyRepairs,
+  requestRepair,
+  resolveReferenceEvidencePath,
+  runCreativeRepairLoop,
+} from "../scripts/creative-repair-loop.mjs";
 
 const roots: string[] = [];
 const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
@@ -13,27 +18,42 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
-  if (originalOpenRouterKey === undefined) delete process.env.OPENROUTER_API_KEY;
+  if (originalOpenRouterKey === undefined)
+    delete process.env.OPENROUTER_API_KEY;
   else process.env.OPENROUTER_API_KEY = originalOpenRouterKey;
   vi.unstubAllGlobals();
-  await Promise.all(roots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    roots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
+  );
 });
 
 describe("creative repair loop", () => {
   it("uses a generous repair completion budget and reports bounded response diagnostics", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-budget-"));
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-budget-"),
+    );
     roots.push(root);
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
     const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
-    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
-      new Response(JSON.stringify({
-        choices: [{ finish_reason: "stop", message: { content: JSON.stringify(repaired) } }],
-        usage: {
-          completion_tokens: 3456,
-          completion_tokens_details: { reasoning_tokens: 321 },
-        },
-      })),
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(repaired) },
+              },
+            ],
+            usage: {
+              completion_tokens: 3456,
+              completion_tokens_details: { reasoning_tokens: 321 },
+            },
+          }),
+        ),
     );
     vi.stubGlobal("fetch", fetchMock);
     const diagnostics: string[] = [];
@@ -60,15 +80,25 @@ describe("creative repair loop", () => {
   });
 
   it("keeps required section IDs and reference marker order explicit during repairs", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-reference-checklist-"));
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-reference-checklist-"),
+    );
     roots.push(root);
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
     const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
-    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
-      new Response(JSON.stringify({
-        choices: [{ finish_reason: "stop", message: { content: JSON.stringify(repaired) } }],
-      })),
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(repaired) },
+              },
+            ],
+          }),
+        ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -107,72 +137,95 @@ describe("creative repair loop", () => {
   });
 
   it("classifies a length-limited repair response instead of reporting generic invalid JSON", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-truncation-"));
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-truncation-"),
+    );
     roots.push(root);
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
-    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
-      new Response(JSON.stringify({
-        choices: [{ finish_reason: "length", message: { content: "{" } }],
-        usage: {
-          completion_tokens: 48000,
-          completion_tokens_details: { reasoning_tokens: 47000 },
-        },
-      })),
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [{ finish_reason: "length", message: { content: "{" } }],
+            usage: {
+              completion_tokens: 48000,
+              completion_tokens_details: { reasoning_tokens: 47000 },
+            },
+          }),
+        ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(requestRepair({
-      model: "test/model",
-      referenceDna: {
-        sectionSequence: repairSectionSequence,
-        evidence: { desktopScreenshot: { path: desktop } },
-      },
-      findings: [],
-      files: { experience: "old", styles: "old", motion: "old" },
-      screenshots: [],
-    })).rejects.toThrow(
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+      }),
+    ).rejects.toThrow(
       "Creative repair response was truncated (finish_reason=length max_completion_tokens=48000 completion_tokens=48000 reasoning_tokens=47000 content_chars=1).",
     );
   });
 
   it("classifies malformed non-truncated repair JSON with usage diagnostics", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-malformed-json-"));
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-malformed-json-"),
+    );
     roots.push(root);
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
-    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
-      new Response(JSON.stringify({
-        choices: [{ finish_reason: "stop", message: { content: "not json" } }],
-        usage: { completion_tokens: 810, completion_tokens_details: { reasoning_tokens: 200 } },
-      })),
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              { finish_reason: "stop", message: { content: "not json" } },
+            ],
+            usage: {
+              completion_tokens: 810,
+              completion_tokens_details: { reasoning_tokens: 200 },
+            },
+          }),
+        ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(requestRepair({
-      model: "test/model",
-      referenceDna: {
-        sectionSequence: repairSectionSequence,
-        evidence: { desktopScreenshot: { path: desktop } },
-      },
-      findings: [],
-      files: { experience: "old", styles: "old", motion: "old" },
-      screenshots: [],
-    })).rejects.toThrow(
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+      }),
+    ).rejects.toThrow(
       "Creative repair response was malformed (finish_reason=stop max_completion_tokens=48000 completion_tokens=810 reasoning_tokens=200 content_chars=8).",
     );
   });
 
   it("prefers an accessible absolute reference evidence path", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-evidence-"));
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-evidence-"),
+    );
     roots.push(root);
     const absolutePath = path.join(root, "reference.png");
     await fs.writeFile(absolutePath, "reference");
 
-    await expect(resolveReferenceEvidencePath({
-      path: "missing/repository-relative.png",
-      absolutePath,
-    })).resolves.toBe(absolutePath);
+    await expect(
+      resolveReferenceEvidencePath({
+        path: "missing/repository-relative.png",
+        absolutePath,
+      }),
+    ).resolves.toBe(absolutePath);
   });
 
   it("loads reference screenshots through absolute paths when relative paths are unavailable", async () => {
@@ -183,27 +236,42 @@ describe("creative repair loop", () => {
     await fs.writeFile(desktop, "desktop-evidence");
     await fs.writeFile(mobile, "mobile-evidence");
     const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
-    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => new Response(JSON.stringify({
-      choices: [{ message: { content: JSON.stringify(repaired) } }],
-    })));
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(repaired) } }],
+          }),
+        ),
+    );
     vi.stubGlobal("fetch", fetchMock);
 
-    expect(await requestRepair({
-      model: "test/model",
-      referenceDna: {
-        sectionSequence: repairSectionSequence,
-        evidence: {
-          desktopScreenshot: { path: path.join(root, "missing-desktop.png"), absolutePath: desktop },
-          mobileScreenshot: { path: path.join(root, "missing-mobile.png"), absolutePath: mobile },
+    expect(
+      await requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: {
+            desktopScreenshot: {
+              path: path.join(root, "missing-desktop.png"),
+              absolutePath: desktop,
+            },
+            mobileScreenshot: {
+              path: path.join(root, "missing-mobile.png"),
+              absolutePath: mobile,
+            },
+          },
         },
-      },
-      findings: [],
-      files: repaired,
-      screenshots: [],
-    })).toEqual(repaired);
+        findings: [],
+        files: repaired,
+        screenshots: [],
+      }),
+    ).toEqual(repaired);
     expect(fetchMock).toHaveBeenCalledOnce();
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    const images = body.messages[1].content.filter((part: any) => part.type === "image_url");
+    const images = body.messages[1].content.filter(
+      (part: any) => part.type === "image_url",
+    );
     expect(images.map((part: any) => part.image_url.url)).toEqual([
       `data:image/png;base64,${Buffer.from("desktop-evidence").toString("base64")}`,
       `data:image/png;base64,${Buffer.from("mobile-evidence").toString("base64")}`,
@@ -218,12 +286,13 @@ describe("creative repair loop", () => {
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
     const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
-    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
-      new Response(
-        JSON.stringify({
-          choices: [{ message: { content: JSON.stringify(repaired) } }],
-        }),
-      ),
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(repaired) } }],
+          }),
+        ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -239,7 +308,8 @@ describe("creative repair loop", () => {
       files: repaired,
       screenshots: [],
       creativeSession: {
-        sessionId: "launchloom:creative:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        sessionId:
+          "launchloom:creative:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         reasoningEffort: "max",
         recommendedEffort: "max",
         mode: "enforce",
@@ -257,17 +327,20 @@ describe("creative repair loop", () => {
   });
 
   it("authorizes requested composition changes only for explicit human review findings", async () => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-human-repair-prompt-"));
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-human-repair-prompt-"),
+    );
     roots.push(root);
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
     const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
-    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) =>
-      new Response(
-        JSON.stringify({
-          choices: [{ message: { content: JSON.stringify(repaired) } }],
-        }),
-      ),
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(repaired) } }],
+          }),
+        ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -301,88 +374,242 @@ describe("creative repair loop", () => {
     );
   });
 
+  it("allows reference-driven repairs to change the composition that failed visual review", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-reference-repair-prompt-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(repaired) } }],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        {
+          category: "hero-geometry",
+          severity: "major",
+          evidence:
+            "The opening composition is generic and does not match the assigned image-led reference.",
+        },
+      ],
+      files: repaired,
+      screenshots: [],
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(prompt).toContain("You may change composition, layout, hierarchy");
+    expect(prompt).toContain(
+      "Do not preserve any composition or design mechanic explicitly identified as failing.",
+    );
+    expect(prompt).toContain(
+      "Preserve verified business facts, sealed content bindings, accessibility",
+    );
+    expect(prompt).not.toContain(
+      "Preserve its composition and sealed content bindings.",
+    );
+  });
+
+  it("preserves composition when a repair finding is non-visual", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-copy-repair-prompt-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(repaired) } }],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        {
+          category: "copy-integrity",
+          evidence: "The phone label contains a typo.",
+        },
+      ],
+      files: repaired,
+      screenshots: [],
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(prompt).toContain(
+      "Preserve its composition and sealed content bindings.",
+    );
+  });
+
   it.each([
     undefined,
     {},
     { available: true },
     { available: false, path: "desktop.png" },
-  ])("fails terminally before requesting a repair for invalid desktop evidence %j", async (desktopScreenshot) => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-    const evaluate = vi.fn(async () => ({ pass: true, findings: [] }));
-    await expect(runCreativeRepairLoop({
-      files: { experience: "old", styles: "old", motion: "old" },
-      referenceDna: { evidence: { desktopScreenshot } },
-      findings: [{ evidence: "Hero heading is white-on-white on a light panel." }],
-      generate: (request: any) => requestRepair({ model: "test/model", ...request }),
-      evaluate,
-    })).rejects.toThrow("Creative repair requires desktop reference evidence");
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(evaluate).toHaveBeenCalledOnce();
-  });
+  ])(
+    "fails terminally before requesting a repair for invalid desktop evidence %j",
+    async (desktopScreenshot) => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      const evaluate = vi.fn(async () => ({ pass: true, findings: [] }));
+      await expect(
+        runCreativeRepairLoop({
+          files: { experience: "old", styles: "old", motion: "old" },
+          referenceDna: { evidence: { desktopScreenshot } },
+          findings: [
+            { evidence: "Hero heading is white-on-white on a light panel." },
+          ],
+          generate: (request: any) =>
+            requestRepair({ model: "test/model", ...request }),
+          evaluate,
+        }),
+      ).rejects.toThrow("Creative repair requires desktop reference evidence");
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(evaluate).toHaveBeenCalledOnce();
+    },
+  );
 
-  it.each([undefined, {}, { available: false, path: "missing-mobile.png" }])("keeps mobile reference evidence optional: %j", async (mobileScreenshot) => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-"));
-    roots.push(root);
-    const desktop = path.join(root, "desktop.png");
-    await fs.writeFile(desktop, "desktop-evidence");
-    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
-    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => new Response(JSON.stringify({
-      choices: [{ message: { content: JSON.stringify(repaired) } }],
-    })));
-    vi.stubGlobal("fetch", fetchMock);
+  it.each([undefined, {}, { available: false, path: "missing-mobile.png" }])(
+    "keeps mobile reference evidence optional: %j",
+    async (mobileScreenshot) => {
+      const root = await fs.mkdtemp(
+        path.join(os.tmpdir(), "launchloom-repair-"),
+      );
+      roots.push(root);
+      const desktop = path.join(root, "desktop.png");
+      await fs.writeFile(desktop, "desktop-evidence");
+      const repaired = {
+        experience: "fixed",
+        styles: "fixed",
+        motion: "fixed",
+      };
+      const fetchMock = vi.fn(
+        async (_url: string, _options: RequestInit) =>
+          new Response(
+            JSON.stringify({
+              choices: [{ message: { content: JSON.stringify(repaired) } }],
+            }),
+          ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
 
-    await expect(requestRepair({
-      model: "test/model",
-      referenceDna: {
-        sectionSequence: repairSectionSequence,
-        evidence: { desktopScreenshot: { path: desktop }, mobileScreenshot },
-      },
-      findings: [],
-      files: repaired,
-      screenshots: [],
-    })).resolves.toEqual(repaired);
-    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    expect(body.messages[1].content.filter((part: any) => part.type === "image_url")).toHaveLength(1);
-  });
+      await expect(
+        requestRepair({
+          model: "test/model",
+          referenceDna: {
+            sectionSequence: repairSectionSequence,
+            evidence: {
+              desktopScreenshot: { path: desktop },
+              mobileScreenshot,
+            },
+          },
+          findings: [],
+          files: repaired,
+          screenshots: [],
+        }),
+      ).resolves.toEqual(repaired);
+      const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+      expect(
+        body.messages[1].content.filter(
+          (part: any) => part.type === "image_url",
+        ),
+      ).toHaveLength(1);
+    },
+  );
 
   it.each([
     ["desktopScreenshot", false],
     ["desktopScreenshot", true],
     ["mobileScreenshot", false],
     ["mobileScreenshot", true],
-  ] as const)("fails terminally for unreadable %s (directory: %s) instead of applying safety repairs", async (kind, directory) => {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-repair-"));
-    roots.push(root);
-    const desktop = path.join(root, "desktop.png");
-    await fs.writeFile(desktop, "desktop-evidence");
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-    const evaluate = vi.fn(async () => ({ pass: true, findings: [] }));
-    await expect(runCreativeRepairLoop({
-      files: { experience: "old", styles: "old", motion: "old" },
-      referenceDna: { evidence: {
-        desktopScreenshot: { path: desktop },
-        [kind]: {
-          path: path.join(root, "missing.png"),
-          absolutePath: directory ? root : path.join(root, "also-missing.png"),
-        },
-      } },
-      findings: [{ evidence: "Hero heading is white-on-white on a light panel." }],
-      generate: (request: any) => requestRepair({ model: "test/model", ...request }),
-      evaluate,
-    })).rejects.toThrow("Creative repair cannot load required reference evidence");
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(evaluate).toHaveBeenCalledOnce();
-  });
+  ] as const)(
+    "fails terminally for unreadable %s (directory: %s) instead of applying safety repairs",
+    async (kind, directory) => {
+      const root = await fs.mkdtemp(
+        path.join(os.tmpdir(), "launchloom-repair-"),
+      );
+      roots.push(root);
+      const desktop = path.join(root, "desktop.png");
+      await fs.writeFile(desktop, "desktop-evidence");
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+      const evaluate = vi.fn(async () => ({ pass: true, findings: [] }));
+      await expect(
+        runCreativeRepairLoop({
+          files: { experience: "old", styles: "old", motion: "old" },
+          referenceDna: {
+            evidence: {
+              desktopScreenshot: { path: desktop },
+              [kind]: {
+                path: path.join(root, "missing.png"),
+                absolutePath: directory
+                  ? root
+                  : path.join(root, "also-missing.png"),
+              },
+            },
+          },
+          findings: [
+            { evidence: "Hero heading is white-on-white on a light panel." },
+          ],
+          generate: (request: any) =>
+            requestRepair({ model: "test/model", ...request }),
+          evaluate,
+        }),
+      ).rejects.toThrow(
+        "Creative repair cannot load required reference evidence",
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(evaluate).toHaveBeenCalledOnce();
+    },
+  );
 
   it("repairs at most two cycles and returns the passing source", async () => {
     let calls = 0;
     const result = await runCreativeRepairLoop({
       files: { experience: "old", styles: "old", motion: "old" },
       referenceDna: { familyId: "test" },
-      generate: async ({ cycle }: any) => { calls += 1; return { experience: `fixed-${cycle}`, styles: "fixed", motion: "fixed" }; },
-      evaluate: async (files: any) => ({ pass: files.experience === "fixed-2", findings: files.experience === "fixed-2" ? [] : ["still generic"] }),
+      generate: async ({ cycle }: any) => {
+        calls += 1;
+        return {
+          experience: `fixed-${cycle}`,
+          styles: "fixed",
+          motion: "fixed",
+        };
+      },
+      evaluate: async (files: any) => ({
+        pass: files.experience === "fixed-2",
+        findings: files.experience === "fixed-2" ? [] : ["still generic"],
+      }),
       maxCycles: 2,
     });
     expect(calls).toBe(2);
@@ -394,7 +621,11 @@ describe("creative repair loop", () => {
     const result = await runCreativeRepairLoop({
       files: { experience: "old", styles: "old", motion: "old" },
       referenceDna: { familyId: "test" },
-      generate: async () => ({ experience: "still-old", styles: "still-old", motion: "still-old" }),
+      generate: async () => ({
+        experience: "still-old",
+        styles: "still-old",
+        motion: "still-old",
+      }),
       evaluate: async () => ({ pass: false, findings: ["not fixed"] }),
       maxCycles: 2,
     });
@@ -404,11 +635,16 @@ describe("creative repair loop", () => {
 
   it("applies only scoped repairs for measured footer and mobile CTA defects", () => {
     const result = applyCreativeVisualSafetyRepairs(
-      { experience: "<main></main>", styles: ".footer { color: #111; }", motion: "" },
+      {
+        experience: "<main></main>",
+        styles: ".footer { color: #111; }",
+        motion: "",
+      },
       [
         {
           category: "content-integrity",
-          evidence: "Footer brand is unreadable against the dark background and clipped at the top edge.",
+          evidence:
+            "Footer brand is unreadable against the dark background and clipped at the top edge.",
         },
         {
           category: "conversion",
@@ -420,69 +656,121 @@ describe("creative repair loop", () => {
         },
         {
           category: "conversion",
-          evidence: "On mobile the navigation is hidden and no menu is visible.",
+          evidence:
+            "On mobile the navigation is hidden and no menu is visible.",
         },
         {
           category: "hierarchy",
-          evidence: "The services intro is an oversized five-line display heading that dwarfs the service rows.",
+          evidence:
+            "The services intro is an oversized five-line display heading that dwarfs the service rows.",
         },
       ],
     );
-    expect(result.styles).toContain("launchloom-visual-repair: footer-contrast");
-    expect(result.styles).toContain("launchloom-visual-repair: conversion-clearance");
-    expect(result.styles).toContain("launchloom-visual-repair: hero-host-collision");
-    expect(result.styles).toContain("launchloom-visual-repair: mobile-navigation-visibility");
-    expect(result.styles).toContain('body:has([data-creative-host="true"]) .quick-answers');
-    expect(result.styles).toContain('[data-creative-host="true"] a[data-navigation-geometry="fixed-bottom-conversation-pill"]');
-    expect(result.styles).toContain("launchloom-visual-repair: service-intro-hierarchy");
+    expect(result.styles).toContain(
+      "launchloom-visual-repair: footer-contrast",
+    );
+    expect(result.styles).toContain(
+      "launchloom-visual-repair: conversion-clearance",
+    );
+    expect(result.styles).toContain(
+      "launchloom-visual-repair: hero-host-collision",
+    );
+    expect(result.styles).toContain(
+      "launchloom-visual-repair: mobile-navigation-visibility",
+    );
+    expect(result.styles).toContain(
+      'body:has([data-creative-host="true"]) .quick-answers',
+    );
+    expect(result.styles).toContain(
+      '[data-creative-host="true"] a[data-navigation-geometry="fixed-bottom-conversation-pill"]',
+    );
+    expect(result.styles).toContain(
+      "launchloom-visual-repair: service-intro-hierarchy",
+    );
     expect(result.styles).not.toContain("data-experience-pack");
   });
 
   it("keeps visual findings when the structural evaluator already passes", async () => {
     let repairFindings: unknown[] = [];
     const result = await runCreativeRepairLoop({
-      files: { experience: "<main></main>", styles: ".footer { color: #111; }", motion: "" },
-      findings: [{ category: "content-integrity", evidence: "Footer text is unreadable against the dark background." }],
+      files: {
+        experience: "<main></main>",
+        styles: ".footer { color: #111; }",
+        motion: "",
+      },
+      findings: [
+        {
+          category: "content-integrity",
+          evidence: "Footer text is unreadable against the dark background.",
+        },
+      ],
       referenceDna: { familyId: "test" },
       generate: async ({ findings }: any) => {
         repairFindings = findings;
-        return { experience: "<main></main>", styles: ".footer { color: #111; }", motion: "" };
+        return {
+          experience: "<main></main>",
+          styles: ".footer { color: #111; }",
+          motion: "",
+        };
       },
       evaluate: async () => ({ pass: true, findings: [] }),
       maxCycles: 2,
     });
     expect(repairFindings).toHaveLength(1);
     expect(result.pass).toBe(true);
-    expect(result.files.styles).toContain("launchloom-visual-repair: footer-contrast");
+    expect(result.files.styles).toContain(
+      "launchloom-visual-repair: footer-contrast",
+    );
   });
 
   it("fits long unbroken service titles on mobile", () => {
     const result = applyCreativeVisualSafetyRepairs(
-      { experience: "<main />", styles: ".archive-row-name { font-size: 4rem; }", motion: "" },
-      [{
-        category: "content-integrity",
-        severity: "critical",
-        viewport: "mobile",
-        evidence: "ASTROPHOTOGRAPHY is cut off at the right viewport edge.",
-        recommendation: "Allow the long service title to wrap on mobile.",
-      }],
+      {
+        experience: "<main />",
+        styles: ".archive-row-name { font-size: 4rem; }",
+        motion: "",
+      },
+      [
+        {
+          category: "content-integrity",
+          severity: "critical",
+          viewport: "mobile",
+          evidence: "ASTROPHOTOGRAPHY is cut off at the right viewport edge.",
+          recommendation: "Allow the long service title to wrap on mobile.",
+        },
+      ],
     );
 
     expect(result.styles).toContain("mobile-service-title-fit");
     expect(result.styles).toContain("overflow-wrap: break-word");
     expect(result.styles).toContain("word-break: normal");
-    expect(result.styles).toContain('[data-creative-host="true"] .archive-row-name');
+    expect(result.styles).toContain(
+      '[data-creative-host="true"] .archive-row-name',
+    );
   });
 
   it("uses only deterministic safety repairs when the author returns malformed output", async () => {
     const result = await runCreativeRepairLoop({
-      files: { experience: "<main></main>", styles: ".hero { background: var(--cream); }", motion: "" },
-      findings: [{ category: "content-integrity", evidence: "Hero heading is white-on-white on a light panel." }],
+      files: {
+        experience: "<main></main>",
+        styles: ".hero { background: var(--cream); }",
+        motion: "",
+      },
+      findings: [
+        {
+          category: "content-integrity",
+          evidence: "Hero heading is white-on-white on a light panel.",
+        },
+      ],
       referenceDna: { familyId: "test" },
-      generate: async () => { throw new Error("OpenRouter returned malformed JSON"); },
+      generate: async () => {
+        throw new Error("OpenRouter returned malformed JSON");
+      },
       evaluate: async (files: any) => ({
         pass: files.styles.includes("hero-host-collision"),
-        findings: files.styles.includes("hero-host-collision") ? [] : ["hero still collides"],
+        findings: files.styles.includes("hero-host-collision")
+          ? []
+          : ["hero still collides"],
       }),
       maxCycles: 2,
     });

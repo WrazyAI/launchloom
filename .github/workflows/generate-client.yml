@@ -9,6 +9,15 @@ on:
         description: LaunchLoom intake issue number
         required: true
         type: string
+      reuse_authored_candidates:
+        description: Reuse a validated candidate set from an existing private client repository
+        required: false
+        type: boolean
+        default: false
+      candidate_repository:
+        description: Existing private LaunchLoom client repository (required when reusing candidates)
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -48,6 +57,8 @@ jobs:
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+      REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
+      REUSABLE_CANDIDATE_REPO: ${{ inputs.candidate_repository || '' }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -69,30 +80,58 @@ jobs:
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
         run: |
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
-          node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json
-          node scripts/generate-site-config.mjs --source /tmp/intake.md --research /tmp/seo-research.json --out /tmp/site.config.json
-          node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/intake.md --out /tmp/inspiration-pack.json
-          node scripts/analyze-reference-dna.mjs --inspiration /tmp/inspiration-pack.json --out /tmp/inspiration-pack.json
+          if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
+            case "$REUSABLE_CANDIDATE_REPO" in
+              "WrazyAI/launchloom-$ISSUE-"*) ;;
+              *) echo "Candidate repository must be the existing WrazyAI/launchloom-$ISSUE-* repo for this intake"; exit 1 ;;
+            esac
+            CANDIDATE_SOURCE="$RUNNER_TEMP/launchloom-candidate-source"
+            gh repo clone "$REUSABLE_CANDIDATE_REPO" "$CANDIDATE_SOURCE" -- --branch review/initial --depth 1
+            for file in \
+              src/site.config.json \
+              .launchloom/seo-research.json \
+              .launchloom/inspiration-pack.json \
+              .launchloom/reasoning-preflight.json \
+              .launchloom/generated-experiences/creative-run.json; do
+              test -f "$CANDIDATE_SOURCE/$file" || { echo "Reusable candidate repository is missing $file"; exit 1; }
+            done
+            cp "$CANDIDATE_SOURCE/src/site.config.json" /tmp/site.config.json
+            cp "$CANDIDATE_SOURCE/.launchloom/seo-research.json" /tmp/seo-research.json
+            cp "$CANDIDATE_SOURCE/.launchloom/inspiration-pack.json" /tmp/inspiration-pack.json
+            cp "$CANDIDATE_SOURCE/.launchloom/reasoning-preflight.json" /tmp/reasoning-preflight.json
+            mkdir -p "$RUNNER_TEMP/reusable-authored-candidates"
+            cp -R "$CANDIDATE_SOURCE/.launchloom/generated-experiences/." "$RUNNER_TEMP/reusable-authored-candidates/"
+            echo "Reusable private candidate artifacts loaded; fresh authoring and SEO/config model calls are skipped."
+          else
+            node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json
+            node scripts/generate-site-config.mjs --source /tmp/intake.md --research /tmp/seo-research.json --out /tmp/site.config.json
+            node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/intake.md --out /tmp/inspiration-pack.json
+            node scripts/analyze-reference-dna.mjs --inspiration /tmp/inspiration-pack.json --out /tmp/inspiration-pack.json
+            rm -f /tmp/reasoning-preflight.json
+            if [ "$CREATIVE_EXPERIENCE_MODEL" = "openai/gpt-6-luna" ]; then
+              node scripts/run-reasoning-preflight.mjs \
+                --inspiration /tmp/inspiration-pack.json \
+                --out /tmp/reasoning-preflight.json \
+                --mode "$REASONING_PREFLIGHT_MODE" \
+                --model "$REASONING_PREFLIGHT_MODEL" \
+                --creative-model "$CREATIVE_EXPERIENCE_MODEL" \
+                --session-key "$LAUNCHLOOM_INTAKE_ID"
+              jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
+              FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' /tmp/reasoning-preflight.json)
+              if [ "$FALLBACK_USED" = "true" ]; then
+                FALLBACK_CODE=$(jq -r '.selector.error.code // "selector-error"' /tmp/reasoning-preflight.json)
+                echo "::warning title=Reasoning preflight fallback::TypeSafe/Jev selector fallback is active ($FALLBACK_CODE). This creative session is frozen at max reasoning for quality safety."
+              fi
+            fi
+          fi
           jq -e '.referenceDnaAnalyzed == true and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null))' /tmp/inspiration-pack.json >/dev/null || { echo "Reference DNA was not derived from screenshot evidence"; exit 1; }
-          rm -f /tmp/reasoning-preflight.json
-          if [ "$CREATIVE_EXPERIENCE_MODEL" = "openai/gpt-6-luna" ]; then
-            node scripts/run-reasoning-preflight.mjs \
-              --inspiration /tmp/inspiration-pack.json \
-              --out /tmp/reasoning-preflight.json \
-              --mode "$REASONING_PREFLIGHT_MODE" \
-              --model "$REASONING_PREFLIGHT_MODEL" \
-              --creative-model "$CREATIVE_EXPERIENCE_MODEL" \
-              --session-key "$LAUNCHLOOM_INTAKE_ID"
+          if [ -f /tmp/reasoning-preflight.json ]; then
             jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
             echo "reasoning_mode=$(jq -r '.mode' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
             echo "reasoning_effort=$(jq -r '.reasoningEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
             echo "reasoning_recommended=$(jq -r '.recommendedEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
             FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' /tmp/reasoning-preflight.json)
             echo "reasoning_fallback=$FALLBACK_USED" >> "$GITHUB_OUTPUT"
-            if [ "$FALLBACK_USED" = "true" ]; then
-              FALLBACK_CODE=$(jq -r '.selector.error.code // "selector-error"' /tmp/reasoning-preflight.json)
-              echo "::warning title=Reasoning preflight fallback::TypeSafe/Jev selector fallback is active ($FALLBACK_CODE). This creative session is frozen at max reasoning for quality safety."
-            fi
           else
             echo "reasoning_mode=static" >> "$GITHUB_OUTPUT"
             echo "reasoning_effort=$CREATIVE_EXPERIENCE_REASONING_EFFORT" >> "$GITHUB_OUTPUT"
@@ -252,12 +291,24 @@ jobs:
           if [ -f /tmp/reasoning-preflight.json ]; then
             SESSION_ARGS=(--session /tmp/reasoning-preflight.json)
           fi
-          npm run author:experiences -- \
-            --config /tmp/site.config.json \
-            --inspiration /tmp/inspiration-pack.json \
-            --out /tmp/generated-experiences \
-            "${SESSION_ARGS[@]}" \
-            --failure-mode throw
+          if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
+            test -n "$REUSABLE_CANDIDATE_REPO" || { echo "Candidate repository is required when reuse is enabled"; exit 1; }
+            test -f /tmp/reasoning-preflight.json || { echo "Reusable candidates require their original frozen reasoning session"; exit 1; }
+            node scripts/validate-reusable-creative-candidates.mjs \
+              --config /tmp/site.config.json \
+              --inspiration /tmp/inspiration-pack.json \
+              --candidates "$RUNNER_TEMP/reusable-authored-candidates" \
+              --out /tmp/generated-experiences \
+              --session /tmp/reasoning-preflight.json \
+              --model "$CREATIVE_EXPERIENCE_MODEL"
+          else
+            npm run author:experiences -- \
+              --config /tmp/site.config.json \
+              --inspiration /tmp/inspiration-pack.json \
+              --out /tmp/generated-experiences \
+              "${SESSION_ARGS[@]}" \
+              --failure-mode throw
+          fi
       - name: Commit authored experience evidence
         run: |
           cd "${{ steps.branch.outputs.dir }}"

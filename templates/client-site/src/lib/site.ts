@@ -190,7 +190,7 @@ export type SiteConfig = {
       candidateId?: string;
       familyId?: string;
       referenceFamilyId?: string;
-      referenceDnaVersion?: number;
+      referenceDnaVersion?: number | null;
       contractHash?: string;
       visualScore?: number;
       distinctivenessScore?: number;
