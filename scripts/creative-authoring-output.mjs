@@ -14,6 +14,8 @@ export function completionLimitRequestField(tokens) {
 }
 
 export function referenceImplementationChecklist(referenceDna) {
+  if (referenceDna == null) return "";
+
   const sections = Array.isArray(referenceDna?.sectionSequence)
     ? referenceDna.sectionSequence
     : [];
