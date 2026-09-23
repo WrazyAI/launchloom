@@ -464,25 +464,123 @@ function collectJsxElements(source) {
   return { file, elements };
 }
 
-function jsxChildrenContainBinding(children, binding, file) {
-  for (const child of children || []) {
-    if (
-      ts.isJsxExpression(child) &&
-      child.expression?.getText(file).replace(/\s+/gu, "") === binding
+function bindingPatternNames(name) {
+  if (ts.isIdentifier(name)) return [name.text];
+  if (ts.isObjectBindingPattern(name) || ts.isArrayBindingPattern(name))
+    return name.elements.flatMap((element) =>
+      ts.isOmittedExpression(element) ? [] : bindingPatternNames(element.name),
+    );
+  return [];
+}
+
+function expressionReferencesContentBinding(
+  expression,
+  binding,
+  aliases,
+  file,
+) {
+  let found = false;
+  const normalizedBinding = binding.replace(/\s+/gu, "").replace(/\?\./gu, ".");
+  const visit = (node) => {
+    if (found) return;
+    if (ts.isPropertyAccessExpression(node)) {
+      const path = node
+        .getText(file)
+        .replace(/\s+/gu, "")
+        .replace(/\?\./gu, ".");
+      if (path === normalizedBinding) {
+        found = true;
+        return;
+      }
+      visit(node.expression);
+      return;
+    }
+    if (ts.isIdentifier(node) && aliases.has(node.text)) {
+      found = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  if (expression) visit(expression);
+  return found;
+}
+
+/**
+ * Resolve simple, unambiguous local values derived from a sealed content
+ * token. Some authored headings are split into words before being rendered
+ * inside their h1, so checking only the JSX expression misses that binding.
+ */
+function localContentBindingAliases(file, binding) {
+  const declarations = [];
+  const nameCounts = new Map();
+  const recordNames = (name) => {
+    for (const value of bindingPatternNames(name))
+      nameCounts.set(value, (nameCounts.get(value) || 0) + 1);
+  };
+  const collect = (node) => {
+    if (ts.isVariableDeclaration(node)) {
+      recordNames(node.name);
+      if (ts.isIdentifier(node.name) && node.initializer)
+        declarations.push({
+          name: node.name.text,
+          initializer: node.initializer,
+        });
+    } else if (ts.isParameter(node)) recordNames(node.name);
+    else if (
+      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+      node.name
     )
-      return true;
-    if (
-      ts.isJsxElement(child) &&
-      jsxChildrenContainBinding(child.children, binding, file)
-    )
-      return true;
-    if (
-      ts.isJsxFragment(child) &&
-      jsxChildrenContainBinding(child.children, binding, file)
-    )
-      return true;
+      recordNames(node.name);
+    ts.forEachChild(node, collect);
+  };
+  collect(file);
+
+  const aliases = new Set();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const declaration of declarations) {
+      if (
+        nameCounts.get(declaration.name) === 1 &&
+        !aliases.has(declaration.name) &&
+        expressionReferencesContentBinding(
+          declaration.initializer,
+          binding,
+          aliases,
+          file,
+        )
+      ) {
+        aliases.add(declaration.name);
+        changed = true;
+      }
+    }
   }
-  return false;
+  return aliases;
+}
+
+function jsxChildrenContainBinding(children, binding, file) {
+  const aliases = localContentBindingAliases(file, binding);
+  const visit = (items) => {
+    for (const child of items || []) {
+      if (
+        ts.isJsxExpression(child) &&
+        expressionReferencesContentBinding(
+          child.expression,
+          binding,
+          aliases,
+          file,
+        )
+      )
+        return true;
+      if (
+        (ts.isJsxElement(child) || ts.isJsxFragment(child)) &&
+        visit(child.children)
+      )
+        return true;
+    }
+    return false;
+  };
+  return visit(children);
 }
 
 function jsxDescendantElementContainsBinding(

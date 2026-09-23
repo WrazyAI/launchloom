@@ -156,7 +156,7 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
-  it("keeps anchors and reviewed image alt text through a sealed asset fallback in the full repair flow", async () => {
+  it("restores split-heading hero markers and reviewed image alt text in the full repair flow", async () => {
     process.env.OPENROUTER_API_KEY = "test-openrouter-key";
     const { root, candidates } = await fixture(["candidate-a"]);
     const registry = JSON.parse(
@@ -201,9 +201,10 @@ describe("rendered creative repair orchestration", () => {
     };
     const initialExperience = `import { LeadForm } from "@launchloom/runtime";
 export default function Experience({ content, runtime }) {
+  const headlineWords = content.hero.heading.trim().split(/\\s+/);
   return <main data-mobile-recomposition="single-column-editorial-chapters" data-motion-primitive="masked-image-reveal">
     <nav data-navigation-geometry="quiet-corner-links"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a><a className="nav-cta" href="#contact">{content.hero.primaryLabel}</a></nav>
-    <section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument"><h1>{content.hero.heading}</h1><img src={content.hero.image} alt="Still-life image for the studio" /><a className="hero-cta" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>
+    <section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument"><h1>{headlineWords.join(" ")}</h1><img src={content.hero.image} alt="Still-life image for the studio" /><a className="hero-cta" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>
     <section data-reference-section="image-chapter"></section>
     <section data-reference-section="editorial-intro"></section>
     <section data-reference-section="image-mosaic"></section>
@@ -214,6 +215,7 @@ export default function Experience({ content, runtime }) {
   </main>;
 }`;
     const repairedExperience = initialExperience
+      .replace(" data-hero", "")
       .replace(" data-early-conversion", "")
       .replace(
         '<section data-reference-section="image-chapter"></section>',
@@ -313,6 +315,9 @@ export default function Experience({ content, runtime }) {
     );
     expect(repaired).toContain(
       '<a className="hero-cta" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a>',
+    );
+    expect(repaired).toMatch(
+      /<section(?=[^>]*data-reference-section="hero")(?=[^>]*\bdata-hero(?:\s|>))[^>]*><h1>\{headlineWords\.join\(" "\)\}/u,
     );
     expect(repaired).toContain(
       '<section className="service-note"><p>A note about the services chapter.</p>',
