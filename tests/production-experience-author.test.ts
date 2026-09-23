@@ -320,6 +320,27 @@ describe("production experience author", () => {
     ).toThrow(/found 2 semantic targets/iu);
   });
 
+  it("deduplicates hero markers only when a unique semantic hero remains", () => {
+    const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
+    const duplicated = `${original}<section data-hero><h2>Decorative section</h2></section>`;
+
+    const restored = restoreRequiredExperienceMarkers(duplicated, original, {
+      id: "route-03",
+    });
+
+    expect(restored.match(/\bdata-hero\b/gu)).toHaveLength(1);
+    expect(restored).toContain('<section data-reference-section="hero" data-hero>');
+  });
+
+  it("keeps refusing duplicate hero markers when the semantic target is ambiguous", () => {
+    const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1></section>`;
+    const duplicated = `${original}<section data-hero><h1>{content.hero.heading}</h1></section>`;
+
+    expect(() =>
+      restoreRequiredExperienceMarkers(duplicated, original, { id: "route-03" }),
+    ).toThrow(/found 2 semantic targets/iu);
+  });
+
   it("does not treat JSX text or comments as sealed hero content bindings", () => {
     const original = `<section data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
     const deceptive = `<section>{/* <h1>{content.hero.heading}</h1> */}<h1>content.hero.heading</h1><a href="#contact">{/* {content.hero.primaryLabel} */}content.hero.primaryLabel</a></section>`;

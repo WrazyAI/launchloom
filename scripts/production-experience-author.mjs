@@ -1144,19 +1144,16 @@ export function restoreRequiredExperienceMarkers(
     const existing = repaired.elements.filter(({ opening }) =>
       jsxAttribute(opening, name),
     );
-    if (existing.length > 1)
-      throw new Error(
-        `Candidate ${route.id} cannot safely restore ${name}: repaired source has ${existing.length} matching markers.`,
-      );
-    if (existing.length === 1 && existing[0] === candidates[0]) continue;
-    if (existing.length === 1) {
-      const misplaced = jsxAttribute(existing[0].opening, name);
+    for (const marker of existing) {
+      if (marker === candidates[0]) continue;
+      const misplaced = jsxAttribute(marker.opening, name);
       edits.push({
         start: misplaced.getStart(repaired.file),
         end: misplaced.end,
         text: "",
       });
     }
+    if (existing.includes(candidates[0])) continue;
     const insertAt = jsxAttributeInsertionPoint(
       repairedSource,
       candidates[0].opening,

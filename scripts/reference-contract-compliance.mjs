@@ -76,6 +76,8 @@ function outputContentPaths(source) {
   const roots = [];
   const writes = [];
   const componentDefinitions = new Map();
+  const runtimeComponentNames = new Map();
+  const runtimeNamespaces = new Set();
   const moduleScope = { bindings: new Map(), parent: null, functionScope: true };
   const propertyName = (node) => node && (ts.isIdentifier(node) || ts.isStringLiteral(node) || ts.isNumericLiteral(node)) ? node.text : null;
   const lookup = (scope, name) => {
@@ -96,6 +98,16 @@ function outputContentPaths(source) {
   };
   const exported = (node) => node.modifiers?.some((modifier) => modifier?.kind === ts.SyntaxKind.ExportKeyword);
   const entryNames = new Set(["Experience"]);
+  for (const statement of file.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier) || statement.moduleSpecifier.text !== "@launchloom/runtime") continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (bindings && ts.isNamespaceImport(bindings)) runtimeNamespaces.add(bindings.name.text);
+    else if (bindings && ts.isNamedImports(bindings))
+      for (const specifier of bindings.elements) {
+        const importedName = specifier.propertyName?.text || specifier.name.text;
+        if (importedName === "FAQList") runtimeComponentNames.set(specifier.name.text, importedName);
+      }
+  }
   for (const statement of file.statements)
     if (ts.isExportAssignment(statement) && ts.isIdentifier(statement.expression)) entryNames.add(statement.expression.text);
   const isEntryFunction = (node) => {
@@ -186,6 +198,34 @@ function outputContentPaths(source) {
     const tag = node?.tagName;
     return tag && ts.isIdentifier(tag) && /^[A-Z]/u.test(tag.text) ? tag.text : "";
   };
+  const runtimeHelperName = (node) => {
+    const opening = node?.openingElement || node;
+    const tag = opening?.tagName;
+    if (tag && ts.isIdentifier(tag)) return runtimeComponentNames.get(tag.text) || "";
+    if (tag && ts.isPropertyAccessExpression(tag) && ts.isIdentifier(tag.expression) && ts.isIdentifier(tag.name) &&
+      runtimeNamespaces.has(tag.expression.text) && tag.name.text === "FAQList") return "FAQList";
+    return "";
+  };
+  const hasDirectSealedContentProp = (node) => {
+    const opening = node?.openingElement || node;
+    if (!opening?.attributes?.properties) return false;
+    const content = opening.attributes.properties.find((attribute) =>
+      ts.isJsxAttribute(attribute) && ts.isIdentifier(attribute.name) && attribute.name.text === "content",
+    );
+    return Boolean(content && content.initializer && ts.isJsxExpression(content.initializer) &&
+      content.initializer.expression && ts.isIdentifier(content.initializer.expression) && content.initializer.expression.text === "content");
+  };
+  const isInsideFaqSection = (node) => {
+    for (let current = node?.parent; current; current = current.parent) {
+      const opening = ts.isJsxElement(current) ? current.openingElement : ts.isJsxSelfClosingElement(current) ? current : null;
+      if (!opening || !ts.isIdentifier(opening.tagName) || opening.tagName.text.toLowerCase() !== "section") continue;
+      const id = opening.attributes.properties.find((attribute) =>
+        ts.isJsxAttribute(attribute) && ts.isIdentifier(attribute.name) && attribute.name.text === "id",
+      );
+      if (id?.initializer && ts.isStringLiteral(id.initializer) && id.initializer.text.toLowerCase() === "faqs") return true;
+    }
+    return false;
+  };
   const componentBindings = (definition, opening, parentOverrides) => {
     const props = new Map();
     for (const attribute of opening.attributes.properties) {
@@ -215,6 +255,7 @@ function outputContentPaths(source) {
     return bindings;
   };
   const componentPaths = (node, parentOverrides) => {
+    if (runtimeHelperName(node) === "FAQList" && hasDirectSealedContentProp(node) && isInsideFaqSection(node)) return ["content.faqs"];
     const name = componentName(node.openingElement || node);
     const definition = componentDefinitions.get(name);
     if (!definition || activeComponents.has(definition)) return [];
