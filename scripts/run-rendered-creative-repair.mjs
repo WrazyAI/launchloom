@@ -4,7 +4,12 @@ import { spawn } from "node:child_process";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
 import { requestRepair } from "./creative-repair-loop.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
-import { validateProductionCandidateFiles } from "./production-experience-author.mjs";
+import {
+  restoreImageAltsFromOriginal,
+  restoreRequiredExperienceMarkers,
+  restoreRequiredSectionIdsOnSemanticSections,
+  validateProductionCandidateFiles,
+} from "./production-experience-author.mjs";
 import { runHumanRevisionGate } from "./human-revision-gate.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
@@ -13,13 +18,15 @@ const REPAIR_FILES = ["Experience.jsx", "styles.css", "motion.js"];
 
 function cliArgs(argv) {
   return Object.fromEntries(
-    argv.slice(2).reduce(
-      (pairs, value, index, all) =>
-        index % 2 === 0
-          ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
-          : pairs,
-      [],
-    ),
+    argv
+      .slice(2)
+      .reduce(
+        (pairs, value, index, all) =>
+          index % 2 === 0
+            ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
+            : pairs,
+        [],
+      ),
   );
 }
 
@@ -62,20 +69,20 @@ function gatePass(report) {
   );
   return Boolean(
     report &&
-      report.status !== "error" &&
-      report.audit?.verdict === "pass" &&
-      !(report.blockers || []).length &&
-      !major.length,
+    report.status !== "error" &&
+    report.audit?.verdict === "pass" &&
+    !(report.blockers || []).length &&
+    !major.length,
   );
 }
 
 function candidateNeedsRepair(candidate) {
   return Boolean(
     candidate &&
-      (!candidate.valid ||
-        candidate.referenceFidelity?.pass === false ||
-        candidate.renderedReferenceFidelity?.pass === false ||
-        !candidate.eligible),
+    (!candidate.valid ||
+      candidate.referenceFidelity?.pass === false ||
+      candidate.renderedReferenceFidelity?.pass === false ||
+      !candidate.eligible),
   );
 }
 
@@ -119,13 +126,14 @@ async function readJson(file) {
 }
 
 async function readCandidate(candidateDir) {
-  const [metadata, contentManifest, experience, styles, motion] = await Promise.all([
-    readJson(path.join(candidateDir, "metadata.json")),
-    readJson(path.join(candidateDir, "content-manifest.json")),
-    fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
-    fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
-    fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
-  ]);
+  const [metadata, contentManifest, experience, styles, motion] =
+    await Promise.all([
+      readJson(path.join(candidateDir, "metadata.json")),
+      readJson(path.join(candidateDir, "content-manifest.json")),
+      fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
+      fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
+      fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
+    ]);
   return {
     metadata,
     contentManifest,
@@ -267,7 +275,11 @@ export async function collectAvailableScreenshots(
   return available;
 }
 
-async function copySelectedScreenshots({ screenshotsDir, candidateId, targetDir }) {
+async function copySelectedScreenshots({
+  screenshotsDir,
+  candidateId,
+  targetDir,
+}) {
   await fs.mkdir(targetDir, { recursive: true });
   for (const viewport of VIEWPORTS) {
     const source = path.join(screenshotsDir, `${candidateId}-${viewport}.png`);
@@ -344,7 +356,11 @@ async function validateCandidateReasoningBindings(
   creativeSession,
 ) {
   const entries = await fs.readdir(candidateRoot, { withFileTypes: true });
-  for (const entry of entries.filter((item) => item.isDirectory())) {
+  const directoryEntries = entries.filter((item) => item.isDirectory());
+  const candidateCount = directoryEntries.filter((item) =>
+    /^candidate-[a-z0-9]+$/u.test(item.name),
+  ).length;
+  for (const entry of directoryEntries) {
     const metadataPath = path.join(candidateRoot, entry.name, "metadata.json");
     const metadata = await readJson(metadataPath).catch(() => null);
     const reasoning = metadata?.reasoning || null;
@@ -367,14 +383,23 @@ async function validateCandidateReasoningBindings(
     const mismatches = [
       ["sessionId", reasoning.sessionId, creativeSession.sessionId],
       ["effort", reasoning.effort, creativeSession.reasoningEffort],
-      ["policyVersion", reasoning.policyVersion, creativeSession.reasoningPolicyVersion],
-      ["selectorModelVersion", reasoning.selectorModelVersion, creativeSession.selectorModelVersion],
+      [
+        "policyVersion",
+        reasoning.policyVersion,
+        creativeSession.reasoningPolicyVersion,
+      ],
+      [
+        "selectorModelVersion",
+        reasoning.selectorModelVersion,
+        creativeSession.selectorModelVersion,
+      ],
     ].filter(([, actual, expected]) => actual !== expected);
     if (mismatches.length)
       throw new Error(
         `Candidate ${metadata?.candidateId || entry.name} reasoning binding does not match the frozen creative session: ${mismatches.map(([field, actual, expected]) => `${field}=${actual ?? "(missing)"} expected ${expected ?? "(missing)"}`).join(" | ")}`,
       );
   }
+  return candidateCount;
 }
 
 async function defaultRepairCandidate({
@@ -389,26 +414,49 @@ async function defaultRepairCandidate({
   const referenceDna =
     metadata.creativeManifest?.referenceDna || metadata.referenceDna;
   if (!referenceDna)
-    throw new Error(`${metadata.candidateId || candidateDir} has no Reference DNA.`);
-  const repaired = normalizeRepair(
-    await requestRepair({
-      model,
-      referenceDna,
-      findings,
-      files,
-      screenshots,
-      contentManifest,
-      creativeSession,
-    }),
-  );
-  const validated = validateProductionCandidateFiles({
-    files: repaired,
-    route: {
-      id: metadata.routeId || metadata.candidateId || "rendered-repair",
-      referenceDna,
-    },
-    content,
+    throw new Error(
+      `${metadata.candidateId || candidateDir} has no Reference DNA.`,
+    );
+  const repairResponse = await requestRepair({
+    model,
+    referenceDna,
+    findings,
+    files,
+    screenshots,
+    contentManifest,
+    creativeSession,
   });
+  let validated;
+  try {
+    const modelRepaired = normalizeRepair(repairResponse);
+    const repaired = {
+      ...modelRepaired,
+      experience: restoreImageAltsFromOriginal(
+        restoreRequiredExperienceMarkers(
+          restoreRequiredSectionIdsOnSemanticSections(
+            modelRepaired.experience,
+            {
+              id: metadata.routeId || metadata.candidateId || "rendered-repair",
+            },
+          ),
+          files.experience,
+          { id: metadata.routeId || metadata.candidateId || "rendered-repair" },
+        ),
+        files.experience,
+        content,
+      ),
+    };
+    validated = validateProductionCandidateFiles({
+      files: repaired,
+      route: {
+        id: metadata.routeId || metadata.candidateId || "rendered-repair",
+        referenceDna,
+      },
+      content,
+    });
+  } catch (error) {
+    throw repairOutputRejected(error);
+  }
   await writeCandidate(candidateDir, validated.files);
   return validated.files;
 }
@@ -423,7 +471,9 @@ function resolveCandidateDirectory(candidateRoot, directory) {
   if (typeof directory !== "string" || !directory.trim())
     throw new Error("Creative repair report omitted a candidate directory.");
   if (path.isAbsolute(directory))
-    throw new Error(`Creative repair candidate directory must be relative: ${directory}`);
+    throw new Error(
+      `Creative repair candidate directory must be relative: ${directory}`,
+    );
   const root = path.resolve(candidateRoot);
   const resolved = path.resolve(root, directory);
   const relative = path.relative(root, resolved);
@@ -433,7 +483,9 @@ function resolveCandidateDirectory(candidateRoot, directory) {
     relative.startsWith(`..${path.sep}`) ||
     path.isAbsolute(relative)
   ) {
-    throw new Error(`Creative repair candidate directory escapes the candidates root: ${directory}`);
+    throw new Error(
+      `Creative repair candidate directory escapes the candidates root: ${directory}`,
+    );
   }
   return resolved;
 }
@@ -472,8 +524,14 @@ async function persistRepairEvidence({
   reason,
   findings,
   cyclesUsed,
+  status = "repaired",
+  error,
 }) {
-  const directory = path.join(outDir, `round-${String(round).padStart(2, "0")}`, "repairs");
+  const directory = path.join(
+    outDir,
+    `round-${String(round).padStart(2, "0")}`,
+    "repairs",
+  );
   await fs.mkdir(directory, { recursive: true });
   await fs.writeFile(
     path.join(directory, `${candidateId}.json`),
@@ -483,12 +541,31 @@ async function persistRepairEvidence({
         candidateId,
         reason,
         cycle: cyclesUsed,
+        status,
+        ...(error ? { error } : {}),
         findings,
       },
       null,
       2,
     )}\n`,
   );
+}
+
+function repairOutputRejected(error) {
+  const rejected = new Error(
+    `Creative repair output rejected by source validation: ${error?.message || String(error)}`,
+    { cause: error instanceof Error ? error : undefined },
+  );
+  rejected.code = "CREATIVE_REPAIR_OUTPUT_REJECTED";
+  return rejected;
+}
+
+function safeRepairRejectionMessage(error) {
+  return String(
+    error?.message || error || "Creative repair output was rejected.",
+  )
+    .replace(/\s+/gu, " ")
+    .slice(0, 800);
 }
 
 /**
@@ -544,17 +621,17 @@ export async function runRenderedCreativeRepair({
   const cycleLimit = boundedCycles(maxCycles);
   const cycleUse = new Map();
   const history = [];
-  const maxRounds = Math.max(1, cycleLimit * 3 + 1);
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession
     ? validateCreativeSessionConfig(creativeSession, {
         creativeModel: resolvedModel,
       })
     : null;
-  await validateCandidateReasoningBindings(
+  const candidateCount = await validateCandidateReasoningBindings(
     candidateRoot,
     frozenCreativeSession,
   );
+  const maxRounds = Math.max(1, candidateCount * (cycleLimit + 1) + 1);
   const humanFindings = Array.isArray(requestedFindings)
     ? requestedFindings.filter(Boolean)
     : [];
@@ -570,6 +647,9 @@ export async function runRenderedCreativeRepair({
   if (humanFindings.length > 0 && !humanFeedback)
     throw new Error("Human feedback must contain non-empty request text.");
   let humanRepairPending = humanFindings.length > 0;
+  const excludedCandidateIds = new Set();
+  /** @type {Record<string, string>} */
+  const rejectedCandidates = {};
   await fs.rm(evidenceRoot, { recursive: true, force: true });
   await fs.mkdir(evidenceRoot, { recursive: true });
 
@@ -582,28 +662,60 @@ export async function runRenderedCreativeRepair({
     candidateDirectory,
   ) {
     const used = cycleUse.get(candidateId) || 0;
-    if (used >= cycleLimit) return false;
+    if (used >= cycleLimit) return { status: "exhausted" };
     const candidateDir = resolveCandidateDirectory(
       candidateRoot,
       candidateDirectory,
     );
-    const screenshots = VIEWPORTS.map((viewport) =>
+    // Show Luna the real browser-scale desktop/mobile compositions first, then
+    // the full page for section rhythm. Older evidence sets fall back to the
+    // original full-page captures.
+    const viewportScreenshots = ["desktop", "mobile"].map((viewport) =>
+      path.join(screenshotsDir, `${candidateId}-${viewport}-viewport.png`),
+    );
+    const fullPageScreenshots = VIEWPORTS.map((viewport) =>
       path.join(screenshotsDir, `${candidateId}-${viewport}.png`),
     );
+    const screenshots = (await collectAvailableScreenshots(viewportScreenshots)).length === viewportScreenshots.length
+      ? [...viewportScreenshots, fullPageScreenshots[0]]
+      : fullPageScreenshots;
     // A build failure can legitimately leave an ENOENT screenshot, but
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);
     const nextCycle = used + 1;
-    await repairCandidateImpl({
-      candidateDir,
-      candidateId,
-      findings,
-      screenshots: availableScreenshots,
-      model: resolvedModel,
-      creativeSession: frozenCreativeSession,
-      cycle: nextCycle,
-      maxCycles: cycleLimit,
-    });
+    try {
+      await repairCandidateImpl({
+        candidateDir,
+        candidateId,
+        findings,
+        screenshots: availableScreenshots,
+        model: resolvedModel,
+        creativeSession: frozenCreativeSession,
+        cycle: nextCycle,
+        maxCycles: cycleLimit,
+      });
+    } catch (error) {
+      const mayIsolate =
+        requestedMode === "preview" &&
+        !humanFeedback &&
+        error?.code === "CREATIVE_REPAIR_OUTPUT_REJECTED";
+      if (!mayIsolate) throw error;
+      const message = safeRepairRejectionMessage(error);
+      cycleUse.set(candidateId, nextCycle);
+      excludedCandidateIds.add(candidateId);
+      rejectedCandidates[candidateId] = message;
+      await persistRepairEvidence({
+        outDir: evidenceRoot,
+        round,
+        candidateId,
+        reason,
+        findings,
+        cyclesUsed: nextCycle,
+        status: "rejected",
+        error: message,
+      });
+      return { status: "rejected", error: message };
+    }
     cycleUse.set(candidateId, nextCycle);
     await persistRepairEvidence({
       outDir: evidenceRoot,
@@ -613,7 +725,7 @@ export async function runRenderedCreativeRepair({
       findings,
       cyclesUsed: nextCycle,
     });
-    return true;
+    return { status: "repaired" };
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
@@ -624,22 +736,42 @@ export async function runRenderedCreativeRepair({
     const screenshotsDir = path.join(roundDir, "screenshots");
     const reportPath = path.join(roundDir, "creative-bakeoff.json");
     await fs.mkdir(roundDir, { recursive: true });
-    const report = await runBakeoffImpl({
-      siteDir: root,
-      candidatesDir: candidateRoot,
-      reportPath,
-      screenshotsDir,
-      preview: true,
-      promote: false,
-      deferPromotion: true,
-      requireDiversity,
-    });
+    let report;
+    try {
+      report = await runBakeoffImpl({
+        siteDir: root,
+        candidatesDir: candidateRoot,
+        reportPath,
+        screenshotsDir,
+        preview: true,
+        promote: false,
+        deferPromotion: true,
+        requireDiversity,
+        excludedCandidateIds: [...excludedCandidateIds].sort(),
+      });
+    } catch (error) {
+      const isExhaustedPreview =
+        requestedMode === "preview" &&
+        /No creative candidates remain after exclusions:/u.test(
+          String(error?.message || error),
+        );
+      const rejectionDetails = Object.entries(rejectedCandidates)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([candidateId, message]) => `- ${candidateId}: ${message}`)
+        .join("\n");
+      if (!isExhaustedPreview || !rejectionDetails) throw error;
+      throw new Error(
+        `${error.message}\nRejected candidate details:\n${rejectionDetails}`,
+        { cause: error },
+      );
+    }
     const record = {
       round,
       selectedCandidateId: report.selectedCandidateId,
       promotionReady: Boolean(report.promotionReady),
       visualDiversityPass: Boolean(report.visualDiversity?.pass),
       repairs: [],
+      rejectedCandidates: [],
     };
     history.push(record);
 
@@ -651,6 +783,7 @@ export async function runRenderedCreativeRepair({
     if (!report.selectedCandidateId) {
       const candidates = (report.candidates || []).filter(candidateNeedsRepair);
       let repairedAny = false;
+      let rejectedAny = false;
       for (const candidate of candidates) {
         const findings = [
           ...candidateFindings(candidate),
@@ -658,7 +791,9 @@ export async function runRenderedCreativeRepair({
         ];
         const repaired = await repair(
           candidate.candidateId,
-          findings.length ? findings : ["Candidate did not pass rendered preview gates."],
+          findings.length
+            ? findings
+            : ["Candidate did not pass rendered preview gates."],
           humanRepairPending
             ? "human-review-feedback"
             : "candidate-render-failure",
@@ -666,13 +801,16 @@ export async function runRenderedCreativeRepair({
           screenshotsDir,
           candidate.directory,
         );
-        if (repaired) {
+        if (repaired.status === "repaired") {
           repairedAny = true;
           record.repairs.push(candidate.candidateId);
+        } else if (repaired.status === "rejected") {
+          rejectedAny = true;
+          record.rejectedCandidates.push(candidate.candidateId);
         }
       }
       if (repairedAny && humanRepairPending) humanRepairPending = false;
-      if (!repairedAny)
+      if (!repairedAny && !rejectedAny)
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
         );
@@ -682,7 +820,9 @@ export async function runRenderedCreativeRepair({
     const selectedId = report.selectedCandidateId;
     const selected = reportCandidate(report, selectedId);
     if (!selected)
-      throw new Error(`Selected candidate ${selectedId} is missing from the bakeoff report.`);
+      throw new Error(
+        `Selected candidate ${selectedId} is missing from the bakeoff report.`,
+      );
     const selectedDirectory = resolveCandidateDirectory(
       candidateRoot,
       selected.directory,
@@ -697,7 +837,7 @@ export async function runRenderedCreativeRepair({
         screenshotsDir,
         selected.directory,
       );
-      if (!repaired)
+      if (repaired.status !== "repaired")
         throw new Error(
           `Human feedback for ${selectedId} could not be applied within the ${cycleLimit}-cycle repair budget.`,
         );
@@ -744,7 +884,11 @@ export async function runRenderedCreativeRepair({
         screenshotsDir,
         selected.directory,
       );
-      if (!repaired)
+      if (repaired.status === "rejected") {
+        record.rejectedCandidates.push(selectedId);
+        continue;
+      }
+      if (repaired.status !== "repaired")
         throw new Error(
           `Selected candidate ${selectedId} still fails rendered visual QA after ${cycleLimit} repair cycles.`,
         );
@@ -763,8 +907,7 @@ export async function runRenderedCreativeRepair({
         feedback: humanFeedback,
         reportPath: humanGateReportPath,
       });
-      record.humanRevisionVerdict =
-        humanGate.audit?.verdict || "error";
+      record.humanRevisionVerdict = humanGate.audit?.verdict || "error";
       if (humanGate.audit?.verdict !== "pass") {
         const repaired = await repair(
           selectedId,
@@ -782,7 +925,7 @@ export async function runRenderedCreativeRepair({
           screenshotsDir,
           selected.directory,
         );
-        if (!repaired)
+        if (repaired.status !== "repaired")
           throw new Error(
             `Selected candidate ${selectedId} still does not satisfy the human review request after ${cycleLimit} repair cycles.`,
           );
@@ -813,7 +956,7 @@ export async function runRenderedCreativeRepair({
           screenshotsDir,
           reportCandidate(report, target.candidateId)?.directory,
         );
-        if (repaired) {
+        if (repaired.status === "repaired") {
           repairedAny = true;
           record.repairs.push(target.candidateId);
         }
@@ -851,8 +994,7 @@ export async function runRenderedCreativeRepair({
             mode: frozenCreativeSession.mode,
             reasoningPolicyVersion:
               frozenCreativeSession.reasoningPolicyVersion,
-            selectorModelVersion:
-              frozenCreativeSession.selectorModelVersion,
+            selectorModelVersion: frozenCreativeSession.selectorModelVersion,
           }
         : null,
       selectedCandidateId: selectedId,
@@ -863,6 +1005,7 @@ export async function runRenderedCreativeRepair({
         : true,
       visualDiversityPass: Boolean(report.visualDiversity?.pass),
       repairCycles: Object.fromEntries(cycleUse),
+      rejectedCandidates,
       history,
       final: {
         bakeoffReport: path.join(finalDir, "creative-bakeoff.json"),
@@ -908,9 +1051,7 @@ export async function runRenderedCreativeRepair({
 
     if (humanFeedback) {
       const liveConfigPath = path.join(root, "src/site.config.json");
-      const liveConfig = JSON.parse(
-        await fs.readFile(liveConfigPath, "utf8"),
-      );
+      const liveConfig = JSON.parse(await fs.readFile(liveConfigPath, "utf8"));
       if (liveConfig.revisionReport) {
         liveConfig.revisionReport.creativeSourceRepairVerified = {
           pass: true,
@@ -941,9 +1082,7 @@ async function main() {
   const args = cliArgs(process.argv);
   const sessionFile = String(args.session || "").trim();
   const creativeSession = sessionFile
-    ? validateCreativeSessionConfig(
-        await readJson(path.resolve(sessionFile)),
-      )
+    ? validateCreativeSessionConfig(await readJson(path.resolve(sessionFile)))
     : null;
   const feedbackFile = String(args["feedback-file"] || "").trim();
   const requestedFindings = feedbackFile
@@ -982,6 +1121,7 @@ async function main() {
       reasoningEffort: creativeSession?.reasoningEffort || null,
       reasoningMode: creativeSession?.mode || null,
       repairCycles: result.repairCycles,
+      rejectedCandidates: result.rejectedCandidates,
       summary: path.resolve(
         args["site-dir"] || "templates/client-site",
         args.out || ".launchloom/creative-repair",

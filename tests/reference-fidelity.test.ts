@@ -88,6 +88,24 @@ export default function Experience({ content }) { return <main data-mobile-recom
     ]));
   });
 
+  it("counts the trusted FAQList runtime helper as a sealed FAQ output binding", () => {
+    const source = `import { FAQList } from "@launchloom/runtime";\n${validExperience.replace("{content.faqs}", "<FAQList content={content} />")}`;
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: source, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.findings).not.toContainEqual(expect.objectContaining({
+      code: "unbound-content-token",
+      message: expect.stringContaining("content.faqs"),
+    }));
+  });
+
+  it("does not count FAQList as output when it is outside the semantic FAQs section", () => {
+    const source = `import { FAQList } from "@launchloom/runtime";\n${validExperience.replace("{content.faqs}", "").replace("</main>", "<FAQList content={content} /></main>")}`;
+    const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: source, stylesSource: validStyles, motionSource: validMotion });
+    expect(report.findings).toContainEqual(expect.objectContaining({
+      code: "unbound-content-token",
+      message: expect.stringContaining("content.faqs"),
+    }));
+  });
+
   it("accepts destructured sealed collection bindings", () => {
     const destructured = validExperience
       .replace("<main ", "const { services, faqs } = content; return <main ")

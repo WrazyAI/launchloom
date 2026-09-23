@@ -20,6 +20,13 @@ import {
   selectAuthorReferenceScreenshots,
 } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
+import {
+  AUTHORING_STAGE_BUDGETS,
+  authoringCompletionDiagnostics,
+  completionLimitRequestField,
+  formatAuthoringCompletionDiagnostics,
+  referenceImplementationChecklist,
+} from "./creative-authoring-output.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -59,7 +66,7 @@ const authorDeadline =
   Date.now() +
   Math.max(
     5 * 60_000,
-    Number(process.env.CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS || 20 * 60_000),
+    Number(process.env.CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS || 45 * 60_000),
   );
 const sharedAbortController = new AbortController();
 
@@ -109,8 +116,15 @@ ${request.rules}
 
 Transfer principles from the reference evidence, never source layout, copy, branding, code, imagery, or trade dress. The candidate must embody its assigned route and must not collapse toward a generic split hero, white pill navigation, card grid, or shared LaunchLoom template. Treat the family, Reference DNA, mobile behavior, and prohibited patterns as binding design constraints, not suggestions.
 
+STRUCTURAL OUTPUT CHECK
+- The Experience.jsx source must contain literal id="services", id="faqs", and id="contact" attributes on the actual matching visible sections.
+- Do not use computed IDs, JavaScript variables, aria labels, empty anchors, or hidden elements as substitutes for those section IDs.
+- Put each required data-reference-section value on its corresponding visible section, exactly once, and preserve the explicit order supplied in the route checklist.
+- Before returning JSX, verify every required ID and section marker is present in the source and in the expected DOM order.
+
 REFERENCE FIDELITY RULES
 - Do not average references or drift to a familiar LaunchLoom composition.
+- A tall desktop reference may be a full-page capture. Its image-height fractions are not CSS vh. Use the recorded source capture dimensions and adapt the composition so the complete desktop header and hero fit within 1536x864 while preserving the reference's hierarchy, crop, and overlap.
 - Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
 - Preserve assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
 - Include every required signature element and expose its data-reference-signature attribute in the rendered DOM.
@@ -160,6 +174,7 @@ function routePromptPrefix(request) {
     2,
   );
   const dna = request.route.referenceDna;
+  const implementationChecklist = referenceImplementationChecklist(dna);
   const referenceMarkers = dna
     ? `
 CANONICAL REFERENCE MARKERS
@@ -173,12 +188,14 @@ data-motion-primitive="${markerSlug(dna.motion?.primitive)}"
 Do not substitute the primary or secondary CTA placement for the early CTA marker. The early conversion element must use the exact data-cta-placement value above.`
     : "";
 
-  return `ROUTE
+return `ROUTE
 ${route}
 
 SEALED CONTENT SHAPE
 ${JSON.stringify(request.contentShape, null, 2)}
-${referenceMarkers}`;
+${referenceMarkers}
+
+${implementationChecklist}`;
 }
 
 function boundedFormatRepair(request) {
@@ -250,10 +267,10 @@ async function requestStage(request) {
   sharedAbortController.signal.addEventListener("abort", abortStage, {
     once: true,
   });
-  const stageLimitMs =
-    request.stage === "experience" || request.stage === "styles"
-      ? 150_000
-      : 90_000;
+  const stageBudget = AUTHORING_STAGE_BUDGETS[request.stage];
+  if (!stageBudget)
+    throw new Error(`Unsupported creative authoring stage: ${request.stage}`);
+  const stageLimitMs = stageBudget.timeoutMs;
   const remainingMs = authorDeadline - Date.now();
   if (remainingMs <= 0)
     throw new Error("Phase 2 authorship exceeded its configured budget.");
@@ -340,14 +357,7 @@ async function requestStage(request) {
                 type: "json_schema",
                 json_schema: authorStageSchema,
               },
-              max_tokens:
-                request.stage === "experience" || request.stage === "styles"
-                  ? request.stage === "experience"
-                    ? 9000
-                    : 8000
-                  : request.stage === "contract"
-                    ? 4000
-                    : 3500,
+              ...completionLimitRequestField(stageBudget.maxTokens),
               messages: [
                 {
                   role: "system",
@@ -397,10 +407,21 @@ async function requestStage(request) {
           });
         }
         const content = payload.choices?.[0]?.message?.content;
+        const completionDiagnostics = authoringCompletionDiagnostics({
+          stage: request.stage,
+          routeId: request.route.id,
+          maxTokens: stageBudget.maxTokens,
+          payload,
+          content,
+        });
+        usageRecord.completion = completionDiagnostics;
+        console.info(
+          `production_experience_response route=${request.route.id} stage=${request.stage} ${formatAuthoringCompletionDiagnostics(completionDiagnostics)}`,
+        );
         if (!content) {
           usageRecord.parseStatus = "missing-content";
           throw new Error(
-            `No ${request.stage} content returned for ${request.route.id} (${payload.choices?.[0]?.finish_reason || "unknown"}).`,
+            `No ${request.stage} content returned for ${request.route.id} (${formatAuthoringCompletionDiagnostics(completionDiagnostics)}).`,
           );
         }
         let parsed;
@@ -408,7 +429,10 @@ async function requestStage(request) {
           parsed = parseModelJson(content);
         } catch (error) {
           usageRecord.parseStatus = "parse-failed";
-          throw error;
+          throw new Error(
+            `Invalid ${request.stage} JSON returned for ${request.route.id} (${formatAuthoringCompletionDiagnostics(completionDiagnostics)}).`,
+            { cause: error },
+          );
         }
         usageRecord.parseStatus = "parsed";
         console.log(

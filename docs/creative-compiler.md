@@ -19,6 +19,10 @@ lead endpoint, or ship an unverified layout.
    defaults are fallback vocabulary only; screenshot-derived measurements are
    required in the new-intake workflow. A missing required desktop screenshot
    fails creative compilation; prose-only inspiration cannot reach Luna.
+   Full-page reference captures retain their source pixel dimensions in the
+   evidence record. Their section-height fractions describe the captured page,
+   not CSS viewport units; the adapted desktop header and hero must still fit
+   inside the 1536x864 browser viewport.
    3. `author-production-experiences.mjs` asks the visual author for three
    independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
    author receives the complete Reference DNA and its desktop/mobile evidence,
@@ -27,9 +31,15 @@ lead endpoint, or ship an unverified layout.
    but not network access, remote code, canvas, or Three.js by default. Model
    stages are globally limited to two in-flight requests so a three-candidate
    bakeoff does not exhaust the provider budget. The authoring budget defaults
-   to 20 minutes and can be bounded with
+   to 45 minutes and can be bounded with
    `CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS`; it never turns an expired author
-   run into a legacy renderer. A failed reference-fidelity
+   run into a legacy renderer. Completion ceilings are stage-specific: 24k
+   tokens for the design contract, 48k for JSX, 40k for CSS, and 24k for
+   motion, with up to 5 minutes for contract/motion and 8 minutes for JSX/CSS.
+   These are upper bounds, not reserved spend. The author logs finish reason,
+   completion/reasoning token usage, and returned content length on every
+   response so output truncation is distinguishable from input-context errors.
+   A failed reference-fidelity
    check gets at most two author-owned repairs and then fails closed.
 4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders 1536x864 desktop, 1366x768 compact desktop, and
@@ -37,7 +47,8 @@ lead endpoint, or ship an unverified layout.
    compliance remains a cheap safety preflight for sealed content and isolated
    CSS. Reference geometry and signature markers remain diagnostic evidence,
    while promotion fidelity comes from `rendered-reference-fidelity.mjs`, which
-   judges the candidate screenshots against the assigned reference screenshots
+   judges true first-viewport captures against the assigned reference screenshots,
+   with a separate labeled full-page overview for section order and rhythm,
    across hero geometry, typography, spatial rhythm, imagery, service
    presentation, navigation, CTA placement, mobile recomposition, and
    interaction evidence. Screenshot-to-screenshot candidate distance is
@@ -50,13 +61,15 @@ lead endpoint, or ship an unverified layout.
    retained in the report for diagnosis and do not veto a pixel-diverse
    candidate. Legacy candidates keep the structural diversity fallback.
 6. `run-rendered-creative-repair.mjs` owns the bounded rendered repair loop.
-   Each round runs the real Astro bakeoff, keeps the desktop, compact, and
-   mobile screenshots, applies the screenshot-to-reference judge, and then
+   Each round runs the real Astro bakeoff, keeps browser-scale viewport captures
+   and full-page overviews, applies the screenshot-to-reference judge, and then
    runs `visual-quality-gate.mjs` against the selected rendered candidate.
    Repairable findings are returned to Luna with the current source, Reference
    DNA, and available screenshots. The repaired candidate is never trusted on
    its own claim: it must rebuild, rerender, and pass the judges on the next
-   round. Each candidate gets at most two repair cycles. Production promotion
+   round. Each repair response has a 48k completion ceiling and records its
+   finish reason plus completion/reasoning token counts without logging source
+   content. Each candidate gets at most two repair cycles. Production promotion
    still requires `promotionReady`, including rendered v2 diversity, plus a
    passing final visual gate. The loop never falls back to a legacy renderer.
 

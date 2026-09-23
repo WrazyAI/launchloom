@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
+import ts from "typescript";
 import {
   authorExperienceCandidates,
   namespaceCreativeCss,
+  restoreImageAltsFromOriginal,
+  restoreRequiredExperienceMarkers,
+  restoreRequiredSectionIdsOnSemanticSections,
   validateProductionCandidateFiles,
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
@@ -123,6 +127,346 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("accepts decorative empty alts but rejects missing or nullish alt values", () => {
+    const route = { id: "route-decorative-alt" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const decorativeImage = experience.replace(
+      "<section data-hero>",
+      '<section data-hero><img src={content.hero.image} alt="" aria-hidden="true" />',
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: decorativeImage, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+
+    const missingAlt = decorativeImage.replace(' alt=""', "");
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: missingAlt, styles, motion },
+        route,
+      }),
+    ).toThrow(/must have a usable alt attribute/iu);
+
+    const invalidAltSources = [
+      decorativeImage.replace('alt=""', "alt={}"),
+      decorativeImage.replace('alt=""', "alt={null}"),
+      decorativeImage.replace('alt=""', "alt={undefined}"),
+    ];
+    for (const invalidExperience of invalidAltSources)
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience: invalidExperience, styles, motion },
+          route,
+        }),
+      ).toThrow(/must have a usable alt attribute/iu);
+  });
+
+  it("requires sealed content when a content-bound runtime helper is used", () => {
+    const route = { id: "route-runtime-helper-content" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const imported = experience.replace(
+      'import { LeadForm } from "@launchloom/runtime";',
+      'import { FAQList as FAQs, LeadForm } from "@launchloom/runtime";',
+    );
+    const missingContent = imported.replace(
+      '<section id="faqs">',
+      '<section id="faqs"><FAQs />',
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: missingContent, styles, motion },
+        route,
+      }),
+    ).toThrow(/FAQs.*must receive sealed content.*content=\{content\}/iu);
+
+    const boundContent = missingContent.replace(
+      "<FAQs />",
+      "<FAQs content={content} />",
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: boundContent, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+  });
+
+  it("counts the trusted FAQList helper as a sealed FAQ binding", () => {
+    const route = { id: "route-runtime-faq-binding" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    )
+      .replace(
+        'import { LeadForm } from "@launchloom/runtime";',
+        'import { FAQList, LeadForm } from "@launchloom/runtime";',
+      )
+      .replace(
+        /<section id="faqs">\{content\.faqs\.map\(\(faq\) => <details key=\{faq\.question\}><summary>\{faq\.question\}<\/summary><p>\{faq\.answer\}<\/p><\/details>\)\}<\/section>/u,
+        '<section id="faqs"><FAQList content={content} /></section>',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(experience).not.toContain("content.faqs");
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+
+    const misplacedFaqList = experience.replace(
+      '<section id="faqs"><FAQList content={content} /></section>',
+      '<section id="faqs"></section><FAQList content={content} />',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: misplacedFaqList, styles, motion },
+        route,
+      }),
+    ).toThrow(/missing required sealed binding content\.faqs/iu);
+  });
+
+  it("restores required anchors only on uniquely identifiable semantic sections", () => {
+    const source = `<main>
+      <section data-hero><h1>{content.hero.heading}</h1></section>
+      <section data-early-conversion><a>{content.hero.primaryLabel}</a></section>
+      <section className='service-atlas' data-service-presentation='object-led'>{content.services}</section>
+      <section className='faq-section'><details>{content.faqs}</details></section>
+      <section className='contact-band'><LeadForm content={content} /></section>
+    </main>`;
+
+    const restored = restoreRequiredSectionIdsOnSemanticSections(source, {
+      id: "route-01",
+    });
+
+    expect(restored).toContain(
+      "data-service-presentation='object-led' id=\"services\"",
+    );
+    expect(restored).toContain("className='faq-section' id=\"faqs\"");
+    expect(restored).toContain("className='contact-band' id=\"contact\"");
+    expect(() =>
+      restoreRequiredSectionIdsOnSemanticSections(
+        source.replace(
+          "</section>\n      <section className='faq-section'>",
+          "</section>\n      <section className='service-index' data-service-presentation='second'>{content.services}</section>\n      <section className='faq-section'>",
+        ),
+        { id: "route-ambiguous" },
+      ),
+    ).toThrow(/found 2 matching semantic sections/iu);
+  });
+
+  it("restores required hero markers only on unique semantic targets", () => {
+    const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
+    const repaired = original
+      .replace(" data-hero", "")
+      .replace(" data-early-conversion", "");
+
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-01",
+    });
+
+    expect(restored).toContain('data-reference-section="hero" data-hero');
+    expect(restored).toContain('href="#contact" data-early-conversion');
+
+    const misplaced = repaired.replace(
+      "</section>",
+      "</section><section data-hero></section>",
+    );
+    const relocated = restoreRequiredExperienceMarkers(misplaced, original, {
+      id: "route-01",
+    });
+    expect(relocated).toContain('data-reference-section="hero" data-hero');
+    expect(relocated).not.toContain("<section data-hero></section>");
+
+    const ambiguous = repaired.replace(
+      "</a>",
+      '</a><a href="#contact">{content.hero.primaryLabel}</a>',
+    );
+    expect(() =>
+      restoreRequiredExperienceMarkers(ambiguous, original, { id: "route-01" }),
+    ).toThrow(/found 2 semantic targets/iu);
+  });
+
+  it("deduplicates hero markers only when a unique semantic hero remains", () => {
+    const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
+    const duplicated = `${original}<section data-hero><h2>Decorative section</h2></section>`;
+
+    const restored = restoreRequiredExperienceMarkers(duplicated, original, {
+      id: "route-03",
+    });
+
+    expect(restored.match(/\bdata-hero\b/gu)).toHaveLength(1);
+    expect(restored).toContain('<section data-reference-section="hero" data-hero>');
+  });
+
+  it("keeps refusing duplicate hero markers when the semantic target is ambiguous", () => {
+    const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1></section>`;
+    const duplicated = `${original}<section data-hero><h1>{content.hero.heading}</h1></section>`;
+
+    expect(() =>
+      restoreRequiredExperienceMarkers(duplicated, original, { id: "route-03" }),
+    ).toThrow(/found 2 semantic targets/iu);
+  });
+
+  it("does not treat JSX text or comments as sealed hero content bindings", () => {
+    const original = `<section data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
+    const deceptive = `<section>{/* <h1>{content.hero.heading}</h1> */}<h1>content.hero.heading</h1><a href="#contact">{/* {content.hero.primaryLabel} */}content.hero.primaryLabel</a></section>`;
+
+    expect(() =>
+      restoreRequiredExperienceMarkers(deceptive, original, { id: "route-01" }),
+    ).toThrow(/found 0 semantic targets/iu);
+  });
+
+  it("places the hero marker on the innermost section containing the hero binding", () => {
+    const original = `<section data-hero><div><section><h1>{content.hero.heading}</h1></section><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></div></section>`;
+    const repaired = original
+      .replace(" data-hero", "")
+      .replace(" data-early-conversion", "");
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-01",
+    });
+
+    expect(restored).toMatch(
+      /<section><div><section data-hero><h1>\{content\.hero\.heading\}<\/h1><\/section>/u,
+    );
+    expect(restored).not.toMatch(/<section data-hero><div>/u);
+  });
+
+  it("uses reviewed CTA placement ahead of a matching nav class", () => {
+    const original = `<section data-reference-section="hero" data-cta-placement="hero-action-row" data-hero><h1>{content.hero.heading}</h1><a className="hero-action" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
+    const repaired = `<header><a className="hero-action" href="#contact">{content.hero.primaryLabel}</a></header><section data-reference-section="hero" data-cta-placement="hero-action-row"><h1>{content.hero.heading}</h1><a className="changed-action" href="#contact">{content.hero.primaryLabel}</a></section>`;
+
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-02",
+    });
+
+    expect(restored).toContain(
+      '<a className="hero-action" href="#contact">{content.hero.primaryLabel}</a>',
+    );
+    expect(restored).toContain(
+      '<a className="changed-action" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a>',
+    );
+  });
+
+  it("restores only reviewed image alt text from the same original src binding", () => {
+    const original = `<div><img src={content.hero.image} alt="A close view of a flowering plant" /></div>`;
+    const repaired = `<div><img src={content.hero.image} alt="" /><img src={content.hero.secondaryImage} alt="" /></div>`;
+
+    const restored = restoreImageAltsFromOriginal(repaired, original);
+
+    expect(restored).toContain(
+      'src={content.hero.image} alt="A close view of a flowering plant"',
+    );
+    expect(restored).toContain('src={content.hero.secondaryImage} alt=""');
+    expect(restored).toMatch(/alt="A close view of a flowering plant"\s*\/>/u);
+    const diagnostics = ts.transpileModule(restored, {
+      fileName: "Experience.jsx",
+      compilerOptions: {
+        allowJs: true,
+        jsx: ts.JsxEmit.ReactJSX,
+        target: ts.ScriptTarget.ES2020,
+      },
+      reportDiagnostics: true,
+    }).diagnostics;
+    expect(
+      diagnostics?.filter(
+        (item) => item.category === ts.DiagnosticCategory.Error,
+      ),
+    ).toEqual([]);
+  });
+
+  it("does not infer alt text through an unresolved asset fallback", () => {
+    const original =
+      '<img src={content.hero.image} alt="Reviewed image description" />';
+    const repaired =
+      '<img src={unresolvedAsset || content.hero.image} alt="" />';
+
+    const restored = restoreImageAltsFromOriginal(repaired, original, {
+      hero: { image: "/images/hero.webp" },
+    });
+
+    expect(restored).toContain(
+      'src={unresolvedAsset || content.hero.image} alt=""',
+    );
+  });
+
+  it("reuses reviewed alt text for repeated, reformatted uses of the same sealed image", () => {
+    const original = `<div><img src={content.hero.image} alt="Still-life image in the studio" /></div>`;
+    const repaired = `<div>
+      <img src={ content.hero.image } alt="" />
+      <img src={content.hero.image} alt="" />
+      <img src={content.hero.secondaryImage} alt="" />
+    </div>`;
+
+    const restored = restoreImageAltsFromOriginal(repaired, original);
+
+    expect(
+      restored.match(/alt="Still-life image in the studio"/gu),
+    ).toHaveLength(2);
+    expect(restored).toContain('src={content.hero.secondaryImage} alt=""');
+
+    const ambiguousOriginal = `<img src={content.hero.image} alt="Front crop" /><img src={content.hero.image} alt="Back crop" />`;
+    const ambiguous = restoreImageAltsFromOriginal(
+      `<img src={content.hero.image} alt="" /><img src={content.hero.image} alt="" /><img src={content.hero.image} alt="" />`,
+      ambiguousOriginal,
+    );
+    expect(ambiguous.match(/alt="Front crop"/gu)).toHaveLength(1);
+    expect(ambiguous.match(/alt="Back crop"/gu)).toHaveLength(1);
+    expect(ambiguous.match(/alt=""/gu)).toHaveLength(1);
+  });
+
+  it("does not conflate meaningful template-literal whitespace in image paths", () => {
+    const original =
+      '<img src={`${content.hero.image}front.jpg`} alt="Front image" />';
+    const repaired = [
+      '<img src={`${content.hero.image} front.jpg`} alt="" />',
+      '<img src={ `${ content.hero.image }front.jpg` } alt="" />',
+    ].join("");
+
+    const restored = restoreImageAltsFromOriginal(repaired, original);
+
+    expect(restored.match(/alt="Front image"/gu)).toHaveLength(1);
+    expect(restored).toContain(
+      'src={`${content.hero.image} front.jpg`} alt=""',
+    );
+    expect(restored).toContain(
+      'src={ `${ content.hero.image }front.jpg` } alt="Front image"',
+    );
+  });
+
   it("keeps shared creative form helper text on the candidate contrast palette", () => {
     const styles = readFileSync(
       "templates/client-site/src/styles/creative-runtime.css",
@@ -307,6 +651,13 @@ describe("production experience author", () => {
     expect(
       requests.every((request) =>
         request.rules.includes("Do not hardcode business facts"),
+      ),
+    ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes(
+          "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}",
+        ),
       ),
     ).toBe(true);
   });
@@ -610,7 +961,7 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
-  it("repairs malformed CSS wrappers and empty image alt attributes", async () => {
+  it("repairs malformed CSS wrappers while retaining decorative empty alts", async () => {
     const result = await authorExperienceCandidates({
       site,
       inspirationPack,
@@ -631,6 +982,13 @@ describe("production experience author", () => {
     expect(result.candidates).toHaveLength(3);
     expect(
       result.candidates.every((item) => item.metadata.complianceRepaired),
+    ).toBe(true);
+    expect(
+      result.candidates.every((item) =>
+        item.files["Experience.jsx"].includes(
+          '<img src={content.hero.image} alt="" />',
+        ),
+      ),
     ).toBe(true);
   });
 

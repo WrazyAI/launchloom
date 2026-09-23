@@ -145,7 +145,10 @@ export function redactPromptValue(value) {
   if (Array.isArray(value)) return value.map(redactPromptValue);
   if (value && typeof value === "object")
     return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, redactPromptValue(item)]),
+      Object.entries(value).map(([key, item]) => [
+        key,
+        redactPromptValue(item),
+      ]),
     );
   return value;
 }
@@ -165,8 +168,8 @@ function contentShape(site, route) {
   );
   const hasLiveGoogleProof = Boolean(
     site.socialProof?.source === "google_reviews" &&
-      site.socialProof.google?.apiUrl &&
-      site.socialProof.google?.token,
+    site.socialProof.google?.apiUrl &&
+    site.socialProof.google?.token,
   );
   return {
     brand: {
@@ -182,9 +185,16 @@ function contentShape(site, route) {
       heading: String(copy.heroHeading || business.tagline || ""),
       body: String(copy.heroBody || business.description || ""),
       primaryLabel: String(business.primaryCta || ""),
-      image: assets.photoOne || routeImages.hero || images.hero || images.secondary || "",
-      secondaryImage: assets.photoTwo || routeImages.secondary || images.secondary || "",
-      tertiaryImage: assets.photoThree || routeImages.tertiary || images.tertiary || "",
+      image:
+        assets.photoOne ||
+        routeImages.hero ||
+        images.hero ||
+        images.secondary ||
+        "",
+      secondaryImage:
+        assets.photoTwo || routeImages.secondary || images.secondary || "",
+      tertiaryImage:
+        assets.photoThree || routeImages.tertiary || images.tertiary || "",
       offer: String(business.offer || ""),
     },
     services: site.services || [],
@@ -195,10 +205,13 @@ function contentShape(site, route) {
     copy,
     businessDescription: String(business.description || ""),
     showLocationMap:
-      String(business.primaryCta || "").trim().toLowerCase() ===
-        "get directions" &&
+      String(business.primaryCta || "")
+        .trim()
+        .toLowerCase() === "get directions" &&
       (Boolean(String(business.placeId || "").trim()) ||
-        /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(String(business.address || "").trim())),
+        /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(
+          String(business.address || "").trim(),
+        )),
     hasSocialProof:
       socialProofPoints.length > 0 ||
       fallbackProofPoints.length > 0 ||
@@ -212,14 +225,11 @@ function contentShape(site, route) {
               "",
           ),
           intro: String(
-            site.socialProof.intro ||
-              site.socialProof.fallback?.intro ||
-              "",
+            site.socialProof.intro || site.socialProof.fallback?.intro || "",
           ),
-          points: (
-            site.socialProof.source === "google_reviews"
-              ? fallbackProofPoints
-              : socialProofPoints
+          points: (site.socialProof.source === "google_reviews"
+            ? fallbackProofPoints
+            : socialProofPoints
           )
             .slice(0, 4)
             .map(String),
@@ -239,7 +249,9 @@ export function buildCreativeContentManifest(site, route) {
 
 function assertInspirationPack(pack) {
   if (!pack || !Array.isArray(pack.routes) || pack.routes.length !== 3)
-    throw new Error("Creative authorship requires exactly three inspiration routes.");
+    throw new Error(
+      "Creative authorship requires exactly three inspiration routes.",
+    );
   for (const route of pack.routes) {
     for (const key of requiredRouteKeys)
       if (!String(route[key] || "").trim())
@@ -312,11 +324,10 @@ function syntaxErrorFor(source, route, fileName, jsx) {
     (item) => item.category === ts.DiagnosticCategory.Error,
   );
   if (!diagnostic) return;
-  const message = ts.flattenDiagnosticMessageText(
-    diagnostic.messageText,
-    " ",
+  const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, " ");
+  throw new Error(
+    `Candidate ${route.id} ${fileName} has invalid syntax: ${message}`,
   );
-  throw new Error(`Candidate ${route.id} ${fileName} has invalid syntax: ${message}`);
 }
 
 function bindingPatternContains(pattern, name) {
@@ -324,7 +335,9 @@ function bindingPatternContains(pattern, name) {
   if (ts.isBindingElement(pattern))
     return bindingPatternContains(pattern.name, name);
   if (ts.isObjectBindingPattern(pattern) || ts.isArrayBindingPattern(pattern))
-    return pattern.elements.some((element) => bindingPatternContains(element, name));
+    return pattern.elements.some((element) =>
+      bindingPatternContains(element, name),
+    );
   return false;
 }
 
@@ -375,10 +388,6 @@ function scopeErrorFor(source, route) {
   }
 }
 
-function replaceEmptyImageAlt(source) {
-  return source.replace(/\balt\s*=\s*(["'])\s*\1/gu, 'alt="Decorative image"');
-}
-
 function reducedMotionFallback() {
   return `export function mountExperienceMotion(runtime) {
   const reduced = Boolean(runtime?.reducedMotion) ||
@@ -392,6 +401,805 @@ function importSpecifiers(source) {
   return [
     ...source.matchAll(/\bimport\s+(?:[^;]*?\s+from\s+)?["']([^"']+)["']/gu),
   ].map((match) => match[1]);
+}
+
+function parseJsxSource(source) {
+  return ts.createSourceFile(
+    "Experience.jsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.JSX,
+  );
+}
+
+function jsxOpeningName(opening) {
+  return opening?.tagName && ts.isIdentifier(opening.tagName)
+    ? opening.tagName.text
+    : "";
+}
+
+function jsxAttributes(opening) {
+  return opening?.attributes?.properties || [];
+}
+
+function jsxAttribute(opening, name) {
+  return jsxAttributes(opening).find(
+    (attribute) =>
+      ts.isJsxAttribute(attribute) && attribute.name.getText() === name,
+  );
+}
+
+function jsxAttributeValue(attribute, file) {
+  const initializer = attribute?.initializer;
+  if (!initializer) return "";
+  if (
+    ts.isStringLiteral(initializer) ||
+    ts.isNoSubstitutionTemplateLiteral(initializer)
+  )
+    return initializer.text;
+  if (ts.isJsxExpression(initializer) && initializer.expression)
+    return initializer.expression.getText(file).trim();
+  return "";
+}
+
+function collectJsxElements(source) {
+  const file = parseJsxSource(source);
+  const elements = [];
+  const visit = (node) => {
+    if (ts.isJsxElement(node))
+      elements.push({
+        node,
+        opening: node.openingElement,
+        body: source.slice(
+          node.openingElement.end,
+          node.closingElement.getStart(file),
+        ),
+      });
+    else if (ts.isJsxSelfClosingElement(node))
+      elements.push({ node, opening: node, body: "" });
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return { file, elements };
+}
+
+const contentBoundRuntimeHelpers = new Set([
+  "ContactLinks",
+  "FAQList",
+  "LocationMap",
+  "SocialProof",
+]);
+
+function validateContentBoundRuntimeHelpers(source, route) {
+  const { file, elements } = collectJsxElements(source);
+  const namedHelpers = new Map();
+  const runtimeNamespaces = new Set();
+  const sealedBindings = new Set();
+
+  for (const statement of file.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      statement.moduleSpecifier.text !== "@launchloom/runtime"
+    )
+      continue;
+
+    const bindings = statement.importClause?.namedBindings;
+    if (!bindings) continue;
+    if (ts.isNamespaceImport(bindings)) {
+      runtimeNamespaces.add(bindings.name.text);
+      continue;
+    }
+    if (!ts.isNamedImports(bindings)) continue;
+
+    for (const specifier of bindings.elements) {
+      const importedName = specifier.propertyName?.text || specifier.name.text;
+      if (contentBoundRuntimeHelpers.has(importedName))
+        namedHelpers.set(specifier.name.text, importedName);
+    }
+  }
+
+  for (const { opening } of elements) {
+    let localName = jsxOpeningName(opening);
+    let helperName = namedHelpers.get(localName);
+    const tagName = opening.tagName;
+    if (
+      !helperName &&
+      tagName &&
+      ts.isPropertyAccessExpression(tagName) &&
+      ts.isIdentifier(tagName.expression) &&
+      ts.isIdentifier(tagName.name) &&
+      runtimeNamespaces.has(tagName.expression.text) &&
+      contentBoundRuntimeHelpers.has(tagName.name.text)
+    ) {
+      localName = `${tagName.expression.text}.${tagName.name.text}`;
+      helperName = tagName.name.text;
+    }
+    if (!helperName) continue;
+
+    const contentValue = jsxAttributeValue(
+      jsxAttribute(opening, "content"),
+      file,
+    );
+    if (contentValue !== "content")
+      throw new Error(
+        `Candidate ${route.id} runtime helper ${localName} must receive sealed content through content={content}.`,
+      );
+    // FAQList is a trusted runtime adapter that reads content.faqs itself.
+    // Count that as the FAQ token binding only when it is inside the required
+    // FAQ section; unrelated helpers and unbound helper calls cannot satisfy it.
+    if (
+      helperName === "FAQList" &&
+      isInsideSemanticSection(opening, "faqs", file)
+    )
+      sealedBindings.add("content.faqs");
+  }
+  return sealedBindings;
+}
+
+function bindingPatternNames(name) {
+  if (ts.isIdentifier(name)) return [name.text];
+  if (ts.isObjectBindingPattern(name) || ts.isArrayBindingPattern(name))
+    return name.elements.flatMap((element) =>
+      ts.isOmittedExpression(element) ? [] : bindingPatternNames(element.name),
+    );
+  return [];
+}
+
+function expressionReferencesContentBinding(
+  expression,
+  binding,
+  aliases,
+  file,
+) {
+  let found = false;
+  const normalizedBinding = binding.replace(/\s+/gu, "").replace(/\?\./gu, ".");
+  const visit = (node) => {
+    if (found) return;
+    if (ts.isPropertyAccessExpression(node)) {
+      const path = node
+        .getText(file)
+        .replace(/\s+/gu, "")
+        .replace(/\?\./gu, ".");
+      if (path === normalizedBinding) {
+        found = true;
+        return;
+      }
+      visit(node.expression);
+      return;
+    }
+    if (ts.isIdentifier(node) && aliases.has(node.text)) {
+      found = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  if (expression) visit(expression);
+  return found;
+}
+
+/**
+ * Resolve simple, unambiguous local values derived from a sealed content
+ * token. Some authored headings are split into words before being rendered
+ * inside their h1, so checking only the JSX expression misses that binding.
+ */
+function localContentBindingAliases(file, binding) {
+  const declarations = [];
+  const nameCounts = new Map();
+  const recordNames = (name) => {
+    for (const value of bindingPatternNames(name))
+      nameCounts.set(value, (nameCounts.get(value) || 0) + 1);
+  };
+  const collect = (node) => {
+    if (ts.isVariableDeclaration(node)) {
+      recordNames(node.name);
+      if (ts.isIdentifier(node.name) && node.initializer)
+        declarations.push({
+          name: node.name.text,
+          initializer: node.initializer,
+        });
+    } else if (ts.isParameter(node)) recordNames(node.name);
+    else if (
+      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+      node.name
+    )
+      recordNames(node.name);
+    ts.forEachChild(node, collect);
+  };
+  collect(file);
+
+  const aliases = new Set();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const declaration of declarations) {
+      if (
+        nameCounts.get(declaration.name) === 1 &&
+        !aliases.has(declaration.name) &&
+        expressionReferencesContentBinding(
+          declaration.initializer,
+          binding,
+          aliases,
+          file,
+        )
+      ) {
+        aliases.add(declaration.name);
+        changed = true;
+      }
+    }
+  }
+  return aliases;
+}
+
+function jsxChildrenContainBinding(children, binding, file) {
+  const aliases = localContentBindingAliases(file, binding);
+  const visit = (items) => {
+    for (const child of items || []) {
+      if (
+        ts.isJsxExpression(child) &&
+        expressionReferencesContentBinding(
+          child.expression,
+          binding,
+          aliases,
+          file,
+        )
+      )
+        return true;
+      if (
+        (ts.isJsxElement(child) || ts.isJsxFragment(child)) &&
+        visit(child.children)
+      )
+        return true;
+    }
+    return false;
+  };
+  return visit(children);
+}
+
+function jsxDescendantElementContainsBinding(
+  container,
+  descendantName,
+  binding,
+  file,
+) {
+  if (!ts.isJsxElement(container)) return false;
+  const visit = (children) => {
+    for (const child of children || []) {
+      if (ts.isJsxElement(child)) {
+        if (
+          jsxOpeningName(child.openingElement) === descendantName &&
+          jsxChildrenContainBinding(child.children, binding, file)
+        )
+          return true;
+        if (visit(child.children)) return true;
+      } else if (ts.isJsxFragment(child) && visit(child.children)) return true;
+    }
+    return false;
+  };
+  return visit(container.children);
+}
+
+function jsxAncestorAttributeValue(node, attributeName, file) {
+  let current = node;
+  while (current) {
+    const opening = ts.isJsxElement(current)
+      ? current.openingElement
+      : ts.isJsxSelfClosingElement(current)
+        ? current
+        : undefined;
+    if (opening) {
+      const value = jsxAttributeValue(
+        jsxAttribute(opening, attributeName),
+        file,
+      ).trim();
+      if (value) return value;
+    }
+    current = current.parent;
+  }
+  return "";
+}
+
+function jsxAttributeInsertionPoint(source, opening, file) {
+  const close = source.lastIndexOf(">", opening.end - 1);
+  if (close < opening.getStart(file)) return -1;
+  let cursor = close - 1;
+  while (cursor > opening.getStart(file) && /\s/u.test(source[cursor]))
+    cursor -= 1;
+  return source[cursor] === "/" ? cursor : close;
+}
+
+function semanticSectionMatch(element, sectionName, file) {
+  if (jsxOpeningName(element.opening) !== "section") return false;
+  const attrs = jsxAttributes(element.opening).filter(ts.isJsxAttribute);
+  const attrValue = (name) =>
+    jsxAttributeValue(
+      attrs.find((attribute) => attribute.name.getText() === name),
+      file,
+    );
+  const identity = [
+    attrValue("id"),
+    attrValue("className"),
+    attrValue("class"),
+    attrValue("aria-label"),
+    attrValue("data-reference-section"),
+    attrValue("data-service-presentation"),
+  ]
+    .join(" ")
+    .toLowerCase();
+  const body = element.body.toLowerCase();
+
+  if (sectionName === "services")
+    return (
+      Boolean(attrValue("data-service-presentation")) ||
+      /\b(?:services?|offerings?|capabilities|programs?)\b/u.test(identity) ||
+      /content\.services\b|<service[a-z]*/u.test(body)
+    );
+  if (sectionName === "faqs")
+    return (
+      /\b(?:faqs?|questions?|answers?)\b/u.test(identity) ||
+      /content\.faqs\b|<faqlist\b|<details\b/u.test(body)
+    );
+  if (sectionName === "contact")
+    return (
+      /<leadform\b/u.test(body) ||
+      /\b(?:contact|consultation|appointment|inquiry|enquir(?:y|ies))\b/u.test(
+        identity,
+      )
+    );
+  return false;
+}
+
+function isInsideSemanticSection(node, sectionName, file) {
+  let current = node.parent;
+  while (current) {
+    if (ts.isJsxElement(current)) {
+      const body = current.closingElement
+        ? file.text.slice(
+            current.openingElement.end,
+            current.closingElement.getStart(file),
+          )
+        : "";
+      if (
+        semanticSectionMatch(
+          { opening: current.openingElement, body },
+          sectionName,
+          file,
+        )
+      )
+        return true;
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
+function idAttributeValue(element, file) {
+  const attribute = jsxAttribute(element.opening, "id");
+  return { attribute, value: jsxAttributeValue(attribute, file) };
+}
+
+function explicitSemanticSectionMatch(element, sectionName, file) {
+  const attrs = jsxAttributes(element.opening).filter(ts.isJsxAttribute);
+  const attrValue = (name) =>
+    jsxAttributeValue(
+      attrs.find((attribute) => attribute.name.getText() === name),
+      file,
+    );
+  if (sectionName === "services")
+    return Boolean(attrValue("data-service-presentation"));
+  if (sectionName === "faqs")
+    return attrValue("data-reference-section")?.trim().toLowerCase() === "faqs";
+  if (sectionName === "contact") return /<LeadForm\b/u.test(element.body);
+  return false;
+}
+
+function assertSectionIdIsNotOverridden(element, attribute, route, id) {
+  if (!attribute) return;
+  const laterSpread = jsxAttributes(element.opening).some(
+    (item) =>
+      ts.isJsxSpreadAttribute(item) && item.getStart() > attribute.getStart(),
+  );
+  if (laterSpread)
+    throw new Error(
+      `Candidate ${route.id} section id="${id}" may be overridden by a later JSX spread.`,
+    );
+}
+
+/**
+ * Restore the host's navigation anchors only on uniquely identifiable,
+ * semantically matching sections. Ambiguous or dynamically overridden IDs
+ * remain a hard failure instead of being guessed.
+ */
+export function restoreRequiredSectionIdsOnSemanticSections(
+  source,
+  route = { id: "candidate" },
+) {
+  const { file, elements } = collectJsxElements(source);
+  const edits = [];
+  const required = ["services", "faqs", "contact"];
+  for (const id of required) {
+    const sections = elements.filter(
+      (element) => jsxOpeningName(element.opening) === "section",
+    );
+    const semantic = sections.filter((element) =>
+      semanticSectionMatch(element, id, file),
+    );
+    const explicitlyAnchored = semantic.filter(
+      (element) => idAttributeValue(element, file).value === id,
+    );
+    const explicitlyIdentified = semantic.filter((element) =>
+      explicitSemanticSectionMatch(element, id, file),
+    );
+    const preferred = explicitlyAnchored.length
+      ? explicitlyAnchored
+      : explicitlyIdentified.length
+        ? explicitlyIdentified
+        : semantic;
+    if (preferred.length !== 1)
+      throw new Error(
+        `Candidate ${route.id} cannot safely restore id="${id}": found ${semantic.length} matching semantic sections.`,
+      );
+    const target = preferred[0];
+    const assigned = elements.filter(({ opening }) => {
+      const { value } = idAttributeValue({ opening }, file);
+      return value === id;
+    });
+    if (assigned.some(({ opening }) => opening !== target.opening))
+      throw new Error(
+        `Candidate ${route.id} has id="${id}" on a different element than its semantic section.`,
+      );
+
+    const { attribute, value } = idAttributeValue(target, file);
+    assertSectionIdIsNotOverridden(target, attribute, route, id);
+    if (value === id && attribute?.getText(file) === `id="${id}"`) continue;
+    if (attribute && !value)
+      throw new Error(
+        `Candidate ${route.id} has a dynamic or unsupported id on the ${id} section.`,
+      );
+    if (attribute)
+      edits.push({
+        start: attribute.getStart(file),
+        end: attribute.end,
+        text: `id="${id}"`,
+      });
+    else {
+      const insertAt = jsxAttributeInsertionPoint(source, target.opening, file);
+      if (insertAt < 0)
+        throw new Error(
+          `Candidate ${route.id} has an invalid opening tag for ${id}.`,
+        );
+      edits.push({ start: insertAt, end: insertAt, text: ` id="${id}"` });
+    }
+  }
+  let restored = source;
+  for (const edit of edits.sort((a, b) => b.start - a.start))
+    restored = `${restored.slice(0, edit.start)}${edit.text}${restored.slice(edit.end)}`;
+  return restored;
+}
+
+function resolveSealedImageExpression(node, content) {
+  if (!node) return { resolved: false };
+  if (ts.isParenthesizedExpression(node))
+    return resolveSealedImageExpression(node.expression, content);
+  if (ts.isAsExpression(node) || ts.isTypeAssertionExpression(node))
+    return resolveSealedImageExpression(node.expression, content);
+  if (ts.isSatisfiesExpression(node))
+    return resolveSealedImageExpression(node.expression, content);
+  if (ts.isIdentifier(node))
+    return node.text === "content"
+      ? { resolved: true, value: content }
+      : { resolved: false };
+  if (ts.isPropertyAccessExpression(node)) {
+    const base = resolveSealedImageExpression(node.expression, content);
+    if (!base.resolved) return { resolved: false };
+    if (base.value == null && node.questionDotToken)
+      return { resolved: true, value: undefined };
+    if (base.value == null || typeof base.value !== "object")
+      return { resolved: false };
+    if (!Object.prototype.hasOwnProperty.call(base.value, node.name.text)) {
+      if (
+        Object.prototype.hasOwnProperty.call(Object.prototype, node.name.text)
+      )
+        return { resolved: false };
+      return { resolved: true, value: undefined };
+    }
+    return { resolved: true, value: base.value[node.name.text] };
+  }
+  if (ts.isBinaryExpression(node)) {
+    const left = resolveSealedImageExpression(node.left, content);
+    if (!left.resolved) return { resolved: false };
+    if (node.operatorToken.kind === ts.SyntaxKind.BarBarToken)
+      return left.value
+        ? left
+        : resolveSealedImageExpression(node.right, content);
+    if (node.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+      return left.value == null
+        ? resolveSealedImageExpression(node.right, content)
+        : left;
+  }
+  return { resolved: false };
+}
+
+function resolvedImageValue(attribute, content) {
+  if (!content) return undefined;
+  const initializer = attribute?.initializer;
+  if (ts.isJsxExpression(initializer) && initializer.expression) {
+    const result = resolveSealedImageExpression(
+      initializer.expression,
+      content,
+    );
+    return result.resolved &&
+      typeof result.value === "string" &&
+      result.value.trim()
+      ? result.value
+      : undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Restore reviewed alt text from the exact original src binding, or from an
+ * unambiguous image URL resolved through sealed content tokens. New and
+ * ambiguous images remain untouched so accessibility validation fails closed.
+ * @param {string} repairedSource
+ * @param {string} originalSource
+ * @param {Record<string, any> | null} [content=null]
+ */
+export function restoreImageAltsFromOriginal(
+  repairedSource,
+  originalSource,
+  content = null,
+) {
+  const original = collectJsxElements(originalSource);
+  const repaired = collectJsxElements(repairedSource);
+  const originalAlts = new Map();
+  const expressionPrinter = ts.createPrinter({ removeComments: true });
+  const imageSourceKey = (attribute, file) => {
+    const initializer = attribute?.initializer;
+    if (!initializer) return "";
+    if (ts.isJsxExpression(initializer) && initializer.expression) {
+      return `expression:${expressionPrinter.printNode(
+        ts.EmitHint.Expression,
+        initializer.expression,
+        file,
+      )}`;
+    }
+    return `literal:${jsxAttributeValue(attribute, file)}`;
+  };
+  for (const { opening } of original.elements) {
+    if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
+    const src = jsxAttribute(opening, "src");
+    const alt = jsxAttribute(opening, "alt");
+    const srcKey = imageSourceKey(src, original.file);
+    const altValue = jsxAttributeValue(alt, original.file);
+    if (!srcKey || !alt || !altValue.trim()) continue;
+    const queue = originalAlts.get(srcKey) || [];
+    queue.push(alt.getText(original.file));
+    originalAlts.set(srcKey, queue);
+  }
+
+  const originalAltsByResolvedSource = new Map();
+  if (content) {
+    for (const { opening } of original.elements) {
+      if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
+      const src = jsxAttribute(opening, "src");
+      const alt = jsxAttribute(opening, "alt");
+      const value = resolvedImageValue(src, content);
+      const altValue = jsxAttributeValue(alt, original.file);
+      if (!value || !alt || !altValue.trim()) continue;
+      const alts = originalAltsByResolvedSource.get(value) || new Set();
+      alts.add(alt.getText(original.file));
+      originalAltsByResolvedSource.set(value, alts);
+    }
+  }
+
+  const used = new Map();
+  const edits = [];
+  for (const { opening } of repaired.elements) {
+    if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
+    const src = jsxAttribute(opening, "src");
+    const alt = jsxAttribute(opening, "alt");
+    const srcKey = imageSourceKey(src, repaired.file);
+    if (!srcKey || (alt && jsxAttributeValue(alt, repaired.file).trim()))
+      continue;
+    const queue = originalAlts.get(srcKey) || [];
+    const index = used.get(srcKey) || 0;
+    let reviewedAlt =
+      queue[index] ||
+      (queue.length > 0 && new Set(queue).size === 1 ? queue[0] : undefined);
+    if (!reviewedAlt) {
+      const value = resolvedImageValue(src, content);
+      const resolvedAlts = value
+        ? originalAltsByResolvedSource.get(value)
+        : undefined;
+      if (resolvedAlts?.size === 1)
+        reviewedAlt = resolvedAlts.values().next().value;
+    }
+    if (!reviewedAlt) continue;
+    if (index < queue.length) used.set(srcKey, index + 1);
+    if (alt)
+      edits.push({
+        start: alt.getStart(repaired.file),
+        end: alt.end,
+        text: reviewedAlt,
+      });
+    else {
+      const insertAt = jsxAttributeInsertionPoint(
+        repaired.file.text,
+        opening,
+        repaired.file,
+      );
+      if (insertAt < 0) continue;
+      edits.push({ start: insertAt, end: insertAt, text: ` ${reviewedAlt}` });
+    }
+  }
+  let restored = repairedSource;
+  for (const edit of edits.sort((a, b) => b.start - a.start))
+    restored = `${restored.slice(0, edit.start)}${edit.text}${restored.slice(edit.end)}`;
+  return restored;
+}
+
+/**
+ * Restore lost opening-scene markers only when the repaired JSX still has a
+ * unique semantic hero and contact-bound primary action. Otherwise validation
+ * remains fail-closed instead of attaching markers to arbitrary elements.
+ */
+export function restoreRequiredExperienceMarkers(
+  repairedSource,
+  originalSource,
+  route = { id: "candidate" },
+) {
+  const original = collectJsxElements(originalSource);
+  const repaired = collectJsxElements(repairedSource);
+  const edits = [];
+  const markerSpecs = [
+    {
+      name: "data-hero",
+      targets: () => {
+        const matches = repaired.elements.filter((element) => {
+          if (jsxOpeningName(element.opening) !== "section") return false;
+          return jsxDescendantElementContainsBinding(
+            element.node,
+            "h1",
+            "content.hero.heading",
+            repaired.file,
+          );
+        });
+        return matches.filter(
+          (candidate) =>
+            !matches.some(
+              (other) =>
+                other !== candidate &&
+                other.node.getStart(repaired.file) >
+                  candidate.node.getStart(repaired.file) &&
+                other.node.end < candidate.node.end,
+            ),
+        );
+      },
+    },
+    {
+      name: "data-early-conversion",
+      targetAttributes: ["data-cta-placement", "className"],
+      targets: () =>
+        repaired.elements.filter((element) => {
+          if (jsxOpeningName(element.opening) !== "a") return false;
+          const href = jsxAttributeValue(
+            jsxAttribute(element.opening, "href"),
+            repaired.file,
+          ).trim();
+          return (
+            href === "#contact" &&
+            ts.isJsxElement(element.node) &&
+            jsxChildrenContainBinding(
+              element.node.children,
+              "content.hero.primaryLabel",
+              repaired.file,
+            )
+          );
+        }),
+    },
+  ];
+
+  for (const { name, targetAttributes = [], targets } of markerSpecs) {
+    const originalMatches = original.elements.filter(({ opening }) =>
+      jsxAttribute(opening, name),
+    );
+    if (originalMatches.length !== 1)
+      throw new Error(
+        `Candidate ${route.id} cannot safely restore ${name}: original source has ${originalMatches.length} matching markers.`,
+      );
+    let candidates = targets();
+    for (const attributeName of targetAttributes) {
+      if (candidates.length <= 1) break;
+      const originalValue = jsxAttributeValue(
+        jsxAttribute(originalMatches[0].opening, attributeName),
+        original.file,
+      ).trim();
+      const signatureValue =
+        attributeName === "data-cta-placement"
+          ? jsxAncestorAttributeValue(
+              originalMatches[0].node,
+              attributeName,
+              original.file,
+            )
+          : originalValue;
+      if (!signatureValue) continue;
+      const matching = candidates.filter(({ node, opening }) => {
+        const value =
+          attributeName === "data-cta-placement"
+            ? jsxAncestorAttributeValue(node, attributeName, repaired.file)
+            : jsxAttributeValue(
+                jsxAttribute(opening, attributeName),
+                repaired.file,
+              ).trim();
+        return value === signatureValue;
+      });
+      if (matching.length > 0) candidates = matching;
+    }
+    if (candidates.length !== 1)
+      throw new Error(
+        `Candidate ${route.id} cannot safely restore ${name}: found ${candidates.length} semantic targets.`,
+      );
+    const existing = repaired.elements.filter(({ opening }) =>
+      jsxAttribute(opening, name),
+    );
+    for (const marker of existing) {
+      if (marker === candidates[0]) continue;
+      const misplaced = jsxAttribute(marker.opening, name);
+      edits.push({
+        start: misplaced.getStart(repaired.file),
+        end: misplaced.end,
+        text: "",
+      });
+    }
+    if (existing.includes(candidates[0])) continue;
+    const insertAt = jsxAttributeInsertionPoint(
+      repairedSource,
+      candidates[0].opening,
+      repaired.file,
+    );
+    if (insertAt < 0)
+      throw new Error(
+        `Candidate ${route.id} has an invalid opening tag for ${name}.`,
+      );
+    edits.push({ start: insertAt, end: insertAt, text: ` ${name}` });
+  }
+
+  let restored = repairedSource;
+  for (const edit of edits.sort((a, b) => b.start - a.start))
+    restored = `${restored.slice(0, edit.start)}${edit.text}${restored.slice(edit.end)}`;
+  return restored;
+}
+
+function assertRequiredSectionAnchors(source, route) {
+  const { file, elements } = collectJsxElements(source);
+  for (const marker of ["data-hero", "data-early-conversion"])
+    if (!elements.some(({ opening }) => jsxAttribute(opening, marker)))
+      throw new Error(
+        `Candidate ${route.id} is missing required marker ${marker}.`,
+      );
+
+  for (const id of ["services", "faqs", "contact"]) {
+    const assigned = elements.filter(
+      (element) => idAttributeValue(element, file).value === id,
+    );
+    if (assigned.length !== 1 || !semanticSectionMatch(assigned[0], id, file))
+      throw new Error(
+        `Candidate ${route.id} must place id="${id}" on its unique semantic ${id} section.`,
+      );
+    const { attribute } = idAttributeValue(assigned[0], file);
+    assertSectionIdIsNotOverridden(assigned[0], attribute, route, id);
+  }
+  const contact = elements.find(
+    (element) =>
+      jsxOpeningName(element.opening) === "section" &&
+      idAttributeValue(element, file).value === "contact",
+  );
+  if (!contact?.body.includes("<LeadForm"))
+    throw new Error(
+      `Candidate ${route.id} must render the shared LeadForm inside the contact section, not in the hero.`,
+    );
 }
 
 function unsupportedClaimLiterals(source) {
@@ -502,21 +1310,19 @@ function validateExperience(source, route, content) {
   for (const [pattern, label] of forbidden)
     if (pattern.test(source))
       throw new Error(`Candidate ${route.id} contains forbidden ${label}.`);
-  for (const marker of [
-    "data-hero",
-    "data-early-conversion",
-    'id="services"',
-    'id="faqs"',
-    'id="contact"',
-  ])
-    if (!source.includes(marker))
-      throw new Error(
-        `Candidate ${route.id} is missing required marker ${marker}.`,
-      );
-  if (!/import\s+\{[^}]*\bLeadForm\b[^}]*\}\s+from\s+["']@launchloom\/runtime["']/u.test(source))
-    throw new Error(`Candidate ${route.id} must use the shared LaunchLoom runtime.`);
+  assertRequiredSectionAnchors(source, route);
+  if (
+    !/import\s+\{[^}]*\bLeadForm\b[^}]*\}\s+from\s+["']@launchloom\/runtime["']/u.test(
+      source,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} must use the shared LaunchLoom runtime.`,
+    );
   if (!/\bLeadForm\b/u.test(source))
-    throw new Error(`Candidate ${route.id} must render the shared LeadForm runtime surface.`);
+    throw new Error(
+      `Candidate ${route.id} must render the shared LeadForm runtime surface.`,
+    );
   const leadFormCount = (source.match(/<LeadForm\b/gu) || []).length;
   if (leadFormCount !== 1)
     throw new Error(
@@ -526,19 +1332,39 @@ function validateExperience(source, route, content) {
     throw new Error(
       `Candidate ${route.id} must pass sealed content to the shared LeadForm runtime surface.`,
     );
-  if (/\balt\s*=\s*["']\s*["']/iu.test(source))
-    throw new Error(`Candidate ${route.id} contains an empty image alt attribute.`);
+  const helperSealedBindings = validateContentBoundRuntimeHelpers(
+    source,
+    route,
+  );
+  for (const { opening } of collectJsxElements(source).elements) {
+    if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
+    const altAttribute = jsxAttribute(opening, "alt");
+    const initializer = altAttribute?.initializer;
+    const expression =
+      initializer && ts.isJsxExpression(initializer)
+        ? initializer.expression
+        : null;
+    const invalidExpression =
+      initializer &&
+      ts.isJsxExpression(initializer) &&
+      (!expression ||
+        expression.kind === ts.SyntaxKind.NullKeyword ||
+        (ts.isIdentifier(expression) && expression.text === "undefined"));
+    if (!altAttribute || !initializer || invalidExpression)
+      throw new Error(
+        `Candidate ${route.id} has an image that must have a usable alt attribute; use alt="" only for decorative or redundant imagery.`,
+      );
+  }
   for (const target of ["services", "faqs", "contact"])
     if (!new RegExp(`href\\s*=\\s*["']#${target}["']`, "u").test(source))
       throw new Error(
         `Candidate ${route.id} navigation must expose href="#${target}".`,
       );
-  if (!/id\s*=\s*["']contact["'][\s\S]{0,5000}<LeadForm\b/u.test(source))
-    throw new Error(
-      `Candidate ${route.id} must render the shared LeadForm inside the contact section, not in the hero.`,
-    );
   for (const binding of requiredExperienceBindings)
-    if (!binding.aliases.some((token) => referencesContentPath(source, token)))
+    if (
+      !helperSealedBindings.has(binding.token) &&
+      !binding.aliases.some((token) => referencesContentPath(source, token))
+    )
       throw new Error(
         `Candidate ${route.id} is missing required sealed binding ${binding.token}.`,
       );
@@ -557,14 +1383,20 @@ function validateExperience(source, route, content) {
 }
 
 function validateStyles(source, route) {
-  if (/<!doctype\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/iu.test(source))
-    throw new Error(`Candidate ${route.id} styles must contain CSS only, not an HTML document.`);
+  if (
+    /<!doctype\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/iu.test(source)
+  )
+    throw new Error(
+      `Candidate ${route.id} styles must contain CSS only, not an HTML document.`,
+    );
   if (/url\s*\(\s*["']?(?:https?:)?\/\//iu.test(source))
     throw new Error(`Candidate ${route.id} CSS contains a remote URL.`);
   if (/—/u.test(source))
     throw new Error(`Candidate ${route.id} CSS contains an em dash.`);
   if (/(?:^|\n)\s*["']\s*\n?\}\s*$/u.test(source))
-    throw new Error(`Candidate ${route.id} CSS contains a malformed trailing wrapper.`);
+    throw new Error(
+      `Candidate ${route.id} CSS contains a malformed trailing wrapper.`,
+    );
 }
 
 /**
@@ -617,8 +1449,13 @@ function validateMotion(source, route) {
     throw new Error(
       `Candidate ${route.id} motion must export mountExperienceMotion.`,
     );
-  if (/<[A-Za-z][^>]*>/u.test(source) || /\b(?:React|useState|useEffect|LeadForm)\b/u.test(source))
-    throw new Error(`Candidate ${route.id} motion must be JavaScript without JSX or React components.`);
+  if (
+    /<[A-Za-z][^>]*>/u.test(source) ||
+    /\b(?:React|useState|useEffect|LeadForm)\b/u.test(source)
+  )
+    throw new Error(
+      `Candidate ${route.id} motion must be JavaScript without JSX or React components.`,
+    );
 }
 
 /**
@@ -668,7 +1505,9 @@ function authorRules() {
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
     "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
     "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; use a compact anchor CTA for early conversion and do not fake a form or create a second lead endpoint.",
+    "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
+    'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",
     "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact: no full LeadForm, service list, or long-copy block in the first fold.",
     "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
@@ -749,15 +1588,26 @@ async function generateValidatedSource({ generate, request, stage, validate }) {
       if (cycle === 2) throw error;
     }
   }
-  throw new Error(`Candidate ${request.route.id} ${stage} validation did not complete.`);
+  throw new Error(
+    `Candidate ${request.route.id} ${stage} validation did not complete.`,
+  );
 }
 
 async function generateMotionSource({ generate, request, validate }) {
   try {
-    return await generateValidatedSource({ generate, request, stage: "motion", validate });
+    return await generateValidatedSource({
+      generate,
+      request,
+      stage: "motion",
+      validate,
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (!/(?:No motion content returned|invalid syntax|motion must|motion lacks|motion contains)/iu.test(message))
+    if (
+      !/(?:No motion content returned|invalid syntax|motion must|motion lacks|motion contains)/iu.test(
+        message,
+      )
+    )
       throw error;
     validate(reducedMotionFallback(), request.route);
     return { source: reducedMotionFallback(), repaired: true, fallback: true };
@@ -828,10 +1678,7 @@ export async function authorExperienceCandidates({
   const limitedGenerate = createGenerationLimiter(generate, maxConcurrency);
   const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
-      const routeContentManifest = buildCreativeContentManifest(
-        site,
-        route,
-      );
+      const routeContentManifest = buildCreativeContentManifest(site, route);
       const content = routeContentManifest.values;
       const base = { route, contentTokens, contentShape: content, rules };
       const contractResult = await generateContract(limitedGenerate, {
@@ -872,34 +1719,23 @@ export async function authorExperienceCandidates({
           validateExperience(experience, route, content);
         } catch (repairError) {
           const repairMessage =
-            repairError instanceof Error ? repairError.message : String(repairError);
-          if (/empty image alt attribute/iu.test(repairMessage)) {
-            experience = replaceEmptyImageAlt(experience);
-            validateExperience(experience, route, content);
-          } else {
-            const finalRepair = await generateStageValue(
-              limitedGenerate,
-              {
-                ...base,
-                stage: "experience",
-                designContract,
-                previousSource: experience,
-                validationError: `The first repair still failed validation: ${repairMessage}. This is the final repair attempt. Return complete JSX with every listed contract requirement fixed.`,
-              },
-              "content",
-              "experience",
-            );
-            experience = normalizeAuthoredSource(finalRepair.value);
-            try {
-              validateExperience(experience, route, content);
-            } catch (finalError) {
-              const finalMessage =
-                finalError instanceof Error ? finalError.message : String(finalError);
-              if (!/empty image alt attribute/iu.test(finalMessage)) throw finalError;
-              experience = replaceEmptyImageAlt(experience);
-              validateExperience(experience, route, content);
-            }
-          }
+            repairError instanceof Error
+              ? repairError.message
+              : String(repairError);
+          const finalRepair = await generateStageValue(
+            limitedGenerate,
+            {
+              ...base,
+              stage: "experience",
+              designContract,
+              previousSource: experience,
+              validationError: `The first repair still failed validation: ${repairMessage}. This is the final repair attempt. Return complete JSX with every listed contract requirement fixed. Give every image a usable alt attribute; use an empty alt only for decorative imagery or when adjacent text fully conveys its relevant information, and preserve reviewed descriptions for informative assets.`,
+            },
+            "content",
+            "experience",
+          );
+          experience = normalizeAuthoredSource(finalRepair.value);
+          validateExperience(experience, route, content);
         }
       }
       const [stylesOutput, motionOutput] = await Promise.all([
@@ -930,8 +1766,16 @@ export async function authorExperienceCandidates({
       complianceRepaired ||= stylesOutput.repaired || motionOutput.repaired;
       let referenceRepairCycles = 0;
       if (route.referenceDna?.complete) {
-        let fidelity = validateReferenceCandidate({ referenceDna: route.referenceDna, experienceSource: experience, stylesSource: styles, motionSource: motion });
-        while ((!fidelity.pass || !fidelity.visualPass) && referenceRepairCycles < 2) {
+        let fidelity = validateReferenceCandidate({
+          referenceDna: route.referenceDna,
+          experienceSource: experience,
+          stylesSource: styles,
+          motionSource: motion,
+        });
+        while (
+          (!fidelity.pass || !fidelity.visualPass) &&
+          referenceRepairCycles < 2
+        ) {
           referenceRepairCycles += 1;
           const repaired = await generateStageValue(
             limitedGenerate,
@@ -948,17 +1792,30 @@ export async function authorExperienceCandidates({
           experience = normalizeAuthoredSource(repaired.value);
           complianceRepaired = true;
           validateExperience(experience, route, content);
-          fidelity = validateReferenceCandidate({ referenceDna: route.referenceDna, experienceSource: experience, stylesSource: styles, motionSource: motion });
+          fidelity = validateReferenceCandidate({
+            referenceDna: route.referenceDna,
+            experienceSource: experience,
+            stylesSource: styles,
+            motionSource: motion,
+          });
         }
         if (!fidelity.pass || !fidelity.visualPass)
-          throw new Error(`Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`);
+          throw new Error(
+            `Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
+          );
       }
       const creativeManifest = buildCandidateManifest({
-        candidate: { candidateId: `candidate-${String.fromCharCode(97 + index)}` },
+        candidate: {
+          candidateId: `candidate-${String.fromCharCode(97 + index)}`,
+        },
         route,
         model,
         contentManifestDigest: routeContentManifest.digest,
-        assets: ["content.hero.image", "content.hero.secondaryImage", "content.hero.tertiaryImage"],
+        assets: [
+          "content.hero.image",
+          "content.hero.secondaryImage",
+          "content.hero.tertiaryImage",
+        ],
       });
       const metadata = {
         version: 2,
@@ -1046,7 +1903,10 @@ export async function authorExperienceCandidates({
     failures.push({
       routeId: routes[index].id,
       candidateId: `candidate-${String.fromCharCode(97 + index)}`,
-      error: result.reason instanceof Error ? result.reason.message : String(result.reason),
+      error:
+        result.reason instanceof Error
+          ? result.reason.message
+          : String(result.reason),
     });
   }
   if (!candidates.length)

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import sharp from "sharp";
 import { buildCandidateManifest } from "../scripts/creative-compiler.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 import { promoteCreativeCandidate } from "../scripts/promote-creative-candidate.mjs";
@@ -55,6 +56,36 @@ afterEach(async () => {
 });
 
 describe("creative candidate promotion", () => {
+  it("omits validator-rejected candidates from a later bakeoff", async () => {
+    const root = await makeFixture();
+
+    await expect(
+      runCreativeBakeoff({
+        siteDir: root,
+        candidatesDir: ".",
+        reportPath: path.join(root, "excluded-report.json"),
+        screenshotsDir: path.join(root, "excluded-screenshots"),
+        preview: true,
+        excludedCandidateIds: ["candidate-a"],
+      }),
+    ).rejects.toThrow(
+      /No creative candidates remain after exclusions.*candidate-a/iu,
+    );
+  });
+
+  it("does not allow candidate exclusions during promotion", async () => {
+    const root = await makeFixture();
+
+    await expect(
+      runCreativeBakeoff({
+        siteDir: root,
+        candidatesDir: ".",
+        promote: true,
+        excludedCandidateIds: ["candidate-a"],
+      }),
+    ).rejects.toThrow(/only supported for non-promoting preview reruns/iu);
+  });
+
   it("copies a validated candidate and switches the site renderer", async () => {
     const root = await makeFixture();
     const result = await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
@@ -163,7 +194,10 @@ describe("creative candidate promotion", () => {
     const originalConfig = await fs.readFile(configPath, "utf8");
     await fs.cp(selectedPath, selectedBackup, { recursive: true });
 
-    const renderedReferenceEvaluator = async () => ({
+    const fidelityEvidence: any[] = [];
+    const renderedReferenceEvaluator = async (input: any) => {
+      fidelityEvidence.push(input);
+      return {
       version: 1,
       model: "test/model",
       score: 100,
@@ -182,7 +216,8 @@ describe("creative candidate promotion", () => {
         },
         findings: [],
       },
-    });
+      };
+    };
 
     try {
       const report = await runCreativeBakeoff({
@@ -213,6 +248,13 @@ describe("creative candidate promotion", () => {
       });
 
       expect(report.diversity.pass).toBe(false);
+      const firstEvidence = fidelityEvidence[0];
+      const viewportImage = await sharp(firstEvidence.candidateScreenshots.desktop).metadata();
+      const pageOverview = await sharp(firstEvidence.candidateScreenshots.fullDesktop).metadata();
+      expect({ width: viewportImage.width, height: viewportImage.height }).toEqual({ width: 1536, height: 864 });
+      expect(pageOverview.width).toBe(1536);
+      expect(pageOverview.height).toBeGreaterThanOrEqual(864);
+      expect(firstEvidence.renderedGeometry.desktop.viewportHeight).toBe(864);
       expect(report.visualDiversity.pass).toBe(true);
       expect(report.candidates.every((candidate: any) => candidate.eligible)).toBe(
         true,
@@ -253,9 +295,7 @@ describe("creative candidate promotion", () => {
       const blockedConfig = JSON.parse(
         await fs.readFile(configPath, "utf8"),
       );
-      expect(blockedConfig.design?.experience?.renderer).not.toBe(
-        "creative-candidate",
-      );
+      expect(blockedConfig).toEqual(JSON.parse(originalConfig));
     } finally {
       await fs.writeFile(configPath, originalConfig);
       await fs.rm(selectedPath, { recursive: true, force: true });

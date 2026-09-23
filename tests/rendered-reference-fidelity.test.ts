@@ -295,6 +295,32 @@ describe("rendered reference request retries", () => {
 });
 
 describe("rendered reference fidelity", () => {
+  it("identifies the true viewport and page overview as different visual evidence", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const requests: any[] = [];
+    await evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+        fullDesktop: files.secondDesktop,
+      },
+      renderedGeometry: { desktop: { heroBottom: 480, viewportHeight: 864 } },
+      fetchImpl: async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return response({ verdict: "pass", overallScore: 89, scores: passingScores, findings: [], summary: "Pass." });
+      },
+    });
+    const textBlocks = requests[0].messages[1].content.filter((part: any) => part.type === "text").map((part: any) => part.text).join("\n");
+    expect(textBlocks).toContain("Candidate desktop first viewport 1536x864");
+    expect(textBlocks).toContain("Candidate desktop page overview");
+    expect(textBlocks).toContain("480");
+    expect(textBlocks).toContain("864");
+    expect(textBlocks).toContain("capture height is not the browser viewport height");
+  });
+
   it("passes only from pixel-level reference scores, not DOM markers", async () => {
     process.env.OPENROUTER_API_KEY = "test";
     const files = await evidence();

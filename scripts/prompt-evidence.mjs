@@ -17,6 +17,15 @@ function cacheKey(filePath) {
   return path.resolve(filePath);
 }
 
+/** Return source pixel dimensions before prompt transport resizes an image. */
+export async function promptImageDimensions(filePath) {
+  const input = await fs.readFile(cacheKey(filePath));
+  if (!looksLikeImage(input)) throw new Error(`Prompt evidence is not an image: ${filePath}`);
+  const { width, height } = await sharp(input).metadata();
+  if (!width || !height) throw new Error(`Prompt evidence has no dimensions: ${filePath}`);
+  return { width, height };
+}
+
 function looksLikeImage(input) {
   return (
     (input.length >= 8 && input[0] === 0x89 && input[1] === 0x50 && input[2] === 0x4e && input[3] === 0x47) ||

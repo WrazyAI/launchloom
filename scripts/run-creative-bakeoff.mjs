@@ -160,7 +160,7 @@ function hardFailures(evidence, viewport) {
 }
 
 /**
- * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean}} options
+ * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function runCreativeBakeoff({
@@ -171,6 +171,7 @@ export async function runCreativeBakeoff({
   promote = false,
   preview = false,
   deferPromotion = false,
+  excludedCandidateIds = [],
   renderedReferenceEvaluator = evaluateRenderedReferenceFidelity,
   renderedDiversityEvaluator = evaluateRenderedDiversity,
   requireDiversity = true,
@@ -186,16 +187,36 @@ export async function runCreativeBakeoff({
     screenshotsDir || ".launchloom/creative-bakeoff-screenshots",
   );
   const entries = (await fs.readdir(candidateRoot, { withFileTypes: true }).catch(() => []))
-    .filter((entry) => entry.isDirectory() && /^candidate-[a-z]+$/u.test(entry.name))
+    .filter((entry) => entry.isDirectory() && /^candidate-[a-z0-9]+$/u.test(entry.name))
     .map((entry) => entry.name)
     .sort();
   if (!entries.length) throw new Error(`No creative candidates found in ${candidateRoot}.`);
 
+  const excludedIds = new Set(
+    Array.isArray(excludedCandidateIds)
+      ? excludedCandidateIds.filter(
+          (candidateId) => typeof candidateId === "string" && candidateId,
+        )
+      : [],
+  );
+  if (excludedIds.size && (!preview || promote))
+    throw new Error(
+      "Candidate exclusions are only supported for non-promoting preview reruns.",
+    );
   const candidates = [];
   for (const directory of entries) {
     const metadata = JSON.parse(await fs.readFile(path.join(candidateRoot, directory, "metadata.json"), "utf8"));
     const manifest = validateCandidateManifest(metadata.creativeManifest || metadata);
+    if (excludedIds.has(manifest.candidateId)) continue;
     candidates.push({ directory, metadata, manifest });
+  }
+  if (!candidates.length) {
+    const exclusions = [...excludedIds].sort();
+    throw new Error(
+      exclusions.length
+        ? `No creative candidates remain after exclusions: ${exclusions.join(", ")}.`
+        : `No creative candidates found in ${candidateRoot}.`,
+    );
   }
   const diversity = diversityReport(candidates.map(({ metadata }) => metadata));
   const originalConfigPath = path.join(root, "src/site.config.json");
@@ -288,9 +309,11 @@ export async function runCreativeBakeoff({
               if (!renderedFidelity.pass)
                 candidateResult.failures.push(...renderedFidelity.hardFindings.map((item) => `${viewport.name}: ${item.message}`));
             }
-            // Keep the requested viewport width while including the complete
-            // route so the screenshot-level gate can inspect lower sections,
-            // FAQs, and the contact handoff as well as the hero.
+            // The reference judge needs the actual first viewport for hero
+            // geometry. Keep a separate full-page capture for section rhythm,
+            // lower content, and the final visual-quality gate.
+            if (candidate.manifest.version >= 2)
+              await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}-viewport.png`) });
             await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}.png`), fullPage: true });
             await page.close();
           }
@@ -301,10 +324,16 @@ export async function runCreativeBakeoff({
           const renderedReference = await renderedReferenceEvaluator({
             referenceDna: candidate.manifest.referenceDna,
             candidateScreenshots: {
-              desktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop.png`),
-              compact: path.join(evidenceDir, `${candidate.manifest.candidateId}-compact.png`),
-              mobile: path.join(evidenceDir, `${candidate.manifest.candidateId}-mobile.png`),
+              desktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop-viewport.png`),
+              compact: path.join(evidenceDir, `${candidate.manifest.candidateId}-compact-viewport.png`),
+              mobile: path.join(evidenceDir, `${candidate.manifest.candidateId}-mobile-viewport.png`),
+              fullDesktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop.png`),
             },
+            renderedGeometry: Object.fromEntries(candidateResult.viewports.map((viewport) => [viewport.name, {
+              viewportWidth: viewport.width,
+              viewportHeight: viewport.viewportHeight,
+              heroBottom: viewport.heroBottom,
+            }])),
           });
           candidateResult.renderedReferenceFidelity = renderedReference;
           candidateResult.referenceFidelity = {
@@ -581,6 +610,7 @@ export async function runCreativeBakeoff({
     diversity,
     visualDiversity,
     diversityRequired: requireDiversity,
+    excludedCandidateIds: [...excludedIds].sort(),
     candidates: results,
     selectedCandidateId: selectionPass ? winner.candidateId : null,
     // Preview selection depends on candidate quality, while diversity remains

@@ -1,17 +1,29 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { collectAvailableScreenshots, runRenderedCreativeRepair, runVisualGateProcess, writeCandidate } from "../scripts/run-rendered-creative-repair.mjs";
+import {
+  collectAvailableScreenshots,
+  runRenderedCreativeRepair,
+  runVisualGateProcess,
+  writeCandidate,
+} from "../scripts/run-rendered-creative-repair.mjs";
+import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
+import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 
 const roots: string[] = [];
+const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
 
 afterEach(async () => {
+  if (originalOpenRouterKey === undefined)
+    delete process.env.OPENROUTER_API_KEY;
+  else process.env.OPENROUTER_API_KEY = originalOpenRouterKey;
+  vi.unstubAllGlobals();
   await Promise.all(
-    roots.splice(0).map((root) =>
-      fs.rm(root, { recursive: true, force: true }),
-    ),
+    roots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
   );
 });
 
@@ -33,7 +45,10 @@ async function fixture(candidateIds = ["candidate-a", "candidate-b"]) {
       path.join(directory, "metadata.json"),
       JSON.stringify({ candidateId, referenceDna: { familyId: candidateId } }),
     );
-    await fs.writeFile(path.join(directory, "Experience.jsx"), "export default () => null;\n");
+    await fs.writeFile(
+      path.join(directory, "Experience.jsx"),
+      "export default () => null;\n",
+    );
     await fs.writeFile(path.join(directory, "styles.css"), "body{}\n");
     await fs.writeFile(
       path.join(directory, "motion.js"),
@@ -47,7 +62,9 @@ async function bindCandidateSession(
   candidatesDir: string,
   creativeSession: Record<string, any>,
 ) {
-  for (const entry of await fs.readdir(candidatesDir, { withFileTypes: true })) {
+  for (const entry of await fs.readdir(candidatesDir, {
+    withFileTypes: true,
+  })) {
     if (!entry.isDirectory()) continue;
     const metadataPath = path.join(candidatesDir, entry.name, "metadata.json");
     const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
@@ -63,7 +80,10 @@ async function bindCandidateSession(
   }
 }
 
-function candidate(candidateId: string, overrides: Record<string, unknown> = {}) {
+function candidate(
+  candidateId: string,
+  overrides: Record<string, unknown> = {},
+) {
   return {
     candidateId,
     directory: candidateId,
@@ -114,9 +134,7 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
     version: 1,
     mode: "verify",
     blockers:
-      verdict === "pass"
-        ? []
-        : [{ severity: "major", category: "hierarchy" }],
+      verdict === "pass" ? [] : [{ severity: "major", category: "hierarchy" }],
     audit: {
       verdict,
       findings:
@@ -139,6 +157,563 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("keeps preview available when one candidate repair violates its sealed-content contract", async () => {
+    const { root, candidates } = await fixture([
+      "candidate-a",
+      "candidate-b",
+      "candidate-c",
+    ]);
+    const rejectedCandidateSource = await fs.readFile(
+      path.join(candidates, "candidate-c", "Experience.jsx"),
+      "utf8",
+    );
+    const firstPass = ["candidate-a", "candidate-b", "candidate-c"].map(
+      (candidateId) =>
+        candidate(candidateId, {
+          valid: false,
+          eligible: false,
+          referenceFidelity: { pass: false, score: 30 },
+          renderedReferenceFidelity: { pass: false, audit: { findings: [] } },
+          failures: ["Rendered candidate needs repair."],
+        }),
+    );
+    const bakeoffExclusions: string[][] = [];
+    const repairCalls: string[] = [];
+    const promotions: string[] = [];
+    let bakeoffCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        bakeoffExclusions.push(options.excludedCandidateIds || []);
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({ selectedCandidateId: null, candidates: firstPass })
+            : report({
+                selectedCandidateId: "candidate-b",
+                candidates: [
+                  candidate("candidate-a"),
+                  candidate("candidate-b"),
+                ],
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ candidateId }: any) => {
+        repairCalls.push(candidateId);
+        if (candidateId === "candidate-c") {
+          const error = new Error(
+            "Reference-safe source validation failed: Required sealed token content.hero.image does not flow into output.",
+          );
+          Object.assign(error, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+          throw error;
+        }
+      },
+      promoteImpl: async ({ candidateDir }: any) => {
+        promotions.push(path.basename(candidateDir));
+        return { candidateId: "candidate-b" };
+      },
+    });
+
+    expect(result.status).toBe("passed");
+    expect(result.selectedCandidateId).toBe("candidate-b");
+    expect(bakeoffCalls).toBe(2);
+    expect(repairCalls).toEqual(["candidate-a", "candidate-b", "candidate-c"]);
+    expect(bakeoffExclusions[1]).toEqual(["candidate-c"]);
+    expect(promotions).toEqual(["candidate-b"]);
+    expect(result.rejectedCandidates["candidate-c"]).toMatch(
+      /content\.hero\.image/iu,
+    );
+    expect(
+      JSON.parse(
+        await fs.readFile(
+          path.join(
+            root,
+            "evidence",
+            "round-00",
+            "repairs",
+            "candidate-c.json",
+          ),
+          "utf8",
+        ),
+      ),
+    ).toMatchObject({ status: "rejected", candidateId: "candidate-c" });
+    expect(
+      await fs.readFile(
+        path.join(candidates, "candidate-c", "Experience.jsx"),
+        "utf8",
+      ),
+    ).toBe(rejectedCandidateSource);
+  });
+
+  it("rejects a repaired FAQList with missing sealed content and selects a passing sibling", async () => {
+    const { root, candidates } = await fixture(["candidate-a", "candidate-b"]);
+    const bakeoffExclusions: string[][] = [];
+    const repairCalls: string[] = [];
+    const promotions: string[] = [];
+    let bakeoffCalls = 0;
+    let visualCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        bakeoffExclusions.push(options.excludedCandidateIds || []);
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({ selectedCandidateId: "candidate-a" })
+            : report({
+                selectedCandidateId: "candidate-b",
+                candidates: [candidate("candidate-b")],
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => {
+        visualCalls += 1;
+        return visualGate(options, visualCalls === 1 ? "revise" : "pass");
+      },
+      repairCandidateImpl: async ({ candidateId }: any) => {
+        repairCalls.push(candidateId);
+        const malformedRepair = {
+          experience: `import { FAQList, LeadForm } from "@launchloom/runtime";
+export default function Experience({ content, runtime }) {
+  return <main>
+    <nav><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
+    <section data-hero><h1>{content.hero.heading}</h1><a data-early-conversion href="#contact">{content.hero.primaryLabel}</a></section>
+    <section id="services">{content.services.map((service) => <p key={service.name}>{service.name} {service.description}</p>)}</section>
+    <section id="faqs"><p>{content.faqs.length}</p><FAQList /></section>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`,
+          styles: "[data-hero] { color: inherit; }",
+          motion:
+            "export function mountExperienceMotion() { return () => {}; }",
+        };
+        let validationError: Error | undefined;
+        try {
+          validateProductionCandidateFiles({
+            files: malformedRepair,
+            route: { id: candidateId },
+          });
+        } catch (error) {
+          validationError = error as Error;
+        }
+        expect(validationError?.message).toMatch(
+          /FAQList.*must receive sealed content.*content=\{content\}/iu,
+        );
+        const error = new Error(
+          `Creative repair output rejected by source validation: ${validationError?.message}`,
+        );
+        Object.assign(error, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+        throw error;
+      },
+      promoteImpl: async ({ candidateDir }: any) => {
+        promotions.push(path.basename(candidateDir));
+        return { candidateId: "candidate-b" };
+      },
+    });
+
+    expect(result.status).toBe("passed");
+    expect(result.selectedCandidateId).toBe("candidate-b");
+    expect(bakeoffCalls).toBe(2);
+    expect(visualCalls).toBe(2);
+    expect(repairCalls).toEqual(["candidate-a"]);
+    expect(bakeoffExclusions[1]).toEqual(["candidate-a"]);
+    expect(result.rejectedCandidates["candidate-a"]).toMatch(
+      /FAQList.*content=\{content\}/iu,
+    );
+    expect(promotions).toEqual(["candidate-b"]);
+  });
+
+  it("preserves candidate rejection reasons when every preview candidate is excluded", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    const rejection = new Error(
+      "Creative repair output rejected by source validation: FAQList must receive sealed content through content={content}.",
+    );
+    Object.assign(rejection, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 1,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffCalls += 1;
+          if (bakeoffCalls > 1)
+            throw new Error(
+              "No creative candidates remain after exclusions: candidate-a.",
+            );
+          return writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          );
+        },
+        repairCandidateImpl: async () => {
+          throw rejection;
+        },
+      }),
+    ).rejects.toThrow(/candidate-a.*FAQList.*content=\{content\}/iu);
+
+    expect(bakeoffCalls).toBe(2);
+    expect(
+      JSON.parse(
+        await fs.readFile(
+          path.join(
+            root,
+            "evidence",
+            "round-00",
+            "repairs",
+            "candidate-a.json",
+          ),
+          "utf8",
+        ),
+      ),
+    ).toMatchObject({
+      status: "rejected",
+      error: expect.stringMatching(/FAQList.*content=\{content\}/iu),
+    });
+  });
+
+  it("bounds preview rounds using the available candidate count", async () => {
+    const candidateIds = [
+      "candidate-1",
+      "candidate-2",
+      "candidate-3",
+      "candidate-4",
+      "candidate-5",
+    ];
+    const { root, candidates } = await fixture(candidateIds);
+    const exclusionsByRound: string[][] = [];
+    const promotions: string[] = [];
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        const excluded = options.excludedCandidateIds || [];
+        exclusionsByRound.push(excluded);
+        const available = candidateIds.filter((id) => !excluded.includes(id));
+        return writeBakeoffEvidence(
+          options,
+          report({
+            selectedCandidateId: available[0],
+            candidates: available.map((id) => candidate(id)),
+          }),
+        );
+      },
+      runVisualGateImpl: (options: any) =>
+        visualGate(
+          options,
+          options.candidateId === "candidate-5" ? "pass" : "revise",
+        ),
+      repairCandidateImpl: async () => {
+        const error = new Error(
+          "Creative repair output rejected by source validation: Required sealed token content.hero.image does not flow into output.",
+        );
+        Object.assign(error, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+        throw error;
+      },
+      promoteImpl: async ({ candidateDir }: any) => {
+        promotions.push(path.basename(candidateDir));
+        return { candidateId: "candidate-5" };
+      },
+    });
+
+    expect(result.status).toBe("passed");
+    expect(result.selectedCandidateId).toBe("candidate-5");
+    expect(exclusionsByRound).toEqual([
+      [],
+      ["candidate-1"],
+      ["candidate-1", "candidate-2"],
+      ["candidate-1", "candidate-2", "candidate-3"],
+      ["candidate-1", "candidate-2", "candidate-3", "candidate-4"],
+    ]);
+    expect(promotions).toEqual(["candidate-5"]);
+  });
+
+  it("fails closed on the same validator rejection in promotion mode", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const bakeoffOptions: any[] = [];
+    const promotions: string[] = [];
+    const rejection = new Error(
+      "Creative repair output rejected by source validation: Required sealed token content.hero.image does not flow into output.",
+    );
+    Object.assign(rejection, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "promote",
+        maxCycles: 1,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffOptions.push(options);
+          return writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          );
+        },
+        repairCandidateImpl: async () => {
+          throw rejection;
+        },
+        promoteImpl: async ({ candidateDir }: any) => {
+          promotions.push(path.basename(candidateDir));
+          return { candidateId: "candidate-a" };
+        },
+      }),
+    ).rejects.toThrow(/content\.hero\.image/iu);
+
+    expect(bakeoffOptions).toHaveLength(1);
+    expect(bakeoffOptions[0].excludedCandidateIds).toEqual([]);
+    expect(promotions).toEqual([]);
+  });
+
+  it("does not isolate a rejected repair when applying human feedback", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const rejection = new Error(
+      "Creative repair output rejected by source validation: Required sealed token content.hero.image does not flow into output.",
+    );
+    Object.assign(rejection, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 1,
+        requestedFindings: ["Keep the supplied hero image visible."],
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          ),
+        repairCandidateImpl: async () => {
+          throw rejection;
+        },
+      }),
+    ).rejects.toThrow(/content\.hero\.image/iu);
+  });
+
+  it("restores split-heading hero markers and reviewed image alt text in the full repair flow", async () => {
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const registry = JSON.parse(
+      readFileSync(
+        new URL("../data/inspiration-registry.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const referenceDna = buildReferenceDna(registry.records[1], {
+      requireEvidence: true,
+    });
+    const content = {
+      brand: {
+        name: "Test Studio",
+        logo: "",
+        phone: "(555) 555-0100",
+        email: "hello@example.com",
+        address: "",
+        serviceAreas: [],
+      },
+      hero: {
+        kicker: "A considered service",
+        heading: "Thoughtful work, made personal",
+        body: "A clear first conversation about what you need.",
+        primaryLabel: "Start a conversation",
+        image: "/images/hero.webp",
+        secondaryImage: "/images/ornament.webp",
+      },
+      services: [
+        {
+          name: "Consultation",
+          description: "A focused first step.",
+          slug: "consultation",
+        },
+      ],
+      faqs: [
+        {
+          question: "What happens first?",
+          answer: "We start with a conversation.",
+        },
+      ],
+    };
+    const initialExperience = `import { LeadForm } from "@launchloom/runtime";
+export default function Experience({ content, runtime }) {
+  const headlineWords = content.hero.heading.trim().split(/\\s+/);
+  return <main data-mobile-recomposition="single-column-editorial-chapters" data-motion-primitive="masked-image-reveal">
+    <nav data-navigation-geometry="quiet-corner-links"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a><a className="nav-cta" href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument"><h1>{headlineWords.join(" ")}</h1><img src={content.hero.image} alt="Still-life image for the studio" /><a className="hero-cta" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>
+    <section data-reference-section="image-chapter"></section>
+    <section data-reference-section="editorial-intro"></section>
+    <section data-reference-section="image-mosaic"></section>
+    <section id='services' data-reference-section="magazine-archive" data-service-presentation="magazine-archive-ledger" data-reference-signature="magazine-archive">{content.services}</section>
+    <section data-reference-section="closing-scene" data-reference-signature="closing-scene"></section>
+    <section id='faqs'>{content.faqs}</section>
+    <section id='contact'><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`;
+    const repairedExperience = initialExperience
+      .replace(" data-hero", "")
+      .replace(" data-early-conversion", "")
+      .replace(
+        '<section data-reference-section="image-chapter"></section>',
+        '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.image} alt="" /><img src={content.hero.tertiaryImage || content.hero.image} alt="" /><img src={content.hero.secondaryImage} alt="" aria-hidden="true" /></section></section>',
+      );
+    const candidateDir = path.join(candidates, "candidate-a");
+    const metadataPath = path.join(candidateDir, "metadata.json");
+    const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+    metadata.routeId = "route-02";
+    metadata.referenceDna = referenceDna;
+    await fs.writeFile(metadataPath, JSON.stringify(metadata));
+    await fs.writeFile(
+      path.join(candidateDir, "content-manifest.json"),
+      JSON.stringify({
+        tokens: [
+          { token: "content.hero.heading" },
+          { token: "content.services" },
+          { token: "content.faqs" },
+        ],
+        values: content,
+      }),
+    );
+    await fs.writeFile(
+      path.join(candidateDir, "Experience.jsx"),
+      initialExperience,
+    );
+
+    const repairBundle = {
+      experience: repairedExperience,
+      styles:
+        ":root { --ll-creative-ink: #fff; } @media (max-width: 700px) { main { display: block; } }",
+      motion:
+        "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
+    };
+    let repairPrompt = "";
+    const fetchMock = vi.fn(
+      async (_input: unknown, init?: { body?: unknown }) => {
+        repairPrompt = String(init?.body || "");
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(repairBundle) },
+              },
+            ],
+            usage: { completion_tokens: 32 },
+          }),
+        );
+      },
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    let visualGateCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      model: "test/model",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(
+          options,
+          report({ candidates: [candidate("candidate-a")] }),
+        ),
+      runVisualGateImpl: async (options: any) => {
+        visualGateCalls += 1;
+        return visualGate(options, visualGateCalls === 1 ? "revise" : "pass");
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(repairPrompt).toContain("ALT-TEXT CONTRACT");
+    const requestBody = JSON.parse(repairPrompt);
+    const repairText = requestBody.messages
+      .flatMap((message: any) =>
+        Array.isArray(message.content) ? message.content : [],
+      )
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(repairText).toContain(
+      'Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text',
+    );
+    expect(visualGateCalls).toBe(2);
+    const repaired = await fs.readFile(
+      path.join(candidateDir, "Experience.jsx"),
+      "utf8",
+    );
+    expect(repaired).toContain(
+      '<section id="services" data-reference-section="magazine-archive"',
+    );
+    expect(repaired).toContain(
+      '<a className="nav-cta" href="#contact">{content.hero.primaryLabel}</a>',
+    );
+    expect(repaired).toContain(
+      '<a className="hero-cta" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a>',
+    );
+    expect(repaired).toMatch(
+      /<section(?=[^>]*data-reference-section="hero")(?=[^>]*\bdata-hero(?:\s|>))[^>]*><h1>\{headlineWords\.join\(" "\)\}/u,
+    );
+    expect(repaired).toContain(
+      '<section className="service-note"><p>A note about the services chapter.</p>',
+    );
+    expect(
+      repaired.match(/alt="Still-life image for the studio"/gu),
+    ).toHaveLength(4);
+    expect(repaired).toContain(
+      'src={content.hero.secondaryImage} alt="" aria-hidden="true"',
+    );
+  });
+
   it("repairs the selected source only after a rendered visual failure and rerenders before passing", async () => {
     const { root, candidates } = await fixture();
     let bakeoffCalls = 0;
@@ -546,10 +1121,15 @@ describe("rendered creative repair orchestration", () => {
       ],
       runBakeoffImpl: async (options: any) => {
         bakeoffCalls += 1;
-        return writeBakeoffEvidence(
+        const result = await writeBakeoffEvidence(
           options,
           report({ candidates: [candidate("candidate-a")] }),
         );
+        if (bakeoffCalls === 1) {
+          for (const viewport of ["desktop", "mobile"])
+            await fs.writeFile(path.join(options.screenshotsDir, `candidate-a-${viewport}-viewport.png`), "viewport pixels");
+        }
+        return result;
       },
       runVisualGateImpl: (options: any) => visualGate(options, "pass"),
       runHumanGateImpl: async ({ feedback }: any) => {
@@ -568,6 +1148,11 @@ describe("rendered creative repair orchestration", () => {
     expect(result.status).toBe("passed");
     expect(bakeoffCalls).toBe(2);
     expect(repairs).toHaveLength(1);
+    expect(repairs[0].screenshots.map((file: string) => path.basename(file))).toEqual([
+      "candidate-a-desktop-viewport.png",
+      "candidate-a-mobile-viewport.png",
+      "candidate-a-desktop.png",
+    ]);
     expect(repairs[0].findings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -738,8 +1323,7 @@ process.exit(1);
         {
           experience: "export default function Repaired(){ return null; }",
           styles: ".repaired { display: block; }",
-          motion:
-            "export function mountExperienceMotion(){ return () => {}; }",
+          motion: "export function mountExperienceMotion(){ return () => {}; }",
         },
         { fsImpl },
       ),
@@ -849,8 +1433,7 @@ process.exit(1);
         {
           experience: "export default function Repaired(){ return null; }",
           styles: ".repaired { display: block; }",
-          motion:
-            "export function mountExperienceMotion(){ return () => {}; }",
+          motion: "export function mountExperienceMotion(){ return () => {}; }",
         },
         { fsImpl },
       ),
@@ -906,7 +1489,9 @@ process.exit(1);
           writeBakeoffEvidence(
             options,
             report({
-              candidates: [candidate("candidate-a", { directory: "../outside" })],
+              candidates: [
+                candidate("candidate-a", { directory: "../outside" }),
+              ],
             }),
           ),
         runVisualGateImpl: async () => visualGate({}, "pass"),
@@ -927,10 +1512,11 @@ process.exit(1);
       'PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build',
     );
     const hostGuardIndex = workflow.indexOf('data-creative-host="true"');
-    const candidateGuardIndex = workflow.indexOf('data-creative-candidate=\\\"$CANDIDATE_ID\\\"');
+    const candidateGuardIndex = workflow.indexOf(
+      'data-creative-candidate=\\\"$CANDIDATE_ID\\\"',
+    );
     expect(buildIndex).toBeGreaterThan(-1);
     expect(hostGuardIndex).toBeGreaterThan(buildIndex);
     expect(candidateGuardIndex).toBeGreaterThan(buildIndex);
   });
-
 });
