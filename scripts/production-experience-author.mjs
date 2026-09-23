@@ -1208,6 +1208,7 @@ function hasLiteralNavigationAnchor(elements, navigation, target) {
     if (
       jsxOpeningName(opening) !== "a" ||
       !isDescendantOf(node, navigation.node) ||
+      isNavigationAnchorHidden(navigation, node, elements) ||
       isStaticallyUnreachable(node)
     )
       return false;
@@ -1215,6 +1216,29 @@ function hasLiteralNavigationAnchor(elements, navigation, target) {
     const href = jsxAttribute(opening, "href")?.initializer;
     return Boolean(
       href && ts.isStringLiteral(href) && href.text === `#${target}`,
+    );
+  });
+}
+
+/** Reject native hidden attributes on a navigation link or any of its containers. */
+function isNavigationAnchorHidden(navigation, anchor, elements) {
+  return elements.some(({ node, opening }) => {
+    if (
+      (node !== navigation.node &&
+        !isDescendantOf(node, navigation.node) &&
+        !isDescendantOf(navigation.node, node)) ||
+      (node !== anchor && !isDescendantOf(anchor, node))
+    )
+      return false;
+
+    const hidden = jsxAttribute(opening, "hidden");
+    if (!hidden) return false;
+    const initializer = hidden.initializer;
+    return !(
+      initializer &&
+      ts.isJsxExpression(initializer) &&
+      initializer.expression &&
+      isBooleanLiteral(initializer.expression, false)
     );
   });
 }

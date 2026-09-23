@@ -271,6 +271,57 @@ describe("production experience author", () => {
     );
   });
 
+  it("rejects hidden navigation containers but allows an explicit false value", () => {
+    const route = { id: "route-hidden-navigation" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const original = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const hiddenNavigation = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav hidden aria-label="Main navigation">',
+    );
+    const hiddenParent = original
+      .replace(
+        '<nav aria-label="Main navigation">',
+        '<div hidden><nav aria-label="Main navigation">',
+      )
+      .replace("</nav>", "</nav></div>");
+    const hiddenChild = original
+      .replace(
+        '<nav aria-label="Main navigation">',
+        '<nav aria-label="Main navigation"><div hidden>',
+      )
+      .replace("</nav>", "</div></nav>");
+    const explicitlyVisibleNavigation = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav hidden={false} aria-label="Main navigation">',
+    );
+
+    for (const experience of [hiddenNavigation, hiddenParent, hiddenChild])
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+        }),
+      ).toThrow(
+        'Candidate route-hidden-navigation navigation must expose href="#services".',
+      );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: explicitlyVisibleNavigation, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+  });
+
   it("requires sealed content when a content-bound runtime helper is used", () => {
     const route = { id: "route-runtime-helper-content" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
