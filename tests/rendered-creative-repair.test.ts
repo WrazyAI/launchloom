@@ -1121,10 +1121,15 @@ export default function Experience({ content, runtime }) {
       ],
       runBakeoffImpl: async (options: any) => {
         bakeoffCalls += 1;
-        return writeBakeoffEvidence(
+        const result = await writeBakeoffEvidence(
           options,
           report({ candidates: [candidate("candidate-a")] }),
         );
+        if (bakeoffCalls === 1) {
+          for (const viewport of ["desktop", "mobile"])
+            await fs.writeFile(path.join(options.screenshotsDir, `candidate-a-${viewport}-viewport.png`), "viewport pixels");
+        }
+        return result;
       },
       runVisualGateImpl: (options: any) => visualGate(options, "pass"),
       runHumanGateImpl: async ({ feedback }: any) => {
@@ -1143,6 +1148,11 @@ export default function Experience({ content, runtime }) {
     expect(result.status).toBe("passed");
     expect(bakeoffCalls).toBe(2);
     expect(repairs).toHaveLength(1);
+    expect(repairs[0].screenshots.map((file: string) => path.basename(file))).toEqual([
+      "candidate-a-desktop-viewport.png",
+      "candidate-a-mobile-viewport.png",
+      "candidate-a-desktop.png",
+    ]);
     expect(repairs[0].findings).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

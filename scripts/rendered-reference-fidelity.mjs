@@ -11,7 +11,7 @@ import {
   promptCachedText,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
-import { promptImagePart } from "./prompt-evidence.mjs";
+import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 
 export const RENDERED_REFERENCE_MODEL =
   process.env.CREATIVE_REFERENCE_JUDGE_MODEL || "openai/gpt-6-luna";
@@ -149,6 +149,17 @@ async function imagePart(file) {
   return promptImagePart(file);
 }
 
+async function imageSize(file) {
+  if (!file) return "unknown size";
+  try {
+    const { width, height } = await promptImageDimensions(file);
+    return `${width}x${height} source pixels`;
+  } catch {
+    // Tiny non-image test fixtures still exercise the request contract.
+    return "unknown size";
+  }
+}
+
 async function requestJson({
   model,
   schema,
@@ -251,12 +262,13 @@ function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
 }
 
 /**
- * @param {{referenceDna: any, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string}, model?: string, fetchImpl?: typeof fetch}} options
+ * @param {{referenceDna: any, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string, fullDesktop?: string}, renderedGeometry?: Record<string, any>, model?: string, fetchImpl?: typeof fetch}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function evaluateRenderedReferenceFidelity({
   referenceDna,
   candidateScreenshots,
+  renderedGeometry = {},
   model = RENDERED_REFERENCE_MODEL,
   fetchImpl = fetch
 } = {}) {
@@ -270,28 +282,39 @@ export async function evaluateRenderedReferenceFidelity({
   const candidateDesktop = candidateScreenshots?.desktop;
   const candidateCompact = candidateScreenshots?.compact;
   const candidateMobile = candidateScreenshots?.mobile;
+  const candidateOverview = candidateScreenshots?.fullDesktop;
   for (const [label, file] of [["desktop reference", desktopReference], ["candidate desktop", candidateDesktop], ["candidate compact", candidateCompact], ["candidate mobile", candidateMobile]])
     if (!file) throw new Error(`Rendered reference evaluation is missing ${label}.`);
   const stableReferenceDna = cacheableReferenceDna(referenceDna);
+  const [referenceSize, overviewSize] = await Promise.all([
+    imageSize(desktopReference),
+    imageSize(candidateOverview),
+  ]);
   const reusableReferencePrefix = `REFERENCE DNA
 ${JSON.stringify(stableReferenceDna, null, 2)}
 
-Compare the candidate to the reference as an independent implementation of the same design mechanics. Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding. A technically clean but visually generic page must not pass.`;
+EVIDENCE COORDINATES
+The desktop reference is a ${referenceSize} capture. It may cover multiple page sections; its capture height is not the browser viewport height. Do not convert fractions of its full image height into CSS vh, or infer candidate hero size from a scaled full-page overview.
+The candidate desktop, compact, and mobile images below are actual first-viewport captures. Browser-measured geometry: ${JSON.stringify(renderedGeometry)}. Use those measurements for viewport fit and hero occupancy, then inspect the viewport pixels for composition quality.
+${candidateOverview ? `The candidate desktop page overview is ${overviewSize}. Use it only for section order and spatial rhythm; long-page scaling is not evidence of small typography or a shallow hero.` : ""}
+Compare corresponding design mechanics and visual language rather than total page length. A client site must include real services, FAQs, and contact sections even when the reference capture ends earlier. Do not penalize their existence; judge how they are composed and paced. If no mobile reference exists, judge mobile recomposition against Reference DNA and the candidate mobile viewport without inventing a reference mobile layout.
+Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding. A technically clean but visually generic page must not pass.`;
   const content = [
     { type: "text", text: reusableReferencePrefix },
-    { type: "text", text: "Reference desktop:" },
+    { type: "text", text: `Reference desktop capture (${referenceSize}):` },
     await imagePart(desktopReference),
     ...(mobileReference ? [{ type: "text", text: "Reference mobile:" }, await imagePart(mobileReference)] : []),
     promptCachedText(
       model,
       "End assigned reference evidence. Candidate render evidence follows.",
     ),
-    { type: "text", text: "Candidate desktop 1536x864:" },
+    { type: "text", text: "Candidate desktop first viewport 1536x864:" },
     await imagePart(candidateDesktop),
-    { type: "text", text: "Candidate compact desktop 1366x768:" },
+    { type: "text", text: "Candidate compact desktop first viewport 1366x768:" },
     await imagePart(candidateCompact),
-    { type: "text", text: "Candidate mobile 390x844:" },
-    await imagePart(candidateMobile)
+    { type: "text", text: "Candidate mobile first viewport 390x844:" },
+    await imagePart(candidateMobile),
+    ...(candidateOverview ? [{ type: "text", text: `Candidate desktop page overview (${overviewSize}):` }, await imagePart(candidateOverview)] : []),
   ];
   const sessionId = openRouterSessionId(
     "rendered-reference",

@@ -19,6 +19,10 @@ lead endpoint, or ship an unverified layout.
    defaults are fallback vocabulary only; screenshot-derived measurements are
    required in the new-intake workflow. A missing required desktop screenshot
    fails creative compilation; prose-only inspiration cannot reach Luna.
+   Full-page reference captures retain their source pixel dimensions in the
+   evidence record. Their section-height fractions describe the captured page,
+   not CSS viewport units; the adapted desktop header and hero must still fit
+   inside the 1536x864 browser viewport.
    3. `author-production-experiences.mjs` asks the visual author for three
    independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
    author receives the complete Reference DNA and its desktop/mobile evidence,
@@ -43,7 +47,8 @@ lead endpoint, or ship an unverified layout.
    compliance remains a cheap safety preflight for sealed content and isolated
    CSS. Reference geometry and signature markers remain diagnostic evidence,
    while promotion fidelity comes from `rendered-reference-fidelity.mjs`, which
-   judges the candidate screenshots against the assigned reference screenshots
+   judges true first-viewport captures against the assigned reference screenshots,
+   with a separate labeled full-page overview for section order and rhythm,
    across hero geometry, typography, spatial rhythm, imagery, service
    presentation, navigation, CTA placement, mobile recomposition, and
    interaction evidence. Screenshot-to-screenshot candidate distance is
@@ -56,8 +61,8 @@ lead endpoint, or ship an unverified layout.
    retained in the report for diagnosis and do not veto a pixel-diverse
    candidate. Legacy candidates keep the structural diversity fallback.
 6. `run-rendered-creative-repair.mjs` owns the bounded rendered repair loop.
-   Each round runs the real Astro bakeoff, keeps the desktop, compact, and
-   mobile screenshots, applies the screenshot-to-reference judge, and then
+   Each round runs the real Astro bakeoff, keeps browser-scale viewport captures
+   and full-page overviews, applies the screenshot-to-reference judge, and then
    runs `visual-quality-gate.mjs` against the selected rendered candidate.
    Repairable findings are returned to Luna with the current source, Reference
    DNA, and available screenshots. The repaired candidate is never trusted on

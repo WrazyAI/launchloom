@@ -124,6 +124,7 @@ STRUCTURAL OUTPUT CHECK
 
 REFERENCE FIDELITY RULES
 - Do not average references or drift to a familiar LaunchLoom composition.
+- A tall desktop reference may be a full-page capture. Its image-height fractions are not CSS vh. Use the recorded source capture dimensions and adapt the composition so the complete desktop header and hero fit within 1536x864 while preserving the reference's hierarchy, crop, and overlap.
 - Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
 - Preserve assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
 - Include every required signature element and expose its data-reference-signature attribute in the rendered DOM.

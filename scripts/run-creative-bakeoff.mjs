@@ -309,9 +309,11 @@ export async function runCreativeBakeoff({
               if (!renderedFidelity.pass)
                 candidateResult.failures.push(...renderedFidelity.hardFindings.map((item) => `${viewport.name}: ${item.message}`));
             }
-            // Keep the requested viewport width while including the complete
-            // route so the screenshot-level gate can inspect lower sections,
-            // FAQs, and the contact handoff as well as the hero.
+            // The reference judge needs the actual first viewport for hero
+            // geometry. Keep a separate full-page capture for section rhythm,
+            // lower content, and the final visual-quality gate.
+            if (candidate.manifest.version >= 2)
+              await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}-viewport.png`) });
             await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}.png`), fullPage: true });
             await page.close();
           }
@@ -322,10 +324,16 @@ export async function runCreativeBakeoff({
           const renderedReference = await renderedReferenceEvaluator({
             referenceDna: candidate.manifest.referenceDna,
             candidateScreenshots: {
-              desktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop.png`),
-              compact: path.join(evidenceDir, `${candidate.manifest.candidateId}-compact.png`),
-              mobile: path.join(evidenceDir, `${candidate.manifest.candidateId}-mobile.png`),
+              desktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop-viewport.png`),
+              compact: path.join(evidenceDir, `${candidate.manifest.candidateId}-compact-viewport.png`),
+              mobile: path.join(evidenceDir, `${candidate.manifest.candidateId}-mobile-viewport.png`),
+              fullDesktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop.png`),
             },
+            renderedGeometry: Object.fromEntries(candidateResult.viewports.map((viewport) => [viewport.name, {
+              viewportWidth: viewport.width,
+              viewportHeight: viewport.viewportHeight,
+              heroBottom: viewport.heroBottom,
+            }])),
           });
           candidateResult.renderedReferenceFidelity = renderedReference;
           candidateResult.referenceFidelity = {

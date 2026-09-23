@@ -667,9 +667,18 @@ export async function runRenderedCreativeRepair({
       candidateRoot,
       candidateDirectory,
     );
-    const screenshots = VIEWPORTS.map((viewport) =>
+    // Show Luna the real browser-scale desktop/mobile compositions first, then
+    // the full page for section rhythm. Older evidence sets fall back to the
+    // original full-page captures.
+    const viewportScreenshots = ["desktop", "mobile"].map((viewport) =>
+      path.join(screenshotsDir, `${candidateId}-${viewport}-viewport.png`),
+    );
+    const fullPageScreenshots = VIEWPORTS.map((viewport) =>
       path.join(screenshotsDir, `${candidateId}-${viewport}.png`),
     );
+    const screenshots = (await collectAvailableScreenshots(viewportScreenshots)).length === viewportScreenshots.length
+      ? [...viewportScreenshots, fullPageScreenshots[0]]
+      : fullPageScreenshots;
     // A build failure can legitimately leave an ENOENT screenshot, but
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);

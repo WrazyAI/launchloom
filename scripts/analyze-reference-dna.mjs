@@ -6,7 +6,7 @@ import {
   openRouterChatCompletion,
   openRouterSessionId,
 } from "./openrouter-client.mjs";
-import { promptImagePart } from "./prompt-evidence.mjs";
+import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 
 const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-6-luna";
 
@@ -208,6 +208,10 @@ async function analyzeRoute(route, fetchImpl = fetch) {
   const desktop = dna.evidence?.desktopScreenshot?.path;
   const mobile = dna.evidence?.mobileScreenshot?.available ? dna.evidence.mobileScreenshot.path : "";
   if (!desktop) throw new Error(`Reference route ${route.id} has no desktop screenshot.`);
+  const captureDimensions = {
+    desktop: await promptImageDimensions(desktop),
+    mobile: mobile ? await promptImageDimensions(mobile) : null,
+  };
   const content = [
     {
       type: "text",
@@ -226,9 +230,15 @@ ${JSON.stringify({
   motionOpportunity: route.motionOpportunity
 }, null, 2)}
 
+SOURCE CAPTURE DIMENSIONS
+${JSON.stringify(captureDimensions, null, 2)}
+The desktop image may be a full-page capture or page excerpt. Its total image height is not a browser viewport height. The production desktop viewport is 1536x864 and the complete header plus hero must fit inside it at 100% zoom. Preserve the reference's hierarchy, crop, overlap, and spacing when adapting it to that viewport.
+
 Rules:
 - infer geometry from the screenshots, not from familiar templates
-- describe ratios relative to viewport size
+- distinguish source-image width ratios, source-image height ratios, and actual browser viewport ratios explicitly
+- dominantSectionHeightRatios describe fractions of the captured page image, never CSS vh; do not call a full-page image a single viewport
+- describe heroGeometry.viewport as the adapted 1536x864 browser composition, not the source screenshot's full height
 - identify image occupancy, crop strategy, whitespace rhythm, overlap, section-height rhythm, and surface transitions
 - infer only motion that is visually supported by the screenshots or the route's documented motion opportunity
 - required signatures must be design mechanics that can be independently implemented
@@ -280,7 +290,7 @@ Rules:
     if (!response.ok)
       throw new Error(`Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`);
     logOpenRouterCacheUsage("reference-dna", payload.usage);
-    return parseChoice(payload);
+    return { ...parseChoice(payload), captureDimensions };
   } finally {
     clearTimeout(timeout);
   }
@@ -294,14 +304,16 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
   const routes = [];
   for (const route of pack.routes) {
     const analyzed = await analyzeRoute(route, fetchImpl);
+    const { captureDimensions, ...analysis } = analyzed;
     routes.push({
       ...route,
       referenceDna: {
         ...route.referenceDna,
-        ...analyzed,
+        ...analysis,
         evidence: {
           ...route.referenceDna.evidence,
-          annotatedDescription: analyzed.annotatedDescription
+          annotatedDescription: analysis.annotatedDescription,
+          captureDimensions,
         },
         analyzedFromEvidence: true,
         analyzerModel: model,

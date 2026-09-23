@@ -19,7 +19,7 @@ import {
   promptCachedText,
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
-import { promptImagePart } from "./prompt-evidence.mjs";
+import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
 const REPAIR_SCHEMA = {
@@ -371,6 +371,15 @@ async function imagePart(file) {
   return promptImagePart(file);
 }
 
+async function imageSizeLabel(file) {
+  try {
+    const { width, height } = await promptImageDimensions(file);
+    return `${width}x${height} source pixels`;
+  } catch {
+    return "unknown source dimensions";
+  }
+}
+
 export async function resolveReferenceEvidencePath(record) {
   const repositoryRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -490,7 +499,8 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     const resolved = await resolveReferenceEvidencePath(record);
     try {
       if (!resolved) throw new Error("No accessible reference screenshot.");
-      content.push({ type: "text", text: "Assigned reference evidence:" });
+      const dimensions = await imageSizeLabel(resolved);
+      content.push({ type: "text", text: `Assigned reference evidence (${dimensions}). Its capture height may span multiple page sections and is not a browser viewport height. Reference DNA section-height fractions must not be used directly as CSS vh. The desktop header and complete hero must fit within 1536x864.` });
       content.push(await imagePart(resolved));
     } catch (cause) {
       throw new ReferenceEvidenceError(
@@ -533,8 +543,14 @@ Every <img> must have a usable alt attribute. Use concise descriptive alt text f
 
 Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
   });
-  for (const screenshot of screenshots.slice(0, 3))
+  for (const screenshot of screenshots.slice(0, 3)) {
+    const dimensions = await imageSizeLabel(screenshot);
+    const viewportCapture = /-viewport\.png$/u.test(screenshot);
+    content.push({ type: "text", text: viewportCapture
+      ? `Current candidate first browser viewport (${dimensions}). Judge hero geometry, typography, and mobile recomposition at this scale.`
+      : `Current candidate full-page overview (${dimensions}). Use it for section rhythm, not to infer browser-scale typography or hero height.` });
     content.push(await imagePart(screenshot));
+  }
 
   const reasoningEffort =
     creativeSession?.reasoningEffort ||
