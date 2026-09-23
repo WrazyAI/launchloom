@@ -388,10 +388,6 @@ function scopeErrorFor(source, route) {
   }
 }
 
-function replaceEmptyImageAlt(source) {
-  return source.replace(/\balt\s*=\s*(["'])\s*\1/gu, 'alt="Decorative image"');
-}
-
 function reducedMotionFallback() {
   return `export function mountExperienceMotion(runtime) {
   const reduced = Boolean(runtime?.reducedMotion) ||
@@ -1143,10 +1139,25 @@ function validateExperience(source, route, content) {
     throw new Error(
       `Candidate ${route.id} must pass sealed content to the shared LeadForm runtime surface.`,
     );
-  if (/\balt\s*=\s*["']\s*["']/iu.test(source))
-    throw new Error(
-      `Candidate ${route.id} contains an empty image alt attribute.`,
-    );
+  for (const { opening } of collectJsxElements(source).elements) {
+    if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
+    const altAttribute = jsxAttribute(opening, "alt");
+    const initializer = altAttribute?.initializer;
+    const expression =
+      initializer && ts.isJsxExpression(initializer)
+        ? initializer.expression
+        : null;
+    const invalidExpression =
+      initializer &&
+      ts.isJsxExpression(initializer) &&
+      (!expression ||
+        expression.kind === ts.SyntaxKind.NullKeyword ||
+        (ts.isIdentifier(expression) && expression.text === "undefined"));
+    if (!altAttribute || !initializer || invalidExpression)
+      throw new Error(
+        `Candidate ${route.id} has an image that must have a usable alt attribute; use alt="" only for decorative or redundant imagery.`,
+      );
+  }
   for (const target of ["services", "faqs", "contact"])
     if (!new RegExp(`href\\s*=\\s*["']#${target}["']`, "u").test(source))
       throw new Error(
@@ -1295,6 +1306,7 @@ function authorRules() {
     "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
     "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; use a compact anchor CTA for early conversion and do not fake a form or create a second lead endpoint.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
+    'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",
     "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact: no full LeadForm, service list, or long-copy block in the first fold.",
     "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
@@ -1509,36 +1521,20 @@ export async function authorExperienceCandidates({
             repairError instanceof Error
               ? repairError.message
               : String(repairError);
-          if (/empty image alt attribute/iu.test(repairMessage)) {
-            experience = replaceEmptyImageAlt(experience);
-            validateExperience(experience, route, content);
-          } else {
-            const finalRepair = await generateStageValue(
-              limitedGenerate,
-              {
-                ...base,
-                stage: "experience",
-                designContract,
-                previousSource: experience,
-                validationError: `The first repair still failed validation: ${repairMessage}. This is the final repair attempt. Return complete JSX with every listed contract requirement fixed.`,
-              },
-              "content",
-              "experience",
-            );
-            experience = normalizeAuthoredSource(finalRepair.value);
-            try {
-              validateExperience(experience, route, content);
-            } catch (finalError) {
-              const finalMessage =
-                finalError instanceof Error
-                  ? finalError.message
-                  : String(finalError);
-              if (!/empty image alt attribute/iu.test(finalMessage))
-                throw finalError;
-              experience = replaceEmptyImageAlt(experience);
-              validateExperience(experience, route, content);
-            }
-          }
+          const finalRepair = await generateStageValue(
+            limitedGenerate,
+            {
+              ...base,
+              stage: "experience",
+              designContract,
+              previousSource: experience,
+              validationError: `The first repair still failed validation: ${repairMessage}. This is the final repair attempt. Return complete JSX with every listed contract requirement fixed. Give every image a usable alt attribute; use an empty alt only for decorative imagery or when adjacent text fully conveys its relevant information, and preserve reviewed descriptions for informative assets.`,
+            },
+            "content",
+            "experience",
+          );
+          experience = normalizeAuthoredSource(finalRepair.value);
+          validateExperience(experience, route, content);
         }
       }
       const [stylesOutput, motionOutput] = await Promise.all([

@@ -3,7 +3,12 @@ import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { collectAvailableScreenshots, runRenderedCreativeRepair, runVisualGateProcess, writeCandidate } from "../scripts/run-rendered-creative-repair.mjs";
+import {
+  collectAvailableScreenshots,
+  runRenderedCreativeRepair,
+  runVisualGateProcess,
+  writeCandidate,
+} from "../scripts/run-rendered-creative-repair.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 
 const roots: string[] = [];
@@ -15,9 +20,9 @@ afterEach(async () => {
   else process.env.OPENROUTER_API_KEY = originalOpenRouterKey;
   vi.unstubAllGlobals();
   await Promise.all(
-    roots.splice(0).map((root) =>
-      fs.rm(root, { recursive: true, force: true }),
-    ),
+    roots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
   );
 });
 
@@ -39,7 +44,10 @@ async function fixture(candidateIds = ["candidate-a", "candidate-b"]) {
       path.join(directory, "metadata.json"),
       JSON.stringify({ candidateId, referenceDna: { familyId: candidateId } }),
     );
-    await fs.writeFile(path.join(directory, "Experience.jsx"), "export default () => null;\n");
+    await fs.writeFile(
+      path.join(directory, "Experience.jsx"),
+      "export default () => null;\n",
+    );
     await fs.writeFile(path.join(directory, "styles.css"), "body{}\n");
     await fs.writeFile(
       path.join(directory, "motion.js"),
@@ -53,7 +61,9 @@ async function bindCandidateSession(
   candidatesDir: string,
   creativeSession: Record<string, any>,
 ) {
-  for (const entry of await fs.readdir(candidatesDir, { withFileTypes: true })) {
+  for (const entry of await fs.readdir(candidatesDir, {
+    withFileTypes: true,
+  })) {
     if (!entry.isDirectory()) continue;
     const metadataPath = path.join(candidatesDir, entry.name, "metadata.json");
     const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
@@ -69,7 +79,10 @@ async function bindCandidateSession(
   }
 }
 
-function candidate(candidateId: string, overrides: Record<string, unknown> = {}) {
+function candidate(
+  candidateId: string,
+  overrides: Record<string, unknown> = {},
+) {
   return {
     candidateId,
     directory: candidateId,
@@ -120,9 +133,7 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
     version: 1,
     mode: "verify",
     blockers:
-      verdict === "pass"
-        ? []
-        : [{ severity: "major", category: "hierarchy" }],
+      verdict === "pass" ? [] : [{ severity: "major", category: "hierarchy" }],
     audit: {
       verdict,
       findings:
@@ -172,7 +183,7 @@ describe("rendered creative repair orchestration", () => {
         body: "A clear first conversation about what you need.",
         primaryLabel: "Start a conversation",
         image: "/images/hero.webp",
-        secondaryImage: "",
+        secondaryImage: "/images/ornament.webp",
       },
       services: [
         {
@@ -206,7 +217,7 @@ export default function Experience({ content, runtime }) {
       .replace(" data-early-conversion", "")
       .replace(
         '<section data-reference-section="image-chapter"></section>',
-        '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.image} alt="" /><img src={content.hero.secondaryImage || content.hero.image} alt="" /></section></section>',
+        '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.image} alt="" /><img src={content.hero.tertiaryImage || content.hero.image} alt="" /><img src={content.hero.secondaryImage} alt="" aria-hidden="true" /></section></section>',
       );
     const candidateDir = path.join(candidates, "candidate-a");
     const metadataPath = path.join(candidateDir, "metadata.json");
@@ -237,9 +248,11 @@ export default function Experience({ content, runtime }) {
       motion:
         "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
     };
+    let repairPrompt = "";
     const fetchMock = vi.fn(
-      async () =>
-        new Response(
+      async (_input: unknown, init?: { body?: unknown }) => {
+        repairPrompt = String(init?.body || "");
+        return new Response(
           JSON.stringify({
             choices: [
               {
@@ -249,7 +262,8 @@ export default function Experience({ content, runtime }) {
             ],
             usage: { completion_tokens: 32 },
           }),
-        ),
+        );
+      },
     );
     vi.stubGlobal("fetch", fetchMock);
     let visualGateCalls = 0;
@@ -274,6 +288,18 @@ export default function Experience({ content, runtime }) {
 
     expect(result.status).toBe("passed");
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(repairPrompt).toContain("ALT-TEXT CONTRACT");
+    const requestBody = JSON.parse(repairPrompt);
+    const repairText = requestBody.messages
+      .flatMap((message: any) =>
+        Array.isArray(message.content) ? message.content : [],
+      )
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(repairText).toContain(
+      'Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text',
+    );
     expect(visualGateCalls).toBe(2);
     const repaired = await fs.readFile(
       path.join(candidateDir, "Experience.jsx"),
@@ -294,6 +320,9 @@ export default function Experience({ content, runtime }) {
     expect(
       repaired.match(/alt="Still-life image for the studio"/gu),
     ).toHaveLength(4);
+    expect(repaired).toContain(
+      'src={content.hero.secondaryImage} alt="" aria-hidden="true"',
+    );
   });
 
   it("repairs the selected source only after a rendered visual failure and rerenders before passing", async () => {
@@ -895,8 +924,7 @@ process.exit(1);
         {
           experience: "export default function Repaired(){ return null; }",
           styles: ".repaired { display: block; }",
-          motion:
-            "export function mountExperienceMotion(){ return () => {}; }",
+          motion: "export function mountExperienceMotion(){ return () => {}; }",
         },
         { fsImpl },
       ),
@@ -1006,8 +1034,7 @@ process.exit(1);
         {
           experience: "export default function Repaired(){ return null; }",
           styles: ".repaired { display: block; }",
-          motion:
-            "export function mountExperienceMotion(){ return () => {}; }",
+          motion: "export function mountExperienceMotion(){ return () => {}; }",
         },
         { fsImpl },
       ),
@@ -1063,7 +1090,9 @@ process.exit(1);
           writeBakeoffEvidence(
             options,
             report({
-              candidates: [candidate("candidate-a", { directory: "../outside" })],
+              candidates: [
+                candidate("candidate-a", { directory: "../outside" }),
+              ],
             }),
           ),
         runVisualGateImpl: async () => visualGate({}, "pass"),
@@ -1084,10 +1113,11 @@ process.exit(1);
       'PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build',
     );
     const hostGuardIndex = workflow.indexOf('data-creative-host="true"');
-    const candidateGuardIndex = workflow.indexOf('data-creative-candidate=\\\"$CANDIDATE_ID\\\"');
+    const candidateGuardIndex = workflow.indexOf(
+      'data-creative-candidate=\\\"$CANDIDATE_ID\\\"',
+    );
     expect(buildIndex).toBeGreaterThan(-1);
     expect(hostGuardIndex).toBeGreaterThan(buildIndex);
     expect(candidateGuardIndex).toBeGreaterThan(buildIndex);
   });
-
 });

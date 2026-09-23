@@ -127,6 +127,57 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("accepts decorative empty alts but rejects missing or nullish alt values", () => {
+    const route = { id: "route-decorative-alt" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const decorativeImage = experience.replace(
+      "<section data-hero>",
+      '<section data-hero><img src={content.hero.image} alt="" aria-hidden="true" />',
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: decorativeImage, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+
+    const missingAlt = decorativeImage.replace(' alt=""', "");
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: missingAlt, styles, motion },
+        route,
+      }),
+    ).toThrow(/must have a usable alt attribute/iu);
+
+    const invalidAltSources = [
+      decorativeImage.replace('alt=""', "alt={}"),
+      decorativeImage.replace('alt=""', "alt={null}"),
+      decorativeImage.replace('alt=""', "alt={undefined}"),
+    ];
+    for (const invalidExperience of invalidAltSources)
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience: invalidExperience, styles, motion },
+          route,
+        }),
+      ).toThrow(/must have a usable alt attribute/iu);
+  });
+
   it("restores required anchors only on uniquely identifiable semantic sections", () => {
     const source = `<main>
       <section data-hero><h1>{content.hero.heading}</h1></section>
@@ -173,11 +224,9 @@ describe("production experience author", () => {
       "</section>",
       "</section><section data-hero></section>",
     );
-    const relocated = restoreRequiredExperienceMarkers(
-      misplaced,
-      original,
-      { id: "route-01" },
-    );
+    const relocated = restoreRequiredExperienceMarkers(misplaced, original, {
+      id: "route-01",
+    });
     expect(relocated).toContain('data-reference-section="hero" data-hero');
     expect(relocated).not.toContain("<section data-hero></section>");
 
@@ -273,8 +322,7 @@ describe("production experience author", () => {
   });
 
   it("reuses reviewed alt text for repeated, reformatted uses of the same sealed image", () => {
-    const original =
-      `<div><img src={content.hero.image} alt="Still-life image in the studio" /></div>`;
+    const original = `<div><img src={content.hero.image} alt="Still-life image in the studio" /></div>`;
     const repaired = `<div>
       <img src={ content.hero.image } alt="" />
       <img src={content.hero.image} alt="" />
@@ -288,8 +336,7 @@ describe("production experience author", () => {
     ).toHaveLength(2);
     expect(restored).toContain('src={content.hero.secondaryImage} alt=""');
 
-    const ambiguousOriginal =
-      `<img src={content.hero.image} alt="Front crop" /><img src={content.hero.image} alt="Back crop" />`;
+    const ambiguousOriginal = `<img src={content.hero.image} alt="Front crop" /><img src={content.hero.image} alt="Back crop" />`;
     const ambiguous = restoreImageAltsFromOriginal(
       `<img src={content.hero.image} alt="" /><img src={content.hero.image} alt="" /><img src={content.hero.image} alt="" />`,
       ambiguousOriginal,
@@ -300,7 +347,8 @@ describe("production experience author", () => {
   });
 
   it("does not conflate meaningful template-literal whitespace in image paths", () => {
-    const original = '<img src={`${content.hero.image}front.jpg`} alt="Front image" />';
+    const original =
+      '<img src={`${content.hero.image}front.jpg`} alt="Front image" />';
     const repaired = [
       '<img src={`${content.hero.image} front.jpg`} alt="" />',
       '<img src={ `${ content.hero.image }front.jpg` } alt="" />',
@@ -309,8 +357,12 @@ describe("production experience author", () => {
     const restored = restoreImageAltsFromOriginal(repaired, original);
 
     expect(restored.match(/alt="Front image"/gu)).toHaveLength(1);
-    expect(restored).toContain('src={`${content.hero.image} front.jpg`} alt=""');
-    expect(restored).toContain('src={ `${ content.hero.image }front.jpg` } alt="Front image"');
+    expect(restored).toContain(
+      'src={`${content.hero.image} front.jpg`} alt=""',
+    );
+    expect(restored).toContain(
+      'src={ `${ content.hero.image }front.jpg` } alt="Front image"',
+    );
   });
 
   it("keeps shared creative form helper text on the candidate contrast palette", () => {
@@ -800,7 +852,7 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
-  it("repairs malformed CSS wrappers and empty image alt attributes", async () => {
+  it("repairs malformed CSS wrappers while retaining decorative empty alts", async () => {
     const result = await authorExperienceCandidates({
       site,
       inspirationPack,
@@ -821,6 +873,13 @@ describe("production experience author", () => {
     expect(result.candidates).toHaveLength(3);
     expect(
       result.candidates.every((item) => item.metadata.complianceRepaired),
+    ).toBe(true);
+    expect(
+      result.candidates.every((item) =>
+        item.files["Experience.jsx"].includes(
+          '<img src={content.hero.image} alt="" />',
+        ),
+      ),
     ).toBe(true);
   });
 
