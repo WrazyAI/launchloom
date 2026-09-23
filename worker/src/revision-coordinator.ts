@@ -78,6 +78,73 @@ export type CompletionResult = {
   };
 };
 
+export type CreativeRepairStatus =
+  | "available"
+  | "dispatching"
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed";
+
+export type CreativeRepairFinding = {
+  category: string;
+  severity: "critical" | "major" | "minor" | "info";
+  evidence: string;
+  recommendation?: string;
+};
+
+export type CreativeRepairSessionInput = {
+  sessionId: string;
+  repo: string;
+  pr: number;
+  siteId: string;
+  headSha: string;
+  candidateId: string;
+  repairAvailable: boolean;
+  previewUrl?: string | null;
+  findings: CreativeRepairFinding[];
+};
+
+type CreativeRepairRow = {
+  session_id: string;
+  repo: string;
+  pr: number;
+  site_id: string;
+  head_sha: string;
+  candidate_id: string;
+  repair_available: number;
+  preview_url: string | null;
+  findings_json: string;
+  status: CreativeRepairStatus;
+  attempt_consumed: number;
+  created_at: number;
+  updated_at: number;
+  result_preview_url: string | null;
+  result_review_url: string | null;
+  outcome: string | null;
+  failure: string | null;
+};
+
+export type CreativeRepairSessionView = {
+  sessionId: string;
+  status: CreativeRepairStatus;
+  attemptConsumed: boolean;
+  candidateId: string;
+  repairAvailable: boolean;
+  previewUrl: string | null;
+  findings: CreativeRepairFinding[];
+  resultPreviewUrl: string | null;
+  resultReviewUrl: string | null;
+  outcome: string | null;
+  failure: string | null;
+};
+
+export type CreativeRepairClaim = {
+  run: boolean;
+  status: CreativeRepairStatus | "missing" | "stale";
+  session?: CreativeRepairSessionInput;
+};
+
 const ACTIVE = "('dispatching','dispatched','running')";
 const DISPATCH_RETRY_MS = 15 * 60_000;
 const RUN_TIMEOUT_MS = 50 * 60_000;
@@ -215,8 +282,233 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           window_started_at INTEGER NOT NULL,
           request_count INTEGER NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS creative_repair_sessions (
+          session_id TEXT PRIMARY KEY,
+          repo TEXT NOT NULL,
+          pr INTEGER NOT NULL,
+          site_id TEXT NOT NULL,
+          head_sha TEXT NOT NULL,
+          candidate_id TEXT NOT NULL,
+          repair_available INTEGER NOT NULL,
+          preview_url TEXT,
+          findings_json TEXT NOT NULL,
+          status TEXT NOT NULL CHECK(status IN ('available','dispatching','queued','running','completed','failed')),
+          attempt_consumed INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          result_preview_url TEXT,
+          result_review_url TEXT,
+          outcome TEXT,
+          failure TEXT
+        );
+        CREATE INDEX IF NOT EXISTS creative_repair_sessions_created
+          ON creative_repair_sessions(created_at);
       `);
     });
+  }
+
+  private creativeRepairRow(sessionId: string) {
+    return this.ctx.storage.sql
+      .exec<CreativeRepairRow>(
+        "SELECT * FROM creative_repair_sessions WHERE session_id = ? LIMIT 1",
+        sessionId,
+      )
+      .toArray()[0];
+  }
+
+  private creativeRepairView(
+    row: CreativeRepairRow,
+  ): CreativeRepairSessionView {
+    let findings: CreativeRepairFinding[] = [];
+    try {
+      const parsed = JSON.parse(row.findings_json);
+      if (Array.isArray(parsed)) findings = parsed;
+    } catch {
+      findings = [];
+    }
+    return {
+      sessionId: row.session_id,
+      status: row.status,
+      attemptConsumed: row.attempt_consumed > 0,
+      candidateId: row.candidate_id,
+      repairAvailable: row.repair_available === 1 && row.attempt_consumed === 0,
+      previewUrl: row.preview_url,
+      findings,
+      resultPreviewUrl: row.result_preview_url,
+      resultReviewUrl: row.result_review_url,
+      outcome: row.outcome,
+      failure: row.failure,
+    };
+  }
+
+  private creativeRepairInput(row: CreativeRepairRow): CreativeRepairSessionInput {
+    let findings: CreativeRepairFinding[] = [];
+    try {
+      const parsed = JSON.parse(row.findings_json);
+      if (Array.isArray(parsed)) findings = parsed;
+    } catch {
+      findings = [];
+    }
+    return {
+      sessionId: row.session_id,
+      repo: row.repo,
+      pr: row.pr,
+      siteId: row.site_id,
+      headSha: row.head_sha,
+      candidateId: row.candidate_id,
+      repairAvailable: row.repair_available === 1,
+      previewUrl: row.preview_url,
+      findings,
+    };
+  }
+
+  async registerCreativeRepair(
+    input: CreativeRepairSessionInput,
+  ): Promise<CreativeRepairSessionView> {
+    const existing = this.creativeRepairRow(input.sessionId);
+    if (existing) {
+      const exactMatch =
+        existing.repo === input.repo &&
+        existing.pr === input.pr &&
+        existing.site_id === input.siteId &&
+        existing.head_sha === input.headSha &&
+        existing.candidate_id === input.candidateId;
+      if (!exactMatch)
+        throw new Error("Creative repair session ID is already bound.");
+      return this.creativeRepairView(existing);
+    }
+    const now = Date.now();
+    this.ctx.storage.sql.exec(
+      "DELETE FROM creative_repair_sessions WHERE created_at < ? AND status IN ('completed','failed')",
+      now - 90 * 24 * 60 * 60_000,
+    );
+    this.ctx.storage.sql.exec(
+      `INSERT INTO creative_repair_sessions (
+        session_id, repo, pr, site_id, head_sha, candidate_id,
+        repair_available, preview_url, findings_json, status,
+        attempt_consumed, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'available', 0, ?, ?)`,
+      input.sessionId,
+      input.repo,
+      input.pr,
+      input.siteId,
+      input.headSha,
+      input.candidateId,
+      input.repairAvailable ? 1 : 0,
+      input.previewUrl || null,
+      JSON.stringify(input.findings.slice(0, 20)),
+      now,
+      now,
+    );
+    return this.creativeRepairView(this.creativeRepairRow(input.sessionId)!);
+  }
+
+  async getCreativeRepair(
+    sessionId: string,
+    repo: string,
+    pr: number,
+    headSha: string,
+  ): Promise<CreativeRepairSessionView | null> {
+    const row = this.creativeRepairRow(sessionId);
+    if (
+      !row ||
+      row.repo.toLowerCase() !== repo.toLowerCase() ||
+      row.pr !== pr ||
+      row.head_sha !== headSha
+    )
+      return null;
+    return this.creativeRepairView(row);
+  }
+
+  beginCreativeRepair(
+    sessionId: string,
+    repo: string,
+    pr: number,
+    headSha: string,
+  ): { started: boolean; status: CreativeRepairStatus | "missing" } {
+    const row = this.creativeRepairRow(sessionId);
+    if (!row) return { started: false, status: "missing" };
+    if (
+      row.repo.toLowerCase() !== repo.toLowerCase() ||
+      row.pr !== pr ||
+      row.head_sha !== headSha
+    )
+      return { started: false, status: "failed" };
+    if (row.status !== "available" || row.attempt_consumed !== 0)
+      return { started: false, status: row.status };
+    if (row.repair_available !== 1)
+      return { started: false, status: "failed" };
+    this.ctx.storage.sql.exec(
+      "UPDATE creative_repair_sessions SET status = 'dispatching', attempt_consumed = 1, updated_at = ? WHERE session_id = ? AND status = 'available' AND attempt_consumed = 0",
+      Date.now(),
+      sessionId,
+    );
+    return { started: true, status: "dispatching" };
+  }
+
+  async creativeRepairDispatched(sessionId: string): Promise<void> {
+    this.ctx.storage.sql.exec(
+      "UPDATE creative_repair_sessions SET status = 'queued', updated_at = ? WHERE session_id = ? AND status = 'dispatching'",
+      Date.now(),
+      sessionId,
+    );
+  }
+
+  async claimCreativeRepair(sessionId: string): Promise<CreativeRepairClaim> {
+    const row = this.creativeRepairRow(sessionId);
+    if (!row) return { run: false, status: "missing" };
+    if (row.status !== "queued" && row.status !== "dispatching")
+      return { run: false, status: row.status };
+    this.ctx.storage.sql.exec(
+      "UPDATE creative_repair_sessions SET status = 'running', updated_at = ? WHERE session_id = ? AND status IN ('dispatching','queued')",
+      Date.now(),
+      sessionId,
+    );
+    return {
+      run: true,
+      status: "running",
+      session: this.creativeRepairInput(this.creativeRepairRow(sessionId)!),
+    };
+  }
+
+  async completeCreativeRepair(
+    sessionId: string,
+    result: {
+      outcome: string;
+      previewUrl?: string | null;
+      reviewUrl?: string | null;
+      findings?: CreativeRepairFinding[];
+    },
+  ): Promise<void> {
+    const row = this.creativeRepairRow(sessionId);
+    if (!row || row.status !== "running")
+      throw new Error("Creative repair is not running.");
+    this.ctx.storage.sql.exec(
+      `UPDATE creative_repair_sessions
+       SET status = 'completed', updated_at = ?, result_preview_url = ?,
+           result_review_url = ?, outcome = ?, findings_json = ?, failure = NULL
+       WHERE session_id = ? AND status = 'running'`,
+      Date.now(),
+      result.previewUrl || null,
+      result.reviewUrl || null,
+      result.outcome.slice(0, 80),
+      JSON.stringify((result.findings || JSON.parse(row.findings_json)).slice(0, 20)),
+      sessionId,
+    );
+  }
+
+  async failCreativeRepair(
+    sessionId: string,
+    reason: string,
+  ): Promise<void> {
+    this.ctx.storage.sql.exec(
+      `UPDATE creative_repair_sessions
+       SET status = 'failed', updated_at = ?, failure = ?
+       WHERE session_id = ? AND status IN ('dispatching','queued','running')`,
+      Date.now(),
+      cleanError(reason),
+      sessionId,
+    );
   }
 
   private row(requestId: string) {

@@ -1129,9 +1129,9 @@ describe("production experience author", () => {
     expect(workflow).toContain(
       "cp -R /tmp/generated-experiences .launchloom/generated-experiences",
     );
-    expect(workflow).toContain(
-      "name: Preserve compact generation failure diagnostics",
-    );
+    expect(workflow).toContain("name: Prepare private creative-recovery report");
+    expect(workflow).toContain("name: Register one-time repair session and create signed review link");
+    expect(workflow).not.toContain("uses: actions/upload-artifact@v4");
     expect(workflow).not.toContain("name: Preserve SEO research evidence");
     expect(workflow).not.toContain("name: Preserve inspiration evidence");
     expect(workflow).not.toContain(

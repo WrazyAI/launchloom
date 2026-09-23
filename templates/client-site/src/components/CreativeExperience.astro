@@ -6,11 +6,13 @@ import site from "../lib/site";
 
 const { experience } = Astro.props;
 const candidateId = site.design?.experience?.candidateId || "selected";
+const diagnostic = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 const runtime = {
   candidateId,
+  diagnostic,
   lead: {
-    apiUrl: site.lead?.apiUrl || "",
-    token: site.lead?.token || "",
+    apiUrl: diagnostic ? "" : site.lead?.apiUrl || "",
+    token: diagnostic ? "" : site.lead?.token || "",
   },
   reviews: {
     apiUrl: site.socialProof?.google?.apiUrl || "",
@@ -23,6 +25,7 @@ const runtime = {
   role="main"
   data-creative-host="true"
   data-creative-renderer="creative-candidate"
+  data-creative-diagnostic={diagnostic ? "true" : undefined}
   data-creative-candidate={candidateId}
   data-creative-family={site.design?.experience?.familyId || "unknown"}
   data-creative-reference-family={site.design?.experience?.referenceFamilyId || site.design?.experience?.familyId || "unknown"}

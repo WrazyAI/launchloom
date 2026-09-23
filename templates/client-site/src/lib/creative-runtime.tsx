@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 export type CreativeRuntime = {
   candidateId?: string;
   reducedMotion?: boolean;
+  diagnostic?: boolean;
   asset?: (token: string) => string;
   lead?: { apiUrl?: string; token?: string };
   reviews?: { apiUrl?: string; token?: string };
@@ -105,15 +106,27 @@ export function FAQList({ content }: { content: CreativeContent }) {
   );
 }
 
-export function LeadForm({
-  content,
-  runtime,
-  id = "creative-lead-form",
-}: {
+type LeadFormProps = {
   content: CreativeContent;
   runtime?: CreativeRuntime;
   id?: string;
-}) {
+};
+
+export function LeadForm(props: LeadFormProps) {
+  if (props.runtime?.diagnostic)
+    return (
+      <p className="launchloom-lead-form-note" data-runtime="lead-form-disabled" role="status">
+        Contact forms are disabled in this private design preview.
+      </p>
+    );
+  return <ConfiguredLeadForm {...props} />;
+}
+
+function ConfiguredLeadForm({
+  content,
+  runtime,
+  id = "creative-lead-form",
+}: LeadFormProps) {
   const [status, setStatus] = useState("");
   const [pending, setPending] = useState(false);
   const initial = useMemo(

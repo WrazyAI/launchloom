@@ -1,0 +1,322 @@
+name: Final creative candidate repair
+
+on:
+  repository_dispatch:
+    types: [repair-creative-candidate]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: creative-repair-${{ github.event.client_payload.sessionId }}
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      CREATIVE_EXPERIENCE_MODEL: ${{ vars.CREATIVE_EXPERIENCE_MODEL || 'openai/gpt-6-luna' }}
+      REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+      REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
+      LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+    steps:
+      - uses: actions/checkout@v5
+      - name: Atomically claim the one allowed repair
+        id: claim
+        env:
+          CLIENT_REPO: ${{ github.event.client_payload.repo }}
+          SESSION_ID: ${{ github.event.client_payload.sessionId }}
+          CLIENT_PR: ${{ github.event.client_payload.pr }}
+          EXPECTED_SHA: ${{ github.event.client_payload.headSha }}
+        run: |
+          [[ "$CLIENT_REPO" =~ ^WrazyAI/launchloom-[0-9]+-[a-z0-9-]+$ ]] || { echo "Invalid client repository" >&2; exit 1; }
+          [[ "$SESSION_ID" =~ ^[a-f0-9]{32}$ ]] || { echo "Invalid recovery session" >&2; exit 1; }
+          [[ "$CLIENT_PR" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid review pull request" >&2; exit 1; }
+          [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ ]] || { echo "Invalid reviewed commit" >&2; exit 1; }
+          test -n "$REVISION_COORDINATOR_SECRET" || { echo "Missing recovery coordinator credential" >&2; exit 1; }
+          RESPONSE=$(jq -n --arg repo "$CLIENT_REPO" --arg session "$SESSION_ID" --argjson pr "$CLIENT_PR" --arg sha "$EXPECTED_SHA" '{action:"claim",repo:$repo,sessionId:$session,pr:$pr,headSha:$sha}' | curl --fail-with-body --silent --show-error -X POST "$LAUNCHLOOM_API_URL/api/internal/creative-repairs" -H "Authorization: Bearer $REVISION_COORDINATOR_SECRET" -H "Content-Type: application/json" --data-binary @-)
+          printf '%s' "$RESPONSE" > "$RUNNER_TEMP/creative-repair-claim.json"
+          RUN=$(printf '%s' "$RESPONSE" | jq -r '.run // false')
+          echo "run=$RUN" >> "$GITHUB_OUTPUT"
+          if [ "$RUN" != true ]; then echo "Repair event was already claimed or is stale; no model call will run."; exit 0; fi
+          jq -e '.session.repo == env.CLIENT_REPO and .session.sessionId == env.SESSION_ID and .session.pr == (env.CLIENT_PR | tonumber) and .session.headSha == env.EXPECTED_SHA and .session.repairAvailable == true' "$RUNNER_TEMP/creative-repair-claim.json" >/dev/null
+
+      - uses: actions/setup-node@v5
+        if: steps.claim.outputs.run == 'true'
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install LaunchLoom tools and rendered browser
+        if: steps.claim.outputs.run == 'true'
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Fetch the exact private review commit
+        id: client
+        if: steps.claim.outputs.run == 'true'
+        env:
+          CLIENT_REPO: ${{ github.event.client_payload.repo }}
+          EXPECTED_SHA: ${{ github.event.client_payload.headSha }}
+        run: |
+          CLIENT_DIR="$RUNNER_TEMP/creative-repair-client"
+          gh repo clone "$CLIENT_REPO" "$CLIENT_DIR" -- --branch review/initial --depth 1
+          cd "$CLIENT_DIR"
+          git config user.name "LaunchLoom"
+          git config user.email "automation@launchloom.app"
+          git remote set-url origin "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git"
+          test "$(git branch --show-current)" = "review/initial" || { echo "Review branch mismatch" >&2; exit 1; }
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA" || { echo "The reviewed site changed before the repair started" >&2; exit 1; }
+          echo "dir=$CLIENT_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Validate the frozen session and isolate one candidate
+        id: input
+        if: steps.claim.outputs.run == 'true'
+        env:
+          CLIENT_DIR: ${{ steps.client.outputs.dir }}
+          SESSION_ID: ${{ github.event.client_payload.sessionId }}
+          CLIENT_REPO: ${{ github.event.client_payload.repo }}
+          EXPECTED_SHA: ${{ github.event.client_payload.headSha }}
+        run: |
+          CANDIDATE=$(jq -r '.session.candidateId' "$RUNNER_TEMP/creative-repair-claim.json")
+          SITE_ID=$(jq -r '.session.siteId' "$RUNNER_TEMP/creative-repair-claim.json")
+          [[ "$CANDIDATE" =~ ^candidate-[a-z0-9]+$ ]] || { echo "Invalid candidate ID" >&2; exit 1; }
+          [[ "$SITE_ID" =~ ^[a-z0-9][a-z0-9-]{0,62}$ ]] || { echo "Invalid Pages project" >&2; exit 1; }
+          jq -e --arg candidate "$CANDIDATE" '.candidateId == $candidate and .creativeSessionId != null' "$CLIENT_DIR/.launchloom/creative-recovery.json" >/dev/null
+          jq -e '.reasoningEffort == "xhigh" or .reasoningEffort == "max"' "$CLIENT_DIR/.launchloom/reasoning-preflight.json" >/dev/null
+          test "$(jq -r '.creativeSessionId' "$CLIENT_DIR/.launchloom/creative-recovery.json")" = "$(jq -r '.sessionId' "$CLIENT_DIR/.launchloom/reasoning-preflight.json")" || { echo "Recovery report and frozen reasoning session do not match" >&2; exit 1; }
+          FROZEN_DIGEST=$(sha256sum "$CLIENT_DIR/.launchloom/reasoning-preflight.json" | cut -d' ' -f1)
+          SOURCE="$CLIENT_DIR/.launchloom/generated-experiences/$CANDIDATE"
+          for FILE in metadata.json content-manifest.json Experience.jsx styles.css motion.js; do test -s "$SOURCE/$FILE" || { echo "Candidate source is incomplete: $FILE" >&2; exit 1; }; done
+          mkdir -p "$RUNNER_TEMP/final-repair-candidates/$CANDIDATE"
+          cp -R "$SOURCE/." "$RUNNER_TEMP/final-repair-candidates/$CANDIDATE/"
+          node --input-type=module - "$RUNNER_TEMP/creative-repair-claim.json" "$RUNNER_TEMP/creative-repair-findings.txt" <<'NODE'
+          import fs from 'node:fs';
+          const claim = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          const findings = claim.session.findings || [];
+          const text = findings.length
+            ? findings.map((item) => `[${item.severity}] ${item.category}\nEvidence: ${item.evidence}${item.recommendation ? `\nRecommendation: ${item.recommendation}` : ''}`).join('\n\n')
+            : 'The candidate did not pass the rendered preview-quality gate. Inspect the saved reference-fidelity and visual-gate reports, repair this candidate once, and preserve all verified business facts and sealed content tokens.';
+          fs.writeFileSync(process.argv[3], text.slice(0, 12000));
+          NODE
+          echo "candidate=$CANDIDATE" >> "$GITHUB_OUTPUT"
+          echo "site_id=$SITE_ID" >> "$GITHUB_OUTPUT"
+          echo "frozen_digest=$FROZEN_DIGEST" >> "$GITHUB_OUTPUT"
+
+      - name: Run exactly one rendered repair against captured findings
+        id: repair
+        if: steps.claim.outputs.run == 'true'
+        env:
+          CLIENT_DIR: ${{ steps.client.outputs.dir }}
+          CANDIDATE: ${{ steps.input.outputs.candidate }}
+          SESSION_ID: ${{ github.event.client_payload.sessionId }}
+          FROZEN_DIGEST: ${{ steps.input.outputs.frozen_digest }}
+        run: |
+          set +e
+          node scripts/run-rendered-creative-repair.mjs \
+            --site-dir "$CLIENT_DIR" \
+            --candidates "$RUNNER_TEMP/final-repair-candidates" \
+            --out .launchloom/creative-repair/final-attempt \
+            --mode preview \
+            --session "$CLIENT_DIR/.launchloom/reasoning-preflight.json" \
+            --feedback-file "$RUNNER_TEMP/creative-repair-findings.txt" \
+            --max-cycles 1 \
+            --require-diversity false \
+            --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" \
+            > "$RUNNER_TEMP/final-repair-runner.log" 2>&1
+          EXIT_CODE=$?
+          set -e
+          test "$(sha256sum "$CLIENT_DIR/.launchloom/reasoning-preflight.json" | cut -d' ' -f1)" = "$FROZEN_DIGEST" || { echo "The frozen reasoning session changed during repair" >&2; exit 1; }
+          RESULT=failed
+          RESULT_LINE=$(tail -n 1 "$RUNNER_TEMP/final-repair-runner.log")
+          if [ "$EXIT_CODE" -eq 0 ] && printf '%s' "$RESULT_LINE" | jq -e '.creativeRepairStatus == "passed" and .selectedCandidateId == env.CANDIDATE and .visualGatePass == true' >/dev/null 2>&1; then RESULT=passed; fi
+          # The repair runner prints one JSON result line on success. Never print
+          # its captured logs: they can include client-specific generated copy.
+          echo "result=$RESULT" >> "$GITHUB_OUTPUT"
+          if [ "$RESULT" = passed ]; then echo "The single rendered repair passed its own visual and creative gates."; else echo "The single rendered repair did not pass all required gates."; fi
+
+      - name: Preserve private repair source and reports
+        id: save
+        if: always() && steps.claim.outputs.run == 'true' && steps.input.outputs.candidate != ''
+        env:
+          CLIENT_DIR: ${{ steps.client.outputs.dir }}
+          CANDIDATE: ${{ steps.input.outputs.candidate }}
+          EXPECTED_SHA: ${{ github.event.client_payload.headSha }}
+          REPAIR_RESULT: ${{ steps.repair.outputs.result }}
+        run: |
+          cd "$CLIENT_DIR"
+          git fetch --quiet origin review/initial
+          test "$(git rev-parse origin/review/initial)" = "$EXPECTED_SHA" || { echo "Review branch changed during repair; preserving artifacts without overwriting it" >&2; exit 1; }
+          SOURCE="$RUNNER_TEMP/final-repair-candidates/$CANDIDATE"
+          DESTINATION=".launchloom/generated-experiences/$CANDIDATE"
+          for FILE in Experience.jsx styles.css motion.js; do
+            if [ -s "$SOURCE/$FILE" ]; then cp "$SOURCE/$FILE" "$DESTINATION/$FILE"; fi
+          done
+          if [ -d .launchloom/creative-repair/final-attempt ]; then git add .launchloom/creative-repair/final-attempt; fi
+          git add "$DESTINATION/Experience.jsx" "$DESTINATION/styles.css" "$DESTINATION/motion.js"
+          if [ "$REPAIR_RESULT" = passed ]; then git add src/site.config.json src/generated-experiences/selected; fi
+          if ! git diff --cached --quiet; then
+            git commit -m "Record one-time rendered creative repair"
+            git push origin HEAD:review/initial
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Reevaluate the repaired candidate against its full peer set
+        id: quality
+        if: steps.repair.outputs.result == 'passed' && steps.save.outcome == 'success'
+        continue-on-error: true
+        env:
+          CLIENT_DIR: ${{ steps.client.outputs.dir }}
+          CANDIDATE: ${{ steps.input.outputs.candidate }}
+        run: |
+          cd "$CLIENT_DIR"
+          REPORT=.launchloom/creative-repair/final-attempt/round-02/creative-bakeoff.json
+          SCREENSHOTS=.launchloom/creative-repair/final-attempt/round-02/screenshots
+          mkdir -p "$(dirname "$REPORT")"
+          set +e
+          node "$GITHUB_WORKSPACE/scripts/run-creative-bakeoff.mjs" --site-dir "$PWD" --candidates .launchloom/generated-experiences --report "$REPORT" --screenshots "$SCREENSHOTS" --preview true > "$RUNNER_TEMP/final-full-bakeoff.log" 2>&1
+          BAKEOFF_EXIT=$?
+          set -e
+          READY=false
+          if [ "$BAKEOFF_EXIT" -eq 0 ] && jq -e --arg candidate "$CANDIDATE" '.selectedCandidateId == $candidate and .fallback == false and .promotionReady == true and .diversityRequired == true and .visualDiversity.pass == true' "$REPORT" >/dev/null 2>&1; then
+            SCORE=$(jq -r --arg candidate "$CANDIDATE" '.candidates[] | select(.candidateId == $candidate) | .visualScore' "$REPORT")
+            DISTANCE=$(jq -r --arg candidate "$CANDIDATE" '.candidates[] | select(.candidateId == $candidate) | .distinctivenessScore' "$REPORT")
+            node "$GITHUB_WORKSPACE/scripts/promote-creative-candidate.mjs" --site-dir "$PWD" --candidate ".launchloom/generated-experiences/$CANDIDATE" --preview true --selection-mode creative-preview --visual-score "$SCORE" --distinctiveness-score "$DISTANCE"
+            cp "$REPORT" .launchloom/creative-bakeoff.json
+            git add .launchloom/creative-bakeoff.json src/site.config.json src/generated-experiences/selected "$REPORT" "$SCREENSHOTS"
+            if ! git diff --cached --quiet; then git commit -m "Record full-cohort creative quality check"; git push origin HEAD:review/initial; fi
+            READY=true
+          fi
+          echo "promotion_ready=$READY" >> "$GITHUB_OUTPUT"
+          if [ "$READY" = true ]; then echo "Repaired candidate passed full-cohort diversity and promotion checks."; else echo "Repaired candidate did not pass every full-cohort promotion check."; fi
+
+      - name: Build and release-check the repaired developer preview
+        id: verified_preview
+        if: steps.repair.outputs.result == 'passed' && steps.quality.outputs.promotion_ready == 'true'
+        env:
+          CLIENT_DIR: ${{ steps.client.outputs.dir }}
+          SITE_ID: ${{ steps.input.outputs.site_id }}
+          CANDIDATE: ${{ steps.input.outputs.candidate }}
+          LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+        run: |
+          cd "$CLIENT_DIR"
+          npm ci
+          PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
+          grep -I -F -q 'data-creative-host="true"' dist/index.html || { echo "Creative host marker missing from final build" >&2; exit 1; }
+          grep -I -F -q "data-creative-candidate=\"$CANDIDATE\"" dist/index.html || { echo "Repaired candidate missing from final build" >&2; exit 1; }
+          if grep -I -E -q 'data-experience-pack|legacy-design-family' dist/index.html; then echo "Legacy renderer marker found" >&2; exit 1; fi
+          PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots .launchloom/creative-repair/final-attempt/review-screenshots
+          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
+          jq -e --arg candidate "$CANDIDATE" '.status == "passed" and .visualGatePass == true and .humanRevisionPass == true and .selectedCandidateId == $candidate' .launchloom/creative-repair/final-attempt/summary.json >/dev/null
+          FINAL_GATE=.launchloom/creative-repair/final-attempt/final/visual-gate.json
+          jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_GATE" >/dev/null
+          if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash" >&2; exit 1; fi
+          git add .launchloom/creative-repair/final-attempt/review-screenshots
+          if ! git diff --cached --quiet; then git commit -m "Record repaired preview verification"; git push origin HEAD:review/initial; fi
+          npx wrangler pages deploy dist --project-name "$SITE_ID" --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "One-time repaired developer preview"
+          PREVIEW="https://review-initial.$SITE_ID.pages.dev"
+          node "$GITHUB_WORKSPACE/scripts/wait-for-pages-preview.mjs" --url "$PREVIEW"
+          echo "url=$PREVIEW" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare a diagnostic-only view if the final repair still misses
+        id: diagnostic
+        if: always() && steps.claim.outputs.run == 'true' && steps.save.outcome == 'success' && (steps.quality.outputs.promotion_ready != 'true' || steps.verified_preview.outcome == 'failure')
+        continue-on-error: true
+        env:
+          CLIENT_DIR: ${{ steps.client.outputs.dir }}
+          CANDIDATE: ${{ steps.input.outputs.candidate }}
+        run: |
+          cd "$CLIENT_DIR"
+          test -f .launchloom/creative-repair/final-attempt/round-00/creative-bakeoff.json || { echo "No final rendered report; returning the report without a public preview."; exit 0; }
+          RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-recovery.mjs" --site-dir "$PWD" --candidates .launchloom/generated-experiences --repair-root .launchloom/creative-repair/final-attempt --candidate-id "$CANDIDATE")
+          SAFE=$(printf '%s' "$RESULT" | jq -r '.diagnosticPreviewEligible')
+          test "$(printf '%s' "$RESULT" | jq -r '.candidateId')" = "$CANDIDATE" || { echo "Final report candidate mismatch" >&2; exit 1; }
+          jq '.status = "final-attempt-completed" | .repairAvailable = false' .launchloom/creative-recovery.json > "$RUNNER_TEMP/creative-recovery-final.json"
+          mv "$RUNNER_TEMP/creative-recovery-final.json" .launchloom/creative-recovery.json
+          git add .launchloom/creative-recovery.json src/site.config.json src/generated-experiences/selected
+          if ! git diff --cached --quiet; then git commit -m "Prepare final diagnostic-only creative result"; git push origin HEAD:review/initial; fi
+          echo "safe=$SAFE" >> "$GITHUB_OUTPUT"
+
+      - name: Build and deploy safe noindex diagnostic result
+        id: diagnostic_preview
+        if: always() && steps.diagnostic.outputs.safe == 'true'
+        continue-on-error: true
+        env:
+          CLIENT_DIR: ${{ steps.client.outputs.dir }}
+          SITE_ID: ${{ steps.input.outputs.site_id }}
+          CANDIDATE: ${{ steps.input.outputs.candidate }}
+          LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+        run: |
+          cd "$CLIENT_DIR"
+          PUBLIC_REVIEW_MODE=true PUBLIC_CREATIVE_DIAGNOSTIC=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
+          node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" --dist dist --candidate "$CANDIDATE" --screenshots .launchloom/creative-repair/final-attempt/diagnostic-screenshots
+          git add .launchloom/creative-recovery.json .launchloom/creative-repair/final-attempt/diagnostic-screenshots
+          if ! git diff --cached --quiet; then git commit -m "Record final diagnostic preview checks"; git push origin HEAD:review/initial; fi
+          npx wrangler pages deploy dist --project-name "$SITE_ID" --branch creative-diagnostic --commit-hash "$(git rev-parse HEAD)" --commit-message "Final noindex diagnostic creative preview"
+          PREVIEW="https://creative-diagnostic.$SITE_ID.pages.dev"
+          node "$GITHUB_WORKSPACE/scripts/wait-for-pages-preview.mjs" --url "$PREVIEW"
+          echo "url=$PREVIEW" >> "$GITHUB_OUTPUT"
+
+      - name: Return the final result to the developer
+        id: finish
+        if: always() && steps.claim.outputs.run == 'true'
+        env:
+          CLIENT_REPO: ${{ github.event.client_payload.repo }}
+          SESSION_ID: ${{ github.event.client_payload.sessionId }}
+          CLIENT_PR: ${{ github.event.client_payload.pr }}
+          PREVIEW_URL: ${{ steps.verified_preview.outputs.url }}
+          DIAGNOSTIC_URL: ${{ steps.diagnostic_preview.outputs.url }}
+          CLIENT_DIR: ${{ steps.client.outputs.dir }}
+          SITE_ID: ${{ steps.input.outputs.site_id }}
+          REPAIR_RESULT: ${{ steps.repair.outputs.result }}
+          PROMOTION_READY: ${{ steps.quality.outputs.promotion_ready }}
+        run: |
+          cd "$CLIENT_DIR"
+          if [ "$REPAIR_RESULT" = passed ] && [ "$PROMOTION_READY" = true ] && [ -n "$PREVIEW_URL" ]; then
+            CLIENT_EMAIL=$(node -e 'const x=require(process.argv[1]); console.log(x.business.email || x.business.leadEmail || "")' "$PWD/src/site.config.json")
+            FEEDBACK_ISSUE=$(gh issue list --repo "$CLIENT_REPO" --state open --label launchloom-client-feedback --limit 1 --json number --jq '.[0].number // 0')
+            ORIGINS="$PREVIEW_URL,https://$SITE_ID.pages.dev"
+            TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage developer --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "$(git rev-parse HEAD)" --site "$SITE_ID" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$ORIGINS" --preview-url "$PREVIEW_URL" --token-only true)
+            REVIEW_URL="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
+            OUTCOME=passed
+            RESULT_PREVIEW="$PREVIEW_URL"
+            RESULT_REVIEW="$REVIEW_URL"
+            gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-creative-repair-result -->\n\n## Final creative repair passed\n\nThe repaired creative candidate cleared the rendered preview and SEO checks. It is ready for developer review, not client publication.\n\nPreview: $PREVIEW_URL\n\nDeveloper review: $REVIEW_URL"
+            printf 'The repaired design passed the final rendered and SEO checks. It has not been published to the client.\n' > "$RUNNER_TEMP/creative-repair-outcome.txt"
+            node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.argv[1]); console.log(x.business.name || "Website")' "$PWD/src/site.config.json")" --preview "$PREVIEW_URL" --review "$REVIEW_URL" --kind revision --audience developer --outcome-file "$RUNNER_TEMP/creative-repair-outcome.txt" --idempotency-key "creative-repair-$SESSION_ID"
+          else
+            OUTCOME=needs-attention
+            RESULT_PREVIEW="$DIAGNOSTIC_URL"
+            RESULT_REVIEW=""
+            if [ -n "$DIAGNOSTIC_URL" ]; then
+              gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-creative-repair-result -->\n\n## Final creative repair needs attention\n\nThe one allowed repair completed, but the result still did not clear all promotion checks. This diagnostic preview is noindex and cannot be approved or published.\n\nDiagnostic preview: $DIAGNOSTIC_URL"
+            else
+              gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-creative-repair-result -->\n\n## Final creative repair needs attention\n\nThe one allowed repair did not produce a hard-check-safe diagnostic preview. The report and source are preserved in this private repository; no site was published."
+            fi
+            printf 'The single final repair did not pass all required checks. No automatic approval or client publication occurred.\n' > "$RUNNER_TEMP/creative-repair-outcome.txt"
+            node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$SITE_ID" --preview "${RESULT_PREVIEW:-https://github.com/$CLIENT_REPO/pull/$CLIENT_PR}" --review "https://github.com/$CLIENT_REPO/pull/$CLIENT_PR" --kind revision --audience manual-attention --outcome-file "$RUNNER_TEMP/creative-repair-outcome.txt" --idempotency-key "creative-repair-$SESSION_ID"
+          fi
+          BODY=$(jq -n --arg repo "$CLIENT_REPO" --arg session "$SESSION_ID" --arg outcome "$OUTCOME" --arg preview "$RESULT_PREVIEW" --arg review "$RESULT_REVIEW" '{action:"complete",repo:$repo,sessionId:$session,outcome:$outcome,previewUrl:(if $preview == "" then null else $preview end),reviewUrl:(if $review == "" then null else $review end)}')
+          if [ "$OUTCOME" = needs-attention ] && [ -s .launchloom/creative-recovery.json ]; then
+            FINDINGS=$(jq -c '.findings // []' .launchloom/creative-recovery.json)
+            BODY=$(printf '%s' "$BODY" | jq --argjson findings "$FINDINGS" '. + {findings:$findings}')
+          fi
+          curl --fail-with-body --silent --show-error -X POST "$LAUNCHLOOM_API_URL/api/internal/creative-repairs" -H "Authorization: Bearer $REVISION_COORDINATOR_SECRET" -H "Content-Type: application/json" --data "$BODY" >/dev/null
+
+      - name: Mark an interrupted one-time repair as failed
+        if: always() && steps.claim.outputs.run == 'true' && steps.finish.outcome != 'success'
+        env:
+          CLIENT_REPO: ${{ github.event.client_payload.repo }}
+          SESSION_ID: ${{ github.event.client_payload.sessionId }}
+        run: |
+          BODY=$(jq -n --arg repo "$CLIENT_REPO" --arg session "$SESSION_ID" '{action:"fail",repo:$repo,sessionId:$session,reason:"Repair workflow stopped before a result could be returned. The one allowed attempt remains consumed."}')
+          curl --fail-with-body --silent --show-error -X POST "$LAUNCHLOOM_API_URL/api/internal/creative-repairs" -H "Authorization: Bearer $REVISION_COORDINATOR_SECRET" -H "Content-Type: application/json" --data "$BODY" >/dev/null

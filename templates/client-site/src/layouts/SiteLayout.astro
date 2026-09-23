@@ -6,7 +6,8 @@ import ExitOffer from "../components/ExitOffer.astro";
 import "../styles/site.css";
 
 const { title = site.business.name, description = site.business.description } = Astro.props;
-const noIndex = import.meta.env.PUBLIC_REVIEW_MODE === "true";
+const diagnosticPreview = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
+const noIndex = import.meta.env.PUBLIC_REVIEW_MODE === "true" || diagnosticPreview;
 // The approved deployment origin is supplied at build time. A domain in the
 // intake is not necessarily connected to Pages and must not become canonical.
 const canonical = noIndex ? undefined : new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
@@ -44,9 +45,9 @@ const structuredDataJson = JSON.stringify(structuredData).replace(/</g, "\\u003c
     <title>{title}</title>
   </head>
   <body style={`--brand:${site.style.primaryColor};--on-brand:${site.style.contrastColor || "#ffffff"};--brand-ink:${site.style.brandTextColor || site.style.primaryColor};--brand-surface:${site.style.brandSurfaceColor || site.style.primaryColor};--on-brand-surface:${site.style.brandSurfaceTextColor || site.style.contrastColor || "#ffffff"};--cream:${site.style.surfaceColor || "#f8f6f0"};--hero-surface:${site.style.heroColor || "#e8eee5"};--ink:${site.style.inkColor || "#14201d"};--muted:${site.style.mutedColor || "#5e6b66"};--line:${site.style.lineColor || "#d8ded7"}`}>
-    <ReviewBanner />
+    {!diagnosticPreview && <ReviewBanner />}
     <slot />
-    <QuickAnswers />
-    <ExitOffer />
+    {!diagnosticPreview && <QuickAnswers />}
+    {!diagnosticPreview && <ExitOffer />}
   </body>
 </html>
