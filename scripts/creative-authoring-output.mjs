@@ -36,6 +36,7 @@ export function referenceImplementationChecklist(referenceDna) {
     );
   return [
     'REQUIRED LITERAL SECTION IDS: put id="services", id="faqs", and id="contact" on the actual matching content sections. These must be literal JSX string attributes, not variables, expressions, aliases, or empty anchor elements.',
+    'REQUIRED NAVIGATION LINKS: keep real anchor links href="#services", href="#faqs", and href="#contact" available in the visible navigation. Do not remove, replace, or convert them to click handlers.',
     'REFERENCE SECTION ORDER: put each data-reference-section value on its corresponding visible <section> element, in this exact DOM order:',
     ...sectionIds.map(
       (id, index) => `${index + 1}. data-reference-section="${id}"`,

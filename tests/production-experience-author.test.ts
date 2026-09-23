@@ -178,6 +178,27 @@ describe("production experience author", () => {
       ).toThrow(/must have a usable alt attribute/iu);
   });
 
+  it("rejects candidate navigation that replaces the FAQ anchor with a click handler", () => {
+    const route = { id: "route-02" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace('href="#faqs"', "onClick={() => {}}");
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).toThrow('Candidate route-02 navigation must expose href="#faqs".');
+  });
+
   it("requires sealed content when a content-bound runtime helper is used", () => {
     const route = { id: "route-runtime-helper-content" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };

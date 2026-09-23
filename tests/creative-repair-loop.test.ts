@@ -121,6 +121,9 @@ describe("creative repair loop", () => {
     expect(prompt).toContain('id="services"');
     expect(prompt).toContain('id="faqs"');
     expect(prompt).toContain('id="contact"');
+    expect(prompt).toContain(
+      'REQUIRED NAVIGATION LINKS: keep real anchor links href="#services", href="#faqs", and href="#contact" available in the visible navigation. Do not remove, replace, or convert them to click handlers.',
+    );
     expect(prompt).toContain('data-reference-section="hero"');
     expect(prompt).toContain('data-reference-section="services"');
     expect(prompt).toContain('data-reference-section="faqs"');
