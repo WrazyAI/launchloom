@@ -191,7 +191,7 @@ describe("rendered creative repair orchestration", () => {
 export default function Experience({ content, runtime }) {
   return <main data-mobile-recomposition="single-column-editorial-chapters" data-motion-primitive="masked-image-reveal">
     <nav data-navigation-geometry="quiet-corner-links"><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
-    <section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument"><h1>{content.hero.heading}</h1><img src={content.hero.image} alt={content.hero.heading} /><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>
+    <section data-reference-section="hero" data-hero data-hero-geometry="typographic-monument" data-reference-signature="editorial-monument"><h1>{content.hero.heading}</h1><img src={content.hero.image} alt="Still-life image for the studio" /><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>
     <section data-reference-section="image-chapter"></section>
     <section data-reference-section="editorial-intro"></section>
     <section data-reference-section="image-mosaic"></section>
@@ -203,7 +203,7 @@ export default function Experience({ content, runtime }) {
 }`;
     const repairedExperience = initialExperience.replace(
       '<section data-reference-section="image-chapter"></section>',
-      '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p></section></section>',
+      '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.image} alt="" /></section></section>',
     );
     const candidateDir = path.join(candidates, "candidate-a");
     const metadataPath = path.join(candidateDir, "metadata.json");
@@ -280,8 +280,11 @@ export default function Experience({ content, runtime }) {
       '<section id="services" data-reference-section="magazine-archive"',
     );
     expect(repaired).toContain(
-      '<section className="service-note"><p>A note about the services chapter.</p></section>',
+      '<section className="service-note"><p>A note about the services chapter.</p>',
     );
+    expect(
+      repaired.match(/alt="Still-life image for the studio"/gu),
+    ).toHaveLength(3);
   });
 
   it("repairs the selected source only after a rendered visual failure and rerenders before passing", async () => {

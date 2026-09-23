@@ -630,11 +630,24 @@ export function restoreImageAltsFromOriginal(repairedSource, originalSource) {
   const original = collectJsxElements(originalSource);
   const repaired = collectJsxElements(repairedSource);
   const originalAlts = new Map();
+  const expressionPrinter = ts.createPrinter({ removeComments: true });
+  const imageSourceKey = (attribute, file) => {
+    const initializer = attribute?.initializer;
+    if (!initializer) return "";
+    if (ts.isJsxExpression(initializer) && initializer.expression) {
+      return `expression:${expressionPrinter.printNode(
+        ts.EmitHint.Expression,
+        initializer.expression,
+        file,
+      )}`;
+    }
+    return `literal:${jsxAttributeValue(attribute, file)}`;
+  };
   for (const { opening } of original.elements) {
     if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
     const src = jsxAttribute(opening, "src");
     const alt = jsxAttribute(opening, "alt");
-    const srcKey = src?.initializer?.getText(original.file).trim();
+    const srcKey = imageSourceKey(src, original.file);
     const altValue = jsxAttributeValue(alt, original.file);
     if (!srcKey || !alt || !altValue.trim()) continue;
     const queue = originalAlts.get(srcKey) || [];
@@ -648,14 +661,16 @@ export function restoreImageAltsFromOriginal(repairedSource, originalSource) {
     if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
     const src = jsxAttribute(opening, "src");
     const alt = jsxAttribute(opening, "alt");
-    const srcKey = src?.initializer?.getText(repaired.file).trim();
+    const srcKey = imageSourceKey(src, repaired.file);
     if (!srcKey || (alt && jsxAttributeValue(alt, repaired.file).trim()))
       continue;
     const queue = originalAlts.get(srcKey) || [];
     const index = used.get(srcKey) || 0;
-    const reviewedAlt = queue[index];
+    const reviewedAlt =
+      queue[index] ||
+      (queue.length > 0 && new Set(queue).size === 1 ? queue[0] : undefined);
     if (!reviewedAlt) continue;
-    used.set(srcKey, index + 1);
+    if (index < queue.length) used.set(srcKey, index + 1);
     if (alt)
       edits.push({
         start: alt.getStart(repaired.file),

@@ -182,6 +182,47 @@ describe("production experience author", () => {
     ).toEqual([]);
   });
 
+  it("reuses reviewed alt text for repeated, reformatted uses of the same sealed image", () => {
+    const original =
+      `<div><img src={content.hero.image} alt="Still-life image in the studio" /></div>`;
+    const repaired = `<div>
+      <img src={ content.hero.image } alt="" />
+      <img src={content.hero.image} alt="" />
+      <img src={content.hero.secondaryImage} alt="" />
+    </div>`;
+
+    const restored = restoreImageAltsFromOriginal(repaired, original);
+
+    expect(
+      restored.match(/alt="Still-life image in the studio"/gu),
+    ).toHaveLength(2);
+    expect(restored).toContain('src={content.hero.secondaryImage} alt=""');
+
+    const ambiguousOriginal =
+      `<img src={content.hero.image} alt="Front crop" /><img src={content.hero.image} alt="Back crop" />`;
+    const ambiguous = restoreImageAltsFromOriginal(
+      `<img src={content.hero.image} alt="" /><img src={content.hero.image} alt="" /><img src={content.hero.image} alt="" />`,
+      ambiguousOriginal,
+    );
+    expect(ambiguous.match(/alt="Front crop"/gu)).toHaveLength(1);
+    expect(ambiguous.match(/alt="Back crop"/gu)).toHaveLength(1);
+    expect(ambiguous.match(/alt=""/gu)).toHaveLength(1);
+  });
+
+  it("does not conflate meaningful template-literal whitespace in image paths", () => {
+    const original = '<img src={`${content.hero.image}front.jpg`} alt="Front image" />';
+    const repaired = [
+      '<img src={`${content.hero.image} front.jpg`} alt="" />',
+      '<img src={ `${ content.hero.image }front.jpg` } alt="" />',
+    ].join("");
+
+    const restored = restoreImageAltsFromOriginal(repaired, original);
+
+    expect(restored.match(/alt="Front image"/gu)).toHaveLength(1);
+    expect(restored).toContain('src={`${content.hero.image} front.jpg`} alt=""');
+    expect(restored).toContain('src={ `${ content.hero.image }front.jpg` } alt="Front image"');
+  });
+
   it("keeps shared creative form helper text on the candidate contrast palette", () => {
     const styles = readFileSync(
       "templates/client-site/src/styles/creative-runtime.css",
