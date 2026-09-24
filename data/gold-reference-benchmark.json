@@ -1,0 +1,307 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-24",
+  "purpose": "Frozen synthetic cases for comparing LaunchLoom reference selection coverage before and after Gold Reference Library changes. Keep these inputs stable across reference-system experiments.",
+  "cases": [
+    {
+      "id": "hvac-urgent-service",
+      "name": "Desert HVAC Service",
+      "industry": "home-services",
+      "businessKind": "local-service",
+      "styleBrief": "technical urgent trustworthy bold utility",
+      "compatibility": {
+        "businessKind": "local-service",
+        "conversionMode": "quote-request",
+        "contentDensity": "medium",
+        "locality": "service-area",
+        "assetAvailability": "medium",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "plumber-local-emergency",
+      "name": "Neighborhood Plumbing",
+      "industry": "plumbing",
+      "businessKind": "local-service",
+      "styleBrief": "direct practical local high contrast service led",
+      "compatibility": {
+        "businessKind": "local-service",
+        "conversionMode": "call",
+        "contentDensity": "medium",
+        "locality": "service-area",
+        "assetAvailability": "low",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "electrician-estimate",
+      "name": "City Electrical Co.",
+      "industry": "electrical",
+      "businessKind": "local-service",
+      "styleBrief": "clean technical precise project proof",
+      "compatibility": {
+        "businessKind": "local-service",
+        "conversionMode": "quote-request",
+        "contentDensity": "medium",
+        "locality": "service-area",
+        "assetAvailability": "medium",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "garage-door-service",
+      "name": "Garage Door Repair",
+      "industry": "garage-door",
+      "businessKind": "local-service",
+      "styleBrief": "utility service coverage practical bold",
+      "compatibility": {
+        "businessKind": "local-service",
+        "conversionMode": "call",
+        "contentDensity": "medium",
+        "locality": "service-area",
+        "assetAvailability": "medium",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "auto-repair-precision",
+      "name": "Precision Auto Workshop",
+      "industry": "automotive",
+      "businessKind": "automotive",
+      "styleBrief": "technical object led premium workshop precise dark",
+      "compatibility": {
+        "businessKind": "automotive",
+        "conversionMode": "booking",
+        "contentDensity": "medium",
+        "locality": "single-location",
+        "assetAvailability": "medium",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "general-dental",
+      "name": "Neighborhood Dental Practice",
+      "industry": "dental",
+      "businessKind": "healthcare",
+      "styleBrief": "clean calm friendly clinical modern human",
+      "compatibility": {
+        "businessKind": "healthcare",
+        "conversionMode": "booking",
+        "contentDensity": "high",
+        "locality": "single-location",
+        "assetAvailability": "medium",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "medspa-consultation",
+      "name": "Aesthetic Wellness Studio",
+      "industry": "beauty",
+      "businessKind": "wellness",
+      "styleBrief": "premium warm editorial consultation intimate",
+      "compatibility": {
+        "businessKind": "wellness",
+        "conversionMode": "consultation",
+        "contentDensity": "high",
+        "locality": "single-location",
+        "assetAvailability": "high",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "therapy-care",
+      "name": "Therapy and Care Practice",
+      "industry": "wellness",
+      "businessKind": "healthcare",
+      "styleBrief": "quiet reassuring human editorial low pressure",
+      "compatibility": {
+        "businessKind": "healthcare",
+        "conversionMode": "consultation",
+        "contentDensity": "high",
+        "locality": "single-location",
+        "assetAvailability": "low",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "law-confidential",
+      "name": "Boutique Law Firm",
+      "industry": "legal",
+      "businessKind": "professional-service",
+      "styleBrief": "restrained precise confidential editorial trust",
+      "compatibility": {
+        "businessKind": "professional-service",
+        "conversionMode": "consultation",
+        "contentDensity": "high",
+        "locality": "single-location",
+        "assetAvailability": "low",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "financial-advisory",
+      "name": "Independent Financial Advisory",
+      "industry": "financial",
+      "businessKind": "professional-service",
+      "styleBrief": "calm authority precise restrained professional",
+      "compatibility": {
+        "businessKind": "professional-service",
+        "conversionMode": "consultation",
+        "contentDensity": "high",
+        "locality": "service-area",
+        "assetAvailability": "low",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "consultancy-founder",
+      "name": "Founder Consultancy",
+      "industry": "consulting",
+      "businessKind": "professional-service",
+      "styleBrief": "authored confident editorial founder led distinctive",
+      "compatibility": {
+        "businessKind": "professional-service",
+        "conversionMode": "consultation",
+        "contentDensity": "medium",
+        "locality": "remote",
+        "assetAvailability": "low",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "home-builder",
+      "name": "Custom Home Builder",
+      "industry": "construction",
+      "businessKind": "construction",
+      "styleBrief": "cinematic architecture craftsmanship project led premium",
+      "compatibility": {
+        "businessKind": "construction",
+        "conversionMode": "quote-request",
+        "contentDensity": "high",
+        "locality": "service-area",
+        "assetAvailability": "high",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "property-advisory",
+      "name": "Property Advisory",
+      "industry": "real-estate",
+      "businessKind": "real-estate",
+      "styleBrief": "guided editorial spatial premium property storytelling",
+      "compatibility": {
+        "businessKind": "real-estate",
+        "conversionMode": "consultation",
+        "contentDensity": "high",
+        "locality": "service-area",
+        "assetAvailability": "high",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "neighborhood-cafe",
+      "name": "Neighborhood Cafe",
+      "industry": "food",
+      "businessKind": "restaurant",
+      "styleBrief": "warm playful tactile local collage visit first",
+      "compatibility": {
+        "businessKind": "restaurant",
+        "conversionMode": "visit",
+        "contentDensity": "medium",
+        "locality": "single-location",
+        "assetAvailability": "high",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "restaurant-reservation",
+      "name": "Modern Restaurant",
+      "industry": "restaurant",
+      "businessKind": "restaurant",
+      "styleBrief": "sensory editorial food photography atmospheric",
+      "compatibility": {
+        "businessKind": "restaurant",
+        "conversionMode": "booking",
+        "contentDensity": "medium",
+        "locality": "single-location",
+        "assetAvailability": "high",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "bakery-retail",
+      "name": "Bakery and Food Retail",
+      "industry": "food",
+      "businessKind": "retail",
+      "styleBrief": "product led warm tactile playful packaging collage",
+      "compatibility": {
+        "businessKind": "retail",
+        "conversionMode": "visit",
+        "contentDensity": "medium",
+        "locality": "single-location",
+        "assetAvailability": "high",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "fitness-membership",
+      "name": "Performance Gym",
+      "industry": "fitness",
+      "businessKind": "fitness",
+      "styleBrief": "kinetic energetic condensed action performance",
+      "compatibility": {
+        "businessKind": "fitness",
+        "conversionMode": "signup",
+        "contentDensity": "medium",
+        "locality": "single-location",
+        "assetAvailability": "high",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "sports-coaching",
+      "name": "Athlete Coaching",
+      "industry": "sports",
+      "businessKind": "coaching",
+      "styleBrief": "bold typographic kinetic action coaching",
+      "compatibility": {
+        "businessKind": "coaching",
+        "conversionMode": "trial",
+        "contentDensity": "medium",
+        "locality": "service-area",
+        "assetAvailability": "medium",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "salon-booking",
+      "name": "Hair and Beauty Salon",
+      "industry": "beauty",
+      "businessKind": "physical-facility",
+      "styleBrief": "premium expressive editorial approachable visual",
+      "compatibility": {
+        "businessKind": "physical-facility",
+        "conversionMode": "booking",
+        "contentDensity": "medium",
+        "locality": "single-location",
+        "assetAvailability": "medium",
+        "reducedMotionFirst": false
+      }
+    },
+    {
+      "id": "boutique-retail",
+      "name": "Boutique Product Retail",
+      "industry": "retail",
+      "businessKind": "retail",
+      "styleBrief": "object led collage product premium tactile distinct",
+      "compatibility": {
+        "businessKind": "retail",
+        "conversionMode": "purchase",
+        "contentDensity": "medium",
+        "locality": "single-location",
+        "assetAvailability": "high",
+        "reducedMotionFirst": false
+      }
+    }
+  ]
+}
