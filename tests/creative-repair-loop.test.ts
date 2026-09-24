@@ -284,6 +284,54 @@ describe("creative repair loop", () => {
     ]);
   });
 
+  it("keeps the client visual brief in rendered repair prompts", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-visual-brief-repair-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(repaired) } }],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [],
+      files: repaired,
+      screenshots: [],
+      contentManifest: {
+        values: { brand: { name: "Coastal Brush" } },
+        tokens: [],
+        visualBrief: {
+          palette: { surfaceColor: "#f5f0e4", primaryColor: "#245a4c" },
+          artDirection: "Light tactile craft collage, not a dark house style.",
+        },
+      },
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(prompt).toContain("CLIENT VISUAL BRIEF");
+    expect(prompt).toContain("#f5f0e4");
+    expect(prompt).toContain("Light tactile craft collage");
+    expect(prompt).toContain("Do not repair toward a generic LaunchLoom house style");
+  });
+
   it("uses the frozen creative session effort and session id for repairs", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-frozen-repair-session-"),

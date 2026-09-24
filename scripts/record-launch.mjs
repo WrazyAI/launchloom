@@ -33,6 +33,7 @@ const entry = launchRecordFrom({
   inspiration,
   launchedAt: args["launched-at"] || new Date().toISOString(),
   stage: args.stage || "preview",
+  recordKey: args["record-key"] || "",
 });
 const history = await recordLaunch(entry, historyPath);
 console.log(`launch_recorded=${entry.id}`);

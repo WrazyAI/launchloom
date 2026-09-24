@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import ts from "typescript";
 import {
   authorExperienceCandidates,
+  buildCreativeContentManifest,
   namespaceCreativeCss,
   restoreImageAltsFromOriginal,
   restoreRequiredExperienceMarkers,
@@ -127,6 +128,36 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("keeps the client visual brief alongside sealed content", () => {
+    const manifest = buildCreativeContentManifest({
+      ...site,
+      style: {
+        primaryColor: "#245a4c",
+        surfaceColor: "#f5f0e4",
+        inkColor: "#17362f",
+        tone: "warm",
+        preference: "warm-friendly",
+        visualDirection: "layered room image windows",
+        artDirection:
+          "Light chalk-and-ivory canvas with cypress-green typography.",
+      },
+    });
+
+    expect(manifest.version).toBe(2);
+    expect(manifest.visualBrief).toMatchObject({
+      palette: {
+        primaryColor: "#245a4c",
+        surfaceColor: "#f5f0e4",
+        inkColor: "#17362f",
+      },
+      tone: "warm",
+      preference: "warm-friendly",
+      visualDirection: "layered room image windows",
+      artDirection:
+        "Light chalk-and-ivory canvas with cypress-green typography.",
+    });
+    expect(manifest.values).not.toHaveProperty("style");
+  });
   it("accepts decorative empty alts but rejects missing or nullish alt values", () => {
     const route = { id: "route-decorative-alt" };
     const request = {

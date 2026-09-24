@@ -203,6 +203,10 @@ export function buildRouteContract(route, index = 0) {
     referenceDna,
     referenceEvidenceComplete: Boolean(referenceDna.complete),
     referenceIds: list(route.referenceIds, 8),
+    intakeFitScore: Number.isFinite(Number(route.intakeFitScore))
+      ? Number(route.intakeFitScore)
+      : 0,
+    explicitReferenceMatch: route.explicitReferenceMatch === true,
     evidence: Array.isArray(route.evidence)
       ? route.evidence.map((item) => ({
           id: clean(item.id, 80),

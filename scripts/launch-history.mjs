@@ -34,6 +34,36 @@ export function recentLayoutFingerprints(history) {
   ];
 }
 
+export function recentCreativeFamilyIds(history) {
+  return (history?.launches || []).flatMap((launch) => [
+    ...new Set(
+      [
+        launch.creativeFamilyId,
+        launch.referenceFamilyId,
+        ...(Array.isArray(launch.routeFamilyIds)
+          ? launch.routeFamilyIds
+          : []),
+      ]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean),
+    ),
+  ]);
+}
+
+export function countRecentCreativeFamilyUses(history, candidateFamilyIds) {
+  const candidateFamilies = new Set(
+    (Array.isArray(candidateFamilyIds) ? candidateFamilyIds : [])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean),
+  );
+  if (!candidateFamilies.size) return 0;
+  return (history?.launches || []).filter((launch) =>
+    recentCreativeFamilyIds({ launches: [launch] }).some((familyId) =>
+      candidateFamilies.has(familyId),
+    ),
+  ).length;
+}
+
 function slug(value) {
   return String(value || "launch")
     .toLowerCase()
@@ -58,24 +88,51 @@ export function launchRecordFrom({
   inspiration,
   launchedAt = new Date().toISOString(),
   stage = "preview",
+  recordKey = "",
 }) {
   const experience = config?.design?.experience || {};
   const packId = String(experience.packId || "").trim();
   const variantId = String(experience.variantId || "standard").trim();
   const fingerprint = String(experience.fingerprint || "").trim();
-  if (!packId || !fingerprint)
+  const normalizedStage =
+    stage === "production" ? "production" : stage === "attempt" ? "attempt" : "preview";
+  if (normalizedStage !== "attempt" && (!packId || !fingerprint))
     throw new Error("A launch record needs a pack id and layout fingerprint.");
   const routes = Array.isArray(inspiration?.routes) ? inspiration.routes : [];
+  const baseId = `${launchedAt.slice(0, 10)}-${slug(config?.business?.name)}`;
+  const attemptKey = slug(
+    recordKey ||
+      String(launchedAt || "")
+        .replace(/[^0-9]+/gu, "")
+        .slice(-9),
+  );
   return {
-    id: `${launchedAt.slice(0, 10)}-${slug(config?.business?.name)}`,
+    id:
+      normalizedStage === "attempt"
+        ? `${baseId}-attempt-${attemptKey || "reservation"}`
+        : baseId,
     launchedAt,
-    stage: stage === "production" ? "production" : "preview",
+    stage: normalizedStage,
     businessName: String(config?.business?.name || "").trim(),
     recipe: String(config?.design?.recipe || "").trim(),
     packId,
     variantId,
     layoutFingerprint: fingerprint,
-    referenceIds: cleanList(routes.map((route) => route.referenceId)),
+    creativeFamilyId: String(experience.familyId || "").trim(),
+    referenceFamilyId: String(experience.referenceFamilyId || "").trim(),
+    routeFamilyIds: cleanList(
+      routes.flatMap((route) => [
+        route.familyId,
+        route.referenceFamilyId,
+        route.referenceDna?.familyId,
+      ]),
+    ),
+    referenceIds: cleanList(
+      routes.flatMap((route) => [
+        ...(Array.isArray(route.referenceIds) ? route.referenceIds : []),
+        route.referenceId,
+      ]),
+    ),
     routeSignatures: cleanList(routes.map((route) => route.signature)),
   };
 }

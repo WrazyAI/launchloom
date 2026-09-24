@@ -51,6 +51,27 @@ export default function Experience({ content, runtime }) {
   return root;
 }
 
+async function writeV2ContentManifest(
+  root: string,
+  directory = "candidate-a",
+) {
+  await fs.writeFile(
+    path.join(root, directory, "content-manifest.json"),
+    JSON.stringify({
+      version: 2,
+      values: {},
+      tokens: [],
+      visualBrief: {
+        palette: {},
+        tone: "",
+        preference: "",
+        visualDirection: "",
+        artDirection: "",
+      },
+    }),
+  );
+}
+
 afterEach(async () => {
   await Promise.all(tempRoots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
 });
@@ -140,6 +161,44 @@ describe("creative candidate promotion", () => {
     expect(report.selectedCandidateId).toBeNull();
   }, 45_000);
 
+  it("rejects a version-two candidate before rendering when its content manifest is missing", async () => {
+    const root = await makeFixture();
+    const metadataPath = path.join(root, "candidate-a/metadata.json");
+    const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+    const record = JSON.parse(
+      await fs.readFile("data/inspiration-registry.json", "utf8"),
+    ).records[0];
+    const baseDna = buildReferenceDna(record, { requireEvidence: true });
+    metadata.version = 2;
+    metadata.referenceDna = baseDna;
+    metadata.referenceEvidence = {
+      desktop: baseDna.evidence.desktopScreenshot.path,
+      mobile: baseDna.evidence.mobileScreenshot?.path || "",
+      complete: true,
+    };
+    metadata.creativeManifest = {
+      ...metadata.creativeManifest,
+      version: 2,
+      referenceDna: baseDna,
+      referenceEvidence: metadata.referenceEvidence,
+    };
+    await fs.writeFile(metadataPath, JSON.stringify(metadata));
+
+    const report = await runCreativeBakeoff({
+      siteDir: path.resolve("templates/client-site"),
+      candidatesDir: root,
+      reportPath: path.join(root, "missing-brief-report.json"),
+      screenshotsDir: path.join(root, "missing-brief-screenshots"),
+      preview: true,
+    });
+
+    expect(report.candidates[0].valid).toBe(false);
+    expect(report.candidates[0].viewports).toHaveLength(0);
+    expect(report.candidates[0].failures).toContain(
+      "Version-2 creative candidates require a valid content-manifest.json with visualBrief.",
+    );
+  }, 45_000);
+
   it("uses rendered diversity as the sole v2 production diversity authority", async () => {
     const root = await makeFixture();
     const record = JSON.parse(
@@ -165,6 +224,7 @@ describe("creative candidate promotion", () => {
       referenceEvidence: firstMetadata.referenceEvidence,
     };
     await fs.writeFile(firstMetadataPath, JSON.stringify(firstMetadata));
+    await writeV2ContentManifest(root);
 
     await fs.cp(
       path.join(root, "candidate-a"),
@@ -326,6 +386,7 @@ describe("creative candidate promotion", () => {
       referenceEvidence: metadata.referenceEvidence,
     };
     await fs.writeFile(metadataPath, JSON.stringify(metadata));
+    await writeV2ContentManifest(root);
     const experiencePath = path.join(root, "candidate-a/Experience.jsx");
     const experience = await fs.readFile(experiencePath, "utf8");
     await fs.writeFile(

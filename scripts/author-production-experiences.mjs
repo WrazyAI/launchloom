@@ -130,6 +130,7 @@ REFERENCE FIDELITY RULES
 - Include every required signature element and expose its data-reference-signature attribute in the rendered DOM.
 - Use one distinctive, purposeful interaction from the assigned family and provide its reduced-motion equivalent.
 - Keep business facts, SEO copy, contact details, and imagery bound to sealed content tokens. Never copy reference branding, copy, assets, or trade dress.
+- Treat the client visual brief as a binding local art-direction layer. Preserve its palette intent, tone, explicit composition requests, and prohibited patterns unless they conflict with accessibility or the assigned reference mechanics. Do not replace a light brief with a dark house style, or substitute LaunchLoom's familiar lime/charcoal treatment when the brief asks for another palette.
 
 STAGE SAFETY
 - Contract output defines the implementation but never contains source files.
@@ -193,6 +194,11 @@ ${route}
 
 SEALED CONTENT SHAPE
 ${JSON.stringify(request.contentShape, null, 2)}
+
+CLIENT VISUAL BRIEF
+${JSON.stringify(request.visualBrief || {}, null, 2)}
+The visual brief is client intent, not source content. Use it to choose palette, surface treatment, typography mood, image treatment, and composition within the assigned route. Explicit named-reference or art-direction requests should remain visibly recognizable after adaptation.
+
 ${referenceMarkers}
 
 ${implementationChecklist}`;

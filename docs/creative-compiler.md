@@ -26,8 +26,12 @@ lead endpoint, or ship an unverified layout.
    3. `author-production-experiences.mjs` asks the visual author for three
    independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
    author receives the complete Reference DNA and its desktop/mobile evidence,
-   then must expose the contract's signatures and geometry markers in the
-   rendered DOM. It can use React, the shared runtime, GSAP, and ScrollTrigger,
+   plus a bounded client visual brief containing the resolved palette, tone,
+   style preference, visual direction, and submitted art direction. The visual
+   brief remains available to rendered repair and reference judging so a repair
+   cannot silently converge on a LaunchLoom house palette or reverse an explicit
+   light/dark direction. The author must expose the contract's signatures and
+   geometry markers in the rendered DOM. It can use React, the shared runtime, GSAP, and ScrollTrigger,
    but not network access, remote code, canvas, or Three.js by default. Model
    stages are globally limited to two in-flight requests so a three-candidate
    bakeoff does not exhaust the provider budget. The authoring budget defaults
@@ -50,12 +54,26 @@ lead endpoint, or ship an unverified layout.
    judges true first-viewport captures against the assigned reference screenshots,
    with a separate labeled full-page overview for section order and rhythm,
    across hero geometry, typography, spatial rhythm, imagery, service
-   presentation, navigation, CTA placement, mobile recomposition, and
-   interaction evidence. Screenshot-to-screenshot candidate distance is
+   presentation, navigation, CTA placement, mobile recomposition, interaction
+   evidence, palette adherence, and client art direction. Palette adherence and
+   art direction are independent hard-threshold scores; a candidate cannot pass
+   by compensating for a wrong client palette with stronger reference mechanics.
+   Screenshot-to-screenshot candidate distance is
    recorded for preview and is a hard production-promotion gate; different
    metadata, colors, or copy do not count as visual diversity.
 5. Route fingerprints remain an early compiler diagnostic so independently
-   authored routes do not collapse before rendering. For version-two
+   authored routes do not collapse before rendering. Explicitly named reference
+   intent is carried into candidate metadata and is compared before aggregate
+   score among otherwise eligible preview candidates. Recent creative families receive a bounded
+   rotation penalty unless the intake explicitly requested that reference,
+   which reduces cross-client repetition without overriding client direction.
+   Inspiration attempts record their selected route families as well as
+   reference IDs and signatures, so a failed attempt rotates away from sibling
+   references in the same family when alternatives exist. The workflow reserves
+   the pack against the latest main history before reference analysis; if a
+   concurrent intake wins the history push, the losing run reselects from the
+   updated history before retrying instead of authoring a stale overlapping
+   pack. For version-two
    candidates, production diversity authority comes from rendered screenshot
    comparison only; fingerprint distance and unique-dimension counts are
    retained in the report for diagnosis and do not veto a pixel-diverse

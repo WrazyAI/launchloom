@@ -3,8 +3,10 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
+  countRecentCreativeFamilyUses,
   launchRecordFrom,
   readLaunchHistory,
+  recentCreativeFamilyIds,
   recentLayoutFingerprints,
   recordLaunch,
 } from "../scripts/launch-history.mjs";
@@ -17,14 +19,26 @@ const config = {
       packId: "bold-utility",
       variantId: "portrait",
       fingerprint: "bold-utility|portrait|utility-pill|guided-portrait",
+      familyId: "market-collage",
+      referenceFamilyId: "a1-collage-composition",
     },
   },
 };
 
 const inspiration = {
   routes: [
-    { referenceId: "nightjar-cinematic-salon", signature: "signature-a" },
-    { referenceId: "kokoro-spatial-editorial", signature: "signature-b" },
+    {
+      referenceIds: ["nightjar-cinematic-salon"],
+      familyId: "cinematic-stage",
+      referenceFamilyId: "a1-cinematic-3d",
+      signature: "signature-a",
+    },
+    {
+      referenceIds: ["kokoro-spatial-editorial"],
+      familyId: "editorial-monument",
+      referenceFamilyId: "a1-kinetic-founder",
+      signature: "signature-b",
+    },
     { referenceId: null, signature: "signature-a" },
   ],
 };
@@ -81,6 +95,77 @@ describe("launch history", () => {
     expect(record.stage).toBe("production");
   });
 
+  it("records inspiration attempts before a creative candidate exists", () => {
+    const record = launchRecordFrom({
+      config: {
+        business: { name: "Early Attempt" },
+        design: { recipe: "local-trades", experience: {} },
+      },
+      inspiration,
+      launchedAt: "2026-09-18T20:00:00.000Z",
+      stage: "attempt",
+      recordKey: "59",
+    });
+    expect(record.stage).toBe("attempt");
+    expect(record.id).toBe("2026-09-18-early-attempt-attempt-59");
+    expect(record.referenceIds).toEqual([
+      "kokoro-spatial-editorial",
+      "nightjar-cinematic-salon",
+    ]);
+    expect(record.routeFamilyIds).toEqual([
+      "a1-cinematic-3d",
+      "a1-kinetic-founder",
+      "cinematic-stage",
+      "editorial-monument",
+    ]);
+    expect(recentCreativeFamilyIds({ launches: [record] })).toEqual(
+      expect.arrayContaining([
+        "cinematic-stage",
+        "a1-cinematic-3d",
+        "editorial-monument",
+        "a1-kinetic-founder",
+      ]),
+    );
+    expect(record.layoutFingerprint).toBe("");
+  });
+
+  it("counts a duplicated creative/reference family only once per launch", () => {
+    expect(
+      recentCreativeFamilyIds({
+        launches: [
+          {
+            creativeFamilyId: "market-collage",
+            referenceFamilyId: "market-collage",
+          },
+          {
+            creativeFamilyId: "market-collage",
+            referenceFamilyId: "market-collage",
+          },
+        ],
+      }),
+    ).toEqual(["market-collage", "market-collage"]);
+  });
+
+  it("counts one launch once when both creative and reference families match", () => {
+    expect(
+      countRecentCreativeFamilyUses(
+        {
+          launches: [
+            {
+              creativeFamilyId: "market-collage",
+              referenceFamilyId: "a1-collage-composition",
+            },
+            {
+              creativeFamilyId: "editorial-monument",
+              referenceFamilyId: "a1-uncommon-founder-atlas",
+            },
+          ],
+        },
+        ["market-collage", "a1-collage-composition"],
+      ),
+    ).toBe(1);
+  });
+
   it("records, dedupes, and caps launches", async () => {
     const historyPath = await temporaryHistory();
     await recordLaunch(
@@ -131,6 +216,9 @@ describe("launch history", () => {
     expect(capped.launches.length).toBeLessThanOrEqual(50);
     expect(recentLayoutFingerprints(capped)).toContain(
       "bold-utility|portrait|utility-pill|guided-portrait",
+    );
+    expect(recentCreativeFamilyIds(capped)).toEqual(
+      expect.arrayContaining(["market-collage", "a1-collage-composition"]),
     );
   });
 });

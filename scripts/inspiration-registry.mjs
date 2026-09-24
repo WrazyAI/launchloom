@@ -118,27 +118,127 @@ function signatureFor(record) {
     .join("|");
 }
 
+function normalizedPhrase(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u02bc]/gu, "'")
+    .replace(/\b(?:don't|dont)\b/gu, "do not")
+    .replace(/\b(?:doesn't|doesnt)\b/gu, "does not")
+    .replace(/\b(?:shouldn't|shouldnt)\b/gu, "should not")
+    .replace(/[^a-z0-9]+/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function normalizedRequestClause(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u02bc]/gu, "'")
+    .replace(/\b(?:don't|dont)\b/gu, "do not")
+    .replace(/\b(?:doesn't|doesnt)\b/gu, "does not")
+    .replace(/\b(?:shouldn't|shouldnt)\b/gu, "should not")
+    .replace(/[^a-z0-9,]+/gu, " ")
+    .replace(/\s*,\s*/gu, ", ")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function affirmativeAliasMention(source, alias) {
+  let offset = 0;
+  while (offset < source.length) {
+    const index = source.indexOf(alias, offset);
+    if (index < 0) return false;
+    let before = source.slice(Math.max(0, index - 128), index).trim();
+    const lastComma = before.lastIndexOf(",");
+    if (lastComma >= 0) {
+      const commaTail = before.slice(lastComma + 1).trim();
+      if (
+        /^(?:(?:and|but)\s+)?(?:use|apply|follow|choose|adopt|keep|pick|select|try|prefer|build|create|make)\b/u.test(
+          commaTail,
+        )
+      )
+        before = commaTail;
+    }
+    const contrastMatches = [
+      ...before.matchAll(
+        /\b(?:but|however|yet|instead(?!\s+of\b)|rather(?!\s+than\b)|and(?=\s+(?:use|apply|follow|choose|adopt|keep|pick|select|try|prefer|build|create|make)\b))\b/gu,
+      ),
+    ];
+    const lastContrast = contrastMatches.at(-1);
+    if (lastContrast)
+      before = before.slice(
+        Number(lastContrast.index || 0) + lastContrast[0].length,
+      ).trim();
+    const negationContext = before.replace(/,/gu, " ");
+    const negated =
+      /(?:\bdo not|\bdoes not|\bshould not|\bnever|\bavoid|\bexclude|\bwithout|\breject|\bskip|\bnot|\bno|\brather than|\binstead of)(?:\s+\w+){0,6}\s*$/u.test(
+        negationContext,
+      );
+    if (!negated) return true;
+    offset = index + alias.length;
+  }
+  return false;
+}
+
+function explicitlyRequested(record, request) {
+  const clauses = String(request.styleText || "")
+    .split(/[.;!?\n]+/u)
+    .map(normalizedRequestClause)
+    .filter(Boolean);
+  if (!clauses.length) return false;
+  const aliases = [
+    ...new Set(
+      [
+        record.id,
+        record.name,
+        record.referenceName,
+        record.familyId,
+      ]
+        .map(normalizedPhrase)
+        .filter((value) => value.length >= 5),
+    ),
+  ];
+  return aliases.some((alias) =>
+    clauses.some((clause) => affirmativeAliasMention(clause, alias)),
+  );
+}
+
 function scoreRecord(record, request) {
   const industry = cleanText(request.industry, 80).toLowerCase();
-  const terms = cleanList(request.styleTerms, 20);
-  const searchable = new Set([
+  const terms = [
+    ...new Set(
+      cleanList(request.styleTerms, 20)
+        .flatMap((term) => normalizedPhrase(term).split(" "))
+        .filter(Boolean),
+    ),
+  ];
+  const searchable = [
+    record.id,
+    record.name,
+    record.referenceName,
+    record.familyId,
     ...record.industries,
     ...record.moods,
-    record.navigation.toLowerCase(),
-    record.heroGeometry.toLowerCase(),
-    record.servicePresentation.toLowerCase(),
-    record.sectionRhythm.toLowerCase(),
-    record.typographyCategory.toLowerCase(),
-    record.imageStrategy.toLowerCase(),
+    ...record.sourceStyles,
+    record.navigation,
+    record.heroGeometry,
+    record.servicePresentation,
+    record.sectionRhythm,
+    record.typographyCategory,
+    record.imageStrategy,
     ...record.motionOpportunities,
-  ]);
+  ]
+    .map(normalizedPhrase)
+    .filter(Boolean);
   let score = record.industries.includes(industry) ? 40 : 0;
   if (record.industries.includes("all")) score += 6;
+  if (explicitlyRequested(record, request)) score += 120;
   for (const term of terms)
     if (
-      [...searchable].some(
-        (value) => value.includes(term) || term.includes(value),
-      )
+      searchable.some((value) => {
+        const tokens = value.split(" ");
+        return tokens.includes(term) || (term.length >= 5 && value.includes(term));
+      })
     )
       score += 8;
   return score + stableFraction(`${request.seed}|${record.id}`);
@@ -179,15 +279,33 @@ function evidenceFor(record) {
   };
 }
 
-function rankedRecords(registry, request, recentReferenceIds, recentRouteSignatures, mode) {
+function rankedRecords(
+  registry,
+  request,
+  recentReferenceIds,
+  recentFamilyIds,
+  recentRouteSignatures,
+  mode,
+) {
   return registry.records
-    .filter(
-      (record) =>
+    .filter((record) => {
+      const explicit = explicitlyRequested(record, request);
+      const familyId = cleanText(
+        record.familyId || buildRouteContract(record).familyId,
+        80,
+      ).toLowerCase();
+      return (
         (!mode.excludeReferences ||
-          !recentReferenceIds.has(record.id.toLowerCase())) &&
+          !recentReferenceIds.has(record.id.toLowerCase()) ||
+          explicit) &&
+        (!mode.excludeFamilies ||
+          !recentFamilyIds.has(familyId) ||
+          explicit) &&
         (!mode.excludeRouteSignatures ||
-          !recentRouteSignatures.has(signatureFor(record))),
-    )
+          !recentRouteSignatures.has(signatureFor(record)) ||
+          explicit)
+      );
+    })
     .map((record) => ({
       record,
       score: scoreRecord(record, request),
@@ -218,6 +336,9 @@ export function buildInspirationPack(request, rawRegistry) {
   const recentReferenceIds = new Set(
     cleanList(request.recentReferenceIds, 200),
   );
+  const recentFamilyIds = new Set(
+    cleanList(request.recentFamilyIds, 200),
+  );
   const recentRouteSignatures = new Set(
     (Array.isArray(request.recentRouteSignatures)
       ? request.recentRouteSignatures
@@ -225,13 +346,30 @@ export function buildInspirationPack(request, rawRegistry) {
     ).map((value) => cleanText(value, 600)),
   );
   const selectionModes = [
-    { id: "fresh", excludeReferences: true, excludeRouteSignatures: true },
+    {
+      id: "fresh",
+      excludeReferences: true,
+      excludeFamilies: true,
+      excludeRouteSignatures: true,
+    },
     {
       id: "route-signatures-relaxed",
       excludeReferences: true,
+      excludeFamilies: true,
       excludeRouteSignatures: false,
     },
-    { id: "history-relaxed", excludeReferences: false, excludeRouteSignatures: false },
+    {
+      id: "families-relaxed",
+      excludeReferences: true,
+      excludeFamilies: false,
+      excludeRouteSignatures: false,
+    },
+    {
+      id: "history-relaxed",
+      excludeReferences: false,
+      excludeFamilies: false,
+      excludeRouteSignatures: false,
+    },
   ];
   let selection;
   for (const mode of selectionModes) {
@@ -239,6 +377,7 @@ export function buildInspirationPack(request, rawRegistry) {
       registry,
       { ...request, seed, industry },
       recentReferenceIds,
+      recentFamilyIds,
       recentRouteSignatures,
       mode,
     );
@@ -259,6 +398,7 @@ export function buildInspirationPack(request, rawRegistry) {
     // must never be mixed into the authoring evidence where they can be
     // averaged into a generic composition.
     const evidence = [evidenceFor(anchor)];
+    const rankedAnchor = ranked.find((candidate) => candidate.record.id === anchor.id);
     const route = {
       id: `route-${String(index + 1).padStart(2, "0")}`,
       label: anchor.name,
@@ -276,6 +416,8 @@ export function buildInspirationPack(request, rawRegistry) {
       mobileBehavior: anchor.mobileBehavior || undefined,
       prohibitedPatterns: anchor.prohibitedPatterns || [],
       referenceIds: evidence.map((item) => item.id),
+      intakeFitScore: Number(rankedAnchor?.score || 0),
+      explicitReferenceMatch: explicitlyRequested(anchor, request),
       evidence,
       signature: signatureFor(anchor),
     };
@@ -297,7 +439,13 @@ export function buildInspirationPack(request, rawRegistry) {
     seed,
     industry,
     styleTerms: cleanList(request.styleTerms, 20),
+    styleText: cleanText(request.styleText, 1200),
+    explicitReferenceIds: registry.records
+      .filter((record) => explicitlyRequested(record, request))
+      .map((record) => record.id)
+      .sort(),
     recentReferenceIds: [...recentReferenceIds].sort(),
+    recentFamilyIds: [...recentFamilyIds].sort(),
     recentRouteSignatures: [...recentRouteSignatures].sort(),
     freshnessFallback: selection.mode.id,
   };

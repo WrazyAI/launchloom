@@ -27,6 +27,8 @@ export const RENDERED_REFERENCE_THRESHOLDS = Object.freeze({
   ctaPlacement: 75,
   mobileRecomposition: 78,
   interactionEvidence: 65,
+  paletteAdherence: 80,
+  artDirection: 80,
   pairwiseDistinctiveness: 72,
 });
 
@@ -52,7 +54,9 @@ const auditSchema = {
           "navigation",
           "ctaPlacement",
           "mobileRecomposition",
-          "interactionEvidence"
+          "interactionEvidence",
+          "paletteAdherence",
+          "artDirection"
         ],
         properties: {
           heroGeometry: { type: "integer", minimum: 0, maximum: 100 },
@@ -63,7 +67,9 @@ const auditSchema = {
           navigation: { type: "integer", minimum: 0, maximum: 100 },
           ctaPlacement: { type: "integer", minimum: 0, maximum: 100 },
           mobileRecomposition: { type: "integer", minimum: 0, maximum: 100 },
-          interactionEvidence: { type: "integer", minimum: 0, maximum: 100 }
+          interactionEvidence: { type: "integer", minimum: 0, maximum: 100 },
+          paletteAdherence: { type: "integer", minimum: 0, maximum: 100 },
+          artDirection: { type: "integer", minimum: 0, maximum: 100 }
         }
       },
       findings: {
@@ -87,6 +93,8 @@ const auditSchema = {
                 "cta-placement",
                 "mobile-recomposition",
                 "interaction-evidence",
+                "palette-adherence",
+                "client-art-direction",
                 "generic-grammar"
               ]
             },
@@ -251,7 +259,9 @@ function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
     ["navigation", thresholds.navigation],
     ["ctaPlacement", thresholds.ctaPlacement],
     ["mobileRecomposition", thresholds.mobileRecomposition],
-    ["interactionEvidence", thresholds.interactionEvidence]
+    ["interactionEvidence", thresholds.interactionEvidence],
+    ["paletteAdherence", thresholds.paletteAdherence],
+    ["artDirection", thresholds.artDirection]
   ];
   return (
     audit?.verdict === "pass" &&
@@ -262,11 +272,12 @@ function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
 }
 
 /**
- * @param {{referenceDna: any, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string, fullDesktop?: string}, renderedGeometry?: Record<string, any>, model?: string, fetchImpl?: typeof fetch}} options
+ * @param {{referenceDna: any, visualBrief?: Record<string, any>, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string, fullDesktop?: string}, renderedGeometry?: Record<string, any>, model?: string, fetchImpl?: typeof fetch}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function evaluateRenderedReferenceFidelity({
   referenceDna,
+  visualBrief = {},
   candidateScreenshots,
   renderedGeometry = {},
   model = RENDERED_REFERENCE_MODEL,
@@ -308,6 +319,12 @@ Evaluate geometry, typography scale and role, spacing rhythm, image occupancy an
       model,
       "End assigned reference evidence. Candidate render evidence follows.",
     ),
+    {
+      type: "text",
+      text: `CLIENT VISUAL BRIEF
+${JSON.stringify(visualBrief || {}, null, 2)}
+Treat this as binding client art direction layered onto the reference mechanics. Score paletteAdherence and artDirection independently and strictly. A candidate that substitutes an unrelated house palette, reverses an explicit light/dark surface direction, ignores a named composition request, or visibly collapses into a generic LaunchLoom treatment must score below the corresponding hard threshold and receive a palette-adherence or client-art-direction finding. Do not hide client-intent failures inside otherwise strong reference-mechanics scores.`,
+    },
     { type: "text", text: "Candidate desktop first viewport 1536x864:" },
     await imagePart(candidateDesktop),
     { type: "text", text: "Candidate compact desktop first viewport 1366x768:" },

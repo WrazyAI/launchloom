@@ -469,6 +469,7 @@ export async function requestRepair({
     ? contentManifest.tokens.map((item) => item.token).filter(Boolean)
     : [];
   const contentShape = contentManifest?.values || {};
+  const visualBrief = contentManifest?.visualBrief || {};
   const content = [
     {
       type: "text",
@@ -480,6 +481,10 @@ ${contentTokens.join("\n") || "(not supplied)"}
 
 CURRENT SEALED CONTENT SHAPE
 ${JSON.stringify(contentShape, null, 2)}
+
+CLIENT VISUAL BRIEF
+${JSON.stringify(visualBrief, null, 2)}
+Preserve this client art direction during repair. Do not repair toward a generic LaunchLoom house style or overwrite an explicit light/dark, palette, composition, or named-reference request unless a measured finding requires that exact change.
 
 TRUSTED @launchloom/runtime HELPERS
 LeadForm, FAQList, ContactLinks, LocationMap, ChatLauncher, SocialProof, resolveAsset, useReducedMotion.

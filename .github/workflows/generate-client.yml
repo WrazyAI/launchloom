@@ -107,37 +107,7 @@ jobs:
             node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json
             node scripts/generate-site-config.mjs --source /tmp/intake.md --research /tmp/seo-research.json --out /tmp/site.config.json
             node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/intake.md --out /tmp/inspiration-pack.json
-            node scripts/analyze-reference-dna.mjs --inspiration /tmp/inspiration-pack.json --out /tmp/inspiration-pack.json
             rm -f /tmp/reasoning-preflight.json
-            if [ "$CREATIVE_EXPERIENCE_MODEL" = "openai/gpt-6-luna" ]; then
-              node scripts/run-reasoning-preflight.mjs \
-                --inspiration /tmp/inspiration-pack.json \
-                --out /tmp/reasoning-preflight.json \
-                --mode "$REASONING_PREFLIGHT_MODE" \
-                --model "$REASONING_PREFLIGHT_MODEL" \
-                --creative-model "$CREATIVE_EXPERIENCE_MODEL" \
-                --session-key "$LAUNCHLOOM_INTAKE_ID"
-              jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
-              FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' /tmp/reasoning-preflight.json)
-              if [ "$FALLBACK_USED" = "true" ]; then
-                FALLBACK_CODE=$(jq -r '.selector.error.code // "selector-error"' /tmp/reasoning-preflight.json)
-                echo "::warning title=Reasoning preflight fallback::TypeSafe/Jev selector fallback is active ($FALLBACK_CODE). This creative session is frozen at max reasoning for quality safety."
-              fi
-            fi
-          fi
-          jq -e '.referenceDnaAnalyzed == true and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null))' /tmp/inspiration-pack.json >/dev/null || { echo "Reference DNA was not derived from screenshot evidence"; exit 1; }
-          if [ -f /tmp/reasoning-preflight.json ]; then
-            jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
-            echo "reasoning_mode=$(jq -r '.mode' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
-            echo "reasoning_effort=$(jq -r '.reasoningEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
-            echo "reasoning_recommended=$(jq -r '.recommendedEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
-            FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' /tmp/reasoning-preflight.json)
-            echo "reasoning_fallback=$FALLBACK_USED" >> "$GITHUB_OUTPUT"
-          else
-            echo "reasoning_mode=static" >> "$GITHUB_OUTPUT"
-            echo "reasoning_effort=$CREATIVE_EXPERIENCE_REASONING_EFFORT" >> "$GITHUB_OUTPUT"
-            echo "reasoning_recommended=static" >> "$GITHUB_OUTPUT"
-            echo "reasoning_fallback=false" >> "$GITHUB_OUTPUT"
           fi
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
@@ -152,6 +122,96 @@ jobs:
           echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
           echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "No externally validated queries")')" >> "$GITHUB_OUTPUT"
           node -e 'const x=require("/tmp/seo-research.json"); const state=x.mode === "researched" ? "Research complete. Production approval is available." : "Research is incomplete. This preview can be reviewed, but production approval is blocked until research succeeds."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}\nValidated queries: ${(x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "None"}\nRecorded research cost: $${Number(x.cost?.usd || 0).toFixed(5)}`)'
+      # Reserve visual routes against the latest main history before expensive
+      # reference analysis or authoring. If another intake wins the push race,
+      # reselect from the newly updated history rather than saving a stale pack.
+      - name: Reserve inspiration routes
+        if: (github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main') && env.REUSE_AUTHORED_CANDIDATES != 'true'
+        env:
+          LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
+        run: |
+          git config user.name "LaunchLoom"
+          git config user.email "automation@launchloom.app"
+          HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"
+          HISTORY_RECORDED=false
+          for HISTORY_ATTEMPT in 1 2 3; do
+            git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
+            if ! git fetch origin main; then
+              continue
+            fi
+            if ! git worktree add --detach "$HISTORY_DIR" origin/main; then
+              continue
+            fi
+            HISTORY_FILE="$HISTORY_DIR/data/recent-launch-signatures.json"
+            node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs" \
+              --config /tmp/site.config.json \
+              --intake /tmp/intake.md \
+              --history "$HISTORY_FILE" \
+              --out /tmp/inspiration-pack.json
+            if ! node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
+              --config /tmp/site.config.json \
+              --inspiration /tmp/inspiration-pack.json \
+              --stage attempt \
+              --record-key "$LAUNCHLOOM_INTAKE_ID" \
+              --history "$HISTORY_FILE"; then
+              git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
+              continue
+            fi
+            if git -C "$HISTORY_DIR" diff --quiet -- data/recent-launch-signatures.json; then
+              echo "No inspiration history change."
+              HISTORY_RECORDED=true
+              break
+            fi
+            git -C "$HISTORY_DIR" add data/recent-launch-signatures.json
+            git -C "$HISTORY_DIR" commit -m "Record inspiration attempt [skip ci]"
+            if git -C "$HISTORY_DIR" push origin HEAD:main; then
+              HISTORY_RECORDED=true
+              break
+            fi
+            echo "History push raced with another intake; reselecting from latest main ($HISTORY_ATTEMPT/3)."
+          done
+          git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
+          if [ "$HISTORY_RECORDED" != true ]; then
+            echo "::error title=Inspiration reservation failed::Could not atomically reserve a fresh inspiration pack after three attempts."
+            exit 1
+          fi
+      - name: Analyze reserved inspiration and freeze creative session
+        env:
+          LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
+        run: |
+          if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
+            node scripts/analyze-reference-dna.mjs \
+              --inspiration /tmp/inspiration-pack.json \
+              --out /tmp/inspiration-pack.json
+            rm -f /tmp/reasoning-preflight.json
+            if [ "$CREATIVE_EXPERIENCE_MODEL" = "openai/gpt-6-luna" ]; then
+              node scripts/run-reasoning-preflight.mjs \
+                --inspiration /tmp/inspiration-pack.json \
+                --out /tmp/reasoning-preflight.json \
+                --mode "$REASONING_PREFLIGHT_MODE" \
+                --model "$REASONING_PREFLIGHT_MODEL" \
+                --creative-model "$CREATIVE_EXPERIENCE_MODEL" \
+                --session-key "$LAUNCHLOOM_INTAKE_ID"
+            fi
+          fi
+          jq -e '.referenceDnaAnalyzed == true and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null))' /tmp/inspiration-pack.json >/dev/null || { echo "Reference DNA was not derived from screenshot evidence"; exit 1; }
+          if [ -f /tmp/reasoning-preflight.json ]; then
+            jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
+            echo "reasoning_mode=$(jq -r '.mode' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            echo "reasoning_effort=$(jq -r '.reasoningEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            echo "reasoning_recommended=$(jq -r '.recommendedEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' /tmp/reasoning-preflight.json)
+            echo "reasoning_fallback=$FALLBACK_USED" >> "$GITHUB_OUTPUT"
+            if [ "$FALLBACK_USED" = "true" ]; then
+              FALLBACK_CODE=$(jq -r '.selector.error.code // "selector-error"' /tmp/reasoning-preflight.json)
+              echo "::warning title=Reasoning preflight fallback::TypeSafe/Jev selector fallback is active ($FALLBACK_CODE). This creative session is frozen at max reasoning for quality safety."
+            fi
+          else
+            echo "reasoning_mode=static" >> "$GITHUB_OUTPUT"
+            echo "reasoning_effort=$CREATIVE_EXPERIENCE_REASONING_EFFORT" >> "$GITHUB_OUTPUT"
+            echo "reasoning_recommended=static" >> "$GITHUB_OUTPUT"
+            echo "reasoning_fallback=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Create private repository and Cloudflare Pages project
         id: client
         run: |

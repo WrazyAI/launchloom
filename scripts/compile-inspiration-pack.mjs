@@ -13,12 +13,28 @@ function parseArgs(values) {
   return result;
 }
 
+const STYLE_STOPWORDS = new Set([
+  "and",
+  "are",
+  "for",
+  "from",
+  "into",
+  "not",
+  "the",
+  "this",
+  "that",
+  "then",
+  "use",
+  "with",
+  "your",
+]);
+
 function words(value) {
   return String(value || "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/gu, " ")
     .split(/\s+/u)
-    .filter((word) => word.length > 2);
+    .filter((word) => word.length > 2 && !STYLE_STOPWORDS.has(word));
 }
 
 function intakeFromMarkdown(value) {
@@ -69,13 +85,19 @@ const normalizedIndustry = String(config.industry || "").toLowerCase();
 const industry = ["", "all", "general", "other"].includes(normalizedIndustry)
   ? intake.industry || config.businessKind || config.preset || "all"
   : config.industry;
-const styleTerms = [
-  ...words(intake.stylePreference),
-  ...words(intake.brandNotes),
-  ...words(config.style?.tone),
-  ...words(config.design?.treatment?.typography),
-  ...words(config.design?.recipe),
-];
+const styleText = [
+  intake.stylePreference,
+  intake.brandNotes,
+  config.style?.preference,
+  config.style?.visualDirection,
+  config.style?.artDirection,
+  config.style?.tone,
+  config.design?.treatment?.typography,
+  config.design?.recipe,
+]
+  .filter(Boolean)
+  .join(" ");
+const styleTerms = words(styleText);
 const pack = buildInspirationPack(
   {
     seed:
@@ -85,10 +107,18 @@ const pack = buildInspirationPack(
       "launchloom-intake",
     industry,
     styleTerms,
+    styleText,
     referenceCalibration: a1Library?.calibration,
     recentReferenceIds: recent.flatMap((launch) =>
       Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
     ),
+    recentFamilyIds: recent.flatMap((launch) => [
+      ...(Array.isArray(launch.routeFamilyIds)
+        ? launch.routeFamilyIds
+        : []),
+      launch.creativeFamilyId,
+      launch.referenceFamilyId,
+    ]),
     recentRouteSignatures: recent.flatMap((launch) =>
       Array.isArray(launch.routeSignatures) ? launch.routeSignatures : [],
     ),

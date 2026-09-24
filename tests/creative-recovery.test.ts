@@ -66,14 +66,23 @@ describe("creative recovery diagnostics", () => {
     expect(result.reasons.length).toBeGreaterThan(0);
   });
 
-  it("selects the highest rendered score with a stable candidate-ID tie break", () => {
+  it("prioritizes reference fidelity over a generic aggregate score", () => {
+    const highAggregate: any = candidate("candidate-b", 96);
+    highAggregate.renderedReferenceFidelity = { score: 61 };
+    const faithful: any = candidate("candidate-c", 84);
+    faithful.renderedReferenceFidelity = { score: 88 };
+    const explicit: any = candidate("candidate-a", 80);
+    explicit.renderedReferenceFidelity = { score: 82 };
+    explicit.explicitReferenceMatch = true;
+
     expect(
-      chooseRecoveryCandidate([
-        candidate("candidate-b", 81),
-        candidate("candidate-c", 93),
-        candidate("candidate-a", 93),
-      ])?.candidateId,
+      chooseRecoveryCandidate([highAggregate, faithful, explicit])?.candidateId,
     ).toBe("candidate-a");
+
+    explicit.explicitReferenceMatch = false;
+    expect(
+      chooseRecoveryCandidate([highAggregate, faithful, explicit])?.candidateId,
+    ).toBe("candidate-c");
   });
 });
 
