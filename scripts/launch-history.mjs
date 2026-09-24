@@ -63,19 +63,26 @@ export function launchRecordFrom({
   const packId = String(experience.packId || "").trim();
   const variantId = String(experience.variantId || "standard").trim();
   const fingerprint = String(experience.fingerprint || "").trim();
-  if (!packId || !fingerprint)
+  const normalizedStage =
+    stage === "production" ? "production" : stage === "attempt" ? "attempt" : "preview";
+  if (normalizedStage !== "attempt" && (!packId || !fingerprint))
     throw new Error("A launch record needs a pack id and layout fingerprint.");
   const routes = Array.isArray(inspiration?.routes) ? inspiration.routes : [];
   return {
     id: `${launchedAt.slice(0, 10)}-${slug(config?.business?.name)}`,
     launchedAt,
-    stage: stage === "production" ? "production" : "preview",
+    stage: normalizedStage,
     businessName: String(config?.business?.name || "").trim(),
     recipe: String(config?.design?.recipe || "").trim(),
     packId,
     variantId,
     layoutFingerprint: fingerprint,
-    referenceIds: cleanList(routes.map((route) => route.referenceId)),
+    referenceIds: cleanList(
+      routes.flatMap((route) => [
+        ...(Array.isArray(route.referenceIds) ? route.referenceIds : []),
+        route.referenceId,
+      ]),
+    ),
     routeSignatures: cleanList(routes.map((route) => route.signature)),
   };
 }
