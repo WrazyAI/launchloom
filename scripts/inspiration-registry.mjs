@@ -169,9 +169,10 @@ function affirmativeAliasMention(source, alias) {
       before = before.slice(
         Number(lastContrast.index || 0) + lastContrast[0].length,
       ).trim();
+    const negationContext = before.replace(/,/gu, " ");
     const negated =
       /(?:\bdo not|\bdoes not|\bshould not|\bnever|\bavoid|\bexclude|\bwithout|\breject|\bskip|\bnot|\bno|\brather than|\binstead of)(?:\s+\w+){0,6}\s*$/u.test(
-        before,
+        negationContext,
       );
     if (!negated) return true;
     offset = index + alias.length;
