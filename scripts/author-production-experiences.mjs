@@ -145,6 +145,15 @@ STAGE SAFETY
 }
 
 function routePromptPrefix(request) {
+  const routeDesignTemplate = request.route.designTemplate;
+  const referenceDna = cacheableReferenceDna(request.route.referenceDna);
+  if (
+    referenceDna?.evidence?.designTemplate === routeDesignTemplate
+  )
+    referenceDna.evidence = {
+      ...referenceDna.evidence,
+      designTemplate: undefined,
+    };
   const route = JSON.stringify(
     {
       id: request.route.id,
@@ -165,7 +174,7 @@ function routePromptPrefix(request) {
       calibrationProfile: request.route.calibrationProfile,
       referenceCalibration: request.route.referenceCalibration,
       signature: request.route.signature,
-      referenceDna: cacheableReferenceDna(request.route.referenceDna),
+      referenceDna,
       evidence: (request.route.evidence || []).map((item) => ({
         name: item.name,
         source: item.source,
@@ -174,7 +183,10 @@ function routePromptPrefix(request) {
         sourceStyles: item.sourceStyles,
         sourceFonts: item.sourceFonts,
         tags: item.tags,
-        designTemplate: item.designTemplate,
+        designTemplate:
+          item.designTemplate === routeDesignTemplate
+            ? undefined
+            : item.designTemplate,
         provenance: item.provenance,
         calibrationProfile: item.calibrationProfile,
         notes: item.notes,
