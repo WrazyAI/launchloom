@@ -262,11 +262,12 @@ function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
 }
 
 /**
- * @param {{referenceDna: any, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string, fullDesktop?: string}, renderedGeometry?: Record<string, any>, model?: string, fetchImpl?: typeof fetch}} options
+ * @param {{referenceDna: any, visualBrief?: Record<string, any>, candidateScreenshots?: {desktop?: string, compact?: string, mobile?: string, fullDesktop?: string}, renderedGeometry?: Record<string, any>, model?: string, fetchImpl?: typeof fetch}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function evaluateRenderedReferenceFidelity({
   referenceDna,
+  visualBrief = {},
   candidateScreenshots,
   renderedGeometry = {},
   model = RENDERED_REFERENCE_MODEL,
@@ -308,6 +309,12 @@ Evaluate geometry, typography scale and role, spacing rhythm, image occupancy an
       model,
       "End assigned reference evidence. Candidate render evidence follows.",
     ),
+    {
+      type: "text",
+      text: `CLIENT VISUAL BRIEF
+${JSON.stringify(visualBrief || {}, null, 2)}
+Treat this as binding client art direction layered onto the reference mechanics. A candidate that substitutes an unrelated house palette, reverses an explicit light/dark surface direction, ignores a named composition request, or visibly collapses into a generic LaunchLoom treatment must receive corresponding penalties in typography, spatial rhythm, imagery, service presentation, or generic-grammar findings.`,
+    },
     { type: "text", text: "Candidate desktop first viewport 1536x864:" },
     await imagePart(candidateDesktop),
     { type: "text", text: "Candidate compact desktop first viewport 1366x768:" },
