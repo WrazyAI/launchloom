@@ -137,7 +137,9 @@ function affirmativeAliasMention(source, alias) {
     if (index < 0) return false;
     let before = source.slice(Math.max(0, index - 96), index).trim();
     const contrastMatches = [
-      ...before.matchAll(/\b(?:but|however|instead|rather|yet)\b/gu),
+      ...before.matchAll(
+        /\b(?:but|however|yet|instead(?!\s+of\b)|rather(?!\s+than\b))\b/gu,
+      ),
     ];
     const lastContrast = contrastMatches.at(-1);
     if (lastContrast)
@@ -145,7 +147,7 @@ function affirmativeAliasMention(source, alias) {
         Number(lastContrast.index || 0) + lastContrast[0].length,
       ).trim();
     const negated =
-      /(?:\bdo not|\bdoes not|\bshould not|\bnever|\bavoid|\bexclude|\bwithout|\breject|\bskip|\bnot|\bno)(?:\s+\w+){0,6}\s*$/u.test(
+      /(?:\bdo not|\bdoes not|\bshould not|\bnever|\bavoid|\bexclude|\bwithout|\breject|\bskip|\bnot|\bno|\brather than|\binstead of)(?:\s+\w+){0,6}\s*$/u.test(
         before,
       );
     if (!negated) return true;
