@@ -1,11 +1,21 @@
 {
   "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
   "type": "frontend",
-  "name": "SEO confirmation summary remains readable on mobile",
-  "description": "The final SEO summary uses a single-column mobile layout without clipping or horizontal overflow.",
+  "name": "Simplified confirmation remains readable on mobile",
+  "description": "The final business summary uses a mobile-safe layout without clipping or horizontal overflow.",
   "priority": "p2",
   "planSteps": [
-    { "type": "action", "description": "Use a mobile viewport and navigate through all onboarding steps with fictional valid data plus long search and customer-problem phrases" },
-    { "type": "assertion", "description": "On Confirm, the summary cards are stacked in one column, all entered SEO text wraps inside the cards, and the page has no horizontal scrolling" }
+    {
+      "type": "action",
+      "description": "Use a mobile viewport and navigate through all three onboarding steps with fictional valid data"
+    },
+    {
+      "type": "assertion",
+      "description": "The final summary shows business, core services, main service city, travel radius, and primary customer action without horizontal scrolling"
+    },
+    {
+      "type": "assertion",
+      "description": "The single confirmation control and image uploads remain usable at mobile width"
+    }
   ]
 }
