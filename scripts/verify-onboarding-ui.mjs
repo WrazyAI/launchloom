@@ -57,127 +57,102 @@ try {
   await page.goto(`${origin}/onboard/`, { waitUntil: "networkidle" });
 
   if (
-    (await page.locator('link[rel="icon"]').getAttribute("href")) !==
-    "/favicon.svg"
+    (await page.locator('meta[name="robots"]').getAttribute("content")) !==
+    "noindex, nofollow"
   )
-    failures.push("LaunchLoom favicon is not linked.");
+    failures.push("Onboarding is not marked noindex, nofollow.");
+
+  if (await page.getByRole("link", { name: "New site" }).count())
+    failures.push("Onboarding still exposes the public New site navigation.");
 
   const manual = page.getByRole("button", {
     name: "Enter details manually",
   });
   if (!(await manual.isVisible()))
     failures.push("Manual-entry button is not visible.");
-  if (
-    ["transparent", "rgba(0, 0, 0, 0)"].includes(
-      await manual.evaluate(
-        (element) => getComputedStyle(element).backgroundColor,
-      ),
-    )
-  )
-    failures.push("Manual-entry control still looks like plain text.");
-  await page.screenshot({
-    path: path.join(screenshotDir, "manual-entry-desktop.png"),
-    fullPage: true,
-  });
   await manual.click();
-  if (!(await page.getByText("Manual details", { exact: true }).isVisible()))
-    failures.push("Manual-entry button did not switch the form.");
 
-  await page.locator('[name="businessName"]').fill("Visual QA Studio");
+  await page.locator('[name="businessName"]').fill("Visual QA Painting");
   await page.locator('[name="contactName"]').fill("David");
   await page.locator('[name="email"]').fill("david@example.com");
   await page.locator('[name="phone"]').fill("(555) 555-0100");
   await page.locator('[name="address"]').fill("100 Test Street");
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.locator('[name="services"]').fill("Website design");
-  await page.locator('[name="serviceAreas"]').fill("Austin");
+
+  const stepText = await page.locator(".stepper").innerText();
+  if (!stepText.includes("Step 2 of 3"))
+    failures.push("Simplified onboarding is not a three-step flow.");
+
+  const services = page.locator('[name="services"]');
+  await services.fill("Exterior painting");
+  await page.locator('[name="industry"]').selectOption("home-services");
+  await page.locator('[name="serviceAreas"]').fill("Charleston, SC");
+  await page.locator('[name="serviceRadius"]').selectOption("30");
   await page
     .locator('[name="differentiators"]')
-    .fill("Clear strategy and careful execution");
+    .fill("Careful prep, tidy work, and clear communication.");
+
+  await services.fill(
+    "Exterior painting\nInterior painting\nCabinet refinishing\nCommercial painting\nDeck staining\nDrywall repair",
+  );
+  await page.getByRole("button", { name: "Continue" }).click();
+  if (!((await services.evaluate((element) => element.validationMessage)) || "").includes("5"))
+    failures.push("Services field does not cap the client at five core services.");
+
+  await services.fill("Exterior painting\nInterior painting\nCabinet refinishing");
   await page.getByRole("button", { name: "Continue" }).click();
 
-  await page.locator('[name="priorityService"]').fill("Website design");
-  await page.locator('[name="seoNotSure"]').check();
-  if (!(await page.locator('[name="searchPhrases"]').isDisabled()))
-    failures.push("Hidden SEO search phrases still submit when not-sure is selected.");
-  await page.locator('[name="seoNotSure"]').uncheck();
-  if (await page.locator('[name="searchPhrases"]').isDisabled())
-    failures.push("SEO search phrases stay disabled after not-sure is cleared.");
-  await page
-    .locator('[name="searchPhrases"]')
-    .fill("website designer austin\nlocal web design");
-  await page
-    .locator('[name="customerProblems"]')
-    .fill("Our current site does not explain why clients should contact us.");
-  await page.locator('[name="priorityLocations"]').fill("Austin");
-  await page.getByRole("button", { name: "Continue" }).click();
+  if (await page.locator('[name="searchPhrases"]').count())
+    failures.push("Client-facing SEO search phrase input still exists.");
+  if (await page.locator('[name="competitorUrls"]').count())
+    failures.push("Client-facing competitor URL input still exists.");
+  if (await page.locator('[name="priorityLocations"]').count())
+    failures.push("Duplicated priority location input still exists.");
 
-  const colorInput = page.locator('[name="primaryColor"]');
-  if (!(await colorInput.isVisible()))
-    failures.push("Primary color picker is not visibly usable.");
-  const pickerBox = await colorInput.boundingBox();
-  if (!pickerBox || pickerBox.width < 60 || pickerBox.height < 50)
-    failures.push("Primary color picker still renders as a small line.");
-  await colorInput.fill("#d4ff00");
+  await page.locator('[name="brandNotes"]').fill("Warm, local, established.");
   await page.locator('[name="leadEmail"]').fill("leads@example.com");
-  if (!(await page.getByText("#D4FF00", { exact: true }).isVisible()))
-    failures.push("Primary color picker does not show its selected value.");
 
   const logoInput = page.locator('input[name="logo"]');
   await logoInput.setInputFiles(uploadFixture);
   const preview = page.locator(".image-preview-card").first();
   if (!(await preview.isVisible()))
-    failures.push("Selecting an image did not produce a rich preview.");
+    failures.push("Selecting an image did not produce a preview.");
+
   if (
-    !(await preview
-      .getByText(/professional-services-advisory-v1\.png/)
+    !(await page
+      .locator("dl > div")
+      .filter({ has: page.getByText("Main service city", { exact: true }) })
+      .getByRole("definition")
+      .getByText("Charleston, SC", { exact: true })
       .isVisible())
   )
-    failures.push("Image preview does not identify the selected file.");
+    failures.push("Confirmation does not show the main service city.");
 
-  await page.getByRole("button", { name: "Back" }).click();
   if (
-    (await page.locator('[name="priorityService"]').inputValue()) !==
-    "Website design"
-  )
-    failures.push(
-      "SEO priority service was lost after returning to an earlier step.",
-    );
-  if (
-    !(await page.locator('[name="searchPhrases"]').inputValue()).includes(
-      "local web design",
-    )
-  )
-    failures.push(
-      "SEO search phrases were lost after returning to an earlier step.",
-    );
-  await page.getByRole("button", { name: "Continue" }).click();
-  if ((await colorInput.inputValue()) !== "#d4ff00")
-    failures.push("Primary color was lost after returning to an earlier step.");
-  if (!(await preview.isVisible()))
-    failures.push("Image preview was lost after returning to an earlier step.");
-
-  await page.getByRole("button", { name: "Continue" }).click();
-  const priorityServiceSummary = page
-    .locator("dl > div")
-    .filter({
-      has: page.getByText("Priority service", { exact: true }),
-    })
-    .getByRole("definition");
-  if (
-    !(await priorityServiceSummary
-      .getByText("Website design", { exact: true })
+    !(await page
+      .locator("dl > div")
+      .filter({ has: page.getByText("Travel radius", { exact: true }) })
+      .getByRole("definition")
+      .getByText("30 miles", { exact: true })
       .isVisible())
   )
-    failures.push("Confirmation does not show the SEO priority service.");
-  if (!(await page.getByText(/website designer austin/).isVisible()))
-    failures.push("Confirmation does not show the supplied search phrases.");
+    failures.push("Confirmation does not show the service radius.");
+
+  if ((await page.locator('input[type="checkbox"][required]').count()) !== 1)
+    failures.push("Client confirmation should require one checkbox.");
+
   await page.getByRole("button", { name: "Back" }).click();
+  if (!(await page.locator('[name="services"]').inputValue()).includes("Cabinet refinishing"))
+    failures.push("Service choices were lost after backward navigation.");
+  if ((await page.locator('[name="serviceRadius"]').inputValue()) !== "30")
+    failures.push("Service radius was lost after backward navigation.");
+  await page.getByRole("button", { name: "Continue" }).click();
 
   await page.screenshot({
-    path: path.join(screenshotDir, "image-preview-desktop.png"),
+    path: path.join(screenshotDir, "simplified-onboarding-desktop.png"),
     fullPage: true,
   });
+
   await page.setViewportSize({ width: 390, height: 844 });
   const overflow = await page.evaluate(() => ({
     pixels: document.documentElement.scrollWidth - window.innerWidth,
@@ -195,16 +170,12 @@ try {
   }));
   if (overflow.pixels > 1)
     failures.push(
-      `Image preview causes ${overflow.pixels}px of horizontal overflow on mobile: ${JSON.stringify(overflow.elements)}.`,
+      `Simplified onboarding causes ${overflow.pixels}px of horizontal overflow on mobile: ${JSON.stringify(overflow.elements)}.`,
     );
   await page.screenshot({
-    path: path.join(screenshotDir, "image-preview-mobile.png"),
+    path: path.join(screenshotDir, "simplified-onboarding-mobile.png"),
     fullPage: true,
   });
-
-  await preview.getByRole("button", { name: "Remove" }).click();
-  if (await preview.isVisible())
-    failures.push("Remove did not clear the image preview.");
 } finally {
   await browser.close();
   server.close();
