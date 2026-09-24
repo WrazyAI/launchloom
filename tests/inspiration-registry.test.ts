@@ -156,6 +156,31 @@ describe("inspiration registry", () => {
     },
   );
 
+  it.each([
+    "Do not use A1 MCKP Object Stage for this client.",
+    "Avoid the A1 MCKP Object Stage reference.",
+    "Use a clean workshop direction, not A1 MCKP Object Stage.",
+  ])("does not treat a negated reference mention as an explicit request: %s", (styleText) => {
+    const pack = buildInspirationPack(
+      {
+        seed: "precision-auto-negated",
+        industry: "automotive",
+        styleTerms: ["clean", "modern", "workshop"],
+        styleText,
+        recentReferenceIds: ["a1-mckp-object-stage"],
+        recentRouteSignatures: [],
+      },
+      mergedRegistry,
+    );
+
+    expect(pack.request.explicitReferenceIds).not.toContain(
+      "a1-mckp-object-stage",
+    );
+    expect(
+      pack.routes.flatMap((route: any) => route.referenceIds),
+    ).not.toContain("a1-mckp-object-stage");
+  });
+
   it("prioritizes an explicitly named reference even when history recently used it", () => {
     const pack = buildInspirationPack(
       {
