@@ -74,6 +74,32 @@ describe("Reference Library v2", () => {
     }
   });
 
+  it("keeps curated research provenance separate from owned production evidence", () => {
+    const library = normalizeReferenceLibraryV2(raw, {
+      repositoryRoot: root,
+    });
+    expect(library.researchSources.galleries).toEqual(
+      expect.arrayContaining([
+        "https://www.a1.gallery/",
+        "https://www.lapa.ninja/",
+        "https://www.siteinspire.com/",
+        "https://www.awwwards.com/",
+      ]),
+    );
+    for (const record of library.records) {
+      expect(record.provenance.externalInfluences.length).toBeGreaterThan(0);
+      expect(
+        record.provenance.externalInfluences.every((value: string) =>
+          value.startsWith("https://"),
+        ),
+      ).toBe(true);
+      expect(record.screenshotPath).toContain(
+        "data/inspiration-evidence/reference-v2/",
+      );
+      expect(record.sourceCategory).toBe("owned-normalized-reference");
+    }
+  });
+
   it("stores a structured template and canonical DNA on every reference", () => {
     const library = normalizeReferenceLibraryV2(raw, {
       repositoryRoot: root,
