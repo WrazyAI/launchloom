@@ -112,6 +112,14 @@ jobs:
           echo "site_id=$SITE_ID" >> "$GITHUB_OUTPUT"
           echo "frozen_digest=$FROZEN_DIGEST" >> "$GITHUB_OUTPUT"
 
+      - name: Install rendered client dependencies
+        if: steps.claim.outputs.run == 'true'
+        env:
+          CLIENT_DIR: ${{ steps.client.outputs.dir }}
+        run: |
+          test -s "$CLIENT_DIR/package-lock.json" || { echo "Generated client package lock is missing" >&2; exit 1; }
+          npm ci --prefix "$CLIENT_DIR"
+
       - name: Run exactly one rendered repair against captured findings
         id: repair
         if: steps.claim.outputs.run == 'true'
