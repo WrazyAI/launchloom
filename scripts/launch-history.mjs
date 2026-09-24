@@ -35,13 +35,13 @@ export function recentLayoutFingerprints(history) {
 }
 
 export function recentCreativeFamilyIds(history) {
-  return (history?.launches || [])
-    .flatMap((launch) => [
-      launch.creativeFamilyId,
-      launch.referenceFamilyId,
-    ])
-    .map((value) => String(value || "").trim())
-    .filter(Boolean);
+  return (history?.launches || []).flatMap((launch) => [
+    ...new Set(
+      [launch.creativeFamilyId, launch.referenceFamilyId]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean),
+    ),
+  ]);
 }
 
 function slug(value) {
