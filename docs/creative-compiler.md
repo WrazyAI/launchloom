@@ -31,7 +31,7 @@ but it does not ask a model to rewrite canonical structure on every intake.
 Legacy records without canonical DNA keep the screenshot-analysis path for
 compatibility.
 
-The v2 loader fails closed unless the library contains exactly 30 records,
+The v2 loader fails closed unless the library contains at least 30 records,
 every record has unique desktop and mobile evidence, every record is owned
 production evidence with a structured template and provenance, and the library
 retains broad local-service coverage.
