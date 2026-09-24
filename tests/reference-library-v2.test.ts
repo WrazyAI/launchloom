@@ -137,10 +137,29 @@ describe("Reference Library v2", () => {
 
   it("rejects reused visual evidence even when the paths differ", () => {
     const broken = structuredClone(raw);
-    broken.records[1].screenshotPath = broken.records[0].screenshotPath;
-    expect(() =>
-      normalizeReferenceLibraryV2(broken, { repositoryRoot: root }),
-    ).toThrow(/reuses visual evidence|byte-identical visual evidence/iu);
+    const copy = path.join(
+      "data/inspiration-evidence/reference-v2",
+      `.dup-${process.pid}.svg`,
+    );
+    fs.copyFileSync(broken.records[0].screenshotPath, copy);
+    try {
+      broken.records[1].screenshotPath = copy;
+      expect(() =>
+        normalizeReferenceLibraryV2(broken, { repositoryRoot: root }),
+      ).toThrow(/byte-identical visual evidence/iu);
+    } finally {
+      fs.rmSync(copy, { force: true });
+    }
+  });
+
+  it("rejects null or out-of-range canonical measurement ratios", () => {
+    for (const badValue of [null, "", -0.01, 1.01]) {
+      const broken = structuredClone(raw);
+      broken.records[0].canonicalReferenceDna.measurements.navTopRatio = badValue;
+      expect(() =>
+        normalizeReferenceLibraryV2(broken, { repositoryRoot: root }),
+      ).toThrow(/invalid canonical measurement navTopRatio/iu);
+    }
   });
 
   it("rejects duplicate structural signatures", () => {
@@ -157,6 +176,37 @@ describe("Reference Library v2", () => {
     expect(() =>
       normalizeReferenceLibraryV2(broken, { repositoryRoot: root }),
     ).toThrow(/structural signature/iu);
+  });
+
+  it("does not inherit Kokoro prohibitions for custom canonical families", async () => {
+    const library = await loadReferenceLibraryV2(
+      "data/reference-library-v2.json",
+      { repositoryRoot: root },
+    );
+    const target = library.records.find(
+      (record: any) => record.id === "blueprint-service-ledger",
+    );
+    const pack = buildInspirationPack(
+      {
+        seed: "canonical-prohibitions",
+        industry: "home-services",
+        styleTerms: ["blueprint", "technical", "ledger"],
+        styleText: "Use Blueprint Service Ledger mechanics.",
+        recentReferenceIds: [],
+        recentFamilyIds: [],
+        recentRouteSignatures: [],
+      },
+      library,
+    );
+    const route = pack.routes.find(
+      (item: any) => item.referenceIds.includes(target.id),
+    );
+    expect(route).toBeTruthy();
+    expect(route.referenceDna.prohibitedPatterns).not.toContain("bento-card-wall");
+    expect(route.referenceDna.prohibitedPatterns).not.toContain("pill-navbar");
+    expect(route.referenceDna.prohibitedPatterns).toEqual(
+      expect.arrayContaining(target.canonicalReferenceDna.prohibitedPatterns),
+    );
   });
 
   it("renders SVG desktop and mobile evidence through the prompt pipeline", async () => {
