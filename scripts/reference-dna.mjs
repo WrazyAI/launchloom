@@ -493,7 +493,9 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
       defaults.mobileRecomposition,
     prohibitedPatterns: list(
       [
-        ...(defaults.prohibitedPatterns || []),
+        ...(canonical
+          ? []
+          : FAMILY_DEFAULTS[familyId]?.prohibitedPatterns || []),
         ...(route.prohibitedPatterns || []),
         ...(canonical?.prohibitedPatterns || []),
         ...(analyzed.prohibitedPatterns || []),
