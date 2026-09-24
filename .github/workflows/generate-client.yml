@@ -191,11 +191,20 @@ jobs:
           jq -e '.referenceDnaAnalyzed == true and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null))' /tmp/inspiration-pack.json >/dev/null || { echo "Reference DNA was not derived from screenshot evidence"; exit 1; }
           if [ -f /tmp/reasoning-preflight.json ]; then
             jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
+            echo "reasoning_mode=$(jq -r '.mode' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            echo "reasoning_effort=$(jq -r '.reasoningEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            echo "reasoning_recommended=$(jq -r '.recommendedEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
             FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' /tmp/reasoning-preflight.json)
+            echo "reasoning_fallback=$FALLBACK_USED" >> "$GITHUB_OUTPUT"
             if [ "$FALLBACK_USED" = "true" ]; then
               FALLBACK_CODE=$(jq -r '.selector.error.code // "selector-error"' /tmp/reasoning-preflight.json)
               echo "::warning title=Reasoning preflight fallback::TypeSafe/Jev selector fallback is active ($FALLBACK_CODE). This creative session is frozen at max reasoning for quality safety."
             fi
+          else
+            echo "reasoning_mode=static" >> "$GITHUB_OUTPUT"
+            echo "reasoning_effort=$CREATIVE_EXPERIENCE_REASONING_EFFORT" >> "$GITHUB_OUTPUT"
+            echo "reasoning_recommended=static" >> "$GITHUB_OUTPUT"
+            echo "reasoning_fallback=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Create private repository and Cloudflare Pages project
         id: client
