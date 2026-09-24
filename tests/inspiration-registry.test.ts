@@ -179,6 +179,8 @@ describe("inspiration registry", () => {
     "Do not use A1 MCKP Object Stage for this client.",
     "Avoid the A1 MCKP Object Stage reference.",
     "Use a clean workshop direction, not A1 MCKP Object Stage.",
+    "Choose another design rather than A1 MCKP Object Stage.",
+    "Use another reference instead of A1 MCKP Object Stage.",
   ])("does not treat a negated reference mention as an explicit request: %s", (styleText) => {
     const pack = buildInspirationPack(
       {
@@ -251,6 +253,31 @@ describe("inspiration registry", () => {
         styleTerms: ["object", "stage"],
         styleText:
           "Do not use A1 MCKP Object Stage as a generic card wall, but use A1 MCKP Object Stage mechanics.",
+        recentReferenceIds: ["a1-mckp-object-stage"],
+        recentFamilyIds: ["a1-object-stage"],
+        recentRouteSignatures: [],
+      },
+      mergedRegistry,
+    );
+
+    expect(pack.request.explicitReferenceIds).toContain(
+      "a1-mckp-object-stage",
+    );
+    expect(pack.routes[0].referenceIds).toEqual([
+      "a1-mckp-object-stage",
+    ]);
+  });
+
+  it.each([
+    "Rather use A1 MCKP Object Stage.",
+    "Instead use A1 MCKP Object Stage.",
+  ])("keeps affirmative contrast phrasing explicit: %s", (styleText) => {
+    const pack = buildInspirationPack(
+      {
+        seed: "precision-auto-affirmative-contrast",
+        industry: "automotive",
+        styleTerms: ["object", "stage"],
+        styleText,
         recentReferenceIds: ["a1-mckp-object-stage"],
         recentFamilyIds: ["a1-object-stage"],
         recentRouteSignatures: [],
