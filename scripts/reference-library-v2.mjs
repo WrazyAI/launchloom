@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { validateReferenceDna } from "./reference-dna.mjs";
@@ -35,6 +36,8 @@ export function normalizeReferenceLibraryV2(
 
   const ids = new Set();
   const evidencePaths = new Set();
+  const evidenceDigests = new Set();
+  const structuralSignatures = new Set();
   const records = raw.records.map((record, index) => {
     const id = clean(record?.id, 100);
     if (!id) throw new Error(`Reference Library v2 record ${index + 1} has no id.`);
@@ -64,6 +67,15 @@ export function normalizeReferenceLibraryV2(
           `Reference Library v2 reuses visual evidence across references: ${evidencePath}.`,
         );
       evidencePaths.add(evidencePath);
+      const digest = crypto
+        .createHash("sha256")
+        .update(fs.readFileSync(path.resolve(repositoryRoot, evidencePath)))
+        .digest("hex");
+      if (evidenceDigests.has(digest))
+        throw new Error(
+          `Reference Library v2 contains byte-identical visual evidence: ${evidencePath}.`,
+        );
+      evidenceDigests.add(digest);
     }
 
     if (!Array.isArray(record.industries) || !record.industries.length)
@@ -72,6 +84,39 @@ export function normalizeReferenceLibraryV2(
       throw new Error(`Reference Library v2 '${id}' needs at least four design tags.`);
     if (!record.designTemplate || typeof record.designTemplate !== "object")
       throw new Error(`Reference Library v2 '${id}' needs a structured designTemplate.`);
+    for (const key of [
+      "layoutArchetype",
+      "navigationPattern",
+      "servicePattern",
+      "surfaceSystem",
+      "typeSystem",
+      "imageSystem",
+      "spacingSystem",
+      "conversionSystem",
+      "responsiveSystem",
+      "compositionSystem",
+      "desktopBlueprint",
+      "mobileBlueprint",
+      "sectionBlueprint",
+      "interactionSystem",
+      "signatureRequirements",
+      "acceptanceChecks",
+      "adaptationRules",
+    ])
+      if (!record.designTemplate[key])
+        throw new Error(
+          `Reference Library v2 '${id}' is missing designTemplate.${key}.`,
+        );
+    if (!Array.isArray(record.designTemplate.sectionBlueprint) ||
+        record.designTemplate.sectionBlueprint.length < 4)
+      throw new Error(
+        `Reference Library v2 '${id}' needs a detailed sectionBlueprint.`,
+      );
+    if (!Array.isArray(record.designTemplate.acceptanceChecks) ||
+        record.designTemplate.acceptanceChecks.length < 3)
+      throw new Error(
+        `Reference Library v2 '${id}' needs template acceptance checks.`,
+      );
     if (!record.provenance || typeof record.provenance !== "object")
       throw new Error(`Reference Library v2 '${id}' needs provenance metadata.`);
     if (
@@ -86,6 +131,20 @@ export function normalizeReferenceLibraryV2(
         throw new Error(
           `Reference Library v2 '${id}' has an invalid research influence URL.`,
         );
+
+    const structuralSignature = [
+      clean(record.navigation, 100),
+      clean(record.heroGeometry, 100),
+      clean(record.servicePresentation, 100),
+      clean(record.typographyCategory, 100),
+      clean(record.sectionRhythm, 180),
+      clean(record.imageStrategy, 100),
+    ].join("|");
+    if (structuralSignatures.has(structuralSignature))
+      throw new Error(
+        `Reference Library v2 '${id}' duplicates another reference's structural signature.`,
+      );
+    structuralSignatures.add(structuralSignature);
 
     const canonical = structuredClone(record.canonicalReferenceDna || {});
     canonical.source = clean(record.source, 120);
