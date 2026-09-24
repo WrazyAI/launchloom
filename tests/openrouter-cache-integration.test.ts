@@ -163,8 +163,9 @@ describe("OpenRouter cache integration", () => {
       source.indexOf("stagePromptSuffix(request)"),
     );
     expect(source).toContain(
-      "referenceDna: cacheableReferenceDna(request.route.referenceDna)",
+      "const referenceDna = cacheableReferenceDna(request.route.referenceDna);",
     );
+    expect(source).toContain("referenceDna,");
   });
 
   it("keeps static Reference DNA analysis reusable across runs for 24 hours", () => {
