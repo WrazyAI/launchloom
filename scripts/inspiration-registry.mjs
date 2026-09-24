@@ -118,27 +118,58 @@ function signatureFor(record) {
     .join("|");
 }
 
+function normalizedPhrase(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
+function explicitlyRequested(record, request) {
+  const source = normalizedPhrase(request.styleText);
+  if (!source) return false;
+  const aliases = [
+    record.id,
+    record.name,
+    record.referenceName,
+    record.familyId,
+  ]
+    .map(normalizedPhrase)
+    .filter((value) => value.length >= 5);
+  return aliases.some((alias) => source.includes(alias));
+}
+
 function scoreRecord(record, request) {
   const industry = cleanText(request.industry, 80).toLowerCase();
   const terms = cleanList(request.styleTerms, 20);
-  const searchable = new Set([
+  const searchable = [
+    record.id,
+    record.name,
+    record.referenceName,
+    record.familyId,
     ...record.industries,
     ...record.moods,
-    record.navigation.toLowerCase(),
-    record.heroGeometry.toLowerCase(),
-    record.servicePresentation.toLowerCase(),
-    record.sectionRhythm.toLowerCase(),
-    record.typographyCategory.toLowerCase(),
-    record.imageStrategy.toLowerCase(),
+    ...record.sourceStyles,
+    record.navigation,
+    record.heroGeometry,
+    record.servicePresentation,
+    record.sectionRhythm,
+    record.typographyCategory,
+    record.imageStrategy,
     ...record.motionOpportunities,
-  ]);
+  ]
+    .map(normalizedPhrase)
+    .filter(Boolean);
   let score = record.industries.includes(industry) ? 40 : 0;
   if (record.industries.includes("all")) score += 6;
+  if (explicitlyRequested(record, request)) score += 120;
   for (const term of terms)
     if (
-      [...searchable].some(
-        (value) => value.includes(term) || term.includes(value),
-      )
+      searchable.some((value) => {
+        const tokens = value.split(" ");
+        return tokens.includes(term) || (term.length >= 5 && value.includes(term));
+      })
     )
       score += 8;
   return score + stableFraction(`${request.seed}|${record.id}`);
@@ -184,9 +215,11 @@ function rankedRecords(registry, request, recentReferenceIds, recentRouteSignatu
     .filter(
       (record) =>
         (!mode.excludeReferences ||
-          !recentReferenceIds.has(record.id.toLowerCase())) &&
+          !recentReferenceIds.has(record.id.toLowerCase()) ||
+          explicitlyRequested(record, request)) &&
         (!mode.excludeRouteSignatures ||
-          !recentRouteSignatures.has(signatureFor(record))),
+          !recentRouteSignatures.has(signatureFor(record)) ||
+          explicitlyRequested(record, request)),
     )
     .map((record) => ({
       record,
@@ -297,6 +330,11 @@ export function buildInspirationPack(request, rawRegistry) {
     seed,
     industry,
     styleTerms: cleanList(request.styleTerms, 20),
+    styleText: cleanText(request.styleText, 1200),
+    explicitReferenceIds: registry.records
+      .filter((record) => explicitlyRequested(record, request))
+      .map((record) => record.id)
+      .sort(),
     recentReferenceIds: [...recentReferenceIds].sort(),
     recentRouteSignatures: [...recentRouteSignatures].sort(),
     freshnessFallback: selection.mode.id,
