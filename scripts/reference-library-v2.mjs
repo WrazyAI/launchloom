@@ -74,6 +74,18 @@ export function normalizeReferenceLibraryV2(
       throw new Error(`Reference Library v2 '${id}' needs a structured designTemplate.`);
     if (!record.provenance || typeof record.provenance !== "object")
       throw new Error(`Reference Library v2 '${id}' needs provenance metadata.`);
+    if (
+      !Array.isArray(record.provenance.externalInfluences) ||
+      !record.provenance.externalInfluences.length
+    )
+      throw new Error(
+        `Reference Library v2 '${id}' needs at least one curated research influence.`,
+      );
+    for (const sourceUrl of record.provenance.externalInfluences)
+      if (!/^https:\/\//u.test(String(sourceUrl || "")))
+        throw new Error(
+          `Reference Library v2 '${id}' has an invalid research influence URL.`,
+        );
 
     const canonical = structuredClone(record.canonicalReferenceDna || {});
     canonical.source = clean(record.source, 120);
@@ -111,6 +123,10 @@ export function normalizeReferenceLibraryV2(
     calibration:
       raw.calibration && typeof raw.calibration === "object"
         ? raw.calibration
+        : {},
+    researchSources:
+      raw.researchSources && typeof raw.researchSources === "object"
+        ? raw.researchSources
         : {},
     records,
   };
