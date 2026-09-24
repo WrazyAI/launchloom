@@ -147,6 +147,14 @@ export function normalizeReferenceLibraryV2(
     structuralSignatures.add(structuralSignature);
 
     const canonical = structuredClone(record.canonicalReferenceDna || {});
+    if (canonical.canonical !== true)
+      throw new Error(
+        `Reference Library v2 '${id}' canonicalReferenceDna must set canonical: true.`,
+      );
+    if (clean(canonical.familyId, 80) !== clean(record.familyId, 80))
+      throw new Error(
+        `Reference Library v2 '${id}' canonical familyId must match the record familyId.`,
+      );
     canonical.source = clean(record.source, 120);
     canonical.sourceUrl = clean(record.sourceUrl, 500);
     canonical.rights = "owned";
