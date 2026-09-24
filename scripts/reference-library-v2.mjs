@@ -24,13 +24,13 @@ function assertFile(repositoryRoot, relativePath, label) {
 
 export function normalizeReferenceLibraryV2(
   raw,
-  { repositoryRoot = process.cwd(), expectedCount = 30 } = {},
+  { repositoryRoot = process.cwd(), minimumCount = 30 } = {},
 ) {
   if (!raw || !Array.isArray(raw.records))
     throw new Error("Reference Library v2 must contain a records array.");
-  if (expectedCount && raw.records.length !== expectedCount)
+  if (minimumCount && raw.records.length < minimumCount)
     throw new Error(
-      `Reference Library v2 must contain exactly ${expectedCount} production references; found ${raw.records.length}.`,
+      `Reference Library v2 must contain at least ${minimumCount} production references; found ${raw.records.length}.`,
     );
 
   const ids = new Set();
