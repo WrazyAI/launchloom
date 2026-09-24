@@ -46,6 +46,7 @@ export default function ReviewPanel() {
   const [token, setToken] = useState("");
   const [claims, setClaims] = useState<ReviewClaims>({});
   const [comment, setComment] = useState("");
+  const [category, setCategory] = useState("text");
   const [email, setEmail] = useState("");
   const [state, setState] = useState("");
   const [sending, setSending] = useState(false);
@@ -161,6 +162,7 @@ export default function ReviewPanel() {
         body: JSON.stringify({
           token,
           comment,
+          category: isClient ? category : "developer",
           email,
           pageUrl: window.location.href,
           submissionId: submissionId.current,
@@ -237,7 +239,7 @@ export default function ReviewPanel() {
         <p>
           {isDeveloper
             ? "Approve this exact preview to publish it and invite the client. Or leave feedback for another internal revision."
-            : "Leave feedback in plain language. We’ll review it internally before any update is published."}
+            : "Request a small correction such as a logo, photo, colour, contact detail, or wording change. Larger redesign requests are reviewed separately."}
         </p>
         {hasCreativeRepair && (
           <section className="creative-repair-panel" aria-labelledby="creative-repair-title">
@@ -333,13 +335,34 @@ export default function ReviewPanel() {
               placeholder={invitedEmail}
             />
           </label>
+          {isClient && (
+            <label className="field">
+              What kind of change is this?
+              <select
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+              >
+                <option value="logo">Logo</option>
+                <option value="photos">Business photos</option>
+                <option value="style">Font or styling</option>
+                <option value="color">Colour</option>
+                <option value="text">Text or factual correction</option>
+                <option value="contact">Contact details</option>
+                <option value="other-small">Other small change</option>
+              </select>
+            </label>
+          )}
           <label className="field">
-            What should change?
+            {isDeveloper ? "What should change?" : "Describe the small change"}
             <textarea
               required
               value={comment}
               onChange={(event) => setComment(event.target.value)}
-              placeholder="For example: Make the main headline more direct and make the phone number more prominent."
+              placeholder={
+                isDeveloper
+                  ? "For example: Make the main headline more direct and make the phone number more prominent."
+                  : "For example: Replace the logo, update this phone number, or use the newer team photo."
+              }
             />
           </label>
           <button className="button" type="submit" disabled={sending}>
