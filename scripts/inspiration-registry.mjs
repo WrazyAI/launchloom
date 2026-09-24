@@ -70,6 +70,9 @@ function normalizeRecord(record, index) {
     rights,
     industries: cleanList(record.industries),
     moods: cleanList(record.moods),
+    tags: cleanList(record.tags, 24),
+    sourceCategory: cleanText(record.sourceCategory, 80),
+    evidenceTier: cleanText(record.evidenceTier, 40),
     navigation: cleanText(record.navigation, 80),
     heroGeometry: cleanText(record.heroGeometry, 80),
     servicePresentation: cleanText(record.servicePresentation, 80),
@@ -93,6 +96,20 @@ function normalizeRecord(record, index) {
         : undefined,
     sourceStyles: cleanList(record.sourceStyles, 20),
     sourceFonts: cleanList(record.sourceFonts, 12),
+    designTemplate:
+      record.designTemplate && typeof record.designTemplate === "object"
+        ? structuredClone(record.designTemplate)
+        : undefined,
+    canonicalReferenceDna:
+      record.canonicalReferenceDna &&
+      typeof record.canonicalReferenceDna === "object"
+        ? structuredClone(record.canonicalReferenceDna)
+        : undefined,
+    provenance:
+      record.provenance && typeof record.provenance === "object"
+        ? structuredClone(record.provenance)
+        : undefined,
+    calibrationProfile: cleanText(record.calibrationProfile, 40),
   };
   if (!normalized.id || !normalized.sourceUrl || !normalized.industries.length)
     throw new Error(`Inspiration record ${index + 1} is incomplete.`);
@@ -219,6 +236,7 @@ function scoreRecord(record, request) {
     record.familyId,
     ...record.industries,
     ...record.moods,
+    ...record.tags,
     ...record.sourceStyles,
     record.navigation,
     record.heroGeometry,
@@ -274,6 +292,13 @@ function evidenceFor(record) {
     measuredDesignTokens: record.measuredDesignTokens,
     sourceStyles: record.sourceStyles?.length ? record.sourceStyles : undefined,
     sourceFonts: record.sourceFonts?.length ? record.sourceFonts : undefined,
+    tags: record.tags?.length ? record.tags : undefined,
+    sourceCategory: record.sourceCategory || undefined,
+    evidenceTier: record.evidenceTier || undefined,
+    designTemplate: record.designTemplate,
+    canonicalReferenceDna: record.canonicalReferenceDna,
+    provenance: record.provenance,
+    calibrationProfile: record.calibrationProfile || undefined,
     notes: record.notes || undefined,
     evidenceKind: record.evidenceKind || undefined,
   };
@@ -415,6 +440,14 @@ export function buildInspirationPack(request, rawRegistry) {
       referenceFamilyId: anchor.familyId || undefined,
       mobileBehavior: anchor.mobileBehavior || undefined,
       prohibitedPatterns: anchor.prohibitedPatterns || [],
+      tags: anchor.tags || [],
+      designTemplate: anchor.designTemplate,
+      canonicalReferenceDna: anchor.canonicalReferenceDna,
+      referenceCalibration: request.referenceCalibration || undefined,
+      calibrationProfile: anchor.calibrationProfile || undefined,
+      sourceCategory: anchor.sourceCategory || undefined,
+      evidenceTier: anchor.evidenceTier || undefined,
+      provenance: anchor.provenance,
       referenceIds: evidence.map((item) => item.id),
       intakeFitScore: Number(rankedAnchor?.score || 0),
       explicitReferenceMatch: explicitlyRequested(anchor, request),
