@@ -212,12 +212,13 @@ export async function runCreativeBakeoff({
     const metadata = JSON.parse(
       await fs.readFile(path.join(candidateRoot, directory, "metadata.json"), "utf8"),
     );
-    const contentManifest = JSON.parse(
-      await fs.readFile(
+    const contentManifest = await fs
+      .readFile(
         path.join(candidateRoot, directory, "content-manifest.json"),
         "utf8",
-      ),
-    );
+      )
+      .then(JSON.parse)
+      .catch(() => null);
     const manifest = validateCandidateManifest(metadata.creativeManifest || metadata);
     if (excludedIds.has(manifest.candidateId)) continue;
     candidates.push({ directory, metadata, manifest, contentManifest });
