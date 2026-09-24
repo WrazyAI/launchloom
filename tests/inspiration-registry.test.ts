@@ -181,6 +181,8 @@ describe("inspiration registry", () => {
     "Use a clean workshop direction, not A1 MCKP Object Stage.",
     "Choose another design rather than A1 MCKP Object Stage.",
     "Use another reference instead of A1 MCKP Object Stage.",
+    "Rather than use A1 MCKP Object Stage, choose another reference.",
+    "Instead of A1 MCKP Object Stage, choose another reference.",
   ])("does not treat a negated reference mention as an explicit request: %s", (styleText) => {
     const pack = buildInspirationPack(
       {
@@ -268,6 +270,31 @@ describe("inspiration registry", () => {
     expect(
       pack.routes.flatMap((route: any) => route.referenceIds),
     ).not.toContain("a1-mckp-object-stage");
+  });
+
+  it.each([
+    "Avoid dark themes and use A1 MCKP Object Stage.",
+    "Avoid dark themes, use A1 MCKP Object Stage.",
+  ])("resets negation before an affirmative request: %s", (styleText) => {
+    const pack = buildInspirationPack(
+      {
+        seed: "precision-auto-positive-scope",
+        industry: "automotive",
+        styleTerms: ["object", "stage"],
+        styleText,
+        recentReferenceIds: ["a1-mckp-object-stage"],
+        recentFamilyIds: ["a1-object-stage"],
+        recentRouteSignatures: [],
+      },
+      mergedRegistry,
+    );
+
+    expect(pack.request.explicitReferenceIds).toContain(
+      "a1-mckp-object-stage",
+    );
+    expect(pack.routes[0].referenceIds).toEqual([
+      "a1-mckp-object-stage",
+    ]);
   });
 
   it("treats a positive request after 'but' as affirmative", () => {
