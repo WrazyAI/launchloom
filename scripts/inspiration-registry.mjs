@@ -121,6 +121,7 @@ function signatureFor(record) {
 function normalizedPhrase(value) {
   return String(value || "")
     .toLowerCase()
+    .replace(/[\u2018\u2019\u02bc]/gu, "'")
     .replace(/\b(?:don't|dont)\b/gu, "do not")
     .replace(/\b(?:doesn't|doesnt)\b/gu, "does not")
     .replace(/\b(?:shouldn't|shouldnt)\b/gu, "should not")
@@ -146,8 +147,11 @@ function affirmativeAliasMention(source, alias) {
 }
 
 function explicitlyRequested(record, request) {
-  const source = normalizedPhrase(request.styleText);
-  if (!source) return false;
+  const clauses = String(request.styleText || "")
+    .split(/[.;!?\n]+/u)
+    .map(normalizedPhrase)
+    .filter(Boolean);
+  if (!clauses.length) return false;
   const aliases = [
     ...new Set(
       [
@@ -160,7 +164,9 @@ function explicitlyRequested(record, request) {
         .filter((value) => value.length >= 5),
     ),
   ];
-  return aliases.some((alias) => affirmativeAliasMention(source, alias));
+  return aliases.some((alias) =>
+    clauses.some((clause) => affirmativeAliasMention(clause, alias)),
+  );
 }
 
 function scoreRecord(record, request) {
