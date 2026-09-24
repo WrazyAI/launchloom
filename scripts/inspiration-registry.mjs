@@ -292,6 +292,7 @@ export function buildInspirationPack(request, rawRegistry) {
     // must never be mixed into the authoring evidence where they can be
     // averaged into a generic composition.
     const evidence = [evidenceFor(anchor)];
+    const rankedAnchor = ranked.find((candidate) => candidate.record.id === anchor.id);
     const route = {
       id: `route-${String(index + 1).padStart(2, "0")}`,
       label: anchor.name,
@@ -309,6 +310,8 @@ export function buildInspirationPack(request, rawRegistry) {
       mobileBehavior: anchor.mobileBehavior || undefined,
       prohibitedPatterns: anchor.prohibitedPatterns || [],
       referenceIds: evidence.map((item) => item.id),
+      intakeFitScore: Number(rankedAnchor?.score || 0),
+      explicitReferenceMatch: explicitlyRequested(anchor, request),
       evidence,
       signature: signatureFor(anchor),
     };
