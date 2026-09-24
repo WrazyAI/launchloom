@@ -130,15 +130,30 @@ function normalizedPhrase(value) {
     .trim();
 }
 
+function normalizedRequestClause(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[\u2018\u2019\u02bc]/gu, "'")
+    .replace(/\b(?:don't|dont)\b/gu, "do not")
+    .replace(/\b(?:doesn't|doesnt)\b/gu, "does not")
+    .replace(/\b(?:shouldn't|shouldnt)\b/gu, "should not")
+    .replace(/[^a-z0-9,]+/gu, " ")
+    .replace(/\s*,\s*/gu, ", ")
+    .replace(/\s+/gu, " ")
+    .trim();
+}
+
 function affirmativeAliasMention(source, alias) {
   let offset = 0;
   while (offset < source.length) {
     const index = source.indexOf(alias, offset);
     if (index < 0) return false;
-    let before = source.slice(Math.max(0, index - 96), index).trim();
+    let before = source.slice(Math.max(0, index - 128), index).trim();
+    const lastComma = before.lastIndexOf(",");
+    if (lastComma >= 0) before = before.slice(lastComma + 1).trim();
     const contrastMatches = [
       ...before.matchAll(
-        /\b(?:but|however|yet|instead(?!\s+of\b)|rather(?!\s+than\b))\b/gu,
+        /\b(?:but|however|yet|instead(?!\s+of\b)|rather(?!\s+than\b)|and(?=\s+(?:use|apply|follow|choose|adopt|keep|pick|select|try|prefer|build|create|make)\b))\b/gu,
       ),
     ];
     const lastContrast = contrastMatches.at(-1);
@@ -146,27 +161,10 @@ function affirmativeAliasMention(source, alias) {
       before = before.slice(
         Number(lastContrast.index || 0) + lastContrast[0].length,
       ).trim();
-    const compoundContrasts = [
-      ...before.matchAll(/\b(?:instead of|rather than)\b/gu),
-    ];
-    const lastCompoundContrast = compoundContrasts.at(-1);
-    const compoundTail = lastCompoundContrast
-      ? before
-          .slice(
-            Number(lastCompoundContrast.index || 0) +
-              lastCompoundContrast[0].length,
-          )
-          .trim()
-      : "";
-    const compoundRejection =
-      Boolean(lastCompoundContrast) &&
-      !/\b(?:use|choose|pick|select|try|follow|adopt|prefer|want|like|build|create|make)\b/u.test(
-        compoundTail,
-      );
     const negated =
-      /(?:\bdo not|\bdoes not|\bshould not|\bnever|\bavoid|\bexclude|\bwithout|\breject|\bskip|\bnot|\bno)(?:\s+\w+){0,6}\s*$/u.test(
+      /(?:\bdo not|\bdoes not|\bshould not|\bnever|\bavoid|\bexclude|\bwithout|\breject|\bskip|\bnot|\bno|\brather than|\binstead of)(?:\s+\w+){0,6}\s*$/u.test(
         before,
-      ) || compoundRejection;
+      );
     if (!negated) return true;
     offset = index + alias.length;
   }
@@ -176,7 +174,7 @@ function affirmativeAliasMention(source, alias) {
 function explicitlyRequested(record, request) {
   const clauses = String(request.styleText || "")
     .split(/[.;!?\n]+/u)
-    .map(normalizedPhrase)
+    .map(normalizedRequestClause)
     .filter(Boolean);
   if (!clauses.length) return false;
   const aliases = [
