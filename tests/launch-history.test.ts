@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
+  countRecentCreativeFamilyUses,
   launchRecordFrom,
   readLaunchHistory,
   recentCreativeFamilyIds,
@@ -123,6 +124,26 @@ describe("launch history", () => {
         ],
       }),
     ).toEqual(["market-collage", "market-collage"]);
+  });
+
+  it("counts one launch once when both creative and reference families match", () => {
+    expect(
+      countRecentCreativeFamilyUses(
+        {
+          launches: [
+            {
+              creativeFamilyId: "market-collage",
+              referenceFamilyId: "a1-collage-composition",
+            },
+            {
+              creativeFamilyId: "editorial-monument",
+              referenceFamilyId: "a1-uncommon-founder-atlas",
+            },
+          ],
+        },
+        ["market-collage", "a1-collage-composition"],
+      ),
+    ).toBe(1);
   });
 
   it("records, dedupes, and caps launches", async () => {
