@@ -112,6 +112,13 @@ const pack = buildInspirationPack(
     recentReferenceIds: recent.flatMap((launch) =>
       Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
     ),
+    recentFamilyIds: recent.flatMap((launch) => [
+      ...(Array.isArray(launch.routeFamilyIds)
+        ? launch.routeFamilyIds
+        : []),
+      launch.creativeFamilyId,
+      launch.referenceFamilyId,
+    ]),
     recentRouteSignatures: recent.flatMap((launch) =>
       Array.isArray(launch.routeSignatures) ? launch.routeSignatures : [],
     ),
