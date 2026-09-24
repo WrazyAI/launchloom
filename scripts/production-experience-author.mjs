@@ -1213,11 +1213,80 @@ function hasLiteralNavigationAnchor(elements, navigation, target) {
     )
       return false;
 
-    const href = jsxAttribute(opening, "href")?.initializer;
-    return Boolean(
-      href && ts.isStringLiteral(href) && href.text === `#${target}`,
-    );
+    return jsxHrefTarget(opening) === `#${target}`;
   });
+}
+
+/** Resolve href in JSX prop order, failing closed when a spread is dynamic. */
+function jsxHrefTarget(opening) {
+  let href = { known: false, value: undefined };
+  for (const property of jsxAttributes(opening)) {
+    if (ts.isJsxAttribute(property) && property.name.getText() === "href") {
+      const initializer = property.initializer;
+      href = {
+        known: true,
+        value:
+          initializer &&
+          (ts.isStringLiteral(initializer) ||
+            ts.isNoSubstitutionTemplateLiteral(initializer))
+            ? initializer.text
+            : undefined,
+      };
+      continue;
+    }
+    if (!ts.isJsxSpreadAttribute(property)) continue;
+    href = spreadHrefState(property, href);
+  }
+  return href.known ? href.value : undefined;
+}
+
+/** Apply the href effect of a static object spread, if it can be proven. */
+function spreadHrefState(spread, current) {
+  const expression = spread.expression;
+  if (!ts.isObjectLiteralExpression(expression))
+    return { known: false, value: undefined };
+
+  let href = current;
+  for (const property of expression.properties) {
+    if (ts.isSpreadAssignment(property)) {
+      href = { known: false, value: undefined };
+      continue;
+    }
+
+    const name = property.name;
+    let key;
+    if (name && ts.isComputedPropertyName(name)) {
+      const computed = name.expression;
+      if (
+        !ts.isStringLiteral(computed) &&
+        !ts.isNoSubstitutionTemplateLiteral(computed)
+      ) {
+        href = { known: false, value: undefined };
+        continue;
+      }
+      key = computed.text;
+    } else if (
+      name &&
+      (ts.isIdentifier(name) ||
+        ts.isStringLiteral(name) ||
+        ts.isNoSubstitutionTemplateLiteral(name))
+    ) {
+      key = name.text;
+    } else {
+      href = { known: false, value: undefined };
+      continue;
+    }
+
+    if (key !== "href") continue;
+    const value =
+      ts.isPropertyAssignment(property) &&
+      (ts.isStringLiteral(property.initializer) ||
+        ts.isNoSubstitutionTemplateLiteral(property.initializer))
+        ? property.initializer.text
+        : undefined;
+    href = { known: true, value };
+  }
+  return href;
 }
 
 /** Reject native hidden attributes on a navigation link or any of its containers. */

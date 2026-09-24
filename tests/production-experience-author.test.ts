@@ -206,6 +206,49 @@ describe("production experience author", () => {
     );
   });
 
+  it("rejects navigation hrefs that a later JSX spread can override", () => {
+    const route = { id: "route-overridden-navigation-href" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const original = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const overridesToWrongTarget = original.replace(
+      '<a href="#faqs">FAQs</a>',
+      '<a href="#faqs" {...{ href: "#contact" }}>FAQs</a>',
+    );
+    const unknownOverride = original.replace(
+      '<a href="#faqs">FAQs</a>',
+      '<a href="#faqs" {...linkProps}>FAQs</a>',
+    );
+    const harmlessStaticSpread = original.replace(
+      '<a href="#faqs">FAQs</a>',
+      '<a href="#faqs" {...{ className: "nav-link" }}>FAQs</a>',
+    );
+
+    for (const experience of [overridesToWrongTarget, unknownOverride])
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+        }),
+      ).toThrow(
+        'Candidate route-overridden-navigation-href navigation must expose literal <a href="#faqs"> inside a visible native <nav>.',
+      );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: harmlessStaticSpread, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+  });
+
   it("does not count anchors inside statically unreachable JSX branches", () => {
     const route = { id: "route-unreachable-navigation" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
