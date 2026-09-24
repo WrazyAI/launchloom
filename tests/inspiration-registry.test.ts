@@ -183,6 +183,7 @@ describe("inspiration registry", () => {
     "Use another reference instead of A1 MCKP Object Stage.",
     "Rather than use A1 MCKP Object Stage, choose another reference.",
     "Instead of A1 MCKP Object Stage, choose another reference.",
+    "Avoid A1 MCKP Object Stage, or A1 MCKP Object Stage-inspired layouts.",
   ])("does not treat a negated reference mention as an explicit request: %s", (styleText) => {
     const pack = buildInspirationPack(
       {
