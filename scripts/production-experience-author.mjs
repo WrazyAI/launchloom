@@ -15,6 +15,7 @@ import { validateReferenceCandidate } from "./reference-fidelity.mjs";
  *   route: Record<string, any>;
  *   contentTokens: string[];
  *   contentShape: Record<string, any>;
+ *   visualBrief?: Record<string, any>;
  *   rules: string;
  *   designContract?: string;
  *   experienceSource?: string;
@@ -153,6 +154,28 @@ export function redactPromptValue(value) {
   return value;
 }
 
+function visualBrief(site) {
+  const style = site.style || {};
+  return {
+    palette: {
+      primaryColor: String(style.primaryColor || ""),
+      contrastColor: String(style.contrastColor || ""),
+      brandTextColor: String(style.brandTextColor || ""),
+      brandSurfaceColor: String(style.brandSurfaceColor || ""),
+      brandSurfaceTextColor: String(style.brandSurfaceTextColor || ""),
+      surfaceColor: String(style.surfaceColor || ""),
+      heroColor: String(style.heroColor || ""),
+      inkColor: String(style.inkColor || ""),
+      mutedColor: String(style.mutedColor || ""),
+      lineColor: String(style.lineColor || ""),
+    },
+    tone: String(style.tone || ""),
+    preference: String(style.preference || ""),
+    visualDirection: String(style.visualDirection || ""),
+    artDirection: String(style.artDirection || ""),
+  };
+}
+
 function contentShape(site, route) {
   const business = site.business || {};
   const copy = site.copy || {};
@@ -240,8 +263,9 @@ function contentShape(site, route) {
 
 export function buildCreativeContentManifest(site, route) {
   const manifest = {
-    version: 1,
+    version: 2,
     values: contentShape(site || {}, route),
+    visualBrief: visualBrief(site || {}),
     tokens: contentTokenDefinitions.map(([token, type]) => ({ token, type })),
   };
   return { ...manifest, digest: digest(manifest) };
@@ -1996,7 +2020,13 @@ export async function authorExperienceCandidates({
     routes.map(async (route, index) => {
       const routeContentManifest = buildCreativeContentManifest(site, route);
       const content = routeContentManifest.values;
-      const base = { route, contentTokens, contentShape: content, rules };
+      const base = {
+        route,
+        contentTokens,
+        contentShape: content,
+        visualBrief: routeContentManifest.visualBrief,
+        rules,
+      };
       const contractResult = await generateContract(limitedGenerate, {
         ...base,
         stage: "contract",
