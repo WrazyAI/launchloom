@@ -202,6 +202,31 @@ describe("inspiration registry", () => {
     ).not.toContain("a1-mckp-object-stage");
   });
 
+  it.each([
+    "Rather than a grid layout, use A1 MCKP Object Stage.",
+    "Instead of generic card walls, use A1 MCKP Object Stage mechanics.",
+  ])("treats the request after a rejected design as affirmative: %s", (styleText) => {
+    const pack = buildInspirationPack(
+      {
+        seed: "precision-auto-rejected-alternative",
+        industry: "automotive",
+        styleTerms: ["object", "stage"],
+        styleText,
+        recentReferenceIds: ["a1-mckp-object-stage"],
+        recentFamilyIds: ["a1-object-stage"],
+        recentRouteSignatures: [],
+      },
+      mergedRegistry,
+    );
+
+    expect(pack.request.explicitReferenceIds).toContain(
+      "a1-mckp-object-stage",
+    );
+    expect(pack.routes[0].referenceIds).toEqual([
+      "a1-mckp-object-stage",
+    ]);
+  });
+
   it("keeps a later-sentence explicit reference request after an earlier negation", () => {
     const pack = buildInspirationPack(
       {

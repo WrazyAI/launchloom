@@ -146,10 +146,27 @@ function affirmativeAliasMention(source, alias) {
       before = before.slice(
         Number(lastContrast.index || 0) + lastContrast[0].length,
       ).trim();
-    const negated =
-      /(?:\bdo not|\bdoes not|\bshould not|\bnever|\bavoid|\bexclude|\bwithout|\breject|\bskip|\bnot|\bno|\brather than|\binstead of)(?:\s+\w+){0,6}\s*$/u.test(
-        before,
+    const compoundContrasts = [
+      ...before.matchAll(/\b(?:instead of|rather than)\b/gu),
+    ];
+    const lastCompoundContrast = compoundContrasts.at(-1);
+    const compoundTail = lastCompoundContrast
+      ? before
+          .slice(
+            Number(lastCompoundContrast.index || 0) +
+              lastCompoundContrast[0].length,
+          )
+          .trim()
+      : "";
+    const compoundRejection =
+      Boolean(lastCompoundContrast) &&
+      !/\b(?:use|choose|pick|select|try|follow|adopt|prefer|want|like|build|create|make)\b/u.test(
+        compoundTail,
       );
+    const negated =
+      /(?:\bdo not|\bdoes not|\bshould not|\bnever|\bavoid|\bexclude|\bwithout|\breject|\bskip|\bnot|\bno)(?:\s+\w+){0,6}\s*$/u.test(
+        before,
+      ) || compoundRejection;
     if (!negated) return true;
     offset = index + alias.length;
   }
