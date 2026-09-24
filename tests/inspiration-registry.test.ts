@@ -181,6 +181,49 @@ describe("inspiration registry", () => {
     ).not.toContain("a1-mckp-object-stage");
   });
 
+  it("keeps a later-sentence explicit reference request after an earlier negation", () => {
+    const pack = buildInspirationPack(
+      {
+        seed: "precision-auto-sentence-scope",
+        industry: "automotive",
+        styleTerms: ["clean", "modern", "object", "stage"],
+        styleText:
+          "Don't make it cluttered. Use A1 MCKP Object Stage.",
+        recentReferenceIds: ["a1-mckp-object-stage"],
+        recentRouteSignatures: [],
+      },
+      mergedRegistry,
+    );
+
+    expect(pack.request.explicitReferenceIds).toContain(
+      "a1-mckp-object-stage",
+    );
+    expect(pack.routes[0].referenceIds).toEqual([
+      "a1-mckp-object-stage",
+    ]);
+  });
+
+  it("recognizes curly-apostrophe negation for a named reference", () => {
+    const pack = buildInspirationPack(
+      {
+        seed: "precision-auto-curly-negation",
+        industry: "automotive",
+        styleTerms: ["clean", "modern", "workshop"],
+        styleText: "Don’t use A1 MCKP Object Stage.",
+        recentReferenceIds: ["a1-mckp-object-stage"],
+        recentRouteSignatures: [],
+      },
+      mergedRegistry,
+    );
+
+    expect(pack.request.explicitReferenceIds).not.toContain(
+      "a1-mckp-object-stage",
+    );
+    expect(
+      pack.routes.flatMap((route: any) => route.referenceIds),
+    ).not.toContain("a1-mckp-object-stage");
+  });
+
   it("prioritizes an explicitly named reference even when history recently used it", () => {
     const pack = buildInspirationPack(
       {
