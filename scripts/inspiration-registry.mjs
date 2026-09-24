@@ -135,7 +135,15 @@ function affirmativeAliasMention(source, alias) {
   while (offset < source.length) {
     const index = source.indexOf(alias, offset);
     if (index < 0) return false;
-    const before = source.slice(Math.max(0, index - 96), index).trim();
+    let before = source.slice(Math.max(0, index - 96), index).trim();
+    const contrastMatches = [
+      ...before.matchAll(/\b(?:but|however|instead|rather|yet)\b/gu),
+    ];
+    const lastContrast = contrastMatches.at(-1);
+    if (lastContrast)
+      before = before.slice(
+        Number(lastContrast.index || 0) + lastContrast[0].length,
+      ).trim();
     const negated =
       /(?:\bdo not|\bdoes not|\bshould not|\bnever|\bavoid|\bexclude|\bwithout|\breject|\bskip|\bnot|\bno)(?:\s+\w+){0,6}\s*$/u.test(
         before,
@@ -171,7 +179,13 @@ function explicitlyRequested(record, request) {
 
 function scoreRecord(record, request) {
   const industry = cleanText(request.industry, 80).toLowerCase();
-  const terms = cleanList(request.styleTerms, 20);
+  const terms = [
+    ...new Set(
+      cleanList(request.styleTerms, 20)
+        .flatMap((term) => normalizedPhrase(term).split(" "))
+        .filter(Boolean),
+    ),
+  ];
   const searchable = [
     record.id,
     record.name,
@@ -239,17 +253,33 @@ function evidenceFor(record) {
   };
 }
 
-function rankedRecords(registry, request, recentReferenceIds, recentRouteSignatures, mode) {
+function rankedRecords(
+  registry,
+  request,
+  recentReferenceIds,
+  recentFamilyIds,
+  recentRouteSignatures,
+  mode,
+) {
   return registry.records
-    .filter(
-      (record) =>
+    .filter((record) => {
+      const explicit = explicitlyRequested(record, request);
+      const familyId = cleanText(
+        record.familyId || buildRouteContract(record).familyId,
+        80,
+      ).toLowerCase();
+      return (
         (!mode.excludeReferences ||
           !recentReferenceIds.has(record.id.toLowerCase()) ||
-          explicitlyRequested(record, request)) &&
+          explicit) &&
+        (!mode.excludeFamilies ||
+          !recentFamilyIds.has(familyId) ||
+          explicit) &&
         (!mode.excludeRouteSignatures ||
           !recentRouteSignatures.has(signatureFor(record)) ||
-          explicitlyRequested(record, request)),
-    )
+          explicit)
+      );
+    })
     .map((record) => ({
       record,
       score: scoreRecord(record, request),
@@ -280,6 +310,9 @@ export function buildInspirationPack(request, rawRegistry) {
   const recentReferenceIds = new Set(
     cleanList(request.recentReferenceIds, 200),
   );
+  const recentFamilyIds = new Set(
+    cleanList(request.recentFamilyIds, 200),
+  );
   const recentRouteSignatures = new Set(
     (Array.isArray(request.recentRouteSignatures)
       ? request.recentRouteSignatures
@@ -287,13 +320,30 @@ export function buildInspirationPack(request, rawRegistry) {
     ).map((value) => cleanText(value, 600)),
   );
   const selectionModes = [
-    { id: "fresh", excludeReferences: true, excludeRouteSignatures: true },
+    {
+      id: "fresh",
+      excludeReferences: true,
+      excludeFamilies: true,
+      excludeRouteSignatures: true,
+    },
     {
       id: "route-signatures-relaxed",
       excludeReferences: true,
+      excludeFamilies: true,
       excludeRouteSignatures: false,
     },
-    { id: "history-relaxed", excludeReferences: false, excludeRouteSignatures: false },
+    {
+      id: "families-relaxed",
+      excludeReferences: true,
+      excludeFamilies: false,
+      excludeRouteSignatures: false,
+    },
+    {
+      id: "history-relaxed",
+      excludeReferences: false,
+      excludeFamilies: false,
+      excludeRouteSignatures: false,
+    },
   ];
   let selection;
   for (const mode of selectionModes) {
@@ -301,6 +351,7 @@ export function buildInspirationPack(request, rawRegistry) {
       registry,
       { ...request, seed, industry },
       recentReferenceIds,
+      recentFamilyIds,
       recentRouteSignatures,
       mode,
     );
@@ -368,6 +419,7 @@ export function buildInspirationPack(request, rawRegistry) {
       .map((record) => record.id)
       .sort(),
     recentReferenceIds: [...recentReferenceIds].sort(),
+    recentFamilyIds: [...recentFamilyIds].sort(),
     recentRouteSignatures: [...recentRouteSignatures].sort(),
     freshnessFallback: selection.mode.id,
   };
