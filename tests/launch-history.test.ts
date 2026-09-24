@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   launchRecordFrom,
   readLaunchHistory,
+  recentCreativeFamilyIds,
   recentLayoutFingerprints,
   recordLaunch,
 } from "../scripts/launch-history.mjs";
@@ -17,14 +18,22 @@ const config = {
       packId: "bold-utility",
       variantId: "portrait",
       fingerprint: "bold-utility|portrait|utility-pill|guided-portrait",
+      familyId: "market-collage",
+      referenceFamilyId: "a1-collage-composition",
     },
   },
 };
 
 const inspiration = {
   routes: [
-    { referenceId: "nightjar-cinematic-salon", signature: "signature-a" },
-    { referenceId: "kokoro-spatial-editorial", signature: "signature-b" },
+    {
+      referenceIds: ["nightjar-cinematic-salon"],
+      signature: "signature-a",
+    },
+    {
+      referenceIds: ["kokoro-spatial-editorial"],
+      signature: "signature-b",
+    },
     { referenceId: null, signature: "signature-a" },
   ],
 };
@@ -81,6 +90,24 @@ describe("launch history", () => {
     expect(record.stage).toBe("production");
   });
 
+  it("records inspiration attempts before a creative candidate exists", () => {
+    const record = launchRecordFrom({
+      config: {
+        business: { name: "Early Attempt" },
+        design: { recipe: "local-trades", experience: {} },
+      },
+      inspiration,
+      launchedAt: "2026-09-18T20:00:00.000Z",
+      stage: "attempt",
+    });
+    expect(record.stage).toBe("attempt");
+    expect(record.referenceIds).toEqual([
+      "kokoro-spatial-editorial",
+      "nightjar-cinematic-salon",
+    ]);
+    expect(record.layoutFingerprint).toBe("");
+  });
+
   it("records, dedupes, and caps launches", async () => {
     const historyPath = await temporaryHistory();
     await recordLaunch(
@@ -131,6 +158,9 @@ describe("launch history", () => {
     expect(capped.launches.length).toBeLessThanOrEqual(50);
     expect(recentLayoutFingerprints(capped)).toContain(
       "bold-utility|portrait|utility-pill|guided-portrait",
+    );
+    expect(recentCreativeFamilyIds(capped)).toEqual(
+      expect.arrayContaining(["market-collage", "a1-collage-composition"]),
     );
   });
 });
