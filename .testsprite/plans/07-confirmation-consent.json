@@ -1,14 +1,29 @@
 {
   "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
   "type": "frontend",
-  "name": "Confirmation requires factual, rights, and research consent",
-  "description": "The final form makes all three consent boundaries explicit before a preview can be requested.",
+  "name": "Confirmation uses one plain-language client approval",
+  "description": "The final client step has a single required confirmation instead of separate technical consent checkboxes.",
   "priority": "p1",
   "planSteps": [
-    { "type": "action", "description": "Navigate through Business, Services, Search language, and Brand using fictional valid required data" },
-    { "type": "assertion", "description": "The Confirm step shows separate required checkboxes for factual accuracy, asset rights, and bounded SEO research" },
-    { "type": "assertion", "description": "The research consent explains that research suggestions do not replace confirmed business facts" },
-    { "type": "action", "description": "Leave all consent checkboxes unselected and activate Create my preview" },
-    { "type": "assertion", "description": "The form stays on Confirm and reports a required consent as invalid without showing a success confirmation" }
+    {
+      "type": "action",
+      "description": "Navigate through Business and Services using fictional valid data and reach Brand"
+    },
+    {
+      "type": "assertion",
+      "description": "The Brand step shows one required checkbox covering accurate approved business information/files and authorization for public market research"
+    },
+    {
+      "type": "assertion",
+      "description": "No separate required SEO research or asset-rights checkbox is visible"
+    },
+    {
+      "type": "action",
+      "description": "Leave the confirmation unselected and activate Create my preview"
+    },
+    {
+      "type": "assertion",
+      "description": "The form remains incomplete and does not show a success confirmation"
+    }
   ]
 }
