@@ -104,8 +104,10 @@ describe("launch history", () => {
       inspiration,
       launchedAt: "2026-09-18T20:00:00.000Z",
       stage: "attempt",
+      recordKey: "59",
     });
     expect(record.stage).toBe("attempt");
+    expect(record.id).toBe("2026-09-18-early-attempt-attempt-59");
     expect(record.referenceIds).toEqual([
       "kokoro-spatial-editorial",
       "nightjar-cinematic-salon",
