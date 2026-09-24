@@ -146,7 +146,8 @@ jobs:
             if ! node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
               --config /tmp/site.config.json \
               --inspiration /tmp/inspiration-pack.json \
-              --stage attempt; then
+              --stage attempt \
+              --record-key "$LAUNCHLOOM_INTAKE_ID"; then
               continue
             fi
             if git diff --quiet -- data/recent-launch-signatures.json; then
