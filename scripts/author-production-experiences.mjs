@@ -131,6 +131,7 @@ REFERENCE FIDELITY RULES
 - Use one distinctive, purposeful interaction from the assigned family and provide its reduced-motion equivalent.
 - Keep business facts, SEO copy, contact details, and imagery bound to sealed content tokens. Never copy reference branding, copy, assets, or trade dress.
 - Treat the client visual brief as a binding local art-direction layer. Preserve its palette intent, tone, explicit composition requests, and prohibited patterns unless they conflict with accessibility or the assigned reference mechanics. Do not replace a light brief with a dark house style, or substitute LaunchLoom's familiar lime/charcoal treatment when the brief asks for another palette.
+- When a route includes a structured designTemplate and canonical Reference DNA, treat those as the stable implementation specification. The screenshots are visual evidence for the same template, not permission to invent a nearby generic style. Preserve the template's composition rules, spacing system, image role, service treatment, conversion pattern, and mobile recomposition.
 
 STAGE SAFETY
 - Contract output defines the implementation but never contains source files.
@@ -159,6 +160,10 @@ function routePromptPrefix(request) {
       familyId: request.route.familyId,
       mobileBehavior: request.route.mobileBehavior,
       prohibitedPatterns: request.route.prohibitedPatterns,
+      tags: request.route.tags,
+      designTemplate: request.route.designTemplate,
+      calibrationProfile: request.route.calibrationProfile,
+      referenceCalibration: request.route.referenceCalibration,
       signature: request.route.signature,
       referenceDna: cacheableReferenceDna(request.route.referenceDna),
       evidence: (request.route.evidence || []).map((item) => ({
@@ -168,6 +173,10 @@ function routePromptPrefix(request) {
         measuredDesignTokens: item.measuredDesignTokens,
         sourceStyles: item.sourceStyles,
         sourceFonts: item.sourceFonts,
+        tags: item.tags,
+        designTemplate: item.designTemplate,
+        provenance: item.provenance,
+        calibrationProfile: item.calibrationProfile,
         notes: item.notes,
       })),
     },
