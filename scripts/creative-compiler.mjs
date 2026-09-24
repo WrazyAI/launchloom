@@ -214,6 +214,30 @@ export function buildRouteContract(route, index = 0) {
       clean(route.mobileBehavior, 160) ||
       "recompose into a content-driven single column without horizontal overflow",
     prohibitedPatterns,
+    tags: list(route.tags, 24),
+    designTemplate:
+      route.designTemplate && typeof route.designTemplate === "object"
+        ? route.designTemplate
+        : referenceDna.evidence?.designTemplate,
+    calibrationProfile:
+      clean(
+        route.calibrationProfile ||
+          referenceDna.evidence?.calibrationProfile,
+        80,
+      ) || undefined,
+    referenceCalibration:
+      route.referenceCalibration ||
+      referenceDna.evidence?.referenceCalibration ||
+      undefined,
+    sourceCategory: clean(route.sourceCategory, 80) || undefined,
+    evidenceTier: clean(route.evidenceTier, 40) || undefined,
+    provenance:
+      route.provenance || referenceDna.evidence?.provenance || undefined,
+    canonicalReferenceDna:
+      route.canonicalReferenceDna ||
+      route.evidence?.find((item) => item.canonicalReferenceDna)
+        ?.canonicalReferenceDna ||
+      undefined,
     referenceDna,
     referenceEvidenceComplete: Boolean(referenceDna.complete),
     referenceIds: list(route.referenceIds, 8),
