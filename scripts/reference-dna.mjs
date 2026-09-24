@@ -389,8 +389,18 @@ function evidenceRecord(route, kind) {
 }
 
 export function buildReferenceDna(route, { requireEvidence = false } = {}) {
-  const familyId = clean(route.referenceFamilyId, 80) || familyForRoute(route);
-  const defaults = FAMILY_DEFAULTS[familyId] || FAMILY_DEFAULTS["kokoro-editorial-architecture"];
+  const canonical =
+    route.canonicalReferenceDna ||
+    route.evidence?.find((item) => item.canonicalReferenceDna)
+      ?.canonicalReferenceDna ||
+    null;
+  const analyzed = route.referenceDna || {};
+  const familyId =
+    clean(canonical?.familyId, 80) ||
+    clean(route.referenceFamilyId, 80) ||
+    familyForRoute(route);
+  const defaults =
+    FAMILY_DEFAULTS[familyId] || FAMILY_DEFAULTS["kokoro-editorial-architecture"];
   const desktop = evidenceRecord(route, "desktop");
   const mobile = evidenceRecord(route, "mobile");
   const incompleteReasons = [];
@@ -399,9 +409,13 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
   if (!desktop.source) incompleteReasons.push("reference source is missing");
   if (!desktop.rights) incompleteReasons.push("reference rights are missing");
   const dna = {
-    version: REFERENCE_DNA_VERSION,
+    version: Number(canonical?.version || REFERENCE_DNA_VERSION),
+    canonical: canonical?.canonical === true,
     familyId,
-    referenceName: clean(route.referenceName, 180) || defaults.referenceName,
+    referenceName:
+      clean(canonical?.referenceName, 180) ||
+      clean(route.referenceName, 180) ||
+      defaults.referenceName,
     source: desktop.source,
     sourceUrl: clean(route.sourceUrl || route.evidence?.[0]?.sourceUrl, 500),
     rights: desktop.rights,
@@ -415,36 +429,91 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
           route.evidence?.[0]?.notes,
         1400,
       ),
-      measuredDesignTokens: route.measuredDesignTokens || route.evidence?.[0]?.measuredDesignTokens || undefined,
-      sourceStyles: list(route.sourceStyles || route.evidence?.[0]?.sourceStyles, 20),
-      sourceFonts: list(route.sourceFonts || route.evidence?.[0]?.sourceFonts, 12),
+      measuredDesignTokens:
+        route.measuredDesignTokens ||
+        route.evidence?.[0]?.measuredDesignTokens ||
+        undefined,
+      sourceStyles: list(
+        route.sourceStyles || route.evidence?.[0]?.sourceStyles,
+        20,
+      ),
+      sourceFonts: list(
+        route.sourceFonts || route.evidence?.[0]?.sourceFonts,
+        12,
+      ),
+      tags: list(route.tags || route.evidence?.[0]?.tags, 24),
+      designTemplate:
+        route.designTemplate || route.evidence?.[0]?.designTemplate || undefined,
+      provenance:
+        route.provenance || route.evidence?.[0]?.provenance || undefined,
+      calibrationProfile:
+        clean(
+          route.calibrationProfile ||
+            route.evidence?.[0]?.calibrationProfile,
+          80,
+        ) || undefined,
+      referenceCalibration: route.referenceCalibration || undefined,
     },
-    heroGeometry: route.referenceDna?.heroGeometry || defaults.heroGeometry,
-    navigationGeometry: route.referenceDna?.navigationGeometry || defaults.navigationGeometry,
-    typography: route.referenceDna?.typography || defaults.typography,
-    palette: route.referenceDna?.palette || defaults.palette,
-    imageTreatment: route.referenceDna?.imageTreatment || defaults.imageTreatment,
-    sectionSequence: normalizeSectionSequence(
-      route.referenceDna?.sectionSequence || defaults.sectionSequence,
-      familyId,
-    ),
+    heroGeometry:
+      canonical?.heroGeometry || analyzed.heroGeometry || defaults.heroGeometry,
+    navigationGeometry:
+      canonical?.navigationGeometry ||
+      analyzed.navigationGeometry ||
+      defaults.navigationGeometry,
+    typography:
+      canonical?.typography || analyzed.typography || defaults.typography,
+    palette: canonical?.palette || analyzed.palette || defaults.palette,
+    imageTreatment:
+      canonical?.imageTreatment ||
+      analyzed.imageTreatment ||
+      defaults.imageTreatment,
+    sectionSequence: canonical?.sectionSequence
+      ? list(canonical.sectionSequence, 20)
+      : normalizeSectionSequence(
+          analyzed.sectionSequence || defaults.sectionSequence,
+          familyId,
+        ),
     sectionSequenceEvidence: list(
-      route.referenceDna?.sectionSequenceEvidence ||
-        route.referenceDna?.sectionSequence ||
+      canonical?.sectionSequence ||
+        analyzed.sectionSequenceEvidence ||
+        analyzed.sectionSequence ||
         defaults.sectionSequence,
       20,
     ),
-    servicePresentation: route.referenceDna?.servicePresentation || defaults.servicePresentation,
-    ctaPlacement: route.referenceDna?.ctaPlacement || defaults.ctaPlacement,
-    motion: route.referenceDna?.motion || defaults.motion,
-    mobileRecomposition: route.referenceDna?.mobileRecomposition || defaults.mobileRecomposition,
-    prohibitedPatterns: list([...(defaults.prohibitedPatterns || []), ...(route.prohibitedPatterns || []), ...(route.referenceDna?.prohibitedPatterns || [])], 30),
-    requiredSignatureElements: route.referenceDna?.requiredSignatureElements || defaults.requiredSignatureElements,
-    acceptanceChecks: list(route.referenceDna?.acceptanceChecks || defaults.acceptanceChecks, 20),
-    measurements: route.referenceDna?.measurements || null,
-    analyzedFromEvidence: Boolean(route.referenceDna?.analyzedFromEvidence),
-    analyzerModel: clean(route.referenceDna?.analyzerModel, 160),
-    analyzedAt: clean(route.referenceDna?.analyzedAt, 80),
+    servicePresentation:
+      canonical?.servicePresentation ||
+      analyzed.servicePresentation ||
+      defaults.servicePresentation,
+    ctaPlacement:
+      canonical?.ctaPlacement || analyzed.ctaPlacement || defaults.ctaPlacement,
+    motion: canonical?.motion || analyzed.motion || defaults.motion,
+    mobileRecomposition:
+      canonical?.mobileRecomposition ||
+      analyzed.mobileRecomposition ||
+      defaults.mobileRecomposition,
+    prohibitedPatterns: list(
+      [
+        ...(defaults.prohibitedPatterns || []),
+        ...(route.prohibitedPatterns || []),
+        ...(canonical?.prohibitedPatterns || []),
+        ...(analyzed.prohibitedPatterns || []),
+      ],
+      30,
+    ),
+    requiredSignatureElements:
+      canonical?.requiredSignatureElements ||
+      analyzed.requiredSignatureElements ||
+      defaults.requiredSignatureElements,
+    acceptanceChecks: list(
+      canonical?.acceptanceChecks ||
+        analyzed.acceptanceChecks ||
+        defaults.acceptanceChecks,
+      20,
+    ),
+    measurements: canonical?.measurements || analyzed.measurements || null,
+    analyzedFromEvidence: Boolean(analyzed.analyzedFromEvidence),
+    analyzerModel: clean(analyzed.analyzerModel, 160),
+    analyzedAt: clean(analyzed.analyzedAt, 80),
     complete: incompleteReasons.length === 0,
     incompleteReasons,
   };
