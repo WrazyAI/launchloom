@@ -6,6 +6,19 @@ import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
 const registry = JSON.parse(
   fs.readFileSync(path.resolve("data/inspiration-registry.json"), "utf8"),
 );
+const a1Registry = JSON.parse(
+  fs.readFileSync(path.resolve("data/a1-reference-library.json"), "utf8"),
+);
+const mergedRegistry = {
+  ...registry,
+  records: [
+    ...registry.records,
+    ...a1Registry.records.filter(
+      (record: any) =>
+        !registry.records.some((existing: any) => existing.id === record.id),
+    ),
+  ],
+};
 
 const jewelryRequest = {
   seed: "intake-33-maison-orphee",
@@ -97,6 +110,29 @@ describe("inspiration registry", () => {
     expect(pack.routes).toHaveLength(3);
     expect(["route-signatures-relaxed", "history-relaxed"]).toContain(
       pack.request.freshnessFallback,
+    );
+  });
+
+  it("prioritizes an explicitly named reference even when history recently used it", () => {
+    const pack = buildInspirationPack(
+      {
+        seed: "precision-auto-explicit",
+        industry: "automotive",
+        styleTerms: ["clean", "modern", "object", "stage", "precision"],
+        styleText:
+          "Art direction: an object-led workshop guided by the A1 MCKP Object Stage reference mechanics.",
+        recentReferenceIds: ["a1-mckp-object-stage"],
+        recentRouteSignatures: [],
+      },
+      mergedRegistry,
+    );
+
+    expect(pack.routes[0]).toMatchObject({
+      referenceIds: ["a1-mckp-object-stage"],
+      explicitReferenceMatch: true,
+    });
+    expect(pack.request.explicitReferenceIds).toContain(
+      "a1-mckp-object-stage",
     );
   });
 
