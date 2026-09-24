@@ -22,10 +22,10 @@ describe("Reference Library v2", () => {
       repositoryRoot: root,
     });
     expect(library.records).toHaveLength(30);
-    expect(new Set(library.records.map((record) => record.id)).size).toBe(30);
+    expect(new Set(library.records.map((record: any) => record.id)).size).toBe(30);
     expect(
       library.records.every(
-        (record) =>
+        (record: any) =>
           record.rights === "owned" &&
           record.evidenceTier === "production" &&
           record.sourceCategory === "owned-normalized-reference",
@@ -37,7 +37,7 @@ describe("Reference Library v2", () => {
     const library = normalizeReferenceLibraryV2(raw, {
       repositoryRoot: root,
     });
-    const paths = library.records.flatMap((record) => [
+    const paths = library.records.flatMap((record: any) => [
       record.screenshotPath,
       record.mobileScreenshotPath,
     ]);
@@ -54,7 +54,7 @@ describe("Reference Library v2", () => {
       repositoryRoot: root,
     });
     expect(
-      library.records.filter((record) =>
+      library.records.filter((record: any) =>
         record.industries.includes("home-services"),
       ).length,
     ).toBeGreaterThanOrEqual(8);
@@ -69,7 +69,7 @@ describe("Reference Library v2", () => {
       "real-estate",
     ]) {
       expect(
-        library.records.some((record) => record.industries.includes(industry)),
+        library.records.some((record: any) => record.industries.includes(industry)),
       ).toBe(true);
     }
   });
