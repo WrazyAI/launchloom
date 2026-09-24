@@ -88,6 +88,7 @@ export function launchRecordFrom({
   inspiration,
   launchedAt = new Date().toISOString(),
   stage = "preview",
+  recordKey = "",
 }) {
   const experience = config?.design?.experience || {};
   const packId = String(experience.packId || "").trim();
@@ -98,8 +99,18 @@ export function launchRecordFrom({
   if (normalizedStage !== "attempt" && (!packId || !fingerprint))
     throw new Error("A launch record needs a pack id and layout fingerprint.");
   const routes = Array.isArray(inspiration?.routes) ? inspiration.routes : [];
+  const baseId = `${launchedAt.slice(0, 10)}-${slug(config?.business?.name)}`;
+  const attemptKey = slug(
+    recordKey ||
+      String(launchedAt || "")
+        .replace(/[^0-9]+/gu, "")
+        .slice(-9),
+  );
   return {
-    id: `${launchedAt.slice(0, 10)}-${slug(config?.business?.name)}`,
+    id:
+      normalizedStage === "attempt"
+        ? `${baseId}-attempt-${attemptKey || "reservation"}`
+        : baseId,
     launchedAt,
     stage: normalizedStage,
     businessName: String(config?.business?.name || "").trim(),
