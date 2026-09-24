@@ -150,7 +150,15 @@ function affirmativeAliasMention(source, alias) {
     if (index < 0) return false;
     let before = source.slice(Math.max(0, index - 128), index).trim();
     const lastComma = before.lastIndexOf(",");
-    if (lastComma >= 0) before = before.slice(lastComma + 1).trim();
+    if (lastComma >= 0) {
+      const commaTail = before.slice(lastComma + 1).trim();
+      if (
+        /^(?:(?:and|but)\s+)?(?:use|apply|follow|choose|adopt|keep|pick|select|try|prefer|build|create|make)\b/u.test(
+          commaTail,
+        )
+      )
+        before = commaTail;
+    }
     const contrastMatches = [
       ...before.matchAll(
         /\b(?:but|however|yet|instead(?!\s+of\b)|rather(?!\s+than\b)|and(?=\s+(?:use|apply|follow|choose|adopt|keep|pick|select|try|prefer|build|create|make)\b))\b/gu,
