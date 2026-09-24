@@ -321,6 +321,46 @@ describe("rendered reference fidelity", () => {
     expect(textBlocks).toContain("capture height is not the browser viewport height");
   });
 
+  it("judges the rendered candidate against the client visual brief", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const requests: any[] = [];
+    await evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      visualBrief: {
+        palette: {
+          surfaceColor: "#f5f0e4",
+          primaryColor: "#245a4c",
+        },
+        artDirection:
+          "Light tactile craft collage with cypress-green typography.",
+      },
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      fetchImpl: async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return response({
+          verdict: "pass",
+          overallScore: 89,
+          scores: passingScores,
+          findings: [],
+          summary: "Pass.",
+        });
+      },
+    });
+
+    const textBlocks = requests[0].messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(textBlocks).toContain("CLIENT VISUAL BRIEF");
+    expect(textBlocks).toContain("#f5f0e4");
+    expect(textBlocks).toContain("Light tactile craft collage");
+  });
+
   it("passes only from pixel-level reference scores, not DOM markers", async () => {
     process.env.OPENROUTER_API_KEY = "test";
     const files = await evidence();
