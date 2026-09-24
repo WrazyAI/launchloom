@@ -121,6 +121,9 @@ describe("creative repair loop", () => {
     expect(prompt).toContain('id="services"');
     expect(prompt).toContain('id="faqs"');
     expect(prompt).toContain('id="contact"');
+    expect(prompt).toContain(
+      'REQUIRED NAVIGATION LINKS (EVERY ROUTE, INCLUDING WHEN REFERENCE DNA IS NULL): include visible native lowercase <nav> containing literal JSX anchors <a href="#services">Services</a>, <a href="#faqs">FAQs</a>, and <a href="#contact">Contact</a>. Do not remove, replace, or convert these anchors to components or click handlers.',
+    );
     expect(prompt).toContain('data-reference-section="hero"');
     expect(prompt).toContain('data-reference-section="services"');
     expect(prompt).toContain('data-reference-section="faqs"');

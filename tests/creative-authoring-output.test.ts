@@ -71,8 +71,14 @@ describe("creative authoring output budgets", () => {
     expect(checklist).toContain("semantically matching section");
   });
 
-  it("skips reference checklist requirements when a legacy route has no DNA", () => {
-    expect(referenceImplementationChecklist(undefined)).toBe("");
+  it("keeps required navigation links when a route has no reference DNA", () => {
+    const checklist = referenceImplementationChecklist(undefined);
+
+    expect(checklist).toContain("visible native lowercase <nav>");
+    expect(checklist).toContain('<a href="#services">Services</a>');
+    expect(checklist).toContain('<a href="#faqs">FAQs</a>');
+    expect(checklist).toContain('<a href="#contact">Contact</a>');
+    expect(checklist).not.toContain("REFERENCE SECTION ORDER");
   });
 
   it("rejects empty or colliding normalized section marker IDs", () => {

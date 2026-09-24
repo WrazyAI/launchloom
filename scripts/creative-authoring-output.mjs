@@ -14,7 +14,9 @@ export function completionLimitRequestField(tokens) {
 }
 
 export function referenceImplementationChecklist(referenceDna) {
-  if (referenceDna == null) return "";
+  const navigationRequirement =
+    'REQUIRED NAVIGATION LINKS (EVERY ROUTE, INCLUDING WHEN REFERENCE DNA IS NULL): include visible native lowercase <nav> containing literal JSX anchors <a href="#services">Services</a>, <a href="#faqs">FAQs</a>, and <a href="#contact">Contact</a>. Do not remove, replace, or convert these anchors to components or click handlers.';
+  if (referenceDna == null) return navigationRequirement;
 
   const sections = Array.isArray(referenceDna?.sectionSequence)
     ? referenceDna.sectionSequence
@@ -36,6 +38,7 @@ export function referenceImplementationChecklist(referenceDna) {
     );
   return [
     'REQUIRED LITERAL SECTION IDS: put id="services", id="faqs", and id="contact" on the actual matching content sections. These must be literal JSX string attributes, not variables, expressions, aliases, or empty anchor elements.',
+    navigationRequirement,
     'REFERENCE SECTION ORDER: put each data-reference-section value on its corresponding visible <section> element, in this exact DOM order:',
     ...sectionIds.map(
       (id, index) => `${index + 1}. data-reference-section="${id}"`,

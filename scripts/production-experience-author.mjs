@@ -1202,6 +1202,314 @@ function assertRequiredSectionAnchors(source, route) {
     );
 }
 
+/** Check that a navigation subtree contains a renderable literal section link. */
+function hasLiteralNavigationAnchor(elements, navigation, target) {
+  return elements.some(({ node, opening }) => {
+    if (
+      jsxOpeningName(opening) !== "a" ||
+      !isDescendantOf(node, navigation.node) ||
+      isNavigationAnchorHidden(navigation, node, elements) ||
+      isStaticallyUnreachable(node)
+    )
+      return false;
+
+    return jsxHrefTarget(opening) === `#${target}`;
+  });
+}
+
+/** Resolve href in JSX prop order, failing closed when a spread is dynamic. */
+function jsxHrefTarget(opening) {
+  let href = { known: false, value: undefined };
+  for (const property of jsxAttributes(opening)) {
+    if (ts.isJsxAttribute(property) && property.name.getText() === "href") {
+      const initializer = property.initializer;
+      href = {
+        known: true,
+        value:
+          initializer &&
+          (ts.isStringLiteral(initializer) ||
+            ts.isNoSubstitutionTemplateLiteral(initializer))
+            ? initializer.text
+            : undefined,
+      };
+      continue;
+    }
+    if (!ts.isJsxSpreadAttribute(property)) continue;
+    href = spreadHrefState(property, href);
+  }
+  return href.known ? href.value : undefined;
+}
+
+/** Apply the href effect of a static object spread, if it can be proven. */
+function spreadHrefState(spread, current) {
+  const expression = spread.expression;
+  if (!ts.isObjectLiteralExpression(expression))
+    return { known: false, value: undefined };
+
+  let href = current;
+  for (const property of expression.properties) {
+    if (ts.isSpreadAssignment(property)) {
+      href = { known: false, value: undefined };
+      continue;
+    }
+
+    const name = property.name;
+    let key;
+    if (name && ts.isComputedPropertyName(name)) {
+      const computed = name.expression;
+      if (
+        !ts.isStringLiteral(computed) &&
+        !ts.isNoSubstitutionTemplateLiteral(computed)
+      ) {
+        href = { known: false, value: undefined };
+        continue;
+      }
+      key = computed.text;
+    } else if (
+      name &&
+      (ts.isIdentifier(name) ||
+        ts.isStringLiteral(name) ||
+        ts.isNoSubstitutionTemplateLiteral(name))
+    ) {
+      key = name.text;
+    } else {
+      href = { known: false, value: undefined };
+      continue;
+    }
+
+    if (key !== "href") continue;
+    const value =
+      ts.isPropertyAssignment(property) &&
+      (ts.isStringLiteral(property.initializer) ||
+        ts.isNoSubstitutionTemplateLiteral(property.initializer))
+        ? property.initializer.text
+        : undefined;
+    href = { known: true, value };
+  }
+  return href;
+}
+
+/** Reject native hidden attributes on a navigation link or any of its containers. */
+function isNavigationAnchorHidden(navigation, anchor, elements) {
+  return elements.some(({ node, opening }) => {
+    if (
+      (node !== navigation.node &&
+        !isDescendantOf(node, navigation.node) &&
+        !isDescendantOf(navigation.node, node)) ||
+      (node !== anchor && !isDescendantOf(anchor, node))
+    )
+      return false;
+
+    return hasPotentiallyHiddenJsxAttribute(opening);
+  });
+}
+
+/** Preserve JSX prop order while detecting hidden values from attributes/spreads. */
+function hasPotentiallyHiddenJsxAttribute(opening) {
+  let hidden = false;
+  let displayNone = false;
+  for (const attribute of jsxAttributes(opening)) {
+    if (ts.isJsxAttribute(attribute) && attribute.name.getText() === "hidden") {
+      const initializer = attribute.initializer;
+      hidden = Boolean(
+        !initializer ||
+          !ts.isJsxExpression(initializer) ||
+          !initializer.expression ||
+          !isBooleanLiteral(initializer.expression, false),
+      );
+      continue;
+    }
+    if (ts.isJsxAttribute(attribute) && attribute.name.getText() === "style") {
+      displayNone = inlineStyleDisplayNone(attribute.initializer);
+      continue;
+    }
+    if (ts.isJsxSpreadAttribute(attribute)) {
+      const spreadHidden = staticSpreadHiddenValue(attribute);
+      if (spreadHidden !== null) hidden = spreadHidden;
+      const spreadDisplayNone = staticSpreadDisplayNone(attribute);
+      if (spreadDisplayNone !== null) displayNone = spreadDisplayNone;
+    }
+  }
+  return hidden !== false || displayNone !== false;
+}
+
+/** Return inline `display: none`, treating dynamic style objects as unsafe. */
+function inlineStyleDisplayNone(initializer) {
+  if (!initializer || !ts.isJsxExpression(initializer)) return undefined;
+  return styleObjectDisplayNone(initializer.expression);
+}
+
+function styleObjectDisplayNone(expression) {
+  if (!expression) return undefined;
+  if (expression.kind === ts.SyntaxKind.NullKeyword) return false;
+  if (!ts.isObjectLiteralExpression(expression)) return undefined;
+
+  let displayNone = false;
+  for (const property of expression.properties) {
+    if (ts.isSpreadAssignment(property)) return undefined;
+    const name = property.name;
+    if (name && ts.isComputedPropertyName(name)) {
+      const key = name.expression;
+      if (
+        !ts.isStringLiteral(key) &&
+        !ts.isNoSubstitutionTemplateLiteral(key)
+      )
+        return undefined;
+      if (key.text !== "display") continue;
+    } else if (
+      !name ||
+      (!ts.isIdentifier(name) &&
+        !ts.isStringLiteral(name) &&
+        !ts.isNoSubstitutionTemplateLiteral(name))
+    ) {
+      return undefined;
+    } else if (name.text !== "display") continue;
+    if (!ts.isPropertyAssignment(property)) return undefined;
+    const value = property.initializer;
+    if (
+      !ts.isStringLiteral(value) &&
+      !ts.isNoSubstitutionTemplateLiteral(value)
+    )
+      return undefined;
+    displayNone = value.text.trim().toLowerCase() === "none";
+  }
+  return displayNone;
+}
+
+/** Return display visibility from a static JSX props object spread. */
+function staticSpreadDisplayNone(attribute) {
+  const expression = attribute.expression;
+  if (!ts.isObjectLiteralExpression(expression)) return undefined;
+
+  let foundStyle = false;
+  let displayNone;
+  for (const property of expression.properties) {
+    if (ts.isSpreadAssignment(property)) return undefined;
+    const name = property.name;
+    if (name && ts.isComputedPropertyName(name)) {
+      const key = name.expression;
+      if (
+        !ts.isStringLiteral(key) &&
+        !ts.isNoSubstitutionTemplateLiteral(key)
+      )
+        return undefined;
+      if (key.text !== "style") continue;
+    } else if (
+      !name ||
+      (!ts.isIdentifier(name) &&
+        !ts.isStringLiteral(name) &&
+        !ts.isNoSubstitutionTemplateLiteral(name))
+    ) {
+      return undefined;
+    } else if (name.text !== "style") continue;
+    foundStyle = true;
+    if (!ts.isPropertyAssignment(property)) return undefined;
+    const value = property.initializer;
+    if (value.kind === ts.SyntaxKind.NullKeyword) displayNone = false;
+    else displayNone = styleObjectDisplayNone(value);
+  }
+  return foundStyle ? displayNone : null;
+}
+
+/** Return a known hidden value, null when absent, or undefined when dynamic. */
+function staticSpreadHiddenValue(attribute) {
+  const expression = attribute.expression;
+  if (!ts.isObjectLiteralExpression(expression)) return undefined;
+
+  let foundHidden = false;
+  let hidden;
+  for (const property of expression.properties) {
+    if (ts.isSpreadAssignment(property)) return undefined;
+    const name = property.name;
+    if (name && ts.isComputedPropertyName(name)) {
+      const key = name.expression;
+      if (
+        !ts.isStringLiteral(key) &&
+        !ts.isNoSubstitutionTemplateLiteral(key)
+      )
+        return undefined;
+      if (key.text !== "hidden") continue;
+    } else if (
+      !name ||
+      (!ts.isIdentifier(name) &&
+        !ts.isStringLiteral(name) &&
+        !ts.isNoSubstitutionTemplateLiteral(name))
+    ) {
+      return undefined;
+    } else if (name.text !== "hidden") continue;
+
+    foundHidden = true;
+    if (!ts.isPropertyAssignment(property)) {
+      hidden = undefined;
+      continue;
+    }
+    if (isBooleanLiteral(property.initializer, true)) hidden = true;
+    else if (isBooleanLiteral(property.initializer, false)) hidden = false;
+    else hidden = undefined;
+  }
+  return foundHidden ? hidden : null;
+}
+
+/** Return whether node is nested below ancestor in the parsed JSX tree. */
+function isDescendantOf(node, ancestor) {
+  for (let parent = node.parent; parent; parent = parent.parent)
+    if (parent === ancestor) return true;
+  return false;
+}
+
+/** Return whether node is ancestor itself or one of its descendants. */
+function isWithinOrSelf(node, ancestor) {
+  return node === ancestor || isDescendantOf(node, ancestor);
+}
+
+/** Match a boolean literal after removing harmless expression parentheses. */
+function isBooleanLiteral(expression, value) {
+  let unwrapped = expression;
+  while (ts.isParenthesizedExpression(unwrapped))
+    unwrapped = unwrapped.expression;
+  return (
+    unwrapped.kind ===
+    (value ? ts.SyntaxKind.TrueKeyword : ts.SyntaxKind.FalseKeyword)
+  );
+}
+
+/** Detect JSX nested in branches proven unreachable by literal booleans. */
+function isStaticallyUnreachable(node) {
+  for (let current = node; current?.parent; current = current.parent) {
+    const parent = current.parent;
+    if (ts.isBinaryExpression(parent)) {
+      const inRight = isWithinOrSelf(current, parent.right);
+      if (
+        inRight &&
+        ((parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+          isBooleanLiteral(parent.left, false)) ||
+          (parent.operatorToken.kind === ts.SyntaxKind.BarBarToken &&
+            isBooleanLiteral(parent.left, true)))
+      )
+        return true;
+    }
+    if (ts.isConditionalExpression(parent)) {
+      if (
+        (isWithinOrSelf(current, parent.whenTrue) &&
+          isBooleanLiteral(parent.condition, false)) ||
+        (isWithinOrSelf(current, parent.whenFalse) &&
+          isBooleanLiteral(parent.condition, true))
+      )
+        return true;
+    }
+    if (
+      ts.isIfStatement(parent) &&
+      ((isWithinOrSelf(current, parent.thenStatement) &&
+        isBooleanLiteral(parent.expression, false)) ||
+        (parent.elseStatement &&
+          isWithinOrSelf(current, parent.elseStatement) &&
+          isBooleanLiteral(parent.expression, true)))
+    )
+      return true;
+  }
+  return false;
+}
+
 function unsupportedClaimLiterals(source) {
   const withoutImports = source.replace(/^\s*import[^;]+;?\s*$/gmu, "");
   const textNodes = [...withoutImports.matchAll(/>([^<>{}\n]+)</gu)].map(
@@ -1355,10 +1663,18 @@ function validateExperience(source, route, content) {
         `Candidate ${route.id} has an image that must have a usable alt attribute; use alt="" only for decorative or redundant imagery.`,
       );
   }
+  const { elements } = collectJsxElements(source);
+  const navigations = elements.filter(
+    ({ opening }) => jsxOpeningName(opening) === "nav",
+  );
   for (const target of ["services", "faqs", "contact"])
-    if (!new RegExp(`href\\s*=\\s*["']#${target}["']`, "u").test(source))
+    if (
+      !navigations.some((navigation) =>
+        hasLiteralNavigationAnchor(elements, navigation, target),
+      )
+    )
       throw new Error(
-        `Candidate ${route.id} navigation must expose href="#${target}".`,
+        `Candidate ${route.id} navigation must expose literal <a href="#${target}"> inside a visible native <nav>.`,
       );
   for (const binding of requiredExperienceBindings)
     if (

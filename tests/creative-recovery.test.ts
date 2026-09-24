@@ -95,6 +95,10 @@ describe("developer-triggered creative repair workflow", () => {
     expect(repairWorkflow).toContain("--max-cycles 1");
     expect(repairWorkflow).toContain("--feedback-file");
     expect(repairWorkflow).toContain("--session");
+    expect(repairWorkflow).toContain('npm ci --prefix "$CLIENT_DIR"');
+    expect(repairWorkflow.indexOf("Install rendered client dependencies")).toBeLessThan(
+      repairWorkflow.indexOf("Run exactly one rendered repair against captured findings"),
+    );
     expect(repairWorkflow).toContain("round-02/creative-bakeoff.json");
     expect(repairWorkflow).toContain(".promotionReady == true");
     expect(repairWorkflow).toContain("steps.verified_preview.outcome == 'failure'");

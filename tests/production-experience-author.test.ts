@@ -178,6 +178,249 @@ describe("production experience author", () => {
       ).toThrow(/must have a usable alt attribute/iu);
   });
 
+  it("requires FAQ navigation anchors inside nav even when an unrelated FAQ link remains", () => {
+    const route = { id: "route-02" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    )
+      .replace('href="#faqs"', "onClick={() => {}}")
+      .replace(
+        "<main>",
+        '<main><a href="#faqs">An unrelated FAQ link</a>',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).toThrow(
+      'Candidate route-02 navigation must expose literal <a href="#faqs"> inside a visible native <nav>.',
+    );
+  });
+
+  it("rejects navigation hrefs that a later JSX spread can override", () => {
+    const route = { id: "route-overridden-navigation-href" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const original = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const overridesToWrongTarget = original.replace(
+      '<a href="#faqs">FAQs</a>',
+      '<a href="#faqs" {...{ href: "#contact" }}>FAQs</a>',
+    );
+    const unknownOverride = original.replace(
+      '<a href="#faqs">FAQs</a>',
+      '<a href="#faqs" {...linkProps}>FAQs</a>',
+    );
+    const harmlessStaticSpread = original.replace(
+      '<a href="#faqs">FAQs</a>',
+      '<a href="#faqs" {...{ className: "nav-link" }}>FAQs</a>',
+    );
+
+    for (const experience of [overridesToWrongTarget, unknownOverride])
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+        }),
+      ).toThrow(
+        'Candidate route-overridden-navigation-href navigation must expose literal <a href="#faqs"> inside a visible native <nav>.',
+      );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: harmlessStaticSpread, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+  });
+
+  it("does not count anchors inside statically unreachable JSX branches", () => {
+    const route = { id: "route-unreachable-navigation" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace(
+      '<a href="#faqs">FAQs</a>',
+      '{false && <a href="#faqs">FAQs</a>}',
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).toThrow(
+      'Candidate route-unreachable-navigation navigation must expose literal <a href="#faqs"> inside a visible native <nav>.',
+    );
+  });
+
+  it("requires native lowercase nav and anchor elements for navigation", () => {
+    const route = { id: "route-native-navigation" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const original = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const nonNativeNavigation = original
+      .replace(
+        '<nav aria-label="Main navigation">',
+        '<Nav aria-label="Main navigation">',
+      )
+      .replace("</nav>", "</Nav>");
+    const componentAnchor = original.replace(
+      '<a href="#faqs">FAQs</a>',
+      '<A href="#faqs">FAQs</A>',
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: nonNativeNavigation, styles, motion },
+        route,
+      }),
+    ).toThrow(
+      'Candidate route-native-navigation navigation must expose literal <a href="#services"> inside a visible native <nav>.',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: componentAnchor, styles, motion },
+        route,
+      }),
+    ).toThrow(
+      'Candidate route-native-navigation navigation must expose literal <a href="#faqs"> inside a visible native <nav>.',
+    );
+  });
+
+  it("rejects hidden navigation containers but allows an explicit false value", () => {
+    const route = { id: "route-hidden-navigation" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const original = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const hiddenNavigation = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav hidden aria-label="Main navigation">',
+    );
+    const hiddenParent = original
+      .replace(
+        '<nav aria-label="Main navigation">',
+        '<div hidden><nav aria-label="Main navigation">',
+      )
+      .replace("</nav>", "</nav></div>");
+    const hiddenChild = original
+      .replace(
+        '<nav aria-label="Main navigation">',
+        '<nav aria-label="Main navigation"><div hidden>',
+      )
+      .replace("</nav>", "</div></nav>");
+    const hiddenAnchor = original.replace(
+      '<a href="#services">Services</a>',
+      '<a {...{ hidden: true }} href="#services">Services</a>',
+    );
+    const spreadOverridesFalse = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav hidden={false} {...{ hidden: true }} aria-label="Main navigation">',
+    );
+    const dynamicSpreadAfterFalse = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav hidden={false} {...navProps} aria-label="Main navigation">',
+    );
+    const displayNoneNavigation = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav hidden={false} style={{ display: "none" }} aria-label="Main navigation">',
+    );
+    const displayNoneAnchor = original.replace(
+      '<a href="#services">Services</a>',
+      '<a style={{ display: "none" }} href="#services">Services</a>',
+    );
+    const displayNoneSpread = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav {...{ style: { display: "none" } }} aria-label="Main navigation">',
+    );
+    const dynamicDisplayProperty = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav style={{ [displayProperty]: "none" }} aria-label="Main navigation">',
+    );
+    const dynamicStyleProperty = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav {...{ [styleProperty]: { display: "none" } }} aria-label="Main navigation">',
+    );
+    const explicitlyVisibleNavigation = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav hidden={false} aria-label="Main navigation">',
+    );
+    const safeStaticSpread = original.replace(
+      '<nav aria-label="Main navigation">',
+      '<nav {...{ id: "main-navigation" }} aria-label="Main navigation">',
+    );
+
+    for (const experience of [
+      hiddenNavigation,
+      hiddenParent,
+      hiddenChild,
+      hiddenAnchor,
+      spreadOverridesFalse,
+      dynamicSpreadAfterFalse,
+      displayNoneNavigation,
+      displayNoneAnchor,
+      displayNoneSpread,
+      dynamicDisplayProperty,
+      dynamicStyleProperty,
+    ])
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+        }),
+      ).toThrow(
+        'Candidate route-hidden-navigation navigation must expose literal <a href="#services"> inside a visible native <nav>.',
+      );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: explicitlyVisibleNavigation, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: safeStaticSpread, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+  });
+
   it("requires sealed content when a content-bound runtime helper is used", () => {
     const route = { id: "route-runtime-helper-content" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
