@@ -76,6 +76,23 @@ describe("inspiration registry", () => {
     );
   });
 
+  it("excludes recently attempted route families while fresh alternatives exist", () => {
+    const initial = buildInspirationPack(jewelryRequest, mergedRegistry);
+    const recentFamily = initial.routes[0].familyId;
+    const next = buildInspirationPack(
+      {
+        ...jewelryRequest,
+        recentFamilyIds: [recentFamily],
+      },
+      mergedRegistry,
+    );
+
+    expect(next.request.freshnessFallback).toBe("fresh");
+    expect(next.routes.map((route: any) => route.familyId)).not.toContain(
+      recentFamily,
+    );
+  });
+
   it("preserves reference-only rights and never exposes source assets as usable site assets", () => {
     const pack = buildInspirationPack(jewelryRequest, registry);
 
@@ -108,9 +125,11 @@ describe("inspiration registry", () => {
     );
 
     expect(pack.routes).toHaveLength(3);
-    expect(["route-signatures-relaxed", "history-relaxed"]).toContain(
-      pack.request.freshnessFallback,
-    );
+    expect([
+      "route-signatures-relaxed",
+      "families-relaxed",
+      "history-relaxed",
+    ]).toContain(pack.request.freshnessFallback);
   });
 
   it.each([
@@ -222,6 +241,70 @@ describe("inspiration registry", () => {
     expect(
       pack.routes.flatMap((route: any) => route.referenceIds),
     ).not.toContain("a1-mckp-object-stage");
+  });
+
+  it("treats a positive request after 'but' as affirmative", () => {
+    const pack = buildInspirationPack(
+      {
+        seed: "precision-auto-contrast",
+        industry: "automotive",
+        styleTerms: ["object", "stage"],
+        styleText:
+          "Do not use A1 MCKP Object Stage as a generic card wall, but use A1 MCKP Object Stage mechanics.",
+        recentReferenceIds: ["a1-mckp-object-stage"],
+        recentFamilyIds: ["a1-object-stage"],
+        recentRouteSignatures: [],
+      },
+      mergedRegistry,
+    );
+
+    expect(pack.request.explicitReferenceIds).toContain(
+      "a1-mckp-object-stage",
+    );
+    expect(pack.routes[0].referenceIds).toEqual([
+      "a1-mckp-object-stage",
+    ]);
+  });
+
+  it("normalizes hyphenated style terms for direct registry callers", () => {
+    const target = structuredClone(
+      mergedRegistry.records.find(
+        (record: any) => record.id === "a1-mckp-object-stage",
+      ),
+    );
+    const craft = structuredClone(
+      mergedRegistry.records.find(
+        (record: any) => record.id === "a1-craft-collage-field",
+      ),
+    );
+    const kinetic = structuredClone(
+      mergedRegistry.records.find(
+        (record: any) => record.id === "a1-scs-kinetic-command",
+      ),
+    );
+    target.industries = ["all"];
+    target.sourceStyles = ["clean-modern-precision"];
+    craft.industries = ["all"];
+    craft.sourceStyles = ["tactile-collage"];
+    kinetic.industries = ["all"];
+    kinetic.sourceStyles = ["kinetic-command"];
+
+    const pack = buildInspirationPack(
+      {
+        seed: "hyphenated-style-term",
+        industry: "all",
+        styleTerms: ["clean-modern"],
+        styleText: "",
+        recentReferenceIds: [],
+        recentFamilyIds: [],
+        recentRouteSignatures: [],
+      },
+      { version: 1, records: [craft, kinetic, target] },
+    );
+
+    expect(pack.routes[0].referenceIds).toEqual([
+      "a1-mckp-object-stage",
+    ]);
   });
 
   it("prioritizes an explicitly named reference even when history recently used it", () => {
