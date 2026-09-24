@@ -132,41 +132,46 @@ jobs:
         run: |
           git config user.name "LaunchLoom"
           git config user.email "automation@launchloom.app"
+          HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"
           HISTORY_RECORDED=false
           for HISTORY_ATTEMPT in 1 2 3; do
-            git rebase --abort >/dev/null 2>&1 || true
+            git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
             if ! git fetch origin main; then
               continue
             fi
-            git reset --hard origin/main
+            if ! git worktree add --detach "$HISTORY_DIR" origin/main; then
+              continue
+            fi
+            HISTORY_FILE="$HISTORY_DIR/data/recent-launch-signatures.json"
             node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs" \
               --config /tmp/site.config.json \
               --intake /tmp/intake.md \
+              --history "$HISTORY_FILE" \
               --out /tmp/inspiration-pack.json
             if ! node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
               --config /tmp/site.config.json \
               --inspiration /tmp/inspiration-pack.json \
               --stage attempt \
-              --record-key "$LAUNCHLOOM_INTAKE_ID"; then
+              --record-key "$LAUNCHLOOM_INTAKE_ID" \
+              --history "$HISTORY_FILE"; then
+              git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
               continue
             fi
-            if git diff --quiet -- data/recent-launch-signatures.json; then
+            if git -C "$HISTORY_DIR" diff --quiet -- data/recent-launch-signatures.json; then
               echo "No inspiration history change."
               HISTORY_RECORDED=true
               break
             fi
-            git add data/recent-launch-signatures.json
-            git commit -m "Record inspiration attempt [skip ci]"
-            if git push origin HEAD:main; then
+            git -C "$HISTORY_DIR" add data/recent-launch-signatures.json
+            git -C "$HISTORY_DIR" commit -m "Record inspiration attempt [skip ci]"
+            if git -C "$HISTORY_DIR" push origin HEAD:main; then
               HISTORY_RECORDED=true
               break
             fi
             echo "History push raced with another intake; reselecting from latest main ($HISTORY_ATTEMPT/3)."
           done
+          git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
           if [ "$HISTORY_RECORDED" != true ]; then
-            git rebase --abort >/dev/null 2>&1 || true
-            git fetch origin main || true
-            git reset --hard origin/main
             echo "::error title=Inspiration reservation failed::Could not atomically reserve a fresh inspiration pack after three attempts."
             exit 1
           fi
