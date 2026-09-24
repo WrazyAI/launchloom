@@ -2190,6 +2190,8 @@ export async function authorExperienceCandidates({
         familyId: route.familyId,
         referenceFamilyId: route.referenceDna.familyId,
         referenceName: route.referenceDna.referenceName,
+        intakeFitScore: Number(route.intakeFitScore || 0),
+        explicitReferenceMatch: route.explicitReferenceMatch === true,
         referenceDna: route.referenceDna,
         mobileBehavior: route.mobileBehavior,
         fingerprint: creativeManifest.fingerprint,
