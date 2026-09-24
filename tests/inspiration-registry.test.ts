@@ -113,6 +113,49 @@ describe("inspiration registry", () => {
     );
   });
 
+  it.each([
+    [
+      "Apex Air Conditioning & Heating",
+      "home-services",
+      "Art direction: A1 SCS Kinetic Command mechanics, translated for a desert HVAC concept.",
+      "a1-scs-kinetic-command",
+    ],
+    [
+      "Precision Auto Care",
+      "automotive",
+      "Art direction: an object-led precision workshop, guided by the A1 MCKP Object Stage reference mechanics.",
+      "a1-mckp-object-stage",
+    ],
+    [
+      "Coastal Brush Painting Co.",
+      "home-services",
+      "Art direction: tactile craft collage inspired by A1 Craft Collage Field.",
+      "a1-craft-collage-field",
+    ],
+  ])(
+    "keeps explicit intake reference intent for %s",
+    (_business, industry, styleText, expectedReference) => {
+      const pack = buildInspirationPack(
+        {
+          seed: _business,
+          industry,
+          styleTerms: styleText
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/gu, " ")
+            .split(/\s+/u)
+            .filter(Boolean),
+          styleText,
+          recentReferenceIds: [],
+          recentRouteSignatures: [],
+        },
+        mergedRegistry,
+      );
+
+      expect(pack.routes[0].referenceIds).toEqual([expectedReference]);
+      expect(pack.routes[0].explicitReferenceMatch).toBe(true);
+    },
+  );
+
   it("prioritizes an explicitly named reference even when history recently used it", () => {
     const pack = buildInspirationPack(
       {
