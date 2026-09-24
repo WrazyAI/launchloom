@@ -1,13 +1,25 @@
 {
   "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
   "type": "frontend",
-  "name": "Service choices persist after revisiting Business",
-  "description": "Core service, area, differentiator, business model, and primary action stay intact across form navigation.",
+  "name": "Core services and radius persist after revisiting Business",
+  "description": "The simplified service facts remain intact across form navigation.",
   "priority": "p1",
   "planSteps": [
-    { "type": "action", "description": "Navigate to /onboard/, use manual entry, complete required Business fields, and continue" },
-    { "type": "action", "description": "On Services enter two fictional services, one area, one differentiator, select Remote or online service, and select Request a quote" },
-    { "type": "action", "description": "Use Back to revisit Business, then Continue to Services" },
-    { "type": "assertion", "description": "Both service lines, the area, differentiator, Remote or online service choice, and Request a quote choice remain selected" }
+    {
+      "type": "action",
+      "description": "Navigate to /onboard/, use manual entry, complete required Business fields, and continue"
+    },
+    {
+      "type": "action",
+      "description": "Enter three fictional services, choose a category, set a main city and 20 mile radius, add a differentiator, and choose Request a quote"
+    },
+    {
+      "type": "action",
+      "description": "Use Back to revisit Business, then Continue to Services"
+    },
+    {
+      "type": "assertion",
+      "description": "The services, category, city, radius, differentiator, and Request a quote choice remain selected"
+    }
   ]
 }
