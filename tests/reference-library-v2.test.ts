@@ -157,6 +157,50 @@ describe("Reference Library v2", () => {
     }
   });
 
+  it.each([
+    [
+      "automotive",
+      "Use the A1 MCKP Object Stage reference mechanics.",
+      "a1-mckp-object-stage",
+    ],
+    [
+      "home-services",
+      "Use the A1 SCS Kinetic Command reference mechanics.",
+      "a1-scs-kinetic-command",
+    ],
+    [
+      "home-services",
+      "Use the A1 Craft Collage Field reference mechanics.",
+      "a1-craft-collage-field",
+    ],
+  ])(
+    "preserves explicit reference requests in the production library: %s",
+    async (industry, styleText, expectedReference) => {
+      const library = await loadReferenceLibraryV2(
+        "data/reference-library-v2.json",
+        { repositoryRoot: root },
+      );
+      const pack = buildInspirationPack(
+        {
+          seed: `explicit-${expectedReference}`,
+          industry,
+          styleTerms: styleText
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/gu, " ")
+            .split(/\s+/u)
+            .filter(Boolean),
+          styleText,
+          recentReferenceIds: [expectedReference],
+          recentFamilyIds: [],
+          recentRouteSignatures: [],
+        },
+        library,
+      );
+      expect(pack.routes[0].referenceIds).toEqual([expectedReference]);
+      expect(pack.routes[0].explicitReferenceMatch).toBe(true);
+    },
+  );
+
   it("selects actual local-service families for a home-services request", async () => {
     const library = await loadReferenceLibraryV2(
       "data/reference-library-v2.json",
