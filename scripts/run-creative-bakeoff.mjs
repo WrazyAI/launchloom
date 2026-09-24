@@ -17,8 +17,8 @@ import {
   evaluateRenderedReferenceFidelity,
 } from "./rendered-reference-fidelity.mjs";
 import {
+  countRecentCreativeFamilyUses,
   readLaunchHistory,
-  recentCreativeFamilyIds,
 } from "./launch-history.mjs";
 
 function argsFrom(argv) {
@@ -249,14 +249,9 @@ export async function runCreativeBakeoff({
     );
   }
   const diversity = diversityReport(candidates.map(({ metadata }) => metadata));
-  const recentFamilyCounts = new Map();
+  let recentHistory = { launches: [] };
   try {
-    const history = await readLaunchHistory();
-    for (const familyId of recentCreativeFamilyIds(history))
-      recentFamilyCounts.set(
-        familyId,
-        (recentFamilyCounts.get(familyId) || 0) + 1,
-      );
+    recentHistory = await readLaunchHistory();
   } catch {
     // Rotation history is advisory; missing history must not block a bakeoff.
   }
@@ -536,10 +531,9 @@ export async function runCreativeBakeoff({
             .filter(Boolean),
         ),
       ];
-      const recentFamilyUses = candidateFamilyIds.reduce(
-        (total, familyId) =>
-          total + (recentFamilyCounts.get(familyId) || 0),
-        0,
+      const recentFamilyUses = countRecentCreativeFamilyUses(
+        recentHistory,
+        candidateFamilyIds,
       );
       candidateResult.rotationPenalty =
         candidateResult.explicitReferenceMatch
