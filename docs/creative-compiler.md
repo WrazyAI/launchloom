@@ -5,14 +5,48 @@ experiences. It separates verified business truth from visual composition so a
 new design can be ambitious without being allowed to invent facts, bypass the
 lead endpoint, or ship an unverified layout.
 
+## Reference Library v2
+
+Production inspiration now comes from `data/reference-library-v2.json`, a
+30-reference normalized design library. Every production reference has:
+
+- one unique LaunchLoom-owned desktop evidence board and one unique mobile
+  evidence board under `data/inspiration-evidence/reference-v2/`;
+- explicit target industries, moods, design tags, source category, evidence
+  tier, provenance, and a structured `designTemplate`;
+- canonical versioned Reference DNA with hero geometry, navigation geometry,
+  typography, palette, imagery, section rhythm, service treatment, CTA
+  placement, motion, mobile recomposition, prohibited fallbacks, required
+  signatures, acceptance checks, and measured ratios;
+- a calibration profile used alongside the library-level landing/service
+  distributions.
+
+External galleries may be used for research provenance, but their screenshots
+are not shipped as production evidence. The normalized boards are original
+LaunchLoom assets, which keeps rights and mobile coverage unambiguous.
+
+Canonical v2 DNA is authoritative. `analyze-reference-dna.mjs` verifies the
+local desktop/mobile evidence dimensions and marks the route evidence-backed,
+but it does not ask a model to rewrite canonical structure on every intake.
+Legacy records without canonical DNA keep the screenshot-analysis path for
+compatibility.
+
+The v2 loader fails closed unless the library contains exactly 30 records,
+every record has unique desktop and mobile evidence, every record is owned
+production evidence with a structured template and provenance, and the library
+retains broad local-service coverage.
+
 ## Pipeline
 
 1. `generate-site-config.mjs` and `seo-research.mjs` produce the sealed truth
    layer: business facts, SEO vocabulary, FAQs, service decisions, contact
    details, structured data, and approved assets.
 2. `compile-inspiration-pack.mjs` selects three independent route contracts with
-   one authoritative visual capsule per route. `analyze-reference-dna.mjs`
-   then inspects the actual desktop/mobile evidence and enriches Reference DNA
+   one authoritative visual capsule per route. It prefers Reference Library v2
+   and falls back to the historical base + A1 registries only when the v2 file
+   is unavailable. `analyze-reference-dna.mjs` then verifies canonical v2
+   evidence or, for legacy records, inspects the actual desktop/mobile evidence
+   and enriches Reference DNA
    with measured headline occupancy, image occupancy, navigation and CTA
    coordinates, content-column width, section-height rhythm, aspect ratios,
    overlap relationships, surface transitions, and mobile geometry. Family
