@@ -44,6 +44,20 @@ export function recentCreativeFamilyIds(history) {
   ]);
 }
 
+export function countRecentCreativeFamilyUses(history, candidateFamilyIds) {
+  const candidateFamilies = new Set(
+    (Array.isArray(candidateFamilyIds) ? candidateFamilyIds : [])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean),
+  );
+  if (!candidateFamilies.size) return 0;
+  return (history?.launches || []).filter((launch) =>
+    recentCreativeFamilyIds({ launches: [launch] }).some((familyId) =>
+      candidateFamilies.has(familyId),
+    ),
+  ).length;
+}
+
 function slug(value) {
   return String(value || "launch")
     .toLowerCase()
