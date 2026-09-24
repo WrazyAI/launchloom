@@ -161,18 +161,46 @@ jobs:
         run: |
           git config user.name "LaunchLoom"
           git config user.email "automation@launchloom.app"
-          node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
-            --config /tmp/site.config.json \
-            --inspiration /tmp/inspiration-pack.json \
-            --stage attempt
-          if git diff --quiet -- data/recent-launch-signatures.json; then
-            echo "No inspiration history change."
-          else
-            git add data/recent-launch-signatures.json
-            git commit -m "Record inspiration attempt [skip ci]"
-            git fetch origin main
-            git rebase origin/main
-            git push origin HEAD:main
+          HISTORY_BASE=$(git rev-parse HEAD)
+          HISTORY_RECORDED=false
+          for HISTORY_ATTEMPT in 1 2 3; do
+            git rebase --abort >/dev/null 2>&1 || true
+            git reset --hard "$HISTORY_BASE"
+            if ! git fetch origin main; then
+              break
+            fi
+            if ! git rebase origin/main; then
+              git rebase --abort >/dev/null 2>&1 || true
+              git reset --hard "$HISTORY_BASE"
+              continue
+            fi
+            HISTORY_BASE=$(git rev-parse HEAD)
+            if ! node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
+              --config /tmp/site.config.json \
+              --inspiration /tmp/inspiration-pack.json \
+              --stage attempt; then
+              break
+            fi
+            if git diff --quiet -- data/recent-launch-signatures.json; then
+              echo "No inspiration history change."
+              HISTORY_RECORDED=true
+              break
+            fi
+            if ! git add data/recent-launch-signatures.json ||
+              ! git commit -m "Record inspiration attempt [skip ci]"; then
+              break
+            fi
+            if git push origin HEAD:main; then
+              HISTORY_RECORDED=true
+              break
+            fi
+            echo "History push raced with another intake; retrying from latest main ($HISTORY_ATTEMPT/3)."
+          done
+          if [ "$HISTORY_RECORDED" != true ]; then
+            git rebase --abort >/dev/null 2>&1 || true
+            git reset --hard "$HISTORY_BASE"
+            git checkout -- data/recent-launch-signatures.json
+            echo "::warning title=Launch history not recorded::Could not persist the inspiration attempt after retrying concurrent main updates. The checkout was restored cleanly."
           fi
       - name: Create private repository and Cloudflare Pages project
         id: client
