@@ -1013,6 +1013,7 @@ function fallback(intake) {
   );
   const stylePreference = text(intake.stylePreference, 80);
   const visualDirection = text(intake.imageDirection, 600);
+  const artDirection = text(intake.brandNotes, 1200);
   const suppressUnverifiedLocation = hasConflictingUnverifiedAddress(intake);
   return {
     preset,
@@ -1047,6 +1048,7 @@ function fallback(intake) {
       tone: intake.tone || "confident",
       ...(stylePreference ? { preference: stylePreference } : {}),
       ...(visualDirection ? { visualDirection } : {}),
+      ...(artDirection ? { artDirection } : {}),
     },
     services: services.length
       ? services
@@ -1436,6 +1438,9 @@ export function normalise(candidate, intake) {
       ...(base.style.preference ? { preference: base.style.preference } : {}),
       ...(base.style.visualDirection
         ? { visualDirection: base.style.visualDirection }
+        : {}),
+      ...(base.style.artDirection
+        ? { artDirection: base.style.artDirection }
         : {}),
     },
     services: services.length ? services : base.services,
