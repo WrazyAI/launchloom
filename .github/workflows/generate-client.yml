@@ -152,6 +152,28 @@ jobs:
           echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
           echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "No externally validated queries")')" >> "$GITHUB_OUTPUT"
           node -e 'const x=require("/tmp/seo-research.json"); const state=x.mode === "researched" ? "Research complete. Production approval is available." : "Research is incomplete. This preview can be reviewed, but production approval is blocked until research succeeds."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}\nValidated queries: ${(x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "None"}\nRecorded research cost: $${Number(x.cost?.usd || 0).toFixed(5)}`)'
+      # Record the selected visual routes before expensive authoring starts.
+      # Failed creative attempts still influence rotation, preventing the same
+      # references from being retried indefinitely across client intakes.
+      - name: Record inspiration attempt for rotation
+        if: (github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main') && env.REUSE_AUTHORED_CANDIDATES != 'true'
+        continue-on-error: true
+        run: |
+          git config user.name "LaunchLoom"
+          git config user.email "automation@launchloom.app"
+          node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
+            --config /tmp/site.config.json \
+            --inspiration /tmp/inspiration-pack.json \
+            --stage attempt
+          if git diff --quiet -- data/recent-launch-signatures.json; then
+            echo "No inspiration history change."
+          else
+            git add data/recent-launch-signatures.json
+            git commit -m "Record inspiration attempt [skip ci]"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
       - name: Create private repository and Cloudflare Pages project
         id: client
         run: |
