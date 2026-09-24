@@ -154,8 +154,30 @@ export function normalizeReferenceLibraryV2(
     canonical.incompleteReasons = [];
     canonical.analyzedFromEvidence = true;
     validateReferenceDna(canonical, { requireEvidence: false });
-    if (!canonical.measurements)
-      throw new Error(`Reference Library v2 '${id}' needs canonical measurements.`);
+    if (!canonical.measurements || typeof canonical.measurements !== "object")
+      throw new Error(
+        `Reference Library v2 '${id}' needs canonical measurements.`,
+      );
+    for (const key of [
+      "headlineWidthRatio",
+      "headlineHeightRatio",
+      "heroImageOccupancyRatio",
+      "contentColumnWidthRatio",
+      "navTopRatio",
+      "navSideInsetRatio",
+      "ctaTopRatio",
+    ]) {
+      const value = canonical.measurements[key];
+      if (
+        typeof value !== "number" ||
+        !Number.isFinite(value) ||
+        value < 0 ||
+        value > 1
+      )
+        throw new Error(
+          `Reference Library v2 '${id}' has an invalid canonical measurement ${key}.`,
+        );
+    }
 
     return {
       ...record,
