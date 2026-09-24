@@ -60,8 +60,8 @@ lead endpoint, or ship an unverified layout.
    metadata, colors, or copy do not count as visual diversity.
 5. Route fingerprints remain an early compiler diagnostic so independently
    authored routes do not collapse before rendering. Explicitly named reference
-   intent is carried into candidate metadata and wins ties among otherwise
-   eligible preview candidates. Recent creative families receive a bounded
+   intent is carried into candidate metadata and is compared before aggregate
+   score among otherwise eligible preview candidates. Recent creative families receive a bounded
    rotation penalty unless the intake explicitly requested that reference,
    which reduces cross-client repetition without overriding client direction.
    Inspiration attempts are recorded before expensive authorship so failed
