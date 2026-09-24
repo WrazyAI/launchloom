@@ -202,6 +202,8 @@ describe("Reference Library v2", () => {
       (item: any) => item.referenceIds.includes(target.id),
     );
     expect(route).toBeTruthy();
+    if (!route)
+      throw new Error("Blueprint Service Ledger route was not selected.");
     expect(route.referenceDna.prohibitedPatterns).not.toContain("bento-card-wall");
     expect(route.referenceDna.prohibitedPatterns).not.toContain("pill-navbar");
     expect(route.referenceDna.prohibitedPatterns).toEqual(
