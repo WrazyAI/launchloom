@@ -54,8 +54,11 @@ lead endpoint, or ship an unverified layout.
    judges true first-viewport captures against the assigned reference screenshots,
    with a separate labeled full-page overview for section order and rhythm,
    across hero geometry, typography, spatial rhythm, imagery, service
-   presentation, navigation, CTA placement, mobile recomposition, and
-   interaction evidence. Screenshot-to-screenshot candidate distance is
+   presentation, navigation, CTA placement, mobile recomposition, interaction
+   evidence, palette adherence, and client art direction. Palette adherence and
+   art direction are independent hard-threshold scores; a candidate cannot pass
+   by compensating for a wrong client palette with stronger reference mechanics.
+   Screenshot-to-screenshot candidate distance is
    recorded for preview and is a hard production-promotion gate; different
    metadata, colors, or copy do not count as visual diversity.
 5. Route fingerprints remain an early compiler diagnostic so independently
@@ -64,8 +67,13 @@ lead endpoint, or ship an unverified layout.
    score among otherwise eligible preview candidates. Recent creative families receive a bounded
    rotation penalty unless the intake explicitly requested that reference,
    which reduces cross-client repetition without overriding client direction.
-   Inspiration attempts are recorded before expensive authorship so failed
-   generations still rotate their selected references. For version-two
+   Inspiration attempts record their selected route families as well as
+   reference IDs and signatures, so a failed attempt rotates away from sibling
+   references in the same family when alternatives exist. The workflow reserves
+   the pack against the latest main history before reference analysis; if a
+   concurrent intake wins the history push, the losing run reselects from the
+   updated history before retrying instead of authoring a stale overlapping
+   pack. For version-two
    candidates, production diversity authority comes from rendered screenshot
    comparison only; fingerprint distance and unique-dimension counts are
    retained in the report for diagnosis and do not veto a pixel-diverse
