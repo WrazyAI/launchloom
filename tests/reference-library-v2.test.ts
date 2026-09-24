@@ -115,7 +115,17 @@ describe("Reference Library v2", () => {
         spacingSystem: expect.any(Object),
         conversionSystem: expect.any(Object),
         responsiveSystem: expect.any(Object),
+        compositionSystem: expect.any(Object),
+        desktopBlueprint: expect.any(Object),
+        mobileBlueprint: expect.any(Object),
+        sectionBlueprint: expect.any(Array),
+        interactionSystem: expect.any(Object),
+        signatureRequirements: expect.any(Array),
+        acceptanceChecks: expect.any(Array),
+        adaptationRules: expect.any(Object),
       });
+      expect(record.designTemplate.sectionBlueprint.length).toBeGreaterThanOrEqual(4);
+      expect(record.designTemplate.mobileBlueprint.targetViewport).toBe("390x844");
       expect(record.canonicalReferenceDna).toMatchObject({
         canonical: true,
         familyId: record.familyId,
@@ -123,6 +133,30 @@ describe("Reference Library v2", () => {
         measurements: expect.any(Object),
       });
     }
+  });
+
+  it("rejects reused visual evidence even when the paths differ", () => {
+    const broken = structuredClone(raw);
+    broken.records[1].screenshotPath = broken.records[0].screenshotPath;
+    expect(() =>
+      normalizeReferenceLibraryV2(broken, { repositoryRoot: root }),
+    ).toThrow(/reuses visual evidence|byte-identical visual evidence/iu);
+  });
+
+  it("rejects duplicate structural signatures", () => {
+    const broken = structuredClone(raw);
+    for (const key of [
+      "navigation",
+      "heroGeometry",
+      "servicePresentation",
+      "typographyCategory",
+      "sectionRhythm",
+      "imageStrategy",
+    ])
+      broken.records[1][key] = broken.records[0][key];
+    expect(() =>
+      normalizeReferenceLibraryV2(broken, { repositoryRoot: root }),
+    ).toThrow(/structural signature/iu);
   });
 
   it("renders SVG desktop and mobile evidence through the prompt pipeline", async () => {
