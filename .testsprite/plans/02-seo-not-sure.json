@@ -1,15 +1,21 @@
 {
   "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
   "type": "frontend",
-  "name": "Not sure path reaches confirmation without keyword phrases",
-  "description": "A business owner who does not know SEO phrases can continue using confirmed service and location context.",
+  "name": "SEO strategy is removed from the client form",
+  "description": "The client provides business facts while LaunchLoom owns keyword, competitor, and market research.",
   "priority": "p0",
   "planSteps": [
-    { "type": "action", "description": "Navigate to /onboard/, choose manual entry, and fill every required Business field with fictional valid data" },
-    { "type": "action", "description": "Continue to Services and fill required core services, areas served, and differentiators" },
-    { "type": "action", "description": "Continue to Search language and select I am not sure which keywords to use" },
-    { "type": "assertion", "description": "The manual search-phrases field is hidden while priority service, customer problem, exclusions, priority locations, and competitor website fields remain available" },
-    { "type": "action", "description": "Continue to Brand, fill the required lead notification email, and continue to Confirm" },
-    { "type": "assertion", "description": "The Confirm summary says research will start from confirmed business context and does not require a manually supplied keyword phrase" }
+    {
+      "type": "action",
+      "description": "Navigate through Business and Services with fictional valid data"
+    },
+    {
+      "type": "assertion",
+      "description": "No client-facing fields ask for search phrases, keyword difficulty, competitor URLs, priority locations, or other SEO strategy"
+    },
+    {
+      "type": "assertion",
+      "description": "The Services step explains that LaunchLoom will handle keyword, competitor, and market research after submission"
+    }
   ]
 }
