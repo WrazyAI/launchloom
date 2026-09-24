@@ -121,23 +121,46 @@ function signatureFor(record) {
 function normalizedPhrase(value) {
   return String(value || "")
     .toLowerCase()
+    .replace(/\b(?:don't|dont)\b/gu, "do not")
+    .replace(/\b(?:doesn't|doesnt)\b/gu, "does not")
+    .replace(/\b(?:shouldn't|shouldnt)\b/gu, "should not")
     .replace(/[^a-z0-9]+/gu, " ")
     .replace(/\s+/gu, " ")
     .trim();
+}
+
+function affirmativeAliasMention(source, alias) {
+  let offset = 0;
+  while (offset < source.length) {
+    const index = source.indexOf(alias, offset);
+    if (index < 0) return false;
+    const before = source.slice(Math.max(0, index - 96), index).trim();
+    const negated =
+      /(?:\bdo not|\bdoes not|\bshould not|\bnever|\bavoid|\bexclude|\bwithout|\breject|\bskip|\bnot|\bno)(?:\s+\w+){0,6}\s*$/u.test(
+        before,
+      );
+    if (!negated) return true;
+    offset = index + alias.length;
+  }
+  return false;
 }
 
 function explicitlyRequested(record, request) {
   const source = normalizedPhrase(request.styleText);
   if (!source) return false;
   const aliases = [
-    record.id,
-    record.name,
-    record.referenceName,
-    record.familyId,
-  ]
-    .map(normalizedPhrase)
-    .filter((value) => value.length >= 5);
-  return aliases.some((alias) => source.includes(alias));
+    ...new Set(
+      [
+        record.id,
+        record.name,
+        record.referenceName,
+        record.familyId,
+      ]
+        .map(normalizedPhrase)
+        .filter((value) => value.length >= 5),
+    ),
+  ];
+  return aliases.some((alias) => affirmativeAliasMention(source, alias));
 }
 
 function scoreRecord(record, request) {
