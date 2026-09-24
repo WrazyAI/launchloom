@@ -159,6 +159,35 @@ describe("experience-pack compiler", () => {
     );
   });
 
+  it("reserves inspiration against latest history before reference analysis", () => {
+    const workflow = readFileSync(
+      ".github/workflows/generate-client.yml",
+      "utf8",
+    );
+    const reservationIndex = workflow.indexOf(
+      "- name: Reserve inspiration routes",
+    );
+    const reservationCompileIndex = workflow.indexOf(
+      'node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs"',
+      reservationIndex,
+    );
+    const recordIndex = workflow.indexOf(
+      'node "$GITHUB_WORKSPACE/scripts/record-launch.mjs"',
+      reservationIndex,
+    );
+    const analysisIndex = workflow.indexOf(
+      "- name: Analyze reserved inspiration and freeze creative session",
+    );
+    expect(reservationIndex).toBeGreaterThan(-1);
+    expect(reservationCompileIndex).toBeGreaterThan(reservationIndex);
+    expect(recordIndex).toBeGreaterThan(reservationCompileIndex);
+    expect(analysisIndex).toBeGreaterThan(recordIndex);
+    expect(workflow).toContain(
+      "History push raced with another intake; reselecting from latest main",
+    );
+    expect(workflow).toContain('--record-key "$LAUNCHLOOM_INTAKE_ID"');
+  });
+
   it("runs a three-viewport internal bakeoff and preserves a safe fallback", () => {
     const bakeoff = readFileSync("scripts/run-experience-bakeoff.mjs", "utf8");
     expect(bakeoff).toContain("width: 1536, height: 864");
