@@ -212,6 +212,18 @@ async function analyzeRoute(route, fetchImpl = fetch) {
     desktop: await promptImageDimensions(desktop),
     mobile: mobile ? await promptImageDimensions(mobile) : null,
   };
+  if (dna.canonical === true && dna.measurements) {
+    return {
+      annotatedDescription:
+        dna.evidence?.annotatedDescription ||
+        route.referenceNotes ||
+        route.evidence?.[0]?.referenceNotes ||
+        `Canonical LaunchLoom reference for ${dna.referenceName || route.label || route.id}.`,
+      measurements: dna.measurements,
+      canonicalVerification: true,
+      captureDimensions,
+    };
+  }
   const content = [
     {
       type: "text",
@@ -316,12 +328,24 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
           captureDimensions,
         },
         analyzedFromEvidence: true,
-        analyzerModel: model,
-        analyzedAt: new Date().toISOString()
-      }
+        analyzerModel:
+          analysis.canonicalVerification === true
+            ? "canonical-reference-v2"
+            : model,
+        analyzedAt: new Date().toISOString(),
+      },
     });
   }
-  return { ...pack, referenceDnaAnalyzed: true, referenceDnaAnalyzerModel: model, routes };
+  return {
+    ...pack,
+    referenceDnaAnalyzed: true,
+    referenceDnaAnalyzerModel: routes.every(
+      (route) => route.referenceDna?.analyzerModel === "canonical-reference-v2",
+    )
+      ? "canonical-reference-v2"
+      : model,
+    routes,
+  };
 }
 
 async function main() {
