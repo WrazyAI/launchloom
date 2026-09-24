@@ -309,10 +309,15 @@ Rules:
 }
 
 export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
-  if (!process.env.OPENROUTER_API_KEY)
-    throw new Error("OPENROUTER_API_KEY is required to derive Reference DNA from screenshots.");
   if (!Array.isArray(pack?.routes) || !pack.routes.length)
     throw new Error("Reference DNA analysis requires inspiration routes.");
+  const requiresModelAnalysis = pack.routes.some(
+    (route) =>
+      route.referenceDna?.canonical !== true ||
+      !route.referenceDna?.measurements,
+  );
+  if (requiresModelAnalysis && !process.env.OPENROUTER_API_KEY)
+    throw new Error("OPENROUTER_API_KEY is required to derive Reference DNA from screenshots.");
   const routes = [];
   for (const route of pack.routes) {
     const analyzed = await analyzeRoute(route, fetchImpl);
