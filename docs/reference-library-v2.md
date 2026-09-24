@@ -39,10 +39,28 @@ Each `designTemplate` defines:
 8. `conversionSystem`: primary/secondary action placement and form treatment.
 9. `responsiveSystem`: mobile recomposition rules.
 10. `doNot`: prohibited generic fallbacks.
+11. `compositionSystem`: explicit opening, navigation, service, and conversion geometry.
+12. `desktopBlueprint`: target viewport, measured ratios, overlap rules, surface transitions, and desktop implementation constraints.
+13. `mobileBlueprint`: 390x844 target, measured content/image/CTA ratios, touch target, and narrow-screen recomposition constraints.
+14. `sectionBlueprint`: ordered section roles with per-section layout intent.
+15. `interactionSystem`: motion primitive, implementation layer, reduced-motion behavior, and interaction constraints.
+16. `signatureRequirements` and `acceptanceChecks`: machine-checkable structural markers plus reviewer criteria.
+17. `adaptationRules`: explicit rules for mapping client brand, palette, imagery, and sealed copy onto the reference without copying third-party identity.
 
 Canonical Reference DNA adds exact hero/navigation geometry, section sequence,
 motion/reduced-motion behavior, CTA placement, required DOM signatures,
 acceptance checks, mobile rules, palette intent, and measured ratios.
+
+## Research provenance
+
+Every reference now carries at least one curated external research influence.
+The current research pool includes A1 Gallery, Lapa Ninja, SiteInspire, and
+Awwwards, with specific example pages attached where useful. Those links are
+research provenance only: the agent may study layout mechanics, hierarchy,
+responsive behavior, and interaction patterns, but production evidence remains
+the LaunchLoom-owned normalized desktop/mobile board. Third-party logos,
+branding, copy, proprietary imagery, and trade dress are never production
+assets.
 
 ## Current 30 references
 
@@ -86,7 +104,10 @@ For each ID:
 - Desktop: `data/inspiration-evidence/reference-v2/<id>/desktop.svg`
 - Mobile: `data/inspiration-evidence/reference-v2/<id>/mobile.svg`
 
-The loader validates that all 60 current evidence paths are unique and present.
+The loader validates that all 60 current evidence paths are unique and present,
+that no two evidence files are byte-identical, that no two production entries
+share the same complete structural signature, and that every template includes
+its detailed desktop/mobile blueprint and curated research provenance.
 
 ## Expansion guidance
 
