@@ -20,7 +20,7 @@ export type SeoIntake = {
   competitorUrls: string;
   seoNotSure?: "yes";
 };
-const steps = ["Business", "Services", "Search language", "Brand", "Confirm"];
+const steps = ["Business", "Services", "Brand"];
 const apiBase = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || "").replace(
   /\/$/,
   "",
@@ -57,33 +57,6 @@ function imageSize(bytes: number) {
   return bytes >= 1_000_000
     ? `${(bytes / 1_000_000).toFixed(1)} MB`
     : `${Math.max(1, Math.round(bytes / 1_000))} KB`;
-}
-
-function BrandColorField() {
-  const [color, setColor] = useState("#205d51");
-
-  return (
-    <label className="field brand-color-field">
-      Primary color
-      <span className="brand-color-control">
-        <input
-          aria-label="Choose primary brand color"
-          name="primaryColor"
-          type="color"
-          defaultValue={color}
-          onInput={(event) => setColor(event.currentTarget.value)}
-        />
-        <span className="brand-color-value">
-          <strong>{color.toUpperCase()}</strong>
-          <small>Choose color</small>
-        </span>
-      </span>
-      <small className="brand-color-note">
-        Very bright colors stay focused on buttons and accents, not large page
-        backgrounds.
-      </small>
-    </label>
-  );
 }
 
 function ImageUploadField({
@@ -220,7 +193,6 @@ export default function OnboardingForm() {
   const [step, setStep] = useState(0);
   const [place, setPlace] = useState<Place | null>(null);
   const [showLookup, setShowLookup] = useState(true);
-  const [seoNotSure, setSeoNotSure] = useState(false);
   const [submissionId, setSubmissionId] = useState(
     () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
   );
@@ -432,7 +404,6 @@ export default function OnboardingForm() {
       setStep(0);
       setPlace(null);
       setShowLookup(true);
-      setSeoNotSure(false);
       setSubmissionId(
         globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
       );
@@ -601,139 +572,114 @@ export default function OnboardingForm() {
         hidden={step !== 1}
         aria-hidden={step !== 1}
       >
-        <span className="eyebrow">The conversion brief</span>
-        <h1>What should the site make happen?</h1>
-        <div className="choice-grid">
-          <label className="choice">
-            <input type="radio" name="preset" value="wellness" defaultChecked />
-            <span>
-              <b>Premium wellness</b>
-              <small>
-                Care-led consultation funnel with a calm, elevated feel.
-              </small>
-            </span>
-          </label>
-          <label className="choice">
-            <input type="radio" name="preset" value="home-services" />
-            <span>
-              <b>Home services</b>
-              <small>
-                Fast trust-building pages for services and local areas.
-              </small>
-            </span>
-          </label>
-        </div>
-        <div className="choice-grid">
-          <label className="choice">
-            <input
-              type="radio"
-              name="businessModel"
-              value="local"
-              defaultChecked
-            />
-            <span>
-              <b>Local service business</b>
-              <small>
-                You serve clients in person, at their home, or in your local
-                area.
-              </small>
-            </span>
-          </label>
-          <label className="choice">
-            <input type="radio" name="businessModel" value="online" />
-            <span>
-              <b>Remote or online service</b>
-              <small>
-                You primarily serve clients digitally or beyond one location.
-              </small>
-            </span>
-          </label>
-        </div>
+        <span className="eyebrow">Your services and area</span>
+        <h1>What should customers find you for?</h1>
+        <p>
+          Tell us what you actually offer and where you work. We&apos;ll handle
+          the keyword, competitor, and market research after you submit.
+        </p>
         <div className="field-grid">
           <label className="field full">
-            Core services
+            What services do you want people to find you for?
             <textarea
               required
               name="services"
-              placeholder="One service per line. Put the most important service first."
+              placeholder={"One service per line, up to 5.\nExample:\nExterior painting\nInterior painting\nCabinet refinishing"}
+              onInput={(event) => {
+                const count = event.currentTarget.value
+                  .split(/\r?\n|,/u)
+                  .map((item) => item.trim())
+                  .filter(Boolean).length;
+                event.currentTarget.setCustomValidity(
+                  count > 5 ? "Choose up to 5 core services." : "",
+                );
+              }}
             />
-          </label>
-          <label className="field full">
-            Primary offer
-            <textarea
-              name="offer"
-              placeholder="e.g. Free consultation, same-day service, or a new-customer offer"
-            />
-          </label>
-          <label className="field full">
-            Areas served
-            <textarea
-              required
-              name="serviceAreas"
-              placeholder="Cities, neighborhoods, regions, or ‘remote / nationwide’"
-            />
-          </label>
-          <label className="field full">
-            What makes you the obvious choice?
-            <textarea
-              required
-              name="differentiators"
-              placeholder="Experience, credentials, response time, guarantees, approach, results…"
-            />
+            <small>
+              Choose 1 to 5 core services. Put the most important one first.
+            </small>
           </label>
           <label className="field">
-            Business category
-            <select name="industry" defaultValue="other">
-              <option value="wellness">Wellness, health, or care</option>
+            What kind of business is this?
+            <select required name="industry" defaultValue="">
+              <option value="" disabled>
+                Choose the closest match
+              </option>
               <option value="home-services">Home services or trades</option>
-              <option value="technology">Technology or software</option>
+              <option value="wellness">Care, wellness, or health</option>
               <option value="professional-services">
                 Professional services
               </option>
               <option value="hospitality">Hospitality or food</option>
               <option value="real-estate">Real estate or property</option>
+              <option value="technology">Technology or online service</option>
               <option value="other">Another kind of business</option>
             </select>
           </label>
+          <label className="field">
+            What city do you mainly serve?
+            <input
+              required
+              name="serviceAreas"
+              placeholder="e.g. Charleston, SC"
+            />
+          </label>
+          <label className="field">
+            How far do you normally travel?
+            <select required name="serviceRadius" defaultValue="20">
+              <option value="10">Up to 10 miles</option>
+              <option value="20">Up to 20 miles</option>
+              <option value="30">Up to 30 miles</option>
+              <option value="50">Up to 50 miles</option>
+              <option value="50+">More than 50 miles</option>
+            </select>
+          </label>
+          <label className="field full">
+            Why do customers choose you?
+            <textarea
+              required
+              name="differentiators"
+              placeholder="For example: 15 years of experience, tidy work, clear communication, fast response, specialist expertise."
+            />
+          </label>
         </div>
         <fieldset className="cta-options">
-          <legend>What should the primary button do?</legend>
+          <legend>What should customers do when they&apos;re interested?</legend>
           <label>
             <input
               type="radio"
               name="primaryCta"
-              value="Book a consultation"
+              value="Call now"
               defaultChecked
             />{" "}
-            Book a call / consultation
-          </label>
-          <label>
-            <input type="radio" name="primaryCta" value="Call now" /> Call now
+            Call us
           </label>
           <label>
             <input type="radio" name="primaryCta" value="Request a quote" />{" "}
             Request a quote
           </label>
           <label>
-            <input type="radio" name="primaryCta" value="Get directions" /> Get
-            directions
+            <input
+              type="radio"
+              name="primaryCta"
+              value="Book an appointment"
+            />{" "}
+            Book an appointment
           </label>
-          <p className="form-note">
-            We will add an interactive map when your exact business address or
-            confirmed Google listing is available.
-          </p>
-        </fieldset>
-        <fieldset className="cta-options">
-          <legend>Optional website assistant</legend>
           <label>
-            <input type="checkbox" name="conversionAiChat" value="yes" /> Add an
-            AI answers widget
+            <input
+              type="radio"
+              name="primaryCta"
+              value="Send us your details"
+            />{" "}
+            Send us their details
           </label>
-          <p className="form-note">
-            It answers from approved website facts and sends visitors to your
-            primary next step when the site does not contain the answer.
-          </p>
         </fieldset>
+        <p className="form-note">
+          We&apos;ll use your main city and travel radius to research nearby
+          coverage areas. That does not automatically create a page for every
+          nearby town.
+        </p>
       </section>
       <section
         className="form-step"
@@ -741,125 +687,18 @@ export default function OnboardingForm() {
         hidden={step !== 2}
         aria-hidden={step !== 2}
       >
-        <span className="eyebrow">Use your customers' words</span>
-        <h1>How do people search for this?</h1>
+        <span className="eyebrow">Brand details</span>
+        <h1>Add the pieces only you can provide.</h1>
         <p>
-          Share the phrases customers use when they need help. We will validate
-          them before using them in the website strategy.
+          Your logo and real business photos are ideal. You can skip anything
+          you do not have yet.
         </p>
-        <label className="choice seo-not-sure">
-          <input
-            type="checkbox"
-            name="seoNotSure"
-            value="yes"
-            checked={seoNotSure}
-            onChange={(event) => setSeoNotSure(event.currentTarget.checked)}
-          />
-          <span>
-            <b>I am not sure which keywords to use</b>
-            <small>
-              Start from my confirmed services, locations, and customer problems
-              instead.
-            </small>
-          </span>
-        </label>
         <div className="field-grid">
           <label className="field full">
-            Priority service
-            <input
-              name="priorityService"
-              placeholder="The service you most want customers to find"
-            />
-          </label>
-          <label className="field full" hidden={seoNotSure}>
-            Search phrases customers might use
-            <textarea
-              name="searchPhrases"
-              disabled={seoNotSure}
-              placeholder="One phrase per line, ideally 3 to 8 phrases"
-            />
-          </label>
-          <label className="field full">
-            What problem would a customer describe?
-            <textarea
-              name="customerProblems"
-              placeholder="Use their words. Example: The drain keeps backing up after we run the dishwasher."
-            />
-          </label>
-          <label className="field full">
-            Services or claims we must not include
-            <textarea name="excludedServices" placeholder="One item per line" />
-          </label>
-          <label className="field full">
-            Priority locations
-            <textarea
-              name="priorityLocations"
-              placeholder="The most important confirmed service areas, one per line"
-            />
-          </label>
-          <label className="field full">
-            Competitor websites for research
-            <textarea
-              name="competitorUrls"
-              placeholder="Up to 3 public website URLs, one per line"
-            />
-          </label>
-        </div>
-        <p className="form-note">
-          Your phrases are treated as client-supplied ideas, not verified search
-          volume or ranking claims.
-        </p>
-      </section>
-      <section
-        className="form-step"
-        data-step="3"
-        hidden={step !== 3}
-        aria-hidden={step !== 3}
-      >
-        <span className="eyebrow">Make it feel like you</span>
-        <h1>Give us your visual direction.</h1>
-        <fieldset className="cta-options">
-          <legend>Which direction feels right?</legend>
-          <label>
-            <input
-              type="radio"
-              name="stylePreference"
-              value="clean-modern"
-              defaultChecked
-            />{" "}
-            Clean &amp; modern
-          </label>
-          <label>
-            <input type="radio" name="stylePreference" value="warm-friendly" />{" "}
-            Warm &amp; friendly
-          </label>
-          <label>
-            <input type="radio" name="stylePreference" value="bold-premium" />{" "}
-            Bold &amp; premium
-          </label>
-        </fieldset>
-        <div className="field-grid">
-          <BrandColorField />
-          <label className="field">
-            Tone
-            <select name="tone" defaultValue="confident">
-              <option value="calm">Calm and refined</option>
-              <option value="confident">Confident and direct</option>
-              <option value="warm">Warm and local</option>
-            </select>
-          </label>
-          <label className="field full">
-            Anything else about the brand?
+            Anything we should know about how your business should look or feel?
             <textarea
               name="brandNotes"
-              placeholder="Colors or fonts you love (or hate), competitors to avoid resembling, words we should use or avoid…"
-            />
-          </label>
-          <label className="field full">
-            Generated image direction (optional)
-            <textarea
-              name="imageDirection"
-              placeholder="Subjects, places, materials, or imagery to show or avoid when you do not have business photos."
+              placeholder="Optional: existing brand colours, fonts you already use, or anything you want us to avoid."
             />
           </label>
           <ImageUploadField name="logo" label="Logo" optional />
@@ -876,14 +715,7 @@ export default function OnboardingForm() {
             optional
           />
           <label className="field full">
-            Social links (optional)
-            <input
-              name="socialLinks"
-              placeholder="Instagram, Facebook, LinkedIn, etc."
-            />
-          </label>
-          <label className="field full">
-            Lead notification email
+            Where should new website leads be sent?
             <input
               required
               type="email"
@@ -892,93 +724,45 @@ export default function OnboardingForm() {
             />
           </label>
         </div>
-        <p className="form-note">
-          Use 4–6 strong photos if you have them. Images are compressed in your
-          browser; keep total uploads under 7.5 MB.
-        </p>
-        <p className="form-note">
-          If you do not upload suitable business photos, we may create draft
-          imagery with a third-party image model. Client-provided media always
-          takes priority.
-        </p>
-      </section>
-      <section
-        className="form-step"
-        data-step="4"
-        hidden={step !== 4}
-        aria-hidden={step !== 4}
-      >
+        <div className="review-divider" />
         <span className="eyebrow">One last check</span>
-        <h1>You control the facts.</h1>
-        <p>
-          Review the brief below. We use confirmed facts and bounded search
-          research to write the site.
-        </p>
+        <h2>Confirm the essentials.</h2>
         <dl className="confirmation-summary">
           <div>
             <dt>Business</dt>
             <dd>{draftValue("businessName")}</dd>
           </div>
           <div>
-            <dt>Priority service</dt>
-            <dd>{draftValue("priorityService")}</dd>
-          </div>
-          <div>
-            <dt>Confirmed services</dt>
+            <dt>Core services</dt>
             <dd>{draftValue("services")}</dd>
           </div>
           <div>
-            <dt>Search phrases</dt>
-            <dd>
-              {seoNotSure
-                ? "Research from confirmed business context"
-                : draftValue("searchPhrases")}
-            </dd>
+            <dt>Main service city</dt>
+            <dd>{draftValue("serviceAreas")}</dd>
           </div>
           <div>
-            <dt>Priority locations</dt>
-            <dd>{draftValue("priorityLocations")}</dd>
+            <dt>Travel radius</dt>
+            <dd>{draftValue("serviceRadius")} miles</dd>
           </div>
           <div>
-            <dt>Competitor websites</dt>
-            <dd>{draftValue("competitorUrls")}</dd>
-          </div>
-          <div>
-            <dt>Customer problem language</dt>
-            <dd>{draftValue("customerProblems")}</dd>
-          </div>
-          <div>
-            <dt>Do not include</dt>
-            <dd>{draftValue("excludedServices")}</dd>
+            <dt>Main customer action</dt>
+            <dd>{draftValue("primaryCta")}</dd>
           </div>
         </dl>
+        <input type="hidden" name="confirmSeoResearch" value="yes" />
+        <input type="hidden" name="confirmRights" value="yes" />
         <label className="consent">
           <input type="checkbox" required name="confirmAccuracy" value="yes" />
           <span>
-            I confirm the business details, services, and claims submitted here
-            are accurate and approved for use on my website.
+            I confirm the business details and files I&apos;ve provided are
+            accurate and approved for use, and I authorize research of public
+            search and market data to prepare this website.
           </span>
         </label>
-        <label className="consent">
-          <input
-            type="checkbox"
-            required
-            name="confirmSeoResearch"
-            value="yes"
-          />
-          <span>
-            I approve bounded research of the phrases, locations, and public
-            competitor URLs in this brief. Research suggestions will not replace
-            my confirmed business facts.
-          </span>
-        </label>
-        <label className="consent">
-          <input type="checkbox" required name="confirmRights" value="yes" />
-          <span>
-            I have permission to use any logo, photograph, and testimonial I
-            upload.
-          </span>
-        </label>
+        <p className="form-note">
+          Research helps us decide keywords, page structure, and useful service
+          areas. It never replaces the business facts you confirmed here.
+        </p>
       </section>
       {error && (
         <p className="form-message error" role="alert">
