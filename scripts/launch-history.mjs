@@ -37,7 +37,13 @@ export function recentLayoutFingerprints(history) {
 export function recentCreativeFamilyIds(history) {
   return (history?.launches || []).flatMap((launch) => [
     ...new Set(
-      [launch.creativeFamilyId, launch.referenceFamilyId]
+      [
+        launch.creativeFamilyId,
+        launch.referenceFamilyId,
+        ...(Array.isArray(launch.routeFamilyIds)
+          ? launch.routeFamilyIds
+          : []),
+      ]
         .map((value) => String(value || "").trim())
         .filter(Boolean),
     ),
@@ -103,6 +109,13 @@ export function launchRecordFrom({
     layoutFingerprint: fingerprint,
     creativeFamilyId: String(experience.familyId || "").trim(),
     referenceFamilyId: String(experience.referenceFamilyId || "").trim(),
+    routeFamilyIds: cleanList(
+      routes.flatMap((route) => [
+        route.familyId,
+        route.referenceFamilyId,
+        route.referenceDna?.familyId,
+      ]),
+    ),
     referenceIds: cleanList(
       routes.flatMap((route) => [
         ...(Array.isArray(route.referenceIds) ? route.referenceIds : []),
