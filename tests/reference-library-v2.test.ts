@@ -152,6 +152,21 @@ describe("Reference Library v2", () => {
     }
   });
 
+  it("rejects non-canonical DNA and canonical family mismatches", () => {
+    const missingFlag = structuredClone(raw);
+    missingFlag.records[0].canonicalReferenceDna.canonical = false;
+    expect(() =>
+      normalizeReferenceLibraryV2(missingFlag, { repositoryRoot: root }),
+    ).toThrow(/canonicalReferenceDna must set canonical: true/iu);
+
+    const mismatchedFamily = structuredClone(raw);
+    mismatchedFamily.records[0].canonicalReferenceDna.familyId =
+      "different-family";
+    expect(() =>
+      normalizeReferenceLibraryV2(mismatchedFamily, { repositoryRoot: root }),
+    ).toThrow(/canonical familyId must match the record familyId/iu);
+  });
+
   it("rejects null or out-of-range canonical measurement ratios", () => {
     for (const badValue of [null, "", -0.01, 1.01]) {
       const broken = structuredClone(raw);
