@@ -5,6 +5,7 @@ import {
   loadA1ReferenceLibrary,
   mergeInspirationRegistries,
 } from "./a1-reference-library.mjs";
+import { loadReferenceLibraryV2 } from "./reference-library-v2.mjs";
 
 function parseArgs(values) {
   const result = {};
@@ -59,11 +60,22 @@ const historyPath = path.resolve(
 const a1LibraryPath = path.resolve(
   args["a1-library"] || path.join(repository, "data/a1-reference-library.json"),
 );
+const referenceLibraryV2Path = path.resolve(
+  args["reference-library"] ||
+    path.join(repository, "data/reference-library-v2.json"),
+);
 const outputPath = path.resolve(
   args.out || ".launchloom/inspiration-pack.json",
 );
 
-const [config, baseRegistry, history, intake, a1Library] = await Promise.all([
+const [
+  config,
+  baseRegistry,
+  history,
+  intake,
+  a1Library,
+  referenceLibraryV2,
+] = await Promise.all([
   fs.readFile(configPath, "utf8").then(JSON.parse),
   fs.readFile(registryPath, "utf8").then(JSON.parse),
   fs.readFile(historyPath, "utf8").then(JSON.parse),
@@ -74,10 +86,18 @@ const [config, baseRegistry, history, intake, a1Library] = await Promise.all([
     () => loadA1ReferenceLibrary(a1LibraryPath, { repositoryRoot: repository }),
     () => null,
   ),
+  fs.access(referenceLibraryV2Path).then(
+    () =>
+      loadReferenceLibraryV2(referenceLibraryV2Path, {
+        repositoryRoot: repository,
+      }),
+    () => null,
+  ),
 ]);
-const registry = a1Library
+const legacyRegistry = a1Library
   ? mergeInspirationRegistries(baseRegistry, a1Library)
   : baseRegistry;
+const registry = referenceLibraryV2 || legacyRegistry;
 const recent = Array.isArray(history.launches)
   ? history.launches.slice(-30)
   : [];
@@ -108,7 +128,8 @@ const pack = buildInspirationPack(
     industry,
     styleTerms,
     styleText,
-    referenceCalibration: a1Library?.calibration,
+    referenceCalibration:
+      referenceLibraryV2?.calibration || a1Library?.calibration,
     recentReferenceIds: recent.flatMap((launch) =>
       Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
     ),
@@ -126,12 +147,17 @@ const pack = buildInspirationPack(
   registry,
 );
 pack.referenceLibrary = {
-  a1: a1Library
+  version: referenceLibraryV2?.version || 1,
+  source: referenceLibraryV2?.source || "legacy-registry",
+  recordIds: referenceLibraryV2?.records.map((record) => record.id) || [],
+  calibration:
+    referenceLibraryV2?.calibration || a1Library?.calibration || null,
+  policy: referenceLibraryV2?.policy || null,
+  legacyA1: a1Library
     ? {
         source: a1Library.source,
         capturedAt: a1Library.capturedAt,
         recordIds: a1Library.records.map((record) => record.id),
-        calibration: a1Library.calibration,
       }
     : null,
 };
