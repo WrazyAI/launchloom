@@ -108,6 +108,23 @@ describe("launch history", () => {
     expect(record.layoutFingerprint).toBe("");
   });
 
+  it("counts a duplicated creative/reference family only once per launch", () => {
+    expect(
+      recentCreativeFamilyIds({
+        launches: [
+          {
+            creativeFamilyId: "market-collage",
+            referenceFamilyId: "market-collage",
+          },
+          {
+            creativeFamilyId: "market-collage",
+            referenceFamilyId: "market-collage",
+          },
+        ],
+      }),
+    ).toEqual(["market-collage", "market-collage"]);
+  });
+
   it("records, dedupes, and caps launches", async () => {
     const historyPath = await temporaryHistory();
     await recordLaunch(
