@@ -1,5 +1,5 @@
 ---
-const { compact = false } = Astro.props;
+const { compact = false, hideNav = false } = Astro.props;
 ---
 
 <header class:list={["site-header", { compact }]}>
@@ -7,8 +7,9 @@ const { compact = false } = Astro.props;
     <span class="brand-mark" aria-hidden="true">L</span>
     <span>launchloom</span>
   </a>
-  <nav aria-label="Primary navigation">
-    <a href="/onboard">New site</a>
-    <a href="/#how-it-works">How it works</a>
-  </nav>
+  {!hideNav && (
+    <nav aria-label="Primary navigation">
+      <a href="/#how-it-works">How it works</a>
+    </nav>
+  )}
 </header>
