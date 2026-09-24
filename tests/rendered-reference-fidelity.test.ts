@@ -92,6 +92,8 @@ const passingScores = {
   ctaPlacement: 86,
   mobileRecomposition: 88,
   interactionEvidence: 76,
+  paletteAdherence: 90,
+  artDirection: 91,
 };
 
 describe("rendered reference request retries", () => {
@@ -420,6 +422,39 @@ describe("rendered reference fidelity", () => {
     expect(serialized).not.toContain("generatedAt");
     expect(serialized).not.toContain("updatedAt");
     expect(requests[0].prompt_cache_key).toMatch(/^ll:rendered-reference:/u);
+  });
+
+  it("hard-fails palette or art-direction drift even when other scores pass", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const result = await evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      visualBrief: {
+        palette: { surfaceColor: "#f5f0e4", primaryColor: "#245a4c" },
+        artDirection: "Light chalk-and-ivory craft collage.",
+      },
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      fetchImpl: async () =>
+        response({
+          verdict: "pass",
+          overallScore: 92,
+          scores: {
+            ...passingScores,
+            paletteAdherence: 54,
+            artDirection: 62,
+          },
+          findings: [],
+          summary: "Mechanically strong but client palette is wrong.",
+        }),
+    });
+
+    expect(result.pass).toBe(false);
+    expect(result.audit.scores.paletteAdherence).toBe(54);
+    expect(result.audit.scores.artDirection).toBe(62);
   });
 
   it("blocks a generic candidate even when it is technically clean", async () => {
