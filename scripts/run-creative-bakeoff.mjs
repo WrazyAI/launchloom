@@ -219,9 +219,26 @@ export async function runCreativeBakeoff({
       )
       .then(JSON.parse)
       .catch(() => null);
-    const manifest = validateCandidateManifest(metadata.creativeManifest || metadata);
+    const manifest = validateCandidateManifest(
+      metadata.creativeManifest || metadata,
+    );
+    const contentManifestError =
+      manifest.version >= 2 &&
+      (!contentManifest ||
+        contentManifest.version !== 2 ||
+        !contentManifest.visualBrief ||
+        typeof contentManifest.visualBrief !== "object" ||
+        Array.isArray(contentManifest.visualBrief))
+        ? "Version-2 creative candidates require a valid content-manifest.json with visualBrief."
+        : null;
     if (excludedIds.has(manifest.candidateId)) continue;
-    candidates.push({ directory, metadata, manifest, contentManifest });
+    candidates.push({
+      directory,
+      metadata,
+      manifest,
+      contentManifest,
+      contentManifestError,
+    });
   }
   if (!candidates.length) {
     const exclusions = [...excludedIds].sort();
@@ -270,6 +287,8 @@ export async function runCreativeBakeoff({
         viewports: [],
       };
       try {
+        if (candidate.contentManifestError)
+          throw new Error(candidate.contentManifestError);
         const experienceSource = await fs.readFile(path.join(candidateRoot, candidate.directory, "Experience.jsx"), "utf8");
         const stylesSource = await fs.readFile(path.join(candidateRoot, candidate.directory, "styles.css"), "utf8");
         const motionSource = await fs.readFile(path.join(candidateRoot, candidate.directory, "motion.js"), "utf8");
@@ -507,9 +526,21 @@ export async function runCreativeBakeoff({
         technical,
         distinctiveness: scoringDistinctiveness,
       });
-      const recentFamilyUses =
-        (recentFamilyCounts.get(candidate.metadata.familyId) || 0) +
-        (recentFamilyCounts.get(candidate.metadata.referenceFamilyId) || 0);
+      const candidateFamilyIds = [
+        ...new Set(
+          [
+            candidate.metadata.familyId,
+            candidate.metadata.referenceFamilyId,
+          ]
+            .map((value) => String(value || "").trim())
+            .filter(Boolean),
+        ),
+      ];
+      const recentFamilyUses = candidateFamilyIds.reduce(
+        (total, familyId) =>
+          total + (recentFamilyCounts.get(familyId) || 0),
+        0,
+      );
       candidateResult.rotationPenalty =
         candidateResult.explicitReferenceMatch
           ? 0
