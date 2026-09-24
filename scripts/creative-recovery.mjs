@@ -16,6 +16,11 @@ export function chooseRecoveryCandidate(candidates) {
     )
     .sort(
       (left, right) =>
+        Number(right.explicitReferenceMatch === true) -
+          Number(left.explicitReferenceMatch === true) ||
+        (Number(right.renderedReferenceFidelity?.score) || 0) -
+          (Number(left.renderedReferenceFidelity?.score) || 0) ||
+        (Number(right.visualScore) || 0) - (Number(left.visualScore) || 0) ||
         (Number(right.score) || 0) - (Number(left.score) || 0) ||
         left.candidateId.localeCompare(right.candidateId),
     )[0] || null;
