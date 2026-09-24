@@ -11,15 +11,6 @@ type Place = {
   rating?: number;
   ratingCount?: number;
 };
-export type SeoIntake = {
-  priorityService: string;
-  searchPhrases: string;
-  customerProblems: string;
-  excludedServices: string;
-  priorityLocations: string;
-  competitorUrls: string;
-  seoNotSure?: "yes";
-};
 const steps = ["Business", "Services", "Brand"];
 const apiBase = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || "").replace(
   /\/$/,
@@ -672,7 +663,7 @@ export default function OnboardingForm() {
               name="primaryCta"
               value="Send us your details"
             />{" "}
-            Send us their details
+            Send us your details
           </label>
         </fieldset>
         <p className="form-note">
