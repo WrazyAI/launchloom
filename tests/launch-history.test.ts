@@ -29,10 +29,14 @@ const inspiration = {
   routes: [
     {
       referenceIds: ["nightjar-cinematic-salon"],
+      familyId: "cinematic-stage",
+      referenceFamilyId: "a1-cinematic-3d",
       signature: "signature-a",
     },
     {
       referenceIds: ["kokoro-spatial-editorial"],
+      familyId: "editorial-monument",
+      referenceFamilyId: "a1-kinetic-founder",
       signature: "signature-b",
     },
     { referenceId: null, signature: "signature-a" },
@@ -106,6 +110,20 @@ describe("launch history", () => {
       "kokoro-spatial-editorial",
       "nightjar-cinematic-salon",
     ]);
+    expect(record.routeFamilyIds).toEqual([
+      "a1-cinematic-3d",
+      "a1-kinetic-founder",
+      "cinematic-stage",
+      "editorial-monument",
+    ]);
+    expect(recentCreativeFamilyIds({ launches: [record] })).toEqual(
+      expect.arrayContaining([
+        "cinematic-stage",
+        "a1-cinematic-3d",
+        "editorial-monument",
+        "a1-kinetic-founder",
+      ]),
+    );
     expect(record.layoutFingerprint).toBe("");
   });
 
