@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-20T23:48:43.039Z",
+  "updatedAt": "2026-09-24T12:59:02.194Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -64,6 +64,33 @@
         "fixed-bottom-conversation-pill|narrow-authored-column|project-marquee-and-pricing-pair|neo-grotesk-with-pixel-serif|essay-marquee-testimonial|wide-moving-project-strip",
         "micro-menu-with-cart-counterpoint|editorial-face-and-type-collision|archive-collection-rail|fashion-grotesk-and-display-mix|campaign-spread-sequence|hard-cropped-fashion-portrait",
         "performance-scoreboard-navigation|full-viewport-action-poster|horizontal-program-bands|oversized-athletic-condensed|impact-band-recovery|full-bleed-action-documentary"
+      ]
+    },
+    {
+      "id": "2026-09-24-precision-auto-care-attempt-63",
+      "launchedAt": "2026-09-24T12:59:02.194Z",
+      "stage": "attempt",
+      "businessName": "Precision Auto Care",
+      "recipe": "general-editorial",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "a1-cinematic-3d",
+        "a1-kinetic-command",
+        "a1-kinetic-founder"
+      ],
+      "referenceIds": [
+        "a1-ethan-cinematic-3d",
+        "a1-scs-kinetic-command",
+        "a1-uncommon-founder-atlas"
+      ],
+      "routeSignatures": [
+        "compact-pixel-command-nav|centered-typographic-founder-field|goal-atlas-feature-sequence|pixel-display-with-mono-microcopy|statement-goals-progress-contact|textured-dark-field-with-graphic-accents",
+        "minimal-cinematic-nav|cinematic-3d-studio-field|featured-work-rail|restrained-modern-sans|cinematic-intro-work-cta|dark-video-and-3d-atmosphere",
+        "performance-command-bar|full-viewport-action-poster|horizontal-program-bands|condensed-mono-display|impact-band-recovery|full-bleed-action-documentary"
       ]
     }
   ]
