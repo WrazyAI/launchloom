@@ -67,11 +67,11 @@ describe("creative recovery diagnostics", () => {
   });
 
   it("prioritizes reference fidelity over a generic aggregate score", () => {
-    const highAggregate = candidate("candidate-b", 96);
+    const highAggregate: any = candidate("candidate-b", 96);
     highAggregate.renderedReferenceFidelity = { score: 61 };
-    const faithful = candidate("candidate-c", 84);
+    const faithful: any = candidate("candidate-c", 84);
     faithful.renderedReferenceFidelity = { score: 88 };
-    const explicit = candidate("candidate-a", 80);
+    const explicit: any = candidate("candidate-a", 80);
     explicit.renderedReferenceFidelity = { score: 82 };
     explicit.explicitReferenceMatch = true;
 
