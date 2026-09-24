@@ -186,6 +186,16 @@ describe("experience-pack compiler", () => {
       "History push raced with another intake; reselecting from latest main",
     );
     expect(workflow).toContain('--record-key "$LAUNCHLOOM_INTAKE_ID"');
+    const reservationBlock = workflow.slice(reservationIndex, analysisIndex);
+    expect(reservationBlock).toContain(
+      'HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"',
+    );
+    expect(reservationBlock).toContain(
+      'git worktree add --detach "$HISTORY_DIR" origin/main',
+    );
+    expect(reservationBlock).toContain('--history "$HISTORY_FILE"');
+    expect(reservationBlock).toContain('git -C "$HISTORY_DIR" push origin HEAD:main');
+    expect(reservationBlock).not.toContain("git reset --hard origin/main");
   });
 
   it("runs a three-viewport internal bakeoff and preserves a safe fallback", () => {
