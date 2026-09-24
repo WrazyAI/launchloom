@@ -16,6 +16,10 @@ import {
   evaluateRenderedDiversity,
   evaluateRenderedReferenceFidelity,
 } from "./rendered-reference-fidelity.mjs";
+import {
+  readLaunchHistory,
+  recentCreativeFamilyIds,
+} from "./launch-history.mjs";
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -205,10 +209,18 @@ export async function runCreativeBakeoff({
     );
   const candidates = [];
   for (const directory of entries) {
-    const metadata = JSON.parse(await fs.readFile(path.join(candidateRoot, directory, "metadata.json"), "utf8"));
+    const metadata = JSON.parse(
+      await fs.readFile(path.join(candidateRoot, directory, "metadata.json"), "utf8"),
+    );
+    const contentManifest = JSON.parse(
+      await fs.readFile(
+        path.join(candidateRoot, directory, "content-manifest.json"),
+        "utf8",
+      ),
+    );
     const manifest = validateCandidateManifest(metadata.creativeManifest || metadata);
     if (excludedIds.has(manifest.candidateId)) continue;
-    candidates.push({ directory, metadata, manifest });
+    candidates.push({ directory, metadata, manifest, contentManifest });
   }
   if (!candidates.length) {
     const exclusions = [...excludedIds].sort();
@@ -219,6 +231,17 @@ export async function runCreativeBakeoff({
     );
   }
   const diversity = diversityReport(candidates.map(({ metadata }) => metadata));
+  const recentFamilyCounts = new Map();
+  try {
+    const history = await readLaunchHistory();
+    for (const familyId of recentCreativeFamilyIds(history))
+      recentFamilyCounts.set(
+        familyId,
+        (recentFamilyCounts.get(familyId) || 0) + 1,
+      );
+  } catch {
+    // Rotation history is advisory; missing history must not block a bakeoff.
+  }
   const originalConfigPath = path.join(root, "src/site.config.json");
   const originalConfig = await fs.readFile(originalConfigPath, "utf8");
   const selectedDir = path.join(root, "src/generated-experiences/selected");
@@ -237,6 +260,9 @@ export async function runCreativeBakeoff({
         familyId: candidate.manifest.familyId,
         fingerprint: candidate.manifest.fingerprint,
         manifest: candidate.manifest,
+        intakeFitScore: Number(candidate.metadata.intakeFitScore || 0),
+        explicitReferenceMatch:
+          candidate.metadata.explicitReferenceMatch === true,
         valid: true,
         score: 0,
         failures: [],
@@ -323,6 +349,7 @@ export async function runCreativeBakeoff({
         if (candidate.manifest.version >= 2) {
           const renderedReference = await renderedReferenceEvaluator({
             referenceDna: candidate.manifest.referenceDna,
+            visualBrief: candidate.contentManifest?.visualBrief || {},
             candidateScreenshots: {
               desktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop-viewport.png`),
               compact: path.join(evidenceDir, `${candidate.manifest.candidateId}-compact-viewport.png`),
@@ -473,12 +500,22 @@ export async function runCreativeBakeoff({
       // and is the sole diversity authority for v2 promotion.
       const scoringDistinctiveness =
         candidate.manifest.version >= 2 ? 100 : distinctivenessScore;
-      candidateResult.score = scoreCreativeCandidate({
+      const rawScore = scoreCreativeCandidate({
         hardPass: candidateResult.valid,
         visual,
         technical,
         distinctiveness: scoringDistinctiveness,
       });
+      const recentFamilyUses =
+        (recentFamilyCounts.get(candidate.metadata.familyId) || 0) +
+        (recentFamilyCounts.get(candidate.metadata.referenceFamilyId) || 0);
+      candidateResult.rotationPenalty =
+        candidateResult.explicitReferenceMatch
+          ? 0
+          : Math.min(18, recentFamilyUses * 6);
+      candidateResult.rawScore = rawScore;
+      candidateResult.score =
+        rawScore < 0 ? rawScore : rawScore - candidateResult.rotationPenalty;
       candidateResult.eligible =
         candidateResult.valid &&
         candidateResult.referenceFidelity?.pass !== false &&
@@ -595,7 +632,10 @@ export async function runCreativeBakeoff({
   const winner =
     valid.sort(
       (left, right) =>
+        Number(right.explicitReferenceMatch) -
+          Number(left.explicitReferenceMatch) ||
         right.score - left.score ||
+        right.intakeFitScore - left.intakeFitScore ||
         left.candidateId.localeCompare(right.candidateId),
     )[0] || null;
   const selectionPass = Boolean(
