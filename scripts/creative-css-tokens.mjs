@@ -14,7 +14,7 @@ export function cssCustomPropertyDeclarations(source) {
   );
   return [
     ...declarationSource.matchAll(
-      /(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu,
+      /(?:^|[;{}])\s*(--[A-Za-z][\w-]*)\s*:/gu,
     ),
   ].map((match) => match[1]);
 }
