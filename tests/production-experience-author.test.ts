@@ -655,6 +655,23 @@ describe("production experience author", () => {
     ).toThrow(/found 2 semantic targets/iu);
   });
 
+  it("restores data-hero from preserved reference instrumentation when repair aliases the heading", () => {
+    const original = `<section data-reference-section="hero" data-hero-geometry="split-editorial" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
+    const repaired = `export default function Experience({ content }) {
+      const { hero } = content;
+      return <section data-reference-section="hero" data-hero-geometry="split-editorial"><h1>{hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>;
+    }`;
+
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-repair-alias",
+    });
+
+    expect(restored).toContain(
+      'data-reference-section="hero" data-hero-geometry="split-editorial" data-hero',
+    );
+    expect(restored.match(/\bdata-hero\b/gu)).toHaveLength(1);
+  });
+
   it("deduplicates hero markers only when a unique semantic hero remains", () => {
     const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
     const duplicated = `${original}<section data-hero><h2>Decorative section</h2></section>`;
@@ -861,6 +878,26 @@ describe("production experience author", () => {
     expect(css).toContain("color: var(--ll-creative-ink)");
     expect(css).toContain("background: var(--brand)");
     expect(css).not.toContain("--ink:");
+  });
+
+  it("ignores commented-out CSS token declarations during namespacing", () => {
+    const css = namespaceCreativeCss(
+      `/* --brand: red; */
+:root {
+  /* palette note: --ghost: pink; */
+  --ink: #111;
+}
+.hero {
+  color: var(--brand);
+  background: var(--ink);
+}`,
+    );
+
+    expect(css).toContain("/* --brand: red; */");
+    expect(css).toContain("color: var(--brand)");
+    expect(css).not.toContain("var(--ll-creative-brand)");
+    expect(css).toContain("--ll-creative-ink: #111");
+    expect(css).toContain("background: var(--ll-creative-ink)");
   });
 
   it("authors three sealed and structurally independent candidate bundles", async () => {
