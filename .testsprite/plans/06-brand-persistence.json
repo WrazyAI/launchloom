@@ -1,14 +1,33 @@
 {
   "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
   "type": "frontend",
-  "name": "Brand settings persist after revisiting Search language",
-  "description": "Brand direction and the lead email remain intact when the user moves backward and forward.",
+  "name": "Brand note and lead email survive backward navigation",
+  "description": "Client-authoritative brand details remain intact when moving backward and forward.",
   "priority": "p1",
   "planSteps": [
-    { "type": "action", "description": "Navigate through Business and Services using fictional valid required data" },
-    { "type": "action", "description": "On Search language choose the not-sure option and continue" },
-    { "type": "action", "description": "On Brand select Bold and premium, choose a non-default color, select Warm and local, add a short brand note, and enter leads@example.com" },
-    { "type": "action", "description": "Use Back to Search language, then Continue to Brand" },
-    { "type": "assertion", "description": "The Brand step retains the selected direction, visible color value, tone, brand note, and lead notification email" }
+    {
+      "type": "action",
+      "description": "Open a valid unused test invitation link and navigate through Business and Services using fictional valid required data"
+    },
+    {
+      "type": "action",
+      "description": "On Brand add a short brand note, set an existing brand colour, upload a logo, and enter leads@example.com"
+    },
+    {
+      "type": "action",
+      "description": "Use Back to Services, then Continue to Brand"
+    },
+    {
+      "type": "assertion",
+      "description": "The brand note, existing brand colour, uploaded logo preview, and lead notification email remain present"
+    },
+    {
+      "type": "action",
+      "description": "Return to Services one more time, then continue to Brand"
+    },
+    {
+      "type": "assertion",
+      "description": "The brand colour and lead notification email are preserved after repeated backward navigation"
+    }
   ]
 }

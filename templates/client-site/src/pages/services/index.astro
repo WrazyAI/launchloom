@@ -1,0 +1,38 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import site, { phoneHref } from "../../lib/site";
+---
+
+<SiteLayout title={`Services | ${site.business.name}`} description={`Explore confirmed services from ${site.business.name}. Contact the team to discuss the right next step.`}>
+  <Header />
+  <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`]}>
+    <section class="inner-hero">
+      <div class="wrap inner-hero-grid">
+        <div>
+          <a class="breadcrumb" href="/">Home</a>
+          <span class="kicker">Services</span>
+          <h1>{site.copy?.servicesHeading || `Services from ${site.business.name}`}</h1>
+          <p>{site.copy?.servicesIntro || `Review the services ${site.business.name} confirmed and contact the team about your needs.`}</p>
+          <div class="hero-actions">
+            <a class="cta" href="#services-list">Explore services</a>
+            {site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}
+          </div>
+        </div>
+        {site.images.hero && <img src={site.images.hero} alt={`${site.business.name} service context`} fetchpriority="high" />}
+      </div>
+    </section>
+    <section class="section wrap" id="services-list">
+      <div class="section-heading"><span class="kicker">Confirmed services</span><h2>Choose the service that fits your need.</h2></div>
+      <div class="service-grid">
+        {site.services.map((service) => (
+          <a class="service-card" href={`/services/${service.slug}/`}>
+            <h3>{service.name}</h3><p>{service.description}</p><b>View service details <i aria-hidden="true">↗</i></b>
+          </a>
+        ))}
+      </div>
+    </section>
+  </main>
+  <Footer />
+</SiteLayout>

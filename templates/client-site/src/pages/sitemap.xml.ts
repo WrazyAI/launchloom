@@ -15,9 +15,15 @@ export const GET: APIRoute = ({ site }) => {
   const configured = site?.href || "https://example.pages.dev/";
   const paths = [
     "/",
+    "/services/",
     ...siteConfig.services.map((service) => `/services/${service.slug}/`),
+    "/about/",
+    "/contact/",
     ...(siteConfig.industry === "home-services"
-      ? (siteConfig.locations.length ? siteConfig.locations : siteConfig.business.serviceAreas.map((name) => ({ slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") }))).map((location) => `/locations/${location.slug}/`)
+      ? siteConfig.locations.map((location) => `/locations/${location.slug}/`)
+      : []),
+    ...(siteConfig.blogArticles?.length
+      ? ["/blog/", ...siteConfig.blogArticles.map((article) => `/blog/${article.slug}/`)]
       : []),
   ];
   const urls = paths

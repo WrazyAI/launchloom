@@ -1,4 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   applyOperation,
   deterministicOperations,
@@ -9,6 +14,7 @@ import {
   removeEmDashes,
   verifyRevision,
 } from "../scripts/revision-engine.mjs";
+import { applyBoundedClientFeedback } from "../scripts/client-feedback-ops.mjs";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -42,6 +48,102 @@ describe("revision operations", () => {
       "Personal care plans",
     ]);
     expect(JSON.stringify(draft)).not.toMatch(/testimonial|"quote"/i);
+  });
+
+  it("requires bounded client copy, fact, and asset changes in rendered output", () => {
+    const draft = config();
+    const assetUrl = "https://assets.launchloom.wrazyos.com/client-replacements/logo-001.png";
+    const photoUrl = "https://assets.launchloom.wrazyos.com/client-replacements/photo-one-001.jpg";
+    draft.copy.heroHeading = "A clear path";
+    const planned = applyBoundedClientFeedback(draft, [
+      '[Text/factual correction] Replace text "Clear care" with "Care that listens"',
+      '[Text/factual correction] Replace text "A clear path" with "Clear service choices"',
+      "[Contact details] Phone: 555-0110",
+      `[Logo] Replacement asset: ${assetUrl}\nUse this logo in the header.`,
+      `[Business photos] Replacement asset: ${photoUrl}\nUse this as the main service photo.`,
+    ]);
+    expect(planned.ok).toBe(true);
+    const report = {
+      results: planned.results,
+      expectedArtifacts: expectedArtifacts(planned.operations, planned.config),
+    };
+
+    expect(verifyRevision(draft, report, "", "").failures).toEqual(expect.arrayContaining([
+      "Missing rendered text at copy.heroKicker: Care that listens",
+      "Missing rendered text at copy.heroHeading: Clear service choices",
+      "Missing rendered text at business.phone: 555-0110",
+      `Missing rendered replacement asset at header: ${assetUrl}`,
+      `Missing rendered replacement asset at hero: ${photoUrl}`,
+    ]));
+    const homepage = `<header><img src=\"${assetUrl}\"></header><section class=\"hero\"><span class=\"kicker\">Care that listens</span><h1>Clear service choices</h1><img src=\"${photoUrl}\"></section><a>555-0110</a>`;
+    expect(verifyRevision(draft, report, homepage, homepage, { "/": homepage }).ok).toBe(true);
+
+    const wrongHeadingPlacement = `<section class=\"hero\"><h1>Previous heading</h1></section><footer><h1>Clear service choices</h1></footer>`;
+    expect(verifyRevision(draft, report, wrongHeadingPlacement, wrongHeadingPlacement, { "/": wrongHeadingPlacement }).failures)
+      .toContain("Missing rendered text at copy.heroHeading: Clear service choices");
+
+    const wrongLogoPlacement = `<footer><img src=\"${assetUrl}\"></footer>`;
+    expect(verifyRevision(draft, report, wrongLogoPlacement, wrongLogoPlacement, { "/": wrongLogoPlacement }).failures)
+      .toContain(`Missing rendered replacement asset at header: ${assetUrl}`);
+
+    const wrongPhotoPlacement = `<header><img src=\"${assetUrl}\"></header><section class=\"about\"><img src=\"${photoUrl}\"></section>`;
+    expect(verifyRevision(draft, report, wrongPhotoPlacement, wrongPhotoPlacement, { "/": wrongPhotoPlacement }).failures)
+      .toContain(`Missing rendered replacement asset at hero: ${photoUrl}`);
+  });
+
+  it("checks client copy on its target route and handles escaped markup characters", () => {
+    const draft = config();
+    draft.services = [{ name: "Drain cleaning", slug: "drain-cleaning" }];
+    const operations = [
+      { kind: "replace_copy_fragment", path: "services[0].description", to: "Drain care for <older homes>" },
+    ];
+    const report = {
+      results: [{ feedbackIndex: 0, status: "fulfilled" }],
+      expectedArtifacts: expectedArtifacts(operations, draft),
+    };
+    const indexHtml = "<main><h1>Local plumbing</h1></main>";
+    const serviceHtml = "<main><section class=\"inner-hero\"><p>Drain care for &lt;older homes&gt;</p></section></main>";
+
+    expect(verifyRevision(
+      draft,
+      report,
+      indexHtml,
+      `${indexHtml}\n${serviceHtml}`,
+      { "/": indexHtml, "/services/drain-cleaning/": serviceHtml },
+    ).ok).toBe(true);
+    expect(verifyRevision(draft, report, serviceHtml, serviceHtml, { "/": serviceHtml }).failures)
+      .toContain("Missing rendered text at services[0].description: Drain care for <older homes>");
+  });
+
+  it("loads route-specific HTML from the production dist for revision verification", async () => {
+    const directory = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-revision-route-"));
+    try {
+      const dist = path.join(directory, "dist");
+      const servicePath = path.join(dist, "services", "drain-cleaning", "index.html");
+      const indexPath = path.join(dist, "index.html");
+      await fs.mkdir(path.dirname(servicePath), { recursive: true });
+      await fs.writeFile(indexPath, "<main><h1>Harbor Plumbing</h1></main>");
+      await fs.writeFile(servicePath, "<main><p>Drain care for &lt;older homes&gt;</p></main>");
+      const draft = config();
+      draft.services = [{ name: "Drain cleaning", slug: "drain-cleaning" }];
+      draft.revisionReport = {
+        results: [{ feedbackIndex: 0, status: "fulfilled" }],
+        expectedArtifacts: expectedArtifacts([
+          { kind: "replace_copy_fragment", path: "services[0].description", to: "Drain care for <older homes>" },
+        ], draft),
+      };
+      const configPath = path.join(directory, "site.config.json");
+      await fs.writeFile(configPath, JSON.stringify(draft));
+      const scriptPath = fileURLToPath(new URL("../scripts/verify-revision.mjs", import.meta.url));
+      const verify = () => spawnSync(process.execPath, [scriptPath, "--config", configPath, "--dist", dist], { encoding: "utf8" });
+
+      expect(verify().status).toBe(0);
+      await fs.writeFile(servicePath, "<main><p>Other service copy</p></main>");
+      await fs.writeFile(indexPath, "<main><p>Drain care for &lt;older homes&gt;</p></main>");
+      expect(verify().status).toBe(1);
+    } finally {
+      await fs.rm(directory, { recursive: true, force: true });
+    }
   });
 
   it("inserts requested proof after Services on a legacy homepage without replacing its layout", () => {

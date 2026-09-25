@@ -61,8 +61,8 @@ a {
 }
 .wordmark--logo img {
   display: block;
-  max-width: 136px;
-  max-height: 44px;
+  max-width: 260px;
+  max-height: 104px;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -1850,6 +1850,10 @@ h2 {
   }
   .header-call {
     font-size: 0.75rem;
+  }
+  .wordmark--logo img {
+    max-width: 112px;
+    max-height: 45px;
   }
   .hero-grid,
   .split-grid,

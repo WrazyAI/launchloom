@@ -4,9 +4,12 @@ import SiteHeader from "../components/SiteHeader.astro";
 import OnboardingForm from "../components/OnboardingForm";
 ---
 
-<BaseLayout title="Start a new site | LaunchLoom">
+<BaseLayout
+  title="Website onboarding | LaunchLoom"
+  robots="noindex, nofollow"
+>
   <main class="onboard-shell">
-    <SiteHeader compact />
+    <SiteHeader compact hideNav hideBrandLink />
     <OnboardingForm client:load />
   </main>
 </BaseLayout>
