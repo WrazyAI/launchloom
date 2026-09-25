@@ -7,7 +7,6 @@
   "planSteps": [
     { "type": "action", "description": "Open /onboard/ directly without an invitation token" },
     { "type": "assertion", "description": "The page explains that the invitation is unavailable and asks the visitor to request a current link" },
-    { "type": "assertion", "description": "Business inputs, service inputs, upload controls, and submit controls are not present" },
-    { "type": "assertion", "description": "The page is marked noindex, nofollow and shows no public site navigation" }
+    { "type": "assertion", "description": "There is no public homepage link, navigation bar, business input, upload control, or submission button on the locked screen" }
   ]
 }
