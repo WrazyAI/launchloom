@@ -1090,7 +1090,7 @@ export function restoreRequiredExperienceMarkers(
             repaired.file,
           );
         });
-        return matches.filter(
+        const semanticMatches = matches.filter(
           (candidate) =>
             !matches.some(
               (other) =>
@@ -1100,6 +1100,36 @@ export function restoreRequiredExperienceMarkers(
                 other.node.end < candidate.node.end,
             ),
         );
+        if (semanticMatches.length) return semanticMatches;
+
+        // Repairs may safely alias/destructure sealed hero content while
+        // preserving the authored reference instrumentation. When the direct
+        // binding walk cannot prove the h1 path, fall back only to an exact,
+        // unique marker value from the original semantic hero.
+        const originalHero = original.elements.find(({ opening }) =>
+          jsxAttribute(opening, "data-hero"),
+        );
+        for (const attributeName of [
+          "data-reference-section",
+          "data-hero-geometry",
+        ]) {
+          const originalValue = jsxAttributeValue(
+            jsxAttribute(originalHero?.opening, attributeName),
+            original.file,
+          ).trim();
+          if (!originalValue) continue;
+          const instrumented = repaired.elements.filter((element) => {
+            if (jsxOpeningName(element.opening) !== "section") return false;
+            return (
+              jsxAttributeValue(
+                jsxAttribute(element.opening, attributeName),
+                repaired.file,
+              ).trim() === originalValue
+            );
+          });
+          if (instrumented.length) return instrumented;
+        }
+        return semanticMatches;
       },
     },
     {
@@ -1747,14 +1777,19 @@ function validateStyles(source, route) {
  * variables remain available when a candidate intentionally consumes them.
  */
 export function namespaceCreativeCss(source) {
-  // Keep declaration discovery aligned with the reference-fidelity validator.
-  // CSS comments or formatting may appear between a block delimiter and a
-  // custom-property declaration, so do not require the declaration to follow
-  // "{" or ";" immediately.
+  // Mask comments before declaration discovery so commented-out tokens never
+  // cause live var(...) references to be rewritten. Preserve newlines and
+  // character positions while matching only actual declaration boundaries.
+  const declarationSource = source.replace(
+    /\/\*[\s\S]*?\*\//gu,
+    (comment) => comment.replace(/[^\n]/gu, " "),
+  );
   const declared = new Set(
-    [...source.matchAll(/--([A-Za-z][\w-]*)\s*:/gu)].map(
-      (match) => `--${match[1]}`,
-    ),
+    [
+      ...declarationSource.matchAll(
+        /(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu,
+      ),
+    ].map((match) => match[1]),
   );
   if (!declared.size) return source;
   return source.replace(/--[A-Za-z][\w-]*/gu, (token) =>
