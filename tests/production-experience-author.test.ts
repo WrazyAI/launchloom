@@ -848,7 +848,12 @@ describe("production experience author", () => {
 
   it("namespaces candidate-owned CSS variables without hiding host tokens", () => {
     const css = namespaceCreativeCss(
-      ":root { --ink: #f5f1e9; --accent: var(--ink); } .hero { color: var(--ink); background: var(--brand); }",
+      `:root {
+  /* authored palette */
+  --ink: #f5f1e9;
+  --accent: var(--ink);
+}
+.hero { color: var(--ink); background: var(--brand); }`,
     );
 
     expect(css).toContain("--ll-creative-ink: #f5f1e9");
