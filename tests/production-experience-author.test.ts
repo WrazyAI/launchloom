@@ -128,6 +128,53 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("redacts inline client image bytes only from model-bound content", async () => {
+    const inlineImage = `data:image/webp;base64,${"a".repeat(250_000)}`;
+    const requests: AuthorStageRequest[] = [];
+
+    const result = await authorExperienceCandidates({
+      site: {
+        ...site,
+        assets: {
+          ...site.assets,
+          photoOne: inlineImage,
+          photoTwo: inlineImage,
+          photoThree: inlineImage,
+        },
+      },
+      inspirationPack,
+      generate: async (request) => {
+        requests.push(request);
+        return safeStage(request);
+      },
+    });
+
+    expect(requests).toHaveLength(12);
+    expect(
+      requests.every(
+        (request) =>
+          request.contentShape.hero.image === "[sealed client image asset]" &&
+          request.contentShape.hero.secondaryImage ===
+            "[sealed client image asset]" &&
+          request.contentShape.hero.tertiaryImage ===
+            "[sealed client image asset]",
+      ),
+    ).toBe(true);
+    expect(
+      requests.some((request) =>
+        JSON.stringify(request.contentShape).includes("data:image/"),
+      ),
+    ).toBe(false);
+
+    expect(result.contentManifest.values.hero.image).toBe(inlineImage);
+    for (const candidate of result.candidates) {
+      const manifest = JSON.parse(candidate.files["content-manifest.json"]);
+      expect(manifest.values.hero.image).toBe(inlineImage);
+      expect(manifest.values.hero.secondaryImage).toBe(inlineImage);
+      expect(manifest.values.hero.tertiaryImage).toBe(inlineImage);
+    }
+  });
+
   it("keeps the client visual brief alongside sealed content", () => {
     const manifest = buildCreativeContentManifest({
       ...site,
