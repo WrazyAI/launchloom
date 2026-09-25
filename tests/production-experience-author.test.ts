@@ -672,6 +672,23 @@ describe("production experience author", () => {
     expect(restored.match(/\sdata-hero(?=\s|>)/gu)).toHaveLength(1);
   });
 
+  it("rejects hero marker restoration when preserved instrumentation and sealed heading diverge", () => {
+    const original = `<section data-reference-section="hero" data-hero-geometry="split-editorial" data-hero><h1>{content.hero.heading}</h1></section>`;
+    const repaired = `export default function Experience({ content }) {
+      const { hero } = content;
+      return <main>
+        <section data-reference-section="hero" data-hero-geometry="split-editorial"><p>Editorial intro</p></section>
+        <section><h1>{hero.heading}</h1></section>
+      </main>;
+    }`;
+
+    expect(() =>
+      restoreRequiredExperienceMarkers(repaired, original, {
+        id: "route-moved-heading",
+      }),
+    ).toThrow(/cannot safely restore data-hero: found 0 semantic targets/iu);
+  });
+
   it("deduplicates hero markers only when a unique semantic hero remains", () => {
     const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
     const duplicated = `${original}<section data-hero><h2>Decorative section</h2></section>`;
@@ -898,6 +915,20 @@ describe("production experience author", () => {
     expect(css).not.toContain("var(--ll-creative-brand)");
     expect(css).toContain("--ll-creative-ink: #111");
     expect(css).toContain("background: var(--ll-creative-ink)");
+  });
+
+  it("namespaces CSS tokens declared after nested rules", () => {
+    const css = namespaceCreativeCss(
+      `.hero {
+  & .child { color: red; }
+  --ink: blue;
+  color: var(--ink);
+}`,
+    );
+
+    expect(css).toContain("--ll-creative-ink: blue");
+    expect(css).toContain("color: var(--ll-creative-ink)");
+    expect(css).not.toMatch(/(^|[;{}])\s*--ink\s*:/gu);
   });
 
   it("authors three sealed and structurally independent candidate bundles", async () => {
