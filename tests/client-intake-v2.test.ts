@@ -92,6 +92,47 @@ describe("ClientIntakeV2 normalization", () => {
     expect(normalized.confirmedServices).toEqual(["Drain cleaning"]);
   });
 
+  it("preserves commas inside confirmed service names and bounds allowlisted client fields", () => {
+    const normalized = normalizeClientIntake({
+      ...required,
+      intakeVersion: "2",
+      services: ["Heating, ventilation and AC"],
+      industry: "home-services",
+      primaryCity: "Tacoma, WA",
+      serviceRadius: "20",
+      confirmAccuracy: "yes",
+      differentiators: "x".repeat(2200),
+      brandNotes: { unexpected: "object" },
+      brandColor: "not-a-hex-color",
+      primaryColor: "#245a46",
+      leadEmail: "leads@example.test",
+      website: "w".repeat(700),
+      gmbSkipped: ["yes"],
+    });
+
+    expect(normalized.services).toEqual(["Heating, ventilation and AC"]);
+    expect(normalized.differentiators).toHaveLength(2000);
+    expect(normalized.brandNotes).toBe("");
+    expect(normalized.brandColor).toBe("");
+    expect(normalized.primaryColor).toBe("#245a46");
+    expect(normalized.leadEmail).toBe("leads@example.test");
+    expect(normalized.website).toHaveLength(500);
+    expect(normalized.gmbSkipped).toBe("");
+  });
+
+  it("rejects an invalid lead notification email", () => {
+    expect(() => normalizeClientIntake({
+      ...required,
+      intakeVersion: "2",
+      services: ["Drain cleaning"],
+      industry: "home-services",
+      primaryCity: "Tacoma, WA",
+      serviceRadius: "20",
+      confirmAccuracy: "yes",
+      leadEmail: "not-an-email",
+    })).toThrow(/valid lead notification email/u);
+  });
+
   it("rejects a v2 intake without a primary city and valid radius", () => {
     expect(() => normalizeClientIntake({
       ...required,

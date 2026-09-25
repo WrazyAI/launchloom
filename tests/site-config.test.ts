@@ -38,6 +38,30 @@ describe("site configuration", () => {
     ]);
   });
 
+  it("preserves commas inside a confirmed service array entry", () => {
+    const config = normalise({}, {
+      businessName: "North Sound Heating",
+      industry: "home-services",
+      services: ["Heating, ventilation and AC"],
+    });
+
+    expect(config.services.map((service: { name: string }) => service.name)).toContain(
+      "Heating, ventilation and AC",
+    );
+    expect(config.services).toHaveLength(1);
+  });
+
+  it("limits generated service pages to the first five confirmed entries", () => {
+    const services = ["Drain cleaning", "Water heater repair", "Pipe repair", "Sewer inspection", "Fixture repair", "Septic pumping"];
+    const config = normalise({}, {
+      businessName: "Harbor Plumbing",
+      industry: "home-services",
+      services,
+    });
+
+    expect(config.services.map((service: { name: string }) => service.name)).toEqual(services.slice(0, 5));
+  });
+
   it("does not classify pet care as human wellness imagery", () => {
     const config = normalise({
       copy: {

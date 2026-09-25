@@ -35,6 +35,7 @@ function recentFingerprintsForSelection() {
 }
 
 const MODEL = "z-ai/glm-5.3-flash";
+const MAX_CORE_SERVICES = 5;
 
 const SHARED_CREATIVE_DIRECTION =
   "Build a specific local-business decision journey. Near the opening, make clear who the business helps, what it provides, where it operates when location matters, and the next action. The hero headline must be a memorable 4-10 word promise, not a list of services. The hero body must be one useful sentence under 28 words. Service-card descriptions must be one distinct sentence under 22 words. Give each section a distinct job; do not repeat one claim across the hero, proof, services, and About copy. Use one primary action and one useful secondary action. Prefer client assets. Mention no person in a stock image as an employee, customer, patient, or client. Treat an area served as coverage, not a physical office. Do not use em dashes.";
@@ -198,7 +199,7 @@ function serviceMatchScore(first, second) {
 
 function lines(value) {
   if (Array.isArray(value))
-    return value.flatMap((item) => lines(item));
+    return value.flatMap((item) => String(item || "").split(/\r?\n/u).map((line) => line.trim()).filter(Boolean));
   const input = String(value || "");
   const splitCommas = !input.includes("\n");
   const items = [];
@@ -1143,7 +1144,7 @@ export function normalise(candidate, intake) {
   const value = candidate && typeof candidate === "object" ? candidate : {};
   const preset =
     value.preset === "home-services" ? "home-services" : base.preset;
-  const submittedServiceNames = lines(intake.services);
+  const submittedServiceNames = lines(intake.services).slice(0, MAX_CORE_SERVICES);
   const proposedServices = Array.isArray(value.services) ? value.services : [];
   const proposedServiceBySlug = new Map(
     proposedServices
@@ -1178,7 +1179,7 @@ export function normalise(candidate, intake) {
     : Array.isArray(value.services)
       ? value.services
       : base.services;
-  const services = serviceInput.slice(0, 8).map((service, index) => {
+  const services = serviceInput.slice(0, MAX_CORE_SERVICES).map((service, index) => {
     const name = String(
       service.name || base.services[index]?.name || "Our service",
     ).slice(0, 120);

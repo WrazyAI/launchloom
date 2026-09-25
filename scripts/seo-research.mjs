@@ -5,6 +5,8 @@ const DEFAULT_MAX_TASKS = 16;
 const HARD_MAX_TASKS = 32;
 const DEFAULT_MAX_USD = 0.25;
 const HARD_MAX_USD = 2;
+const MAX_CORE_SERVICES = 5;
+const MAX_SERVICE_VARIANTS = 6;
 const US_STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
 };
@@ -16,8 +18,9 @@ const COUNTRY_NAMES = {
 
 const text = (value, limit = 500) => String(value ?? "").replace(/\u0000/gu, "").replace(/—/gu, "-").trim().slice(0, limit);
 const splitList = (value, limit = 20) => {
-  const raw = Array.isArray(value) ? value : [value];
-  const entries = raw.flatMap((item) => text(item, 400).split(/\r?\n|,/u).map((part) => text(part, 160))).filter(Boolean);
+  const isArray = Array.isArray(value);
+  const raw = isArray ? value : [value];
+  const entries = raw.flatMap((item) => text(item, 400).split(isArray ? /\r?\n/u : /\r?\n|,/u).map((part) => text(part, 160))).filter(Boolean);
   return [...new Map(entries.map((item) => [item.toLocaleLowerCase(), item])).values()].slice(0, limit);
 };
 const areaList = (value, limit = 20) => {
@@ -46,7 +49,9 @@ function metricLocationForCity(city, fallback = process.env.SEO_RESEARCH_LOCATIO
 }
 
 export function normaliseSeoIntake(intake = {}) {
-  const services = splitList(intake.confirmedServices || intake.services, 20);
+  const allConfirmedServices = splitList(intake.confirmedServices || intake.services, 100);
+  const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
+  const omittedServices = allConfirmedServices.slice(MAX_CORE_SERVICES);
   const primaryCity = text(intake.primaryCity, 160) || areaList(intake.serviceAreas, 20)[0] || "";
   const coverageAreas = areaList(intake.coverageAreas, 20);
   if (!coverageAreas.length && primaryCity) coverageAreas.push(primaryCity);
@@ -59,6 +64,7 @@ export function normaliseSeoIntake(intake = {}) {
   } catch { /* no existing site to inspect */ }
   return {
     services,
+    omittedServices,
     primaryCity,
     serviceRadius,
     coverageAreas,
@@ -87,7 +93,7 @@ function variantsFor(service, city, industry) {
 }
 
 function defaultSeeds(seo) {
-  return [...new Set(seo.services.flatMap((service) => variantsFor(service, seo.primaryCity, seo.industry)))].slice(0, 60);
+  return [...new Set(seo.services.flatMap((service) => variantsFor(service, seo.primaryCity, seo.industry)))].slice(0, MAX_CORE_SERVICES * MAX_SERVICE_VARIANTS);
 }
 
 function findService(query, services) {
@@ -311,6 +317,8 @@ export async function researchSiteContext(intake = {}, options = {}) {
   const seeds = defaultSeeds(seo);
   const warnings = [];
   warnings.push(...seo.coverageWarnings);
+  if (seo.omittedServices.length)
+    warnings.push(`Only the first ${MAX_CORE_SERVICES} client-confirmed services were researched; review the additional confirmed services before generation: ${seo.omittedServices.join(", ")}.`);
   const stageCosts = [];
   const pageMap = emptyMap(seo);
   const base = {
@@ -512,7 +520,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
   if (cost.overBudget || stoppedForBudget) return returnPartialResearch();
 
   const allSerps = [];
-  const servicesForSerp = seo.services.slice(0, 6);
+  const servicesForSerp = seo.services.slice(0, 5);
   for (const service of servicesForSerp) {
     const query = `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`;
     const stage = await paidTask(`organic_serp:${slugify(service)}`, options.dataForSeo.organicSerp, {
@@ -831,10 +839,15 @@ export function renderSeoMapMarkdown(dossier) {
 }
 
 async function main() {
-  const source = process.argv[process.argv.indexOf("--source") + 1];
-  const destination = process.argv[process.argv.indexOf("--out") + 1];
-  const markdownDestination = process.argv[process.argv.indexOf("--map-out") + 1];
-  const enrichmentFile = process.argv[process.argv.indexOf("--enrichment") + 1];
+  const argumentValue = (flag) => {
+    const index = process.argv.indexOf(flag);
+    const value = index >= 0 ? process.argv[index + 1] : "";
+    return value && !value.startsWith("--") ? value : "";
+  };
+  const source = argumentValue("--source");
+  const destination = argumentValue("--out");
+  const markdownDestination = argumentValue("--map-out");
+  const enrichmentFile = argumentValue("--enrichment");
   if (!source || !destination)
     throw new Error("Usage: node seo-research.mjs --source intake.md --out seo-research.json [--map-out seo-map.md] [--enrichment business-enrichment.json]");
   const intake = extractIntake(await fs.readFile(source, "utf8"));

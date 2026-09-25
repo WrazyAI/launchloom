@@ -164,6 +164,32 @@ describe("private onboarding invitations", () => {
     expect(createdIssues).toBe(1);
   });
 
+  it("returns a generic intake error when GitHub rejects issue creation", async () => {
+    const token = await registeredInvite("invite-github-error-001");
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () =>
+        HttpResponse.json([])),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () =>
+        HttpResponse.json({ message: "sensitive GitHub validation details" }, { status: 422 })),
+    );
+    const response = await SELF.fetch("https://api.launchloom.test/api/intake", {
+      method: "POST",
+      headers: { Origin: onboardingOrigin, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        intakeVersion: "2", inviteToken: token, submissionId: "submission-github-error-001",
+        businessName: "Harbor Plumbing", contactName: "Sam Owner", email: "sam@example.test",
+        phone: "555-0100", address: "1 Main Street", services: ["Drain cleaning"],
+        industry: "home-services", primaryCity: "Tacoma, WA", serviceRadius: "20",
+        confirmAccuracy: "yes",
+      }),
+    });
+    const body = await response.text();
+
+    expect(response.status).toBe(500);
+    expect(body).toContain("We couldn’t start your preview. Please try again.");
+    expect(body).not.toContain("sensitive GitHub validation details");
+  });
+
   it("rejects a valid signature when no persistent invite is registered", async () => {
     const token = await signedInvite({
       inviteId: "invite-unregistered-001",

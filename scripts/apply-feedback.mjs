@@ -89,9 +89,9 @@ revised.revisionReport = {
         ),
     ),
   creativeSourceRepairVerified: null,
-  expectedArtifacts: stage === "client" ? [] : expectedArtifacts(planned.operations, revised).filter(
+  expectedArtifacts: expectedArtifacts(planned.operations, revised).filter(
     (artifact) =>
-      !creativeRenderer ||
+      stage === "client" || !creativeRenderer ||
       (!creativeIgnoredArtifactTypes.has(artifact.type) &&
         !(
           artifact.type === "html" &&

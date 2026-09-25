@@ -57,7 +57,7 @@ The Cloudflare token must be scoped to the account and permit Workers Scripts ed
 
 1. Confirm the Pages platform and R2 custom domains are active, and add the required application secrets above. Add `FAL_KEY` only when contextual image generation is enabled; it is optional and never blocks an intake.
 2. Run **Deploy LaunchLoom platform**. It writes Worker secrets, deploys `launchloom-api`, attaches the API custom domain, then direct-uploads the platform to the existing `launchloom` Pages project.
-3. Configure the private Access application and `onboard.<domain>` host from [private onboarding setup](docs/private-onboarding.md). Confirm its `/onboard/` route can call `https://api.launchloom.wrazyos.com/api/places` with an invitation.
+3. Configure the private Access application from [private onboarding setup](docs/private-onboarding.md). Confirm that `https://launchloom-onboarding.pages.dev/onboard/` can call `https://api.launchloom.wrazyos.com/api/places` with an invitation.
 4. Use a fictional intake first. The generation action creates a private client repository and a private-source / public-URL Pages project, deploys `review-initial.<project>.pages.dev`, then emails only the developer. Developer approval merges and publishes that exact commit before the client is invited. Client feedback creates another internal developer preview; only a further developer approval can update production.
 
 Existing Netlify sites are intentionally untouched during this migration. Keep them live until the fictional wellness and home-services flows pass: onboarding, R2 image upload, generation, preview email, feedback, revision, approval, production deploy, and a lead-form email.

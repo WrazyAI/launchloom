@@ -1,4 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   createDataForSeoClient,
   normaliseSeoIntake,
@@ -68,6 +73,56 @@ describe("SEO market map", () => {
       metricLocation: "Tacoma,Washington,United States",
       labsLocation: "Tacoma,Washington,United States",
     });
+  });
+
+  it("preserves atomic service entries and applies the shared five-service limit", async () => {
+    const confirmedServices = [
+      "Heating, ventilation and AC",
+      "Drain cleaning",
+      "Water heater repair",
+      "Pipe repair",
+      "Sewer inspection",
+      "Septic pumping",
+    ];
+    expect(normaliseSeoIntake({ confirmedServices }).services).toEqual(confirmedServices.slice(0, 5));
+
+    const dossier = await researchSiteContext({ ...intake, confirmedServices });
+    expect(dossier.marketSnapshot.confirmedServices).toEqual(confirmedServices.slice(0, 5));
+    expect(dossier.seedQueries).toEqual(expect.arrayContaining([
+      expect.stringContaining("Heating, ventilation and AC"),
+      expect.stringContaining("Sewer inspection"),
+    ]));
+    expect(dossier.seedQueries.some((query: string) => query.includes("Septic pumping"))).toBe(false);
+    expect(dossier.warnings.join(" ")).toContain("Only the first 5 client-confirmed services were researched");
+  });
+
+  it("runs without optional Markdown map and enrichment CLI arguments", async () => {
+    const directory = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-seo-cli-"));
+    try {
+      const source = path.join(directory, "intake.md");
+      const output = path.join(directory, "research.json");
+      await fs.writeFile(source, `\`\`\`json\n${JSON.stringify({
+        ...intake,
+        confirmedServices: ["Heating, ventilation and AC"],
+      })}\n\`\`\``);
+      const script = fileURLToPath(new URL("../scripts/seo-research.mjs", import.meta.url));
+      const result = spawnSync(process.execPath, [script, "--source", source, "--out", output], {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          DATAFORSEO_LOGIN: "",
+          DATAFORSEO_USERNAME: "",
+          DATAFORSEO_PASSWORD: "",
+        },
+      });
+
+      expect(result.status).toBe(0);
+      expect(JSON.parse(await fs.readFile(output, "utf8")).marketSnapshot.confirmedServices)
+        .toEqual(["Heating, ventilation and AC"]);
+      await expect(fs.stat(process.execPath)).resolves.toBeTruthy();
+    } finally {
+      await fs.rm(directory, { recursive: true, force: true });
+    }
   });
 
   it("keeps an explicit non-US country in local DataForSEO targeting", () => {

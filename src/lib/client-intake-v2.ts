@@ -18,14 +18,16 @@ export type NormalizedClientIntake = Record<string, unknown> & {
 };
 
 function clean(value: unknown, max = 1000) {
+  if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") return "";
   return String(value ?? "").replace(/\u0000/gu, "").trim().slice(0, max);
 }
 
-function list(value: unknown, limit = 20) {
+function list(value: unknown, limit = 20, splitCommas = false) {
   const source = Array.isArray(value) ? value : [value];
   const result: string[] = [];
   for (const item of source) {
-    for (const entry of clean(item, 400).split(/\r?\n|,/u)) {
+    const delimiter = splitCommas && !Array.isArray(value) ? /\r?\n|,/u : /\r?\n/u;
+    for (const entry of clean(item, 400).split(delimiter)) {
       const normalized = clean(entry, 160);
       if (normalized && !result.some((existing) => existing.toLowerCase() === normalized.toLowerCase()))
         result.push(normalized);
@@ -53,7 +55,7 @@ export function normalizeClientIntake(raw: Record<string, unknown>): NormalizedC
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email))
     throw new Error("Enter a valid preview email.");
 
-  const services = list(raw.services, legacy ? 40 : 6);
+  const services = list(raw.services, legacy ? 40 : 6, legacy);
   if (!services.length) throw new Error("Confirm at least one service you offer.");
   if (!legacy && services.length > 5)
     throw new Error("Choose up to five core services.");
@@ -89,8 +91,17 @@ export function normalizeClientIntake(raw: Record<string, unknown>): NormalizedC
   if (legacy && !legacyConfirmed)
     throw new Error("Confirm the submitted business details before submitting.");
 
+  const leadEmail = clean(raw.leadEmail, 240).toLowerCase();
+  if (leadEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(leadEmail))
+    throw new Error("Enter a valid lead notification email.");
+  const normalizedHex = (value: unknown) => {
+    const color = clean(value, 7);
+    return /^#[0-9a-f]{6}$/iu.test(color) ? color : "";
+  };
+
   return {
     ...raw,
+    intakeVersion: legacy ? clean(raw.intakeVersion, 10) : "2",
     version: 2,
     legacy,
     submissionId,
@@ -99,6 +110,22 @@ export function normalizeClientIntake(raw: Record<string, unknown>): NormalizedC
     email,
     phone,
     address,
+    website: clean(raw.website, 500),
+    domain: clean(raw.domain, 253),
+    desiredDomain: clean(raw.desiredDomain, 253),
+    industry: clean(raw.industry, 80),
+    differentiators: clean(raw.differentiators, 2000),
+    primaryCta: clean(raw.primaryCta, 80),
+    brandNotes: clean(raw.brandNotes, 2000),
+    brandColor: normalizedHex(raw.brandColor),
+    primaryColor: normalizedHex(raw.primaryColor),
+    leadEmail,
+    placeId: clean(raw.placeId, 200),
+    googleMapsUrl: clean(raw.googleMapsUrl, 1000),
+    gmbSkipped: affirmative(raw.gmbSkipped) ? "yes" : "",
+    confirmAccuracy: affirmative(raw.confirmAccuracy) ? "yes" : "",
+    confirmRights: affirmative(raw.confirmRights) ? "yes" : "",
+    confirmSeoResearch: affirmative(raw.confirmSeoResearch) ? "yes" : "",
     services,
     confirmedServices: services,
     primaryCity,

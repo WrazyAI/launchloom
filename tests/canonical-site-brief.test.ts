@@ -78,4 +78,54 @@ describe("canonical site brief compilation", () => {
     expect(brief.primaryCity).toBe("Tacoma, WA");
     expect(brief.seoResearch.publishReady).toBe(false);
   });
+
+  it("preserves commas within one confirmed service from intake through the page map", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        businessName: "North Sound Heating",
+        confirmedServices: ["Heating, ventilation and AC"],
+        primaryCity: "Tacoma, WA",
+        industry: "home-services",
+      },
+      research: {
+        pageMap: [{
+          id: "service:heating-ventilation-ac",
+          pageType: "service",
+          title: "Heating, ventilation and AC",
+          service: "Heating, ventilation and AC",
+          slug: "/services/heating-ventilation-ac/",
+          evidence: [{ type: "keyword_overview" }],
+        }],
+      },
+    });
+
+    expect(brief.services).toEqual(["Heating, ventilation and AC"]);
+    expect(brief.pageMap).toHaveLength(1);
+    expect(brief.pageMap[0].service).toBe("Heating, ventilation and AC");
+  });
+
+  it("keeps research and canonical service sets aligned at five services", () => {
+    const services = ["A", "B", "C", "D", "E", "F"];
+    const brief = compileCanonicalSiteBrief({
+      intake: { confirmedServices: services, primaryCity: "Tacoma, WA" },
+      research: {
+        warnings: ["Existing research warning."],
+        pageMap: services.map((service) => ({
+          id: `service:${service.toLowerCase()}`,
+          pageType: "service",
+          title: service,
+          service,
+          slug: `/services/${service.toLowerCase()}/`,
+          evidence: [{ type: "keyword_overview" }],
+        })),
+      },
+    });
+
+    expect(brief.services).toEqual(services.slice(0, 5));
+    expect(brief.pageMap.map((page) => page.service)).toEqual(services.slice(0, 5));
+    expect(brief.seoResearch.warnings).toEqual(expect.arrayContaining([
+      "Existing research warning.",
+      "Only the first 5 client-confirmed services were included in the canonical site brief.",
+    ]));
+  });
 });

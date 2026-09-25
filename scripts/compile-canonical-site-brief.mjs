@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const text = (value, limit = 1000) => String(value ?? "").replace(/\u0000/gu, "").replace(/—/gu, "-").trim().slice(0, limit);
+const MAX_CORE_SERVICES = 5;
 const values = (value, limit = 20) => {
   const source = Array.isArray(value) ? value : [value];
   const result = [];
@@ -43,7 +44,8 @@ function confirmedPageMap(research, services, coverageAreas) {
 
 /** @returns {{ type: string, version: number, legacy: boolean, pageMap: Array<Record<string, any>>, seoResearch: { pageMap: Array<Record<string, any>>, publishReady?: boolean, [key: string]: any }, businessTruth: { services: Array<{ value: string, provenance: string }>, [key: string]: any }, coverage: Record<string, any>, coverageAreas: string[], services: string[], primaryCity: string, [key: string]: any }} */
 export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, research = {} }) {
-  const services = values(intake.confirmedServices || intake.services, 20);
+  const allConfirmedServices = values(intake.confirmedServices || intake.services, 100);
+  const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
   const rawPrimaryCity = text(intake.primaryCity, 180) || values(intake.serviceAreas, 20)[0] || "";
   const enrichmentAreas = values(enrichment.coverageAreas, 20);
   const suppliedAreas = enrichmentAreas.length ? enrichmentAreas : values(intake.coverageAreas || intake.serviceAreas, 20);
@@ -55,6 +57,12 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
   const pageMap = confirmedPageMap(research, services, coverageAreas);
   const seoResearch = {
     ...research,
+    warnings: [
+      ...(Array.isArray(research.warnings) ? research.warnings : []),
+      ...(allConfirmedServices.length > MAX_CORE_SERVICES
+        ? [`Only the first ${MAX_CORE_SERVICES} client-confirmed services were included in the canonical site brief.`]
+        : []),
+    ],
     pageMap,
     pageDecisions: pageMap.filter((page) => ["service", "location"].includes(page.pageType)).map((page) => ({
       type: page.pageType,

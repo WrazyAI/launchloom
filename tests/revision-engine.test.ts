@@ -9,6 +9,7 @@ import {
   removeEmDashes,
   verifyRevision,
 } from "../scripts/revision-engine.mjs";
+import { applyBoundedClientFeedback } from "../scripts/client-feedback-ops.mjs";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -42,6 +43,33 @@ describe("revision operations", () => {
       "Personal care plans",
     ]);
     expect(JSON.stringify(draft)).not.toMatch(/testimonial|"quote"/i);
+  });
+
+  it("requires bounded client copy, fact, and asset changes in rendered output", () => {
+    const draft = config();
+    const assetUrl = "https://assets.launchloom.wrazyos.com/client-replacements/logo-001.png";
+    const planned = applyBoundedClientFeedback(draft, [
+      '[Text/factual correction] Replace text "Clear care" with "Care that listens"',
+      "[Contact details] Phone: 555-0110",
+      `[Logo] Replacement asset: ${assetUrl}\nUse this logo in the header.`,
+    ]);
+    expect(planned.ok).toBe(true);
+    const report = {
+      results: planned.results,
+      expectedArtifacts: expectedArtifacts(planned.operations, planned.config),
+    };
+
+    expect(verifyRevision(draft, report, "", "").failures).toEqual(expect.arrayContaining([
+      "Missing rendered text: Care that listens",
+      "Missing rendered text: 555-0110",
+      `Missing rendered replacement asset: ${assetUrl}`,
+    ]));
+    expect(verifyRevision(
+      draft,
+      report,
+      "<h1>Care that listens</h1><a>555-0110</a>",
+      `<h1>Care that listens</h1><a>555-0110</a><img src=\"${assetUrl}\">`,
+    ).ok).toBe(true);
   });
 
   it("inserts requested proof after Services on a legacy homepage without replacing its layout", () => {

@@ -1233,6 +1233,22 @@ export function ensureLegacySocialProofMarkup(source) {
 }
 export function expectedArtifacts(operations, config) {
   return operations.flatMap((operation) => {
+    if (operation.kind === "replace_asset")
+      return [{ type: "asset", url: clean(operation.url) }];
+    if (operation.kind === "replace_copy_fragment")
+      return [{ type: "text", value: clean(operation.to) }];
+    if (operation.kind === "update_business_fact")
+      return [{ type: "text", value: clean(operation.value) }];
+    if (operation.kind === "update_design_token") {
+      const artifacts = [];
+      if (operation.value)
+        artifacts.push({ type: "style", field: "primaryColor", value: clean(operation.value).toLowerCase() });
+      if (operation.density)
+        artifacts.push({ type: "class", marker: `density-${operation.density}` });
+      if (operation.typography)
+        artifacts.push({ type: "class", marker: `type-${operation.typography}` });
+      return artifacts;
+    }
     if (operation.kind === "set_social_proof")
       return [
         {
@@ -1325,7 +1341,7 @@ function sectionIdFor(config, type) {
     return "social-proof";
   return currentSections(config).find((section) => section.type === type)?.id;
 }
-export function verifyRevision(config, report, html = "") {
+export function verifyRevision(config, report, html = "", allHtml = html) {
   const failures = [];
   const selectedCandidateId = String(
     config.design?.experience?.candidateId || "",
@@ -1383,9 +1399,16 @@ export function verifyRevision(config, report, html = "") {
     }
     if (
       artifact.type === "text" &&
-      !html.includes(artifact.value.replace(/&/g, "&amp;"))
+      !allHtml.includes(artifact.value.replace(/&/g, "&amp;"))
     )
       failures.push(`Missing rendered text: ${artifact.value.slice(0, 80)}`);
+    if (
+      artifact.type === "asset" &&
+      ![artifact.url, artifact.url.replace(/&/g, "&amp;")].some((url) =>
+        allHtml.includes(`src=\"${url}\"`) || allHtml.includes(`src='${url}'`),
+      )
+    )
+      failures.push(`Missing rendered replacement asset: ${artifact.url}`);
     if (
       artifact.type === "style" &&
       !html.toLowerCase().includes(artifact.value)

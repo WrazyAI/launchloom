@@ -653,7 +653,7 @@ async function intake(request: Request, env: Env) {
     }
   } catch (error) {
     console.error("Intake failed", error instanceof Error ? error.message : "Unknown error");
-    return json({ error: error instanceof Error ? error.message : "We couldn’t start your preview. Please try again." }, 500, headers);
+    return json({ error: "We couldn’t start your preview. Please try again." }, 500, headers);
   }
 }
 
