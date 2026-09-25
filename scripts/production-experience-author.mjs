@@ -657,18 +657,163 @@ function localContentBindingAliases(file, binding) {
   return aliases;
 }
 
+/**
+ * Resolve unambiguous local identifiers back to sealed content paths.
+ * Supports ordinary property aliases and object destructuring without using
+ * reference instrumentation as a substitute for proving the rendered binding.
+ */
+function localContentPathAliases(file) {
+  const declarations = [];
+  const nameCounts = new Map();
+  const recordNames = (name) => {
+    for (const value of bindingPatternNames(name))
+      nameCounts.set(value, (nameCounts.get(value) || 0) + 1);
+  };
+  const collect = (node) => {
+    if (ts.isVariableDeclaration(node)) {
+      recordNames(node.name);
+      if (node.initializer)
+        declarations.push({ name: node.name, initializer: node.initializer });
+    } else if (ts.isParameter(node)) {
+      recordNames(node.name);
+      if (ts.isObjectBindingPattern(node.name))
+        declarations.push({ name: node.name, initializer: null });
+    } else if (
+      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+      node.name
+    ) {
+      recordNames(node.name);
+    }
+    ts.forEachChild(node, collect);
+  };
+  collect(file);
+
+  const aliases = new Map();
+  const resolveExpressionPath = (expression) => {
+    if (!expression) return undefined;
+    if (
+      ts.isParenthesizedExpression(expression) ||
+      ts.isAsExpression(expression) ||
+      ts.isTypeAssertionExpression(expression) ||
+      ts.isSatisfiesExpression(expression)
+    )
+      return resolveExpressionPath(expression.expression);
+    if (ts.isIdentifier(expression))
+      return expression.text === "content"
+        ? "content"
+        : aliases.get(expression.text);
+    if (ts.isPropertyAccessExpression(expression)) {
+      const base = resolveExpressionPath(expression.expression);
+      return base ? `${base}.${expression.name.text}` : undefined;
+    }
+    if (
+      ts.isElementAccessExpression(expression) &&
+      expression.argumentExpression &&
+      (ts.isStringLiteral(expression.argumentExpression) ||
+        ts.isNoSubstitutionTemplateLiteral(expression.argumentExpression))
+    ) {
+      const base = resolveExpressionPath(expression.expression);
+      return base ? `${base}.${expression.argumentExpression.text}` : undefined;
+    }
+    return undefined;
+  };
+  const assignBinding = (name, basePath) => {
+    if (!basePath) return false;
+    let changed = false;
+    if (ts.isIdentifier(name)) {
+      if (
+        nameCounts.get(name.text) === 1 &&
+        aliases.get(name.text) !== basePath
+      ) {
+        aliases.set(name.text, basePath);
+        changed = true;
+      }
+      return changed;
+    }
+    if (!ts.isObjectBindingPattern(name)) return false;
+    for (const element of name.elements) {
+      if (element.dotDotDotToken || element.initializer) continue;
+      const keyNode = element.propertyName || element.name;
+      const key =
+        ts.isIdentifier(keyNode) ||
+        ts.isStringLiteral(keyNode) ||
+        ts.isNoSubstitutionTemplateLiteral(keyNode)
+          ? keyNode.text
+          : undefined;
+      if (!key) continue;
+      changed = assignBinding(element.name, `${basePath}.${key}`) || changed;
+    }
+    return changed;
+  };
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const declaration of declarations) {
+      let basePath;
+      if (declaration.initializer)
+        basePath = resolveExpressionPath(declaration.initializer);
+      else if (ts.isObjectBindingPattern(declaration.name)) basePath = "props";
+      if (
+        ts.isObjectBindingPattern(declaration.name) &&
+        basePath === "props"
+      ) {
+        for (const element of declaration.name.elements) {
+          if (element.dotDotDotToken || element.initializer) continue;
+          const keyNode = element.propertyName || element.name;
+          const key =
+            ts.isIdentifier(keyNode) ||
+            ts.isStringLiteral(keyNode) ||
+            ts.isNoSubstitutionTemplateLiteral(keyNode)
+              ? keyNode.text
+              : undefined;
+          if (key !== "content") continue;
+          changed = assignBinding(element.name, "content") || changed;
+        }
+        continue;
+      }
+      changed = assignBinding(declaration.name, basePath) || changed;
+    }
+  }
+  return { aliases, resolveExpressionPath };
+}
+
+function expressionReferencesResolvedContentBinding(
+  expression,
+  binding,
+  pathState,
+) {
+  let found = false;
+  const visit = (node) => {
+    if (!node || found) return;
+    if (pathState.resolveExpressionPath(node) === binding) {
+      found = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(expression);
+  return found;
+}
+
 function jsxChildrenContainBinding(children, binding, file) {
   const aliases = localContentBindingAliases(file, binding);
+  const pathState = localContentPathAliases(file);
   const visit = (items) => {
     for (const child of items || []) {
       if (
         ts.isJsxExpression(child) &&
-        expressionReferencesContentBinding(
+        (expressionReferencesContentBinding(
           child.expression,
           binding,
           aliases,
           file,
-        )
+        ) ||
+          expressionReferencesResolvedContentBinding(
+            child.expression,
+            binding,
+            pathState,
+          ))
       )
         return true;
       if (
@@ -1101,12 +1246,7 @@ export function restoreRequiredExperienceMarkers(
                 other.node.end < candidate.node.end,
             ),
         );
-        if (semanticMatches.length) return semanticMatches;
 
-        // Repairs may safely alias/destructure sealed hero content while
-        // preserving the authored reference instrumentation. When the direct
-        // binding walk cannot prove the h1 path, fall back only to an exact,
-        // unique marker value from the original semantic hero.
         const originalHero = original.elements.find(({ opening }) =>
           jsxAttribute(opening, "data-hero"),
         );
@@ -1128,7 +1268,10 @@ export function restoreRequiredExperienceMarkers(
               ).trim() === originalValue
             );
           });
-          if (instrumented.length) return instrumented;
+          if (!instrumented.length) continue;
+          return semanticMatches.filter((candidate) =>
+            instrumented.includes(candidate),
+          );
         }
         return semanticMatches;
       },
