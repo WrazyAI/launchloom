@@ -2023,7 +2023,10 @@ export async function authorExperienceCandidates({
       const base = {
         route,
         contentTokens,
-        contentShape: content,
+        // The persisted/runtime manifest retains the original sealed asset
+        // values. Only model-bound content is redacted so inline client image
+        // bytes can never consume the authoring context window as text.
+        contentShape: redactPromptValue(content),
         visualBrief: routeContentManifest.visualBrief,
         rules,
       };
