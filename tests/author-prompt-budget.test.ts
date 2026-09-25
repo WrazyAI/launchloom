@@ -23,15 +23,22 @@ describe("creative author prompt budget", () => {
     });
   });
 
-  it("rejects inline image data URIs embedded in prompt text", () => {
-    expect(() =>
-      assertAuthorPromptContext("system", [
-        {
-          type: "text",
-          text: "SEALED CONTENT SHAPE\ndata:image/webp;base64,AAAA",
-        },
-      ]),
-    ).toThrow(/inline image data URI/iu);
+  it("rejects every inline image data URI form embedded in prompt text", () => {
+    const imageUris = [
+      "data:image/webp;base64,AAAA",
+      "data:image/svg+xml;charset=utf-8,%3Csvg%3E%3C/svg%3E",
+      "data:image/svg+xml,%3Csvg%3E%3C/svg%3E",
+    ];
+
+    for (const imageUri of imageUris)
+      expect(() =>
+        assertAuthorPromptContext("system", [
+          {
+            type: "text",
+            text: `SEALED CONTENT SHAPE\n${imageUri}`,
+          },
+        ]),
+      ).toThrow(/inline image data URI/iu);
   });
 
   it("rejects unexpectedly large textual authoring context", () => {
