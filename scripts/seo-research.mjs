@@ -11,16 +11,18 @@ const US_STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
 };
 const COUNTRY_NAMES = {
-  UK: "United Kingdom", GB: "United Kingdom", CA: "Canada", AU: "Australia",
+  US: "United States", USA: "United States", UK: "United Kingdom", GB: "United Kingdom", CA: "Canada", AU: "Australia",
   NZ: "New Zealand", IE: "Ireland", DE: "Germany", FR: "France", ES: "Spain",
   IT: "Italy", NL: "Netherlands", BE: "Belgium", CH: "Switzerland", ZA: "South Africa",
 };
 
 const text = (value, limit = 500) => String(value ?? "").replace(/\u0000/gu, "").replace(/—/gu, "-").trim().slice(0, limit);
 const keywordKey = (value) => text(value, 180).toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
-const splitList = (value, limit = 20) => {
+const splitList = (value, limit = 20, splitCommas = false) => {
   const raw = Array.isArray(value) ? value : [value];
-  const entries = raw.flatMap((item) => text(item, 400).split(/\r?\n/u).map((part) => text(part, 160))).filter(Boolean);
+  const entries = raw.flatMap((item) => text(item, 400).split(/\r?\n/u)
+    .flatMap((part) => splitCommas && !Array.isArray(value) ? part.split(",") : [part])
+    .map((part) => text(part, 160))).filter(Boolean);
   return [...new Map(entries.map((item) => [item.toLocaleLowerCase(), item])).values()].slice(0, limit);
 };
 const areaList = (value, limit = 20) => {
@@ -49,7 +51,8 @@ function metricLocationForCity(city, fallback = process.env.SEO_RESEARCH_LOCATIO
 }
 
 export function normaliseSeoIntake(intake = {}) {
-  const allConfirmedServices = splitList(intake.confirmedServices || intake.services, 100);
+  const legacy = text(intake.intakeVersion, 10) !== "2";
+  const allConfirmedServices = splitList(intake.confirmedServices || intake.services, 100, legacy);
   const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
   const omittedServices = allConfirmedServices.slice(MAX_CORE_SERVICES);
   const primaryCity = text(intake.primaryCity, 160) || areaList(intake.serviceAreas, 20)[0] || "";
@@ -69,7 +72,8 @@ export function normaliseSeoIntake(intake = {}) {
     serviceRadius,
     coverageAreas,
     metricLocation: text(intake.metricLocation, 180) || metricLocationForCity(primaryCity),
-    labsLocation: text(intake.labsLocation, 180) || process.env.SEO_RESEARCH_LABS_LOCATION_NAME || metricLocationForCity(primaryCity),
+    labsLocation: text(intake.labsLocation, 180) || process.env.SEO_RESEARCH_LABS_LOCATION_NAME ||
+      (metricLocationForCity(primaryCity).split(",").at(-1) || "United States").trim(),
     coverageEvidence: intake.coverageEvidence || { source: "client_supplied_primary_city", lookups: 0 },
     coverageWarnings: Array.isArray(intake.coverageWarnings) ? intake.coverageWarnings.map((item) => text(item, 300)) : [],
     industry: text(intake.industry, 100),

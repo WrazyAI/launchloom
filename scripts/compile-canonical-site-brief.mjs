@@ -4,13 +4,16 @@ import { pathToFileURL } from "node:url";
 
 const text = (value, limit = 1000) => String(value ?? "").replace(/\u0000/gu, "").replace(/—/gu, "-").trim().slice(0, limit);
 const MAX_CORE_SERVICES = 5;
-const values = (value, limit = 20) => {
+const values = (value, limit = 20, splitCommas = false) => {
   const source = Array.isArray(value) ? value : [value];
   const result = [];
   for (const entry of source) {
     for (const item of text(entry, 1000).split(/\r?\n/u)) {
-      const normalized = text(item, 240);
-      if (normalized && !result.some((known) => known.toLowerCase() === normalized.toLowerCase())) result.push(normalized);
+      const candidates = splitCommas && !Array.isArray(value) ? item.split(",") : [item];
+      for (const candidate of candidates) {
+        const normalized = text(candidate, 240);
+        if (normalized && !result.some((known) => known.toLowerCase() === normalized.toLowerCase())) result.push(normalized);
+      }
     }
   }
   return result.slice(0, limit);
@@ -44,7 +47,8 @@ function confirmedPageMap(research, services, coverageAreas) {
 
 /** @returns {{ type: string, version: number, legacy: boolean, pageMap: Array<Record<string, any>>, seoResearch: { pageMap: Array<Record<string, any>>, publishReady?: boolean, [key: string]: any }, businessTruth: { services: Array<{ value: string, provenance: string }>, [key: string]: any }, coverage: Record<string, any>, coverageAreas: string[], services: string[], primaryCity: string, [key: string]: any }} */
 export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, research = {} }) {
-  const allConfirmedServices = values(intake.confirmedServices || intake.services, 100);
+  const legacy = text(intake.intakeVersion, 10) !== "2";
+  const allConfirmedServices = values(intake.confirmedServices || intake.services, 100, legacy);
   const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
   const rawPrimaryCity = text(intake.primaryCity, 180) || values(intake.serviceAreas, 20)[0] || "";
   const enrichmentAreas = values(enrichment.coverageAreas, 20);
@@ -100,7 +104,7 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
     type: "CanonicalSiteBrief",
     version: 1,
     createdAt: new Date().toISOString(),
-    legacy: text(intake.intakeVersion, 10) !== "2",
+    legacy,
     submissionId: text(intake.submissionId, 100),
     businessTruth,
     pageMap,

@@ -169,6 +169,29 @@ function slugify(value) {
   );
 }
 
+function normaliseBlogArticles(value) {
+  if (!Array.isArray(value)) return [];
+  const seenSlugs = new Set();
+  return value.slice(0, 50).flatMap((article) => {
+    if (!article || typeof article !== "object" || Array.isArray(article)) return [];
+    const slug = typeof article.slug === "string" ? article.slug.trim() : "";
+    const title = typeof article.title === "string" ? article.title.replace(/\s+/gu, " ").trim() : "";
+    const body = typeof article.body === "string" ? article.body.replace(/—/gu, "-").trim() : "";
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(slug) || slug.length > 90 || !title || !body || seenSlugs.has(slug)) return [];
+    seenSlugs.add(slug);
+    const description = typeof article.description === "string"
+      ? article.description.replace(/—/gu, "-").replace(/\s+/gu, " ").trim().slice(0, 320)
+      : "";
+    const dateValue = typeof article.publishedAt === "string" ? article.publishedAt.trim() : "";
+    const publishedAt = /^\d{4}-\d{2}-\d{2}$/u.test(dateValue) &&
+      !Number.isNaN(Date.parse(`${dateValue}T00:00:00Z`)) &&
+      new Date(`${dateValue}T00:00:00Z`).toISOString().slice(0, 10) === dateValue
+      ? dateValue
+      : "";
+    return [{ slug, title: title.slice(0, 180), description, publishedAt, body: body.slice(0, 30_000) }];
+  });
+}
+
 export function argumentValue(argv, flag) {
   const index = argv.indexOf(flag);
   const value = index >= 0 ? argv[index + 1] : "";
@@ -1493,9 +1516,7 @@ export function normalise(candidate, intake) {
     },
     services: services.length ? services : base.services,
     differentiators: different.length ? different : base.differentiators,
-    blogArticles: Array.isArray(intake.blogArticles)
-      ? intake.blogArticles.slice(0, 50).filter((article) => article && typeof article === "object")
-      : [],
+    blogArticles: normaliseBlogArticles(intake.blogArticles),
     locations:
       base.industry === "home-services"
         ? locationNames.map((name, index) => {

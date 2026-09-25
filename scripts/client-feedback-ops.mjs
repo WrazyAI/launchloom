@@ -115,8 +115,9 @@ function applyOne(config, value) {
   const uploaded = replacementAsset(note);
   if (category === "logo" || category === "photos") {
     if (!uploaded.url) return { ok: false, reason: "Upload a replacement logo or business photo through the signed review form." };
-    const key = category === "logo" ? "logo"
-      : ["photoOne", "photoTwo", "photoThree"].find((slot) => !config.assets?.[slot]) || "photoOne";
+    // The client selects only the broad “business photos” category. Keep the
+    // operation deterministic: the primary photo owns the hero placement.
+    const key = category === "logo" ? "logo" : "photoOne";
     config.assets ||= {};
     config.assets[key] = uploaded.url;
     if (category === "photos") {

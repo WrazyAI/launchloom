@@ -445,6 +445,13 @@ async function github(env: Env, path: string, init: RequestInit = {}) {
   return response;
 }
 
+async function findIntakeIssue(env: Env, marker: string) {
+  const issues = await github(env, "/repos/WrazyAI/launchloom/issues?state=all&per_page=100").then(
+    (response) => response.json() as Promise<Array<{ body?: string; number: number }>>,
+  );
+  return issues.find((issue) => issue.body?.includes(marker))?.number || null;
+}
+
 async function dispatch(
   env: Env,
   eventType: string,
@@ -609,7 +616,8 @@ async function intake(request: Request, env: Env) {
         .map(([key, value]) => [key, key === "assets" ? safeAssets(env, value) : value]),
     );
     const submissionHash = await digest(JSON.stringify(safeData));
-    const reservation = await inviteCoordinator(env).reserveSubmission(
+    const coordinator = inviteCoordinator(env);
+    let reservation = await coordinator.reserveSubmission(
       invite.claims.inviteId,
       invite.tokenHash,
       invite.claims.expiresAt,
@@ -618,6 +626,27 @@ async function intake(request: Request, env: Env) {
       submissionHash,
       normalized.email,
     );
+    const marker = `<!-- launchloom-intake:${normalized.submissionId} -->`;
+    if (!reservation.accepted && reservation.reason === "stale_submission_mismatch") {
+      const existingIssue = await findIntakeIssue(env, marker);
+      if (existingIssue) {
+        return json({
+          error: "This submission changed after acceptance. Request a new invitation to send different details.",
+          code: "submission_mismatch",
+        }, 409, headers);
+      }
+      const previousHash = reservation.reservedSubmissionHash;
+      const rebound = previousHash && await coordinator.rebindStaleReservation(
+        invite.claims.inviteId,
+        normalized.submissionId,
+        previousHash,
+        submissionHash,
+      );
+      if (!rebound) {
+        return json({ error: "This submission is already being accepted. Retry shortly.", code: "in_progress" }, 409, headers);
+      }
+      reservation = { accepted: true, duplicate: false, issue: null };
+    }
     if (!reservation.accepted)
       return json({
         error: reservation.reason === "in_progress"
@@ -627,16 +656,17 @@ async function intake(request: Request, env: Env) {
             : "This invitation is no longer available.",
         code: reservation.reason,
       }, ["in_progress", "submission_mismatch"].includes(reservation.reason) ? 409 : 403, headers);
-    const marker = `<!-- launchloom-intake:${normalized.submissionId} -->`;
     let issueNumber = reservation.issue || null;
     try {
+      if (!issueNumber) issueNumber = await findIntakeIssue(env, marker);
       if (!issueNumber) {
-        const issues = await github(env, "/repos/WrazyAI/launchloom/issues?state=all&per_page=100").then(
-          (response) => response.json() as Promise<Array<{ body?: string; number: number }>>,
+        const claimed = await coordinator.claimIssueCreation(
+          invite.claims.inviteId,
+          normalized.submissionId,
+          submissionHash,
         );
-        issueNumber = issues.find((issue) => issue.body?.includes(marker))?.number || null;
-      }
-      if (!issueNumber) {
+        if (!claimed)
+          return json({ error: "This submission is already being accepted. Retry shortly.", code: "in_progress" }, 409, headers);
         const issue = await github(env, "/repos/WrazyAI/launchloom/issues", {
           method: "POST",
           body: JSON.stringify({
@@ -656,7 +686,7 @@ async function intake(request: Request, env: Env) {
       return json({ ok: true, duplicate: reservation.duplicate, issue: issueNumber }, 200, headers);
     } catch (error) {
       if (!issueNumber)
-        await inviteCoordinator(env).reopenFailedSubmission(invite.claims.inviteId, normalized.submissionId);
+        await coordinator.reopenFailedSubmission(invite.claims.inviteId, normalized.submissionId, submissionHash);
       throw error;
     }
   } catch (error) {

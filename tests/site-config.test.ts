@@ -51,6 +51,35 @@ describe("site configuration", () => {
     expect(config.services).toHaveLength(1);
   });
 
+  it("drops malformed blog records and bounds fields for valid article routes", () => {
+    const validArticle = {
+      slug: "preparing-for-a-first-call",
+      title: "Preparing for a first call",
+      description: "What to have ready before asking for help.",
+      publishedAt: "2026-09-25",
+      body: "Write down the issue and when it began.",
+    };
+    const config = normalise({}, {
+      businessName: "Harbor Plumbing",
+      industry: "home-services",
+      services: "Drain cleaning",
+      blogArticles: [
+        validArticle,
+        { slug: "missing-body", title: "Missing body" },
+        { title: "Missing slug", body: "Some content." },
+        { slug: "../bad-route", title: "Bad route", body: "Some content." },
+        { ...validArticle, title: "Duplicate route" },
+        { slug: "long-copy", title: `A ${"title ".repeat(40)}`, body: "Useful copy — without an em dash." },
+      ],
+    });
+
+    expect(config.blogArticles).toHaveLength(2);
+    expect(config.blogArticles[0]).toEqual(validArticle);
+    expect(config.blogArticles[1].title).toHaveLength(180);
+    expect(config.blogArticles[1].body).toContain("Useful copy - without an em dash.");
+    expect(config.blogArticles.map((article: { slug: string }) => article.slug)).not.toContain("undefined");
+  });
+
   it("limits generated service pages to the first five confirmed entries", () => {
     const services = ["Drain cleaning", "Water heater repair", "Pipe repair", "Sewer inspection", "Fixture repair", "Septic pumping"];
     const config = normalise({}, {

@@ -79,6 +79,20 @@ describe("canonical site brief compilation", () => {
     expect(brief.seoResearch.publishReady).toBe(false);
   });
 
+  it("splits comma-delimited legacy scalar services while preserving city commas", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        intakeVersion: "1",
+        services: "Drain cleaning, Water heater repair",
+        serviceAreas: "Tacoma, WA\nLakewood, WA",
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief.services).toEqual(["Drain cleaning", "Water heater repair"]);
+    expect(brief.coverageAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
+  });
+
   it("preserves commas within one confirmed service from intake through the page map", () => {
     const brief = compileCanonicalSiteBrief({
       intake: {

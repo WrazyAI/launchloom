@@ -23,12 +23,36 @@ permissions:
   contents: write
   issues: write
 
+concurrency:
+  group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
-  generate:
+  intake_handoff_check:
     runs-on: ubuntu-latest
-    concurrency:
-      group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}
-      cancel-in-progress: false
+    outputs:
+      completed: ${{ steps.marker.outputs.completed }}
+    steps:
+      - name: Check successful handoff marker
+        id: marker
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
+        run: |
+          test -n "$ISSUE" || { echo "Missing intake issue number" >&2; exit 1; }
+          MATCH=$(gh api --paginate "repos/WrazyAI/launchloom/issues/$ISSUE/comments?per_page=100" \
+            --jq '.[].body | select(contains("<!-- launchloom-generation-handoff:complete -->"))')
+          if [ -n "$MATCH" ]; then
+            echo "completed=true" >> "$GITHUB_OUTPUT"
+            echo "This intake already completed its developer handoff."
+          else
+            echo "completed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  generate:
+    needs: intake_handoff_check
+    if: ${{ needs.intake_handoff_check.outputs.completed != 'true' || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates) }}
+    runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
@@ -634,6 +658,11 @@ jobs:
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
           gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending
+      - name: Mark intake handoff complete
+        env:
+          ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
+        run: |
+          gh issue comment "$ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s' '<!-- launchloom-generation-handoff:complete -->' 'Initial developer preview handoff completed.')"
       - name: Notify developer when generation stops
         if: failure()
         env:

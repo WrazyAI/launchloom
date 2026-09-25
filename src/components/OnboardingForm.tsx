@@ -862,7 +862,7 @@ export default function OnboardingForm() {
               value="Call now"
               defaultChecked
             />{" "}
-            Call us
+            Call now
           </label>
           <label>
             <input type="radio" name="primaryCta" value="Request a quote" />{" "}

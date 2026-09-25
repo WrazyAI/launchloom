@@ -5,7 +5,13 @@ const baseConfig = () => ({
   business: { name: "Harbor Plumbing", phone: "555-0100", email: "hello@example.test", leadEmail: "leads@example.test", address: "1 Main Street" },
   style: { primaryColor: "#205d51", contrastColor: "#ffffff" },
   design: { recipe: "local-trades", treatment: { typography: "strong", density: "balanced" } },
-  assets: { logo: undefined as string | undefined, photoOne: "https://assets.launchloom.wrazyos.com/old/photo.png" },
+  assets: {
+    logo: undefined as string | undefined,
+    photoOne: "https://assets.launchloom.wrazyos.com/old/photo.png",
+    photoTwo: undefined as string | undefined,
+    photoThree: undefined as string | undefined,
+  },
+  images: { hero: "old-hero", secondary: "old-secondary", tertiary: "old-tertiary" },
   copy: { heroHeading: "Drain help without the guesswork", heroBody: undefined as string | undefined },
   services: [{ name: "Drain cleaning", slug: "drain-cleaning", description: "Clear blocked drains." }],
   conversion: { process: ["Tell us what is happening."], faqs: [{ question: "When should I call?", answer: "Call when a drain stays blocked." }] },
@@ -22,8 +28,26 @@ describe("bounded client feedback", () => {
     expect(result.ok).toBe(true);
     expect(result.operations.map((operation) => operation.kind)).toEqual(["replace_asset", "replace_asset"]);
     expect(result.config.assets.logo).toContain("/client-replacements/");
-    expect(result.config.assets.photoTwo).toContain("/client-replacements/");
+    expect(result.config.assets.photoOne).toContain("/client-replacements/");
+    expect(result.config.images.hero).toBe(result.config.assets.photoOne);
+    expect(result.config.assets.photoTwo).toBeUndefined();
     expect(config.assets.logo).toBeUndefined();
+  });
+
+  it("always routes an ambiguous business photo replacement to the hero slot", () => {
+    const config = baseConfig();
+    config.assets.photoTwo = "https://assets.launchloom.wrazyos.com/old/about.png";
+    config.assets.photoThree = "https://assets.launchloom.wrazyos.com/old/gallery.png";
+    config.images = { hero: "old-hero", secondary: "old-about", tertiary: "old-gallery" };
+    const replacement = "https://assets.launchloom.wrazyos.com/client-replacements/harbor/12/a3/service.webp";
+
+    const result = applyBoundedClientFeedback(config, [
+      `[Business photos] Replacement asset: ${replacement}\n\nUse this updated service photo.`,
+    ]);
+
+    expect(result.operations).toEqual([expect.objectContaining({ kind: "replace_asset", slot: "photoOne", url: replacement })]);
+    expect(result.config.assets).toMatchObject({ photoOne: replacement, photoTwo: config.assets.photoTwo, photoThree: config.assets.photoThree });
+    expect(result.config.images).toMatchObject({ hero: replacement, secondary: "old-about", tertiary: "old-gallery" });
   });
 
   it("rejects arbitrary URLs, missing uploads, and unsupported layout requests", () => {

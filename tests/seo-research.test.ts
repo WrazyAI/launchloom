@@ -71,7 +71,7 @@ describe("SEO market map", () => {
       primaryCity: "Tacoma, WA",
       serviceRadius: 20,
       metricLocation: "Tacoma,Washington,United States",
-      labsLocation: "Tacoma,Washington,United States",
+      labsLocation: "United States",
     });
   });
 
@@ -98,7 +98,21 @@ describe("SEO market map", () => {
 
   it("preserves comma-containing scalar service names across research normalization", () => {
     expect(normaliseSeoIntake({
+      intakeVersion: "2",
       services: "Heating, ventilation and AC",
+      primaryCity: "Tacoma, WA",
+    }).services).toEqual(["Heating, ventilation and AC"]);
+  });
+
+  it("splits comma-delimited legacy scalar services without changing V2 arrays", () => {
+    expect(normaliseSeoIntake({
+      intakeVersion: "1",
+      services: "Drain cleaning, Water heater repair",
+      primaryCity: "Tacoma, WA",
+    }).services).toEqual(["Drain cleaning", "Water heater repair"]);
+    expect(normaliseSeoIntake({
+      intakeVersion: "2",
+      confirmedServices: ["Heating, ventilation and AC"],
       primaryCity: "Tacoma, WA",
     }).services).toEqual(["Heating, ventilation and AC"]);
   });
@@ -165,8 +179,10 @@ describe("SEO market map", () => {
     expect(normaliseSeoIntake({ services: "Drain cleaning", primaryCity: "London, UK" })).toMatchObject({
       primaryCity: "London, UK",
       metricLocation: "London,United Kingdom",
-      labsLocation: "London,United Kingdom",
+      labsLocation: "United Kingdom",
     });
+    expect(normaliseSeoIntake({ services: "Drain cleaning", primaryCity: "Tacoma, Washington, US" }).labsLocation)
+      .toBe("United States");
   });
 
   it("maps local Google Ads metrics, measured search intent, KD, SERP, related-keyword, and ranked-keyword fields", async () => {

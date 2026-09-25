@@ -180,6 +180,90 @@ describe("private onboarding invitations", () => {
     expect(createdIssues).toBe(1);
   });
 
+  it("rejects a changed stale payload when its submission marker already has an issue", async () => {
+    const inviteId = "invite-stale-existing-issue-001";
+    const submissionId = "submission-stale-existing-issue-001";
+    const token = await registeredInvite(inviteId, "sam@example.test");
+    const claims = JSON.parse(atob(token.split(".")[0])) as InviteClaims;
+    const tokenDigest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...tokenDigest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("launchloom-onboarding-invites");
+    await coordinator.reserveSubmission(inviteId, tokenHash, claims.expiresAt, onboardingOrigin, submissionId, "prior-payload-hash", "sam@example.test", Date.now() - 121_000);
+    const marker = `<!-- launchloom-intake:${submissionId} -->`;
+    let createdIssues = 0;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json([{ number: 991, body: marker } ])),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () => {
+        createdIssues += 1;
+        return HttpResponse.json({ number: 992 }, { status: 201 });
+      }),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches", () => new HttpResponse(null, { status: 204 })),
+    );
+
+    const response = await SELF.fetch("https://api.launchloom.test/api/intake", {
+      method: "POST",
+      headers: { Origin: onboardingOrigin, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        intakeVersion: "2", inviteToken: token, submissionId,
+        businessName: "Harbor Plumbing", contactName: "Sam Owner", email: "sam@example.test",
+        phone: "555-0100", address: "1 Main Street, Tacoma, WA", industry: "home-services",
+        services: ["Drain cleaning"], primaryCity: "Tacoma, WA", serviceRadius: "20",
+        differentiators: "Updated positioning", primaryCta: "Request a quote", confirmAccuracy: "yes",
+      }),
+    });
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({ code: "submission_mismatch" });
+    expect(createdIssues).toBe(0);
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      const row = state.storage.sql.exec<{ reserved_submission_hash: string; status: string }>(
+        "SELECT reserved_submission_hash, status FROM onboarding_invites WHERE invite_id = ?", inviteId,
+      ).toArray()[0];
+      expect(row).toEqual({ reserved_submission_hash: "prior-payload-hash", status: "unused" });
+    });
+  });
+
+  it("rebinds a changed stale payload and accepts it when no issue marker exists", async () => {
+    const inviteId = "invite-stale-empty-issue-001";
+    const submissionId = "submission-stale-empty-issue-001";
+    const token = await registeredInvite(inviteId, "sam@example.test");
+    const claims = JSON.parse(atob(token.split(".")[0])) as InviteClaims;
+    const tokenDigest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...tokenDigest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("launchloom-onboarding-invites");
+    await coordinator.reserveSubmission(inviteId, tokenHash, claims.expiresAt, onboardingOrigin, submissionId, "prior-payload-hash", "sam@example.test", Date.now() - 121_000);
+    let createdIssues = 0;
+    let dispatched = 0;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json([])),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () => {
+        createdIssues += 1;
+        return HttpResponse.json({ number: 993 }, { status: 201 });
+      }),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches", () => {
+        dispatched += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const response = await SELF.fetch("https://api.launchloom.test/api/intake", {
+      method: "POST",
+      headers: { Origin: onboardingOrigin, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        intakeVersion: "2", inviteToken: token, submissionId,
+        businessName: "Harbor Plumbing", contactName: "Sam Owner", email: "sam@example.test",
+        phone: "555-0100", address: "1 Main Street, Tacoma, WA", industry: "home-services",
+        services: ["Drain cleaning"], primaryCity: "Tacoma, WA", serviceRadius: "20",
+        differentiators: "Updated positioning", primaryCta: "Request a quote", confirmAccuracy: "yes",
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ ok: true, duplicate: false, issue: 993 });
+    expect(createdIssues).toBe(1);
+    expect(dispatched).toBe(1);
+  });
+
   it("returns a generic intake error when GitHub rejects issue creation", async () => {
     const token = await registeredInvite("invite-github-error-001");
     network.use(
@@ -291,7 +375,7 @@ describe("private onboarding invitations", () => {
     await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: origin, tokenHash: hash, now: Date.now() });
     await coordinator.reserveSubmission(inviteId, hash, expiresAt, origin, submissionId, "payload-hash-a", "owner@example.test");
 
-    await expect(coordinator.reopenFailedSubmission(inviteId, submissionId)).resolves.toBe(true);
+    await expect(coordinator.reopenFailedSubmission(inviteId, submissionId, "payload-hash-a")).resolves.toBe(true);
     await expect(coordinator.validate(inviteId, hash, expiresAt, origin)).resolves.toMatchObject({ valid: true });
   });
 
@@ -310,5 +394,61 @@ describe("private onboarding invitations", () => {
 
     await expect(coordinator.reserveSubmission(inviteId, hash, expiresAt, origin, "submission-other-001", "payload-hash-b", "owner@example.test", now + 121_000)).resolves.toMatchObject({ accepted: false, reason: "in_progress" });
     await expect(coordinator.reserveSubmission(inviteId, hash, expiresAt, origin, submissionId, "payload-hash-a", "owner@example.test", now + 121_000)).resolves.toMatchObject({ accepted: true, duplicate: false });
+  });
+
+  it("rebinds a stale changed payload only before issue creation is claimed", async () => {
+    const inviteId = "invite-stale-rebind-001";
+    const submissionId = "submission-stale-rebind-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [onboardingOrigin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-stale-rebind-flow");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: onboardingOrigin, tokenHash, now });
+    await coordinator.reserveSubmission(inviteId, tokenHash, expiresAt, onboardingOrigin, submissionId, "payload-hash-a", "owner@example.test", now);
+
+    await expect(coordinator.reserveSubmission(inviteId, tokenHash, expiresAt, onboardingOrigin, submissionId, "payload-hash-b", "owner@example.test", now + 121_000))
+      .resolves.toMatchObject({ accepted: false, reason: "stale_submission_mismatch", reservedSubmissionHash: "payload-hash-a" });
+    await expect(coordinator.rebindStaleReservation(inviteId, submissionId, "payload-hash-a", "payload-hash-b", now + 121_000)).resolves.toBe(true);
+    await expect(coordinator.claimIssueCreation(inviteId, submissionId, "payload-hash-a", now + 121_001)).resolves.toBe(false);
+    await expect(coordinator.claimIssueCreation(inviteId, submissionId, "payload-hash-b", now + 121_001)).resolves.toBe(true);
+    await expect(coordinator.rebindStaleReservation(inviteId, submissionId, "payload-hash-b", "payload-hash-c", now + 242_001)).resolves.toBe(false);
+  });
+
+  it("does not rebind a stale reservation once issue creation has started", async () => {
+    const inviteId = "invite-stale-creating-001";
+    const submissionId = "submission-stale-creating-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [onboardingOrigin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-stale-creating-flow");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: onboardingOrigin, tokenHash, now });
+    await coordinator.reserveSubmission(inviteId, tokenHash, expiresAt, onboardingOrigin, submissionId, "payload-hash-a", "owner@example.test", now);
+    await coordinator.claimIssueCreation(inviteId, submissionId, "payload-hash-a", now);
+
+    await expect(coordinator.reserveSubmission(inviteId, tokenHash, expiresAt, onboardingOrigin, submissionId, "payload-hash-b", "owner@example.test", now + 121_000))
+      .resolves.toMatchObject({ accepted: false, reason: "submission_mismatch" });
+    await expect(coordinator.rebindStaleReservation(inviteId, submissionId, "payload-hash-a", "payload-hash-b", now + 121_000)).resolves.toBe(false);
+  });
+
+  it("lets admins revoke stale reservations and clears their replay lock", async () => {
+    const inviteId = "invite-stale-revoke-001";
+    const submissionId = "submission-stale-revoke-001";
+    const now = Date.now();
+    const expiresAt = now + 30 * 60_000;
+    const token = await signedInvite({ inviteId, expiresAt, allowedOrigins: [onboardingOrigin] });
+    const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)));
+    const tokenHash = [...digest].map((part) => part.toString(16).padStart(2, "0")).join("");
+    const coordinator = inviteNamespace.getByName("test-stale-revoke-flow");
+    await coordinator.register({ inviteId, clientEmail: null, expiresAt, allowedOrigin: onboardingOrigin, tokenHash, now });
+    await coordinator.reserveSubmission(inviteId, tokenHash, expiresAt, onboardingOrigin, submissionId, "payload-hash-a", "owner@example.test", now);
+
+    await expect(coordinator.revoke(inviteId, now + 119_999)).resolves.toBe(false);
+    await expect(coordinator.revoke(inviteId, now + 120_000)).resolves.toBe(true);
+    await expect(coordinator.reserveSubmission(inviteId, tokenHash, expiresAt, onboardingOrigin, submissionId, "payload-hash-a", "owner@example.test", now + 120_001))
+      .resolves.toMatchObject({ accepted: false, reason: "revoked" });
   });
 });

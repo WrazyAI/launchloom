@@ -26,6 +26,7 @@ type InviteRow = {
   reserved_submission_id: string | null;
   reserved_submission_hash: string | null;
   reserved_at: number | null;
+  reservation_phase: "reserved" | "creating_issue";
   submission_id: string | null;
   submission_hash: string | null;
   issue_number: number | null;
@@ -48,6 +49,7 @@ export class OnboardingInvites extends DurableObject {
           reserved_submission_id TEXT,
           reserved_submission_hash TEXT,
           reserved_at INTEGER,
+          reservation_phase TEXT NOT NULL DEFAULT 'reserved',
           submission_id TEXT,
           submission_hash TEXT,
           issue_number INTEGER,
@@ -57,6 +59,14 @@ export class OnboardingInvites extends DurableObject {
         CREATE INDEX IF NOT EXISTS onboarding_invites_status_expiry
           ON onboarding_invites(status, expires_at);
       `);
+      const columns = ctx.storage.sql
+        .exec<{ name: string }>("PRAGMA table_info(onboarding_invites)")
+        .toArray();
+      if (!columns.some((column) => column.name === "reservation_phase")) {
+        ctx.storage.sql.exec(
+          "ALTER TABLE onboarding_invites ADD COLUMN reservation_phase TEXT NOT NULL DEFAULT 'reserved'",
+        );
+      }
     });
   }
 
@@ -156,23 +166,36 @@ export class OnboardingInvites extends DurableObject {
     if (row.reserved_submission_id) {
       if (row.reserved_submission_id !== submissionId)
         return { accepted: false as const, reason: "in_progress" as const };
-      if (row.reserved_submission_hash !== submissionHash)
+      const stale = row.reserved_at !== null && now - row.reserved_at >= 2 * 60_000;
+      if (row.reserved_submission_hash !== submissionHash) {
+        if (stale && row.reservation_phase === "reserved") {
+          return {
+            accepted: false as const,
+            reason: "stale_submission_mismatch" as const,
+            reservedSubmissionHash: row.reserved_submission_hash,
+          };
+        }
         return { accepted: false as const, reason: "submission_mismatch" as const };
-      if (row.reserved_at && now - row.reserved_at >= 2 * 60_000) {
+      }
+      if (stale && row.reservation_phase === "reserved") {
         this.ctx.storage.sql.exec(
           `UPDATE onboarding_invites SET reserved_at = ?, updated_at = ?
-           WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id = ?`,
+           WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id = ?
+             AND reserved_submission_hash = ? AND reservation_phase = 'reserved'`,
           now,
           now,
           inviteId,
           submissionId,
+          submissionHash,
         );
         return { accepted: true as const, duplicate: false as const, issue: null };
       }
+      if (stale && row.reservation_phase === "creating_issue")
+        return { accepted: true as const, duplicate: false as const, issue: null };
       return { accepted: false as const, reason: "in_progress" as const };
     }
     this.ctx.storage.sql.exec(
-      `UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, updated_at = ?
+      `UPDATE onboarding_invites SET reserved_submission_id = ?, reserved_submission_hash = ?, reserved_at = ?, reservation_phase = 'reserved', updated_at = ?
        WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id IS NULL`,
       submissionId,
       submissionHash,
@@ -183,11 +206,50 @@ export class OnboardingInvites extends DurableObject {
     return { accepted: true as const, duplicate: false as const, issue: null };
   }
 
+  async rebindStaleReservation(
+    inviteId: string,
+    submissionId: string,
+    previousHash: string,
+    nextHash: string,
+    now = Date.now(),
+  ) {
+    const updated = this.ctx.storage.sql.exec<{ invite_id: string }>(
+      `UPDATE onboarding_invites
+       SET reserved_submission_hash = ?, reserved_at = ?, updated_at = ?
+       WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id = ?
+         AND reserved_submission_hash = ? AND reservation_phase = 'reserved'
+         AND issue_number IS NULL AND reserved_at IS NOT NULL AND reserved_at <= ?
+       RETURNING invite_id`,
+      nextHash,
+      now,
+      now,
+      inviteId,
+      submissionId,
+      previousHash,
+      now - 2 * 60_000,
+    );
+    return updated.toArray().length === 1;
+  }
+
+  async claimIssueCreation(inviteId: string, submissionId: string, submissionHash: string, now = Date.now()) {
+    const updated = this.ctx.storage.sql.exec<{ invite_id: string }>(
+      `UPDATE onboarding_invites SET reservation_phase = 'creating_issue', updated_at = ?
+       WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id = ?
+         AND reserved_submission_hash = ? AND reservation_phase = 'reserved'
+       RETURNING invite_id`,
+      now,
+      inviteId,
+      submissionId,
+      submissionHash,
+    );
+    return updated.toArray().length === 1;
+  }
+
   async recordIssue(inviteId: string, submissionId: string, submissionHash: string, issue: number, now = Date.now()) {
     this.ctx.storage.sql.exec(
       `UPDATE onboarding_invites
        SET status = 'consumed', submission_id = ?, submission_hash = reserved_submission_hash,
-           reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL,
+           reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL, reservation_phase = 'reserved',
            issue_number = ?, updated_at = ?
        WHERE invite_id = ? AND reserved_submission_id = ? AND reserved_submission_hash = ? AND status = 'unused'`,
       submissionId,
@@ -201,25 +263,30 @@ export class OnboardingInvites extends DurableObject {
     return row?.submission_id === submissionId && row.issue_number === issue;
   }
 
-  async reopenFailedSubmission(inviteId: string, submissionId: string, now = Date.now()) {
+  async reopenFailedSubmission(inviteId: string, submissionId: string, submissionHash: string, now = Date.now()) {
     const row = this.row(inviteId);
-    if (!row || row.reserved_submission_id !== submissionId || row.issue_number) return false;
+    if (!row || row.reserved_submission_id !== submissionId || row.reserved_submission_hash !== submissionHash || row.issue_number) return false;
     this.ctx.storage.sql.exec(
-      `UPDATE onboarding_invites SET reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL, updated_at = ?
-       WHERE invite_id = ? AND reserved_submission_id = ? AND status = 'unused' AND issue_number IS NULL`,
+      `UPDATE onboarding_invites SET reserved_submission_id = NULL, reserved_submission_hash = NULL, reserved_at = NULL, reservation_phase = 'reserved', updated_at = ?
+       WHERE invite_id = ? AND reserved_submission_id = ? AND reserved_submission_hash = ? AND status = 'unused' AND issue_number IS NULL`,
       now,
       inviteId,
       submissionId,
+      submissionHash,
     );
-    return true;
+    return this.row(inviteId)?.reserved_submission_id === null;
   }
 
   async revoke(inviteId: string, now = Date.now()) {
     this.ctx.storage.sql.exec(
-      `UPDATE onboarding_invites SET status = 'revoked', updated_at = ?
-       WHERE invite_id = ? AND status = 'unused' AND reserved_submission_id IS NULL`,
+      `UPDATE onboarding_invites
+       SET status = 'revoked', reserved_submission_id = NULL, reserved_submission_hash = NULL,
+           reserved_at = NULL, reservation_phase = 'reserved', updated_at = ?
+       WHERE invite_id = ? AND status = 'unused'
+         AND (reserved_submission_id IS NULL OR (reserved_at IS NOT NULL AND reserved_at <= ?))`,
       now,
       inviteId,
+      now - 2 * 60_000,
     );
     return this.row(inviteId)?.status === "revoked";
   }

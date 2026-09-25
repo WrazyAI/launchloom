@@ -192,6 +192,9 @@ try {
     failures.push("Removing a suggested service did not clear the over-five validation error.");
 
   await services.fill("Exterior painting\nInterior painting\nCabinet refinishing");
+  const callNow = page.getByRole("radio", { name: "Call now", exact: true });
+  if (await callNow.getAttribute("value") !== "Call now")
+    failures.push("The Call now option label and submitted value do not match.");
   await page.getByRole("button", { name: "Continue" }).click();
 
   if (await page.locator('[name="searchPhrases"]').count())
@@ -230,6 +233,16 @@ try {
       .isVisible())
   )
     failures.push("Confirmation does not show the service radius.");
+
+  if (
+    !(await page
+      .locator("dl > div")
+      .filter({ has: page.getByText("Main customer action", { exact: true }) })
+      .getByRole("definition")
+      .getByText("Call now", { exact: true })
+      .isVisible())
+  )
+    failures.push("Confirmation does not show the same Call now wording as the selected option.");
 
   if ((await page.locator('input[type="checkbox"][required]').count()) !== 1)
     failures.push("Client confirmation should require one checkbox.");
