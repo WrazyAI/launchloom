@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-24",
+  "updatedAt": "2026-09-25",
   "admissionPolicy": {
     "minimumCandidates": 20,
     "requiredViewports": [
@@ -633,7 +633,8 @@
         "businessKinds": [
           "fitness",
           "coaching",
-          "healthcare"
+          "healthcare",
+          "physical-facility"
         ],
         "conversionModes": [
           "trial",
@@ -645,7 +646,7 @@
         ],
         "locality": [
           "remote",
-          "physical-facility"
+          "single-location"
         ],
         "assetAvailability": [
           "medium",
@@ -2081,7 +2082,8 @@
         "businessKinds": [
           "fitness",
           "event",
-          "technology-enabled-service"
+          "technology-enabled-service",
+          "physical-facility"
         ],
         "conversionModes": [
           "signup",
@@ -2093,7 +2095,7 @@
         ],
         "locality": [
           "remote",
-          "physical-facility"
+          "single-location"
         ],
         "assetAvailability": [
           "medium",
