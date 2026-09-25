@@ -128,8 +128,12 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
-  it("redacts inline client image bytes only from model-bound content", async () => {
-    const inlineImage = `data:image/webp;base64,${"a".repeat(250_000)}`;
+  it("redacts all inline client image URI forms only from model-bound content", async () => {
+    const inlineImages = {
+      canonical: `data:image/webp;base64,${"a".repeat(250_000)}`,
+      parameterized: "data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D%220%200%201%201%22%3E%3C/svg%3E",
+      percentEncoded: "data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%201%201%22%3E%3C/svg%3E",
+    };
     const requests: AuthorStageRequest[] = [];
 
     const result = await authorExperienceCandidates({
@@ -137,9 +141,9 @@ describe("production experience author", () => {
         ...site,
         assets: {
           ...site.assets,
-          photoOne: inlineImage,
-          photoTwo: inlineImage,
-          photoThree: inlineImage,
+          photoOne: inlineImages.canonical,
+          photoTwo: inlineImages.parameterized,
+          photoThree: inlineImages.percentEncoded,
         },
       },
       inspirationPack,
@@ -166,12 +170,22 @@ describe("production experience author", () => {
       ),
     ).toBe(false);
 
-    expect(result.contentManifest.values.hero.image).toBe(inlineImage);
+    expect(result.contentManifest.values.hero.image).toBe(inlineImages.canonical);
+    expect(result.contentManifest.values.hero.secondaryImage).toBe(
+      inlineImages.parameterized,
+    );
+    expect(result.contentManifest.values.hero.tertiaryImage).toBe(
+      inlineImages.percentEncoded,
+    );
     for (const candidate of result.candidates) {
       const manifest = JSON.parse(candidate.files["content-manifest.json"]);
-      expect(manifest.values.hero.image).toBe(inlineImage);
-      expect(manifest.values.hero.secondaryImage).toBe(inlineImage);
-      expect(manifest.values.hero.tertiaryImage).toBe(inlineImage);
+      expect(manifest.values.hero.image).toBe(inlineImages.canonical);
+      expect(manifest.values.hero.secondaryImage).toBe(
+        inlineImages.parameterized,
+      );
+      expect(manifest.values.hero.tertiaryImage).toBe(
+        inlineImages.percentEncoded,
+      );
     }
   });
 
