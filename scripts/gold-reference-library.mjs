@@ -153,6 +153,10 @@ function evidencePath(record, repositoryRoot, key) {
   return path.resolve(repositoryRoot, relative);
 }
 
+/**
+ * @param {any} record
+ * @param {{ repositoryRoot?: string, fsImpl?: { access: (filePath: string) => Promise<unknown> } }} [options]
+ */
 export async function goldReferenceEligibility(
   record,
   { repositoryRoot = process.cwd(), fsImpl = fs } = {},
@@ -188,6 +192,10 @@ export async function goldReferenceEligibility(
   return { eligible: reasons.length === 0, reasons };
 }
 
+/**
+ * @param {any} raw
+ * @param {{ repositoryRoot?: string, fsImpl?: { access: (filePath: string) => Promise<unknown> } }} [options]
+ */
 export async function productionGoldRegistry(
   raw,
   { repositoryRoot = process.cwd(), fsImpl = fs } = {},
@@ -281,4 +289,61 @@ export function compatibilityScore(record, request = {}) {
   )
     score -= 8;
   return score;
+}
+
+
+export function inferReferenceCompatibility(config = {}, intake = {}) {
+  const cta = String(
+    config.business?.primaryCta ||
+      intake.primaryCta ||
+      intake.callToAction ||
+      "",
+  ).toLowerCase();
+  const conversionMode =
+    /quote|estimate/u.test(cta)
+      ? "quote-request"
+      : /book|appointment|schedule/u.test(cta)
+        ? "booking"
+        : /consult/u.test(cta)
+          ? "consultation"
+          : /call|phone/u.test(cta)
+            ? "call"
+            : /order/u.test(cta)
+              ? "order"
+              : /trial/u.test(cta)
+                ? "trial"
+                : /sign up|signup/u.test(cta)
+                  ? "signup"
+                  : /buy|shop|purchase/u.test(cta)
+                    ? "purchase"
+                    : "contact";
+  const imageCount = Object.values(config.images || {}).filter(Boolean).length;
+  const serviceCount = Array.isArray(config.services)
+    ? config.services.length
+    : 0;
+  const serviceAreas = Array.isArray(config.business?.serviceAreas)
+    ? config.business.serviceAreas.filter(Boolean)
+    : [];
+  return {
+    businessKind: String(
+      intake.businessKind ||
+        intake.serviceModel ||
+        config.businessKind ||
+        config.preset ||
+        config.industry ||
+        "",
+    ).toLowerCase(),
+    conversionMode,
+    contentDensity:
+      serviceCount >= 6 ? "high" : serviceCount <= 2 ? "low" : "medium",
+    locality:
+      serviceAreas.length > 0
+        ? "service-area"
+        : config.business?.address
+          ? "single-location"
+          : "remote",
+    assetAvailability:
+      imageCount >= 4 ? "high" : imageCount >= 1 ? "medium" : "low",
+    reducedMotionFirst: false,
+  };
 }
