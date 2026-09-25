@@ -45,7 +45,7 @@ GitHub Actions variable:
 | ---------------------------- | ------------------------------- |
 | `LAUNCHLOOM_FROM_EMAIL`      | `LaunchLoom <info@wrazyos.com>` |
 | `LAUNCHLOOM_DEVELOPER_EMAIL` | `david@maigreeks.com`           |
-| `ONBOARDING_ORIGIN`          | Exact HTTPS origin for `onboard.<domain>`, no trailing slash.        |
+| `ONBOARDING_ORIGIN`          | `https://launchloom-onboarding.pages.dev`, no trailing slash.        |
 | `ONBOARDING_ADMIN_EMAILS`    | Comma-separated operator Access identity allowlist.                  |
 | `ONBOARDING_ACCESS_AUD`      | Audience ID of the Cloudflare Access application.                    |
 | `SEO_RESEARCH_MAX_TASKS`     | Optional DataForSEO task cap; defaults to `16`.                      |

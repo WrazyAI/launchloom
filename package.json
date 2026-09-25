@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "build:onboarding-pages": "node scripts/prepare-onboarding-pages.mjs",
     "preview": "astro preview",
     "check": "astro check",
     "check:worker": "tsc -p worker/tsconfig.json && tsc -p worker/test/tsconfig.json",

@@ -45,9 +45,13 @@ jobs:
           for key in GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET OPENROUTER_API_KEY GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL REVISION_COORDINATOR_SECRET ONBOARDING_INVITE_SIGNING_SECRET; do
             printf '%s' "${!key}" | npx wrangler secret put "$key"
           done
-      - name: Deploy the LaunchLoom API Worker
-        run: npx wrangler deploy --var "ONBOARDING_ORIGIN:$ONBOARDING_ORIGIN" "ONBOARDING_ADMIN_EMAILS:$ONBOARDING_ADMIN_EMAILS" "ONBOARDING_ACCESS_AUD:$ONBOARDING_ACCESS_AUD"
       - name: Build platform
         run: npm run build
+      - name: Prepare invite-only onboarding Pages bundle
+        run: npm run build:onboarding-pages -- "$RUNNER_TEMP/launchloom-onboarding"
+      - name: Deploy invite-only onboarding Pages project
+        run: npx wrangler pages deploy "$RUNNER_TEMP/launchloom-onboarding" --project-name launchloom-onboarding --branch main --commit-hash "$GITHUB_SHA" --commit-message "LaunchLoom onboarding $GITHUB_SHA"
       - name: Direct-upload platform files to Cloudflare Pages
         run: npx wrangler pages deploy dist --project-name launchloom --commit-hash "$GITHUB_SHA" --commit-message "LaunchLoom platform $GITHUB_SHA"
+      - name: Deploy the LaunchLoom API Worker
+        run: npx wrangler deploy --var "ONBOARDING_ORIGIN:$ONBOARDING_ORIGIN" "ONBOARDING_ADMIN_EMAILS:$ONBOARDING_ADMIN_EMAILS" "ONBOARDING_ACCESS_AUD:$ONBOARDING_ACCESS_AUD"

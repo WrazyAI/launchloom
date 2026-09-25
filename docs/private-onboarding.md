@@ -2,11 +2,12 @@
 
 ## Required host and access setup
 
-1. Point `onboard.<your-domain>` at the LaunchLoom Cloudflare Pages project and
-   serve the intake at `/onboard/`. Set the GitHub repository variable
-   `ONBOARDING_ORIGIN` to the exact HTTPS origin, for example
-   `https://onboard.example.com` without a trailing slash. The invitation
-   manager creates links under that origin.
+1. Use the dedicated `launchloom-onboarding` Cloudflare Pages project. The
+   `pages.dev` root intentionally has no homepage; the only page is `/onboard/`.
+   No custom domain or DNS change is needed. Set the GitHub repository variable
+   `ONBOARDING_ORIGIN` to `https://launchloom-onboarding.pages.dev` with no
+   trailing slash. The invitation manager creates one-use links under that
+   origin.
 2. Create a Cloudflare Access application covering the Worker host
    `api.launchloom.wrazyos.com` and protect both paths:
    `/admin/onboarding-invites*` and `/api/admin/onboarding-invites*`.
@@ -18,10 +19,11 @@
 4. Set the GitHub secret `ONBOARDING_INVITE_SIGNING_SECRET` to a unique,
    high-entropy value. The deployment workflow installs it as a Worker secret.
 
-The Access application and DNS records are external Cloudflare configuration;
-they are not changed by this repository workflow. Do not send a real intake
-until the Access host, onboarding host, API custom domain, and Pages certificate
-are active.
+The Access application and API custom domain are external Cloudflare
+configuration; they are not changed by this repository workflow. The
+onboarding Pages project is direct-uploaded by `deploy-platform.yml`. Do not
+send a real intake until the Access application, onboarding Pages deployment,
+API custom domain, and Pages certificate are active.
 
 ## Creating and using invitations
 
