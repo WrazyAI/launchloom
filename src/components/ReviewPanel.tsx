@@ -54,6 +54,7 @@ export default function ReviewPanel() {
   const [repair, setRepair] = useState<RepairSession | null>(null);
   const [repairLoading, setRepairLoading] = useState(false);
   const submissionId = useRef("");
+  const replacementAssetInput = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const value =
@@ -66,6 +67,11 @@ export default function ReviewPanel() {
   const isClient = claims.stage === "client";
   const hasCreativeRepair = Boolean(claims.creativeRepairSessionId);
   const invitedEmail = claims.reviewerEmail || "the invited reviewer";
+
+  function clearReplacementAsset() {
+    setReplacementAsset(null);
+    if (replacementAssetInput.current) replacementAssetInput.current.value = "";
+  }
 
   async function refreshCreativeRepair() {
     if (!token || !claims.creativeRepairSessionId) return;
@@ -189,7 +195,7 @@ export default function ReviewPanel() {
       );
       if (response.ok) {
         setComment("");
-        setReplacementAsset(null);
+        clearReplacementAsset();
         submissionId.current = "";
       }
     } catch {
@@ -349,7 +355,7 @@ export default function ReviewPanel() {
                 value={category}
                 onChange={(event) => {
                   setCategory(event.target.value);
-                  setReplacementAsset(null);
+                  clearReplacementAsset();
                 }}
               >
                 <option value="logo">Logo</option>
@@ -366,6 +372,7 @@ export default function ReviewPanel() {
             <label className="field">
               Replacement image
               <input
+                ref={replacementAssetInput}
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 required

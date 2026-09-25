@@ -101,4 +101,74 @@ describe("Access-protected invite administration", () => {
     });
     expect(replay.status).toBe(403);
   });
+
+  it("keeps invite administration same-origin while allowing origin-less GETs", async () => {
+    const context = accessContext("admin@example.test");
+    const crossOriginGet = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
+        headers: { Origin: "https://untrusted.pages.dev" },
+      }),
+      testEnv,
+      context,
+    );
+    expect(crossOriginGet.status).toBe(403);
+    expect(crossOriginGet.headers.get("Access-Control-Allow-Origin")).toBeNull();
+    expect(crossOriginGet.headers.get("Cache-Control")).toBe("no-store");
+
+    const crossOriginPost = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
+        method: "POST",
+        headers: {
+          Origin: "https://untrusted.pages.dev",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action: "create" }),
+      }),
+      testEnv,
+      context,
+    );
+    expect(crossOriginPost.status).toBe(403);
+    expect(crossOriginPost.headers.get("Access-Control-Allow-Origin")).toBeNull();
+    expect(crossOriginPost.headers.get("Cache-Control")).toBe("no-store");
+
+    const crossOriginOptions = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
+        method: "OPTIONS",
+        headers: {
+          Origin: "https://untrusted.pages.dev",
+          "Access-Control-Request-Method": "POST",
+        },
+      }),
+      testEnv,
+      context,
+    );
+    expect(crossOriginOptions.status).toBe(403);
+    expect(crossOriginOptions.headers.get("Access-Control-Allow-Origin")).toBeNull();
+    expect(crossOriginOptions.headers.get("Cache-Control")).toBe("no-store");
+
+    const sameOriginOptions = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
+        method: "OPTIONS",
+        headers: {
+          Origin: apiOrigin,
+          "Access-Control-Request-Method": "POST",
+        },
+      }),
+      testEnv,
+      context,
+    );
+    expect(sameOriginOptions.status).toBe(204);
+    expect(sameOriginOptions.headers.get("Access-Control-Allow-Origin")).toBe(apiOrigin);
+    expect(sameOriginOptions.headers.get("Access-Control-Allow-Credentials")).toBe("true");
+    expect(sameOriginOptions.headers.get("Cache-Control")).toBe("no-store");
+
+    const originlessGet = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites`),
+      testEnv,
+      context,
+    );
+    expect(originlessGet.status).toBe(200);
+    expect(originlessGet.headers.get("Access-Control-Allow-Origin")).toBeNull();
+    expect(originlessGet.headers.get("Cache-Control")).toBe("no-store");
+  });
 });

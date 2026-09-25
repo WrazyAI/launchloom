@@ -273,12 +273,27 @@ async function onboardingAdminPage(request: Request, env: Env, ctx: ExecutionCon
 }
 
 async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
-  const allowed = [new URL(request.url).origin];
-  const headers = { ...cors(request, allowed), "Access-Control-Allow-Credentials": "true", "Cache-Control": "no-store" };
-  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
+  const workerOrigin = new URL(request.url).origin;
+  const origin = request.headers.get("Origin") || "";
+  const sameOriginRequest = !origin || origin === workerOrigin;
+  const headers = {
+    ...(origin === workerOrigin
+      ? {
+          "Access-Control-Allow-Origin": workerOrigin,
+          "Access-Control-Allow-Credentials": "true",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          Vary: "Origin",
+        }
+      : {}),
+    "Cache-Control": "no-store",
+  };
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: sameOriginRequest ? 204 : 403, headers });
+  if (origin && origin !== workerOrigin)
+    return json({ error: "Invalid request origin." }, 403, headers);
   if (request.method === "POST") {
-    const origin = request.headers.get("Origin");
-    if (!origin || !allowed.includes(origin)) return json({ error: "Invalid request origin." }, 403, headers);
+    if (!origin) return json({ error: "Invalid request origin." }, 403, headers);
   }
   if (!(await accessAdminEmail(ctx, env)))
     return json({ error: "Access denied." }, 403, headers);
