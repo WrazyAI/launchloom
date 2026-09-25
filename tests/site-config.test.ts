@@ -24,6 +24,20 @@ describe("site configuration", () => {
     expect(config.conversion.qualification[0].options).not.toContain("Maintenance");
   });
 
+  it("keeps all five confirmed hospitality services available in enquiry options", () => {
+    const services = ["Sourdough", "Viennoiserie", "Bespoke cakes", "Catering", "Breakfast gatherings"];
+    const config = normalise({}, {
+      businessName: "Lumière Artisan Bakery & Café",
+      industry: "hospitality",
+      services: services.join("\n"),
+    });
+
+    expect(config.conversion.qualification[0].options).toEqual([
+      ...services,
+      "Not sure yet",
+    ]);
+  });
+
   it("does not classify pet care as human wellness imagery", () => {
     const config = normalise({
       copy: {

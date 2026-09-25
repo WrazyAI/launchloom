@@ -5,6 +5,9 @@ const questions = site.conversion?.qualification || [];
 const qualifier = site.conversion?.guidedQualifier;
 const guided = questions.length > 0 && qualifier?.enabled !== false;
 const stepCount = guided ? questions.length + 1 : 1;
+const unconfiguredMessage = site.business.phone
+  ? `This inquiry form is not connected yet. Please call ${site.business.phone}.`
+  : "This inquiry form is not connected yet.";
 ---
 
 <form
@@ -61,7 +64,7 @@ const stepCount = guided ? questions.length + 1 : 1;
   <small class="lead-status" role="status">{site.copy?.formIntro || "By submitting, you agree to be contacted about your request."}</small>
 </form>
 
-<script is:inline define:vars={{ apiUrl: site.lead?.apiUrl || "" }}>
+<script is:inline define:vars={{ apiUrl: site.lead?.apiUrl || "", unconfiguredMessage }}>
   for (const form of document.querySelectorAll(".lead-form")) {
     const guided = form.dataset.guided === "true";
     const steps = [...form.querySelectorAll("[data-lead-step]")];
@@ -96,7 +99,7 @@ const stepCount = guided ? questions.length + 1 : 1;
       const data = new FormData(form);
       const qualificationNames = JSON.parse(form.dataset.qualification || "[]");
       if (!apiUrl || !data.get("lead-token")) {
-        status.textContent = "This form is not configured yet. Please call us instead.";
+        status.textContent = unconfiguredMessage;
         return;
       }
       status.textContent = "Sending your request...";

@@ -754,6 +754,11 @@ function contentFor(site: SiteConfig): ExperienceContent {
       site.socialProof.google?.apiUrl &&
       site.socialProof.google?.token,
   );
+  const hospitalityArea =
+    site.business.primaryCity || site.business.serviceAreas[0] || "the local area";
+  const eventOrderServices = site.services
+    .filter((service) => /cater|cake|event/iu.test(service.name))
+    .map((service) => service.name.toLocaleLowerCase());
   return {
     brand: {
       name: site.business.name,
@@ -786,8 +791,14 @@ function contentFor(site: SiteConfig): ExperienceContent {
       ? "Service in nearby communities."
       : site.industry === "wellness"
         ? "Areas the practice serves."
-        : "Support across the local area.",
-    coverageIntro: "Share the address you have in mind so the team can confirm service for your location.",
+        : site.industry === "hospitality"
+          ? `Local to ${hospitalityArea}.`
+          : "Support across the local area.",
+    coverageIntro: site.industry === "hospitality"
+      ? eventOrderServices.length
+        ? `Ask about ${eventOrderServices.join(" or ")} for a gathering.`
+        : "Ask about location details and current availability."
+      : "Share the address you have in mind so the team can confirm service for your location.",
     copy,
     businessDescription: site.business.description,
     showLocationMap:

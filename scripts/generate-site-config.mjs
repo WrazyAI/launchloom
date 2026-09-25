@@ -721,7 +721,7 @@ function qualificationFor(industry, kind = industry, services = []) {
         label: "What do you need help with?",
         placeholder: "Select a service",
         options: [
-          ...[...new Set(services.map((service) => text(service?.name || service, 100)).filter(Boolean))].slice(0, 4),
+          ...[...new Set(services.map((service) => text(service?.name || service, 100)).filter(Boolean))].slice(0, 5),
           "Not sure yet",
         ],
       },
@@ -758,7 +758,7 @@ function qualificationFor(industry, kind = industry, services = []) {
         .map((service) => text(service?.name || service, 100))
         .filter(Boolean),
     ),
-  ].slice(0, 3);
+  ].slice(0, 5);
   return [
     {
       name: "interest",

@@ -15,8 +15,7 @@ const secondary = hero.secondaryImage;
 <div class="xp-folio" data-experience-pack={program.packId} data-experience-variant={program.variantId} data-layout-fingerprint={program.fingerprint}>
   <header class="xp-folio__header">
     <a class="xp-folio__mark" href="/">
-      {brand.logo ? <img src={brand.logo} alt="" /> : <span aria-hidden="true">{brand.name.slice(0, 1)}</span>}
-      <strong>{brand.name}</strong>
+      {brand.logo ? <img src={brand.logo} alt={brand.name} /> : <strong>{brand.name}</strong>}
     </a>
     <nav aria-label="Main navigation">
       <a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a>

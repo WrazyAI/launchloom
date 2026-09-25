@@ -58,11 +58,22 @@ describe("experience-pack compiler", () => {
     local.design = { ...local.design!, recipe: "local-trades", sections: [] };
     const care = site("Harbor Glow Wellness", "bold-utility");
     care.industry = "wellness";
+    const bakery = site("Lumière Artisan Bakery & Café", "cinematic-narrative");
+    bakery.industry = "hospitality";
+    bakery.services = [{
+      name: "Catering",
+      description: "Catering orders for local gatherings.",
+      slug: "catering",
+    }];
 
     expect(compileExperiencePack(local, "local-trades").content.coverageHeading).toBe("Service in nearby communities.");
     expect(compileExperiencePack(care, "care-editorial").content.coverageHeading).toBe("Areas the practice serves.");
     expect(compileExperiencePack(site("Oak & Ledger", "bold-utility"), "general-editorial").content.coverageHeading)
       .toBe("Support across the local area.");
+    expect(compileExperiencePack(bakery, "general-editorial").content).toMatchObject({
+      coverageHeading: "Local to Asheville.",
+      coverageIntro: "Ask about catering for a gathering.",
+    });
   });
 
   it("splits model experience authorship into bounded response stages", () => {
@@ -291,7 +302,7 @@ describe("experience-pack compiler", () => {
     expect(new Set(packs.map((pack) => pack.services))).toHaveLength(3);
   });
 
-  it("keeps guided portrait offer and closing copy above the hero overlay", () => {
+  it("keeps guided portrait copy distinct and hides missing closing contact details", () => {
     const component = readFileSync(
       "templates/client-site/src/components/experiences/GuidedConversationExperience.astro",
       "utf8",
@@ -302,8 +313,16 @@ describe("experience-pack compiler", () => {
     );
 
     expect(component).toContain(
-      '{copy.contactHeading || hero.primaryLabel || "Continue the conversation."}',
+      '{copy.contactHeading || "Tell us what would help."}',
     );
+    expect(component).toContain(
+      '{hero.primaryLabel || "Continue the conversation."}',
+    );
+    expect(component).toContain(
+      '<a href="#guided-experience-lead">Start an inquiry</a>',
+    );
+    expect(component).toContain("{brand.email && <a href={`mailto:${brand.email}`}");
+    expect(component).toContain("{brand.address && <p>{brand.address}</p>}");
     expect(styles).toContain(".xp-guide__hero figcaption");
     expect(styles).toContain("z-index: 2;");
     expect(styles).toContain("overflow-wrap: anywhere;");
