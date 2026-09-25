@@ -1,19 +1,22 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   goldReferenceEligibility,
   loadGoldReferenceLibrary,
 } from "./gold-reference-library.mjs";
 
-function argsFrom(argv) {
-  return Object.fromEntries(
-    argv.slice(2).reduce(
-      (pairs, value, index, all) =>
-        index % 2 === 0
-          ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
-          : pairs,
-      [],
-    ),
-  );
+export function argsFrom(argv) {
+  const args = {};
+  for (let index = 2; index < argv.length; index += 2) {
+    const flag = argv[index];
+    const value = argv[index + 1];
+    if (!flag?.startsWith("--"))
+      throw new Error(`Expected a --flag at argument ${index - 1}.`);
+    if (value === undefined || value.startsWith("--"))
+      throw new Error(`Missing value for ${flag}.`);
+    args[flag.slice(2)] = value;
+  }
+  return args;
 }
 
 export async function auditGoldReferenceLibrary({
@@ -61,7 +64,7 @@ export async function auditGoldReferenceLibrary({
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const args = argsFrom(process.argv);
   const report = await auditGoldReferenceLibrary({
     catalog: args.catalog || "data/gold-reference-candidates.json",
