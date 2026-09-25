@@ -702,7 +702,7 @@ describe("production experience author", () => {
   });
 
   it("keeps refusing duplicate hero markers when the semantic target is ambiguous", () => {
-    const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1></section>`;
+    const original = `<section data-hero><h1>{content.hero.heading}</h1></section>`;
     const duplicated = `${original}<section data-hero><h1>{content.hero.heading}</h1></section>`;
 
     expect(() =>
