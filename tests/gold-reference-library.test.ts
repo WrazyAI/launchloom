@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   compatibilityScore,
   goldReferenceEligibility,
+  inferReferenceCompatibility,
   normalizeGoldReferenceLibrary,
   productionGoldRegistry,
 } from "../scripts/gold-reference-library.mjs";
@@ -101,6 +102,39 @@ describe("Gold Reference Library", () => {
       compatibility: { assetAvailability: "high" },
     });
     expect(high - low).toBeGreaterThanOrEqual(36);
+  });
+
+  it("maps scheduling CTAs and single service areas correctly", () => {
+    expect(
+      inferReferenceCompatibility(
+        {
+          business: {
+            primaryCta: "Schedule a Visit",
+            serviceAreas: ["Greater Phoenix"],
+          },
+        },
+        {},
+      ),
+    ).toMatchObject({
+      conversionMode: "booking",
+      locality: "service-area",
+    });
+  });
+
+  it("keeps facility semantics out of locality metadata", () => {
+    for (const id of [
+      "gold-future-performance-health",
+      "gold-google-team-usa-spatial-sport",
+    ]) {
+      const record = library.records.find((item: any) => item.id === id);
+      expect(record?.compatibility.locality).toContain("single-location");
+      expect(record?.compatibility.locality).not.toContain(
+        "physical-facility",
+      );
+      expect(record?.compatibility.businessKinds).toContain(
+        "physical-facility",
+      );
+    }
   });
 
   it("records desktop, compact, and mobile capture requirements", () => {
