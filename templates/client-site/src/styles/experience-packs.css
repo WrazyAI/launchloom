@@ -259,6 +259,10 @@
   font-size: clamp(2.5rem, 5vw, 5rem);
 }
 
+.xp-folio__coverage .xp-folio__eyebrow {
+  color: var(--on-brand-surface);
+}
+
 .xp-folio__coverage > div > p:last-child {
   max-width: 34rem;
   line-height: 1.65;
@@ -1206,6 +1210,14 @@
   .xp-service__brand img {
     max-width: 7rem;
     max-height: 2.2rem;
+  }
+  .inner-experience-cinematic-narrative .inner-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .inner-experience-cinematic-narrative .inner-hero-grid > div,
+  .inner-experience-cinematic-narrative .inner-hero-grid img {
+    min-width: 0;
+    max-width: 100%;
   }
   .xp-folio__hero {
     padding-top: 4rem;

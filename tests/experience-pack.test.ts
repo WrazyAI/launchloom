@@ -329,6 +329,27 @@ describe("experience-pack compiler", () => {
     expect(styles).not.toContain("text-overflow: ellipsis;");
   });
 
+  it("uses the brand surface text token for cinematic coverage labels", () => {
+    const styles = readFileSync(
+      "templates/client-site/src/styles/experience-packs.css",
+      "utf8",
+    );
+
+    expect(styles).toContain(".xp-folio__coverage .xp-folio__eyebrow");
+    expect(styles).toContain("color: var(--on-brand-surface);");
+  });
+
+  it("reflows cinematic service pages into one mobile column", () => {
+    const styles = readFileSync(
+      "templates/client-site/src/styles/experience-packs.css",
+      "utf8",
+    );
+
+    expect(styles).toMatch(
+      /@media \(max-width: 760px\)[\s\S]*?\.inner-experience-cinematic-narrative \.inner-hero-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);/u,
+    );
+  });
+
   it("returns isolated nested blueprint data and fingerprints motion", () => {
     const listed = listExperiencePacks();
     const originalProfile = listed[0].motion.profile;
