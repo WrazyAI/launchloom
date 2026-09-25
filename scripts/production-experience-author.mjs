@@ -7,6 +7,7 @@ import {
 } from "./creative-compiler.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import { cssCustomPropertyDeclarations } from "./creative-css-tokens.mjs";
 
 /**
  * @typedef {"contract" | "experience" | "styles" | "motion"} AuthorStage
@@ -1777,20 +1778,7 @@ function validateStyles(source, route) {
  * variables remain available when a candidate intentionally consumes them.
  */
 export function namespaceCreativeCss(source) {
-  // Mask comments before declaration discovery so commented-out tokens never
-  // cause live var(...) references to be rewritten. Preserve newlines and
-  // character positions while matching only actual declaration boundaries.
-  const declarationSource = source.replace(
-    /\/\*[\s\S]*?\*\//gu,
-    (comment) => comment.replace(/[^\n]/gu, " "),
-  );
-  const declared = new Set(
-    [
-      ...declarationSource.matchAll(
-        /(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu,
-      ),
-    ].map((match) => match[1]),
-  );
+  const declared = new Set(cssCustomPropertyDeclarations(source));
   if (!declared.size) return source;
   return source.replace(/--[A-Za-z][\w-]*/gu, (token) =>
     declared.has(token) && !token.startsWith("--ll-creative-")
