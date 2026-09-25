@@ -102,6 +102,31 @@ describe("Access-protected invite administration", () => {
     expect(replay.status).toBe(403);
   });
 
+  it("encodes non-ASCII client emails as UTF-8 invite claims", async () => {
+    const email = "josé@example.test";
+    const created = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
+        method: "POST",
+        headers: { Origin: apiOrigin, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", clientEmail: email }),
+      }),
+      testEnv,
+      accessContext("admin@example.test"),
+    );
+
+    expect(created.status).toBe(201);
+    const result = await created.json() as { url: string };
+    const token = new URL(result.url).hash.slice("#invite=".length);
+    const validated = await SELF.fetch("https://api.launchloom.test/api/onboarding-invites/validate", {
+      method: "POST",
+      headers: { Origin: "https://onboard.example.test", "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+
+    expect(validated.status).toBe(200);
+    await expect(validated.json()).resolves.toMatchObject({ valid: true, clientEmail: email });
+  });
+
   it("keeps invite administration same-origin while allowing origin-less GETs", async () => {
     const context = accessContext("admin@example.test");
     const crossOriginGet = await worker.fetch(

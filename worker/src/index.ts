@@ -329,7 +329,7 @@ async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
       expiresAt,
       allowedOrigins: [env.ONBOARDING_ORIGIN.replace(/\/$/u, "")],
     };
-    const encoded = btoa(JSON.stringify(claims))
+    const encoded = btoa(String.fromCharCode(...encoder.encode(JSON.stringify(claims))))
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
       .replace(/=+$/u, "");
