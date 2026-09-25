@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
+import { assertAuthorPromptContext } from "./author-prompt-budget.mjs";
 import { authorExperienceCandidates } from "./production-experience-author.mjs";
 import {
   cacheableReferenceDna,
@@ -349,6 +350,10 @@ async function requestStage(request) {
           effort,
           creativeSession?.reasoningPolicyVersion || "static-reasoning",
           systemPrompt,
+        );
+        const promptBudget = assertAuthorPromptContext(systemPrompt, userContent);
+        console.log(
+          `production_experience_prompt=bounded route=${request.route.id} stage=${request.stage} text_chars=${promptBudget.textChars}`,
         );
         const response = await openRouterChatCompletion({
           title: "LaunchLoom Production Experience Author",
