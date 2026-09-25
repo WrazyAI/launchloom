@@ -137,7 +137,7 @@ function digest(value) {
  */
 export function redactPromptValue(value) {
   if (typeof value === "string") {
-    if (/^data:image\/[\w.+-]+;base64,/iu.test(value))
+    if (/^data:image\/[\w.+-]+(?:;[^,]*)?,/iu.test(value))
       return "[sealed client image asset]";
     if (value.length > 12_000)
       return `${value.slice(0, 256)}...[sealed value truncated]`;
