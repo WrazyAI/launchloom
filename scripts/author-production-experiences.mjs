@@ -262,6 +262,17 @@ MOTION STAGE
 Return complete motion.js in content. Return JavaScript text only, never JSX, React components, HTML, CSS, markdown fences, or a second experience implementation. Export mountExperienceMotion(runtime), returning a cleanup function. Use native browser APIs or GSAP only when the assigned motion opportunity materially improves the narrative. Read runtime?.reducedMotion or match prefers-reduced-motion and provide a still equivalent. Use at most one pinned or scrubbed sequence. Do not use network access.`;
 }
 
+/**
+ * Build and execute one bounded creative-authoring stage request.
+ *
+ * The request is assembled from redacted sealed content, normalized reference
+ * evidence, and stage-specific instructions. Text context is validated before
+ * provider transport so leaked inline image data or runaway prompt growth
+ * fails locally instead of consuming an OpenRouter request.
+ *
+ * @param {Record<string, any>} request
+ * @returns {Promise<Record<string, any>>}
+ */
 async function requestStage(request) {
   if (sharedAbortController.signal.aborted)
     throw new Error("Phase 2 authorship cancelled after a sibling failure.");
