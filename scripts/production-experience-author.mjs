@@ -1747,9 +1747,13 @@ function validateStyles(source, route) {
  * variables remain available when a candidate intentionally consumes them.
  */
 export function namespaceCreativeCss(source) {
+  // Keep declaration discovery aligned with the reference-fidelity validator.
+  // CSS comments or formatting may appear between a block delimiter and a
+  // custom-property declaration, so do not require the declaration to follow
+  // "{" or ";" immediately.
   const declared = new Set(
-    [...source.matchAll(/(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu)].map(
-      (match) => match[1],
+    [...source.matchAll(/--([A-Za-z][\w-]*)\s*:/gu)].map(
+      (match) => `--${match[1]}`,
     ),
   );
   if (!declared.size) return source;
