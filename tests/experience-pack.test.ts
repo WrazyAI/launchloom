@@ -50,6 +50,21 @@ function site(name: string, packId?: string): SiteConfig {
 }
 
 describe("experience-pack compiler", () => {
+  it("describes local coverage using the business category without changing its page structure", () => {
+    const local = site("Harbor Plumbing", "kinetic-poster");
+    local.industry = "home-services";
+    local.preset = "home-services";
+    local.businessKind = "home-services";
+    local.design = { ...local.design!, recipe: "local-trades", sections: [] };
+    const care = site("Harbor Glow Wellness", "bold-utility");
+    care.industry = "wellness";
+
+    expect(compileExperiencePack(local, "local-trades").content.coverageHeading).toBe("Service in nearby communities.");
+    expect(compileExperiencePack(care, "care-editorial").content.coverageHeading).toBe("Areas the practice serves.");
+    expect(compileExperiencePack(site("Oak & Ledger", "bold-utility"), "general-editorial").content.coverageHeading)
+      .toBe("Support across the local area.");
+  });
+
   it("splits model experience authorship into bounded response stages", () => {
     const stages = createSplitExperienceStages();
     expect(stages.map((stage) => stage.id)).toEqual([

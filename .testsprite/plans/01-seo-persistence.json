@@ -7,7 +7,7 @@
   "planSteps": [
     {
       "type": "action",
-      "description": "Navigate to /onboard/ and choose Enter details manually"
+      "description": "Open a valid unused test invitation link to /onboard/ and choose Enter details manually"
     },
     {
       "type": "action",

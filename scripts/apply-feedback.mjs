@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import { nextClientFeedbackContext, pendingFeedbackFromComments } from "./feedback-utils.mjs";
+import { applyBoundedClientFeedback } from "./client-feedback-ops.mjs";
 import {
   expectedArtifacts,
   planRevision,
@@ -49,8 +50,10 @@ if (!feedback.length) {
 }
 
 const config = JSON.parse(await fs.readFile(configPath, "utf8"));
-const planned = await planRevision(feedback, config);
-const revised = removeEmDashes(planned.config);
+const planned = stage === "client"
+  ? applyBoundedClientFeedback(config, feedback)
+  : await planRevision(feedback, config);
+const revised = stage === "client" ? planned.config : removeEmDashes(planned.config);
 const previousRevisionReport = config.revisionReport || {};
 const clientFeedbackContext = nextClientFeedbackContext(
   previousRevisionReport,
@@ -77,7 +80,7 @@ revised.revisionReport = {
   operations: planned.operations,
   results: planned.results,
   creativeSourceRepairRequired:
-    creativeRenderer &&
+    stage !== "client" && creativeRenderer &&
     planned.results.some(
       (result) =>
         result.status === "creative" ||
@@ -86,7 +89,7 @@ revised.revisionReport = {
         ),
     ),
   creativeSourceRepairVerified: null,
-  expectedArtifacts: expectedArtifacts(planned.operations, revised).filter(
+  expectedArtifacts: stage === "client" ? [] : expectedArtifacts(planned.operations, revised).filter(
     (artifact) =>
       !creativeRenderer ||
       (!creativeIgnoredArtifactTypes.has(artifact.type) &&
@@ -109,7 +112,9 @@ if (process.env.FEEDBACK_OUTCOME_PATH)
       .map((result) => {
         const detail =
           result.status === "fulfilled"
-            ? `Applied ${result.operationKinds.join(", ") || "verified structured changes"}.`
+            ? `Applied ${result.operationKinds?.join(", ") || result.operation?.kind || "verified structured changes"}.`
+            : result.status === "manual"
+              ? `Manual attention: ${result.reason}`
             : result.status === "creative"
               ? "Queued for authored creative source refinement and rendered verification."
               : `Unresolved: ${result.unresolved.join(", ")}.`;
@@ -121,10 +126,10 @@ if (process.env.FEEDBACK_OUTCOME_PATH)
 if (!planned.ok)
   throw new Error(
     `Feedback needs manual attention. ${planned.results
-      .filter((result) => result.status !== "fulfilled")
+    .filter((result) => result.status !== "fulfilled")
       .map(
         (result) =>
-          `Item ${result.feedbackIndex + 1}: ${result.status} (${result.unresolved.join(", ")})`,
+          `Item ${result.feedbackIndex + 1}: ${result.status} (${result.reason || result.unresolved?.join(", ") || "unsupported request"})`,
       )
       .join("; ")}`,
   );

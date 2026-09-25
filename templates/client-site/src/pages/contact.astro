@@ -1,0 +1,23 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import Header from "../components/Header.astro";
+import LeadForm from "../components/LeadForm.astro";
+import Footer from "../components/Footer.astro";
+import site, { directionsHref, hasExactBusinessLocation, phoneHref } from "../lib/site";
+---
+
+<SiteLayout title={`Contact ${site.business.name}`} description={`Contact ${site.business.name} about ${site.services.slice(0, 2).map((service) => service.name.toLowerCase()).join(" or ") || "your service needs"}.`}>
+  <Header />
+  <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`]}>
+    <section class="inner-hero"><div class="wrap inner-hero-grid"><div>
+      <a class="breadcrumb" href="/">Home</a>
+      <span class="kicker">{site.copy?.contactKicker || "Contact"}</span>
+      <h1>{site.copy?.contactHeading || "Tell us what you need."}</h1>
+      <p>{site.copy?.formIntro || "Share a few details and the team will follow up about the next step."}</p>
+      <div class="hero-actions">{site.business.phone && <a class="cta" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}{hasExactBusinessLocation() && <a class="call-link" href={directionsHref()}>Get directions</a>}</div>
+      <p>{site.business.address}</p>
+    </div>{site.images.secondary && <img src={site.images.secondary} alt={`${site.business.name} service context`} fetchpriority="high" />}</div></section>
+    <section class="contact-section" id="contact"><div class="wrap contact-grid"><div class="contact-copy"><span class="kicker">A useful next step</span><h2>{site.business.primaryCta}</h2><p>{site.business.description}</p>{site.business.phone && <a class="contact-phone" href={phoneHref(site.business.phone)}>{site.business.phone}</a>}</div><LeadForm id="contact-page-lead" /></div></section>
+  </main>
+  <Footer />
+</SiteLayout>

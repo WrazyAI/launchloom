@@ -49,6 +49,11 @@ const secondary = hero.secondaryImage;
       </div>
     </section>
 
+    {brand.serviceAreas.length > 0 && <section class="xp-folio__coverage" aria-labelledby="xp-folio-coverage-title">
+      <div><p class="xp-folio__eyebrow">Service area</p><h2 id="xp-folio-coverage-title">{content.coverageHeading}</h2><p>{content.coverageIntro}</p></div>
+      <ul>{brand.serviceAreas.map((area) => <li>{area}</li>)}</ul>
+    </section>}
+
     <section class="xp-folio__story">
       {secondary && <figure><img src={secondary} alt={`${brand.name} service setting`} loading="lazy" /></figure>}
       <div><p class="xp-folio__eyebrow">{copy.aboutKicker || "The work behind the work"}</p><h2>{copy.aboutHeading || "A considered path from question to next step."}</h2><p>{copy.aboutBody || content.businessDescription}</p></div>

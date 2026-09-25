@@ -6,11 +6,13 @@ import {
   type RevisionRequestInput,
 } from "./revision-coordinator";
 import {
-  isAffirmativeConfirmation,
   seoResearchReadiness,
 } from "./seo-readiness";
+import { OnboardingInvites } from "./onboarding-invites";
+import { normalizeClientIntake } from "../../src/lib/client-intake-v2";
 
 export { RevisionCoordinator } from "./revision-coordinator";
+export { OnboardingInvites } from "./onboarding-invites";
 
 export interface Env {
   ASSETS: {
@@ -32,6 +34,11 @@ export interface Env {
   LAUNCHLOOM_FEEDBACK_EMAIL?: string;
   REVISION_COORDINATOR_SECRET: string;
   REVISION_COORDINATOR: DurableObjectNamespace<RevisionCoordinator>;
+  ONBOARDING_INVITE_SIGNING_SECRET?: string;
+  ONBOARDING_ORIGIN?: string;
+  ONBOARDING_ADMIN_EMAILS?: string;
+  ONBOARDING_ACCESS_AUD?: string;
+  ONBOARDING_INVITES: DurableObjectNamespace<OnboardingInvites>;
   TURNSTILE_SECRET_KEY?: string;
 }
 
@@ -73,6 +80,12 @@ type AiChatClaims = {
   };
 };
 type Intake = Record<string, unknown>;
+type OnboardingInviteClaims = {
+  inviteId: string;
+  clientEmail?: string;
+  expiresAt: number;
+  allowedOrigins: string[];
+};
 
 const json = (value: unknown, status = 200, headers: HeadersInit = {}) =>
   new Response(JSON.stringify(value), {
@@ -129,6 +142,201 @@ async function verifyHmac<T>(token: string, secret: string): Promise<T> {
   );
   if (!valid) throw new Error("Invalid token.");
   return JSON.parse(decoder.decode(fromBase64url(encoded))) as T;
+}
+
+async function signHmac(value: string, secret: string) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = new Uint8Array(
+    await crypto.subtle.sign("HMAC", key, encoder.encode(value)),
+  );
+  return btoa(String.fromCharCode(...signature))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/u, "");
+}
+
+function inviteCoordinator(env: Env) {
+  return env.ONBOARDING_INVITES.getByName("launchloom-onboarding-invites");
+}
+
+async function inviteValidation(request: Request, env: Env) {
+  const origin = request.headers.get("Origin");
+  const allowedOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
+  const headers = allowedOrigin ? cors(request, [allowedOrigin]) : {};
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers });
+  if (request.method !== "POST")
+    return new Response("Method not allowed", { status: 405, headers });
+  try {
+    if (!allowedOrigin || origin !== allowedOrigin)
+      throw new Error("Invalid request origin.");
+    if (!env.ONBOARDING_INVITE_SIGNING_SECRET)
+      throw new Error("Invite validation is unavailable.");
+    const body = (await request.json().catch(() => ({}))) as {
+      token?: unknown;
+      submissionId?: unknown;
+    };
+    const invite = await verifiedInvite(request, env, body.token, true, clean(body.submissionId, 100));
+    const status = invite.status;
+    if (!status.valid && !status.accepted) throw new Error("Invalid invite.");
+    if (status.accepted)
+      return json({ valid: false, accepted: true }, 200, {
+        ...headers,
+        "Cache-Control": "no-store",
+      });
+    return json(
+      { valid: true, clientEmail: invite.clientEmail || null },
+      200,
+      { ...headers, "Cache-Control": "no-store" },
+    );
+  } catch {
+    return json({ valid: false }, 403, {
+      ...headers,
+      "Cache-Control": "no-store",
+    });
+  }
+}
+
+async function verifiedInvite(
+  request: Request,
+  env: Env,
+  tokenValue: unknown,
+  allowConsumed = false,
+  submissionId = "",
+) {
+  const origin = request.headers.get("Origin") || "";
+  const allowedOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "") || "";
+  if (!allowedOrigin || origin !== allowedOrigin)
+    throw new Error("Invalid request origin.");
+  if (!env.ONBOARDING_INVITE_SIGNING_SECRET)
+    throw new Error("Invite validation is unavailable.");
+  const token = clean(tokenValue, 20_000);
+  if (!token) throw new Error("Invalid invite.");
+  const claims = await verifyHmac<OnboardingInviteClaims>(token, env.ONBOARDING_INVITE_SIGNING_SECRET);
+  if (
+    !/^[a-z0-9-]{12,100}$/iu.test(claims.inviteId || "") ||
+    !Number.isFinite(claims.expiresAt) || claims.expiresAt <= Date.now() ||
+    !Array.isArray(claims.allowedOrigins) || !claims.allowedOrigins.includes(origin)
+  ) throw new Error("Invalid invite.");
+  const tokenHash = await digest(token);
+  const status = await inviteCoordinator(env).validate(
+    claims.inviteId,
+    tokenHash,
+    claims.expiresAt,
+    origin,
+    allowConsumed ? submissionId : "",
+  );
+  if (!status.valid && !(allowConsumed && status.accepted))
+    throw new Error("Invalid invite.");
+  return { claims, tokenHash, origin, clientEmail: status.clientEmail || "", status };
+}
+
+async function accessAdminEmail(ctx: ExecutionContext, env: Env) {
+  if (!ctx.access || !env.ONBOARDING_ACCESS_AUD || !env.ONBOARDING_ADMIN_EMAILS)
+    return "";
+  if (ctx.access.aud !== env.ONBOARDING_ACCESS_AUD) return "";
+  const identity = await ctx.access.getIdentity();
+  const email = clean(identity?.email, 240).toLowerCase();
+  const permitted = env.ONBOARDING_ADMIN_EMAILS.split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return email && permitted.includes(email) ? email : "";
+}
+
+const onboardingAdminHtml = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><title>Private invitations | LaunchLoom</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f4f2ea;color:#10251f;font:16px/1.5 system-ui,sans-serif}.shell{width:min(900px,calc(100% - 36px));margin:40px auto 80px}.card{padding:clamp(22px,5vw,48px);border:1px solid #d9ddd1;border-radius:24px;background:#fffefa;box-shadow:0 20px 70px #10251f1f}.eyebrow{color:#40695b;font-size:.7rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase}h1{margin:14px 0;font-size:clamp(2rem,5vw,3.6rem);letter-spacing:-.055em;line-height:1}p{color:#587069;line-height:1.65}.row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid #d9ddd1}.row small{display:block;color:#587069}.field{display:grid;gap:7px;margin:20px 0}.field input{width:100%;padding:12px;border:1px solid #d9ddd1;border-radius:12px;font:inherit}.button{display:inline-flex;align-items:center;justify-content:center;padding:13px 19px;border:0;border-radius:999px;background:#10251f;color:#fffef9;font:inherit;font-weight:750;cursor:pointer}.secondary{background:#d9f06b;color:#10251f}.linkrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px}.linkrow input{min-width:0;padding:12px;border:1px solid #d9ddd1;border-radius:12px;font:inherit}.text-button{border:0;background:transparent;color:#356c5b;font:inherit;font-weight:700;cursor:pointer}.divider{border-top:1px solid #d9ddd1;margin:36px 0}button:disabled{opacity:.6;cursor:wait}[hidden]{display:none!important}@media(max-width:600px){.linkrow{grid-template-columns:1fr}.row{align-items:flex-start}}
+</style></head><body><main class="shell"><section class="card"><span class="eyebrow">Private invite management</span><h1>Invite a business owner.</h1><p>Create a private, one-use link. Bind it to the preview email or leave the email field blank.</p><form id="create"><label class="field">Client preview email (optional)<input type="email" name="clientEmail" autocomplete="email" placeholder="owner@example.com"></label><button class="button" type="submit">Create private link</button></form><p id="status" role="status" aria-live="polite"></p><section id="new" hidden><h2>New invitation</h2><p>The link is shown once. Copy it and send it directly to the business owner.</p><div class="linkrow"><input id="invite-link" readonly aria-label="New private invitation link"><button class="button secondary" id="copy" type="button">Copy link</button></div></section><div class="divider"></div><section><h2>Recent invitations</h2><button class="text-button" id="refresh" type="button">Refresh list</button><div id="invites" aria-live="polite"></div></section></section></main><script>
+(()=>{const endpoint="/api/admin/onboarding-invites",status=document.querySelector("#status"),list=document.querySelector("#invites");async function request(method="GET",body){const response=await fetch(endpoint,{method,headers:body?{"Content-Type":"application/json"}:{},body:body?JSON.stringify(body):undefined,credentials:"same-origin",cache:"no-store"});const result=await response.json().catch(()=>({}));if(!response.ok)throw Error(result.error||"Invite management is unavailable.");return result}async function refresh(){try{const result=await request();list.replaceChildren();for(const invite of result.invites||[]){const row=document.createElement("article");row.className="row";const details=document.createElement("div"),email=document.createElement("strong"),meta=document.createElement("small");email.textContent=invite.clientEmail||"Email not bound";meta.textContent=invite.status+" · expires "+new Date(invite.expiresAt).toLocaleString();details.append(email,meta);row.append(details);if(invite.status==="unused"){const button=document.createElement("button");button.className="text-button";button.type="button";button.textContent="Revoke";button.addEventListener("click",async()=>{button.disabled=true;try{await request("POST",{action:"revoke",inviteId:invite.inviteId});status.textContent="Invitation revoked.";await refresh()}catch(error){status.textContent=error.message;button.disabled=false}});row.append(button)}list.append(row)}if(!list.children.length)list.textContent="No invitations yet."}catch(error){status.textContent=error.message||"Invite list is unavailable."}}document.querySelector("#create").addEventListener("submit",async event=>{event.preventDefault();const button=event.currentTarget.querySelector("button");button.disabled=true;status.textContent="Creating invitation…";try{const form=new FormData(event.currentTarget),result=await request("POST",{action:"create",clientEmail:form.get("clientEmail")});document.querySelector("#invite-link").value=result.url;document.querySelector("#new").hidden=false;status.textContent="Private invitation created.";event.currentTarget.reset();await refresh()}catch(error){status.textContent=error.message||"Invitation could not be created."}finally{button.disabled=false}});document.querySelector("#copy").addEventListener("click",async()=>{await navigator.clipboard.writeText(document.querySelector("#invite-link").value);status.textContent="Invitation link copied."});document.querySelector("#refresh").addEventListener("click",refresh);void refresh()})();
+</script></body></html>`;
+
+async function onboardingAdminPage(request: Request, env: Env, ctx: ExecutionContext) {
+  if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
+  if (!(await accessAdminEmail(ctx, env)))
+    return new Response("Access denied.", { status: 403, headers: { "Cache-Control": "no-store" } });
+  return new Response(onboardingAdminHtml, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "no-referrer",
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    },
+  });
+}
+
+async function adminInvites(request: Request, env: Env, ctx: ExecutionContext) {
+  const allowed = [new URL(request.url).origin];
+  const headers = { ...cors(request, allowed), "Access-Control-Allow-Credentials": "true", "Cache-Control": "no-store" };
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
+  if (request.method === "POST") {
+    const origin = request.headers.get("Origin");
+    if (!origin || !allowed.includes(origin)) return json({ error: "Invalid request origin." }, 403, headers);
+  }
+  if (!(await accessAdminEmail(ctx, env)))
+    return json({ error: "Access denied." }, 403, headers);
+  if (!env.ONBOARDING_INVITE_SIGNING_SECRET || !env.ONBOARDING_ORIGIN)
+    return json({ error: "Invite management is not configured." }, 503, headers);
+  if (request.method === "GET")
+    return json({ invites: await inviteCoordinator(env).list(Date.now()) }, 200, {
+      ...headers,
+      "Cache-Control": "no-store",
+    });
+  if (request.method !== "POST")
+    return new Response("Method not allowed", { status: 405 });
+  try {
+    const body = (await request.json()) as Record<string, unknown>;
+    const action = clean(body.action, 20);
+    const inviteId = clean(body.inviteId, 100);
+    if (action === "revoke") {
+      if (!/^[a-z0-9-]{12,100}$/iu.test(inviteId))
+        return json({ error: "Invalid invitation." }, 400, headers);
+      const revoked = await inviteCoordinator(env).revoke(inviteId, Date.now());
+      return revoked
+        ? json({ ok: true }, 200, headers)
+        : json({ error: "Invitation cannot be revoked." }, 409, headers);
+    }
+    if (action !== "create") return json({ error: "Choose create or revoke." }, 400, headers);
+    const clientEmail = clean(body.clientEmail, 240).toLowerCase();
+    if (clientEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(clientEmail))
+      return json({ error: "Enter a valid client email." }, 400, headers);
+    const expiresAt = Date.now() + 14 * 24 * 60 * 60 * 1000;
+    const claims: OnboardingInviteClaims = {
+      inviteId: crypto.randomUUID(),
+      ...(clientEmail ? { clientEmail } : {}),
+      expiresAt,
+      allowedOrigins: [env.ONBOARDING_ORIGIN.replace(/\/$/u, "")],
+    };
+    const encoded = btoa(JSON.stringify(claims))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/u, "");
+    const token = `${encoded}.${await signHmac(encoded, env.ONBOARDING_INVITE_SIGNING_SECRET)}`;
+    const tokenHash = await digest(token);
+    await inviteCoordinator(env).register({
+      inviteId: claims.inviteId,
+      clientEmail: claims.clientEmail || null,
+      expiresAt,
+      allowedOrigin: claims.allowedOrigins[0],
+      tokenHash,
+      now: Date.now(),
+    });
+    return json({
+      inviteId: claims.inviteId,
+      clientEmail: claims.clientEmail || null,
+      expiresAt,
+      url: `${claims.allowedOrigins[0]}/onboard/#invite=${encodeURIComponent(token)}`,
+    }, 201, { ...headers, "Cache-Control": "no-store" });
+  } catch {
+    return json({ error: "Could not create the invitation." }, 400, headers);
+  }
 }
 
 function clean(value: unknown, limit = 8000) {
@@ -330,96 +538,128 @@ async function siteConfigAtReviewHead(env: Env, claims: ReviewClaims) {
 }
 
 async function intake(request: Request, env: Env) {
-  const headers = cors(request, platformOrigins(env));
-  if (request.method === "OPTIONS")
-    return new Response(null, { status: 204, headers });
-  if (request.method !== "POST")
-    return new Response("Method not allowed", { status: 405, headers });
+  const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
+  const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
+  const headers = cors(request, allowed);
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
+  if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers });
   try {
-    assertOrigin(request, platformOrigins(env));
+    assertOrigin(request, allowed);
     const raw = (await request.json()) as Intake;
-    await verifyTurnstile(
-      env,
-      raw.turnstileToken,
-      request.headers.get("CF-Connecting-IP") || undefined,
-    );
-    if (clean(raw["bot-field"]) || !clean(raw.submissionId, 100))
-      return json({ error: "Invalid intake." }, 400, headers);
-    const businessName = clean(raw.businessName, 120);
-    const email = clean(raw.email, 240);
-    if (
-      !businessName ||
-      !email ||
-      !isAffirmativeConfirmation(raw.confirmAccuracy) ||
-      !isAffirmativeConfirmation(raw.confirmRights) ||
-      !isAffirmativeConfirmation(raw.confirmSeoResearch)
-    )
+    await verifyTurnstile(env, raw.turnstileToken, request.headers.get("CF-Connecting-IP") || undefined);
+    if (clean(raw["bot-field"])) return json({ error: "Invalid intake." }, 400, headers);
+    let invite: Awaited<ReturnType<typeof verifiedInvite>>;
+    try {
+      invite = await verifiedInvite(
+        request,
+        env,
+        raw.inviteToken,
+        true,
+        clean(raw.submissionId, 100),
+      );
+    } catch {
+      return json({ error: "This invitation is invalid or no longer available." }, 403, headers);
+    }
+    let normalized: ReturnType<typeof normalizeClientIntake>;
+    try {
+      normalized = normalizeClientIntake(raw);
+    } catch (error) {
       return json(
-        { error: "Please complete the required business details." },
+        { error: error instanceof Error ? error.message : "Complete the required business details." },
         400,
         headers,
       );
+    }
+    if (invite.clientEmail && invite.clientEmail.toLowerCase() !== normalized.email.toLowerCase())
+      return json({ error: "Use the email address that received this invitation." }, 403, headers);
+    const allowedIntakeFields = new Set([
+      "intakeVersion", "version", "legacy", "submissionId", "businessName", "contactName",
+      "email", "phone", "address", "website", "domain", "desiredDomain", "industry",
+      "services", "confirmedServices", "serviceAreas", "primaryCity", "serviceRadius",
+      "coverageAreas", "differentiators", "primaryCta", "brandNotes", "brandColor",
+      "primaryColor", "leadEmail", "assets", "placeId", "googleMapsUrl", "gmbSkipped",
+      "confirmAccuracy", "confirmRights", "confirmSeoResearch", "confirmation",
+    ]);
     const safeData = Object.fromEntries(
-      Object.entries(raw)
-        .filter(([key]) => key !== "turnstileToken")
-        .map(([key, value]) => [
-          key,
-          key === "assets" ? safeAssets(env, value) : clean(value),
-        ]),
+      Object.entries(normalized)
+        .filter(([key]) => allowedIntakeFields.has(key))
+        .map(([key, value]) => [key, key === "assets" ? safeAssets(env, value) : value]),
     );
-    const marker = `<!-- launchloom-intake:${safeData.submissionId} -->`;
-    const issues = await github(
-      env,
-      "/repos/WrazyAI/launchloom/issues?state=open&per_page=100",
-    ).then(
-      (response) =>
-        response.json() as Promise<Array<{ body?: string; number: number }>>,
+    const submissionHash = await digest(JSON.stringify(safeData));
+    const reservation = await inviteCoordinator(env).reserveSubmission(
+      invite.claims.inviteId,
+      invite.tokenHash,
+      invite.claims.expiresAt,
+      invite.origin,
+      normalized.submissionId,
+      submissionHash,
+      normalized.email,
     );
-    const duplicate = issues.find((issue) => issue.body?.includes(marker));
-    if (duplicate)
-      return json(
-        { ok: true, duplicate: true, issue: duplicate.number },
-        200,
-        headers,
-      );
-    const issue = await github(env, "/repos/WrazyAI/launchloom/issues", {
-      method: "POST",
-      body: JSON.stringify({
-        title: `Intake: ${businessName}`,
-        body: `${marker}\n\n\`\`\`json\n${JSON.stringify(safeData, null, 2)}\n\`\`\``,
-      }),
-    }).then((response) => response.json() as Promise<{ number: number }>);
-    await dispatch(env, "intake-submitted", { issue: issue.number });
-    return json({ ok: true, issue: issue.number }, 200, headers);
+    if (!reservation.accepted)
+      return json({
+        error: reservation.reason === "in_progress"
+          ? "This submission is already being accepted. Retry shortly."
+          : reservation.reason === "submission_mismatch"
+            ? "This submission changed after acceptance. Request a new invitation to send different details."
+            : "This invitation is no longer available.",
+        code: reservation.reason,
+      }, ["in_progress", "submission_mismatch"].includes(reservation.reason) ? 409 : 403, headers);
+    const marker = `<!-- launchloom-intake:${normalized.submissionId} -->`;
+    let issueNumber = reservation.issue || null;
+    try {
+      if (!issueNumber) {
+        const issues = await github(env, "/repos/WrazyAI/launchloom/issues?state=all&per_page=100").then(
+          (response) => response.json() as Promise<Array<{ body?: string; number: number }>>,
+        );
+        issueNumber = issues.find((issue) => issue.body?.includes(marker))?.number || null;
+      }
+      if (!issueNumber) {
+        const issue = await github(env, "/repos/WrazyAI/launchloom/issues", {
+          method: "POST",
+          body: JSON.stringify({
+            title: `Intake: ${normalized.businessName}`,
+            body: `${marker}\n\n\`\`\`json\n${JSON.stringify(safeData, null, 2)}\n\`\`\``,
+          }),
+        }).then((response) => response.json() as Promise<{ number: number }>);
+        issueNumber = issue.number;
+      }
+      if (!reservation.duplicate) {
+        const recorded = await inviteCoordinator(env).recordIssue(
+          invite.claims.inviteId, normalized.submissionId, submissionHash, issueNumber,
+        );
+        if (!recorded) throw new Error("Intake acceptance could not be recorded.");
+      }
+      await dispatch(env, "intake-submitted", { issue: issueNumber });
+      return json({ ok: true, duplicate: reservation.duplicate, issue: issueNumber }, 200, headers);
+    } catch (error) {
+      if (!issueNumber)
+        await inviteCoordinator(env).reopenFailedSubmission(invite.claims.inviteId, normalized.submissionId);
+      throw error;
+    }
   } catch (error) {
-    console.error("Intake failed", error);
-    return json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "We couldn’t start your preview. Please try again.",
-      },
-      500,
-      headers,
-    );
+    console.error("Intake failed", error instanceof Error ? error.message : "Unknown error");
+    return json({ error: error instanceof Error ? error.message : "We couldn’t start your preview. Please try again." }, 500, headers);
   }
 }
 
 async function upload(request: Request, env: Env) {
-  const headers = cors(request, platformOrigins(env));
+  const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
+  const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
+  const headers = cors(request, allowed);
   if (request.method === "OPTIONS")
     return new Response(null, { status: 204, headers });
   if (request.method !== "POST")
     return new Response("Method not allowed", { status: 405, headers });
   try {
-    assertOrigin(request, platformOrigins(env));
+    assertOrigin(request, allowed);
     const form = await request.formData();
+    const submissionId = clean(form.get("submissionId"), 100);
     if (
       clean(form.get("bot-field")) ||
-      !/^[a-z0-9-]{12,100}$/i.test(clean(form.get("submissionId"), 100))
+      !/^[a-z0-9-]{12,100}$/i.test(submissionId)
     )
       return json({ error: "Invalid upload." }, 400, headers);
+    await verifiedInvite(request, env, form.get("inviteToken"), true, submissionId);
     const slot = clean(form.get("slot"), 30);
     const file = form.get("file");
     const slots = new Set([
@@ -447,8 +687,11 @@ async function upload(request: Request, env: Env) {
         : file.type === "image/webp"
           ? "webp"
           : "jpg";
-    const key = `intakes/${clean(form.get("submissionId"), 100)}/${crypto.randomUUID()}-${slot}.${extension}`;
-    await env.ASSETS.put(key, file.stream(), {
+    const fileBytes = await file.arrayBuffer();
+    const checksum = new Uint8Array(await crypto.subtle.digest("SHA-256", fileBytes));
+    const fileHash = [...checksum].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    const key = `intakes/${submissionId}/${slot}-${fileHash.slice(0, 32)}.${extension}`;
+    await env.ASSETS.put(key, new Blob([fileBytes]).stream(), {
       httpMetadata: {
         contentType: file.type,
         cacheControl: "public, max-age=31536000, immutable",
@@ -466,18 +709,27 @@ async function upload(request: Request, env: Env) {
 }
 
 async function places(request: Request, env: Env) {
-  const headers = cors(request, platformOrigins(env));
+  const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
+  const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
+  const headers = cors(request, allowed);
   if (request.method === "OPTIONS")
     return new Response(null, { status: 204, headers });
   if (request.method !== "POST")
     return new Response("Method not allowed", { status: 405, headers });
   try {
-    assertOrigin(request, platformOrigins(env));
+    assertOrigin(request, allowed);
+    const body = (await request.json().catch(() => ({}))) as {
+      query?: unknown;
+      inviteToken?: unknown;
+    };
+    try {
+      await verifiedInvite(request, env, body.inviteToken);
+    } catch {
+      return json({ error: "This invitation is invalid or no longer available." }, 403, headers);
+    }
     if (!env.GOOGLE_PLACES_API_KEY)
       return json({ error: "Places lookup is not configured." }, 503, headers);
-    const { query } = (await request.json().catch(() => ({}))) as {
-      query?: unknown;
-    };
+    const { query } = body;
     if (typeof query !== "string" || query.trim().length < 3)
       return json(
         { error: "Enter a business name, address, or Maps URL." },
@@ -492,7 +744,7 @@ async function places(request: Request, env: Env) {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": env.GOOGLE_PLACES_API_KEY,
           "X-Goog-FieldMask":
-            "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.rating,places.userRatingCount,places.regularOpeningHours",
+            "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.rating,places.userRatingCount,places.regularOpeningHours,places.primaryType,places.types,places.location",
         },
         body: JSON.stringify({ textQuery: query.trim(), maxResultCount: 1 }),
       },
@@ -530,6 +782,11 @@ async function places(request: Request, env: Env) {
           rating: place.rating,
           ratingCount: place.userRatingCount,
           hours: place.regularOpeningHours?.weekdayDescriptions || [],
+          primaryType: place.primaryType || "",
+          types: Array.isArray(place.types) ? place.types.slice(0, 12) : [],
+          location: place.location && Number.isFinite(place.location.latitude) && Number.isFinite(place.location.longitude)
+            ? { latitude: place.location.latitude, longitude: place.location.longitude }
+            : null,
         },
       },
       200,
@@ -537,6 +794,78 @@ async function places(request: Request, env: Env) {
     );
   } catch (error) {
     return json({ error: "Places lookup failed." }, 500, headers);
+  }
+}
+
+async function serviceSuggestions(request: Request, env: Env) {
+  const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
+  const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
+  const headers = cors(request, allowed);
+  if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
+  if (request.method !== "POST") return new Response("Method not allowed", { status: 405, headers });
+  try {
+    assertOrigin(request, allowed);
+    const body = (await request.json()) as Record<string, unknown>;
+    await verifiedInvite(request, env, body.inviteToken);
+    const businessName = clean(body.businessName, 120);
+    const category = clean(body.category, 120);
+    const primaryType = clean(body.primaryType, 120);
+    const placeTypes = Array.isArray(body.placeTypes)
+      ? body.placeTypes.map((item) => clean(item, 80)).filter(Boolean).slice(0, 12)
+      : [];
+    if (!businessName)
+      return json({ suggestions: [], warning: "Add a business name to get suggestions." }, 200, headers);
+    if (!env.OPENROUTER_API_KEY)
+      return json({ suggestions: [], warning: "Suggestions are unavailable; enter your services manually." }, 200, headers);
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "X-OpenRouter-Title": "LaunchLoom business service suggestions",
+      },
+      body: JSON.stringify({
+        model: "z-ai/glm-5.3-flash",
+        temperature: 0.1,
+        max_tokens: 350,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: "Suggest 3 to 5 likely services for the business described. Return JSON {services:[string]}. These are unconfirmed suggestions only. Do not claim any service is offered. Use concrete service names, avoid SEO or keyword terms, and never invent credentials or outcomes.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({ businessName, category, googlePrimaryType: primaryType, googleTypes: placeTypes }),
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!response.ok)
+      return json({ suggestions: [], warning: "Suggestions are temporarily unavailable; enter your services manually." }, 200, headers);
+    const result = await response.json() as {
+      error?: unknown;
+      choices?: Array<{ message?: { content?: unknown } }>;
+    };
+    const content = result.choices?.[0]?.message?.content;
+    let values: unknown = [];
+    try {
+      const parsed = JSON.parse(String(content || "{}")) as { services?: unknown };
+      values = parsed.services;
+    } catch {
+      values = [];
+    }
+    const suggestions = Array.isArray(values)
+      ? [...new Set(values.map((item) => clean(item, 120)).filter(Boolean))].slice(0, 5)
+      : [];
+    return json({
+      suggestions,
+      provenance: "model_suggestion_unconfirmed",
+      warning: suggestions.length ? null : "No suggestions were returned; enter your services manually.",
+    }, 200, headers);
+  } catch {
+    return json({ suggestions: [], warning: "Suggestions are unavailable; enter your services manually." }, 200, headers);
   }
 }
 
@@ -627,8 +956,28 @@ async function feedback(request: Request, env: Env) {
   if (request.method !== "POST")
     return new Response("Method not allowed", { status: 405, headers });
   try {
-    const { token, comment, pageUrl, email, category, submissionId } =
-      (await request.json()) as Record<string, unknown>;
+    const contentType = request.headers.get("Content-Type") || "";
+    let token: unknown;
+    let comment: unknown;
+    let pageUrl: unknown;
+    let email: unknown;
+    let category: unknown;
+    let submissionId: unknown;
+    let replacementFile: File | null = null;
+    if (contentType.toLowerCase().startsWith("multipart/form-data")) {
+      const form = await request.formData();
+      token = form.get("token");
+      comment = form.get("comment");
+      pageUrl = form.get("pageUrl");
+      email = form.get("email");
+      category = form.get("category");
+      submissionId = form.get("submissionId");
+      const file = form.get("replacementAsset");
+      if (file instanceof File && file.size > 0) replacementFile = file;
+    } else {
+      ({ token, comment, pageUrl, email, category, submissionId } =
+        (await request.json()) as Record<string, unknown>);
+    }
     const claims = await verifyHmac<ReviewClaims>(
       String(token || ""),
       env.REVIEW_SIGNING_SECRET,
@@ -690,6 +1039,21 @@ async function feedback(request: Request, env: Env) {
     } else if (!claims.feedbackIssue) {
       throw new Error("Invalid client review link.");
     }
+    const feedbackCategory = clean(category, 80).toLowerCase();
+    let safeCategory = feedbackCategory;
+    if (claims.stage === "client") {
+      const allowedCategories = new Set([
+        "logo", "photos", "style", "color", "text", "contact", "other-small",
+      ]);
+      if (!allowedCategories.has(feedbackCategory))
+        return json({ error: "Choose one of the listed small-change categories." }, 400, cors(request, claims.allowedOrigins));
+      if (replacementFile && !["logo", "photos"].includes(feedbackCategory))
+        return json({ error: "Replacement images are for logo or business photo updates." }, 400, cors(request, claims.allowedOrigins));
+    } else {
+      safeCategory = "developer";
+      if (replacementFile)
+        return json({ error: "File uploads are available on client review links only." }, 400, cors(request, claims.allowedOrigins));
+    }
     // Feedback comments are durable GitHub records. Keep only the reviewed
     // page's public origin/path there; never retain the signed query token.
     const reviewedPage =
@@ -698,17 +1062,44 @@ async function feedback(request: Request, env: Env) {
     const requestId = /^[a-z0-9-]{12,100}$/i.test(suppliedId)
       ? suppliedId
       : crypto.randomUUID();
-    const fingerprint = await digest(
-      suppliedId
-        ? `submission:${requestId}`
-        : [
-            claims.stage,
-            claims.repo,
-            note,
-            clean(category, 80),
-            reviewedPage,
-          ].join("\n"),
-    );
+    let replacementAssetUrl = "";
+    if (replacementFile) {
+      if (replacementFile.size > 8 * 1024 * 1024)
+        return json({ error: "Keep replacement images below 8 MB." }, 413, cors(request, claims.allowedOrigins));
+      const imageBytes = new Uint8Array(await replacementFile.arrayBuffer());
+      const imageType = replacementFile.type.toLowerCase();
+      const extension = imageType === "image/png" ? "png" : imageType === "image/jpeg" ? "jpg" : imageType === "image/webp" ? "webp" : "";
+      const validBytes = extension === "png"
+        ? imageBytes.length >= 8 && imageBytes.slice(0, 8).join(",") === "137,80,78,71,13,10,26,10"
+        : extension === "jpg"
+          ? imageBytes.length >= 3 && imageBytes[0] === 0xff && imageBytes[1] === 0xd8 && imageBytes[2] === 0xff
+          : extension === "webp"
+            ? imageBytes.length >= 12 && new TextDecoder().decode(imageBytes.slice(0, 4)) === "RIFF" && new TextDecoder().decode(imageBytes.slice(8, 12)) === "WEBP"
+            : false;
+      if (!validBytes)
+        return json({ error: "Upload a valid PNG, JPEG, or WebP image." }, 415, cors(request, claims.allowedOrigins));
+      const assetDigest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", imageBytes)))
+        .map((byte) => byte.toString(16).padStart(2, "0")).join("");
+      const safeSite = clean(claims.siteId, 100).toLowerCase().replace(/[^a-z0-9-]/gu, "-").replace(/-+/gu, "-").replace(/^-|-$/gu, "");
+      const safePr = Number.isInteger(Number(claims.pr)) ? String(claims.pr) : "review";
+      const safeRequestId = requestId.toLowerCase().replace(/[^a-z0-9-]/gu, "-");
+      const key = `client-replacements/${safeSite}/${safePr}/${safeRequestId}/${assetDigest}.${extension}`;
+      await env.ASSETS.put(key, replacementFile.stream(), {
+        httpMetadata: { contentType: imageType, cacheControl: "public, max-age=31536000, immutable" },
+      });
+      const base = new URL(env.ASSET_BASE_URL);
+      if (base.protocol !== "https:") throw new Error("Replacement asset storage is not configured safely.");
+      replacementAssetUrl = new URL(key, `${base.href.replace(/\/$/u, "")}/`).href;
+    }
+    const fingerprint = await digest([
+      suppliedId ? requestId : "",
+      claims.stage,
+      claims.repo,
+      note,
+      safeCategory,
+      reviewedPage,
+      replacementAssetUrl,
+    ].join("\n"));
     const queued = await env.REVISION_COORDINATOR.getByName(
       claims.repo.toLowerCase(),
     ).enqueue({
@@ -721,8 +1112,8 @@ async function feedback(request: Request, env: Env) {
       siteId: claims.siteId,
       clientEmail: claims.clientEmail,
       reviewedPage: clean(reviewedPage, 1000),
-      category: clean(category, 80),
-      feedback: note,
+      category: safeCategory,
+      feedback: replacementAssetUrl ? `Replacement asset: ${replacementAssetUrl}\n\n${note}` : note,
     } satisfies RevisionRequestInput);
     if (!queued.ok)
       return json(
@@ -1406,11 +1797,18 @@ async function aiChat(request: Request, env: Env) {
 }
 
 export default {
-  fetch(request: Request, env: Env) {
+  fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const path = new URL(request.url).pathname;
+    if (path === "/api/onboarding-invites/validate")
+      return inviteValidation(request, env);
+    if (path === "/api/admin/onboarding-invites")
+      return adminInvites(request, env, ctx);
+    if (path === "/admin/onboarding-invites")
+      return onboardingAdminPage(request, env, ctx);
     if (path === "/api/intake") return intake(request, env);
     if (path === "/api/upload") return upload(request, env);
     if (path === "/api/places") return places(request, env);
+    if (path === "/api/service-suggestions") return serviceSuggestions(request, env);
     if (path === "/api/google-reviews") return googleReviews(request, env);
     if (path === "/api/feedback") return feedback(request, env);
     if (path === "/api/creative-repair") return creativeRepair(request, env);

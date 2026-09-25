@@ -7,11 +7,11 @@
   "planSteps": [
     {
       "type": "action",
-      "description": "Navigate through Business and Services using fictional valid required data"
+      "description": "Open a valid unused test invitation link and navigate through Business and Services using fictional valid required data"
     },
     {
       "type": "action",
-      "description": "On Brand add a short brand note, upload a logo, and enter leads@example.com"
+      "description": "On Brand add a short brand note, set an existing brand colour, upload a logo, and enter leads@example.com"
     },
     {
       "type": "action",
@@ -19,7 +19,15 @@
     },
     {
       "type": "assertion",
-      "description": "The brand note, uploaded logo preview, and lead notification email remain present"
+      "description": "The brand note, existing brand colour, uploaded logo preview, and lead notification email remain present"
+    },
+    {
+      "type": "action",
+      "description": "Return to Services one more time, then continue to Brand"
+    },
+    {
+      "type": "assertion",
+      "description": "The brand colour and lead notification email are preserved after repeated backward navigation"
     }
   ]
 }

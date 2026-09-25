@@ -240,14 +240,17 @@ describe("human creative revision lifecycle", () => {
     const publish = readFileSync(".github/workflows/publish-site.yml", "utf8");
     const worker = readFileSync("worker/src/index.ts", "utf8");
 
-    for (const workflow of [developer, client]) {
-      expect(workflow).toContain(
-        "scripts/prepare-creative-revision-candidate.mjs",
-      );
-      expect(workflow).toContain("scripts/run-rendered-creative-repair.mjs");
-      expect(workflow).toContain("--require-diversity false");
-      expect(workflow).toContain("humanRevisionPass == true");
-    }
+    expect(developer).toContain(
+      "scripts/prepare-creative-revision-candidate.mjs",
+    );
+    expect(developer).toContain("scripts/run-rendered-creative-repair.mjs");
+    expect(developer).toContain("--require-diversity false");
+    expect(developer).toContain("humanRevisionPass == true");
+    expect(client).toContain("scripts/apply-feedback.mjs");
+    expect(client).not.toContain("scripts/prepare-creative-revision-candidate.mjs");
+    expect(client).not.toContain("scripts/run-rendered-creative-repair.mjs");
+    expect(client).not.toContain("--require-diversity false");
+    expect(client).toContain("--mode verify");
 
     expect(developer).toContain(
       '--feedback-file "$RUNNER_TEMP/developer-feedback.txt"',

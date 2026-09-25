@@ -15,16 +15,29 @@ const { service } = Astro.props as { service: Service };
 const { recipe } = resolvePageRecipe(site);
 const experience = site.design?.experience?.packId ? compileExperiencePack(site, recipe) : null;
 const trades = recipe === "local-trades";
+const serviceImage = site.assets?.photoTwo || site.assets?.photoOne || site.images.secondary || site.images.hero;
 const related = site.services.filter((item) => item.slug !== service.slug).slice(0, 3);
 const process = site.conversion?.process?.slice(0, 4) || [];
 const faqs = site.conversion?.faqs?.slice(0, 4) || [];
 const support = service.decisionSupport;
+const serviceStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: service.name,
+  serviceType: service.name,
+  provider: {
+    "@type": site.industry === "home-services" ? "HomeAndConstructionBusiness" : "LocalBusiness",
+    name: site.business.name,
+    telephone: site.business.phone || undefined,
+  },
+  areaServed: site.business.serviceAreas.length ? site.business.serviceAreas : undefined,
+};
 ---
 
-<SiteLayout title={`${service.name} | ${site.business.name}`} description={service.description}>
+<SiteLayout title={`${service.name} | ${site.business.name}`} description={service.description} schemas={[serviceStructuredData]}>
   <Header />
   <main class:list={["inner-page", `recipe-${recipe}`, experience && `inner-experience-${experience.program.packId}`]} data-experience-pack={experience?.program.packId}>
-    <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home / Services</a><span class="kicker">{trades ? "Service details" : "Care option"}</span><h1>{service.name}</h1><p>{service.description}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{site.images.secondary && <img src={site.images.secondary} alt={`${site.business.name} service context`} />}</div></section>
+    <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home</a> / <a class="breadcrumb" href="/services/">All services</a><span class="kicker">{trades ? "Service details" : "Care option"}</span><h1>{service.name}</h1><p>{service.description}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{serviceImage && <img src={serviceImage} alt={`${site.business.name} ${site.assets?.photoOne || site.assets?.photoTwo ? "client-provided service photo" : "service context"}`} />}</div></section>
 
     <section class="section wrap service-decision"><div class="section-heading"><span class="kicker">A useful place to start</span><h2>{trades ? "Understand the problem, then choose the right service." : "Talk through the support that fits your situation."}</h2></div><div class="decision-grid"><div><h3>What to ask about</h3><p>{support?.scope || service.description}</p></div><div><h3>What happens next</h3><p>{support?.nextStep || (trades ? "Describe the issue, share your location, and the team will confirm the appropriate next step before scheduling." : "Share what support you are considering. The team will listen, answer questions, and help you decide whether this option is suitable.")}</p></div><div><h3>What to prepare</h3><p>{support?.preparation || site.business.offer || `Contact ${site.business.name} for details that apply to your needs.`}</p></div></div></section>
 

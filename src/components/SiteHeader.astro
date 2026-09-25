@@ -1,12 +1,19 @@
 ---
-const { compact = false, hideNav = false } = Astro.props;
+const { compact = false, hideNav = false, hideBrandLink = false } = Astro.props;
 ---
 
 <header class:list={["site-header", { compact }]}>
-  <a class="brand" href="/" aria-label="LaunchLoom home">
-    <span class="brand-mark" aria-hidden="true">L</span>
-    <span>launchloom</span>
-  </a>
+  {hideBrandLink ? (
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">L</span>
+      <span>launchloom</span>
+    </div>
+  ) : (
+    <a class="brand" href="/" aria-label="LaunchLoom home">
+      <span class="brand-mark" aria-hidden="true">L</span>
+      <span>launchloom</span>
+    </a>
+  )}
   {!hideNav && (
     <nav aria-label="Primary navigation">
       <a href="/#how-it-works">How it works</a>

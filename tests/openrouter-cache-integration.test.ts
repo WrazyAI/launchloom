@@ -29,7 +29,6 @@ describe("OpenRouter cache integration", () => {
     const expected = new Map([
       ["scripts/author-production-experiences.mjs", "creative-author"],
       ["scripts/generate-site-config.mjs", "site-copy"],
-      ["scripts/seo-research.mjs", "seo-research"],
       ["scripts/revision-engine.mjs", "revision-operations"],
       ["scripts/rendered-reference-fidelity.mjs", "rendered-reference"],
       ["scripts/visual-quality-gate.mjs", "visual-quality-gate"],
@@ -43,6 +42,15 @@ describe("OpenRouter cache integration", () => {
       expect(source, file).toContain("openRouterSessionId");
       expect(source, file).toContain(scope);
     }
+  });
+
+  it("keeps measured SEO research independent from language model output", () => {
+    const source = fs.readFileSync("scripts/seo-research.mjs", "utf8");
+    expect(source).toContain("createDataForSeoClient");
+    expect(source).toContain("googleSearchVolume");
+    expect(source).toContain("bulkKeywordDifficulty");
+    expect(source).not.toContain("openRouterChatCompletion");
+    expect(source).not.toContain("OPENROUTER_API_KEY");
   });
 
   it("uses xhigh as the default Luna creative reasoning effort", () => {
@@ -118,7 +126,6 @@ describe("OpenRouter cache integration", () => {
     for (const file of [
       "scripts/author-production-experiences.mjs",
       "scripts/generate-site-config.mjs",
-      "scripts/seo-research.mjs",
       "scripts/rendered-reference-fidelity.mjs",
       "scripts/creative-repair-loop.mjs",
     ]) {

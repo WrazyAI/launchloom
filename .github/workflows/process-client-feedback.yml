@@ -110,39 +110,6 @@ jobs:
             CHAT_TOKEN=$(node scripts/create-ai-chat-token.mjs --project "$PROJECT" --file "$RUNNER_TEMP/client/src/site.config.json" --origins "$ORIGINS")
             node scripts/enrich-site-config.mjs --file "$RUNNER_TEMP/client/src/site.config.json" --api https://api.launchloom.wrazyos.com --chatToken "$CHAT_TOKEN"
           fi
-      - name: Refine authored creative candidate from client feedback
-        if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
-        id: creative_revision
-        run: |
-          CLIENT_DIR="$RUNNER_TEMP/client"
-          node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$CLIENT_DIR"
-          RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-revision-candidate.mjs" --client "$CLIENT_DIR" --out "$RUNNER_TEMP/creative-revision-candidates")
-          echo "$RESULT"
-          CREATIVE=$(printf '%s' "$RESULT" | jq -r '.creative // false')
-          REQUIRED=$(printf '%s' "$RESULT" | jq -r '.repairRequired // false')
-          echo "creative=$CREATIVE" >> "$GITHUB_OUTPUT"
-          echo "repair_required=$REQUIRED" >> "$GITHUB_OUTPUT"
-          if [ "$CREATIVE" = true ] && [ "$REQUIRED" = true ]; then
-            SESSION_ARGS=()
-            if [ -f "$CLIENT_DIR/.launchloom/reasoning-preflight.json" ]; then
-              SESSION_ARGS=(--session "$CLIENT_DIR/.launchloom/reasoning-preflight.json")
-            fi
-            node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
-              --site-dir "$CLIENT_DIR" \
-              --candidates "$RUNNER_TEMP/creative-revision-candidates" \
-              --out .launchloom/human-revision \
-              --mode preview \
-              --max-cycles 2 \
-              --require-diversity false \
-              --feedback-file "$RUNNER_TEMP/client-feedback.txt" \
-              --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" \
-              "${SESSION_ARGS[@]}"
-            SUMMARY="$CLIENT_DIR/.launchloom/human-revision/summary.json"
-            jq -e '.status == "passed" and .visualGatePass == true and .humanRevisionPass == true and (.selectedCandidateId != null)' "$SUMMARY" >/dev/null || { echo "Human creative revision did not pass its acceptance gates"; exit 1; }
-            CANDIDATE=$(jq -r '.selectedCandidateId' "$SUMMARY")
-            CYCLES=$(jq -r '(.repairCycles // {}) | to_entries | map(.value) | add // 0' "$SUMMARY")
-            printf '\nCreative source refinement: candidate %s passed the client request gate after %s repair cycle(s).\n' "$CANDIDATE" "$CYCLES" >> "$RUNNER_TEMP/revision-outcome.txt"
-          fi
       - name: Build and direct-upload developer preview
         if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
         id: deploy
@@ -158,17 +125,7 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --html dist/index.html
           node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
-          node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode plan --config src/site.config.json --screenshots "$RUNNER_TEMP/revision-screenshots" --report "$RUNNER_TEMP/revision-screenshots/visual-gate-plan.json"
-          if jq -e '.changed == true' "$RUNNER_TEMP/revision-screenshots/visual-gate-plan.json" >/dev/null; then
-            PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
-            node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --html dist/index.html
-            node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
-            node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
-            node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/revision-screenshots" --report "$RUNNER_TEMP/revision-screenshots/visual-gate-final.json"
-            git add src/site.config.json
-            git commit -m "Apply GLM visual quality corrections"
-            git push origin "${{ steps.revision.outputs.branch }}"
-          fi
+          node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/revision-screenshots" --report "$RUNNER_TEMP/revision-screenshots/visual-gate-final.json"
           # Scan rendered text assets only. Binary generated imagery can contain
           # the UTF-8 byte sequence by coincidence and is not page copy.
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
@@ -201,7 +158,7 @@ jobs:
       - name: Report downstream client revision failure
         if: always() && steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success' && (steps.deploy.outcome != 'success' || steps.review_delivery.outcome != 'success' || steps.complete.outcome != 'success')
         run: |
-          printf '\nRendered creative refinement or downstream verification did not complete successfully. Inspect GitHub Actions run %s.\n' '${{ github.run_id }}' >> "$RUNNER_TEMP/revision-outcome.txt"
+          printf '\nBounded revision or rendered verification did not complete successfully. Inspect GitHub Actions run %s.\n' '${{ github.run_id }}' >> "$RUNNER_TEMP/revision-outcome.txt"
           DETAILS=$(sed -n '1,80p' "$RUNNER_TEMP/revision-outcome.txt")
           gh pr comment "${{ steps.revision.outputs.pr }}" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-manual-attention:client -->' '## Manual attention needed' 'The client request was preserved, but the revised preview did not pass every downstream gate. Nothing was sent back to the client.' "$DETAILS")"
           NAME=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')

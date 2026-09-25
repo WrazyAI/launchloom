@@ -34,6 +34,11 @@ const { brand, hero, services, proof, faqs, copy } = content;
       <div>{services.map((service) => <article><div class="xp-guide__dot" aria-hidden="true"></div><h3>{service.name}</h3><p>{service.description}</p><a href={`/services/${service.slug}/`}>Explore this service</a></article>)}</div>
     </section>
 
+    {brand.serviceAreas.length > 0 && <section class="xp-guide__coverage" aria-labelledby="xp-guide-coverage-title">
+      <div><p class="xp-guide__eyebrow">Service area</p><h2 id="xp-guide-coverage-title">{content.coverageHeading}</h2><p>{content.coverageIntro}</p></div>
+      <ul>{brand.serviceAreas.map((area) => <li>{area}</li>)}</ul>
+    </section>}
+
     {proof.length > 0 && <section class="xp-guide__proof" aria-label="Why choose us"><p>What guides the work</p><div>{proof.map((item) => <strong>{item}</strong>)}</div></section>}
 
     <section class="xp-guide__about">

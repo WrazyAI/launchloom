@@ -18,6 +18,33 @@ const config = {
   locations: [],
   seoResearch: { mode: "researched", publishReady: true },
 };
+const completeVersionTwoConfig = {
+  ...config,
+  seoResearch: {
+    version: 2,
+    mode: "researched",
+    publishReady: true,
+    completeness: {
+      keywordOverview: true,
+      searchIntent: true,
+      keywordDifficulty: true,
+      serviceSerps: 1,
+      serviceSerpsRequired: 1,
+      serviceMetrics: [{ service: "Consultation", complete: true, primaryKeyword: "consultation Testville" }],
+    },
+    competitors: [{ domain: "one.test" }, { domain: "two.test" }, { domain: "three.test" }],
+    cost: { usd: 0.1, limitUsd: 0.25, overBudget: false, complete: true, unreportedTasks: 0 },
+    pageMap: ["home", "services-hub", "service", "about", "contact"].map((pageType) => ({
+      pageType,
+      service: pageType === "service" ? "Consultation" : undefined,
+      primaryKeyword: pageType === "service" ? {
+        keyword: "consultation Testville", volume: 90, kd: 41, cpc: 4.1, competition: 0.7,
+        intent: "commercial", provenance: "dataforseo",
+        metricSources: { volume: "dataforseo_google_ads_location", kd: "dataforseo_labs_bulk_keyword_difficulty", cpc: "dataforseo_google_ads_location", competition: "dataforseo_google_ads_location", intent: "dataforseo_labs_search_intent" },
+      } : undefined,
+    })),
+  },
+};
 const dirs: string[] = [];
 afterEach(async () => {
   await Promise.all(dirs.splice(0).map((dir) => fs.rm(dir, { recursive: true, force: true })));
@@ -35,7 +62,7 @@ async function fixture(review = false) {
     address: config.business.address,
     areaServed: config.business.serviceAreas,
   };
-  for (const route of ["/", "/services/consultation/"]) {
+  for (const route of ["/", "/services/", "/services/consultation/", "/about/", "/contact/"]) {
     const dir = path.join(dist, route.slice(1));
     await fs.mkdir(dir, { recursive: true });
     const pageData = review ? data : { ...data, url: new URL(route, origin).href };
@@ -46,7 +73,7 @@ async function fixture(review = false) {
     ? "User-agent: *\nAllow: /\n"
     : `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`);
   await fs.writeFile(path.join(dist, "sitemap.xml"),
-    `<urlset><url><loc>${origin}/</loc></url><url><loc>${origin}/services/consultation/</loc></url></urlset>`);
+    `<urlset>${["/", "/services/", "/services/consultation/", "/about/", "/contact/"].map((route) => `<url><loc>${origin}${route}</loc></url>`).join("")}</urlset>`);
   return dist;
 }
 
@@ -54,6 +81,28 @@ describe("SEO release gate", () => {
   it("accepts a factual, indexable production build", async () => {
     const dist = await fixture();
     expect(await checkSeoRelease({ mode: "production", config, dist, origin })).toEqual([]);
+  });
+  it("accepts a complete version two measured SEO map and rejects a forged ready flag", async () => {
+    const dist = await fixture();
+    expect(await checkSeoRelease({ mode: "production", config: completeVersionTwoConfig, dist, origin })).toEqual([]);
+    const incomplete = {
+      ...completeVersionTwoConfig,
+      seoResearch: {
+        ...completeVersionTwoConfig.seoResearch,
+        completeness: { ...completeVersionTwoConfig.seoResearch.completeness, serviceMetrics: [] },
+      },
+    };
+    expect((await checkSeoRelease({ mode: "production", config: incomplete, dist, origin }))
+      .some((error) => error.includes("SEO research is incomplete"))).toBe(true);
+    const unreportedCost = {
+      ...completeVersionTwoConfig,
+      seoResearch: {
+        ...completeVersionTwoConfig.seoResearch,
+        cost: { ...completeVersionTwoConfig.seoResearch.cost, complete: false, unreportedTasks: 1 },
+      },
+    };
+    expect((await checkSeoRelease({ mode: "production", config: unreportedCost, dist, origin }))
+      .some((error) => error.includes("SEO research is incomplete"))).toBe(true);
   });
   it("accepts meta descriptions containing apostrophes", async () => {
     const dist = await fixture();
@@ -144,7 +193,7 @@ describe("SEO release gate", () => {
   });
   it("requires an exact noindex directive on review pages", async () => {
     const dist = await fixture(true);
-    for (const route of ["", "services/consultation/"]) {
+    for (const route of ["", "services/", "services/consultation/", "about/", "contact/"]) {
       const file = path.join(dist, route, "index.html");
       await fs.writeFile(
         file,

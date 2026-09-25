@@ -7,6 +7,23 @@ import {
 } from "../scripts/generate-site-config.mjs";
 
 describe("site configuration", () => {
+  it("uses only client-confirmed services in home-service enquiry options", () => {
+    const config = normalise({}, {
+      businessName: "Harbor Plumbing",
+      industry: "home-services",
+      services: "Drain cleaning\nWater heater repair",
+      serviceAreas: "Tacoma, WA",
+    });
+
+    expect(config.conversion.qualification[0].options).toEqual([
+      "Drain cleaning",
+      "Water heater repair",
+      "Not sure yet",
+    ]);
+    expect(config.conversion.qualification[0].options).not.toContain("Installation");
+    expect(config.conversion.qualification[0].options).not.toContain("Maintenance");
+  });
+
   it("does not classify pet care as human wellness imagery", () => {
     const config = normalise({
       copy: {
@@ -190,6 +207,43 @@ describe("site configuration", () => {
       .toEqual(["Tacoma, WA", "Lakewood, WA"]);
   });
 
+  it("does not create location routes from coverage facts without a selected researched location page", () => {
+    const config = normalise({}, {
+      businessName: "Harbor Plumbing",
+      services: ["Drain cleaning"],
+      serviceAreas: "Tacoma, WA\nLakewood, WA",
+      primaryCity: "Tacoma, WA",
+      industry: "home-services",
+      seoResearch: {
+        version: 2,
+        mode: "researched",
+        publishReady: true,
+        pageMap: [
+          { id: "home", pageType: "home", title: "Harbor Plumbing", slug: "/", supportingKeywords: [], fanOutQuestions: [], priority: "high", evidence: [] },
+          { id: "service:drain", pageType: "service", title: "Drain cleaning", slug: "/services/drain-cleaning/", service: "Drain cleaning", supportingKeywords: [], fanOutQuestions: [], priority: "high", evidence: [] },
+        ],
+      },
+    });
+
+    expect(config.business.serviceAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
+    expect(config.business.primaryCity).toBe("Tacoma, WA");
+    expect(config.locations).toEqual([]);
+    expect(config.seoPageMap.map((page: { pageType: string }) => page.pageType)).toEqual(["home", "service"]);
+  });
+
+  it("preserves city names with state commas in canonical coverage facts", () => {
+    const config = normalise({}, {
+      businessName: "Harbor Plumbing",
+      services: ["Drain cleaning"],
+      primaryCity: "Tacoma, WA",
+      coverageAreas: ["Tacoma, WA", "Lakewood, WA"],
+      serviceAreas: "Tacoma, WA\nLakewood, WA",
+      industry: "home-services",
+      seoResearch: { version: 2, mode: "context-only", publishReady: false, pageMap: [] },
+    });
+    expect(config.business.serviceAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
+  });
+
   it("does not invent an argument value when an optional flag is absent", () => {
     expect(argumentValue(["node", "script.mjs"], "--research")).toBe("");
     expect(
@@ -222,6 +276,9 @@ describe("site configuration", () => {
     });
     expect(prepared.seoResearch?.validatedQueries).toHaveLength(12);
     expect(prepared.seoResearch?.evidence).toHaveLength(6);
+    const v2 = prepareGenerationIntake({ seoResearch: { version: 2, mode: "researched", publishReady: true, pageMap: [{ id: "service:a", pageType: "service" }] } });
+    expect(v2.seoResearch?.pageMap).toHaveLength(1);
+    expect(v2.seoResearch?.publishReady).toBe(true);
   });
 
   it("uses client photos and logo metadata without substituting an unrelated stock image", () => {
