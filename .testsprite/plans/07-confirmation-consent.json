@@ -7,7 +7,7 @@
   "planSteps": [
     {
       "type": "action",
-      "description": "Navigate through Business and Services using fictional valid data and reach Brand"
+      "description": "Open a valid unused test invitation link, navigate through Business and Services using fictional valid data, and reach Brand"
     },
     {
       "type": "assertion",

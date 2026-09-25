@@ -35,6 +35,7 @@ function recentFingerprintsForSelection() {
 }
 
 const MODEL = "z-ai/glm-5.3-flash";
+const MAX_CORE_SERVICES = 5;
 
 const SHARED_CREATIVE_DIRECTION =
   "Build a specific local-business decision journey. Near the opening, make clear who the business helps, what it provides, where it operates when location matters, and the next action. The hero headline must be a memorable 4-10 word promise, not a list of services. The hero body must be one useful sentence under 28 words. Service-card descriptions must be one distinct sentence under 22 words. Give each section a distinct job; do not repeat one claim across the hero, proof, services, and About copy. Use one primary action and one useful secondary action. Prefer client assets. Mention no person in a stock image as an employee, customer, patient, or client. Treat an area served as coverage, not a physical office. Do not use em dashes.";
@@ -44,27 +45,52 @@ const RECIPE_CREATIVE_DIRECTION =
 
 function seoResearchForConfig(value) {
   if (!value || typeof value !== "object") return undefined;
+  const sourceVersion = Number(value.version) || 1;
   const mode = ["researched", "context-only", "baseline"].includes(value.mode)
     ? value.mode
     : "baseline";
   const list = (items, limit = 12) =>
     (Array.isArray(items) ? items : []).slice(0, limit);
   return {
-    version: 1,
+    version: sourceVersion,
     mode,
-    publishReady: mode === "researched",
-    validatedQueries: list(value.validatedQueries),
+    publishReady:
+      value.publishReady === true ||
+      (sourceVersion < 2 && mode === "researched"),
+    validatedQueries: list(value.validatedQueries, sourceVersion >= 2 ? 120 : 12).map((item) => ({
+      ...item,
+      keyword: item.keyword || item.query || "",
+      query: item.query || item.keyword || "",
+      volume: item.volume ?? item.searchVolume ?? null,
+      searchVolume: item.searchVolume ?? item.volume ?? null,
+      kd: item.kd ?? item.keywordDifficulty ?? null,
+      cpc: item.cpc ?? null,
+      competition: item.competition ?? null,
+      intent: item.intent ?? null,
+      provenance: item.provenance || "unavailable",
+    })),
     customerQuestions: list(value.customerQuestions),
     copyVocabulary: list(value.copyVocabulary, 16),
     pageDecisions: list(value.pageDecisions),
+    pageMap: list(value.pageMap, 80),
+    competitors: list(value.competitors, 6),
+    questionEvidence: list(value.questionEvidence, 120),
+    fanOutQuestionGroups: list(value.fanOutQuestionGroups, 80),
+    blogOpportunities: list(value.blogOpportunities, 5),
+    quickWins: list(value.quickWins, 10),
+    marketSnapshot: value.marketSnapshot || {},
+    completeness: value.completeness || {},
     prohibitedClaims: list(value.prohibitedClaims),
-    evidence: list(value.evidence, 6),
+    evidence: list(value.evidence, sourceVersion >= 2 ? 80 : 6),
     cost: {
       tasks: Number(value.cost?.tasks) || 0,
       usd: Number(value.cost?.usd) || 0,
-      limitUsd: Number(value.cost?.limitUsd) || 0.1,
+      limitUsd: Number(value.cost?.limitUsd) || 0.25,
+      overBudget: value.cost?.overBudget === true,
+      complete: value.cost?.complete !== false,
+      unreportedTasks: Number(value.cost?.unreportedTasks) || 0,
     },
-    warnings: list(value.warnings, 8),
+    warnings: list(value.warnings, 30),
   };
 }
 
@@ -172,6 +198,8 @@ function serviceMatchScore(first, second) {
 }
 
 function lines(value) {
+  if (Array.isArray(value))
+    return value.flatMap((item) => String(item || "").split(/\r?\n/u).map((line) => line.trim()).filter(Boolean));
   const input = String(value || "");
   const splitCommas = !input.includes("\n");
   const items = [];
@@ -693,7 +721,10 @@ function qualificationFor(industry, kind = industry, services = []) {
         name: "service",
         label: "What do you need help with?",
         placeholder: "Select a service",
-        options: ["Repair", "Installation", "Maintenance", "Not sure yet"],
+        options: [
+          ...[...new Set(services.map((service) => text(service?.name || service, 100)).filter(Boolean))].slice(0, 5),
+          "Not sure yet",
+        ],
       },
       {
         name: "timing",
@@ -728,7 +759,7 @@ function qualificationFor(industry, kind = industry, services = []) {
         .map((service) => text(service?.name || service, 100))
         .filter(Boolean),
     ),
-  ].slice(0, 3);
+  ].slice(0, 5);
   return [
     {
       name: "interest",
@@ -997,7 +1028,9 @@ function fallback(intake) {
     intake.preset === "home-services" ? "home-services" : "wellness";
   const industry = industryFor(intake);
   const businessKind = businessKindFor(intake, industry);
-  const areas = lines(intake.serviceAreas);
+  const areas = Array.isArray(intake.coverageAreas)
+    ? [...new Set(intake.coverageAreas.map((area) => text(area, 160)).filter(Boolean))]
+    : lines(intake.serviceAreas);
   const services = lines(intake.services)
     .slice(0, 8)
     .map((name) => ({
@@ -1030,6 +1063,14 @@ function fallback(intake) {
       email: intake.email || "",
       address: suppressUnverifiedLocation ? "" : intake.address || "",
       serviceAreas: areas,
+      primaryCity: text(intake.primaryCity, 180) || areas[0] || "",
+      serviceRadiusMiles:
+        intake.serviceRadius === "50+"
+          ? "50+"
+          : Number.isFinite(Number(intake.serviceRadius)) &&
+              [10, 20, 30, 50].includes(Number(intake.serviceRadius))
+            ? Number(intake.serviceRadius)
+            : null,
       hours: "Hours available on request",
       primaryCta: suppressUnverifiedLocation
         ? "Contact us"
@@ -1103,7 +1144,7 @@ export function normalise(candidate, intake) {
   const value = candidate && typeof candidate === "object" ? candidate : {};
   const preset =
     value.preset === "home-services" ? "home-services" : base.preset;
-  const submittedServiceNames = lines(intake.services);
+  const submittedServiceNames = lines(intake.services).slice(0, MAX_CORE_SERVICES);
   const proposedServices = Array.isArray(value.services) ? value.services : [];
   const proposedServiceBySlug = new Map(
     proposedServices
@@ -1138,7 +1179,7 @@ export function normalise(candidate, intake) {
     : Array.isArray(value.services)
       ? value.services
       : base.services;
-  const services = serviceInput.slice(0, 8).map((service, index) => {
+  const services = serviceInput.slice(0, MAX_CORE_SERVICES).map((service, index) => {
     const name = String(
       service.name || base.services[index]?.name || "Our service",
     ).slice(0, 120);
@@ -1414,14 +1455,20 @@ export function normalise(candidate, intake) {
     ...featureConfig,
   };
   const seoResearch = seoResearchForConfig(intake.seoResearch);
-  const selectedLocations = seoResearch?.mode === "researched"
-    ? seoResearch.pageDecisions
+  const selectedLocations = seoResearch?.version >= 2
+    ? seoResearch.pageMap
+        .filter((page) => page?.pageType === "location")
+        .map((page) => slugify(String(page.location || page.title || "")))
+    : seoResearch?.mode === "researched"
+      ? seoResearch.pageDecisions
         .filter((decision) => decision?.type === "location")
         .map((decision) => slugify(String(decision.title || "")))
-    : [];
-  const researchedLocations = selectedLocations.length
+      : [];
+  const researchedLocations = seoResearch?.version >= 2
     ? new Set(selectedLocations)
-    : null;
+    : selectedLocations.length
+      ? new Set(selectedLocations)
+      : null;
   const locationNames = researchedLocations
     ? business.serviceAreas.filter((name) =>
         researchedLocations.has(slugify(name)),
@@ -1432,6 +1479,7 @@ export function normalise(candidate, intake) {
     industry: base.industry,
     businessKind: base.businessKind,
     business,
+    seoPageMap: seoResearch?.pageMap || [],
     style: {
       ...resolvePalette({ ...(value.style || {}), ...base.style }),
       tone: base.style.tone,
@@ -1445,6 +1493,9 @@ export function normalise(candidate, intake) {
     },
     services: services.length ? services : base.services,
     differentiators: different.length ? different : base.differentiators,
+    blogArticles: Array.isArray(intake.blogArticles)
+      ? intake.blogArticles.slice(0, 50).filter((article) => article && typeof article === "object")
+      : [],
     locations:
       base.industry === "home-services"
         ? locationNames.map((name, index) => {
@@ -1499,7 +1550,7 @@ export function removeEmDashes(value) {
 }
 
 async function askModel(intake, effort, model = MODEL) {
-  const systemPrompt = `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use its validated queries, customer questions, vocabulary, and page decisions as strategy context. Never present search metrics or SERP language as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`;
+  const systemPrompt = `You are LaunchLoom's senior conversion copywriter and conversion strategist for local and service businesses. Return JSON only. Create specific, polished, plain-language website copy from verified facts. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Build a credible path from visitor problem to action with a differentiated promise, distinct service outcomes, concrete decision support, concise process steps, and useful FAQs. Improve clarity, hierarchy, and customer benefit without inventing licenses, medical claims, guarantees, pricing, credentials, testimonials, business hours, locations, deadlines, staff, or results. Never replace submitted contact facts. When an seoResearch dossier is present, use its keyword-to-page map to keep each confirmed service attached to its researched intent and use page-level fan-out questions for decision support. Never add services absent from the confirmed services list. Keep location pages only when the canonical map contains them. Blog opportunities are for future articles; do not generate initial blog posts or filler. Never present search metrics, SERP language, or competitor titles as a business fact, and never include anything listed under prohibitedClaims. When the primary action is Get directions, preserve that action exactly; the template will add a verified map when an exact location exists, and contactHeading should invite contact rather than repeat Get directions. When the brief includes feedback, treat it as the primary revision request: address it directly and preserve unrelated approved copy and positioning. Avoid generic filler such as 'tailored to your needs', 'when it matters', 'work that lasts', 'next level', 'quality you can trust', or 'we are here for you'. Make every service description distinct and concrete. Only use proof claims supplied in the brief. Do not return HTML or frontend code.`;
   const identity = {
     businessName: intake.businessName || intake.business?.name || "",
     email: intake.email || intake.business?.email || "",
@@ -1659,13 +1710,16 @@ function extractIntake(body) {
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {
   const source = argumentValue(process.argv, "--source");
+  const briefFile = argumentValue(process.argv, "--brief");
   const destination = argumentValue(process.argv, "--out");
   const researchFile = argumentValue(process.argv, "--research");
-  if (!source || !destination)
+  if ((!source && !briefFile) || !destination)
     throw new Error(
-      "Usage: node generate-site-config.mjs --source intake.md --out site.config.json",
+      "Usage: node generate-site-config.mjs (--brief canonical-site-brief.json | --source intake.md) --out site.config.json",
     );
-  const intake = extractIntake(await fs.readFile(source, "utf8"));
+  const intake = briefFile
+    ? JSON.parse(await fs.readFile(briefFile, "utf8"))
+    : extractIntake(await fs.readFile(source, "utf8"));
   if (researchFile)
     intake.seoResearch = JSON.parse(await fs.readFile(researchFile, "utf8"));
   await fs.writeFile(

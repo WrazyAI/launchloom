@@ -7,7 +7,7 @@
   "planSteps": [
     {
       "type": "action",
-      "description": "Navigate to /onboard/, use manual entry, complete required Business fields, and continue"
+      "description": "Open a valid unused test invitation link to /onboard/, use manual entry, complete required Business fields, and continue"
     },
     {
       "type": "action",

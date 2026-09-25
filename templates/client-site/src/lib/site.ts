@@ -16,6 +16,47 @@ export type Location = {
   description?: string;
   localNote?: string;
 };
+export type SeoKeyword = {
+  keyword: string;
+  volume?: number | null;
+  kd?: number | null;
+  cpc?: number | null;
+  competition?: number | null;
+  intent?: string | null;
+  provenance: string;
+  metricSources?: Record<string, string | null>;
+};
+export type SeoPageType =
+  | "home"
+  | "services-hub"
+  | "service"
+  | "location"
+  | "about"
+  | "contact"
+  | "blog-index"
+  | "blog-opportunity";
+export type SeoPageMap = {
+  id: string;
+  pageType: SeoPageType;
+  title: string;
+  slug: string;
+  service?: string;
+  location?: string;
+  primaryKeyword?: SeoKeyword;
+  supportingKeywords: SeoKeyword[];
+  fanOutQuestions: string[];
+  priority: "high" | "medium" | "low";
+  evidence: unknown[];
+  renderWhenArticlesExist?: boolean;
+  localFacts?: Array<{ value: string; provenance: string }>;
+};
+export type BlogArticle = {
+  slug: string;
+  title: string;
+  description: string;
+  publishedAt: string;
+  body: string;
+};
 export type PageSectionType =
   | "hero"
   | "trust"
@@ -82,6 +123,8 @@ export type SiteConfig = {
     email: string;
     address: string;
     serviceAreas: string[];
+    primaryCity?: string;
+    serviceRadiusMiles?: number | "50+" | null;
     hours: string;
     primaryCta: string;
     offer?: string;
@@ -107,8 +150,10 @@ export type SiteConfig = {
     brandSurfaceTextColor?: string;
   };
   services: Service[];
+  seoPageMap?: SeoPageMap[];
   differentiators: string[];
   locations: Location[];
+  blogArticles?: BlogArticle[];
   images: { hero?: string; secondary?: string; tertiary?: string };
   assets?: {
     logo?: string;
@@ -229,14 +274,9 @@ export type SiteConfig = {
     version: number;
     mode: "researched" | "context-only" | "baseline";
     publishReady: boolean;
-    validatedQueries: Array<{
-      query: string;
-      searchVolume?: number | null;
-      cpc?: number | null;
-      competition?: number | null;
-      intent?: string;
-      provenance: string;
-    }>;
+    metricLocation?: string;
+    labsMetricLocation?: string;
+    validatedQueries: Array<SeoKeyword & { query?: string; searchVolume?: number | null }>;
     customerQuestions: string[];
     copyVocabulary: string[];
     pageDecisions: Array<{
@@ -245,6 +285,14 @@ export type SiteConfig = {
       reason?: string;
       provenance: string;
     }>;
+    pageMap?: SeoPageMap[];
+    competitors?: Array<Record<string, unknown>>;
+    questionEvidence?: Array<Record<string, unknown>>;
+    fanOutQuestionGroups?: Array<Record<string, unknown>>;
+    blogOpportunities?: Array<Record<string, unknown>>;
+    quickWins?: Array<Record<string, unknown>>;
+    marketSnapshot?: Record<string, unknown>;
+    completeness?: Record<string, unknown>;
     prohibitedClaims: string[];
     evidence: Array<Record<string, unknown>>;
     cost: { tasks: number; usd: number; limitUsd: number };

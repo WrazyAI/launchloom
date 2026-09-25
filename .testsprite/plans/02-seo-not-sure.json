@@ -1,13 +1,17 @@
 {
   "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
   "type": "frontend",
-  "name": "SEO strategy is removed from the client form",
-  "description": "The client provides business facts while LaunchLoom owns keyword, competitor, and market research.",
+  "name": "Client onboarding keeps website planning simple",
+  "description": "The client confirms business facts and services while LaunchLoom handles website planning and public market research.",
   "priority": "p0",
   "planSteps": [
     {
       "type": "action",
-      "description": "Navigate through Business and Services with fictional valid data"
+      "description": "Open a valid unused test invitation link, complete Business with fictional details, and continue to Services"
+    },
+    {
+      "type": "action",
+      "description": "Confirm up to five services, choose a business category, enter the main city and usual travel distance, then continue"
     },
     {
       "type": "assertion",
@@ -15,7 +19,7 @@
     },
     {
       "type": "assertion",
-      "description": "The Services step explains that LaunchLoom will handle keyword, competitor, and market research after submission"
+      "description": "The Services step says LaunchLoom will learn about the local market and plan the website after submission"
     }
   ]
 }

@@ -1,0 +1,33 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import site, { phoneHref } from "../lib/site";
+---
+
+<SiteLayout title={`About ${site.business.name}`} description={site.copy?.aboutBody || site.business.description}>
+  <Header />
+  <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`]}>
+    <section class="inner-hero">
+      <div class="wrap inner-hero-grid">
+        <div>
+          <a class="breadcrumb" href="/">Home</a>
+          <span class="kicker">{site.copy?.aboutKicker || "About the business"}</span>
+          <h1>{site.copy?.aboutHeading || `About ${site.business.name}`}</h1>
+          <p>{site.copy?.aboutBody || site.business.description}</p>
+          <div class="hero-actions">
+            <a class="cta" href="/contact/">{site.business.primaryCta}</a>
+            {site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}
+          </div>
+        </div>
+        {(site.assets?.teamPhoto || site.images.secondary) && <img src={site.assets?.teamPhoto || site.images.secondary} alt={site.assets?.teamPhoto ? `Owner or team at ${site.business.name}` : `${site.business.name} service context`} fetchpriority="high" />}
+      </div>
+    </section>
+    <section class="section wrap">
+      <div class="section-heading"><span class="kicker">What customers can expect</span><h2>Clear information for a confident next step.</h2></div>
+      <ul class="proof-list">{site.differentiators.map((item) => <li>{item}</li>)}</ul>
+      <p>{site.business.description}</p>
+    </section>
+  </main>
+  <Footer />
+</SiteLayout>

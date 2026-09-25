@@ -5,7 +5,7 @@
   "description": "A user without a Google Business Profile can visibly switch to manual entry and return to lookup.",
   "priority": "p1",
   "planSteps": [
-    { "type": "action", "description": "Navigate to /onboard/" },
+    { "type": "action", "description": "Open a valid unused test invitation link to /onboard/" },
     { "type": "assertion", "description": "Enter details manually appears as a visually distinct button next to the Google Business Profile fallback message" },
     { "type": "action", "description": "Activate Enter details manually" },
     { "type": "assertion", "description": "A Manual details panel is visible with a clickable Use Google lookup instead action" },

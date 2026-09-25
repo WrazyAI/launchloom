@@ -7,7 +7,7 @@
   "planSteps": [
     {
       "type": "action",
-      "description": "Use a mobile viewport and navigate through all three onboarding steps with fictional valid data"
+      "description": "Use a mobile viewport, open a valid unused test invitation link, and navigate through all three onboarding steps with fictional valid data"
     },
     {
       "type": "assertion",

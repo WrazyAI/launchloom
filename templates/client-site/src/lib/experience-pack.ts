@@ -121,6 +121,8 @@ export type ExperienceContent = Readonly<{
   process: readonly string[];
   faqs: readonly { question: string; answer: string }[];
   locations: readonly SiteConfig["locations"][number][];
+  coverageHeading: string;
+  coverageIntro: string;
   copy: NonNullable<SiteConfig["copy"]>;
   businessDescription: string;
   showLocationMap: boolean;
@@ -752,6 +754,11 @@ function contentFor(site: SiteConfig): ExperienceContent {
       site.socialProof.google?.apiUrl &&
       site.socialProof.google?.token,
   );
+  const hospitalityArea =
+    site.business.primaryCity || site.business.serviceAreas[0] || "the local area";
+  const eventOrderServices = site.services
+    .filter((service) => /cater|cake|event/iu.test(service.name))
+    .map((service) => service.name.toLocaleLowerCase());
   return {
     brand: {
       name: site.business.name,
@@ -780,6 +787,18 @@ function contentFor(site: SiteConfig): ExperienceContent {
     process: (site.conversion?.process || []).slice(0, 4),
     faqs: (site.conversion?.faqs || []).slice(0, 8),
     locations: site.locations,
+    coverageHeading: site.industry === "home-services"
+      ? "Service in nearby communities."
+      : site.industry === "wellness"
+        ? "Areas the practice serves."
+        : site.industry === "hospitality"
+          ? `Local to ${hospitalityArea}.`
+          : "Support across the local area.",
+    coverageIntro: site.industry === "hospitality"
+      ? eventOrderServices.length
+        ? `Ask about ${eventOrderServices.join(" or ")} for a gathering.`
+        : "Ask about location details and current availability."
+      : "Share the address you have in mind so the team can confirm service for your location.",
     copy,
     businessDescription: site.business.description,
     showLocationMap:

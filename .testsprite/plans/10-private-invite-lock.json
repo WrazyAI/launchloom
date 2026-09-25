@@ -1,0 +1,12 @@
+{
+  "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
+  "type": "frontend",
+  "name": "Onboarding stays locked without a private invitation",
+  "description": "A direct visit without a valid private link cannot show or submit usable business intake fields.",
+  "priority": "p0",
+  "planSteps": [
+    { "type": "action", "description": "Open /onboard/ directly without an invitation token" },
+    { "type": "assertion", "description": "The page explains that the invitation is unavailable and asks the visitor to request a current link" },
+    { "type": "assertion", "description": "There is no public homepage link, navigation bar, business input, upload control, or submission button on the locked screen" }
+  ]
+}

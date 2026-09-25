@@ -50,6 +50,32 @@ function site(name: string, packId?: string): SiteConfig {
 }
 
 describe("experience-pack compiler", () => {
+  it("describes local coverage using the business category without changing its page structure", () => {
+    const local = site("Harbor Plumbing", "kinetic-poster");
+    local.industry = "home-services";
+    local.preset = "home-services";
+    local.businessKind = "home-services";
+    local.design = { ...local.design!, recipe: "local-trades", sections: [] };
+    const care = site("Harbor Glow Wellness", "bold-utility");
+    care.industry = "wellness";
+    const bakery = site("Lumière Artisan Bakery & Café", "cinematic-narrative");
+    bakery.industry = "hospitality";
+    bakery.services = [{
+      name: "Catering",
+      description: "Catering orders for local gatherings.",
+      slug: "catering",
+    }];
+
+    expect(compileExperiencePack(local, "local-trades").content.coverageHeading).toBe("Service in nearby communities.");
+    expect(compileExperiencePack(care, "care-editorial").content.coverageHeading).toBe("Areas the practice serves.");
+    expect(compileExperiencePack(site("Oak & Ledger", "bold-utility"), "general-editorial").content.coverageHeading)
+      .toBe("Support across the local area.");
+    expect(compileExperiencePack(bakery, "general-editorial").content).toMatchObject({
+      coverageHeading: "Local to Asheville.",
+      coverageIntro: "Ask about catering for a gathering.",
+    });
+  });
+
   it("splits model experience authorship into bounded response stages", () => {
     const stages = createSplitExperienceStages();
     expect(stages.map((stage) => stage.id)).toEqual([
@@ -276,7 +302,7 @@ describe("experience-pack compiler", () => {
     expect(new Set(packs.map((pack) => pack.services))).toHaveLength(3);
   });
 
-  it("keeps guided portrait offer and closing copy above the hero overlay", () => {
+  it("keeps guided portrait copy distinct and hides missing closing contact details", () => {
     const component = readFileSync(
       "templates/client-site/src/components/experiences/GuidedConversationExperience.astro",
       "utf8",
@@ -287,12 +313,41 @@ describe("experience-pack compiler", () => {
     );
 
     expect(component).toContain(
-      '{copy.contactHeading || hero.primaryLabel || "Continue the conversation."}',
+      '{copy.contactHeading || "Tell us what would help."}',
     );
+    expect(component).toContain(
+      '{hero.primaryLabel || "Continue the conversation."}',
+    );
+    expect(component).toContain(
+      '<a href="#guided-experience-lead">Start an inquiry</a>',
+    );
+    expect(component).toContain("{brand.email && <a href={`mailto:${brand.email}`}");
+    expect(component).toContain("{brand.address && <p>{brand.address}</p>}");
     expect(styles).toContain(".xp-guide__hero figcaption");
     expect(styles).toContain("z-index: 2;");
     expect(styles).toContain("overflow-wrap: anywhere;");
     expect(styles).not.toContain("text-overflow: ellipsis;");
+  });
+
+  it("uses the brand surface text token for cinematic coverage labels", () => {
+    const styles = readFileSync(
+      "templates/client-site/src/styles/experience-packs.css",
+      "utf8",
+    );
+
+    expect(styles).toContain(".xp-folio__coverage .xp-folio__eyebrow");
+    expect(styles).toContain("color: var(--on-brand-surface);");
+  });
+
+  it("reflows cinematic service pages into one mobile column", () => {
+    const styles = readFileSync(
+      "templates/client-site/src/styles/experience-packs.css",
+      "utf8",
+    );
+
+    expect(styles).toMatch(
+      /@media \(max-width: 760px\)[\s\S]*?\.inner-experience-cinematic-narrative \.inner-hero-grid \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\);/u,
+    );
   });
 
   it("returns isolated nested blueprint data and fingerprints motion", () => {

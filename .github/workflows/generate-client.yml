@@ -26,10 +26,14 @@ permissions:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    concurrency:
+      group: launchloom-intake-${{ github.event.client_payload.issue || inputs.issue || github.run_id }}
+      cancel-in-progress: false
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
       TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}
       REASONING_PREFLIGHT_MODE: ${{ vars.REASONING_PREFLIGHT_MODE || 'shadow' }}
       REASONING_PREFLIGHT_MODEL: ${{ vars.REASONING_PREFLIGHT_MODEL || 'jev-1.13.0' }}
@@ -47,8 +51,8 @@ jobs:
       # distinction is whether the passing candidate is previewed or promoted;
       # no repository variable can route a new site back to the legacy DOM.
       CREATIVE_EXPERIENCE_MODE: ${{ vars.CREATIVE_EXPERIENCE_MODE == 'promote' && 'promote' || 'preview' }}
-      SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '2' }}
-      SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.10' }}
+      SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '16' }}
+      SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.25' }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
       LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
@@ -91,6 +95,9 @@ jobs:
             for file in \
               src/site.config.json \
               .launchloom/seo-research.json \
+              .launchloom/seo-map.md \
+              .launchloom/business-enrichment.json \
+              .launchloom/canonical-site-brief.json \
               .launchloom/inspiration-pack.json \
               .launchloom/reasoning-preflight.json \
               .launchloom/generated-experiences/creative-run.json; do
@@ -98,15 +105,20 @@ jobs:
             done
             cp "$CANDIDATE_SOURCE/src/site.config.json" /tmp/site.config.json
             cp "$CANDIDATE_SOURCE/.launchloom/seo-research.json" /tmp/seo-research.json
+            cp "$CANDIDATE_SOURCE/.launchloom/seo-map.md" /tmp/seo-map.md
+            cp "$CANDIDATE_SOURCE/.launchloom/business-enrichment.json" /tmp/business-enrichment.json
+            cp "$CANDIDATE_SOURCE/.launchloom/canonical-site-brief.json" /tmp/canonical-site-brief.json
             cp "$CANDIDATE_SOURCE/.launchloom/inspiration-pack.json" /tmp/inspiration-pack.json
             cp "$CANDIDATE_SOURCE/.launchloom/reasoning-preflight.json" /tmp/reasoning-preflight.json
             mkdir -p "$RUNNER_TEMP/reusable-authored-candidates"
             cp -R "$CANDIDATE_SOURCE/.launchloom/generated-experiences/." "$RUNNER_TEMP/reusable-authored-candidates/"
             echo "Reusable private candidate artifacts loaded; fresh authoring and SEO/config model calls are skipped."
           else
-            node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json
-            node scripts/generate-site-config.mjs --source /tmp/intake.md --research /tmp/seo-research.json --out /tmp/site.config.json
-            node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/intake.md --out /tmp/inspiration-pack.json
+            node scripts/coverage-areas.mjs --source /tmp/intake.md --out /tmp/business-enrichment.json
+            node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json --map-out /tmp/seo-map.md --enrichment /tmp/business-enrichment.json
+            node scripts/compile-canonical-site-brief.mjs --source /tmp/intake.md --research /tmp/seo-research.json --enrichment /tmp/business-enrichment.json --out /tmp/canonical-site-brief.json
+            node scripts/generate-site-config.mjs --brief /tmp/canonical-site-brief.json --out /tmp/site.config.json
+            node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/canonical-site-brief.json --out /tmp/inspiration-pack.json
             rm -f /tmp/reasoning-preflight.json
           fi
           SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
@@ -120,8 +132,8 @@ jobs:
           echo "asset_summary=$(node -e 'const x=require("/tmp/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " → " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')" >> "$GITHUB_OUTPUT"
           echo "research_mode=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')" >> "$GITHUB_OUTPUT"
           echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
-          echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "No externally validated queries")')" >> "$GITHUB_OUTPUT"
-          node -e 'const x=require("/tmp/seo-research.json"); const state=x.mode === "researched" ? "Research complete. Production approval is available." : "Research is incomplete. This preview can be reviewed, but production approval is blocked until research succeeds."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}\nValidated queries: ${(x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "None"}\nRecorded research cost: $${Number(x.cost?.usd || 0).toFixed(5)}`)'
+          echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "No externally validated queries")')" >> "$GITHUB_OUTPUT"
+          node -e 'const x=require("/tmp/seo-research.json"); const state=x.mode === "researched" ? "Research complete. Production approval is available." : "Research is incomplete. This preview can be reviewed, but production approval is blocked until research succeeds."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}\nValidated queries: ${(x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded research cost: $${Number(x.cost?.usd || 0).toFixed(5)}`)'
       # Reserve visual routes against the latest main history before expensive
       # reference analysis or authoring. If another intake wins the push race,
       # reselect from the newly updated history rather than saving a stale pack.
@@ -143,9 +155,9 @@ jobs:
               continue
             fi
             HISTORY_FILE="$HISTORY_DIR/data/recent-launch-signatures.json"
-            node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs" \
+          node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs" \
               --config /tmp/site.config.json \
-              --intake /tmp/intake.md \
+              --intake /tmp/canonical-site-brief.json \
               --history "$HISTORY_FILE" \
               --out /tmp/inspiration-pack.json
             if ! node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
@@ -314,6 +326,9 @@ jobs:
           cp /tmp/site.config.json src/site.config.json
           mkdir -p .launchloom
           cp /tmp/seo-research.json .launchloom/seo-research.json
+          cp /tmp/seo-map.md .launchloom/seo-map.md
+          cp /tmp/business-enrichment.json .launchloom/business-enrichment.json
+          cp /tmp/canonical-site-brief.json .launchloom/canonical-site-brief.json
           cp /tmp/inspiration-pack.json .launchloom/inspiration-pack.json
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi

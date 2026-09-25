@@ -251,6 +251,60 @@ button {
   box-shadow: var(--shadow);
   padding: clamp(24px, 5vw, 58px);
 }
+.invite-gate {
+  width: min(100%, 900px);
+  margin: 44px auto 80px;
+  padding: clamp(22px, 5vw, 48px);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+.invite-gate h1 {
+  margin: 14px 0;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+.invite-gate p {
+  max-width: 650px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.service-suggestion-box {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--paper) 55%, white);
+}
+.service-suggestion-box > p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.suggested-services {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+  margin: 6px 0 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+.suggested-services legend {
+  padding: 0 6px;
+  font-weight: 750;
+}
+.suggested-service {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+}
 .stepper {
   display: flex;
   align-items: center;

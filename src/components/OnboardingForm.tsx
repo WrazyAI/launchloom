@@ -10,12 +10,25 @@ type Place = {
   mapsUrl?: string;
   rating?: number;
   ratingCount?: number;
+  primaryType?: string;
+  types?: string[];
+  location?: { latitude: number; longitude: number } | null;
 };
+type InviteState = "loading" | "valid" | "invalid" | "accepted";
 const steps = ["Business", "Services", "Brand"];
 const apiBase = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || "").replace(
   /\/$/,
   "",
 );
+
+function decodeInviteId(token: string) {
+  try {
+    const encoded = token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
+    return (JSON.parse(atob(encoded)) as { inviteId?: string }).inviteId || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
 
 async function compressImage(file: File): Promise<File> {
   if (!file.type.startsWith("image/") || file.size < 900_000) return file;
@@ -184,7 +197,14 @@ export default function OnboardingForm() {
   const [step, setStep] = useState(0);
   const [place, setPlace] = useState<Place | null>(null);
   const [showLookup, setShowLookup] = useState(true);
-  const [submissionId, setSubmissionId] = useState(
+  const [inviteToken, setInviteToken] = useState("");
+  const [inviteState, setInviteState] = useState<InviteState>("loading");
+  const [invitedEmail, setInvitedEmail] = useState("");
+  const [servicesValue, setServicesValue] = useState("");
+  const [suggestedServices, setSuggestedServices] = useState<string[]>([]);
+  const [suggestingServices, setSuggestingServices] = useState(false);
+  const [suggestionMessage, setSuggestionMessage] = useState("");
+  const [submissionId, setSubmissionId] = useState<string>(
     () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
   );
   const [searching, setSearching] = useState(false);
@@ -196,6 +216,104 @@ export default function OnboardingForm() {
     [step],
   );
   const draftValue = (name: string) => draftRef.current[name] || "Not provided";
+
+  useEffect(() => {
+    const tokenKey = "launchloom-onboarding-invite";
+    let token = new URLSearchParams(window.location.hash.slice(1)).get("invite") || "";
+    if (!token) {
+      try {
+        token = (JSON.parse(sessionStorage.getItem(tokenKey) || "{}") as { token?: string }).token || "";
+      } catch {
+        token = "";
+      }
+    }
+    if (!token) {
+      setInviteState("invalid");
+      return;
+    }
+    setInviteToken(token);
+    let inviteId = "unknown";
+    try {
+      const encoded = token.split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
+      const claims = JSON.parse(atob(encoded)) as { inviteId?: string };
+      if (claims.inviteId) inviteId = claims.inviteId;
+    } catch {
+      sessionStorage.removeItem(tokenKey);
+      setInviteState("invalid");
+      return;
+    }
+    sessionStorage.setItem(tokenKey, JSON.stringify({ inviteId, token }));
+    const storageKey = `launchloom-onboarding-submission:${inviteId}`;
+    const payloadKey = `launchloom-onboarding-payload:${inviteId}`;
+    const savedSubmissionId = sessionStorage.getItem(storageKey);
+    const currentSubmissionId = savedSubmissionId || submissionId;
+    if (!savedSubmissionId) sessionStorage.setItem(storageKey, currentSubmissionId);
+    setSubmissionId(currentSubmissionId);
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        if (!apiBase) throw new Error("The LaunchLoom service is unavailable.");
+        const response = await fetch(`${apiBase}/api/onboarding-invites/validate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, submissionId: currentSubmissionId }),
+        });
+        const result = (await response.json().catch(() => ({}))) as {
+          valid?: boolean;
+          accepted?: boolean;
+          clientEmail?: string | null;
+        };
+        if (cancelled) return;
+        const savedPayload = sessionStorage.getItem(payloadKey);
+        if (savedPayload) {
+          const pending = JSON.parse(savedPayload) as Record<string, unknown>;
+          draftRef.current = Object.fromEntries(
+            Object.entries(pending).filter(([, value]) => typeof value === "string"),
+          ) as Record<string, string>;
+          setServicesValue(String(pending.services || ""));
+        }
+        if (result.accepted) {
+          if (savedPayload) {
+            const pending = JSON.parse(savedPayload) as Record<string, unknown>;
+            try {
+              const retry = await fetch(`${apiBase}/api/intake`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...pending, inviteToken: token, submissionId: currentSubmissionId }),
+              });
+              if (!retry.ok) {
+                const failure = (await retry.json().catch(() => ({}))) as { error?: string };
+                throw new Error(failure.error || "The saved submission could not be retried yet.");
+              }
+              sessionStorage.removeItem(payloadKey);
+              sessionStorage.removeItem(tokenKey);
+              sessionStorage.removeItem(storageKey);
+              setInviteState("accepted");
+              return;
+            } catch (retryError) {
+              if (cancelled) return;
+              setError(retryError instanceof Error ? retryError.message : "The saved submission could not be retried yet.");
+              setInviteState("valid");
+              return;
+            }
+          }
+          sessionStorage.removeItem(tokenKey);
+          sessionStorage.removeItem(storageKey);
+          setInviteState("accepted");
+          return;
+        }
+        if (!response.ok || !result.valid) throw new Error("Invitation is unavailable.");
+        setInvitedEmail(result.clientEmail || "");
+        if (result.clientEmail) draftRef.current.email = result.clientEmail;
+        setInviteState("valid");
+        window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+      } catch {
+        if (!cancelled) setInviteState("invalid");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   function captureDraft() {
     const form = formRef.current;
@@ -249,7 +367,7 @@ export default function OnboardingForm() {
 
   useEffect(() => {
     restoreDraft();
-  }, [step]);
+  }, [step, inviteState]);
 
   function advance() {
     const current = formRef.current?.querySelector<HTMLElement>(
@@ -261,6 +379,59 @@ export default function OnboardingForm() {
       if (!field.disabled && !field.reportValidity()) return;
     captureDraft();
     setStep((value) => Math.min(value + 1, steps.length - 1));
+  }
+
+  async function suggestServices() {
+    const form = formRef.current;
+    const value = (name: string) => {
+      const field = form?.elements.namedItem(name) as HTMLInputElement | HTMLSelectElement | null;
+      return field?.value?.trim() || "";
+    };
+    setSuggestingServices(true);
+    setSuggestionMessage("");
+    try {
+      const response = await fetch(`${apiBase}/api/service-suggestions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inviteToken,
+          businessName: value("businessName"),
+          category: value("industry"),
+          primaryType: place?.primaryType || "",
+          placeTypes: place?.types || [],
+        }),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        suggestions?: string[];
+        warning?: string | null;
+      };
+      if (!response.ok) throw new Error(result.warning || "Suggestions are unavailable.");
+      setSuggestedServices(Array.isArray(result.suggestions) ? result.suggestions.slice(0, 5) : []);
+      setSuggestionMessage(result.warning || "Select only services your business offers.");
+    } catch (cause) {
+      setSuggestedServices([]);
+      setSuggestionMessage(cause instanceof Error ? cause.message : "Enter your services manually.");
+    } finally {
+      setSuggestingServices(false);
+    }
+  }
+
+  function toggleSuggestedService(service: string, selected: boolean) {
+    const current = servicesValue
+      .split(/\r?\n/u)
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const next = selected
+      ? [...current.filter((item) => item.toLowerCase() !== service.toLowerCase()), service]
+      : current.filter((item) => item.toLowerCase() !== service.toLowerCase());
+    const serviceField = document.querySelector<HTMLTextAreaElement>('[name="services"]');
+    if (selected && next.length > 5) {
+      serviceField?.setCustomValidity("Choose up to 5 core services.");
+      setSuggestionMessage("Choose up to five core services. Remove one before adding another.");
+      return;
+    }
+    setServicesValue(next.join("\n"));
+    serviceField?.setCustomValidity(next.length > 5 ? "Choose up to 5 core services." : "");
   }
 
   async function lookupPlace() {
@@ -279,7 +450,7 @@ export default function OnboardingForm() {
       const response = await fetch(`${apiBase}/api/places`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, inviteToken }),
       });
       const result = (await response.json()) as {
         place?: Place;
@@ -340,7 +511,12 @@ export default function OnboardingForm() {
     try {
       if (!apiBase)
         throw new Error("The LaunchLoom service is not configured yet.");
-      const assets: Record<string, string> = {};
+      const payloadKey = `launchloom-onboarding-payload:${decodeInviteId(inviteToken)}`;
+      let assets: Record<string, string> = {};
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(payloadKey) || "{}") as { assets?: Record<string, string> };
+        if (saved.assets && typeof saved.assets === "object") assets = { ...saved.assets };
+      } catch { /* the current file selections remain available */ }
       for (const slot of [
         "logo",
         "photoOne",
@@ -352,6 +528,7 @@ export default function OnboardingForm() {
         if (!(file instanceof File) || !file.size) continue;
         const upload = new FormData();
         upload.set("submissionId", submissionId);
+        upload.set("inviteToken", inviteToken);
         upload.set("slot", slot);
         upload.set("file", file);
         const response = await fetch(`${apiBase}/api/upload`, {
@@ -373,10 +550,14 @@ export default function OnboardingForm() {
         [...data.entries()].filter(([, value]) => typeof value === "string"),
       ) as Record<string, string>;
       intake.submissionId = submissionId;
+      intake.intakeVersion = "2";
+      intake.inviteToken = inviteToken;
+      const payload = { ...intake, assets };
+      sessionStorage.setItem(payloadKey, JSON.stringify(payload));
       const handoff = await fetch(`${apiBase}/api/intake`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...intake, assets }),
+        body: JSON.stringify(payload),
       });
       const handoffResult = (await handoff.json().catch(() => ({}))) as {
         error?: string;
@@ -387,9 +568,11 @@ export default function OnboardingForm() {
             "We couldn’t start your preview. Please try once more.",
         );
       setStatus("");
-      setSuccessMessage(
-        "Received. We’ll email your preview link as soon as it’s ready.",
-      );
+      setSuccessMessage("Received. We’ll email your preview link as soon as it’s ready.");
+      sessionStorage.removeItem(payloadKey);
+      sessionStorage.removeItem(`launchloom-onboarding-submission:${decodeInviteId(inviteToken)}`);
+      sessionStorage.removeItem("launchloom-onboarding-invite");
+      setInviteState("accepted");
       form.reset();
       draftRef.current = {};
       setStep(0);
@@ -404,6 +587,15 @@ export default function OnboardingForm() {
     }
   }
 
+  if (inviteState !== "valid")
+    return (
+      <section className="invite-gate" role="status" aria-live="polite">
+        <span className="eyebrow">Private business intake</span>
+        <h1>{inviteState === "accepted" ? "Your details are with us." : inviteState === "loading" ? "Checking your invitation…" : "This invitation is unavailable."}</h1>
+        <p>{inviteState === "accepted" ? "We’ll email your preview link when it is ready." : inviteState === "loading" ? "Please wait while we verify this private link." : "Ask the person who invited you for a current onboarding link."}</p>
+      </section>
+    );
+
   return (
     <form
       ref={formRef}
@@ -413,6 +605,7 @@ export default function OnboardingForm() {
       onSubmit={submit}
     >
       <input type="hidden" name="submissionId" value={submissionId} />
+      <input type="hidden" name="inviteToken" value={inviteToken} />
       <input type="hidden" name="placeId" />
       <input type="hidden" name="googleMapsUrl" />
       <input
@@ -532,6 +725,7 @@ export default function OnboardingForm() {
               required
               type="email"
               name="email"
+              defaultValue={invitedEmail}
               placeholder="you@business.com"
             />
           </label>
@@ -566,8 +760,8 @@ export default function OnboardingForm() {
         <span className="eyebrow">Your services and area</span>
         <h1>What should customers find you for?</h1>
         <p>
-          Tell us what you actually offer and where you work. We&apos;ll handle
-          the keyword, competitor, and market research after you submit.
+          Tell us what you actually offer and where you work. We&apos;ll learn
+          about the local market and plan the website after you submit.
         </p>
         <div className="field-grid">
           <label className="field full">
@@ -575,10 +769,12 @@ export default function OnboardingForm() {
             <textarea
               required
               name="services"
+              value={servicesValue}
               placeholder={"One service per line, up to 5.\nExample:\nExterior painting\nInterior painting\nCabinet refinishing"}
-              onInput={(event) => {
+              onChange={(event) => {
+                setServicesValue(event.currentTarget.value);
                 const count = event.currentTarget.value
-                  .split(/\r?\n|,/u)
+                  .split(/\r?\n/u)
                   .map((item) => item.trim())
                   .filter(Boolean).length;
                 event.currentTarget.setCustomValidity(
@@ -590,6 +786,28 @@ export default function OnboardingForm() {
               Choose 1 to 5 core services. Put the most important one first.
             </small>
           </label>
+          <div className="service-suggestion-box field full">
+            <button className="button secondary" type="button" onClick={suggestServices} disabled={suggestingServices}>
+              {suggestingServices ? "Looking at your business details…" : "Suggest services from my listing"}
+            </button>
+            <p className="form-note">Suggestions are not added unless you select them. Confirm that each one is a service you actually offer.</p>
+            {suggestionMessage && <p role="status">{suggestionMessage}</p>}
+            {suggestedServices.length > 0 && (
+              <fieldset className="suggested-services">
+                <legend>Choose any suggested services you offer</legend>
+                {suggestedServices.map((service) => (
+                  <label className="suggested-service" key={service}>
+                    <input
+                      type="checkbox"
+                      checked={servicesValue.split(/\r?\n/u).some((item) => item.trim().toLowerCase() === service.toLowerCase())}
+                      onChange={(event) => toggleSuggestedService(service, event.currentTarget.checked)}
+                    />
+                    <span>{service}</span>
+                  </label>
+                ))}
+              </fieldset>
+            )}
+          </div>
           <label className="field">
             What kind of business is this?
             <select required name="industry" defaultValue="">
@@ -617,7 +835,8 @@ export default function OnboardingForm() {
           </label>
           <label className="field">
             How far do you normally travel?
-            <select required name="serviceRadius" defaultValue="20">
+            <select required name="serviceRadius" defaultValue="">
+              <option value="" disabled>Select your usual travel distance</option>
               <option value="10">Up to 10 miles</option>
               <option value="20">Up to 20 miles</option>
               <option value="30">Up to 30 miles</option>
@@ -692,6 +911,11 @@ export default function OnboardingForm() {
               placeholder="Optional: existing brand colours, fonts you already use, or anything you want us to avoid."
             />
           </label>
+          <label className="field">
+            Existing brand colour, if you already use one
+            <input name="brandColor" type="text" inputMode="text" pattern="#[0-9a-fA-F]{6}" placeholder="#205d51" />
+            <small>Leave this blank if you do not have a colour you want us to keep.</small>
+          </label>
           <ImageUploadField name="logo" label="Logo" optional />
           <ImageUploadField name="photoOne" label="Business photo 1" optional />
           <ImageUploadField name="photoTwo" label="Business photo 2" optional />
@@ -745,14 +969,15 @@ export default function OnboardingForm() {
         <label className="consent">
           <input type="checkbox" required name="confirmAccuracy" value="yes" />
           <span>
-            I confirm the business details and files I&apos;ve provided are
-            accurate and approved for use, and I authorize research of public
-            search and market data to prepare this website.
+            I confirm the business details are accurate, that I&apos;m allowed
+            to share these files, and that LaunchLoom may use public information
+            to prepare my website.
           </span>
         </label>
         <p className="form-note">
-          Research helps us decide keywords, page structure, and useful service
-          areas. It never replaces the business facts you confirmed here.
+          We use public information to plan helpful website content and nearby
+          coverage details. You decide which business facts and services are
+          accurate.
         </p>
       </section>
       {error && (
