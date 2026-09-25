@@ -123,7 +123,7 @@ try {
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ suggestions: ["Exterior painting", "Interior painting", "Cabinet refinishing"], provenance: "model_suggestion_unconfirmed" }),
+      body: JSON.stringify({ suggestions: ["Exterior painting", "Interior painting", "Cabinet refinishing", "Surface prep, priming and coating"], provenance: "model_suggestion_unconfirmed" }),
     });
   });
   await page.route("**/api/intake", async (route) => {
@@ -166,6 +166,12 @@ try {
   await page.getByLabel("Exterior painting", { exact: true }).check();
   if (await services.inputValue() !== "Exterior painting")
     failures.push("Selecting a service suggestion did not add only the client-confirmed service.");
+  await page.getByLabel("Surface prep, priming and coating", { exact: true }).check();
+  if (await services.inputValue() !== "Exterior painting\nSurface prep, priming and coating")
+    failures.push("Selecting a comma-containing service suggestion split one service into multiple lines.");
+  await page.getByLabel("Surface prep, priming and coating", { exact: true }).uncheck();
+  if (await services.inputValue() !== "Exterior painting")
+    failures.push("Unselecting a comma-containing service suggestion changed other service entries.");
   await services.fill("Exterior painting");
   await page.locator('[name="industry"]').selectOption("home-services");
   await page.locator('[name="serviceAreas"]').fill("Charleston, SC");
@@ -180,6 +186,10 @@ try {
   await page.getByRole("button", { name: "Continue" }).click();
   if (!((await services.evaluate((element) => element.validationMessage)) || "").includes("5"))
     failures.push("Services field does not cap the client at five core services.");
+
+  await page.getByLabel("Exterior painting", { exact: true }).uncheck();
+  if (await services.evaluate((element) => element.validationMessage))
+    failures.push("Removing a suggested service did not clear the over-five validation error.");
 
   await services.fill("Exterior painting\nInterior painting\nCabinet refinishing");
   await page.getByRole("button", { name: "Continue" }).click();

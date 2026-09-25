@@ -96,6 +96,42 @@ describe("SEO market map", () => {
     expect(dossier.warnings.join(" ")).toContain("Only the first 5 client-confirmed services were researched");
   });
 
+  it("preserves comma-containing scalar service names across research normalization", () => {
+    expect(normaliseSeoIntake({
+      services: "Heating, ventilation and AC",
+      primaryCity: "Tacoma, WA",
+    }).services).toEqual(["Heating, ventilation and AC"]);
+  });
+
+  it("matches provider metrics when DataForSEO normalizes punctuation in keyword keys", async () => {
+    const provider = researchProvider();
+    const normalizedKeyword = (keyword: string) => keyword.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+    provider.googleSearchVolume.mockImplementation(async ({ keywords }) => ({
+      cost: 0.04,
+      keywords: keywords.map((keyword) => ({ keyword: normalizedKeyword(keyword), searchVolume: 90, cpc: 4.1, competition: 0.7 })),
+    }));
+    provider.searchIntent.mockImplementation(async ({ keywords }) => ({
+      cost: 0.01,
+      keywords: keywords.map((keyword) => ({ keyword: normalizedKeyword(keyword), intent: "commercial" })),
+    }));
+    provider.bulkKeywordDifficulty.mockImplementation(async ({ keywords }) => ({
+      cost: 0.01,
+      keywords: keywords.map((keyword) => ({ keyword: normalizedKeyword(keyword), difficulty: 41 })),
+    }));
+
+    const dossier = await researchSiteContext({
+      confirmedServices: ["Heating, ventilation and AC"],
+      primaryCity: "Tacoma, WA",
+      industry: "home-services",
+    }, { dataForSeo: provider, maxTasks: 32, maxUsd: 2 });
+    const primary = dossier.pageMap.find((page) => page.pageType === "service")?.primaryKeyword;
+
+    expect(dossier.completeness.serviceMetrics).toEqual([
+      { service: "Heating, ventilation and AC", complete: true, primaryKeyword: expect.any(String) },
+    ]);
+    expect(primary).toMatchObject({ volume: 90, kd: 41, cpc: 4.1, competition: 0.7, intent: "commercial" });
+  });
+
   it("runs without optional Markdown map and enrichment CLI arguments", async () => {
     const directory = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-seo-cli-"));
     try {
@@ -203,9 +239,9 @@ describe("SEO market map", () => {
     expect(dossier.cost).toMatchObject({ tasks: 8, usd: 0.11, limitUsd: 0.25, overBudget: false });
     expect(provider.organicSerp).toHaveBeenCalledTimes(2);
     expect(provider.googleSearchVolume).toHaveBeenCalledWith(expect.objectContaining({
-      keywords: expect.arrayContaining(["Drain cleaning near me", "Drain cleaning Tacoma, WA", "Drain cleaning quote", "emergency Drain cleaning Tacoma, WA"]),
+      keywords: expect.arrayContaining(["Drain cleaning near me", "Drain cleaning Tacoma WA", "Drain cleaning quote", "emergency Drain cleaning Tacoma WA"]),
     }));
-    expect(dossier.validatedQueries.find((item) => item.keyword === "Drain cleaning Tacoma, WA")).toMatchObject({
+    expect(dossier.validatedQueries.find((item) => item.keyword === "Drain cleaning Tacoma WA")).toMatchObject({
       volume: 90, kd: 41, cpc: 4.1, competition: 0.7, intent: "commercial", provenance: "dataforseo",
     });
     expect(dossier.pageMap.map((page) => page.pageType)).toEqual(expect.arrayContaining(["home", "services-hub", "service", "about", "contact", "blog-index"]));
@@ -236,7 +272,7 @@ describe("SEO market map", () => {
     provider.bulkKeywordDifficulty.mockResolvedValueOnce({ cost: 0.01, keywords: [] });
     const dossier = await researchSiteContext(intake, { dataForSeo: provider, maxTasks: 16, maxUsd: 0.25 });
 
-    expect(dossier.validatedQueries.find((item) => item.keyword.toLowerCase() === "drain cleaning tacoma, wa")).toMatchObject({ volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "dataforseo_unavailable" });
+    expect(dossier.validatedQueries.find((item) => item.keyword.toLowerCase() === "drain cleaning tacoma wa")).toMatchObject({ volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "dataforseo_unavailable" });
     expect(dossier.warnings.join(" ")).toMatch(/metrics remain null/iu);
   });
 
@@ -249,7 +285,7 @@ describe("SEO market map", () => {
     const dossier = await researchSiteContext(intake, { dataForSeo: provider, maxTasks: 16, maxUsd: 0.25 });
 
     expect(dossier.completeness.serviceMetrics).toEqual([
-      { service: "Drain cleaning", complete: true, primaryKeyword: "Drain cleaning Tacoma, WA" },
+      { service: "Drain cleaning", complete: true, primaryKeyword: "Drain cleaning Tacoma WA" },
       { service: "Water heater repair", complete: false, primaryKeyword: null },
     ]);
     expect(dossier.publishReady).toBe(false);
@@ -296,7 +332,7 @@ describe("SEO market map", () => {
 
     expect(dossier.cost).toMatchObject({ tasks: 1, usd: 0, complete: false, unreportedTasks: 1, overBudget: false });
     expect(dossier.cost.stageCosts[0]).toMatchObject({ stage: "local_search_volume", usd: null, status: "cost_unavailable" });
-    expect(dossier.validatedQueries.find((item) => item.keyword === "Drain cleaning Tacoma, WA")).toMatchObject({ volume: 90, provenance: "dataforseo_metric_partial" });
+    expect(dossier.validatedQueries.find((item) => item.keyword === "Drain cleaning Tacoma WA")).toMatchObject({ volume: 90, provenance: "dataforseo_metric_partial" });
     expect(provider.searchIntent).not.toHaveBeenCalled();
     expect(dossier.publishReady).toBe(false);
     expect(dossier.warnings.join(" ")).toContain("without provider-reported spend");

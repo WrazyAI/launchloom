@@ -459,9 +459,11 @@ async function dispatch(
   });
 }
 
+class TurnstileValidationError extends Error {}
+
 async function verifyTurnstile(env: Env, token: unknown, remoteip?: string) {
   if (!env.TURNSTILE_SECRET_KEY) return;
-  if (!token) throw new Error("Please complete the spam check.");
+  if (!token) throw new TurnstileValidationError("Please complete the spam check.");
   const form = new FormData();
   form.set("secret", env.TURNSTILE_SECRET_KEY);
   form.set("response", String(token));
@@ -471,7 +473,7 @@ async function verifyTurnstile(env: Env, token: unknown, remoteip?: string) {
     { method: "POST", body: form },
   );
   const result = (await response.json()) as { success?: boolean };
-  if (!result.success) throw new Error("Spam check failed.");
+  if (!result.success) throw new TurnstileValidationError("Spam check failed.");
 }
 
 function assetUrl(env: Env, key: string) {
@@ -561,7 +563,13 @@ async function intake(request: Request, env: Env) {
   try {
     assertOrigin(request, allowed);
     const raw = (await request.json()) as Intake;
-    await verifyTurnstile(env, raw.turnstileToken, request.headers.get("CF-Connecting-IP") || undefined);
+    try {
+      await verifyTurnstile(env, raw.turnstileToken, request.headers.get("CF-Connecting-IP") || undefined);
+    } catch (error) {
+      if (error instanceof TurnstileValidationError)
+        return json({ error: error.message }, 400, headers);
+      throw error;
+    }
     if (clean(raw["bot-field"])) return json({ error: "Invalid intake." }, 400, headers);
     let invite: Awaited<ReturnType<typeof verifiedInvite>>;
     try {

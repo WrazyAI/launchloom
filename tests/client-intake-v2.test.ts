@@ -52,6 +52,21 @@ describe("ClientIntakeV2 normalization", () => {
     });
   });
 
+  it("preserves comma-delimited legacy service submissions", () => {
+    expect(normalizeClientIntake({
+      ...required,
+      services: "Drain cleaning, Water heater repair",
+      serviceAreas: "Tacoma, WA",
+      confirmAccuracy: "yes",
+      confirmRights: "yes",
+      confirmSeoResearch: "yes",
+    })).toMatchObject({
+      legacy: true,
+      services: ["Drain cleaning", "Water heater repair"],
+      coverageAreas: ["Tacoma, WA"],
+    });
+  });
+
   it("requires a single affirmative confirmation for the v2 client contract", () => {
     expect(() => normalizeClientIntake({
       ...required,
@@ -103,7 +118,7 @@ describe("ClientIntakeV2 normalization", () => {
       confirmAccuracy: "yes",
       differentiators: "x".repeat(2200),
       brandNotes: { unexpected: "object" },
-      brandColor: "not-a-hex-color",
+      brandColor: "#245a46extra",
       primaryColor: "#245a46",
       leadEmail: "leads@example.test",
       website: "w".repeat(700),

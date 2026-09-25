@@ -1233,12 +1233,37 @@ export function ensureLegacySocialProofMarkup(source) {
 }
 export function expectedArtifacts(operations, config) {
   return operations.flatMap((operation) => {
-    if (operation.kind === "replace_asset")
-      return [{ type: "asset", url: clean(operation.url) }];
-    if (operation.kind === "replace_copy_fragment")
-      return [{ type: "text", value: clean(operation.to) }];
+    if (operation.kind === "replace_asset") {
+      const placement = {
+        logo: "header",
+        photoOne: "hero",
+        photoTwo: "about",
+        photoThree: "gallery",
+      }[operation.slot] || "page";
+      return [{ type: "asset", url: clean(operation.url), route: "/", placement, slot: operation.slot }];
+    }
+    if (operation.kind === "replace_copy_fragment") {
+      const serviceMatch = operation.path?.match(/^services\[(\d+)\]\.description$/u);
+      const serviceSlug = serviceMatch
+        ? config.services?.[Number(serviceMatch[1])]?.slug
+        : "";
+      const route = serviceSlug ? `/services/${serviceSlug}/` :
+        operation.path?.startsWith("copy.about") ? "/about/" :
+          operation.path === "copy.contactHeading" ? "/contact/" :
+            operation.path?.startsWith("copy.services") ? "/services/" : "/";
+      const placement = serviceMatch ? "service-description" :
+        operation.path === "copy.heroHeading" ? "hero-heading" :
+          ["copy.contactHeading", "copy.servicesHeading"].includes(operation.path) ? "heading" :
+          operation.path === "copy.heroKicker" ? "hero-eyebrow" :
+            operation.path === "copy.heroBody" ? "hero-copy" :
+              operation.path?.startsWith("conversion.process[") ? "process-step" :
+                operation.path?.endsWith(".question") && operation.path?.startsWith("conversion.faqs[") ? "faq-question" :
+                  operation.path?.endsWith(".answer") && operation.path?.startsWith("conversion.faqs[") ? "faq-answer" :
+                    operation.path?.startsWith("differentiators[") ? "proof-point" : "page-copy";
+      return [{ type: "text", value: clean(operation.to), path: operation.path, route, placement }];
+    }
     if (operation.kind === "update_business_fact")
-      return [{ type: "text", value: clean(operation.value) }];
+      return [{ type: "text", value: clean(operation.value), path: `business.${operation.field}`, route: "/", placement: "business-fact" }];
     if (operation.kind === "update_design_token") {
       const artifacts = [];
       if (operation.value)
@@ -1341,7 +1366,70 @@ function sectionIdFor(config, type) {
     return "social-proof";
   return currentSections(config).find((section) => section.type === type)?.id;
 }
-export function verifyRevision(config, report, html = "", allHtml = html) {
+function renderedTextVariants(value) {
+  const ampersands = String(value).replace(/&/gu, "&amp;");
+  const markup = ampersands.replace(/</gu, "&lt;").replace(/>/gu, "&gt;");
+  return [...new Set([
+    markup,
+    markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#39;"),
+    markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#x27;"),
+    ...(!/[<>]/u.test(value) ? [ampersands] : []),
+  ])];
+}
+function elementBodies(html, tag) {
+  return [...html.matchAll(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "giu"))]
+    .map((match) => match[1]);
+}
+function containsRenderedText(html, value) {
+  return renderedTextVariants(value).some((variant) => html.includes(variant));
+}
+function containsTextInElement(html, tag, value) {
+  return elementBodies(html, tag).some((body) => containsRenderedText(body, value));
+}
+function containsTextInHero(html, tag, value) {
+  const sections = [...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/giu)];
+  const heroSections = sections
+    .filter((match) => /hero/iu.test(match[1]))
+    .map((match) => match[2]);
+  return heroSections.some((section) => containsTextInElement(section, tag, value));
+}
+function containsArtifactText(html, artifact) {
+  if (!html) return false;
+  if (artifact.placement === "hero-heading")
+    return containsTextInHero(html, "h1", artifact.value);
+  if (artifact.placement === "heading")
+    return ["h1", "h2", "h3"].some((tag) => containsTextInElement(html, tag, artifact.value));
+  if (artifact.placement === "hero-eyebrow")
+    return ["span", "p"].some((tag) => containsTextInHero(html, tag, artifact.value));
+  if (artifact.placement === "hero-copy")
+    return containsTextInHero(html, "p", artifact.value);
+  if (artifact.placement === "service-description" || artifact.placement === "faq-answer" || artifact.placement === "proof-point")
+    return containsTextInElement(html, "p", artifact.value);
+  if (artifact.placement === "process-step")
+    return containsTextInElement(html, "li", artifact.value) || containsTextInElement(html, "p", artifact.value);
+  if (artifact.placement === "faq-question")
+    return containsTextInElement(html, "summary", artifact.value);
+  return containsRenderedText(html, artifact.value);
+}
+function imageSourceMarkup(url) {
+  const ampersands = String(url).replace(/&/gu, "&amp;");
+  return [`src=\"${url}\"`, `src='${url}'`, `src=\"${ampersands}\"`, `src='${ampersands}'`];
+}
+function assetPlacementHtml(html, placement) {
+  if (placement === "header")
+    return html.match(/<header\b[\s\S]*?<\/header>/iu)?.[0] || "";
+  if (["hero", "about", "gallery"].includes(placement)) {
+    const sections = [...html.matchAll(/<section\b([^>]*)>[\s\S]*?<\/section>/giu)];
+    return sections.find((match) => match[1].toLocaleLowerCase().includes(placement))?.[0] || "";
+  }
+  return html;
+}
+function containsAsset(html, artifact) {
+  const region = assetPlacementHtml(html, artifact.placement);
+  return imageSourceMarkup(artifact.url).some((marker) => region.includes(marker));
+}
+/** @param {Record<string, string> | null} [htmlPages=null] */
+export function verifyRevision(config, report, html = "", allHtml = html, htmlPages = null) {
   const failures = [];
   const selectedCandidateId = String(
     config.design?.experience?.candidateId || "",
@@ -1397,18 +1485,15 @@ export function verifyRevision(config, report, html = "", allHtml = html) {
       if (id && new RegExp(`<section[^>]+id=["']${id}["']`).test(html))
         failures.push(`Section should be absent: ${artifact.sectionType}`);
     }
-    if (
-      artifact.type === "text" &&
-      !allHtml.includes(artifact.value.replace(/&/g, "&amp;"))
-    )
-      failures.push(`Missing rendered text: ${artifact.value.slice(0, 80)}`);
-    if (
-      artifact.type === "asset" &&
-      ![artifact.url, artifact.url.replace(/&/g, "&amp;")].some((url) =>
-        allHtml.includes(`src=\"${url}\"`) || allHtml.includes(`src='${url}'`),
-      )
-    )
-      failures.push(`Missing rendered replacement asset: ${artifact.url}`);
+    const renderedPage = artifact.route
+      ? htmlPages
+        ? htmlPages[artifact.route] || ""
+        : artifact.route === "/" ? html : allHtml
+      : allHtml;
+    if (artifact.type === "text" && !containsArtifactText(renderedPage, artifact))
+      failures.push(`Missing rendered text at ${artifact.path || "the expected page"}: ${artifact.value.slice(0, 80)}`);
+    if (artifact.type === "asset" && !containsAsset(renderedPage, artifact))
+      failures.push(`Missing rendered replacement asset at ${artifact.placement || "the expected page"}: ${artifact.url}`);
     if (
       artifact.type === "style" &&
       !html.toLowerCase().includes(artifact.value)

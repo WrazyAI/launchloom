@@ -1,6 +1,7 @@
 import { env, runInDurableObject, SELF } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
+import worker, { type Env } from "../src/index";
 import type { OnboardingInvites } from "../src/onboarding-invites";
 import { network } from "./network";
 
@@ -63,6 +64,21 @@ async function validateInvite(token: string, origin = onboardingOrigin) {
 }
 
 describe("private onboarding invitations", () => {
+  it("returns a client validation status when the required Turnstile token is missing", async () => {
+    const response = await worker.fetch(
+      new Request("https://api.launchloom.test/api/intake", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: onboardingOrigin },
+        body: JSON.stringify({}),
+      }),
+      { ...(env as unknown as Env), TURNSTILE_SECRET_KEY: "turnstile-test-secret" },
+      {} as ExecutionContext,
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: "Please complete the spam check." });
+  });
+
   it("fails closed when invite validation receives no token", async () => {
     const response = await validateInvite("");
 

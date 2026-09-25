@@ -95,7 +95,7 @@ export function normalizeClientIntake(raw: Record<string, unknown>): NormalizedC
   if (leadEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(leadEmail))
     throw new Error("Enter a valid lead notification email.");
   const normalizedHex = (value: unknown) => {
-    const color = clean(value, 7);
+    const color = clean(value, 1000);
     return /^#[0-9a-f]{6}$/iu.test(color) ? color : "";
   };
 

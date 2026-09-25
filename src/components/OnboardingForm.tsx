@@ -418,13 +418,20 @@ export default function OnboardingForm() {
 
   function toggleSuggestedService(service: string, selected: boolean) {
     const current = servicesValue
-      .split(/\r?\n|,/u)
+      .split(/\r?\n/u)
       .map((value) => value.trim())
       .filter(Boolean);
     const next = selected
       ? [...current.filter((item) => item.toLowerCase() !== service.toLowerCase()), service]
       : current.filter((item) => item.toLowerCase() !== service.toLowerCase());
+    const serviceField = document.querySelector<HTMLTextAreaElement>('[name="services"]');
+    if (selected && next.length > 5) {
+      serviceField?.setCustomValidity("Choose up to 5 core services.");
+      setSuggestionMessage("Choose up to five core services. Remove one before adding another.");
+      return;
+    }
     setServicesValue(next.join("\n"));
+    serviceField?.setCustomValidity(next.length > 5 ? "Choose up to 5 core services." : "");
   }
 
   async function lookupPlace() {
@@ -767,7 +774,7 @@ export default function OnboardingForm() {
               onChange={(event) => {
                 setServicesValue(event.currentTarget.value);
                 const count = event.currentTarget.value
-                  .split(/\r?\n|,/u)
+                  .split(/\r?\n/u)
                   .map((item) => item.trim())
                   .filter(Boolean).length;
                 event.currentTarget.setCustomValidity(
@@ -792,7 +799,7 @@ export default function OnboardingForm() {
                   <label className="suggested-service" key={service}>
                     <input
                       type="checkbox"
-                      checked={servicesValue.split(/\r?\n|,/u).some((item) => item.trim().toLowerCase() === service.toLowerCase())}
+                      checked={servicesValue.split(/\r?\n/u).some((item) => item.trim().toLowerCase() === service.toLowerCase())}
                       onChange={(event) => toggleSuggestedService(service, event.currentTarget.checked)}
                     />
                     <span>{service}</span>

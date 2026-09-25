@@ -17,10 +17,10 @@ const COUNTRY_NAMES = {
 };
 
 const text = (value, limit = 500) => String(value ?? "").replace(/\u0000/gu, "").replace(/—/gu, "-").trim().slice(0, limit);
+const keywordKey = (value) => text(value, 180).toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const splitList = (value, limit = 20) => {
-  const isArray = Array.isArray(value);
-  const raw = isArray ? value : [value];
-  const entries = raw.flatMap((item) => text(item, 400).split(isArray ? /\r?\n/u : /\r?\n|,/u).map((part) => text(part, 160))).filter(Boolean);
+  const raw = Array.isArray(value) ? value : [value];
+  const entries = raw.flatMap((item) => text(item, 400).split(/\r?\n/u).map((part) => text(part, 160))).filter(Boolean);
   return [...new Map(entries.map((item) => [item.toLocaleLowerCase(), item])).values()].slice(0, limit);
 };
 const areaList = (value, limit = 20) => {
@@ -81,10 +81,11 @@ export function normaliseSeoIntake(intake = {}) {
 
 function variantsFor(service, city, industry) {
   const variants = [service, `${service} near me`];
-  if (city) variants.push(`${service} ${city}`);
+  const cityTerm = text(city, 160).replace(/,/gu, " ").replace(/\s+/gu, " ").trim();
+  if (cityTerm) variants.push(`${service} ${cityTerm}`);
   variants.push(`${service} cost`);
   const urgent = /plumb|drain|electric|hvac|water damage|restor|garage door|locksmith|roof leak|tree removal|pest/iu.test(`${service} ${industry}`);
-  if (urgent) variants.push(`emergency ${service}${city ? ` ${city}` : ""}`);
+  if (urgent) variants.push(`emergency ${service}${cityTerm ? ` ${cityTerm}` : ""}`);
   if (/home-services|professional-services/iu.test(industry) || /repair|installation|painting|restoration|tax preparation|bookkeeping/iu.test(service))
     variants.push(`${service} quote`);
   if (/wellness|care|health/iu.test(industry) && /consultation|treatment|therapy|session|care/iu.test(service))
@@ -97,10 +98,10 @@ function defaultSeeds(seo) {
 }
 
 function findService(query, services) {
-  const normalized = query.toLocaleLowerCase();
-  return services.find((service) => normalized.includes(service.toLocaleLowerCase())) ||
+  const normalized = keywordKey(query);
+  return services.find((service) => normalized.includes(keywordKey(service))) ||
     services.find((service) => {
-      const terms = service.toLocaleLowerCase().split(/[^a-z0-9]+/u).filter((term) => term.length > 2);
+      const terms = keywordKey(service).split(/\s+/u).filter((term) => term.length > 2);
       return terms.length > 0 && terms.every((term) => normalized.includes(term));
     }) || null;
 }
@@ -203,17 +204,17 @@ function makePageMap(seo, metrics, kdByKeyword, serps, questionEvidence) {
   const servicePages = [];
   for (const service of seo.services) {
     const matching = metrics.filter((item) => findService(item.keyword, [service]));
-    const preferred = matching.find((item) => hasCompletePrimaryMetrics(item) && item.keyword.toLocaleLowerCase().includes(seo.primaryCity.toLocaleLowerCase())) ||
+    const preferred = matching.find((item) => hasCompletePrimaryMetrics(item) && keywordKey(item.keyword).includes(keywordKey(seo.primaryCity))) ||
       matching.find((item) => hasCompletePrimaryMetrics(item) && (item.intent === "commercial" || item.intent === "transactional")) ||
       matching.find(hasCompletePrimaryMetrics) || matching.find((item) => item.intent === "commercial" || item.intent === "transactional") || matching[0];
     const primary = preferred
-      ? { ...preferred, kd: kdByKeyword.get(preferred.keyword.toLocaleLowerCase()) ?? null }
+      ? { ...preferred, kd: kdByKeyword.get(keywordKey(preferred.keyword)) ?? null }
       : { keyword: `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "confirmed_service_city_not_measured" };
     const support = matching
-      .filter((item) => item.keyword.toLocaleLowerCase() !== primary.keyword.toLocaleLowerCase())
-      .map((item) => ({ ...item, kd: kdByKeyword.get(item.keyword.toLocaleLowerCase()) ?? null }))
+      .filter((item) => keywordKey(item.keyword) !== keywordKey(primary.keyword))
+      .map((item) => ({ ...item, kd: kdByKeyword.get(keywordKey(item.keyword)) ?? null }))
       .slice(0, 12);
-    const serviceSerps = serps.filter((item) => item.service.toLocaleLowerCase() === service.toLocaleLowerCase());
+    const serviceSerps = serps.filter((item) => keywordKey(item.service) === keywordKey(service));
     const measuredQuestions = serviceSerps.flatMap((item) => item.questions.map((question) => ({
       question,
       pageId: `service:${slugify(service)}`,
@@ -412,7 +413,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
   const volumeRows = volumeStage.ok ? flattenItems(volumeStage.value?.keywords || volumeStage.value?.items || []) : [];
   const volumeByKeyword = new Map(volumeRows.map((item) => {
     const keyword = text(item.keyword, 180);
-    return [keyword.toLocaleLowerCase(), {
+    return [keywordKey(keyword), {
       volume: finiteMetric(item.searchVolume ?? item.search_volume),
       cpc: finiteMetric(item.cpc),
       competition: finiteMetric(item.competition),
@@ -422,7 +423,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     [item.volume, item.cpc, item.competition].some((value) => value !== null),
   );
   base.validatedQueries = seeds.map((keyword) => {
-    const local = volumeByKeyword.get(keyword.toLocaleLowerCase());
+    const local = volumeByKeyword.get(keywordKey(keyword));
     const sources = {
       volume: local?.volume !== null && local?.volume !== undefined ? "dataforseo_google_ads_location" : null,
       kd: null,
@@ -444,22 +445,22 @@ export async function researchSiteContext(intake = {}, options = {}) {
   });
   base.marketSnapshot.measuredKeywords = base.validatedQueries.filter((item) => item.metricSources?.volume).length;
   if (!volumeStage.ok) warnings.push("Required local keyword volume, CPC, and competition research is incomplete; publication remains blocked.");
-  if (volumeStage.ok && seeds.some((keyword) => !volumeByKeyword.has(keyword.toLocaleLowerCase())))
+  if (volumeStage.ok && seeds.some((keyword) => !volumeByKeyword.has(keywordKey(keyword))))
     warnings.push("Some planned local keywords were absent from the provider response; their metrics remain null.");
   if (!volumeStage.ok || cost.overBudget || stoppedForBudget) return returnPartialResearch();
 
   const intentStage = await paidTask("search_intent", options.dataForSeo.searchIntent, { keywords: seeds });
   const intentRows = intentStage.ok ? flattenItems(intentStage.value?.keywords || intentStage.value?.items || []) : [];
   const intentByKeyword = new Map(intentRows.map((item) => [
-    text(item.keyword, 180).toLocaleLowerCase(),
+    keywordKey(item.keyword),
     text(item.intent || item.keyword_intent?.label, 40) || null,
   ]).filter(([keyword]) => keyword));
   base.completeness.searchIntent = intentStage.ok && [...intentByKeyword.values()].some(Boolean);
   if (!intentStage.ok) warnings.push("Required measured search intent research is incomplete; publication remains blocked.");
   if (cost.overBudget || stoppedForBudget) {
     base.validatedQueries = seeds.map((keyword) => {
-      const previous = base.validatedQueries.find((item) => item.keyword.toLocaleLowerCase() === keyword.toLocaleLowerCase());
-      const intent = intentByKeyword.get(keyword.toLocaleLowerCase()) ?? null;
+      const previous = base.validatedQueries.find((item) => keywordKey(item.keyword) === keywordKey(keyword));
+      const intent = intentByKeyword.get(keywordKey(keyword)) ?? null;
       const metricSources = { ...(previous?.metricSources || {}), intent: intent ? "dataforseo_labs_search_intent" : null };
       return {
         ...previous,
@@ -477,13 +478,13 @@ export async function researchSiteContext(intake = {}, options = {}) {
     languageCode: "en",
   });
   const difficultyRows = difficultyStage.ok ? flattenItems(difficultyStage.value?.keywords || difficultyStage.value?.items || []) : [];
-  const kdByKeyword = new Map(difficultyRows.map((item) => [text(item.keyword, 180).toLocaleLowerCase(), finiteMetric(item.difficulty ?? item.keywordDifficulty ?? item.keyword_difficulty)]));
+  const kdByKeyword = new Map(difficultyRows.map((item) => [keywordKey(item.keyword), finiteMetric(item.difficulty ?? item.keywordDifficulty ?? item.keyword_difficulty)]));
   base.completeness.keywordDifficulty = difficultyStage.ok && [...kdByKeyword.values()].some((value) => value !== null);
   if (!difficultyStage.ok) warnings.push("Required Keyword Difficulty evidence is incomplete; publication remains blocked.");
   const metrics = seeds.map((keyword) => {
-    const local = volumeByKeyword.get(keyword.toLocaleLowerCase());
-    const intent = intentByKeyword.get(keyword.toLocaleLowerCase()) ?? null;
-    const kd = kdByKeyword.get(keyword.toLocaleLowerCase()) ?? null;
+    const local = volumeByKeyword.get(keywordKey(keyword));
+    const intent = intentByKeyword.get(keywordKey(keyword)) ?? null;
+    const kd = kdByKeyword.get(keywordKey(keyword)) ?? null;
     const values = [local?.volume ?? null, local?.cpc ?? null, local?.competition ?? null, intent, kd];
     const metricSources = {
       volume: local?.volume !== null && local?.volume !== undefined ? "dataforseo_google_ads_location" : null,
@@ -509,7 +510,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
   base.validatedQueries = metrics;
   const serviceMetricCoverage = seo.services.map((service) => {
     const matching = metrics.filter((item) => findService(item.keyword, [service]));
-    const completePrimary = matching.find((item) => hasCompletePrimaryMetrics(item) && item.keyword.toLocaleLowerCase().includes(seo.primaryCity.toLocaleLowerCase())) ||
+    const completePrimary = matching.find((item) => hasCompletePrimaryMetrics(item) && keywordKey(item.keyword).includes(keywordKey(seo.primaryCity))) ||
       matching.find((item) => hasCompletePrimaryMetrics(item) && (item.intent === "commercial" || item.intent === "transactional")) ||
       matching.find(hasCompletePrimaryMetrics) || null;
     return { service, complete: Boolean(completePrimary), primaryKeyword: completePrimary?.keyword || null };
@@ -566,7 +567,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
   }
   const combinedMetrics = [...metrics];
   for (const row of relatedRows) {
-    if (!combinedMetrics.some((item) => item.keyword.toLocaleLowerCase() === row.keyword.toLocaleLowerCase())) combinedMetrics.push(row);
+    if (!combinedMetrics.some((item) => keywordKey(item.keyword) === keywordKey(row.keyword))) combinedMetrics.push(row);
   }
 
   let quickWins = [];
