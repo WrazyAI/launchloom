@@ -1,4 +1,4 @@
-const INLINE_IMAGE_DATA_URI = /data:image\/[\w.+-]+;base64,/iu;
+const INLINE_IMAGE_DATA_URI = /data:image\/[\w.+-]+(?:;[^,]*)?,/iu;
 
 export const DEFAULT_AUTHOR_PROMPT_TEXT_LIMIT = 400_000;
 
