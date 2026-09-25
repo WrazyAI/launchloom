@@ -251,6 +251,11 @@ describe("human creative revision lifecycle", () => {
     expect(client).not.toContain("scripts/run-rendered-creative-repair.mjs");
     expect(client).not.toContain("--require-diversity false");
     expect(client).toContain("--mode verify");
+    for (const workflow of [developer, client]) {
+      expect(workflow).toContain("scripts/verify-revision.mjs");
+      expect(workflow).toContain("--dist dist");
+      expect(workflow).not.toContain("--html dist/index.html");
+    }
 
     expect(developer).toContain(
       '--feedback-file "$RUNNER_TEMP/developer-feedback.txt"',
