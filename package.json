@@ -46,6 +46,9 @@
     "sharp": "0.35.4",
     "zod": "latest"
   },
+  "overrides": {
+    "sharp": "$sharp"
+  },
   "devDependencies": {
     "@astrojs/check": "latest",
     "@cloudflare/vitest-plugin": "^1.1.6",
