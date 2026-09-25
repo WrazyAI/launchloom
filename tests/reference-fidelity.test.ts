@@ -40,6 +40,24 @@ ${validStyles}
     );
   });
 
+  it("detects unisolated CSS tokens declared after nested rules", () => {
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: `.hero {
+  & .child { color: red; }
+  --ink: blue;
+  color: var(--ink);
+}`,
+      motionSource: validMotion,
+    });
+
+    expect(report.pass).toBe(false);
+    expect(report.hardFindings).toContainEqual(
+      expect.objectContaining({ code: "css-token-collision" }),
+    );
+  });
+
   it("ignores prohibited words outside relevant attribute values", () => {
     const report = validateReferenceCandidate({
       referenceDna: { ...dna, prohibitedPatterns: [...dna.prohibitedPatterns, "cards", "grid"] },
