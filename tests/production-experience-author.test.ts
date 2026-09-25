@@ -669,7 +669,7 @@ describe("production experience author", () => {
     expect(restored).toContain(
       'data-reference-section="hero" data-hero-geometry="split-editorial" data-hero',
     );
-    expect(restored.match(/\bdata-hero\b/gu)).toHaveLength(1);
+    expect(restored.match(/\sdata-hero(?=\s|>)/gu)).toHaveLength(1);
   });
 
   it("deduplicates hero markers only when a unique semantic hero remains", () => {
