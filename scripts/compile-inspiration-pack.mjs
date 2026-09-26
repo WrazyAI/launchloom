@@ -1,10 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { buildInspirationPack } from "./inspiration-registry.mjs";
-import {
-  loadA1ReferenceLibrary,
-  mergeInspirationRegistries,
-} from "./a1-reference-library.mjs";
 
 function parseArgs(values) {
   const result = {};
@@ -63,35 +59,26 @@ const registryPath = path.resolve(
 const historyPath = path.resolve(
   args.history || path.join(repository, "data/recent-launch-signatures.json"),
 );
-const a1LibraryPath = path.resolve(
-  args["a1-library"] || path.join(repository, "data/a1-reference-library.json"),
-);
 const outputPath = path.resolve(
   args.out || ".launchloom/inspiration-pack.json",
 );
 
-const [config, baseRegistry, history, intake, a1Library] = await Promise.all([
+const [config, baseRegistry, history, intake] = await Promise.all([
   fs.readFile(configPath, "utf8").then(JSON.parse),
   fs.readFile(registryPath, "utf8").then(JSON.parse),
   fs.readFile(historyPath, "utf8").then(JSON.parse),
   args.intake
     ? intakeFromFile(path.resolve(args.intake))
     : {},
-  fs.access(a1LibraryPath).then(
-    () => loadA1ReferenceLibrary(a1LibraryPath, { repositoryRoot: repository }),
-    () => null,
-  ),
 ]);
-const registry = a1Library
-  ? mergeInspirationRegistries(baseRegistry, a1Library)
-  : baseRegistry;
+const registry = baseRegistry;
 const recent = Array.isArray(history.launches)
   ? history.launches.slice(-30)
   : [];
-const normalizedIndustry = String(config.industry || "").toLowerCase();
+const normalizedIndustry = String(config.businessKind || config.industry || "").toLowerCase();
 const industry = ["", "all", "general", "other"].includes(normalizedIndustry)
   ? intake.industry || config.businessKind || config.preset || "all"
-  : config.industry;
+  : normalizedIndustry;
 const styleText = [
   intake.stylePreference,
   intake.brandNotes,
@@ -115,7 +102,6 @@ const pack = buildInspirationPack(
     industry,
     styleTerms,
     styleText,
-    referenceCalibration: a1Library?.calibration,
     recentReferenceIds: recent.flatMap((launch) =>
       Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
     ),
@@ -131,16 +117,13 @@ const pack = buildInspirationPack(
     ),
   },
   registry,
+  { repositoryRoot: repository, requireDossiers: true },
 );
 pack.referenceLibrary = {
-  a1: a1Library
-    ? {
-        source: a1Library.source,
-        capturedAt: a1Library.capturedAt,
-        recordIds: a1Library.records.map((record) => record.id),
-        calibration: a1Library.calibration,
-      }
-    : null,
+  policy: "permission-cleared-only",
+  source: "data/reference-library/core-collection.json",
+  selectedDossierCount: pack.routes.filter((route) => route.referenceDossier).length,
+  recordIds: pack.routes.map((route) => route.referenceDossier?.id).filter(Boolean),
 };
 
 await fs.mkdir(path.dirname(outputPath), { recursive: true });

@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-amrit-palace-restaurant",
+  "productionEligible": true,
+  "referenceName": "Amrit image-led heritage dining and menu journey",
+  "familyId": "direct-amrit-warm-menu-editorial",
+  "source": {
+    "name": "Amrit Palace official restaurant website",
+    "url": "https://amritpalace.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested that internal full-page desktop/mobile capture and derived design-prompt retention are cleared, and later explicitly confirmed that these screenshots may be sent to the LaunchLoom pipeline model as visual references. No restaurant-owner grant or written license was uploaded. See the requester-attestation and provenance files.",
+    "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md",
+    "assetEvidencePaths": [
+      "rights/REQUESTER-ATTESTATION.md",
+      "rights/PROVENANCE.md"
+    ]
+  },
+  "provenance": {
+    "officialPage": "https://amritpalace.com/",
+    "capturedAt": "2026-09-25",
+    "capture": {
+      "method": "Rendered the official website directly in an isolated agent-browser Chromium session; full-page screenshots were captured from the live source page, not from a gallery or third-party screenshot.",
+      "desktopViewport": { "width": 1536, "height": 864, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 10310 },
+      "mobileViewport": { "width": 390, "height": 844, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 9461 },
+      "diagnostics": "All 69 img elements reported loaded at both final capture viewports; no broken images, no horizontal document overflow. The screenshots contain the original site's branding, copy, and photographs under the requester's attested internal capture/model-reference scope only. None of those original image files is included separately in this dossier."
+    },
+    "attribution": "Official source page: Amrit Palace, https://amritpalace.com/. Full-page captures retained under the requester-attested internal scope recorded in rights/REQUESTER-ATTESTATION.md."
+  },
+  "businessKinds": [
+    "restaurant",
+    "indian-restaurant",
+    "fine-dining",
+    "catering"
+  ],
+  "tags": {
+    "business": ["restaurant", "indian-restaurant", "catering", "multi-location-restaurant"],
+    "style": ["warm-heritage-modern", "editorial-serif", "ochre-paper", "deep-food-photography", "crafted-hospitality"],
+    "composition": ["immersive-dining-hero", "menu-and-image-split", "story-chapter", "three-part-catering", "staggered-drinks-gallery", "testimonial-close"],
+    "conversion": ["reserve-or-order-choice", "menu-discovery", "catering-inquiry", "gift-card-path", "location-hours-footer"],
+    "motion": ["native-menu-links", "discreet-scroll-reveals", "review-carousel-optional", "reduced-motion-safe"],
+    "imagery": ["client-food-photography-priority", "warm-table-scene", "large-dish-crops", "catering-process-imagery", "interior-atmosphere"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1536, "height": 864 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct source uses a compact overlay navigation over a dramatic dining-room image, with restrained central display typography and clear reservation/order controls. It then shifts into a warm paper-and-ochre editorial system: a short dining story, a vertical signature-menu board paired with large food photography, a catering chapter broken into three image-backed offerings, a drinks section with staggered image rhythm and text list, a gift-card chapter, a dark interior scene, review proof, and a utility-dense footer for locations, hours, contact, newsletter, and actions. It is image-led but still gives menu rows and practical actions a visible place. The source's brand, food items, exact prices, copy, locations, reviews, hours, staff, and claims are excluded from transfer. The desktop capture is 1536 by 10310; mobile is 390 by 9461, both full-page live-site captures with no horizontal overflow.",
+    "heroGeometry": {
+      "mode": "immersive full-width dining image with compact overlay navigation and centered editorial title",
+      "alignment": "centered headline on a broad darkened dining-room field, followed by a slightly inset story scene",
+      "viewport": "brand, concise restaurant proposition, and a reserve/order route are visible in the first desktop viewport"
+    },
+    "navigationGeometry": {
+      "mode": "small wordmark and fine utility links over the hero, with compact reservation and order controls",
+      "placement": "edge-aligned overlay at the top of the hero; utility/contact details reappear in the footer",
+      "mobile": "compressed logo and icon/actions above the same image-led opening; the menu and ordering paths remain reachable"
+    },
+    "typography": {
+      "display": "high-contrast editorial serif for hospitality chapters and menu display",
+      "body": "restrained clean sans for item notes, operating details, and controls",
+      "scale": "large but elegant section titles, small utility labels, compact menu list with distinct item/price hierarchy"
+    },
+    "palette": {
+      "surfaces": ["warm parchment", "saffron ochre", "deep espresso", "photographic black-brown"],
+      "ink": "near-black and soft charcoal",
+      "accents": ["warm amber", "restrained spice orange", "muted cream"],
+      "contrastIntent": "light text over a controlled hero overlay and dark food images; menu text remains high-contrast on a warm light surface"
+    },
+    "imageTreatment": {
+      "mode": "cinematic dining-room hero, large food images, catering activity triptych, drinks portraits, and a dark interior chapter",
+      "crop": "wide cover hero and varied wide/portrait food and hospitality crops",
+      "focalPoint": "preserve food or hospitality activity as the focal subject; the source photos are visual evidence only, not client photography"
+    },
+    "sectionSequence": [
+      "dining-room-hero-and-actions",
+      "restaurant-story",
+      "signature-menu-and-dish-images",
+      "catering-offerings",
+      "drinks-list-and-photography",
+      "gift-or-occasion-path",
+      "interior-atmosphere-chapter",
+      "guest-proof",
+      "locations-hours-contact-footer"
+    ],
+    "servicePresentation": {
+      "pattern": "text-forward item list with concise description and aligned price, contrasted against large food images; catering is grouped into a small number of photographic service chapters",
+      "interaction": "menu and reserve/order actions are direct links; keep item information readable without a slider or hover",
+      "adaptation": "use real menu, catering, beverage, dietary, pricing, and order tokens only; remove any offering the client has not verified"
+    },
+    "ctaPlacement": {
+      "primary": "reservation or order choice appears in the opening and repeats at menu or closing decision points",
+      "secondary": "menu browsing and catering inquiry",
+      "early": "offer the most relevant booking path beside the opening promise, without forcing users to choose between multiple locations unless the business has them"
+    },
+    "motion": {
+      "primitive": "subtle section reveals and optional review carousel; no movement is required to read menu or location details",
+      "library": "CSS and native browser behavior; any carousel must use explicit accessible controls",
+      "reducedMotion": "show static images and all reviews or menu information; no autoplay or scroll-jacking"
+    },
+    "mobileRecomposition": {
+      "strategy": "long single-column restaurant journey with compact menu actions and full-width photography",
+      "rules": [
+        "keep a short promise and the primary reserve/order route near the top",
+        "allow menu rows to stack with price and description visibly associated",
+        "stack catering imagery without shrinking labels below comfortable reading size",
+        "turn drink and guest-review rails into swipe-safe or stacked content with visible controls",
+        "keep location, current hours, and contact information easy to scan in the footer"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying Amrit Palace, its wordmark, tagline, exact dish names, prices, photographs, locations, hours, staff, reviews, rating counts, history, or hospitality claims",
+      "inventing menu items, ingredients, allergens, dietary suitability, sourcing, prices, operating hours, catering capacity, or reservation availability",
+      "presenting stock or generated food photography as the client's own dishes or dining room",
+      "using a review carousel as the only place to find practical restaurant information",
+      "turning every menu item into a decorative rounded card or placing the entire menu in an image",
+      "showing multiple reservation providers or location selectors when the client has one verified booking path"
+    ],
+    "requiredSignatureElements": [
+      { "id": "dining-image-opening", "selector": "[data-reference-signature=dining-image-opening]", "description": "broad hospitality image opening with concise promise and direct action" },
+      { "id": "menu-board", "selector": "[data-reference-signature=menu-board]", "description": "accessible text-led menu hierarchy with verified prices when provided" },
+      { "id": "service-photo-chapter", "selector": "[data-reference-signature=service-photo-chapter]", "description": "small editorial image sequence for an additional service such as catering, only when offered" },
+      { "id": "visit-details-close", "selector": "[data-reference-signature=visit-details-close]", "description": "practical location, hours, and contact close using verified facts" }
+    ],
+    "acceptanceChecks": [
+      "desktop hero has a readable promise, appropriate image treatment, and working primary action",
+      "menu and catering copy is bound to verified business data and does not invent price or dietary claims",
+      "photos are client-provided or separately rights-cleared and are not represented as client premises or dishes",
+      "mobile menu rows, service images, contact information, and booking routes remain readable with no horizontal overflow",
+      "review claims and rating details are used only when their source and current value are verified"
+    ]
+  },
+  "review": {
+    "status": "requester-attested-visual-reference",
+    "reviewer": "LaunchLoom repository owner",
+    "reviewedAt": "2026-09-25",
+    "scope": "Official page rendered and captured at desktop and portrait-mobile widths; source mechanics are translated into a prompt and Reference DNA. Requester attestation permits model visual-reference use, but no owner grant file was uploaded."
+  }
+}

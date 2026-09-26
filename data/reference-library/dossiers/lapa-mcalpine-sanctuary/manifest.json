@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "lapa-mcalpine-sanctuary",
+  "productionEligible": true,
+  "referenceName": "McAlpine sanctuary wordmark and room index",
+  "familyId": "lapa-mcalpine-sanctuary",
+  "source": {
+    "name": "McAlpine",
+    "url": "https://mcalpinehouse.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested on 2026-09-25 that clearance covers full-page screenshot retention, derivative prompts, and sending screenshots to the pipeline model as visual reference. The source-specific grant was not attached.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/requester-attestation.md"]
+  },
+  "provenance": {
+    "discoveryPageUrl": "https://www.lapa.ninja/post/mcalpinehouse/",
+    "capture": "Full-page direct-site captures at 1440x1000 and 390x844 after scrolling the full page to trigger any reveal behavior and eager-loading its images. The browser viewport was sized to 1440px desktop and 390px mobile content widths; no site content was modified.",
+    "retrievedAt": "2026-09-25",
+    "captureDimensions": { "desktop": [1440, 5283], "mobile": [390, 3056] },
+    "attribution": "McAlpine is the captured website. Internal reference only; no screenshot or source image redistribution."
+  },
+  "businessKinds": ["architecture", "residential-architecture", "interior-design", "luxury-home-design", "design-studio"],
+  "tags": {
+    "business": ["architecture", "residential-architecture", "interior-design", "luxury-home-design", "design-studio"],
+    "style": ["quiet-luxury", "photographic-minimalism", "high-contrast-serif", "white-space-led", "sanctuary-editorial"],
+    "composition": ["wordmark-over-architecture", "single-film-panel", "vertical-name-index", "dark-navigation-close"],
+    "conversion": ["architect-consultation", "project-index-to-contact", "quiet-enquiry"],
+    "motion": ["cinematic-image-reveal", "optional-presentation-film", "static-poster-fallback"],
+    "imagery": ["architectural-wall-and-shadow", "material-detail", "cinematic-interior" ]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "An almost monochrome architecture practice presentation opens on a quiet exterior material image with an oversized refined serif wordmark. A single centered label and film/poster frame lead into a vertical list of evocative project names, then a dark full-width navigation and contact close. Large white spaces and a narrow serif index set the pace; all source projects, images, names and claims are McAlpine content.",
+    "heroGeometry": { "mode": "full-bleed architectural texture with oversized wordmark", "alignment": "wordmark centered over quiet masonry/landscape image; utility controls remain tiny at top edge", "viewport": "image and brand expression dominate the opening; a concise service/location statement remains accessible in HTML" },
+    "navigationGeometry": { "mode": "minimal menu control", "placement": "small top-corner controls over the image", "mobile": "menu and wordmark are compact; no persistent pill navigation" },
+    "typography": { "display": "high-contrast editorial serif", "body": "quiet neutral sans", "scale": "large brand masthead, small single labels, refined vertical project names" },
+    "palette": { "surfaces": ["white", "stone gray", "deep charcoal"], "ink": "charcoal", "accents": ["natural image tones", "soft shadow gray"], "contrastIntent": "restrained monochrome, with brand text readable on the photo and high contrast in the closing panel" },
+    "imageTreatment": { "mode": "atmospheric architectural material image and one cinematic presentation frame", "crop": "full-bleed opening, restrained centered media frame, minimal image chapter", "focalPoint": "texture, branch shadows and architectural material rather than people" },
+    "sectionSequence": ["architectural-opening", "project-label", "presentation-frame", "vertical-index", "services", "faq", "dark-navigation-contact"],
+    "servicePresentation": { "pattern": "narrow vertical typographic index of service or project chapters", "interaction": "direct anchors from the index; keep labels meaningful and touch-safe" },
+    "ctaPlacement": { "primary": "quiet enquiry control in opening menu and dark closing panel", "secondary": "chapter index", "early": "one visible enquiry link after the wordmark statement" },
+    "motion": { "primitive": "slow reveal for image/presentation chapter only", "library": "native scroll reveal or a short accessible timeline", "reducedMotion": "show a still image and all chapter content in order" },
+    "mobileRecomposition": { "strategy": "one-column sanctuary narrative", "rules": ["keep wordmark within the image-safe area", "stack the presentation frame at natural ratio", "maintain readable project/service names", "show local scope before the chapter index", "stack final navigation and contact routes"] },
+    "prohibitedPatterns": ["copying McAlpine name, logo, source image, projects, names, or film", "using source project labels as client service claims", "unexplained empty screen before useful content", "hover-only chapter interactions", "unverified team, awards, addresses or outcomes", "autoplay-only media without poster", "using this pattern for urgent service businesses"],
+    "requiredSignatureElements": [
+      { "id": "architectural-wordmark-scene", "selector": "[data-reference-signature=architectural-wordmark-scene]", "description": "quiet architectural image with large centered wordmark" },
+      { "id": "presentation-frame", "selector": "[data-reference-signature=presentation-frame]", "description": "single cinematic image or static poster chapter" },
+      { "id": "vertical-chapter-index", "selector": "[data-reference-signature=vertical-chapter-index]", "description": "narrow typographic service/project index" },
+      { "id": "dark-contact-close", "selector": "[data-reference-signature=dark-contact-close]", "description": "dark contact and navigation closing plane" }
+    ],
+    "acceptanceChecks": ["opening retains atmosphere without hiding actual service/location information", "the index contains verified service or project labels", "media has a static/reduced-motion fallback", "primary enquiry remains findable on mobile", "no source project, imagery, name or claim is reused", "no blank area pushes the main action unreasonably far down"]
+  },
+  "review": { "status": "requester-attested-internal-and-model-reference", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "direct-site desktop/mobile capture, source-specific mechanics prompt and requester attestation; no source grant file uploaded" }
+}

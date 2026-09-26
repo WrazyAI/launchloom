@@ -151,8 +151,16 @@ function inferFamily(route) {
 }
 
 export function familyForRoute(route) {
-  const familyId = clean(route?.familyId, 60) || inferFamily(route);
-  return CREATIVE_FAMILIES[familyId] ? familyId : inferFamily(route);
+  const familyId = clean(route?.familyId, 60);
+  const canonical =
+    route?.canonicalReferenceDna?.canonical === true ||
+    route?.referenceDna?.canonical === true ||
+    route?.evidence?.some(
+      (item) => item?.canonicalReferenceDna?.canonical === true,
+    );
+  if (canonical && familyId) return familyId;
+  const resolved = familyId || inferFamily(route);
+  return CREATIVE_FAMILIES[resolved] ? resolved : inferFamily(route);
 }
 
 export function fingerprintForRoute(route) {
@@ -170,17 +178,23 @@ export function buildRouteContract(route, index = 0) {
   if (!route || typeof route !== "object")
     throw new Error(`Creative route ${index + 1} is not an object.`);
   const familyId = familyForRoute(route);
-  const family = CREATIVE_FAMILIES[familyId];
+  const referenceDna = route.referenceDna || buildReferenceDna(route);
+  const family = CREATIVE_FAMILIES[familyId] || {
+    label: clean(route.label, 140) || clean(referenceDna.referenceName, 140),
+    defaultMotion:
+      clean(referenceDna.motion?.primitive, 120) || "restrained-native-motion",
+    prohibitedPatterns: [],
+  };
   const motionOpportunity =
     clean(route.motionOpportunity, 120) || family.defaultMotion;
   const prohibitedPatterns = [
     ...new Set([
       ...DEFAULT_PROHIBITED,
       ...family.prohibitedPatterns,
+      ...list(referenceDna.prohibitedPatterns, 30),
       ...list(route.prohibitedPatterns),
     ]),
   ];
-  const referenceDna = route.referenceDna || buildReferenceDna(route);
   return Object.freeze({
     version: CREATIVE_CONTRACT_VERSION,
     id: clean(route.id, 80) || `route-${String(index + 1).padStart(2, "0")}`,
@@ -200,6 +214,30 @@ export function buildRouteContract(route, index = 0) {
       clean(route.mobileBehavior, 160) ||
       "recompose into a content-driven single column without horizontal overflow",
     prohibitedPatterns,
+    tags: list(route.tags, 24),
+    designTemplate:
+      route.designTemplate && typeof route.designTemplate === "object"
+        ? route.designTemplate
+        : referenceDna.evidence?.designTemplate,
+    calibrationProfile:
+      clean(
+        route.calibrationProfile ||
+          referenceDna.evidence?.calibrationProfile,
+        80,
+      ) || undefined,
+    referenceCalibration:
+      route.referenceCalibration ||
+      referenceDna.evidence?.referenceCalibration ||
+      undefined,
+    sourceCategory: clean(route.sourceCategory, 80) || undefined,
+    evidenceTier: clean(route.evidenceTier, 40) || undefined,
+    provenance:
+      route.provenance || referenceDna.evidence?.provenance || undefined,
+    canonicalReferenceDna:
+      route.canonicalReferenceDna ||
+      route.evidence?.find((item) => item.canonicalReferenceDna)
+        ?.canonicalReferenceDna ||
+      undefined,
     referenceDna,
     referenceEvidenceComplete: Boolean(referenceDna.complete),
     referenceIds: list(route.referenceIds, 8),
@@ -214,9 +252,15 @@ export function buildRouteContract(route, index = 0) {
           source: clean(item.source, 100),
           rights: clean(item.rights, 30),
           screenshotPath: clean(item.screenshotPath, 300),
+          mobileScreenshotPath: clean(item.mobileScreenshotPath, 300),
           measuredDesignTokens: item.measuredDesignTokens || undefined,
           sourceStyles: list(item.sourceStyles, 20),
           sourceFonts: list(item.sourceFonts, 12),
+          tags: list(item.tags, 24),
+          designTemplate: item.designTemplate || undefined,
+          canonicalReferenceDna: item.canonicalReferenceDna || undefined,
+          provenance: item.provenance || undefined,
+          calibrationProfile: clean(item.calibrationProfile, 80) || undefined,
           notes: clean(item.notes, 320),
         }))
       : [],
@@ -331,6 +375,27 @@ export function buildCandidateManifest(input) {
           },
         }
       : {}),
+    ...(route.referenceDossier
+      ? {
+          referenceDossier: {
+            id: clean(route.referenceDossier.id, 100),
+            referenceName: clean(route.referenceDossier.referenceName, 180),
+            familyId: clean(route.referenceDossier.familyId, 100),
+            path: clean(route.referenceDossier.path, 400),
+            digest: clean(route.referenceDossier.digest, 128),
+            source: {
+              name: clean(route.referenceDossier.source?.name, 160),
+              url: clean(route.referenceDossier.source?.url, 500),
+              rights: clean(route.referenceDossier.source?.rights, 40),
+              rightsEvidence: clean(route.referenceDossier.source?.rightsEvidence, 600),
+              rightsEvidencePath: clean(route.referenceDossier.source?.rightsEvidencePath, 260),
+              assetEvidencePaths: list(route.referenceDossier.source?.assetEvidencePaths, 12),
+            },
+            tags: route.referenceDossier.tags || {},
+            designPrompt: String(route.referenceDossier.designPrompt || ""),
+          },
+        }
+      : {}),
     requiredSections: ["hero", "services", "faqs", "contact", "early-conversion"],
     motion: {
       opportunity: contract.motionOpportunity,
@@ -355,6 +420,19 @@ export function validateCandidateManifest(manifest) {
     throw new Error("Creative candidate may declare at most one pinned scene.");
   if (manifest.version >= 2 && (!manifest.referenceDna || manifest.referenceEvidence?.complete !== true))
     throw new Error("Creative candidate manifest must include complete Reference DNA evidence.");
+  if (manifest.referenceDossier && (
+    !clean(manifest.referenceDossier.id, 100) ||
+    !clean(manifest.referenceDossier.path, 400) ||
+    !/^[a-f0-9]{64}$/u.test(clean(manifest.referenceDossier.digest, 128)) ||
+    !clean(manifest.referenceDossier.source?.name, 160) ||
+    !clean(manifest.referenceDossier.source?.url, 500) ||
+    !["owned", "licensed", "permission-cleared"].includes(
+      clean(manifest.referenceDossier.source?.rights, 40),
+    ) ||
+    !clean(manifest.referenceDossier.source?.rightsEvidence, 600) ||
+    String(manifest.referenceDossier.designPrompt || "").trim().length < 900
+  ))
+    throw new Error("Creative candidate manifest contains an incomplete Reference Dossier binding.");
   return manifest;
 }
 

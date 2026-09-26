@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "attested-one-manor-place-dental",
+  "productionEligible": true,
+  "referenceName": "One Manor Place: botanical editorial dental practice",
+  "familyId": "attested-omp-dental-editorial",
+  "businessKinds": ["dental clinic", "neighborhood dentist"],
+  "source": {
+    "name": "One Manor Place official website",
+    "url": "https://omp.dentist/",
+    "discoveredVia": "https://www.lapa.ninja/post/omp/",
+    "sourceType": "official direct website, captured directly",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation on 2026-09-25 permits persistent desktop/mobile screenshots and use as pipeline-model visual reference. No owner license or grant file was uploaded; see the explicit scope and limitation in rights/requester-attestation.md.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md",
+      "rights/source-observations.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": ["dental", "neighborhood dental practice", "general and family dentistry"],
+    "style": ["botanical editorial", "warm natural", "calm clinical"],
+    "composition": ["large serif wordmark", "thin in-page nav rail", "alternating image chapters", "ruled service disclosures"],
+    "conversion": ["book action near opening", "service-specific booking links", "strong contact close"],
+    "motion": ["section reveal", "team carousel", "service disclosure"],
+    "imagery": ["practice photography", "portrait and room images", "warm interiors", "direct-source screenshot evidence"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 900 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The captured page begins with a small service/location statement and a large serif practice wordmark balanced against a portrait. A thin, text-led navigation rail follows. The long page shifts through a warm pale-yellow practice statement, alternating treatment-room images and copy, team cards, a ruled services accordion, a specialty feature, split testimonials and photography, and a dark green identity/contact footer. Mobile stacks the image-and-copy chapters and keeps the services list and booking actions touchable. This is a real dental practice and all its actual copy, people, photos, brand, and claims remain reference-only.",
+    "heroGeometry": { "mode": "large practice wordmark paired with a full-height portrait field and compact neighborhood introduction", "alignment": "asymmetric, copy left and portrait right on desktop", "viewport": "identity, location/service statement, and booking action appear in the opening composition" },
+    "navigationGeometry": { "mode": "slim horizontal in-page section rail", "placement": "immediately after the oversized wordmark band", "mobile": "compact horizontal section links with stacked brand imagery" },
+    "typography": { "display": "high-contrast editorial serif", "body": "compact humanist/mono-influenced text", "scale": "large wordmark, restrained utility labels, short paragraphs" },
+    "palette": { "surfaces": ["warm cream", "pale yellow", "deep botanical green"], "ink": "dark green-gray", "accents": ["muted natural yellow"], "contrastIntent": "soft atmosphere with readable dark text and confident closing contrast" },
+    "imageTreatment": { "mode": "large portrait plus alternating practice/people photography", "crop": "desktop wide room crops and vertical portrait crops on mobile", "focalPoint": "faces and clinic context remain primary" },
+    "sectionSequence": ["hero identity", "practice statement", "about with interior image", "team introduction", "services index", "featured specialty", "testimonial photo chapters", "contact close"],
+    "servicePresentation": { "pattern": "ruled expandable list paired with short scope copy", "interaction": "tap or keyboard expands one service answer at a time" },
+    "ctaPlacement": { "primary": "booking link in hero/navigation", "secondary": "repeated near service and specialty decisions", "early": "visible in initial identity band and nav rail" },
+    "motion": { "primitive": "scroll reveals, a small team carousel, and native disclosure controls", "library": "observed source behavior only; do not import source scripts", "reducedMotion": "show all content in normal flow and retain direct carousel controls" },
+    "mobileRecomposition": { "strategy": "single-column editorial chapters", "rules": ["stack portrait and wordmark without overlap", "keep service disclosures wide and touchable", "retain a direct booking path", "keep display type readable", "avoid page-level horizontal overflow"] },
+    "prohibitedPatterns": ["generic card wall", "pill nav", "long unsupported why-us prose", "copying source identity or photographs", "invented clinic facts, reviews, credentials, or outcomes"],
+    "requiredSignatureElements": [
+      { "id": "editorial-wordmark", "selector": "[data-reference-signature=editorial-wordmark]", "description": "large serif identity balanced with one photographic portrait" },
+      { "id": "section-rail", "selector": "[data-reference-signature=section-rail]", "description": "thin in-page navigation rail after the hero identity" },
+      { "id": "ruled-services", "selector": "[data-reference-signature=ruled-services]", "description": "expandable ruled treatment list instead of service cards" },
+      { "id": "deep-contact-close", "selector": "[data-reference-signature=deep-contact-close]", "description": "distinct dark footer/identity close with contact information" }
+    ],
+    "acceptanceChecks": [
+      "The opening balances a short service/location introduction, oversized identity, portrait, and booking action.",
+      "Section rhythm alternates statement, image/copy, team, service disclosure, and a distinct dark contact close.",
+      "At 390 px the service list and nav remain touch-safe and no horizontal page overflow appears.",
+      "Reference screenshots are sourced from the direct official URL, not Lapa's preview or thumbnails.",
+      "New site copy and imagery do not reproduce One Manor Place's brand, claims, testimonials, or photos."
+    ]
+  },
+  "review": { "status": "reviewed", "reviewer": "Codex direct-source QA", "date": "2026-09-25", "notes": "Direct page screenshots verified at 1440 and 390. No width overflow. One placeholder image URL failed in the source and is disclosed in the capture record. User-attested permission, no owner grant file." }
+}

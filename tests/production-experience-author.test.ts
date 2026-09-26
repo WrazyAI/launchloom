@@ -6,6 +6,7 @@ import {
   authorExperienceCandidates,
   buildCreativeContentManifest,
   namespaceCreativeCss,
+  omitDuplicateRouteDesignTemplates,
   restoreImageAltsFromOriginal,
   restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
@@ -216,10 +217,7 @@ describe("production experience author", () => {
       safeStage({ ...request, stage: "experience" }).content || "",
     )
       .replace('href="#faqs"', "onClick={() => {}}")
-      .replace(
-        "<main>",
-        '<main><a href="#faqs">An unrelated FAQ link</a>',
-      );
+      .replace("<main>", '<main><a href="#faqs">An unrelated FAQ link</a>');
     const styles = String(
       safeStage({ ...request, stage: "styles" }).content || "",
     );
@@ -603,7 +601,9 @@ describe("production experience author", () => {
     });
 
     expect(restored.match(/\bdata-hero\b/gu)).toHaveLength(1);
-    expect(restored).toContain('<section data-reference-section="hero" data-hero>');
+    expect(restored).toContain(
+      '<section data-reference-section="hero" data-hero>',
+    );
   });
 
   it("keeps refusing duplicate hero markers when the semantic target is ambiguous", () => {
@@ -611,7 +611,9 @@ describe("production experience author", () => {
     const duplicated = `${original}<section data-hero><h1>{content.hero.heading}</h1></section>`;
 
     expect(() =>
-      restoreRequiredExperienceMarkers(duplicated, original, { id: "route-03" }),
+      restoreRequiredExperienceMarkers(duplicated, original, {
+        id: "route-03",
+      }),
     ).toThrow(/found 2 semantic targets/iu);
   });
 
@@ -637,6 +639,26 @@ describe("production experience author", () => {
       /<section><div><section data-hero><h1>\{content\.hero\.heading\}<\/h1><\/section>/u,
     );
     expect(restored).not.toMatch(/<section data-hero><div>/u);
+  });
+
+  it("restores the hero marker by its retained reference identity when the heading is aliased", () => {
+    const original = `const heroHeading = content.hero.heading;
+      <><section data-reference-section="architectural-opening" data-reference-signature="architectural-wordmark-scene" data-hero-geometry="full-bleed-architectural-texture-with-oversized-wordmark" data-hero>
+        <h1>{content.brand.name}</h1><h2>{heroHeading}</h2>
+        <a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a>
+      </section><section data-reference-section="vertical-index"><h2>{content.copy.servicesHeading}</h2></section></>`;
+    const repaired = original.replace(/\sdata-hero(?=[\s>])/u, "");
+
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-architecture",
+    });
+
+    expect(restored).toContain(
+      'data-reference-section="architectural-opening" data-reference-signature="architectural-wordmark-scene" data-hero-geometry="full-bleed-architectural-texture-with-oversized-wordmark" data-hero',
+    );
+    expect(restored).not.toContain(
+      'data-reference-section="vertical-index" data-hero',
+    );
   });
 
   it("uses reviewed CTA placement ahead of a matching nav class", () => {
@@ -843,6 +865,105 @@ describe("production experience author", () => {
         rootValue: candidate.metadata.routeId,
       });
     }
+  });
+
+  it("preserves the selected dossier and its design prompt through every authoring stage", async () => {
+    const dossierForRoute = (index: number) => ({
+      id: `permission-cleared-editorial-reference-${index}`,
+      referenceName: `Editorial service index ${index}`,
+      familyId: `editorial-service-index-${index}`,
+      path: `data/reference-library/dossiers/editorial-service-index-${index}`,
+      digest: String(index).repeat(64),
+      source: {
+        name: "Permission-cleared reference",
+        url: `https://example.test/reference-${index}`,
+        rights: "permission-cleared",
+        rightsEvidence:
+          "Requester-attested permission covers screenshot retention and model reference use.",
+        rightsEvidencePath: "rights/clearance.md",
+        assetEvidencePaths: ["rights/clearance.md"],
+      },
+      tags: { business: ["jewelry"], style: [`editorial-${index}`] },
+      designPrompt: `# Reference implementation brief\n\nReference ${index}: ${"Preserve this route's own composition, image role, and service presentation mechanics without copying its identity. ".repeat(16)}`,
+    });
+    const dossiers = new Map(
+      inspirationPack.routes.map((route, index) => [
+        route.id,
+        dossierForRoute(index),
+      ]),
+    );
+    const requests: AuthorStageRequest[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack: {
+        ...inspirationPack,
+        routes: inspirationPack.routes.map((route) => ({
+          ...route,
+          referenceDossier: dossiers.get(route.id),
+        })),
+      },
+      generate: async (request) => {
+        requests.push(request);
+        return safeStage(request);
+      },
+      model: "test/model",
+    });
+
+    expect(requests).toHaveLength(12);
+    for (const request of requests)
+      expect(request.route.referenceDossier).toEqual(
+        dossiers.get(request.route.id),
+      );
+    for (const candidate of result.candidates) {
+      const metadata = JSON.parse(candidate.files["metadata.json"]);
+      const contract = JSON.parse(candidate.files["contract.json"]);
+      const expectedDossier = dossiers.get(metadata.routeId);
+      expect(metadata.creativeManifest.referenceDossier).toEqual(
+        expectedDossier,
+      );
+      expect(contract.creativeManifest.referenceDossier).toEqual(
+        expectedDossier,
+      );
+    }
+  });
+
+  it("omits equal cloned route design templates without dropping explicit null", () => {
+    const routeDesignTemplate = {
+      opening: { layout: "graphic-field", imageRole: "architecture" },
+      sequence: ["opening", "project-index", "contact"],
+    };
+    const clone = () => JSON.parse(JSON.stringify(routeDesignTemplate));
+    const referenceDna = {
+      evidence: { designTemplate: clone(), captureDimensions: { width: 1440 } },
+    };
+    const evidence = [
+      { name: "matching evidence", designTemplate: clone() },
+      { name: "distinct evidence", designTemplate: { opening: "different" } },
+    ];
+
+    const result = omitDuplicateRouteDesignTemplates(
+      routeDesignTemplate,
+      referenceDna,
+      evidence,
+    );
+
+    expect(result.referenceDna?.evidence).not.toHaveProperty("designTemplate");
+    expect(result.referenceDna?.evidence?.captureDimensions).toEqual({
+      width: 1440,
+    });
+    expect(result.evidence[0]).not.toHaveProperty("designTemplate");
+    expect(result.evidence[1].designTemplate).toEqual({
+      opening: "different",
+    });
+    expect(referenceDna.evidence.designTemplate).toEqual(clone());
+
+    const explicitNull = omitDuplicateRouteDesignTemplates(
+      undefined,
+      { evidence: { designTemplate: null } },
+      [{ designTemplate: null }],
+    );
+    expect(explicitNull.referenceDna?.evidence?.designTemplate).toBeNull();
+    expect(explicitNull.evidence[0].designTemplate).toBeNull();
   });
 
   it("keeps contract-repair context bounded when a model omits required fields", async () => {
@@ -1403,8 +1524,12 @@ describe("production experience author", () => {
     expect(workflow).toContain(
       "cp -R /tmp/generated-experiences .launchloom/generated-experiences",
     );
-    expect(workflow).toContain("name: Prepare private creative-recovery report");
-    expect(workflow).toContain("name: Register one-time repair session and create signed review link");
+    expect(workflow).toContain(
+      "name: Prepare private creative-recovery report",
+    );
+    expect(workflow).toContain(
+      "name: Register one-time repair session and create signed review link",
+    );
     expect(workflow).not.toContain("uses: actions/upload-artifact@v4");
     expect(workflow).not.toContain("name: Preserve SEO research evidence");
     expect(workflow).not.toContain("name: Preserve inspiration evidence");

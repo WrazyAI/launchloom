@@ -6,13 +6,11 @@ const scriptsDir = path.resolve("scripts");
 const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
 
 function scriptFiles(directory: string): string[] {
-  return fs
-    .readdirSync(directory, { withFileTypes: true })
-    .flatMap((entry) => {
-      const file = path.join(directory, entry.name);
-      if (entry.isDirectory()) return scriptFiles(file);
-      return entry.isFile() && file.endsWith(".mjs") ? [file] : [];
-    });
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) return scriptFiles(file);
+    return entry.isFile() && file.endsWith(".mjs") ? [file] : [];
+  });
 }
 
 describe("OpenRouter cache integration", () => {
@@ -90,7 +88,9 @@ describe("OpenRouter cache integration", () => {
     );
     const pushIndex = source.indexOf("usage.push(usageRecord)");
     const httpIndex = source.indexOf('usageRecord.parseStatus = "http-error"');
-    const throwIndex = source.indexOf('OpenRouter ${response.status}: ${errorContext}');
+    const throwIndex = source.indexOf(
+      "OpenRouter ${response.status}: ${errorContext}",
+    );
     expect(pushIndex).toBeGreaterThan(-1);
     expect(httpIndex).toBeGreaterThan(pushIndex);
     expect(throwIndex).toBeGreaterThan(httpIndex);
@@ -103,13 +103,8 @@ describe("OpenRouter cache integration", () => {
       "scripts/author-production-experiences.mjs",
       "utf8",
     );
-    const repair = fs.readFileSync(
-      "scripts/creative-repair-loop.mjs",
-      "utf8",
-    );
-    expect(author).toContain(
-      "const requestedEfforts = creativeSession",
-    );
+    const repair = fs.readFileSync("scripts/creative-repair-loop.mjs", "utf8");
+    expect(author).toContain("const requestedEfforts = creativeSession");
     expect(author).toContain("? [reasoningEffort]");
     expect(author).toContain("creativeSession?.sessionId");
     expect(author).toContain(
@@ -130,9 +125,7 @@ describe("OpenRouter cache integration", () => {
       "scripts/creative-repair-loop.mjs",
     ]) {
       const source = fs.readFileSync(file, "utf8");
-      expect(source, file).toMatch(
-        /promptCached(?:MessageContent|Text)/u,
-      );
+      expect(source, file).toMatch(/promptCached(?:MessageContent|Text)/u);
       expect(source, file).toContain("promptCacheRequestFields");
     }
   });
@@ -169,23 +162,47 @@ describe("OpenRouter cache integration", () => {
     expect(source.indexOf("routePromptPrefix(request)")).toBeLessThan(
       source.indexOf("stagePromptSuffix(request)"),
     );
-    expect(source).toContain(
-      "referenceDna: cacheableReferenceDna(request.route.referenceDna)",
+    expect(source).toMatch(
+      /omitDuplicateRouteDesignTemplates\([\s\S]*cacheableReferenceDna\(request\.route\.referenceDna\)/u,
     );
+    expect(source).toContain("referenceDna,");
   });
 
-  it("keeps static Reference DNA analysis reusable across runs for 24 hours", () => {
-    const source = fs.readFileSync(
+  it("supplies the exact dossier design prompt to analysis, every author stage, and repair", () => {
+    const author = fs.readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+    const analyzer = fs.readFileSync(
       "scripts/analyze-reference-dna.mjs",
       "utf8",
     );
+    const repair = fs.readFileSync("scripts/creative-repair-loop.mjs", "utf8");
+    expect(author).toMatch(
+      /referenceDossierPromptBlock\(\s*request\.route\.referenceDossier,?\s*\)/u,
+    );
+    expect(author).toContain(
+      "Treat the included permission-cleared Reference Dossier",
+    );
+    expect(analyzer).toContain(
+      "referenceDossierPromptBlock(route.referenceDossier)",
+    );
+    expect(analyzer).toContain("assertReferenceDossierPack(pack)");
+    expect(repair).toContain("referenceDossierPromptBlock(referenceDossier)");
+    expect(repair).toContain("metadata.creativeManifest?.referenceDossier");
+  });
+
+  it("keeps static Reference DNA analysis reusable across runs for 24 hours", () => {
+    const source = fs.readFileSync("scripts/analyze-reference-dna.mjs", "utf8");
     expect(source).toContain('openRouterSessionId(\n    "reference-dna"');
     expect(source).toContain("responseCacheTtlSeconds: 86_400");
     expect(source).not.toContain("pack.selectionKey ||");
     expect(source).not.toMatch(
       /openRouterSessionId\([\s\S]{0,300}\brouteId\s*:/u,
     );
-    expect(source).not.toMatch(/sessionId[\s\S]{0,300}\bdesktop,\s*\n\s*mobile,/u);
+    expect(source).not.toMatch(
+      /sessionId[\s\S]{0,300}\bdesktop,\s*\n\s*mobile,/u,
+    );
   });
 
   it("limits exact response caching to deterministic control and judge lanes", () => {

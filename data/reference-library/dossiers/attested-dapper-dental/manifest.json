@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "attested-dapper-dental",
+  "productionEligible": true,
+  "referenceName": "Dapper Dental: high-contrast typographic practice story",
+  "familyId": "attested-dapper-dental-dark",
+  "businessKinds": ["dental clinic", "private dentist", "family dentistry"],
+  "source": {
+    "name": "Dapper Dental official website",
+    "url": "https://www.dapperdental.com/",
+    "sourceType": "official direct website, captured directly",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation on 2026-09-25 permits persistent desktop/mobile screenshots and use as pipeline-model visual reference. No owner license or grant file was uploaded; see rights/requester-attestation.md.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md",
+      "rights/source-observations.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": ["dental", "private practice", "family dentistry"],
+    "style": ["expressive dark editorial", "typographic", "playful premium"],
+    "composition": ["compact brand header", "full-bleed photo hero", "asymmetric chapter alternation", "dark narrative sequence"],
+    "conversion": ["top booking action", "contact/booking close", "supporting phone link when verified"],
+    "motion": ["scroll reveal", "media transitions", "reduced-motion safe"],
+    "imagery": ["real practice photography in reference", "full-width people and interiors", "direct-source screenshot evidence"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 900 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct site uses a compact dark brand bar, a full-width dental-interior hero with bold outlined/filled display lettering, and a long sequence of asymmetrical dark chapters. Short typographic statements alternate with wide photographs and compact explanatory copy; later chapters present patient comfort, services, testimonials/social links, and a distinct booking/location close. Mobile stacks those chapters and reduces display type. The page is the official website of a real Winter Park practice; its exact brand, photos, copy, people, reviews, amenities, and business claims are reference-only.",
+    "heroGeometry": { "mode": "full-bleed practice photograph with oversized outlined statement and compact brand bar", "alignment": "centered headline over image with dark overlay", "viewport": "hero headline, short location/service line, and booking action visible at opening" },
+    "navigationGeometry": { "mode": "compact dark utility header with brand and quick actions", "placement": "top edge over or just above the hero", "mobile": "compact menu control and quick contact/booking actions" },
+    "typography": { "display": "bold outlined/solid condensed uppercase display", "body": "neutral sans-serif", "scale": "very large display phrases with small utility labels and short supporting paragraphs" },
+    "palette": { "surfaces": ["near black", "charcoal", "muted image darks"], "ink": "warm white and outlined gray", "accents": ["subdued warm metallic detail"], "contrastIntent": "strong high-contrast headline against dark photographic fields" },
+    "imageTreatment": { "mode": "broad practice and patient-experience photos interleaved with dark statement chapters", "crop": "full-width desktop bands and subject-safe mobile images", "focalPoint": "retain face and dental context, keep text areas unbusy" },
+    "sectionSequence": ["hero", "practice proposition", "team/trust story", "comfort experience", "service chapter", "testimonial/photo chapter", "social presence", "booking/contact close"],
+    "servicePresentation": { "pattern": "service and experience chapters introduced by oversized type and concise copy", "interaction": "contextual in-page links advance to service/contact details" },
+    "ctaPlacement": { "primary": "compact top booking action and hero action", "secondary": "contextual links within service chapters", "early": "visible at the top and repeated at the final booking close" },
+    "motion": { "primitive": "subtle scroll reveal and broad image transitions", "library": "observed source behavior only; do not import source scripts", "reducedMotion": "show each chapter statically and remove parallax/reveal delay" },
+    "mobileRecomposition": { "strategy": "stacked high-contrast story chapters", "rules": ["scale display type while preserving outline/solid hierarchy", "stack image and copy", "keep booking action reachable", "avoid text overlay on faces", "prevent horizontal overflow"] },
+    "prohibitedPatterns": ["copying source provider identity, copy, photos or patient reviews", "fabricated credentials, amenities, awards, prices or pain-free claims", "long generic card wall", "tiny low-contrast body copy", "unverified NAP or medical claims"],
+    "requiredSignatureElements": [
+      { "id": "outlined-display-hero", "selector": "[data-reference-signature=outlined-display-hero]", "description": "full-bleed image stage with bold outlined or dual-weight display type" },
+      { "id": "asymmetric-dark-chapters", "selector": "[data-reference-signature=asymmetric-dark-chapters]", "description": "alternating text and photo chapters on a deep surface" },
+      { "id": "short-practice-details", "selector": "[data-reference-signature=short-practice-details]", "description": "compact patient/experience details, not an oversized generic about essay" },
+      { "id": "booking-close", "selector": "[data-reference-signature=booking-close]", "description": "distinct final booking/contact section" }
+    ],
+    "acceptanceChecks": [
+      "The hero uses a high-impact photo and type hierarchy but carries only verified local client facts.",
+      "Sections alternate between bold statement fields and photographic practice chapters rather than repetitive cards.",
+      "Services, FAQs, and Contact remain distinct, navigable content areas in the new client page.",
+      "At 390 px display type, images, nav, and CTAs fit without horizontal overflow or overlap.",
+      "No source brand, photograph, testimonial, staff identity, amenity, or business claim is reused as client fact."
+    ]
+  },
+  "review": { "status": "reviewed", "reviewer": "Codex direct-source QA", "date": "2026-09-25", "notes": "Direct page screenshots verified at 1440 and 390. No width overflow. Several source image nodes had empty src values and its story iframe returned an anti-bot/security restriction; these are disclosed. User-attested permission, no owner grant file." }
+}

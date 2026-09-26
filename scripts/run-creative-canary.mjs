@@ -6,10 +6,6 @@ import { buildInspirationPack } from "./inspiration-registry.mjs";
 import { enrichInspirationPack } from "./analyze-reference-dna.mjs";
 import { runRenderedCreativeRepair } from "./run-rendered-creative-repair.mjs";
 import { createReasoningPreflight } from "./reasoning-preflight-lib.mjs";
-import {
-  loadA1ReferenceLibrary,
-  mergeInspirationRegistries,
-} from "./a1-reference-library.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -24,7 +20,7 @@ const args = Object.fromEntries(
 );
 
 const root = path.resolve(args.root || ".");
-const out = path.resolve(root, args.out || "artifacts/creative-canary-kokoro");
+const out = path.resolve(root, args.out || "artifacts/creative-canary-reference-library");
 const siteRoot = path.join(root, "templates/client-site");
 const configPath = path.join(siteRoot, "src/site.config.json");
 const selectedDir = path.join(siteRoot, "src/generated-experiences/selected");
@@ -41,18 +37,18 @@ async function imageDataUri(relativePath) {
 async function canaryConfigFrom(original) {
   const config = JSON.parse(original);
   config.business = {
-    name: "Kokoro House Interiors",
+    name: "Alder & Field Architecture",
     tagline: "Spaces that make room for living.",
     description:
       "A hypothetical architecture studio shaping warm, enduring interiors.",
     phone: "(503) 555-0186",
-    email: "studio@kokoro-house.example",
+    email: "studio@alderfield.example",
     address: "Portland, Oregon",
     serviceAreas: ["Portland", "Lake Oswego"],
     primaryCta: "Start a design conversation",
   };
   config.industry = "architecture";
-  config.businessKind = "interior design studio";
+  config.businessKind = "architecture";
   config.services = [
     {
       name: "Residential interiors",
@@ -96,13 +92,13 @@ async function canaryConfigFrom(original) {
   config.assets = {
     logo: "",
     photoOne: await imageDataUri(
-      "data/inspiration-evidence/creative-probe-kokoro/assets/hero-atrium.webp",
+      "data/creative-assets/architecture-canary/hero-atrium.webp",
     ),
     photoTwo: await imageDataUri(
-      "data/inspiration-evidence/creative-probe-kokoro/assets/ridge-house.webp",
+      "data/creative-assets/architecture-canary/ridge-house.webp",
     ),
     photoThree: await imageDataUri(
-      "data/inspiration-evidence/creative-probe-kokoro/assets/project-mosaic.webp",
+      "data/creative-assets/architecture-canary/project-mosaic.webp",
     ),
   };
   config.copy = {
@@ -110,7 +106,7 @@ async function canaryConfigFrom(original) {
     heroKicker: "Architecture for everyday rituals",
     heroHeading: "Rooms that hold a life",
     heroBody: "A measured process for warm, enduring interiors.",
-    servicesHeading: "The Kokoro archive",
+    servicesHeading: "Selected spaces",
     contactHeading: "Begin with a conversation",
     imageChapterLabel: "Material, light, and the shape of a day",
     editorialIntro:
@@ -138,37 +134,46 @@ try {
   const baseRegistry = JSON.parse(
     await fs.readFile(path.join(root, "data/inspiration-registry.json"), "utf8"),
   );
-  const a1Path = path.join(root, "data/a1-reference-library.json");
-  const registry = await fs.access(a1Path).then(
-    async () => mergeInspirationRegistries(
-      baseRegistry,
-      await loadA1ReferenceLibrary(a1Path, { repositoryRoot: root }),
-    ),
-    () => baseRegistry,
-  );
   const compiledPack = buildInspirationPack(
     {
-      seed: "kokoro-model-canary",
+      seed: "architecture-reference-library-canary",
       industry: "architecture",
       styleTerms: [
-        "kokoro",
+        "McAlpine Sanctuary Index",
         "editorial",
         "architecture",
         "monumental serif",
-        "magazine archive",
+        "vertical service index",
       ],
+      styleText:
+        "Use McAlpine Sanctuary Index mechanics: a full-bleed architectural opening, oversized restrained typography, a narrow project/service index, and a dark contact close. Do not reproduce source identity, source copy, source images, or trade dress.",
       recentReferenceIds: [],
       recentRouteSignatures: [],
     },
-    registry,
+    baseRegistry,
   );
   const inspirationPack = await enrichInspirationPack(compiledPack);
-  const kokoroRoute = inspirationPack.routes.find(
-    (route) =>
-      route.referenceDna?.familyId === "kokoro-editorial-architecture",
+  const architectureRoute = inspirationPack.routes.find(
+    (route) => route.referenceDossier?.id === "lapa-mcalpine-sanctuary",
   );
-  if (!kokoroRoute)
-    throw new Error("The controlled canary pack did not contain the Kokoro reference route.");
+  if (!architectureRoute)
+    throw new Error("The controlled canary pack did not contain the selected architecture dossier.");
+  const canaryDna = architectureRoute.referenceDna;
+  const requiredCanarySections = [
+    "architectural-opening",
+    "presentation-frame",
+    "vertical-index",
+    "dark-navigation-contact",
+  ];
+  if (!requiredCanarySections.every((section) => canaryDna.sectionSequence.includes(section)))
+    throw new Error("The selected architecture dossier does not preserve the canary's expected editorial section rhythm.");
+  const requiredCanarySignatures = new Set(
+    canaryDna.requiredSignatureElements.map((element) => element.id),
+  );
+  if (!["architectural-wordmark-scene", "presentation-frame", "vertical-chapter-index", "dark-contact-close"].every((id) => requiredCanarySignatures.has(id)))
+    throw new Error("The selected architecture dossier is missing a required signature element.");
+  if (!/reveal/iu.test(canaryDna.motion.primitive))
+    throw new Error("The selected architecture dossier must define a purposeful reveal interaction.");
 
   const canaryConfigPath = path.join(out, "site.config.json");
   const inspirationPath = path.join(out, "inspiration-pack.json");
@@ -184,7 +189,7 @@ try {
     mode: process.env.REASONING_PREFLIGHT_MODE || "shadow",
     model: process.env.REASONING_PREFLIGHT_MODEL || "jev-1.13.0",
     creativeModel: "openai/gpt-6-luna",
-    sessionKey: "creative-canary-kokoro",
+    sessionKey: "creative-canary-reference-library",
   });
   await fs.writeFile(
     reasoningPreflightPath,
@@ -219,7 +224,7 @@ try {
   const entries = (
     await fs.readdir(authoredRoot, { withFileTypes: true })
   ).filter((entry) => entry.isDirectory() && /^candidate-[a-z]+$/u.test(entry.name));
-  let kokoroCandidate;
+  let architectureCandidate;
   for (const entry of entries) {
     const metadata = JSON.parse(
       await fs.readFile(
@@ -227,22 +232,29 @@ try {
         "utf8",
       ),
     );
-    if (
-      metadata.referenceFamilyId ===
-      "kokoro-editorial-architecture"
-    ) {
-      kokoroCandidate = { directory: entry.name, metadata };
+    if (metadata.referenceDna?.familyId === "lapa-mcalpine-sanctuary") {
+      architectureCandidate = { directory: entry.name, metadata };
       break;
     }
   }
-  if (!kokoroCandidate)
-    throw new Error("Luna did not produce the controlled Kokoro candidate.");
+  if (!architectureCandidate)
+    throw new Error("Luna did not produce the candidate assigned to the architecture dossier.");
+  if (
+    architectureCandidate.metadata.creativeManifest?.referenceDossier?.id !==
+    architectureRoute.referenceDossier.id
+  )
+    throw new Error("The authored candidate lost its assigned architecture dossier binding.");
+  if (
+    architectureCandidate.metadata.creativeManifest?.referenceDossier?.id !==
+    architectureRoute.referenceDossier.id
+  )
+    throw new Error("The authored candidate lost its assigned architecture dossier binding.");
 
-  const isolatedRoot = path.join(out, "kokoro-bakeoff-candidates");
+  const isolatedRoot = path.join(out, "architecture-bakeoff-candidates");
   await fs.mkdir(isolatedRoot, { recursive: true });
   await fs.cp(
-    path.join(authoredRoot, kokoroCandidate.directory),
-    path.join(isolatedRoot, kokoroCandidate.directory),
+    path.join(authoredRoot, architectureCandidate.directory),
+    path.join(isolatedRoot, architectureCandidate.directory),
     { recursive: true, force: true },
   );
 
@@ -259,8 +271,8 @@ try {
   });
   const bakeoffReport = repairResult.bakeoff;
 
-  if (bakeoffReport.selectedCandidateId !== kokoroCandidate.metadata.candidateId)
-    throw new Error("The Luna-authored Kokoro candidate did not pass the rendered creative repair loop.");
+  if (bakeoffReport.selectedCandidateId !== architectureCandidate.metadata.candidateId)
+    throw new Error("The Luna-authored architecture candidate did not pass the rendered creative repair loop.");
 
   const selectedConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
   if (selectedConfig.design?.experience?.renderer !== "creative-candidate")
@@ -276,7 +288,7 @@ try {
     (visualReport.blockers || []).length
   )
     throw new Error(
-      `The Luna-authored Kokoro canary failed final visual QA: ${visualMajors
+      `The Luna-authored architecture canary failed final visual QA: ${visualMajors
         .map((item) => item.evidence || item.category)
         .join(" | ") || visualReport.audit?.verdict}`,
     );
@@ -284,12 +296,12 @@ try {
 
   const candidateReport = bakeoffReport.candidates.find(
     (candidate) =>
-      candidate.candidateId === kokoroCandidate.metadata.candidateId,
+      candidate.candidateId === architectureCandidate.metadata.candidateId,
   );
   const promotionReport = {
     version: 2,
     status: "passed",
-    authorModel: kokoroCandidate.metadata.model,
+    authorModel: architectureCandidate.metadata.model,
     reasoning: {
       effort: creativeSession.reasoningEffort,
       recommendedEffort: creativeSession.recommendedEffort,
@@ -297,12 +309,14 @@ try {
       policyVersion: creativeSession.reasoningPolicyVersion,
       selectorModelVersion: creativeSession.selectorModelVersion,
     },
-    selectedCandidateId: kokoroCandidate.metadata.candidateId,
-    familyId: kokoroCandidate.metadata.familyId,
-    referenceFamilyId: kokoroCandidate.metadata.referenceFamilyId,
+    selectedCandidateId: architectureCandidate.metadata.candidateId,
+    familyId: architectureCandidate.metadata.familyId,
+    referenceFamilyId: architectureCandidate.metadata.referenceFamilyId,
+    referenceDossier:
+      architectureCandidate.metadata.creativeManifest?.referenceDossier || null,
     renderer: selectedConfig.design.experience.renderer,
     noLegacyRenderer: true,
-    referenceDna: kokoroCandidate.metadata.referenceDna,
+    referenceDna: architectureCandidate.metadata.referenceDna,
     renderedReferenceFidelity:
       candidateReport?.renderedReferenceFidelity || null,
     bakeoff: bakeoffReport,
@@ -310,7 +324,7 @@ try {
     screenshots: ["desktop", "compact", "mobile"].map((name) =>
       path.join(
         screenshotsDir,
-        `${kokoroCandidate.metadata.candidateId}-${name}.png`,
+        `${architectureCandidate.metadata.candidateId}-${name}.png`,
       ),
     ),
   };

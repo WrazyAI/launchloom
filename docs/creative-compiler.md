@@ -5,14 +5,40 @@ experiences. It separates verified business truth from visual composition so a
 new design can be ambitious without being allowed to invent facts, bypass the
 lead endpoint, or ship an unverified layout.
 
+## Permission-cleared reference dossiers
+
+Production references are stored as canonical dossiers in
+`data/reference-library/dossiers/`, indexed by
+`data/reference-library/core-collection.json`. Each dossier folder contains a
+full-page desktop capture, a full-page mobile capture, a local rights record,
+a business/source manifest, and a detailed `design-prompt.md`. The first core
+contains three structurally independent references for each of ten supported
+niches. A niche without three eligible dossiers fails closed; unrelated designs
+are never used as filler.
+
+`reference-dossier.mjs` verifies the screenshots, capture dimensions, prompt,
+rights evidence, registered paths, and content digest. Production packs bind
+exactly one authoritative dossier to each route. The Reference DNA analyzer
+receives its screenshots and design prompt, derives measured geometry from the
+pixels, and the author receives the same evidence and prompt at every stage.
+The analyzer adds measured ratios and a pixel-analysis note without replacing
+the dossier's curated section order, service treatment, conversion placement,
+signatures, or mobile strategy.
+Direct-site references carry requester-attested permission; the repository
+does not misrepresent those attestations as independently verified owner
+grants. Reference screenshots and source imagery are evidence only and never
+become client-site assets.
+
 ## Pipeline
 
 1. `generate-site-config.mjs` and `seo-research.mjs` produce the sealed truth
    layer: business facts, SEO vocabulary, FAQs, service decisions, contact
    details, structured data, and approved assets.
 2. `compile-inspiration-pack.mjs` selects three independent route contracts with
-   one authoritative visual capsule per route. `analyze-reference-dna.mjs`
-   then inspects the actual desktop/mobile evidence and enriches Reference DNA
+   one authoritative, business-matched dossier per route from the canonical
+   core. It does not select from discovery-only A1 records or fall back to an
+   unrelated historical registry. `analyze-reference-dna.mjs` inspects the
+   actual desktop/mobile evidence and enriches Reference DNA
    with measured headline occupancy, image occupancy, navigation and CTA
    coordinates, content-column width, section-height rhythm, aspect ratios,
    overlap relationships, surface transitions, and mobile geometry. Family
@@ -23,7 +49,7 @@ lead endpoint, or ship an unverified layout.
    evidence record. Their section-height fractions describe the captured page,
    not CSS viewport units; the adapted desktop header and hero must still fit
    inside the 1536x864 browser viewport.
-   3. `author-production-experiences.mjs` asks the visual author for three
+3. `author-production-experiences.mjs` asks the visual author for three
    independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
    author receives the complete Reference DNA and its desktop/mobile evidence,
    plus a bounded client visual brief containing the resolved palette, tone,
@@ -31,11 +57,11 @@ lead endpoint, or ship an unverified layout.
    brief remains available to rendered repair and reference judging so a repair
    cannot silently converge on a LaunchLoom house palette or reverse an explicit
    light/dark direction. The author must expose the contract's signatures and
-   geometry markers in the rendered DOM. It can use React, the shared runtime, GSAP, and ScrollTrigger,
-   but not network access, remote code, canvas, or Three.js by default. Model
-   stages are globally limited to two in-flight requests so a three-candidate
-   bakeoff does not exhaust the provider budget. The authoring budget defaults
-   to 45 minutes and can be bounded with
+   geometry markers in the rendered DOM. It can use React, the shared runtime,
+   GSAP, and ScrollTrigger, but not network access, remote code, canvas, or
+   Three.js by default. Model stages are globally limited to two in-flight
+   requests so a three-candidate bakeoff does not exhaust the provider budget.
+   The authoring budget defaults to 45 minutes and can be bounded with
    `CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS`; it never turns an expired author
    run into a legacy renderer. Completion ceilings are stage-specific: 24k
    tokens for the design contract, 48k for JSX, 40k for CSS, and 24k for
@@ -43,8 +69,8 @@ lead endpoint, or ship an unverified layout.
    These are upper bounds, not reserved spend. The author logs finish reason,
    completion/reasoning token usage, and returned content length on every
    response so output truncation is distinguishable from input-context errors.
-   A failed reference-fidelity
-   check gets at most two author-owned repairs and then fails closed.
+   A failed reference-fidelity check gets at most two author-owned repairs and
+   then fails closed.
 4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders 1536x864 desktop, 1366x768 compact desktop, and
    390x844 mobile viewports, and records the evidence. Structural contract
@@ -87,8 +113,12 @@ lead endpoint, or ship an unverified layout.
    its own claim: it must rebuild, rerender, and pass the judges on the next
    round. Each repair response has a 48k completion ceiling and records its
    finish reason plus completion/reasoning token counts without logging source
-   content. Each candidate gets at most two repair cycles. Production promotion
-   still requires `promotionReady`, including rendered v2 diversity, plus a
+   content. When the combined authored source exceeds 20,000 characters, repair
+   is split into sequential JSX, CSS, and motion responses to keep each returned
+   bundle within the provider ceiling. Every file-scoped call reuses the same
+   frozen reasoning effort and creative session identity. Each candidate gets
+   at most two repair cycles. Production promotion
+   still requires `promotionReady`, including rendered candidate diversity, plus a
    passing final visual gate. The loop never falls back to a legacy renderer.
 
 ## Safe rollout
