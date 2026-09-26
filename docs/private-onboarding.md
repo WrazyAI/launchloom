@@ -40,7 +40,14 @@ Each invite is stored by a dedicated SQLite Durable Object with state
 the existing revision Durable Object and review tokens remain independent.
 An accepted submission consumes the invite after the intake issue is safely
 created. The same submission ID and content can retry without creating a
-second intake issue; changed content is rejected.
+second intake issue or dispatching generation twice; changed content is
+rejected. Generation dispatch and the receipt email are persisted in the
+invitation Durable Object's SQLite outbox. Each task is attempted immediately
+and retried by a Durable Object alarm after transient failures. Receipt retries
+reuse the same Resend idempotency key and go to the client's preview email.
+The receipt confirms that the details were received and processing has started;
+it is not the website preview. The developer reviews the generated preview
+before anything is published.
 
 ## Service suggestions and coverage lookup
 

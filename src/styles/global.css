@@ -301,9 +301,104 @@ button {
 }
 .suggested-service {
   display: flex;
+  width: 100%;
   align-items: center;
+  justify-content: flex-start;
   gap: 10px;
   min-height: 42px;
+}
+.suggested-service input[type="checkbox"] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  accent-color: #205d51;
+}
+.suggested-service span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.service-picker > label {
+  color: #304c43;
+  font-size: 0.83rem;
+  font-weight: 750;
+}
+.service-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 54px;
+  padding: 9px;
+  border: 1px solid #cfd8cf;
+  border-radius: 12px;
+  background: #fff;
+}
+.service-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 5px 6px 5px 11px;
+  border: 1px solid #bcd5ca;
+  border-radius: 999px;
+  background: #e7f2ed;
+  color: #19332d;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+.service-chip > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.service-chip button {
+  display: inline-grid;
+  flex: 0 0 27px;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #d4e8df;
+  color: #19332d;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.service-chip button:hover {
+  background: #c1dcd0;
+}
+.service-chip button:focus-visible {
+  outline: 3px solid rgba(45, 119, 97, 0.28);
+  outline-offset: 2px;
+}
+.service-chips-empty {
+  padding: 5px 4px;
+  color: #71837c;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.service-entry-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 9px;
+}
+.service-entry-row input:disabled {
+  background: #f1f4ef;
+  color: #61736b;
+}
+.service-add-button {
+  min-height: 46px;
+  padding: 10px 16px;
+}
+.brand-color-clear {
+  justify-self: start;
+  min-height: 34px;
 }
 .stepper {
   display: flex;
@@ -907,6 +1002,12 @@ button {
   .field-grid,
   .choice-grid {
     grid-template-columns: 1fr;
+  }
+  .service-entry-row {
+    grid-template-columns: 1fr;
+  }
+  .service-add-button {
+    width: 100%;
   }
   .field.full {
     grid-column: auto;

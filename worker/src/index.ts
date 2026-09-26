@@ -1,4 +1,7 @@
-import { renderLeadEmail } from "../../emails/render-email.mjs";
+import {
+  renderLeadEmail,
+} from "../../emails/render-email.mjs";
+import { sendEmail } from "./transactional-email";
 import {
   RevisionCoordinator,
   type CreativeRepairFinding,
@@ -18,7 +21,7 @@ export interface Env {
   ASSETS: {
     put(
       key: string,
-      value: ReadableStream,
+      value: ArrayBuffer | ReadableStream,
       options: { httpMetadata: { contentType: string; cacheControl: string } },
     ): Promise<unknown>;
   };
@@ -499,38 +502,6 @@ function safeAssets(env: Env, raw: unknown) {
   );
 }
 
-async function sendEmail(
-  env: Env,
-  input: {
-    to: string;
-    replyTo?: string;
-    subject: string;
-    html: string;
-    text: string;
-    tag: string;
-  },
-) {
-  if (!env.RESEND_API_KEY || !env.LAUNCHLOOM_FROM_EMAIL) return;
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: env.LAUNCHLOOM_FROM_EMAIL,
-      to: [input.to],
-      reply_to: input.replyTo,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-      tags: [{ name: "launchloom_kind", value: input.tag }],
-    }),
-  });
-  if (!response.ok)
-    throw new Error(`Email delivery failed: ${response.status}`);
-}
-
 async function currentReviewPr(env: Env, claims: ReviewClaims) {
   if (!claims.pr || !claims.headSha)
     throw new Error("Invalid developer review link.");
@@ -682,7 +653,17 @@ async function intake(request: Request, env: Env) {
         );
         if (!recorded) throw new Error("Intake acceptance could not be recorded.");
       }
-      await dispatch(env, "intake-submitted", { issue: issueNumber });
+      await coordinator.queueWorkflowDispatch(
+        invite.claims.inviteId,
+        normalized.submissionId,
+        issueNumber,
+      );
+      await coordinator.queueIntakeReceipt(
+        invite.claims.inviteId,
+        normalized.submissionId,
+        normalized.email,
+        normalized.businessName,
+      );
       return json({ ok: true, duplicate: reservation.duplicate, issue: issueNumber }, 200, headers);
     } catch (error) {
       if (!issueNumber)
@@ -693,6 +674,30 @@ async function intake(request: Request, env: Env) {
     console.error("Intake failed", error instanceof Error ? error.message : "Unknown error");
     return json({ error: "We couldn’t start your preview. Please try again." }, 500, headers);
   }
+}
+
+const MAX_ONBOARDING_ASSET_WRITE_ATTEMPTS = 3;
+
+async function putOnboardingAssetWithRetry(
+  env: Env,
+  key: string,
+  body: ArrayBuffer,
+  options: Parameters<Env["ASSETS"]["put"]>[2],
+) {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= MAX_ONBOARDING_ASSET_WRITE_ATTEMPTS; attempt += 1) {
+    try {
+      // Keep the content-addressed key and the buffered body identical across
+      // attempts. If R2 committed but its response was lost, repeating this
+      // write replaces the same object with the same bytes.
+      return await env.ASSETS.put(key, body, options);
+    } catch (error) {
+      lastError = error;
+      if (attempt === MAX_ONBOARDING_ASSET_WRITE_ATTEMPTS) break;
+      await new Promise((resolve) => setTimeout(resolve, 75 * attempt));
+    }
+  }
+  throw lastError;
 }
 
 async function upload(request: Request, env: Env) {
@@ -744,12 +749,13 @@ async function upload(request: Request, env: Env) {
     const checksum = new Uint8Array(await crypto.subtle.digest("SHA-256", fileBytes));
     const fileHash = [...checksum].map((byte) => byte.toString(16).padStart(2, "0")).join("");
     const key = `intakes/${submissionId}/${slot}-${fileHash.slice(0, 32)}.${extension}`;
-    await env.ASSETS.put(key, new Blob([fileBytes]).stream(), {
+    const stored = await putOnboardingAssetWithRetry(env, key, fileBytes, {
       httpMetadata: {
         contentType: file.type,
         cacheControl: "public, max-age=31536000, immutable",
       },
     });
+    if (stored == null) throw new Error("R2 did not return an object for the onboarding image.");
     return json({ ok: true, key, url: assetUrl(env, key), slot }, 201, headers);
   } catch (error) {
     console.error("Upload failed", error);

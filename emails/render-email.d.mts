@@ -20,6 +20,10 @@ export type LeadEmailInput = {
   qualification?: ReadonlyArray<readonly [string, string]>;
 };
 
+export type IntakeReceivedEmailInput = {
+  businessName: string;
+};
+
 export function cleanEmailText(value: unknown, limit?: number): string;
 export function cleanEmailLine(value: unknown, limit?: number): string;
 export function escapeEmailHtml(value: unknown): string;
@@ -29,6 +33,11 @@ export function renderLifecycleEmail(input: LifecycleEmailInput): {
   text: string;
 };
 export function renderLeadEmail(input: LeadEmailInput): {
+  subject: string;
+  html: string;
+  text: string;
+};
+export function renderIntakeReceivedEmail(input: IntakeReceivedEmailInput): {
   subject: string;
   html: string;
   text: string;
