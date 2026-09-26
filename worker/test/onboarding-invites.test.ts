@@ -139,6 +139,9 @@ describe("private onboarding invitations", () => {
     const issueComments: string[] = [];
     let createdIssues = 0;
     let dispatched = 0;
+    let receiptAttempts = 0;
+    const deliveredReceiptKeys = new Set<string>();
+    const receiptRequests: Array<{ key: string | null; body: { to: string[]; subject: string; html: string; text: string } }> = [];
     network.use(
       http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json([])),
       http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", async ({ request }) => {
@@ -150,6 +153,18 @@ describe("private onboarding invitations", () => {
       http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches", () => {
         dispatched += 1;
         return new HttpResponse(null, { status: 204 });
+      }),
+      http.post("https://api.resend.com/emails", async ({ request }) => {
+        receiptAttempts += 1;
+        const key = request.headers.get("Idempotency-Key");
+        receiptRequests.push({
+          key,
+          body: await request.json() as { to: string[]; subject: string; html: string; text: string },
+        });
+        if (receiptAttempts === 1)
+          return HttpResponse.json({ error: "temporary provider failure" }, { status: 500 });
+        if (key) deliveredReceiptKeys.add(key);
+        return HttpResponse.json({ id: "email-receipt-001" }, { status: 200 });
       }),
     );
     const intake = {
@@ -171,6 +186,17 @@ describe("private onboarding invitations", () => {
     expect(dispatched).toBe(2);
     expect(issueComments[0]).not.toContain(token);
     await expect((await submit()).json()).resolves.toMatchObject({ ok: true, duplicate: true, issue: 987 });
+    expect(receiptRequests).toHaveLength(4);
+    expect(receiptAttempts).toBe(4);
+    expect(deliveredReceiptKeys).toEqual(new Set([`client-intake-received-${submissionId}`]));
+    expect(new Set(receiptRequests.map(({ key }) => key))).toEqual(
+      new Set([`client-intake-received-${submissionId}`]),
+    );
+    expect(receiptRequests[0].body).toMatchObject({
+      to: [invitedEmail],
+      subject: expect.stringMatching(/intake.*received/iu),
+    });
+    expect(receiptRequests[0].body.text).toContain("processing is starting");
     const edited = await SELF.fetch("https://api.launchloom.test/api/intake", {
       method: "POST",
       headers: { Origin: onboardingOrigin, "Content-Type": "application/json" },
@@ -234,6 +260,7 @@ describe("private onboarding invitations", () => {
     await coordinator.reserveSubmission(inviteId, tokenHash, claims.expiresAt, onboardingOrigin, submissionId, "prior-payload-hash", "sam@example.test", Date.now() - 121_000);
     let createdIssues = 0;
     let dispatched = 0;
+    let receiptEmails = 0;
     network.use(
       http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () => HttpResponse.json([])),
       http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () => {
@@ -243,6 +270,10 @@ describe("private onboarding invitations", () => {
       http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches", () => {
         dispatched += 1;
         return new HttpResponse(null, { status: 204 });
+      }),
+      http.post("https://api.resend.com/emails", () => {
+        receiptEmails += 1;
+        return HttpResponse.json({ id: "email-receipt-stale-recovery" });
       }),
     );
 
@@ -262,6 +293,7 @@ describe("private onboarding invitations", () => {
     await expect(response.json()).resolves.toMatchObject({ ok: true, duplicate: false, issue: 993 });
     expect(createdIssues).toBe(1);
     expect(dispatched).toBe(1);
+    expect(receiptEmails).toBe(1);
   });
 
   it("returns a generic intake error when GitHub rejects issue creation", async () => {

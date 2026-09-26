@@ -40,7 +40,11 @@ Each invite is stored by a dedicated SQLite Durable Object with state
 the existing revision Durable Object and review tokens remain independent.
 An accepted submission consumes the invite after the intake issue is safely
 created. The same submission ID and content can retry without creating a
-second intake issue; changed content is rejected.
+second intake issue; changed content is rejected. Once the intake dispatch is
+accepted, LaunchLoom sends a receipt email to the client's preview email,
+confirming that the details were received and processing has started. Retries
+reuse the same email idempotency key. The receipt is not the website preview;
+the developer reviews the generated preview before anything is published.
 
 ## Service suggestions and coverage lookup
 

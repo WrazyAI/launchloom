@@ -1,4 +1,7 @@
-import { renderLeadEmail } from "../../emails/render-email.mjs";
+import {
+  renderIntakeReceivedEmail,
+  renderLeadEmail,
+} from "../../emails/render-email.mjs";
 import {
   RevisionCoordinator,
   type CreativeRepairFinding,
@@ -18,7 +21,7 @@ export interface Env {
   ASSETS: {
     put(
       key: string,
-      value: ReadableStream,
+      value: ArrayBuffer | ReadableStream,
       options: { httpMetadata: { contentType: string; cacheControl: string } },
     ): Promise<unknown>;
   };
@@ -508,14 +511,20 @@ async function sendEmail(
     html: string;
     text: string;
     tag: string;
+    idempotencyKey?: string;
+    required?: boolean;
   },
 ) {
-  if (!env.RESEND_API_KEY || !env.LAUNCHLOOM_FROM_EMAIL) return;
-  const response = await fetch("https://api.resend.com/emails", {
+  if (!env.RESEND_API_KEY || !env.LAUNCHLOOM_FROM_EMAIL) {
+    if (input.required) throw new Error("Transactional email is not configured.");
+    return;
+  }
+  const request: RequestInit = {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
+      ...(input.idempotencyKey ? { "Idempotency-Key": input.idempotencyKey } : {}),
     },
     body: JSON.stringify({
       from: env.LAUNCHLOOM_FROM_EMAIL,
@@ -526,9 +535,21 @@ async function sendEmail(
       text: input.text,
       tags: [{ name: "launchloom_kind", value: input.tag }],
     }),
-  });
-  if (!response.ok)
-    throw new Error(`Email delivery failed: ${response.status}`);
+  };
+  let response: Response | undefined;
+  let lastError: unknown;
+  const maxAttempts = input.idempotencyKey ? 3 : 1;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      response = await fetch("https://api.resend.com/emails", request);
+      if (response.ok || ![429, 500, 502, 503, 504].includes(response.status)) break;
+    } catch (error) {
+      lastError = error;
+    }
+    if (attempt < maxAttempts) await new Promise((resolve) => setTimeout(resolve, attempt * 250));
+  }
+  if (!response) throw new Error(`Email delivery failed: ${lastError instanceof Error ? lastError.message : "network error"}`);
+  if (!response.ok) throw new Error(`Email delivery failed: ${response.status}`);
 }
 
 async function currentReviewPr(env: Env, claims: ReviewClaims) {
@@ -683,6 +704,14 @@ async function intake(request: Request, env: Env) {
         if (!recorded) throw new Error("Intake acceptance could not be recorded.");
       }
       await dispatch(env, "intake-submitted", { issue: issueNumber });
+      const receipt = renderIntakeReceivedEmail({ businessName: normalized.businessName });
+      await sendEmail(env, {
+        to: normalized.email,
+        ...receipt,
+        tag: "client-intake-received",
+        idempotencyKey: `client-intake-received-${normalized.submissionId}`,
+        required: true,
+      });
       return json({ ok: true, duplicate: reservation.duplicate, issue: issueNumber }, 200, headers);
     } catch (error) {
       if (!issueNumber)
@@ -693,6 +722,30 @@ async function intake(request: Request, env: Env) {
     console.error("Intake failed", error instanceof Error ? error.message : "Unknown error");
     return json({ error: "We couldn’t start your preview. Please try again." }, 500, headers);
   }
+}
+
+const MAX_ONBOARDING_ASSET_WRITE_ATTEMPTS = 3;
+
+async function putOnboardingAssetWithRetry(
+  env: Env,
+  key: string,
+  body: ArrayBuffer,
+  options: Parameters<Env["ASSETS"]["put"]>[2],
+) {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= MAX_ONBOARDING_ASSET_WRITE_ATTEMPTS; attempt += 1) {
+    try {
+      // Keep the content-addressed key and the buffered body identical across
+      // attempts. If R2 committed but its response was lost, repeating this
+      // write replaces the same object with the same bytes.
+      return await env.ASSETS.put(key, body, options);
+    } catch (error) {
+      lastError = error;
+      if (attempt === MAX_ONBOARDING_ASSET_WRITE_ATTEMPTS) break;
+      await new Promise((resolve) => setTimeout(resolve, 75 * attempt));
+    }
+  }
+  throw lastError;
 }
 
 async function upload(request: Request, env: Env) {
@@ -744,12 +797,13 @@ async function upload(request: Request, env: Env) {
     const checksum = new Uint8Array(await crypto.subtle.digest("SHA-256", fileBytes));
     const fileHash = [...checksum].map((byte) => byte.toString(16).padStart(2, "0")).join("");
     const key = `intakes/${submissionId}/${slot}-${fileHash.slice(0, 32)}.${extension}`;
-    await env.ASSETS.put(key, new Blob([fileBytes]).stream(), {
+    const stored = await putOnboardingAssetWithRetry(env, key, fileBytes, {
       httpMetadata: {
         contentType: file.type,
         cacheControl: "public, max-age=31536000, immutable",
       },
     });
+    if (stored == null) throw new Error("R2 did not return an object for the onboarding image.");
     return json({ ok: true, key, url: assetUrl(env, key), slot }, 201, headers);
   } catch (error) {
     console.error("Upload failed", error);

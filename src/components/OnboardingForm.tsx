@@ -1,5 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
+import {
+  addIntakeService,
+  MAX_INTAKE_SERVICES,
+  normalizeIntakeServices,
+  removeIntakeService,
+} from "../lib/intake-service-list";
 
 type Place = {
   id: string;
@@ -201,9 +207,12 @@ export default function OnboardingForm() {
   const [inviteState, setInviteState] = useState<InviteState>("loading");
   const [invitedEmail, setInvitedEmail] = useState("");
   const [servicesValue, setServicesValue] = useState("");
+  const [serviceEntry, setServiceEntry] = useState("");
   const [suggestedServices, setSuggestedServices] = useState<string[]>([]);
   const [suggestingServices, setSuggestingServices] = useState(false);
   const [suggestionMessage, setSuggestionMessage] = useState("");
+  const [brandColorPicker, setBrandColorPicker] = useState("#245d51");
+  const [hasExistingBrandColor, setHasExistingBrandColor] = useState(false);
   const [submissionId, setSubmissionId] = useState<string>(
     () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
   );
@@ -214,6 +223,10 @@ export default function OnboardingForm() {
   const progress = useMemo(
     () => `${((step + 1) / steps.length) * 100}%`,
     [step],
+  );
+  const selectedServices = useMemo(
+    () => normalizeIntakeServices(servicesValue),
+    [servicesValue],
   );
   const draftValue = (name: string) => draftRef.current[name] || "Not provided";
 
@@ -271,7 +284,14 @@ export default function OnboardingForm() {
           draftRef.current = Object.fromEntries(
             Object.entries(pending).filter(([, value]) => typeof value === "string"),
           ) as Record<string, string>;
-          setServicesValue(String(pending.services || ""));
+          setServicesValue(
+            normalizeIntakeServices(String(pending.services || "")).join("\n"),
+          );
+          const savedBrandColor = String(pending.brandColor || "");
+          if (/^#[0-9a-f]{6}$/iu.test(savedBrandColor)) {
+            setBrandColorPicker(savedBrandColor);
+            setHasExistingBrandColor(true);
+          }
         }
         if (result.accepted) {
           if (savedPayload) {
@@ -315,7 +335,7 @@ export default function OnboardingForm() {
     return () => { cancelled = true; };
   }, []);
 
-  function captureDraft() {
+  function captureDraft(overrides: Record<string, string> = {}) {
     const form = formRef.current;
     if (!form) return;
     const next: Record<string, string> = {};
@@ -335,6 +355,7 @@ export default function OnboardingForm() {
     }
     const placeQuery = form.querySelector<HTMLInputElement>("#place-query");
     if (placeQuery) next.placeQuery = placeQuery.value;
+    Object.assign(next, overrides);
     draftRef.current = next;
   }
 
@@ -347,6 +368,13 @@ export default function OnboardingForm() {
       if (!field.name || field.type === "file") continue;
       const value = draftRef.current[field.name];
       if (value === undefined) continue;
+      if (field.name === "brandColorPicker" && field instanceof HTMLInputElement) {
+        if (/^#[0-9a-f]{6}$/iu.test(value)) setBrandColorPicker(value);
+      }
+      if (field.name === "brandColor" && /^#[0-9a-f]{6}$/iu.test(value)) {
+        setBrandColorPicker(value);
+        setHasExistingBrandColor(true);
+      }
       if (field instanceof HTMLInputElement && field.type === "radio") {
         field.checked = field.value === value;
       } else if (
@@ -356,8 +384,6 @@ export default function OnboardingForm() {
         field.checked = field.value === value;
       } else {
         field.value = value;
-        if (field instanceof HTMLInputElement && field.type === "color")
-          field.dispatchEvent(new Event("input", { bubbles: true }));
       }
     }
     const placeQuery = form.querySelector<HTMLInputElement>("#place-query");
@@ -370,6 +396,27 @@ export default function OnboardingForm() {
   }, [step, inviteState]);
 
   function advance() {
+    let normalizedServices: string | undefined;
+    if (step === 1) {
+      let nextServices = selectedServices;
+      if (serviceEntry.trim()) {
+        const result = addIntakeService(servicesValue, serviceEntry);
+        if (result.status === "limit") {
+          setSuggestionMessage("Remove a service before adding another. Choose up to five.");
+          return;
+        }
+        nextServices = result.services;
+        setServicesValue(nextServices.join("\n"));
+        setServiceEntry("");
+      }
+      normalizedServices = nextServices.join("\n");
+      if (!nextServices.length) {
+        formRef.current
+          ?.querySelector<HTMLInputElement>("[data-service-entry]")
+          ?.reportValidity();
+        return;
+      }
+    }
     const current = formRef.current?.querySelector<HTMLElement>(
       `[data-step="${step}"]`,
     );
@@ -377,8 +424,31 @@ export default function OnboardingForm() {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >("input, select, textarea") || [])
       if (!field.disabled && !field.reportValidity()) return;
-    captureDraft();
+    captureDraft(
+      normalizedServices === undefined ? {} : { services: normalizedServices },
+    );
     setStep((value) => Math.min(value + 1, steps.length - 1));
+  }
+
+  function commitServiceEntry() {
+    const result = addIntakeService(servicesValue, serviceEntry);
+    if (result.status === "empty") return;
+    if (result.status === "limit") {
+      setSuggestionMessage("Remove a service before adding another. Choose up to five.");
+      return;
+    }
+    if (result.status === "added") {
+      setServicesValue(result.services.join("\n"));
+      setSuggestionMessage("");
+    } else {
+      setSuggestionMessage("That service is already on your list.");
+    }
+    setServiceEntry("");
+  }
+
+  function removeServiceChip(service: string) {
+    setServicesValue(removeIntakeService(servicesValue, service).join("\n"));
+    setSuggestionMessage("");
   }
 
   async function suggestServices() {
@@ -417,21 +487,17 @@ export default function OnboardingForm() {
   }
 
   function toggleSuggestedService(service: string, selected: boolean) {
-    const current = servicesValue
-      .split(/\r?\n/u)
-      .map((value) => value.trim())
-      .filter(Boolean);
-    const next = selected
-      ? [...current.filter((item) => item.toLowerCase() !== service.toLowerCase()), service]
-      : current.filter((item) => item.toLowerCase() !== service.toLowerCase());
-    const serviceField = document.querySelector<HTMLTextAreaElement>('[name="services"]');
-    if (selected && next.length > 5) {
-      serviceField?.setCustomValidity("Choose up to 5 core services.");
-      setSuggestionMessage("Choose up to five core services. Remove one before adding another.");
+    if (selected) {
+      const result = addIntakeService(servicesValue, service);
+      if (result.status === "limit") {
+        setSuggestionMessage("Remove a service before adding another. Choose up to five.");
+        return;
+      }
+      setServicesValue(result.services.join("\n"));
+      setSuggestionMessage("");
       return;
     }
-    setServicesValue(next.join("\n"));
-    serviceField?.setCustomValidity(next.length > 5 ? "Choose up to 5 core services." : "");
+    removeServiceChip(service);
   }
 
   async function lookupPlace() {
@@ -592,7 +658,7 @@ export default function OnboardingForm() {
       <section className="invite-gate" role="status" aria-live="polite">
         <span className="eyebrow">Private business intake</span>
         <h1>{inviteState === "accepted" ? "Your details are with us." : inviteState === "loading" ? "Checking your invitation…" : "This invitation is unavailable."}</h1>
-        <p>{inviteState === "accepted" ? "We’ll email your preview link when it is ready." : inviteState === "loading" ? "Please wait while we verify this private link." : "Ask the person who invited you for a current onboarding link."}</p>
+        <p>{inviteState === "accepted" ? "Your intake has been received and processing has started. We’ll email you with an update." : inviteState === "loading" ? "Please wait while we verify this private link." : "Ask the person who invited you for a current onboarding link."}</p>
       </section>
     );
 
@@ -764,28 +830,60 @@ export default function OnboardingForm() {
           about the local market and plan the website after you submit.
         </p>
         <div className="field-grid">
-          <label className="field full">
-            What services do you want people to find you for?
-            <textarea
-              required
-              name="services"
-              value={servicesValue}
-              placeholder={"One service per line, up to 5.\nExample:\nExterior painting\nInterior painting\nCabinet refinishing"}
-              onChange={(event) => {
-                setServicesValue(event.currentTarget.value);
-                const count = event.currentTarget.value
-                  .split(/\r?\n/u)
-                  .map((item) => item.trim())
-                  .filter(Boolean).length;
-                event.currentTarget.setCustomValidity(
-                  count > 5 ? "Choose up to 5 core services." : "",
-                );
-              }}
-            />
-            <small>
-              Choose 1 to 5 core services. Put the most important one first.
+          <div className="field full service-picker">
+            <label htmlFor="service-entry">
+              What services do you want people to find you for?
+            </label>
+            <input type="hidden" name="services" value={servicesValue} />
+            <div className="service-chips" role="list" aria-label="Confirmed services">
+              {selectedServices.length ? selectedServices.map((service) => (
+                <span className="service-chip" role="listitem" key={service}>
+                  <span>{service}</span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${service}`}
+                    onClick={() => removeServiceChip(service)}
+                  >
+                    <span aria-hidden="true">×</span>
+                  </button>
+                </span>
+              )) : <span className="service-chips-empty">Your confirmed services will appear here.</span>}
+            </div>
+            <div className="service-entry-row">
+              <input
+                id="service-entry"
+                data-service-entry
+                aria-label="Add a core service"
+                aria-describedby="service-picker-help"
+                type="text"
+                value={serviceEntry}
+                disabled={selectedServices.length >= MAX_INTAKE_SERVICES}
+                required={selectedServices.length === 0}
+                placeholder={selectedServices.length >= MAX_INTAKE_SERVICES ? "Remove a service to add another" : "Type a service and press Enter"}
+                onChange={(event) => setServiceEntry(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    commitServiceEntry();
+                  }
+                }}
+                onBlur={() => {
+                  if (serviceEntry.trim()) commitServiceEntry();
+                }}
+              />
+              <button
+                className="button secondary service-add-button"
+                type="button"
+                disabled={!serviceEntry.trim() || selectedServices.length >= MAX_INTAKE_SERVICES}
+                onClick={commitServiceEntry}
+              >
+                Add service
+              </button>
+            </div>
+            <small id="service-picker-help">
+              {selectedServices.length} of {MAX_INTAKE_SERVICES} selected. Three to five is a good target; put the most important first.
             </small>
-          </label>
+          </div>
           <div className="service-suggestion-box field full">
             <button className="button secondary" type="button" onClick={suggestServices} disabled={suggestingServices}>
               {suggestingServices ? "Looking at your business details…" : "Suggest services from my listing"}
@@ -799,7 +897,7 @@ export default function OnboardingForm() {
                   <label className="suggested-service" key={service}>
                     <input
                       type="checkbox"
-                      checked={servicesValue.split(/\r?\n/u).some((item) => item.trim().toLowerCase() === service.toLowerCase())}
+                      checked={selectedServices.some((item) => item.toLowerCase() === service.toLowerCase())}
                       onChange={(event) => toggleSuggestedService(service, event.currentTarget.checked)}
                     />
                     <span>{service}</span>
@@ -908,14 +1006,53 @@ export default function OnboardingForm() {
             Anything we should know about how your business should look or feel?
             <textarea
               name="brandNotes"
-              placeholder="Optional: existing brand colours, fonts you already use, or anything you want us to avoid."
+              placeholder="Optional: fonts you already use or anything you want us to avoid."
             />
           </label>
-          <label className="field">
-            Existing brand colour, if you already use one
-            <input name="brandColor" type="text" inputMode="text" pattern="#[0-9a-fA-F]{6}" placeholder="#205d51" />
-            <small>Leave this blank if you do not have a colour you want us to keep.</small>
-          </label>
+          <div className="field">
+            <label htmlFor="existing-brand-color">
+              Existing brand colour, if you already use one
+            </label>
+            <div className="brand-color-control">
+              <input
+                id="existing-brand-color"
+                name="brandColorPicker"
+                type="color"
+                value={brandColorPicker}
+                aria-describedby="brand-color-note"
+                onChange={(event) => {
+                  setBrandColorPicker(event.currentTarget.value);
+                  setHasExistingBrandColor(true);
+                  draftRef.current.brandColor = event.currentTarget.value;
+                }}
+              />
+              <div className="brand-color-value" aria-live="polite">
+                <strong>{brandColorPicker.toUpperCase()}</strong>
+                <small>{hasExistingBrandColor ? "Selected existing colour" : "Click the swatch to choose"}</small>
+              </div>
+            </div>
+            <input
+              type="hidden"
+              name="brandColor"
+              value={hasExistingBrandColor ? brandColorPicker : ""}
+            />
+            {hasExistingBrandColor && (
+              <button
+                className="text-button brand-color-clear"
+                type="button"
+                onClick={() => {
+                  setHasExistingBrandColor(false);
+                  setBrandColorPicker("#245d51");
+                  draftRef.current.brandColor = "";
+                }}
+              >
+                Clear selected brand colour
+              </button>
+            )}
+            <small id="brand-color-note" className="brand-color-note">
+              Leave the swatch untouched if you do not have a brand colour you want us to keep.
+            </small>
+          </div>
           <ImageUploadField name="logo" label="Logo" optional />
           <ImageUploadField name="photoOne" label="Business photo 1" optional />
           <ImageUploadField name="photoTwo" label="Business photo 2" optional />
@@ -962,6 +1099,10 @@ export default function OnboardingForm() {
           <div>
             <dt>Main customer action</dt>
             <dd>{draftValue("primaryCta")}</dd>
+          </div>
+          <div>
+            <dt>Existing brand colour</dt>
+            <dd>{draftValue("brandColor")}</dd>
           </div>
         </dl>
         <input type="hidden" name="confirmSeoResearch" value="yes" />

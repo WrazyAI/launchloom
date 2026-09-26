@@ -159,6 +159,9 @@ try {
     failures.push("Simplified onboarding is not a three-step flow.");
 
   const services = page.locator('[name="services"]');
+  const serviceEntry = page.getByRole("textbox", { name: "Add a core service" });
+  if (!(await serviceEntry.evaluate((element) => element.required)))
+    failures.push("The service picker does not require at least one confirmed service.");
   await page.getByRole("button", { name: "Suggest services from my listing" }).click();
   await page.getByText("Choose any suggested services you offer").waitFor();
   if (await services.inputValue())
@@ -169,10 +172,54 @@ try {
   await page.getByLabel("Surface prep, priming and coating", { exact: true }).check();
   if (await services.inputValue() !== "Exterior painting\nSurface prep, priming and coating")
     failures.push("Selecting a comma-containing service suggestion split one service into multiple lines.");
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    window.scrollTo(0, 0);
+  });
+  await page.screenshot({
+    path: path.join(screenshotDir, "simplified-services-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const serviceMobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  if (serviceMobileOverflow > 1)
+    failures.push(`Service pills cause ${serviceMobileOverflow}px of horizontal overflow on mobile.`);
+  await page.screenshot({
+    path: path.join(screenshotDir, "simplified-services-mobile.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByLabel("Surface prep, priming and coating", { exact: true }).uncheck();
   if (await services.inputValue() !== "Exterior painting")
     failures.push("Unselecting a comma-containing service suggestion changed other service entries.");
-  await services.fill("Exterior painting");
+
+  await serviceEntry.fill("Interior painting");
+  await serviceEntry.press("Enter");
+  await serviceEntry.fill("Cabinet refinishing");
+  await serviceEntry.press("Enter");
+  await serviceEntry.fill("cabinet refinishing");
+  await serviceEntry.press("Enter");
+  if (await services.inputValue() !== "Exterior painting\nInterior painting\nCabinet refinishing")
+    failures.push("Pressing Enter did not add a unique service pill or case-insensitive duplicates were accepted.");
+  if (await page.locator(".service-chip").count() !== 3)
+    failures.push("Confirmed services are not rendered as removable pills.");
+
+  await serviceEntry.fill("Commercial painting");
+  await serviceEntry.press("Enter");
+  await serviceEntry.fill("Deck staining");
+  await serviceEntry.press("Enter");
+  if ((await services.inputValue()).split("\n").length !== 5 || !(await serviceEntry.isDisabled()))
+    failures.push("The service picker does not stop at five services.");
+  await page.getByRole("button", { name: "Remove Deck staining" }).click();
+  await serviceEntry.fill("Surface prep, priming and coating");
+  await serviceEntry.press("Enter");
+  if (!((await services.inputValue()).includes("Surface prep, priming and coating")))
+    failures.push("A comma-containing service was not kept intact as one pill.");
+  await page.getByRole("button", { name: "Remove Commercial painting" }).click();
+  await page.getByRole("button", { name: "Remove Surface prep, priming and coating" }).click();
+  if (await services.inputValue() !== "Exterior painting\nInterior painting\nCabinet refinishing")
+    failures.push("Removing pills did not preserve the remaining service order.");
+
   await page.locator('[name="industry"]').selectOption("home-services");
   await page.locator('[name="serviceAreas"]').fill("Charleston, SC");
   await page.locator('[name="serviceRadius"]').selectOption("30");
@@ -180,32 +227,32 @@ try {
     .locator('[name="differentiators"]')
     .fill("Careful prep, tidy work, and clear communication.");
 
-  await services.fill(
-    "Exterior painting\nInterior painting\nCabinet refinishing\nCommercial painting\nDeck staining\nDrywall repair",
-  );
-  await page.getByRole("button", { name: "Continue" }).click();
-  if (!((await services.evaluate((element) => element.validationMessage)) || "").includes("5"))
-    failures.push("Services field does not cap the client at five core services.");
-
-  await page.getByLabel("Exterior painting", { exact: true }).uncheck();
-  if (await services.evaluate((element) => element.validationMessage))
-    failures.push("Removing a suggested service did not clear the over-five validation error.");
-
-  await services.fill("Exterior painting\nInterior painting\nCabinet refinishing");
   const callNow = page.getByRole("radio", { name: "Call now", exact: true });
   if (await callNow.getAttribute("value") !== "Call now")
     failures.push("The Call now option label and submitted value do not match.");
   await page.getByRole("button", { name: "Continue" }).click();
 
   if (await page.locator('[name="searchPhrases"]').count())
-    failures.push("Client-facing SEO search phrase input still exists.");
+          failures.push("Client-facing SEO search phrase input still exists.");
   if (await page.locator('[name="competitorUrls"]').count())
     failures.push("Client-facing competitor URL input still exists.");
   if (await page.locator('[name="priorityLocations"]').count())
     failures.push("Duplicated priority location input still exists.");
 
   await page.locator('[name="brandNotes"]').fill("Warm, local, established.");
-  await page.locator('[name="brandColor"]').fill("#245a46");
+  const brandColor = page.locator('[name="brandColor"]');
+  const brandPicker = page.locator('[name="brandColorPicker"]');
+  if (await brandPicker.getAttribute("type") !== "color")
+    failures.push("Existing brand colour is not selected with a colour picker.");
+  if (await brandColor.inputValue())
+    failures.push("A default colour is being submitted as if the client confirmed it.");
+  await brandPicker.fill("#245a46");
+  if (await brandColor.inputValue() !== "#245a46")
+    failures.push("The selected colour picker value is not saved as the client brand colour.");
+  await page.getByRole("button", { name: "Clear selected brand colour" }).click();
+  if (await brandColor.inputValue())
+    failures.push("Clearing the optional colour still submits a brand-colour fact.");
+  await brandPicker.fill("#245a46");
   await page.locator('[name="leadEmail"]').fill("leads@example.com");
 
   const logoInput = page.locator('input[name="logo"]');
@@ -233,6 +280,16 @@ try {
       .isVisible())
   )
     failures.push("Confirmation does not show the service radius.");
+
+  if (
+    !(await page
+      .locator("dl > div")
+      .filter({ has: page.getByText("Existing brand colour", { exact: true }) })
+      .getByRole("definition")
+      .getByText("#245a46", { exact: true })
+      .isVisible())
+  )
+    failures.push("Confirmation does not show the selected existing brand colour.");
 
   if (
     !(await page
@@ -300,6 +357,8 @@ try {
   await page.locator('[name="confirmAccuracy"]').check();
   await page.getByRole("button", { name: "Create my preview" }).click();
   await page.getByRole("heading", { name: "Your details are with us." }).waitFor();
+  if (!(await page.getByText("Your intake has been received and processing has started.", { exact: false }).isVisible()))
+    failures.push("The accepted screen does not confirm that intake processing has started.");
   if (acceptedIntake?.intakeVersion !== "2" || acceptedIntake?.inviteToken !== inviteToken)
     failures.push("The accepted v2 intake did not include its invite proof and contract version.");
   if (acceptedIntake?.services?.split("\n").length !== 3)
@@ -342,7 +401,9 @@ try {
   await retryPage.locator('[name="phone"]').fill("(555) 555-0102");
   await retryPage.locator('[name="address"]').fill("2 Test Street, Tacoma, WA");
   await retryPage.getByRole("button", { name: "Continue" }).click();
-  await retryPage.locator('[name="services"]').fill("Drain cleaning");
+  const retryServiceEntry = retryPage.getByRole("textbox", { name: "Add a core service" });
+  await retryServiceEntry.fill("Drain cleaning");
+  await retryServiceEntry.press("Enter");
   await retryPage.locator('[name="industry"]').selectOption("home-services");
   await retryPage.locator('[name="serviceAreas"]').fill("Tacoma, WA");
   await retryPage.locator('[name="serviceRadius"]').selectOption("20");
