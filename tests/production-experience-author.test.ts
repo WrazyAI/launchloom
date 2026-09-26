@@ -6,6 +6,7 @@ import {
   authorExperienceCandidates,
   buildCreativeContentManifest,
   namespaceCreativeCss,
+  omitDuplicateRouteDesignTemplates,
   restoreImageAltsFromOriginal,
   restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
@@ -924,6 +925,45 @@ describe("production experience author", () => {
         expectedDossier,
       );
     }
+  });
+
+  it("omits equal cloned route design templates without dropping explicit null", () => {
+    const routeDesignTemplate = {
+      opening: { layout: "graphic-field", imageRole: "architecture" },
+      sequence: ["opening", "project-index", "contact"],
+    };
+    const clone = () => JSON.parse(JSON.stringify(routeDesignTemplate));
+    const referenceDna = {
+      evidence: { designTemplate: clone(), captureDimensions: { width: 1440 } },
+    };
+    const evidence = [
+      { name: "matching evidence", designTemplate: clone() },
+      { name: "distinct evidence", designTemplate: { opening: "different" } },
+    ];
+
+    const result = omitDuplicateRouteDesignTemplates(
+      routeDesignTemplate,
+      referenceDna,
+      evidence,
+    );
+
+    expect(result.referenceDna?.evidence).not.toHaveProperty("designTemplate");
+    expect(result.referenceDna?.evidence?.captureDimensions).toEqual({
+      width: 1440,
+    });
+    expect(result.evidence[0]).not.toHaveProperty("designTemplate");
+    expect(result.evidence[1].designTemplate).toEqual({
+      opening: "different",
+    });
+    expect(referenceDna.evidence.designTemplate).toEqual(clone());
+
+    const explicitNull = omitDuplicateRouteDesignTemplates(
+      undefined,
+      { evidence: { designTemplate: null } },
+      [{ designTemplate: null }],
+    );
+    expect(explicitNull.referenceDna?.evidence?.designTemplate).toBeNull();
+    expect(explicitNull.evidence[0].designTemplate).toBeNull();
   });
 
   it("keeps contract-repair context bounded when a model omits required fields", async () => {

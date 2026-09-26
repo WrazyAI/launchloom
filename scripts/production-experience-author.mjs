@@ -123,6 +123,39 @@ function stableJson(value) {
   return JSON.stringify(value);
 }
 
+/** Keep a route's canonical design template from being serialized redundantly. */
+export function omitDuplicateRouteDesignTemplates(
+  routeDesignTemplate,
+  referenceDna,
+  evidence = [],
+) {
+  const routeTemplate = stableJson(routeDesignTemplate);
+  const matchesRouteTemplate = (value) => stableJson(value) === routeTemplate;
+  let normalizedReferenceDna = referenceDna;
+  if (referenceDna && typeof referenceDna === "object") {
+    normalizedReferenceDna = { ...referenceDna };
+    if (referenceDna.evidence && typeof referenceDna.evidence === "object") {
+      const { designTemplate, ...remainingEvidence } = referenceDna.evidence;
+      normalizedReferenceDna.evidence = matchesRouteTemplate(designTemplate)
+        ? remainingEvidence
+        : { ...referenceDna.evidence };
+    }
+  }
+  const normalizedEvidence = Array.isArray(evidence)
+    ? evidence.map((item) => {
+        if (!item || typeof item !== "object") return item;
+        const { designTemplate, ...remainingEvidence } = item;
+        return matchesRouteTemplate(designTemplate)
+          ? remainingEvidence
+          : { ...item };
+      })
+    : evidence;
+  return {
+    referenceDna: normalizedReferenceDna,
+    evidence: normalizedEvidence,
+  };
+}
+
 function digest(value) {
   return crypto.createHash("sha256").update(stableJson(value)).digest("hex");
 }
