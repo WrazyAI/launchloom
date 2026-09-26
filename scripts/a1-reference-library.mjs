@@ -114,7 +114,7 @@ export function mergeInspirationRegistries(base, supplemental) {
   return {
     ...base,
     version: Math.max(Number(base.version || 1), Number(supplemental.version || 1)),
-    updatedAt: [base.updatedAt, supplemental.capturedAt]
+    updatedAt: [base.updatedAt, supplemental.updatedAt, supplemental.capturedAt]
       .filter(Boolean)
       .sort()
       .at(-1),

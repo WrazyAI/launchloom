@@ -37,6 +37,14 @@ describe("A1 reference library", () => {
     ).toThrow(/missing its local screenshot/iu);
   });
 
+  it("preserves newer supplemental updatedAt timestamps", () => {
+    const merged = mergeInspirationRegistries(
+      { version: 1, updatedAt: "2026-09-20", records: [] },
+      { version: 2, updatedAt: "2026-09-25", records: [] },
+    );
+    expect(merged.updatedAt).toBe("2026-09-25");
+  });
+
   it("adds new A1 records without replacing canonical registry records", () => {
     const merged = mergeInspirationRegistries(
       { version: 1, updatedAt: "2026-09-20", records: [{ id: "canonical" }] },

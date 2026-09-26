@@ -34,7 +34,10 @@
     "verify:client-pipeline-fixtures": "node scripts/verify-client-pipeline-fixtures.mjs",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs"
+    "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs",
+    "capture:gold-reference": "node scripts/capture-gold-reference-evidence.mjs",
+    "audit:gold-references": "node scripts/audit-gold-reference-library.mjs",
+    "benchmark:gold-references": "node scripts/run-gold-reference-benchmark.mjs"
   },
   "dependencies": {
     "@astrojs/react": "latest",
