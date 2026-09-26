@@ -21,7 +21,7 @@ const { brand, hero, services, proof, faqs, copy } = content;
   <main>
     <section class="xp-guide__hero" id="opening">
       <div class="xp-guide__hero-copy"><p class="xp-guide__eyebrow">{hero.kicker}</p><h1>{hero.heading}</h1><p>{hero.body}</p>{brand.phone && <a href={phoneHref(brand.phone)}>Call {brand.phone}</a>}</div>
-      {hero.image ? <figure><img src={hero.image} alt={`${brand.name} service context`} fetchpriority="high" /><figcaption>{hero.offer || "Start with what matters most today."}</figcaption></figure> : <div class="xp-guide__hero-art"><span>{brand.name}</span></div>}
+      {hero.image ? <figure><img src={hero.image} alt={`${brand.name} service context`} fetchpriority="high" />{hero.offer ? <figcaption>{hero.offer}</figcaption> : null}</figure> : <div class="xp-guide__hero-art"><span>{brand.name}</span></div>}
     </section>
 
     <section class="xp-guide__qualifier" aria-label="Start a conversation">
