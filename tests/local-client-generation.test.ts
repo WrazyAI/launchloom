@@ -80,6 +80,17 @@ describe("local client generation input", () => {
     expect(JSON.stringify(local)).not.toContain("signed.invite.token.must-not-be-kept");
   });
 
+  it("preserves the open-ended 50+ radius without inventing an exact mile count", () => {
+    const local = prepareLocalClientIntake({ ...formSubmission, serviceRadius: "50+" });
+
+    expect(local.intake.serviceRadius).toBe("50+");
+    expect(local.fixture).toMatchObject({
+      radius: "50+",
+      serviceRadius: "50+",
+      serviceRadiusMiles: null,
+    });
+  });
+
   it("rejects legacy payloads so the local generator cannot silently use the old intake form", () => {
     expect(() => prepareLocalClientIntake({ ...formSubmission, intakeVersion: "1" })).toThrow(
       /intakeVersion 2/u,

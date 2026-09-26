@@ -60,6 +60,8 @@ export function prepareLocalClientIntake(rawSubmission) {
       differentiators: intake.differentiators ? [intake.differentiators] : [],
       primaryCta: intake.primaryCta,
       radius: String(intake.serviceRadius),
+      serviceRadius: intake.serviceRadius,
+      serviceRadiusMiles: typeof intake.serviceRadius === "number" ? intake.serviceRadius : null,
       // Offline mode has no geocoder. Keep only the client-confirmed city.
       coverage: [city],
       promise: `${leadService} in ${city}`,

@@ -438,7 +438,8 @@ async function main() {
       const enrichment = {
         version: 1,
         primaryCity: fixture.primaryCity,
-        serviceRadiusMiles: Number(fixture.radius),
+        serviceRadius: localFormRun ? localExample.fixture.serviceRadius : Number(fixture.radius),
+        serviceRadiusMiles: localFormRun ? localExample.fixture.serviceRadiusMiles : Number(fixture.radius),
         coverageAreas: fixture.coverage,
         coverageEvidence: localFormRun
           ? { source: "local_primary_city_only", lookups: 0, nearbyCommunities: 0 }
