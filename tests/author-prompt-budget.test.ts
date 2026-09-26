@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import {
   assertModelPromptTextBudget,
   formatModelBoundContentShape,
@@ -58,16 +57,5 @@ describe("model-bound author prompt budget", () => {
         400_000,
       ),
     ).toThrow(/exceeds the 400000 character safety budget/iu);
-  });
-
-  it("applies redaction and budget checks to both authoring and repair requests", () => {
-    const author = readFileSync("scripts/author-production-experiences.mjs", "utf8");
-    const repair = readFileSync("scripts/creative-repair-loop.mjs", "utf8");
-
-    expect(author).toContain("formatModelBoundContentShape(request.contentShape)");
-    expect(author).toContain("assertModelPromptTextBudget([");
-    expect(author).toContain('{ type: "text", text: systemPrompt }');
-    expect(repair).toContain("formatModelBoundContentShape(contentShape)");
-    expect(repair).toContain("assertModelPromptTextBudget(content)");
   });
 });

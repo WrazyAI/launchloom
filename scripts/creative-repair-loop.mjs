@@ -42,6 +42,23 @@ const REPAIR_SCHEMA = {
   },
 };
 
+const REPAIR_FILE_ORDER = ["experience", "styles", "motion"];
+
+const REPAIR_FILE_SCHEMA = {
+  name: "launchloom_creative_repair_file",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["file", "content"],
+    properties: {
+      file: { type: "string", enum: REPAIR_FILE_ORDER },
+      content: { type: "string" },
+    },
+  },
+};
+const REPAIR_SOURCE_SPLIT_THRESHOLD_CHARS = 20_000;
+
 function clean(value, limit = 900) {
   return String(value || "")
     .replace(/[—–]/gu, "-")
@@ -479,7 +496,7 @@ export async function requestRepair({
     : [];
   const contentShape = contentManifest?.values || {};
   const visualBrief = contentManifest?.visualBrief || {};
-  const content = [
+  const referenceContext = [
     {
       type: "text",
       text: `ASSIGNED REFERENCE DNA
@@ -517,8 +534,11 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     try {
       if (!resolved) throw new Error("No accessible reference screenshot.");
       const dimensions = await imageSizeLabel(resolved);
-      content.push({ type: "text", text: `Assigned reference evidence (${dimensions}). Its capture height may span multiple page sections and is not a browser viewport height. Reference DNA section-height fractions must not be used directly as CSS vh. The desktop header and complete hero must fit within 1536x864.` });
-      content.push(await imagePart(resolved));
+      referenceContext.push({
+        type: "text",
+        text: `Assigned reference evidence (${dimensions}). Its capture height may span multiple page sections and is not a browser viewport height. Reference DNA section-height fractions must not be used directly as CSS vh. The desktop header and complete hero must fit within 1536x864.`,
+      });
+      referenceContext.push(await imagePart(resolved));
     } catch (cause) {
       throw new ReferenceEvidenceError(
         `Creative repair cannot load required reference evidence: ${record.path || record.absolutePath}`,
@@ -529,27 +549,38 @@ Use these helpers instead of inventing network calls or duplicating platform beh
 
   const structuralChecklist = referenceImplementationChecklist(referenceDna);
 
-  content.push(
+  referenceContext.push(
     promptCachedText(
       model,
       "End reusable assigned reference evidence. Repair-specific findings and current source follow.",
     ),
   );
-  content.push({
-    type: "text",
-    text: `${repairInstruction}
+  const candidateEvidence = [];
+  for (const screenshot of screenshots.slice(0, 3)) {
+    const dimensions = await imageSizeLabel(screenshot);
+    const viewportCapture = /-viewport\.png$/u.test(screenshot);
+    candidateEvidence.push({
+      type: "text",
+      text: viewportCapture
+        ? `Current candidate first browser viewport (${dimensions}). Judge hero geometry, typography, and mobile recomposition at this scale.`
+        : `Current candidate full-page overview (${dimensions}). Use it for section rhythm, not to infer browser-scale typography or hero height.`,
+    });
+    candidateEvidence.push(await imagePart(screenshot));
+  }
+
+  const sourcePrompt = (currentFiles) => `${repairInstruction}
 
 FINDINGS
 ${JSON.stringify(findings, null, 2)}
 
 CURRENT EXPERIENCE.JSX
-${files.experience}
+${currentFiles.experience}
 
 CURRENT STYLES.CSS
-${files.styles}
+${currentFiles.styles}
 
 CURRENT MOTION.JS
-${files.motion}
+${currentFiles.motion}
 
 REQUIRED STRUCTURAL CHECKLIST
 ${structuralChecklist}
@@ -558,17 +589,23 @@ Keep each required ID and section marker on its semantically matching visible se
 ALT-TEXT CONTRACT
 Every <img> must have a usable alt attribute. Use concise descriptive alt text for informative images. Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text. Preserve the reviewed description when reusing a known informative image, even if its crop or position changes. Do not replace an informative description with generic filler such as "Decorative image".
 
-Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
-  });
-  for (const screenshot of screenshots.slice(0, 3)) {
-    const dimensions = await imageSizeLabel(screenshot);
-    const viewportCapture = /-viewport\.png$/u.test(screenshot);
-    content.push({ type: "text", text: viewportCapture
-      ? `Current candidate first browser viewport (${dimensions}). Judge hero geometry, typography, and mobile recomposition at this scale.`
-      : `Current candidate full-page overview (${dimensions}). Use it for section rhythm, not to infer browser-scale typography or hero height.` });
-    content.push(await imagePart(screenshot));
-  }
-  assertModelPromptTextBudget(content);
+Return complete files required by the response schema and no unrelated explanation. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
+
+  const buildRepairContent = (currentFiles, target) => {
+    const requestContent = [
+      ...referenceContext,
+      ...candidateEvidence,
+      { type: "text", text: sourcePrompt(currentFiles) },
+    ];
+    if (target)
+      requestContent.push({
+        type: "text",
+        text: `REPAIR TARGET: ${target}
+Return only the complete ${target} source file in the JSON content field. Do not return or modify other files. Keep the other current files as context only. Use the exact target name "${target}" in the file field. Make focused changes for the supplied findings while preserving the assigned reference, sealed content bindings, required markers, and safety contract.`,
+      });
+    assertModelPromptTextBudget(requestContent);
+    return requestContent;
+  };
 
   const reasoningEffort =
     creativeSession?.reasoningEffort ||
@@ -590,57 +627,93 @@ Return complete files. Keep required reference signatures and safety/content con
     creativeSession?.reasoningPolicyVersion || "static-reasoning",
     stableReferenceDna,
   );
-  const response = await openRouterChatCompletion({
-    title: "LaunchLoom creative repair",
-    sessionId,
-    body: {
-      model,
-      ...promptCacheRequestFields(model, promptCacheKey),
-      temperature: 0.35,
-      reasoning: {
-        effort: reasoningEffort,
-        exclude: true,
-      },
-      response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
-      ...completionLimitRequestField(CREATIVE_REPAIR_MAX_COMPLETION_TOKENS),
-      messages: [
-        {
-          role: "system",
-          content:
-            "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
+  const requestModelRepair = async (currentFiles, target = null) => {
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom creative repair",
+      sessionId,
+      body: {
+        model,
+        ...promptCacheRequestFields(model, promptCacheKey),
+        temperature: 0.35,
+        reasoning: {
+          effort: reasoningEffort,
+          exclude: true,
         },
-        { role: "user", content },
-      ],
-    },
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok)
-    throw new Error(
-      `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
+        response_format: {
+          type: "json_schema",
+          json_schema: target ? REPAIR_FILE_SCHEMA : REPAIR_SCHEMA,
+        },
+        ...completionLimitRequestField(CREATIVE_REPAIR_MAX_COMPLETION_TOKENS),
+        messages: [
+          {
+            role: "system",
+            content:
+              "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
+          },
+          { role: "user", content: buildRepairContent(currentFiles, target) },
+        ],
+      },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok)
+      throw new Error(
+        `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
+      );
+    logOpenRouterCacheUsage("creative-repair", payload.usage);
+    const responseContent = payload.choices?.[0]?.message?.content || "";
+    const diagnostics = authoringCompletionDiagnostics({
+      stage: "creative-repair",
+      routeId: "repair",
+      maxTokens: CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
+      payload,
+      content: responseContent,
+    });
+    const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
+    logger(
+      `creative_completion stage=creative-repair ${diagnosticText}${target ? ` target=${target}` : ""}`,
     );
-  logOpenRouterCacheUsage("creative-repair", payload.usage);
-  const responseContent = payload.choices?.[0]?.message?.content || "";
-  const diagnostics = authoringCompletionDiagnostics({
-    stage: "creative-repair",
-    routeId: "repair",
-    maxTokens: CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
-    payload,
-    content: responseContent,
-  });
-  const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
-  logger(`creative_completion stage=creative-repair ${diagnosticText}`);
-  if (["length", "max_tokens"].includes(diagnostics.finishReason))
-    throw new Error(
-      `Creative repair response was truncated (${diagnosticText}).`,
-    );
-  try {
-    return parseModelJson(responseContent);
-  } catch (cause) {
-    throw new Error(
-      `Creative repair response was malformed (${diagnosticText}).`,
-      { cause },
-    );
+    if (["length", "max_tokens"].includes(diagnostics.finishReason))
+      throw new Error(
+        `Creative repair response was truncated (${diagnosticText}).`,
+      );
+    let parsed;
+    try {
+      parsed = parseModelJson(responseContent);
+    } catch (cause) {
+      throw new Error(
+        `Creative repair response was malformed (${diagnosticText}).`,
+        { cause },
+      );
+    }
+    if (target) {
+      if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        Array.isArray(parsed) ||
+        parsed.file !== target ||
+        typeof parsed.content !== "string"
+      )
+        throw new Error(
+          `Creative repair response did not contain the requested ${target} file.`,
+        );
+      return parsed;
+    }
+    return parsed;
+  };
+
+  const sourceChars = REPAIR_FILE_ORDER.reduce(
+    (total, file) => total + String(files?.[file] || "").length,
+    0,
+  );
+  if (sourceChars <= REPAIR_SOURCE_SPLIT_THRESHOLD_CHARS)
+    return requestModelRepair(files);
+
+  const repairedFiles = { ...files };
+  for (const target of REPAIR_FILE_ORDER) {
+    const repaired = await requestModelRepair(repairedFiles, target);
+    repairedFiles[target] = repaired.content;
   }
+  return repairedFiles;
 }
 
 async function main() {

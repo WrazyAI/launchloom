@@ -1066,6 +1066,11 @@ export function restoreRequiredExperienceMarkers(
   const markerSpecs = [
     {
       name: "data-hero",
+      targetAttributes: [
+        "data-reference-section",
+        "data-reference-signature",
+        "data-hero-geometry",
+      ],
       targets: () => {
         const matches = repaired.elements.filter((element) => {
           if (jsxOpeningName(element.opening) !== "section") return false;
@@ -1076,7 +1081,7 @@ export function restoreRequiredExperienceMarkers(
             repaired.file,
           );
         });
-        return matches.filter(
+        const semanticMatches = matches.filter(
           (candidate) =>
             !matches.some(
               (other) =>
@@ -1084,6 +1089,40 @@ export function restoreRequiredExperienceMarkers(
                 other.node.getStart(repaired.file) >
                   candidate.node.getStart(repaired.file) &&
                 other.node.end < candidate.node.end,
+            ),
+        );
+        if (semanticMatches.length > 1)
+          throw new Error(
+            `Candidate ${route.id} cannot safely restore data-hero: found ${semanticMatches.length} semantic targets.`,
+          );
+        if (semanticMatches.length > 0) return semanticMatches;
+
+        const originalHero = original.elements.find(({ opening }) =>
+          jsxAttribute(opening, "data-hero"),
+        );
+        const identityAttributes = [
+          "data-reference-section",
+          "data-reference-signature",
+          "data-hero-geometry",
+        ]
+          .map((name) => ({
+            name,
+            value: jsxAttributeValue(
+              jsxAttribute(originalHero?.opening, name),
+              original.file,
+            ).trim(),
+          }))
+          .filter(({ value }) => value);
+        if (identityAttributes.length === 0) return [];
+        return repaired.elements.filter(
+          ({ opening }) =>
+            jsxOpeningName(opening) === "section" &&
+            identityAttributes.every(
+              ({ name, value }) =>
+                jsxAttributeValue(
+                  jsxAttribute(opening, name),
+                  repaired.file,
+                ).trim() === value,
             ),
         );
       },
@@ -1323,9 +1362,9 @@ function hasPotentiallyHiddenJsxAttribute(opening) {
       const initializer = attribute.initializer;
       hidden = Boolean(
         !initializer ||
-          !ts.isJsxExpression(initializer) ||
-          !initializer.expression ||
-          !isBooleanLiteral(initializer.expression, false),
+        !ts.isJsxExpression(initializer) ||
+        !initializer.expression ||
+        !isBooleanLiteral(initializer.expression, false),
       );
       continue;
     }
@@ -1360,10 +1399,7 @@ function styleObjectDisplayNone(expression) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "display") continue;
     } else if (
@@ -1398,10 +1434,7 @@ function staticSpreadDisplayNone(attribute) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "style") continue;
     } else if (
@@ -1433,10 +1466,7 @@ function staticSpreadHiddenValue(attribute) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "hidden") continue;
     } else if (

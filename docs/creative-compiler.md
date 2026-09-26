@@ -49,7 +49,7 @@ become client-site assets.
    evidence record. Their section-height fractions describe the captured page,
    not CSS viewport units; the adapted desktop header and hero must still fit
    inside the 1536x864 browser viewport.
-   3. `author-production-experiences.mjs` asks the visual author for three
+3. `author-production-experiences.mjs` asks the visual author for three
    independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
    author receives the complete Reference DNA and its desktop/mobile evidence,
    plus a bounded client visual brief containing the resolved palette, tone,
@@ -57,11 +57,11 @@ become client-site assets.
    brief remains available to rendered repair and reference judging so a repair
    cannot silently converge on a LaunchLoom house palette or reverse an explicit
    light/dark direction. The author must expose the contract's signatures and
-   geometry markers in the rendered DOM. It can use React, the shared runtime, GSAP, and ScrollTrigger,
-   but not network access, remote code, canvas, or Three.js by default. Model
-   stages are globally limited to two in-flight requests so a three-candidate
-   bakeoff does not exhaust the provider budget. The authoring budget defaults
-   to 45 minutes and can be bounded with
+   geometry markers in the rendered DOM. It can use React, the shared runtime,
+   GSAP, and ScrollTrigger, but not network access, remote code, canvas, or
+   Three.js by default. Model stages are globally limited to two in-flight
+   requests so a three-candidate bakeoff does not exhaust the provider budget.
+   The authoring budget defaults to 45 minutes and can be bounded with
    `CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS`; it never turns an expired author
    run into a legacy renderer. Completion ceilings are stage-specific: 24k
    tokens for the design contract, 48k for JSX, 40k for CSS, and 24k for
@@ -69,8 +69,8 @@ become client-site assets.
    These are upper bounds, not reserved spend. The author logs finish reason,
    completion/reasoning token usage, and returned content length on every
    response so output truncation is distinguishable from input-context errors.
-   A failed reference-fidelity
-   check gets at most two author-owned repairs and then fails closed.
+   A failed reference-fidelity check gets at most two author-owned repairs and
+   then fails closed.
 4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders 1536x864 desktop, 1366x768 compact desktop, and
    390x844 mobile viewports, and records the evidence. Structural contract
@@ -113,7 +113,11 @@ become client-site assets.
    its own claim: it must rebuild, rerender, and pass the judges on the next
    round. Each repair response has a 48k completion ceiling and records its
    finish reason plus completion/reasoning token counts without logging source
-   content. Each candidate gets at most two repair cycles. Production promotion
+   content. When the combined authored source exceeds 20,000 characters, repair
+   is split into sequential JSX, CSS, and motion responses to keep each returned
+   bundle within the provider ceiling. Every file-scoped call reuses the same
+   frozen reasoning effort and creative session identity. Each candidate gets
+   at most two repair cycles. Production promotion
    still requires `promotionReady`, including rendered candidate diversity, plus a
    passing final visual gate. The loop never falls back to a legacy renderer.
 
