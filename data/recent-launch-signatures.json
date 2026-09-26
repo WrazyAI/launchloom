@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-24T12:59:02.194Z",
+  "updatedAt": "2026-09-26T01:04:45.370Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -91,6 +91,34 @@
         "compact-pixel-command-nav|centered-typographic-founder-field|goal-atlas-feature-sequence|pixel-display-with-mono-microcopy|statement-goals-progress-contact|textured-dark-field-with-graphic-accents",
         "minimal-cinematic-nav|cinematic-3d-studio-field|featured-work-rail|restrained-modern-sans|cinematic-intro-work-cta|dark-video-and-3d-atmosphere",
         "performance-command-bar|full-viewport-action-poster|horizontal-program-bands|condensed-mono-display|impact-band-recovery|full-bleed-action-documentary"
+      ]
+    },
+    {
+      "id": "2026-09-26-precision-auto-care-attempt-70",
+      "launchedAt": "2026-09-26T01:04:45.369Z",
+      "stage": "attempt",
+      "businessName": "Precision Auto Care",
+      "recipe": "care-editorial",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "a1-collage-composition",
+        "a1-object-stage",
+        "editorial-monument",
+        "kokoro-editorial-architecture"
+      ],
+      "referenceIds": [
+        "a1-craft-collage-field",
+        "a1-mckp-object-stage",
+        "clear-counsel-ledger"
+      ],
+      "routeSignatures": [
+        "distributed-object-stage-nav|isolated-3d-object-on-deep-stage|object-led-capability-atlas|instrument-serif-with-technical-mono|object-reveal-to-case-stack|deep-focus-object-render",
+        "floating-tool-nav|layered-collage-with-offset-product-stills|annotated-feature-objects|serif-and-sans-pair|collage-to-feature-to-proof|hand-drawn-product-collage",
+        "measured-professional-navigation|narrow-positioning-with-portrait-proof|ruled-expertise-ledger|restrained-humanist-serif|position-proof-process|named-professional-portrait"
       ]
     }
   ]
