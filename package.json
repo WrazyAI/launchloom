@@ -32,6 +32,7 @@
     "build:template-gallery": "node scripts/build-template-variant-gallery.mjs",
     "verify:onboarding-ui": "ONBOARDING_VERIFY_PORT=4179 PUBLIC_LAUNCHLOOM_API_URL=http://127.0.0.1:4179 npm run build && ONBOARDING_VERIFY_PORT=4179 node scripts/verify-onboarding-ui.mjs",
     "verify:client-pipeline-fixtures": "node scripts/verify-client-pipeline-fixtures.mjs",
+    "generate:client-site": "node scripts/verify-client-pipeline-fixtures.mjs",
     "test:watch": "vitest",
     "format": "prettier --write .",
     "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs"

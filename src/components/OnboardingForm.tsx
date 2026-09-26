@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
+import { createClientIntakeV2Submission } from "../lib/client-intake-v2.mjs";
 import {
   addIntakeService,
   MAX_INTAKE_SERVICES,
@@ -612,13 +613,14 @@ export default function OnboardingForm() {
           );
         assets[slot] = result.url;
       }
-      const intake = Object.fromEntries(
+      const formFields = Object.fromEntries(
         [...data.entries()].filter(([, value]) => typeof value === "string"),
       ) as Record<string, string>;
-      intake.submissionId = submissionId;
-      intake.intakeVersion = "2";
-      intake.inviteToken = inviteToken;
-      const payload = { ...intake, assets };
+      const payload = createClientIntakeV2Submission(formFields, {
+        submissionId,
+        inviteToken,
+        assets,
+      });
       sessionStorage.setItem(payloadKey, JSON.stringify(payload));
       const handoff = await fetch(`${apiBase}/api/intake`, {
         method: "POST",

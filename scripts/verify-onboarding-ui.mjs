@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { chromium } from "playwright";
 import sharp from "sharp";
+import { CLIENT_INTAKE_V2_SUBMISSION_FIELDS } from "../src/lib/client-intake-v2.mjs";
 
 const repository = path.resolve(new URL("..", import.meta.url).pathname);
 const dist = path.join(repository, "dist");
@@ -361,6 +362,9 @@ try {
     failures.push("The accepted screen does not confirm that intake processing has started.");
   if (acceptedIntake?.intakeVersion !== "2" || acceptedIntake?.inviteToken !== inviteToken)
     failures.push("The accepted v2 intake did not include its invite proof and contract version.");
+  const acceptedFields = Object.keys(acceptedIntake || {}).sort();
+  if (JSON.stringify(acceptedFields) !== JSON.stringify([...CLIENT_INTAKE_V2_SUBMISSION_FIELDS].sort()))
+    failures.push(`The accepted v2 intake field set differs from the shared form contract: ${acceptedFields.join(", ")}.`);
   if (acceptedIntake?.services?.split("\n").length !== 3)
     failures.push("Only the client-selected core services should be submitted.");
   if (acceptedIntake?.brandColor !== "#245a46")
