@@ -168,6 +168,18 @@ describe("OpenRouter cache integration", () => {
     expect(source).toContain("referenceDna,");
   });
 
+  it("supplies the exact dossier design prompt to analysis, every author stage, and repair", () => {
+    const author = fs.readFileSync("scripts/author-production-experiences.mjs", "utf8");
+    const analyzer = fs.readFileSync("scripts/analyze-reference-dna.mjs", "utf8");
+    const repair = fs.readFileSync("scripts/creative-repair-loop.mjs", "utf8");
+    expect(author).toContain("referenceDossierPromptBlock(request.route.referenceDossier)");
+    expect(author).toContain("Treat the included permission-cleared Reference Dossier");
+    expect(analyzer).toContain("referenceDossierPromptBlock(route.referenceDossier)");
+    expect(analyzer).toContain("assertReferenceDossierPack(pack)");
+    expect(repair).toContain("referenceDossierPromptBlock(referenceDossier)");
+    expect(repair).toContain("metadata.creativeManifest?.referenceDossier");
+  });
+
   it("keeps static Reference DNA analysis reusable across runs for 24 hours", () => {
     const source = fs.readFileSync(
       "scripts/analyze-reference-dna.mjs",

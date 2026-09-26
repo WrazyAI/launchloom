@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
+import { redactPromptValue } from "./author-prompt-budget.mjs";
 import ts from "typescript";
 import {
   assertIndependentRoutes,
   buildCandidateManifest,
-  buildRouteContract,
 } from "./creative-compiler.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
@@ -135,24 +135,7 @@ function digest(value) {
  * @param {unknown} value
  * @returns {unknown}
  */
-export function redactPromptValue(value) {
-  if (typeof value === "string") {
-    if (/^data:image\/[\w.+-]+;base64,/iu.test(value))
-      return "[sealed client image asset]";
-    if (value.length > 12_000)
-      return `${value.slice(0, 256)}...[sealed value truncated]`;
-    return value;
-  }
-  if (Array.isArray(value)) return value.map(redactPromptValue);
-  if (value && typeof value === "object")
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [
-        key,
-        redactPromptValue(item),
-      ]),
-    );
-  return value;
-}
+export { redactPromptValue };
 
 function visualBrief(site) {
   const style = site.style || {};
@@ -288,7 +271,10 @@ function assertInspirationPack(pack) {
     for (const route of contracts)
       validateReferenceDna(route.referenceDna, { requireEvidence: true });
   }
-  return contracts;
+  return contracts.map((contract, index) => {
+    const referenceDossier = pack.routes[index]?.referenceDossier;
+    return referenceDossier ? { ...contract, referenceDossier } : contract;
+  });
 }
 
 function asText(value, label) {
@@ -2002,9 +1988,7 @@ export async function authorExperienceCandidates({
   const contentManifest = buildCreativeContentManifest(site);
   const rules = authorRules();
 
-  const routes = assertInspirationPack(inspirationPack).map((route) =>
-    buildRouteContract(route),
-  );
+  const routes = assertInspirationPack(inspirationPack);
   // OpenRouter's in-flight budget is shared across the account. Keep the
   // independent candidates, but never put more than two model stages in
   // flight at once. This protects the creative lane without falling back to a

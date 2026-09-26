@@ -6,6 +6,8 @@ import {
   buildCreativeContentManifest,
   validateProductionCandidateFiles,
 } from "./production-experience-author.mjs";
+import { businessKindMatches } from "./inspiration-registry.mjs";
+import { assertReferenceDossierPack } from "./reference-dossier.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
 function argsFrom(argv) {
@@ -54,6 +56,124 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function dossierBinding(dossier) {
+  if (!dossier || typeof dossier !== "object") return null;
+  return {
+    id: dossier.id || "",
+    referenceName: dossier.referenceName || "",
+    familyId: dossier.familyId || "",
+    path: dossier.path || "",
+    digest: dossier.digest || "",
+    source: {
+      name: dossier.source?.name || "",
+      url: dossier.source?.url || "",
+      rights: dossier.source?.rights || "",
+    },
+    tags: dossier.tags || {},
+    designPrompt: dossier.designPrompt || "",
+  };
+}
+
+/**
+ * @param {Record<string, any>} metadata
+ * @param {Record<string, any>} contract
+ * @param {Record<string, any>} route
+ * @param {string} candidateName
+ * @returns {true}
+ */
+export function assertReusableCandidateDossierBinding(
+  metadata,
+  contract,
+  route,
+  candidateName,
+) {
+  const expected = dossierBinding(route?.referenceDossier);
+  assert(expected, `${candidateName} route has no validated Reference Dossier.`);
+  for (const [label, actual] of [
+    ["metadata", metadata?.creativeManifest?.referenceDossier || metadata?.referenceDossier],
+    ["contract", contract?.creativeManifest?.referenceDossier],
+  ])
+    assert(
+      same(dossierBinding(actual), expected),
+      `${candidateName} ${label} Reference Dossier does not match its route.`,
+    );
+  return true;
+}
+
+/**
+ * @param {{inspiration: Record<string, any>, config: Record<string, any>, repositoryRoot?: string}} options
+ * @returns {Promise<Record<string, any>>}
+ */
+export async function assertReusableInspirationPack({
+  inspiration,
+  config,
+  repositoryRoot = process.cwd(),
+} = {}) {
+  assert(
+    inspiration?.referenceDossiersRequired === true,
+    "Reusable candidates require a permission-cleared dossier-backed Reference DNA pack.",
+  );
+  assert(
+    inspiration.referenceLibrary?.policy === "permission-cleared-only" &&
+      inspiration.referenceLibrary?.selectedDossierCount === 3 &&
+      Array.isArray(inspiration.referenceLibrary?.recordIds),
+    "Reusable candidates require the canonical permission-cleared reference-library binding.",
+  );
+  assertReferenceDossierPack(inspiration, { repositoryRoot });
+
+  const configuredKind = String(config?.businessKind || config?.industry || "")
+    .trim()
+    .toLowerCase();
+  const genericKinds = new Set([
+    "",
+    "all",
+    "general",
+    "other",
+    "local-business",
+    "local-service",
+    "local-services",
+    "small-business",
+  ]);
+  const businessKind = genericKinds.has(configuredKind)
+    ? String(inspiration.request?.industry || "").trim().toLowerCase()
+    : configuredKind;
+  assert(
+    businessKind && !genericKinds.has(businessKind),
+    "Reusable candidates require a specific business kind.",
+  );
+
+  const corePath = path.join(repositoryRoot, "data/reference-library/core-collection.json");
+  const core = JSON.parse(await fs.readFile(corePath, "utf8"));
+  assert(
+    Array.isArray(core?.niches) && core.niches.length > 0,
+    "The canonical reference collection has no business niches.",
+  );
+  const matchingNiches = core.niches.filter((niche) =>
+    businessKindMatches({ industries: [niche.businessKind] }, businessKind),
+  );
+  assert(
+    matchingNiches.length > 0,
+    `The canonical reference collection has no niche matching business kind '${businessKind}'.`,
+  );
+  const allowedDossierIds = new Set(
+    matchingNiches.flatMap((niche) => Array.isArray(niche.referenceIds) ? niche.referenceIds : []),
+  );
+  const routeIds = inspiration.routes.map((route) => route.referenceDossier.id);
+  assert(
+    same([...routeIds].sort(), [...inspiration.referenceLibrary.recordIds].sort()),
+    "Reusable reference-library IDs do not match the route dossier bindings.",
+  );
+  for (const route of inspiration.routes) {
+    const dossier = route.referenceDossier;
+    assert(
+      allowedDossierIds.has(dossier.id) &&
+        businessKindMatches({ industries: dossier.tags?.business }, businessKind),
+      `Reusable dossier '${dossier.id}' is not in the canonical core niche for business kind '${businessKind}'.`,
+    );
+  }
+  return inspiration;
+}
+
 function sessionBinding(metadata, expected, candidateId) {
   const reasoning = metadata.reasoning || {};
   const mismatches = [
@@ -74,6 +194,10 @@ function sessionBinding(metadata, expected, candidateId) {
   );
 }
 
+/**
+ * @param {{configPath: string, inspirationPath: string, candidatesPath: string, outputPath: string, sessionPath: string, model: string, repositoryRoot?: string}} options
+ * @returns {Promise<{validated: true, count: number, routes: string[], sessionId: string}>}
+ */
 export async function validateAndCopyReusableCandidates({
   configPath,
   inspirationPath,
@@ -81,6 +205,7 @@ export async function validateAndCopyReusableCandidates({
   outputPath,
   sessionPath,
   model,
+  repositoryRoot = process.cwd(),
 } = {}) {
   for (const [name, value] of Object.entries({
     configPath,
@@ -101,6 +226,7 @@ export async function validateAndCopyReusableCandidates({
     readJson(sessionPath),
   ]);
   validateCreativeSessionConfig(creativeSession, { creativeModel: model });
+  await assertReusableInspirationPack({ inspiration, config, repositoryRoot });
   assert(
     inspiration.referenceDnaAnalyzed === true &&
       Array.isArray(inspiration.routes) &&
@@ -252,6 +378,12 @@ export async function validateAndCopyReusableCandidates({
       );
       const contractDna = withoutAnalysisTime(
         contract.creativeManifest?.referenceDna || contract.route?.referenceDna,
+      );
+      assertReusableCandidateDossierBinding(
+        metadata,
+        contract,
+        route,
+        candidateName,
       );
 
       assert(

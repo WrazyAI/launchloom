@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "id": "local-seo-core-30",
+  "title": "LaunchLoom Local SEO Reference Core",
+  "updatedAt": "2026-09-26",
+  "selectionContract": "Each niche has exactly three unique, production-eligible, business-matched dossiers. The randomizer must fail closed rather than fill from another niche.",
+  "rightsContract": "Every listed dossier has a local rights/provenance record. Direct-site permission status reflects requester attestation and is not represented as independently verified source-owner permission.",
+  "sourceDesignRule": "Transfer composition, information hierarchy, service mechanics, responsive behavior, and motion only. Source identities, copy, imagery, facts, claims, prices, credentials, and trade dress do not transfer to client sites.",
+  "niches": [
+    {
+      "id": "home-services-trades",
+      "label": "Home services and trades",
+      "businessKind": "home-services",
+      "referenceIds": ["colorlib-fixwell-quote-desk", "spicer-roofing-storm-response", "spicer-landscaping-season-wheel"]
+    },
+    {
+      "id": "dental-practices",
+      "label": "Dental practices",
+      "businessKind": "dental",
+      "referenceIds": ["html5up-dental-dimension", "attested-one-manor-place-dental", "attested-dapper-dental"]
+    },
+    {
+      "id": "home-care-providers",
+      "label": "Home-care providers",
+      "businessKind": "home-care",
+      "referenceIds": ["html5up-home-care-story", "attested-angels-on-call-homecare", "attested-kingsway-care-home-care"]
+    },
+    {
+      "id": "gyms-and-fitness-studios",
+      "label": "Gyms and fitness studios",
+      "businessKind": "fitness",
+      "referenceIds": ["html5up-fitness-big-picture", "colorlib-ironworks-strength-club", "spicer-gym-timetable-first"]
+    },
+    {
+      "id": "restaurants-and-cafes",
+      "label": "Restaurants and cafes",
+      "businessKind": "restaurant",
+      "referenceIds": ["colorlib-tavola-restaurant", "direct-amrit-palace-restaurant", "direct-ethos-greek-bistro"]
+    },
+    {
+      "id": "hotels-and-lodging",
+      "label": "Hotels and destination lodging",
+      "businessKind": "hospitality",
+      "referenceIds": ["direct-mahala-desert-boutique-hotel", "direct-casa-cedo-boutique-hotel", "direct-fogo-island-inn-hospitality"]
+    },
+    {
+      "id": "architecture-and-interiors",
+      "label": "Architecture and interior design practices",
+      "businessKind": "architecture",
+      "referenceIds": ["colorlib-drafthouse-atlas", "lapa-mcalpine-sanctuary", "lapa-mesh-architects-editorial"]
+    },
+    {
+      "id": "law-firms",
+      "label": "Law firms",
+      "businessKind": "legal-services",
+      "referenceIds": ["colorlib-caseworth-legal-ledger", "direct-robins-kaplan-law", "spicer-law-firm-results-ledger"]
+    },
+    {
+      "id": "beauty-and-grooming",
+      "label": "Beauty and grooming services",
+      "businessKind": "beauty",
+      "referenceIds": ["spicer-barber-walk-in-queue", "spicer-hair-salon-stylist-menu", "spicer-med-spa-treatment-menu"]
+    },
+    {
+      "id": "accountants-and-bookkeepers",
+      "label": "Accountants and bookkeepers",
+      "businessKind": "accounting",
+      "referenceIds": ["spicer-accountant-deadline-calendar", "direct-alex-co-accountants-practice", "direct-change-accountants-york"]
+    }
+  ]
+}

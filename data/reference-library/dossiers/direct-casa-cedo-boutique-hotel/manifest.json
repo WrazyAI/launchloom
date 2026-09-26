@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-casa-cedo-boutique-hotel",
+  "productionEligible": true,
+  "referenceName": "Casa Cedo narrative boutique-house stay",
+  "familyId": "direct-casa-cedo-boutique-house-story",
+  "source": {
+    "name": "Casa Cedo official hotel website",
+    "url": "https://www.casacedo.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested on 2026-09-25 that clearance covers full-page screenshot retention, derived design prompts, and submitting screenshot evidence to the LaunchLoom pipeline model as visual reference. No source-owner grant file was attached.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/requester-attestation.md"]
+  },
+  "provenance": {
+    "method": "Rendered the direct official domain in an isolated agent-browser Chromium session; captured full-page desktop and mobile screenshots after scrolling the full page and decoding all source images. No gallery screenshot or source media file was downloaded. The visible cookie notice was dismissed using its consent control before final capture.",
+    "retrievedAt": "2026-09-25",
+    "desktopViewport": { "width": 1440, "height": 900, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 11429 },
+    "mobileViewport": { "width": 390, "height": 844, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 8601 },
+    "diagnostics": "All 17 images decoded at both capture sizes; zero broken images; document width matched 1440px desktop and 390px mobile. The source has very large editorial whitespace and duplicated carousel imagery; the mobile capture preserves the actual page rhythm rather than clipping it.",
+    "attribution": "Casa Cedo official site. Captures and derived mechanics brief are internal/model visual references only under requester attestation; source assets are not client deliverables."
+  },
+  "businessKinds": ["boutique-hotel", "design-hotel", "guesthouse", "lodging", "hospitality"],
+  "tags": {
+    "business": ["boutique-hotel", "design-hotel", "guesthouse", "lodging", "hospitality"],
+    "style": ["warm-interior-editorial", "slow-hospitality", "cream-and-terracotta", "restoration-story", "quiet-luxury"],
+    "composition": ["room-scene-hero", "quiet-editorial-interval", "alternating-house-story", "room-image-strip", "warm-contact-close"],
+    "conversion": ["direct-booking", "room-discovery", "experience-discovery", "location-and-contact"],
+    "motion": ["full-page-story-scroll", "image-reveal", "horizontal-room-strip", "static-motion-fallback"],
+    "imagery": ["interior-photography", "restored-building-details", "garden-and-object-scenes", "room-strip-crops"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 900 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A boutique hotel site tells a long-form story about a lived-in house: the opening is a cinematic warm interior with a small wordmark/nav; a compact welcome follows on warm ivory; restoration details alternate with small photos and short story fragments; testimonials/interior quotations punctuate a longer host narrative; a room/experience strip previews the property; and a terracotta footer hosts navigation, booking and contacts. Mobile retains the story sequence but compresses some intervals and stacks scenes.",
+    "heroGeometry": { "mode": "full-bleed intimate warm interior photograph with centered short statement", "alignment": "quiet wordmark and booking utility at top; the headline rests in open space within the room image", "viewport": "opening shows hotel identity, destination positioning and a single book-stay action" },
+    "navigationGeometry": { "mode": "minimal wordmark with room/experience navigation and a booking action", "placement": "top overlay against the opening image", "mobile": "compact utility header with a visible book action and accessible menu" },
+    "typography": { "display": "restrained editorial serif", "body": "light neutral sans", "scale": "small uppercase labels, carefully sized hero sentence, narrow long-form story measure, quiet captions" },
+    "palette": { "surfaces": ["warm ivory", "pale stone", "terracotta"], "ink": "dark warm brown", "accents": ["copper", "olive", "warm gray"], "contrastIntent": "soft hospitality palette with readable text and booking controls" },
+    "imageTreatment": { "mode": "authentic interior, restoration/object detail, garden and room scenes", "crop": "full-bleed opening plus alternating small and large narrative image blocks", "focalPoint": "room architecture, material and sense of place" },
+    "sectionSequence": ["hero", "welcome", "press-or-proof", "restoration-details", "about", "story", "property-scenes", "rooms-strip", "contact-footer"],
+    "servicePresentation": { "pattern": "rooms and real property experiences as a compact browseable strip, supported by editorial chapters", "interaction": "direct booking/room links and optional accessible horizontal gallery" },
+    "ctaPlacement": { "primary": "Book your stay in opening navigation and hero", "secondary": "explore rooms or experiences", "early": "within first view, before longer story content" },
+    "motion": { "primitive": "quiet image/story reveal and horizontal room strip navigation", "library": "native scroll and browser controls", "reducedMotion": "show all story content in static order; provide video poster where motion exists" },
+    "mobileRecomposition": { "strategy": "single-column narrated house journey", "rules": ["scale title over image-safe area", "alternate copy and images without empty spacer gaps", "stack room experiences into clear swipe/stack choices", "retain visible booking action", "no horizontal page overflow"] },
+    "prohibitedPatterns": ["copying Casa Cedo brand, exact story, photography or review quotes", "inventing room names, rates, occupancy, property history or awards", "fake availability, price countdowns or booking confirmation", "autoplay-only video without poster", "blank pacing sections that hide missing business information", "source reviewers shown as client proof"],
+    "requiredSignatureElements": [
+      { "id": "house-scene-opening", "selector": "[data-reference-signature=house-scene-opening]", "description": "full-bleed room image with a restrained place-specific promise" },
+      { "id": "restoration-story", "selector": "[data-reference-signature=restoration-story]", "description": "alternating image and concise history/material narrative when verified" },
+      { "id": "room-experience-strip", "selector": "[data-reference-signature=room-experience-strip]", "description": "visually distinct rooms/experiences browse route" },
+      { "id": "booking-close", "selector": "[data-reference-signature=booking-close]", "description": "warm contact footer with direct working booking action" }
+    ],
+    "acceptanceChecks": ["hotel category and destination are stated in visible HTML", "all room, date, rate and facility details come from verified client data", "booking action leads to the real channel", "mobile no longer than necessary while preserving the editorial pacing", "gallery captions and navigation work with touch and keyboard", "no source asset, copy, logo or claim is reused"]
+  },
+  "review": { "status": "requester-attested-internal-and-model-reference", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "direct-site paired screenshots, source mechanics prompt, and requester attestation; no owner grant file uploaded" }
+}

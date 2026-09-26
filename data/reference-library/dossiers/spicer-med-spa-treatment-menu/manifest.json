@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-med-spa-treatment-menu",
+  "productionEligible": true,
+  "referenceName": "Spicer med spa treatment and downtime menu",
+  "familyId": "spicer-med-spa-treatment-ledger",
+  "source": {
+    "name": "Spicer Designs Med Spa HTML template",
+    "url": "https://www.spicerdesigns.com/templates/med-spa",
+    "rights": "licensed",
+    "rightsEvidence": "The official source page states CC BY 4.0 and commercial use with the footer credit retained. The downloaded package includes its LICENSE and README, which identify the bundled hero artwork as AI-generated placeholder art and require keeping the Spicer Designs footer link.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/SOURCE-README.md", "rights/ASSET-PROVENANCE.md"]
+  },
+  "provenance": {
+    "archiveSha256": "b0b3e581969dc2cdd03d617989c29d2270bef02574804694024f3847c4b09920",
+    "retrievedAt": "2026-09-25",
+    "attribution": "The unmodified source HTML retains the required linked Spicer Designs footer credit, visible in both captures. Any future adaptation or derivative must preserve attribution and must not suggest endorsement.",
+    "capture": "Rendered locally from the exact official HTML archive at desktop 1440x1000 and mobile 390x844. Captures use the package's built-in prefers-reduced-motion static fallback so all scroll-reveal content is visible. Source files were not edited.",
+    "qa": "Body and document widths matched the viewport at desktop and mobile. The sole bundled hero image loaded. The static HTML has no reveal observer: 18 ms-rise groups remain hidden in the default motion preference, while reduced motion exposes them. FAQ uses native details; click-driven widgets are presentational and forms have no submit destination."
+  },
+  "businessKinds": ["medical-spa", "aesthetic-clinic", "cosmetic-treatment", "med-spa", "clinical-beauty"],
+  "tags": {
+    "business": ["medical-spa", "aesthetic-clinic", "cosmetic-treatment", "med-spa", "clinical-beauty"],
+    "style": ["clinical-luxury", "warm-blush-minimal", "paper-and-stone", "soft-clinic-editorial", "precise-price-transparency"],
+    "composition": ["treatment-menu-led-hero", "per-unit-price-list", "downtime-comparison-table", "practitioner-credentials", "consultation-process-panel"],
+    "conversion": ["consultation-first", "procedure-price-clarity", "recovery-planning", "practitioner-qualification", "financing-disclosure"],
+    "motion": ["section-rise-reveal", "native-faq-disclosure", "static-reduced-motion-fallback", "treatment-filter-presentational-in-html"],
+    "imagery": ["ai-generated-clinic-interior-placeholder", "diffuse-daylight", "light-pink-neutral-surfaces", "no-identifiable-clinician-or-patient", "source-art-not-reused"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A light clinical-luxury page that treats the treatment menu as the primary content rather than opening with a generic spa lifestyle image. A compact consultation bar and quiet header lead into a pale image-backed hero with a consultation CTA and a jump link to prices. The page follows with a treatment menu using per-unit prices and treatment categories, a separate recovery/downtime comparison, a split consultation process, before-and-after evidence policy, practitioner credential cards, review excerpts, a direct FAQ, and a restrained consultation form. Its visual grammar is warm blush paper, soft clinic neutrals, sparse panels, exact values, and prominent practitioner responsibility.",
+    "heroGeometry": { "mode": "treatment-menu-led clinical hero", "alignment": "light image-backed opening with a left-aligned specific treatment promise and two quiet actions; compressed consult utility line above", "viewport": "consultation action and price-discovery link sit in the opening screen without hiding who provides the treatment" },
+    "navigationGeometry": { "mode": "small clinic wordmark with treatment, credentials, and contact anchors", "placement": "thin utility/contact strip followed by quiet hero navigation", "mobile": "compact wordmark and consult/contact control; section links collapse into a menu with no overlap" },
+    "typography": { "display": "intended Fraunces editorial face, though static HTML currently falls back to system sans", "body": "intended Inter neutral sans, though font-family utility is miscompiled in the capture", "scale": "large concise clinical promise, restrained micro-labels, compact price and downtime columns, legible policy body copy" },
+    "palette": { "surfaces": ["warm white", "light blush", "pale stone"], "ink": "deep warm charcoal", "accents": ["muted rose", "clay", "soft taupe"], "contrastIntent": "calm clinical warmth with clear price, credential, and safety text contrast" },
+    "imageTreatment": { "mode": "soft AI-generated spa/clinic interior atmosphere with a light wash", "crop": "wide hero background only; most information sections remain clean typographic and tabular surfaces", "focalPoint": "clinic atmosphere, not a real patient, clinician, procedure result, or promise" },
+    "sectionSequence": ["consult-utility-bar", "treatment-led-hero", "per-unit-treatment-menu", "downtime-comparison-table", "consultation-process", "before-after-evidence-policy", "practitioner-credentials", "approved-reviews", "questions", "consultation-form", "attribution-footer"],
+    "servicePresentation": { "pattern": "treatment rows with exact price basis and a separate recovery/downtime table; practitioner credentials and consultation context are near the decision point", "interaction": "category filters and form widgets are presentational in the static HTML package; retain a complete visible menu and genuine server-connected booking only when implemented" },
+    "ctaPlacement": { "primary": "consultation action in the hero and final consultation form", "secondary": "price menu jump link in the hero", "early": "immediately beside the service promise, before treatment detail" },
+    "motion": { "primitive": "quiet section-rise reveals and native FAQ disclosures", "library": "CSS transitions in the static package; no reveal observer is included in the HTML build", "reducedMotion": "make all treatment, downtime, credential, and policy content visible without transforms; this fallback was used for captures" },
+    "mobileRecomposition": { "strategy": "single-column clinical decision journey", "rules": ["put the consultation action and price link before procedure detail", "turn each treatment row into a labeled block with price basis visible", "stack downtime entries with treatment and recovery labels together", "keep practitioner credentials adjacent to clinical copy", "use full-width form controls and preserve all safety text without horizontal overflow"] },
+    "prohibitedPatterns": ["copying Spicer or demo clinic branding, source copy, source hero image, sample procedures, or fictional staff", "reusing sample per-unit prices, downtime, financing, practitioner credentials, reviews, before-and-after policy, or outcomes as client facts", "inventing medical efficacy, risk rates, contraindications, treatment eligibility, clinician license, recovery promise, or cosmetic result", "presenting AI-generated interior art as the clinic's actual premises", "hiding downtime, price basis, qualifications, or consultation requirements below decorative content", "leaving reveal sections transparent or claiming a form works when it has no handler", "medical advice or guaranteed result claims in generated SEO copy"],
+    "requiredSignatureElements": [
+      { "id": "treatment-led-opening", "selector": "[data-reference-signature=treatment-led-opening]", "description": "a concise opening that introduces the real treatment category and an early consultation action" },
+      { "id": "per-unit-treatment-menu", "selector": "[data-reference-signature=per-unit-treatment-menu]", "description": "a treatment table or list that explains the actual price basis and verified prices" },
+      { "id": "recovery-planning-table", "selector": "[data-reference-signature=recovery-planning-table]", "description": "a separate recovery/downtime comparison populated only from clinician-approved facts" },
+      { "id": "practitioner-credential-panel", "selector": "[data-reference-signature=practitioner-credential-panel]", "description": "a factual provider credential presentation sourced from approved client credentials" }
+    ],
+    "acceptanceChecks": ["price basis and downtime remain visible together in desktop and mobile layouts", "mobile treatment rows reflow without sideways scroll", "credentials identify the verified provider responsible for treatment", "all medical claims, prices, recovery facts, financing, reviews, and qualifications are verified and approved", "consultation and booking controls use a real handler or are not represented as submitted", "all content is visible with motion disabled and default animation cannot leave it hidden", "CC BY footer attribution remains linked in any adapted template"]
+  },
+  "review": { "status": "cc-by-production-reference-with-static-html-caveat", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "Official package/license, single AI-generated hero asset, Google Fonts OFL metadata, local full-page renders, attribution, and responsive inspection. Medical demo copy remains reference-only." }
+}

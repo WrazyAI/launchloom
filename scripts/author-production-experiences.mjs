@@ -1,6 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
+import {
+  assertModelPromptTextBudget,
+  formatModelBoundContentShape,
+} from "./author-prompt-budget.mjs";
+import {
+  assertReferenceDossierPack,
+  referenceDossierPromptBlock,
+} from "./reference-dossier.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
 import { authorExperienceCandidates } from "./production-experience-author.mjs";
 import {
@@ -124,6 +132,7 @@ STRUCTURAL OUTPUT CHECK
 
 REFERENCE FIDELITY RULES
 - Do not average references or drift to a familiar LaunchLoom composition.
+- Treat the included permission-cleared Reference Dossier as the route's detailed design prompt; its full-page captures and structured Reference DNA are authoritative evidence.
 - A tall desktop reference may be a full-page capture. Its image-height fractions are not CSS vh. Use the recorded source capture dimensions and adapt the composition so the complete desktop header and hero fit within 1536x864 while preserving the reference's hierarchy, crop, and overlap.
 - Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
 - Preserve assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
@@ -175,6 +184,7 @@ function routePromptPrefix(request) {
       referenceCalibration: request.route.referenceCalibration,
       signature: request.route.signature,
       referenceDna,
+      referenceDossier: referenceDossierPromptBlock(request.route.referenceDossier),
       evidence: (request.route.evidence || []).map((item) => ({
         name: item.name,
         source: item.source,
@@ -214,7 +224,7 @@ return `ROUTE
 ${route}
 
 SEALED CONTENT SHAPE
-${JSON.stringify(request.contentShape, null, 2)}
+${formatModelBoundContentShape(request.contentShape)}
 
 CLIENT VISUAL BRIEF
 ${JSON.stringify(request.visualBrief || {}, null, 2)}
@@ -354,6 +364,10 @@ async function requestStage(request) {
     for (const effort of requestedEfforts) {
       try {
         const systemPrompt = authorSystemPrompt(request);
+        assertModelPromptTextBudget([
+          ...userContent,
+          { type: "text", text: systemPrompt },
+        ]);
         const sessionId =
           creativeSession?.sessionId ||
           openRouterSessionId(
@@ -595,6 +609,7 @@ try {
     fs.readFile(configPath, "utf8").then(JSON.parse),
     fs.readFile(inspirationPath, "utf8").then(JSON.parse),
   ]);
+  assertReferenceDossierPack(inspirationPack);
   const result = await authorExperienceCandidates({
     site,
     inspirationPack,

@@ -9,6 +9,11 @@ import {
   referenceImplementationChecklist,
 } from "./creative-authoring-output.mjs";
 import { parseModelJson } from "./model-json.mjs";
+import {
+  assertModelPromptTextBudget,
+  formatModelBoundContentShape,
+} from "./author-prompt-budget.mjs";
+import { referenceDossierPromptBlock } from "./reference-dossier.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import {
   cacheableReferenceDna,
@@ -270,11 +275,12 @@ body:has([data-creative-host="true"]) .quick-answers {
  * Bounded author-owned repair loop. The evaluator is deliberately injected so
  * tests can prove the retry limit without contacting a model provider.
  *
- * @param {{files?: {experience?: string, styles?: string, motion?: string}, referenceDna?: any, findings?: any[], screenshots?: string[], generate?: (input: any) => Promise<any>, evaluate?: (files: any) => Promise<any>, maxCycles?: number}} options
+ * @param {{files?: {experience?: string, styles?: string, motion?: string}, referenceDna?: any, referenceDossier?: any, findings?: any[], screenshots?: string[], generate?: (input: any) => Promise<any>, evaluate?: (files: any) => Promise<any>, maxCycles?: number}} options
  */
 export async function runCreativeRepairLoop({
   files,
   referenceDna,
+  referenceDossier,
   findings = [],
   screenshots = [],
   generate,
@@ -309,6 +315,7 @@ export async function runCreativeRepairLoop({
         cycle,
         maxCycles,
         referenceDna,
+        referenceDossier,
         findings: cycleFindings,
         screenshots,
         files: current,
@@ -406,6 +413,7 @@ export async function resolveReferenceEvidencePath(record) {
  * @param {{
  *   model?: string,
  *   referenceDna?: Record<string, any>,
+ *   referenceDossier?: Record<string, any>,
  *   findings?: any[],
  *   files?: {experience?: string, styles?: string, motion?: string},
  *   screenshots?: string[],
@@ -418,6 +426,7 @@ export async function resolveReferenceEvidencePath(record) {
 export async function requestRepair({
   model,
   referenceDna,
+  referenceDossier,
   findings,
   files,
   screenshots,
@@ -476,11 +485,14 @@ export async function requestRepair({
       text: `ASSIGNED REFERENCE DNA
 ${JSON.stringify(stableReferenceDna, null, 2)}
 
+ASSIGNED REFERENCE DOSSIER
+${referenceDossierPromptBlock(referenceDossier) || "No dossier prompt was attached; use the measured Reference DNA and screenshots without inferring missing evidence."}
+
 SEALED CONTENT TOKENS
 ${contentTokens.join("\n") || "(not supplied)"}
 
 CURRENT SEALED CONTENT SHAPE
-${JSON.stringify(contentShape, null, 2)}
+${formatModelBoundContentShape(contentShape)}
 
 CLIENT VISUAL BRIEF
 ${JSON.stringify(visualBrief, null, 2)}
@@ -556,6 +568,7 @@ Return complete files. Keep required reference signatures and safety/content con
       : `Current candidate full-page overview (${dimensions}). Use it for section rhythm, not to infer browser-scale typography or hero height.` });
     content.push(await imagePart(screenshot));
   }
+  assertModelPromptTextBudget(content);
 
   const reasoningEffort =
     creativeSession?.reasoningEffort ||
@@ -695,6 +708,8 @@ async function main() {
     files,
     referenceDna:
       metadata.creativeManifest?.referenceDna || metadata.referenceDna,
+    referenceDossier:
+      metadata.creativeManifest?.referenceDossier || metadata.referenceDossier,
     findings,
     screenshots,
     maxCycles: Math.min(2, Math.max(0, Number(args.maxCycles || 2))),

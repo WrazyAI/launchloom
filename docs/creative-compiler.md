@@ -5,36 +5,29 @@ experiences. It separates verified business truth from visual composition so a
 new design can be ambitious without being allowed to invent facts, bypass the
 lead endpoint, or ship an unverified layout.
 
-## Reference Library v2
+## Permission-cleared reference dossiers
 
-Production inspiration now comes from `data/reference-library-v2.json`, a
-30-reference normalized design library. Every production reference has:
+Production references are stored as canonical dossiers in
+`data/reference-library/dossiers/`, indexed by
+`data/reference-library/core-collection.json`. Each dossier folder contains a
+full-page desktop capture, a full-page mobile capture, a local rights record,
+a business/source manifest, and a detailed `design-prompt.md`. The first core
+contains three structurally independent references for each of ten supported
+niches. A niche without three eligible dossiers fails closed; unrelated designs
+are never used as filler.
 
-- one unique LaunchLoom-owned desktop evidence board and one unique mobile
-  evidence board under `data/inspiration-evidence/reference-v2/`;
-- explicit target industries, moods, design tags, source category, evidence
-  tier, provenance, and a structured `designTemplate`;
-- canonical versioned Reference DNA with hero geometry, navigation geometry,
-  typography, palette, imagery, section rhythm, service treatment, CTA
-  placement, motion, mobile recomposition, prohibited fallbacks, required
-  signatures, acceptance checks, and measured ratios;
-- a calibration profile used alongside the library-level landing/service
-  distributions.
-
-External galleries may be used for research provenance, but their screenshots
-are not shipped as production evidence. The normalized boards are original
-LaunchLoom assets, which keeps rights and mobile coverage unambiguous.
-
-Canonical v2 DNA is authoritative. `analyze-reference-dna.mjs` verifies the
-local desktop/mobile evidence dimensions and marks the route evidence-backed,
-but it does not ask a model to rewrite canonical structure on every intake.
-Legacy records without canonical DNA keep the screenshot-analysis path for
-compatibility.
-
-The v2 loader fails closed unless the library contains at least 30 records,
-every record has unique desktop and mobile evidence, every record is owned
-production evidence with a structured template and provenance, and the library
-retains broad local-service coverage.
+`reference-dossier.mjs` verifies the screenshots, capture dimensions, prompt,
+rights evidence, registered paths, and content digest. Production packs bind
+exactly one authoritative dossier to each route. The Reference DNA analyzer
+receives its screenshots and design prompt, derives measured geometry from the
+pixels, and the author receives the same evidence and prompt at every stage.
+The analyzer adds measured ratios and a pixel-analysis note without replacing
+the dossier's curated section order, service treatment, conversion placement,
+signatures, or mobile strategy.
+Direct-site references carry requester-attested permission; the repository
+does not misrepresent those attestations as independently verified owner
+grants. Reference screenshots and source imagery are evidence only and never
+become client-site assets.
 
 ## Pipeline
 
@@ -42,11 +35,10 @@ retains broad local-service coverage.
    layer: business facts, SEO vocabulary, FAQs, service decisions, contact
    details, structured data, and approved assets.
 2. `compile-inspiration-pack.mjs` selects three independent route contracts with
-   one authoritative visual capsule per route. It prefers Reference Library v2
-   and falls back to the historical base + A1 registries only when the v2 file
-   is unavailable. `analyze-reference-dna.mjs` then verifies canonical v2
-   evidence or, for legacy records, inspects the actual desktop/mobile evidence
-   and enriches Reference DNA
+   one authoritative, business-matched dossier per route from the canonical
+   core. It does not select from discovery-only A1 records or fall back to an
+   unrelated historical registry. `analyze-reference-dna.mjs` inspects the
+   actual desktop/mobile evidence and enriches Reference DNA
    with measured headline occupancy, image occupancy, navigation and CTA
    coordinates, content-column width, section-height rhythm, aspect ratios,
    overlap relationships, surface transitions, and mobile geometry. Family
@@ -122,7 +114,7 @@ retains broad local-service coverage.
    round. Each repair response has a 48k completion ceiling and records its
    finish reason plus completion/reasoning token counts without logging source
    content. Each candidate gets at most two repair cycles. Production promotion
-   still requires `promotionReady`, including rendered v2 diversity, plus a
+   still requires `promotionReady`, including rendered candidate diversity, plus a
    passing final visual gate. The loop never falls back to a legacy renderer.
 
 ## Safe rollout

@@ -1,6 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
+  assertReferenceDossierPack,
+  referenceDossierPromptBlock,
+} from "./reference-dossier.mjs";
+import {
   logOpenRouterCacheUsage,
   logOpenRouterResponseCacheUsage,
   openRouterChatCompletion,
@@ -227,7 +231,7 @@ async function analyzeRoute(route, fetchImpl = fetch) {
   const content = [
     {
       type: "text",
-      text: `Analyze this design reference as implementation mechanics, not as brand identity. Produce measured Reference DNA for an independent implementation. Existing route hints are context only and may be corrected by the pixels.
+      text: `Analyze this design reference as implementation mechanics, not as brand identity. Measure Reference DNA from the screenshots for an independent implementation.
 
 ROUTE HINTS
 ${JSON.stringify({
@@ -242,12 +246,34 @@ ${JSON.stringify({
   motionOpportunity: route.motionOpportunity
 }, null, 2)}
 
+CURATED REFERENCE DOSSIER
+${referenceDossierPromptBlock(route.referenceDossier) || "No dossier was attached. Do not infer missing evidence from prose."}
+
+IMMUTABLE CURATED DESIGN CONTRACT
+${JSON.stringify({
+  heroGeometry: dna.heroGeometry,
+  navigationGeometry: dna.navigationGeometry,
+  typography: dna.typography,
+  palette: dna.palette,
+  imageTreatment: dna.imageTreatment,
+  sectionSequence: dna.sectionSequence,
+  servicePresentation: dna.servicePresentation,
+  ctaPlacement: dna.ctaPlacement,
+  motion: dna.motion,
+  mobileRecomposition: dna.mobileRecomposition,
+  prohibitedPatterns: dna.prohibitedPatterns,
+  requiredSignatureElements: dna.requiredSignatureElements,
+  acceptanceChecks: dna.acceptanceChecks,
+}, null, 2)}
+These curated qualitative mechanics were reviewed against the paired captures and dossier prompt. Repeat them exactly in your structured response. Do not replace or reorder the section sequence, service presentation, CTA position, motion concept, signatures, or mobile strategy. Use screenshots to measure visual ratios, crop and overlap behavior, section-height fractions, and desktop/mobile geometry only.
+
 SOURCE CAPTURE DIMENSIONS
 ${JSON.stringify(captureDimensions, null, 2)}
 The desktop image may be a full-page capture or page excerpt. Its total image height is not a browser viewport height. The production desktop viewport is 1536x864 and the complete header plus hero must fit inside it at 100% zoom. Preserve the reference's hierarchy, crop, overlap, and spacing when adapting it to that viewport.
 
 Rules:
-- infer geometry from the screenshots, not from familiar templates
+- infer measurements from the screenshots, not from familiar templates
+- preserve every field in IMMUTABLE CURATED DESIGN CONTRACT exactly
 - distinguish source-image width ratios, source-image height ratios, and actual browser viewport ratios explicitly
 - dominantSectionHeightRatios describe fractions of the captured page image, never CSS vh; do not call a full-page image a single viewport
 - describe heroGeometry.viewport as the adapted 1536x864 browser composition, not the source screenshot's full height
@@ -311,6 +337,7 @@ Rules:
 export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
   if (!Array.isArray(pack?.routes) || !pack.routes.length)
     throw new Error("Reference DNA analysis requires inspiration routes.");
+  assertReferenceDossierPack(pack);
   const requiresModelAnalysis = pack.routes.some(
     (route) =>
       route.referenceDna?.canonical !== true ||
@@ -321,35 +348,41 @@ export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
   const routes = [];
   for (const route of pack.routes) {
     const analyzed = await analyzeRoute(route, fetchImpl);
-    const { captureDimensions, ...analysis } = analyzed;
-    routes.push({
-      ...route,
-      referenceDna: {
-        ...route.referenceDna,
-        ...analysis,
-        evidence: {
-          ...route.referenceDna.evidence,
-          annotatedDescription: analysis.annotatedDescription,
-          captureDimensions,
-        },
-        analyzedFromEvidence: true,
-        analyzerModel:
-          analysis.canonicalVerification === true
-            ? "canonical-reference-v2"
-            : model,
-        analyzedAt: new Date().toISOString(),
-      },
-    });
+    routes.push(applyMeasuredReferenceAnalysis(route, analyzed));
   }
   return {
     ...pack,
     referenceDnaAnalyzed: true,
     referenceDnaAnalyzerModel: routes.every(
-      (route) => route.referenceDna?.analyzerModel === "canonical-reference-v2",
+      (route) => route.referenceDna?.analyzerModel === "canonical-dossier",
     )
-      ? "canonical-reference-v2"
+      ? "canonical-dossier"
       : model,
     routes,
+  };
+}
+
+/** Add screenshot-derived measurements without replacing the curated design contract. */
+export function applyMeasuredReferenceAnalysis(route, analysis) {
+  const { captureDimensions, canonicalVerification, annotatedDescription, measurements } = analysis;
+  if (!measurements || typeof measurements !== "object")
+    throw new Error(`Reference analysis for ${route?.id || "route"} is missing measurements.`);
+  return {
+    ...route,
+    referenceDna: {
+      ...route.referenceDna,
+      measurements,
+      evidence: {
+        ...route.referenceDna.evidence,
+        captureDimensions,
+        ...(annotatedDescription
+          ? { pixelAnalysisSummary: annotatedDescription }
+          : {}),
+      },
+      analyzedFromEvidence: true,
+      analyzerModel: canonicalVerification === true ? "canonical-dossier" : model,
+      analyzedAt: new Date().toISOString(),
+    },
   };
 }
 

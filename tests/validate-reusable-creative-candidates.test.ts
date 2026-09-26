@@ -1,9 +1,17 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { buildCreativeContentManifest } from "../scripts/production-experience-author.mjs";
+import { buildCandidateManifest } from "../scripts/creative-compiler.mjs";
+import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
+import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 import { validateAndCopyReusableCandidates } from "../scripts/validate-reusable-creative-candidates.mjs";
+import {
+  assertReusableCandidateDossierBinding,
+  assertReusableInspirationPack,
+} from "../scripts/validate-reusable-creative-candidates.mjs";
 
 const roots: string[] = [];
 
@@ -21,7 +29,104 @@ async function writeJson(file: string, value: unknown) {
 }
 
 describe("reusable creative candidate validation", () => {
-  it("rejects stale sealed content before copying any candidate files", async () => {
+  function architecturePack() {
+    const registry = JSON.parse(readFileSync("data/inspiration-registry.json", "utf8"));
+    const pack: any = buildInspirationPack(
+      {
+        seed: "reusable-pack-test",
+        industry: "architecture",
+        styleTerms: [],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      registry,
+      { repositoryRoot: path.resolve("."), requireDossiers: true },
+    );
+    pack.referenceLibrary = {
+      policy: "permission-cleared-only",
+      source: "data/reference-library/core-collection.json",
+      selectedDossierCount: pack.routes.length,
+      recordIds: pack.routes.map((route: any) => route.referenceDossier.id),
+    };
+    return pack;
+  }
+
+  it("revalidates reusable dossier digests and canonical business-kind membership", async () => {
+    const inspiration = architecturePack();
+    expect(
+      await assertReusableInspirationPack({
+        inspiration,
+        config: { businessKind: "architecture" },
+        repositoryRoot: path.resolve("."),
+      }),
+    ).toBe(inspiration);
+
+    const stale: any = structuredClone(inspiration);
+    stale.routes[0].referenceDossier.digest = "0".repeat(64);
+    await expect(
+      assertReusableInspirationPack({
+        inspiration: stale,
+        config: { businessKind: "architecture" },
+        repositoryRoot: path.resolve("."),
+      }),
+    ).rejects.toThrow(/stale or mismatched Reference Dossier/iu);
+
+    await expect(
+      assertReusableInspirationPack({
+        inspiration,
+        config: { businessKind: "dental" },
+        repositoryRoot: path.resolve("."),
+      }),
+    ).rejects.toThrow(/not in the canonical core niche for business kind 'dental'/iu);
+
+    const wrongNiche: any = structuredClone(inspiration);
+    const dental = loadReferenceDossier(
+      "data/reference-library/dossiers/html5up-dental-dimension",
+    );
+    wrongNiche.routes[0].referenceDossier = {
+      id: dental.id,
+      referenceName: dental.referenceName,
+      familyId: dental.familyId,
+      source: dental.source,
+      path: dental.path,
+      digest: dental.digest,
+      tags: dental.tags,
+      designPrompt: dental.designPrompt,
+    };
+    wrongNiche.routes[0].referenceDna = dental.referenceDna;
+    wrongNiche.referenceLibrary.recordIds[0] = dental.id;
+    await expect(
+      assertReusableInspirationPack({
+        inspiration: wrongNiche,
+        config: { businessKind: "architecture" },
+        repositoryRoot: path.resolve("."),
+      }),
+    ).rejects.toThrow(/not in the canonical core niche/iu);
+  });
+
+  it("binds each reused candidate manifest to its exact validated route dossier", () => {
+    const route = architecturePack().routes[0];
+    const creativeManifest = buildCandidateManifest({
+      candidate: { candidateId: "candidate-a" },
+      route,
+      model: "openai/gpt-6-luna",
+      contentManifestDigest: "a".repeat(64),
+    });
+    const metadata = { creativeManifest };
+    const contract = { creativeManifest };
+
+    expect(() =>
+      assertReusableCandidateDossierBinding(metadata, contract, route, "candidate-a"),
+    ).not.toThrow();
+
+    const tampered: any = structuredClone(metadata);
+    tampered.creativeManifest.referenceDossier.digest = "0".repeat(64);
+    expect(() =>
+      assertReusableCandidateDossierBinding(tampered, contract, route, "candidate-a"),
+    ).toThrow(/Reference Dossier does not match its route/iu);
+  });
+
+  it("rejects reusable artifacts without canonical dossier bindings before copying", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-reusable-candidates-"),
     );
@@ -106,34 +211,7 @@ describe("reusable creative candidate validation", () => {
         sessionPath,
         model: "openai/gpt-6-luna",
       }),
-    ).rejects.toThrow(/content tokens do not match/u);
-    await expect(fs.access(outputPath)).rejects.toThrow();
-
-    for (const [index, name] of [
-      "candidate-a",
-      "candidate-b",
-      "candidate-c",
-    ].entries()) {
-      const manifest = buildCreativeContentManifest(config, routes[index]);
-      const metadataPath = path.join(candidatesPath, name, "metadata.json");
-      const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
-      metadata.contentManifestDigest = manifest.digest;
-      await writeJson(metadataPath, metadata);
-      await writeJson(
-        path.join(candidatesPath, name, "content-manifest.json"),
-        manifest,
-      );
-    }
-    await expect(
-      validateAndCopyReusableCandidates({
-        configPath,
-        inspirationPath,
-        candidatesPath,
-        outputPath,
-        sessionPath,
-        model: "openai/gpt-6-luna",
-      }),
-    ).rejects.toThrow(/missing a required Reference DNA binding/u);
+    ).rejects.toThrow(/permission-cleared dossier-backed Reference DNA pack/iu);
     await expect(fs.access(outputPath)).rejects.toThrow();
   });
 });

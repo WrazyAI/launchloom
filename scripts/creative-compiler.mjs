@@ -375,6 +375,27 @@ export function buildCandidateManifest(input) {
           },
         }
       : {}),
+    ...(route.referenceDossier
+      ? {
+          referenceDossier: {
+            id: clean(route.referenceDossier.id, 100),
+            referenceName: clean(route.referenceDossier.referenceName, 180),
+            familyId: clean(route.referenceDossier.familyId, 100),
+            path: clean(route.referenceDossier.path, 400),
+            digest: clean(route.referenceDossier.digest, 128),
+            source: {
+              name: clean(route.referenceDossier.source?.name, 160),
+              url: clean(route.referenceDossier.source?.url, 500),
+              rights: clean(route.referenceDossier.source?.rights, 40),
+              rightsEvidence: clean(route.referenceDossier.source?.rightsEvidence, 600),
+              rightsEvidencePath: clean(route.referenceDossier.source?.rightsEvidencePath, 260),
+              assetEvidencePaths: list(route.referenceDossier.source?.assetEvidencePaths, 12),
+            },
+            tags: route.referenceDossier.tags || {},
+            designPrompt: String(route.referenceDossier.designPrompt || ""),
+          },
+        }
+      : {}),
     requiredSections: ["hero", "services", "faqs", "contact", "early-conversion"],
     motion: {
       opportunity: contract.motionOpportunity,
@@ -399,6 +420,19 @@ export function validateCandidateManifest(manifest) {
     throw new Error("Creative candidate may declare at most one pinned scene.");
   if (manifest.version >= 2 && (!manifest.referenceDna || manifest.referenceEvidence?.complete !== true))
     throw new Error("Creative candidate manifest must include complete Reference DNA evidence.");
+  if (manifest.referenceDossier && (
+    !clean(manifest.referenceDossier.id, 100) ||
+    !clean(manifest.referenceDossier.path, 400) ||
+    !/^[a-f0-9]{64}$/u.test(clean(manifest.referenceDossier.digest, 128)) ||
+    !clean(manifest.referenceDossier.source?.name, 160) ||
+    !clean(manifest.referenceDossier.source?.url, 500) ||
+    !["owned", "licensed", "permission-cleared"].includes(
+      clean(manifest.referenceDossier.source?.rights, 40),
+    ) ||
+    !clean(manifest.referenceDossier.source?.rightsEvidence, 600) ||
+    String(manifest.referenceDossier.designPrompt || "").trim().length < 900
+  ))
+    throw new Error("Creative candidate manifest contains an incomplete Reference Dossier binding.");
   return manifest;
 }
 

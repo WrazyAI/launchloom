@@ -92,4 +92,41 @@ describe("creative compiler", () => {
     expect(validateCandidateManifest(manifest)).toBe(manifest);
     expect(() => validateCandidateManifest({ ...manifest, requiredSections: ["hero"] })).toThrow(/early-conversion/iu);
   });
+
+  it("persists a validated dossier prompt for rendered creative repair", () => {
+    const referenceDossier = {
+      id: "licensed-service-reference",
+      referenceName: "Quote-first service desk",
+      familyId: "licensed-service-reference",
+      path: "data/reference-library/dossiers/licensed-service-reference",
+      digest: "a".repeat(64),
+      source: {
+        name: "Permission-cleared reference",
+        url: "https://example.com/reference",
+        rights: "permission-cleared",
+        rightsEvidence: "Requester attested to reference use.",
+        rightsEvidencePath: "rights/requester-attestation.md",
+        assetEvidencePaths: ["rights/requester-attestation.md"],
+      },
+      tags: { business: ["home-services"] },
+      designPrompt: `# Reference implementation brief\n\n${"A careful reference mechanic. ".repeat(40)}`,
+    };
+    const manifest = buildCandidateManifest({
+      candidate: { candidateId: "candidate-a" },
+      route: { ...routes[0], referenceDossier },
+      model: "test/model",
+      contentManifestDigest: "digest",
+    });
+
+    expect(manifest.referenceDossier).toEqual(referenceDossier);
+    expect(validateCandidateManifest(manifest)).toBe(manifest);
+    expect(() => validateCandidateManifest({
+      ...manifest,
+      referenceDossier: { ...referenceDossier, digest: "invalid" },
+    })).toThrow(/incomplete Reference Dossier binding/iu);
+    expect(() => validateCandidateManifest({
+      ...manifest,
+      referenceDossier: { ...referenceDossier, source: undefined },
+    })).toThrow(/incomplete Reference Dossier binding/iu);
+  });
 });

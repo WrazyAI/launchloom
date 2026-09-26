@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-tavola-restaurant",
+  "productionEligible": true,
+  "referenceName": "Tavola service-time menu board",
+  "familyId": "colorlib-tavola-menu-editorial",
+  "source": {
+    "name": "Colorlib Bootstrap Templates, Tavola",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/tavola",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned repository includes an MIT license for its source. The Tavola CREDITS.txt identifies every included photograph as CC0 1.0 or Public Domain Mark. Both records and Bootstrap's MIT notice are retained in this dossier.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": [
+      "rights/CREDITS.txt",
+      "rights/PROVENANCE.md"
+    ]
+  },
+  "provenance": {
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "repositoryCommit": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "tavola/",
+    "archiveSha256": "77934a85ed807f8be369ffb08170f5424d678734d9872feed71861db15cc209c",
+    "retrievedAt": "2026-09-25",
+    "capture": {
+      "method": "Rendered from the pinned local repository with Playwright 1.63.0 and Chromium. No gallery screenshot or screenshot download was used.",
+      "desktopViewport": {
+        "width": 1536,
+        "height": 864,
+        "deviceScaleFactor": 1,
+        "fullPage": true
+      },
+      "mobileViewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 1,
+        "fullPage": true
+      },
+      "captureNotes": "Lazy CC0 photographs were scrolled into view and decoded before capture. A closed off-canvas navigation dialog was hidden only in the capture page to prevent the Bootstrap 6 alpha dialog from inflating horizontal scroll width. No visible page content was modified. The measured document had no horizontal overflow at either viewport."
+    },
+    "attribution": "Colorlib Bootstrap Templates, MIT source license. Include the MIT copyright and permission notice with copies or substantial portions. The photography is CC0 or public domain as itemized in rights/CREDITS.txt."
+  },
+  "businessKinds": [
+    "restaurant",
+    "cafe",
+    "bistro",
+    "local-food"
+  ],
+  "tags": {
+    "business": ["restaurant", "cafe", "bistro", "food-retail"],
+    "style": ["warm-paper", "editorial-serif", "forest-ink", "terracotta-accent", "quiet-craft"],
+    "composition": ["menu-board-first", "photo-field-hero", "service-tabs", "split-kitchen-story", "asymmetric-room-mosaic"],
+    "conversion": ["reservation-first", "menu-discovery", "hours-and-directions", "dietary-reassurance"],
+    "motion": ["service-menu-tabs", "date-and-time-picker", "native-theme-switch", "no-scroll-jacking"],
+    "imagery": ["cc0-food-photography", "cc0-interior-photography", "warm-full-bleed-hero", "asymmetric-photo-mosaic"]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": { "width": 1536, "height": 864 }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": { "width": 390, "height": 844 }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A hospitality storefront treats the menu as its main content instead of a secondary card grid. A narrow operating-status strip and compact wordmark navigation lead into a full-width food/interior image with left-aligned editorial copy. The menu occupies a large ruled panel with tabs for service periods, course grouping, dotted price leaders, and short notes. A split kitchen story, asymmetrical room mosaic, booking form, and dense visit information close the decision journey. Source demo copy, business details, reviews, dates, and menu facts are fictional and must not be reused.",
+    "heroGeometry": {
+      "mode": "full-width atmospheric photograph with a left-aligned editorial promise",
+      "alignment": "constrained text column anchored to the left over a broad image field",
+      "viewport": "complete navigation, short promise, and booking/menu actions remain visible in the opening desktop viewport"
+    },
+    "navigationGeometry": {
+      "mode": "thin operating-status strip above compact wordmark navigation",
+      "placement": "status is edge-to-edge; nav is centered in a restrained container",
+      "mobile": "brand, a small set of utility controls, and a closed menu drawer"
+    },
+    "typography": {
+      "display": "system editorial serif for the main promise, section headings, and dish names",
+      "body": "neutral system sans-serif for descriptions, metadata, and form labels",
+      "scale": "large but restrained hero type, small uppercase rules, compact menu labels, clear price alignment"
+    },
+    "palette": {
+      "surfaces": ["warm ivory", "pale sage-gray", "deep green-black"],
+      "ink": "soft near-black with muted gray-green secondary text",
+      "accents": ["restrained terracotta"],
+      "contrastIntent": "light paper-like content surfaces over a dark status strip, with one warm action accent"
+    },
+    "imageTreatment": {
+      "mode": "wide hero photography, one split editorial kitchen image, then a room and dish mosaic",
+      "crop": "cover crop for the hero; irregular square and landscape crops in the mosaic",
+      "focalPoint": "keep the dining/food subject legible behind a soft text-safe gradient; use mosaic images as atmosphere, not as evidence of the client's venue"
+    },
+    "sectionSequence": [
+      "hero-and-status",
+      "service-period-menu",
+      "kitchen-story",
+      "room-and-food-mosaic",
+      "reservation",
+      "visit-details-and-faq",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "service-period tabs followed by course headings and menu rows",
+      "interaction": "tabs switch the selected menu; each item uses name, aligned price, and one concise descriptive note",
+      "adaptation": "for a cafe or bakery, group verified offerings by real service or product category rather than copying the sample courses"
+    },
+    "ctaPlacement": {
+      "primary": "reservation or order inquiry appears in the hero and at the dedicated booking point",
+      "secondary": "menu browsing is the adjacent lower-commitment action",
+      "early": "the first viewport should offer the primary action without hiding the menu path"
+    },
+    "motion": {
+      "primitive": "native menu tabs and date/time controls with quiet state changes",
+      "library": "CSS and native browser controls",
+      "reducedMotion": "all content remains visible and controls work without transition effects"
+    },
+    "mobileRecomposition": {
+      "strategy": "single-column menu-led page with readable price rows",
+      "rules": [
+        "stack hero copy before the secondary menu action while preserving the image focal area",
+        "allow service tabs to wrap or scroll without hiding category labels",
+        "keep prices aligned and descriptions readable as menu rows stack",
+        "turn the mosaic into an intentional vertical sequence",
+        "stack booking fields and visit details without horizontal scrolling"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying Tavola, its sample name, menu, address, hours, menu prices, reviews, or chef identity",
+      "inventing restaurant history, awards, farm sourcing, wait times, delivery, or reservation availability",
+      "turning every menu item into a rounded card wall",
+      "using CC0 food imagery as if it depicts the client's real dishes or premises",
+      "placing a PDF or photo of a menu where an accessible HTML menu is required"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "service-menu-board",
+        "selector": "[data-reference-signature=service-menu-board]",
+        "description": "a prominent, accessible service or menu board with category and item hierarchy"
+      },
+      {
+        "id": "status-strip",
+        "selector": "[data-reference-signature=status-strip]",
+        "description": "a concise factual operating or next-step strip, using verified hours only"
+      },
+      {
+        "id": "room-mosaic",
+        "selector": "[data-reference-signature=room-mosaic]",
+        "description": "an asymmetric set of client-owned or licensed venue/food imagery"
+      },
+      {
+        "id": "reservation-close",
+        "selector": "[data-reference-signature=reservation-close]",
+        "description": "a practical booking or inquiry close with verified visit details"
+      }
+    ],
+    "acceptanceChecks": [
+      "the first desktop viewport contains the full nav, a concise promise, and a useful action",
+      "category tabs expose accessible state and menu items remain readable without animation",
+      "all prices, hours, dietary claims, address, and reviews bind only to verified content tokens",
+      "desktop and mobile preserve the menu-board hierarchy without horizontal overflow",
+      "every visible image is client-provided or a subject-matched asset with recorded rights"
+    ]
+  },
+  "review": {
+    "status": "curated-open-license-pilot",
+    "curator": "Codex-assisted",
+    "reviewedAt": "2026-09-25",
+    "scope": "Pinned repository render, per-template CC0 image audit, paired viewport captures, and transferable menu-led composition only. Sample business claims are not approved content."
+  }
+}

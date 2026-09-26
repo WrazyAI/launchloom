@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-fixwell-quote-desk",
+  "productionEligible": true,
+  "referenceName": "Fixwell quote-first service desk",
+  "familyId": "colorlib-fixwell-quote-desk",
+  "source": {
+    "name": "Colorlib Bootstrap Templates Fixwell",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/fixwell",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned repository template is under MIT. Its retained per-template credits identify the sole bundled photograph as CC0/Public Domain; remaining graphic treatments are CSS. Both notices are included in this dossier.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/CREDITS.txt"]
+  },
+  "provenance": {
+    "repositoryCommit": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "archiveSha256": "a08ab6e57a0db6c2dfd91a2c1afe310871d4cac27cd673f9f71b8cf0c0d9d13e",
+    "capture": "Pinned template rendered locally at 1440px and 390px content widths. Lazy images were loaded before capture; a closed off-canvas drawer was hidden only for the mobile capture because it otherwise expanded the page canvas. Visible content and source markup were unchanged.",
+    "retrievedAt": "2026-09-25",
+    "attribution": "Colorlib Bootstrap Templates, MIT. Per-template image provenance is retained; source footer remains visible in both screenshots."
+  },
+  "businessKinds": ["home-services", "handyman", "home-repair", "local-trades", "plumbing", "electrical"],
+  "tags": {
+    "business": ["home-services", "handyman", "home-repair", "local-trades", "plumbing", "electrical"],
+    "style": ["quote-first-utility", "bright-service-desk", "blue-signal", "practical-grotesk", "direct-problem-led"],
+    "composition": ["hero-integrated-quote-form", "service-need-index", "coverage-checker", "process-timeline", "question-contact-split"],
+    "conversion": ["quote-request", "phone-route", "coverage-qualification", "problem-description"],
+    "motion": ["postcode-lookup", "scope-slider", "native-faq-disclosure", "progressive-form"],
+    "imagery": ["cc0-work-context-photo", "soft-tooling-image", "css-line-icons"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A practical home-service page with a narrow utility call strip, compact navigation, and a wide hero where a short problem-led promise shares the opening with a quote form. A service index groups jobs by need, followed by a coverage checker, a short numbered process, recent work and review examples, a question/contact split, and footer. Sample prices, availability, guarantees, reviews, locations, and credentials are fictional template content.",
+    "heroGeometry": { "mode": "quote-first home-service opening", "alignment": "short left problem statement over a bright work-context image with a bounded quote form on the right", "viewport": "headline, one useful sentence, core form fields and request action fit within the first desktop screen" },
+    "navigationGeometry": { "mode": "call-forward trade utility navigation", "placement": "thin optional utility strip above a compact white header", "mobile": "brand and one call/request action stay near the top; remaining anchors are compact" },
+    "typography": { "display": "bold practical grotesk", "body": "neutral readable sans", "scale": "short heavy problem statement, compact labels, body copy in small decision-ready blocks" },
+    "palette": { "surfaces": ["white", "light gray", "soft work-context image"], "ink": "near-black", "accents": ["clear blue", "pale blue-gray"], "contrastIntent": "high legibility with one blue action color and clear input borders" },
+    "imageTreatment": { "mode": "bright job-context hero with restrained overlay", "crop": "wide cover hero and smaller work-proof rectangles", "focalPoint": "work setting supports but does not compete with the headline and quote form" },
+    "sectionSequence": ["utility", "navigation", "hero", "services", "coverage", "process", "work-proof", "faq", "contact"],
+    "servicePresentation": { "pattern": "problem-oriented service index with short scope explanations", "interaction": "coverage lookup or verified area list and concise service selection" },
+    "ctaPlacement": { "primary": "quote submission integrated into hero", "secondary": "phone route in utility/header", "early": "inside hero, adjacent to the opening promise" },
+    "motion": { "primitive": "lookup and form state only when connected to a real endpoint", "library": "native form controls and browser events", "reducedMotion": "show static coverage guidance, all service options and native FAQ disclosure" },
+    "mobileRecomposition": { "strategy": "promise-first single column with inline quote path", "rules": ["headline precedes the form", "keep labels attached to full-width fields", "stack services and process in reading order", "replace map/grid with verified list if needed", "do not fix overflow by clipping content"] },
+    "prohibitedPatterns": ["copied call-bar or quote text", "invented same-day availability or response times", "unverified call-out fees, minimums or hourly prices", "fake reviews or credentials", "coverage presented as a physical office", "stock work photo presented as completed client work", "fake postcode lookup or success message", "multiple repeated quote forms"],
+    "requiredSignatureElements": [
+      { "id": "hero-quote-desk", "selector": "[data-reference-signature=hero-quote-desk]", "description": "bounded quote form integrated into the opening scene" },
+      { "id": "service-need-index", "selector": "[data-reference-signature=service-need-index]", "description": "service choices organized around visitor needs" },
+      { "id": "coverage-checker", "selector": "[data-reference-signature=coverage-checker]", "description": "real coverage lookup or verified service-area list" },
+      { "id": "work-process", "selector": "[data-reference-signature=work-process]", "description": "short practical sequence explaining what happens next" }
+    ],
+    "acceptanceChecks": ["the opening identifies the actual trade and useful next step", "quote form submits to a real endpoint and reports failure honestly", "prices and availability appear only from verified client facts", "coverage is accurate and does not imply an unverified office", "reviews/work evidence are authentic and approved", "mobile form and service list fit at 390px with no horizontal overflow"]
+  },
+  "review": { "status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "pinned MIT template, CC0 photo evidence, full-page desktop/mobile captures, and transferable local-service mechanics" }
+}

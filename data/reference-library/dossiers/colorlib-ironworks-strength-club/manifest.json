@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-ironworks-strength-club",
+  "productionEligible": true,
+  "referenceName": "Ironworks strength-club command rail",
+  "familyId": "colorlib-ironworks-strength-club",
+  "source": {
+    "name": "Colorlib Bootstrap Templates Ironworks",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/ironworks",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned repository template is under MIT. Its retained per-template credits identify the bundled hero photograph as CC0/Public Domain. The license and image credit are included here.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/CREDITS.txt"]
+  },
+  "provenance": {
+    "repositoryCommit": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "archiveSha256": "a08ab6e57a0db6c2dfd91a2c1afe310871d4cac27cd673f9f71b8cf0c0d9d13e",
+    "capture": "Pinned local template rendered at 1440px and 390px content widths. Lazy imagery was loaded before capture; the closed navigation drawer was hidden only during the mobile capture to prevent its off-canvas panel from expanding the page width. Visible site content and source markup were unchanged.",
+    "retrievedAt": "2026-09-25",
+    "attribution": "Colorlib Bootstrap Templates, MIT. Per-template CC0/Public Domain hero photo credit retained; source footer remains visible."
+  },
+  "businessKinds": ["fitness", "gym", "strength-training", "personal-training", "sports-performance"],
+  "tags": {
+    "business": ["fitness", "gym", "strength-training", "personal-training", "sports-performance"],
+    "style": ["strength-poster", "dark-utility", "signal-orange", "industrial-gym", "high-contrast-grotesk"],
+    "composition": ["vertical-command-rail", "full-width-strength-hero", "class-index", "weekly-timetable", "membership-comparison", "first-visit-form"],
+    "conversion": ["book-first-session", "trial-request", "membership-selection", "timetable-navigation"],
+    "motion": ["active-section-rail", "schedule-filter", "theme-control", "native-form-state"],
+    "imagery": ["cc0-gym-photo", "monochrome-weightroom-hero", "coach-portrait-cells"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A strength gym is organized as a dark image-led training page with a persistent pale vertical rail and a bold condensed hero promise. Training classes, a weekly timetable, coaches, membership comparison and first-trial form follow in clearly separated operational chapters. Orange labels and actions punctuate the pale rail and dark/gray section surfaces. Timetable, membership prices, trial terms, coach identities, opening hours and gym claims are fictional sample data.",
+    "heroGeometry": { "mode": "large athletic typography over a close equipment photograph", "alignment": "main content begins to the right of a narrow fixed navigation rail", "viewport": "promise and first-session action are clear before schedule information begins" },
+    "navigationGeometry": { "mode": "persistent vertical command rail", "placement": "left edge with sections, theme control, one action and utility facts", "mobile": "compact top navigation or sheet; do not retain fixed side rail" },
+    "typography": { "display": "bold condensed athletic grotesk", "body": "compact neutral sans", "scale": "large uppercase promise, operational labels and dense schedule data with clear hierarchy" },
+    "palette": { "surfaces": ["charcoal", "white", "cool gray"], "ink": "near-black or warm white per surface", "accents": ["signal orange", "soft gray"], "contrastIntent": "strong athletic contrast with orange reserved for active state and action" },
+    "imageTreatment": { "mode": "monochrome equipment-led hero with restrained portraits", "crop": "wide image under overlaid headline; staff images sit in compact coach index", "focalPoint": "training equipment supports the promise without obscuring text" },
+    "sectionSequence": ["command-rail", "hero", "classes", "timetable", "coaches", "membership", "first-visit", "faq", "contact"],
+    "servicePresentation": { "pattern": "class index plus schedule table and membership comparison", "interaction": "class/time filters only if connected to the true schedule" },
+    "ctaPlacement": { "primary": "trial or first-session action in the desktop rail and hero", "secondary": "membership comparison", "early": "one clear class/visit action alongside the opening promise" },
+    "motion": { "primitive": "active section state in the vertical rail and optional schedule filter", "library": "native scroll state and form controls", "reducedMotion": "static nav state, complete schedule and visible form" },
+    "mobileRecomposition": { "strategy": "top utility nav with vertically stacked operations", "rules": ["move action to the opening hero flow", "show classes before schedule", "convert schedule into grouped day rows", "stack coach and plan content", "keep price terms attached to each plan", "no horizontal overflow"] },
+    "prohibitedPatterns": ["copied gym name, headline, data, coach photos or source gym photo", "fake availability, capacity, member counts, trial, schedules or prices", "unverified health outcomes or transformation results", "stock person implied to be coach/member", "unconnected live booking state", "side rail covering mobile content", "unreadable timetable cells"] ,
+    "requiredSignatureElements": [
+      { "id": "strength-command-rail", "selector": "[data-reference-signature=strength-command-rail]", "description": "desktop vertical navigation rail with a compact mobile replacement" },
+      { "id": "training-poster", "selector": "[data-reference-signature=training-poster]", "description": "equipment-led athletic hero with direct visit action" },
+      { "id": "operational-timetable", "selector": "[data-reference-signature=operational-timetable]", "description": "true weekly schedule, or a clear booking-instructions alternative" },
+      { "id": "membership-comparison", "selector": "[data-reference-signature=membership-comparison]", "description": "plans compared with confirmed inclusions and terms" }
+    ],
+    "acceptanceChecks": ["training offer and real location are immediately understandable", "class schedule matches the business's real timetable", "coaches and credentials are verified", "membership pricing and terms are client-approved", "first-visit form does not collect unnecessary health data", "mobile schedule and navigation are usable without sideways scrolling"]
+  },
+  "review": { "status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "pinned MIT source, CC0 hero image evidence, paired captures and transferable fitness mechanics" }
+}

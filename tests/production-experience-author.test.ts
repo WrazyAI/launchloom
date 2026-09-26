@@ -845,6 +845,56 @@ describe("production experience author", () => {
     }
   });
 
+  it("preserves the selected dossier and its design prompt through every authoring stage", async () => {
+    const dossierForRoute = (index: number) => ({
+      id: `permission-cleared-editorial-reference-${index}`,
+      referenceName: `Editorial service index ${index}`,
+      familyId: `editorial-service-index-${index}`,
+      path: `data/reference-library/dossiers/editorial-service-index-${index}`,
+      digest: String(index).repeat(64),
+      source: {
+        name: "Permission-cleared reference",
+        url: `https://example.test/reference-${index}`,
+        rights: "permission-cleared",
+        rightsEvidence: "Requester-attested permission covers screenshot retention and model reference use.",
+        rightsEvidencePath: "rights/clearance.md",
+        assetEvidencePaths: ["rights/clearance.md"],
+      },
+      tags: { business: ["jewelry"], style: [`editorial-${index}`] },
+      designPrompt: `# Reference implementation brief\n\nReference ${index}: ${"Preserve this route's own composition, image role, and service presentation mechanics without copying its identity. ".repeat(16)}`,
+    });
+    const dossiers = new Map(
+      inspirationPack.routes.map((route, index) => [route.id, dossierForRoute(index)]),
+    );
+    const requests: AuthorStageRequest[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack: {
+        ...inspirationPack,
+        routes: inspirationPack.routes.map((route) => ({
+          ...route,
+          referenceDossier: dossiers.get(route.id),
+        })),
+      },
+      generate: async (request) => {
+        requests.push(request);
+        return safeStage(request);
+      },
+      model: "test/model",
+    });
+
+    expect(requests).toHaveLength(12);
+    for (const request of requests)
+      expect(request.route.referenceDossier).toEqual(dossiers.get(request.route.id));
+    for (const candidate of result.candidates) {
+      const metadata = JSON.parse(candidate.files["metadata.json"]);
+      const contract = JSON.parse(candidate.files["contract.json"]);
+      const expectedDossier = dossiers.get(metadata.routeId);
+      expect(metadata.creativeManifest.referenceDossier).toEqual(expectedDossier);
+      expect(contract.creativeManifest.referenceDossier).toEqual(expectedDossier);
+    }
+  });
+
   it("keeps contract-repair context bounded when a model omits required fields", async () => {
     const repairRequests: AuthorStageRequest[] = [];
     const result = await authorExperienceCandidates({
