@@ -1,7 +1,7 @@
 import {
-  renderIntakeReceivedEmail,
   renderLeadEmail,
 } from "../../emails/render-email.mjs";
+import { sendEmail } from "./transactional-email";
 import {
   RevisionCoordinator,
   type CreativeRepairFinding,
@@ -502,56 +502,6 @@ function safeAssets(env: Env, raw: unknown) {
   );
 }
 
-async function sendEmail(
-  env: Env,
-  input: {
-    to: string;
-    replyTo?: string;
-    subject: string;
-    html: string;
-    text: string;
-    tag: string;
-    idempotencyKey?: string;
-    required?: boolean;
-  },
-) {
-  if (!env.RESEND_API_KEY || !env.LAUNCHLOOM_FROM_EMAIL) {
-    if (input.required) throw new Error("Transactional email is not configured.");
-    return;
-  }
-  const request: RequestInit = {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-      ...(input.idempotencyKey ? { "Idempotency-Key": input.idempotencyKey } : {}),
-    },
-    body: JSON.stringify({
-      from: env.LAUNCHLOOM_FROM_EMAIL,
-      to: [input.to],
-      reply_to: input.replyTo,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-      tags: [{ name: "launchloom_kind", value: input.tag }],
-    }),
-  };
-  let response: Response | undefined;
-  let lastError: unknown;
-  const maxAttempts = input.idempotencyKey ? 3 : 1;
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    try {
-      response = await fetch("https://api.resend.com/emails", request);
-      if (response.ok || ![429, 500, 502, 503, 504].includes(response.status)) break;
-    } catch (error) {
-      lastError = error;
-    }
-    if (attempt < maxAttempts) await new Promise((resolve) => setTimeout(resolve, attempt * 250));
-  }
-  if (!response) throw new Error(`Email delivery failed: ${lastError instanceof Error ? lastError.message : "network error"}`);
-  if (!response.ok) throw new Error(`Email delivery failed: ${response.status}`);
-}
-
 async function currentReviewPr(env: Env, claims: ReviewClaims) {
   if (!claims.pr || !claims.headSha)
     throw new Error("Invalid developer review link.");
@@ -703,15 +653,17 @@ async function intake(request: Request, env: Env) {
         );
         if (!recorded) throw new Error("Intake acceptance could not be recorded.");
       }
-      await dispatch(env, "intake-submitted", { issue: issueNumber });
-      const receipt = renderIntakeReceivedEmail({ businessName: normalized.businessName });
-      await sendEmail(env, {
-        to: normalized.email,
-        ...receipt,
-        tag: "client-intake-received",
-        idempotencyKey: `client-intake-received-${normalized.submissionId}`,
-        required: true,
-      });
+      await coordinator.queueWorkflowDispatch(
+        invite.claims.inviteId,
+        normalized.submissionId,
+        issueNumber,
+      );
+      await coordinator.queueIntakeReceipt(
+        invite.claims.inviteId,
+        normalized.submissionId,
+        normalized.email,
+        normalized.businessName,
+      );
       return json({ ok: true, duplicate: reservation.duplicate, issue: issueNumber }, 200, headers);
     } catch (error) {
       if (!issueNumber)

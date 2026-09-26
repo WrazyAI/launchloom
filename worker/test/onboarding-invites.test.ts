@@ -1,4 +1,4 @@
-import { env, runInDurableObject, SELF } from "cloudflare:test";
+import { env, runDurableObjectAlarm, runInDurableObject, SELF } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import worker, { type Env } from "../src/index";
@@ -64,6 +64,209 @@ async function validateInvite(token: string, origin = onboardingOrigin) {
 }
 
 describe("private onboarding invitations", () => {
+  it("keeps accepted intake successful and retries receipt delivery without redispatching generation", async () => {
+    const inviteId = "invite-receipt-outbox-001";
+    const submissionId = "submission-receipt-outbox-001";
+    const token = await registeredInvite(inviteId, "sam@example.test");
+    let dispatches = 0;
+    let receiptAttempts = 0;
+    const receiptKeys: Array<string | null> = [];
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () =>
+        HttpResponse.json([]),
+      ),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () =>
+        HttpResponse.json({ number: 981 }, { status: 201 }),
+      ),
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        () => {
+          dispatches += 1;
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+      http.post("https://api.resend.com/emails", ({ request }) => {
+        receiptAttempts += 1;
+        receiptKeys.push(request.headers.get("Idempotency-Key"));
+        return receiptAttempts <= 3
+          ? HttpResponse.json(
+              { error: "temporary provider failure" },
+              { status: 500 },
+            )
+          : HttpResponse.json(
+              { id: "email-receipt-recovered" },
+              { status: 200 },
+            );
+      }),
+    );
+    const intake = {
+      intakeVersion: "2",
+      inviteToken: token,
+      submissionId,
+      businessName: "Harbor Plumbing",
+      contactName: "Sam Owner",
+      email: "sam@example.test",
+      phone: "555-0100",
+      address: "1 Main Street, Tacoma, WA",
+      industry: "home-services",
+      services: ["Drain cleaning"],
+      primaryCity: "Tacoma, WA",
+      serviceAreas: "Tacoma, WA",
+      serviceRadius: "20",
+      differentiators: "Clear communication",
+      primaryCta: "Request a quote",
+      confirmAccuracy: "yes",
+      leadEmail: "leads@example.test",
+    };
+    const submit = () =>
+      SELF.fetch("https://api.launchloom.test/api/intake", {
+        method: "POST",
+        headers: {
+          Origin: onboardingOrigin,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(intake),
+      });
+
+    const accepted = await submit();
+    expect(accepted.status).toBe(200);
+    await expect(accepted.json()).resolves.toMatchObject({
+      ok: true,
+      issue: 981,
+    });
+    await runInDurableObject(
+      inviteNamespace.getByName("launchloom-onboarding-invites"),
+      (_instance, state) => {
+        state.storage.sql.exec(
+          "UPDATE intake_outbox SET next_attempt_at = ? WHERE submission_id = ? AND task_type = 'receipt' AND status = 'pending'",
+          Date.now(),
+          submissionId,
+        );
+      },
+    );
+    await expect(
+      runDurableObjectAlarm(
+        inviteNamespace.getByName("launchloom-onboarding-invites"),
+      ),
+    ).resolves.toBe(true);
+    const duplicateResponses = await Promise.all([submit(), submit()]);
+    expect(duplicateResponses.map((response) => response.status)).toEqual([
+      200, 200,
+    ]);
+    expect(dispatches).toBe(1);
+    expect(receiptAttempts).toBe(4);
+    expect(receiptKeys).toEqual(
+      Array(4).fill(`client-intake-received-${submissionId}`),
+    );
+    await runInDurableObject(
+      inviteNamespace.getByName("launchloom-onboarding-invites"),
+      async (_instance, state) => {
+        const row = state.storage.sql
+          .exec<{ status: string; attempts: number }>(
+            "SELECT status, attempts FROM intake_outbox WHERE submission_id = ? AND task_type = 'receipt'",
+            submissionId,
+          )
+          .toArray()[0];
+        expect(row).toEqual({ status: "delivered", attempts: 2 });
+      },
+    );
+  });
+
+  it("retries a failed generation dispatch from the persisted outbox", async () => {
+    const inviteId = "invite-dispatch-outbox-001";
+    const submissionId = "submission-dispatch-outbox-001";
+    const token = await registeredInvite(inviteId, "sam@example.test");
+    let dispatchAttempts = 0;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () =>
+        HttpResponse.json([]),
+      ),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () =>
+        HttpResponse.json({ number: 982 }, { status: 201 }),
+      ),
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        () => {
+          dispatchAttempts += 1;
+          return dispatchAttempts === 1
+            ? HttpResponse.json(
+                { error: "temporary GitHub failure" },
+                { status: 503 },
+              )
+            : new HttpResponse(null, { status: 204 });
+        },
+      ),
+      http.post("https://api.resend.com/emails", () =>
+        HttpResponse.json(
+          { id: "email-receipt-dispatch-outbox" },
+          { status: 200 },
+        ),
+      ),
+    );
+    const intake = {
+      intakeVersion: "2",
+      inviteToken: token,
+      submissionId,
+      businessName: "Harbor Plumbing",
+      contactName: "Sam Owner",
+      email: "sam@example.test",
+      phone: "555-0100",
+      address: "1 Main Street, Tacoma, WA",
+      industry: "home-services",
+      services: ["Drain cleaning"],
+      primaryCity: "Tacoma, WA",
+      serviceAreas: "Tacoma, WA",
+      serviceRadius: "20",
+      differentiators: "Clear communication",
+      primaryCta: "Request a quote",
+      confirmAccuracy: "yes",
+      leadEmail: "leads@example.test",
+    };
+    const submit = () =>
+      SELF.fetch("https://api.launchloom.test/api/intake", {
+        method: "POST",
+        headers: {
+          Origin: onboardingOrigin,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(intake),
+      });
+
+    const accepted = await submit();
+    expect(accepted.status).toBe(200);
+    expect(dispatchAttempts).toBe(1);
+    await runInDurableObject(
+      inviteNamespace.getByName("launchloom-onboarding-invites"),
+      (_instance, state) => {
+        state.storage.sql.exec(
+          "UPDATE intake_outbox SET next_attempt_at = ? WHERE submission_id = ? AND task_type = 'workflow' AND status = 'pending'",
+          Date.now(),
+          submissionId,
+        );
+      },
+    );
+    await expect(
+      runDurableObjectAlarm(
+        inviteNamespace.getByName("launchloom-onboarding-invites"),
+      ),
+    ).resolves.toBe(true);
+    expect(dispatchAttempts).toBe(2);
+    expect((await submit()).status).toBe(200);
+    expect(dispatchAttempts).toBe(2);
+    await runInDurableObject(
+      inviteNamespace.getByName("launchloom-onboarding-invites"),
+      async (_instance, state) => {
+        const row = state.storage.sql
+          .exec<{ status: string; attempts: number }>(
+            "SELECT status, attempts FROM intake_outbox WHERE submission_id = ? AND task_type = 'workflow'",
+            submissionId,
+          )
+          .toArray()[0];
+        expect(row).toEqual({ status: "delivered", attempts: 2 });
+      },
+    );
+  });
+
   it("returns a client validation status when the required Turnstile token is missing", async () => {
     const response = await worker.fetch(
       new Request("https://api.launchloom.test/api/intake", {
@@ -183,11 +386,11 @@ describe("private onboarding invitations", () => {
     expect((await submit()).status).toBe(200);
     expect((await submit()).status).toBe(200);
     expect(createdIssues).toBe(1);
-    expect(dispatched).toBe(2);
+    expect(dispatched).toBe(1);
     expect(issueComments[0]).not.toContain(token);
     await expect((await submit()).json()).resolves.toMatchObject({ ok: true, duplicate: true, issue: 987 });
-    expect(receiptRequests).toHaveLength(4);
-    expect(receiptAttempts).toBe(4);
+    expect(receiptRequests).toHaveLength(2);
+    expect(receiptAttempts).toBe(2);
     expect(deliveredReceiptKeys).toEqual(new Set([`client-intake-received-${submissionId}`]));
     expect(new Set(receiptRequests.map(({ key }) => key))).toEqual(
       new Set([`client-intake-received-${submissionId}`]),

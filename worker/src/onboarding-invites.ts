@@ -1,4 +1,10 @@
 import { DurableObject } from "cloudflare:workers";
+import { renderIntakeReceivedEmail } from "../../emails/render-email.mjs";
+import { sendEmail, type TransactionalEmailEnvironment } from "./transactional-email";
+
+const OUTBOX_DELIVERY_LEASE_MS = 2 * 60_000;
+const OUTBOX_RETRY_BASE_MS = 30_000;
+const OUTBOX_RETRY_MAX_MS = 30 * 60_000;
 
 export type InviteRegistration = {
   inviteId: string;
@@ -34,8 +40,27 @@ type InviteRow = {
   updated_at: number;
 };
 
-export class OnboardingInvites extends DurableObject {
-  constructor(ctx: DurableObjectState, env: Cloudflare.Env) {
+type OutboxTaskType = "workflow" | "receipt";
+type OutboxStatus = "pending" | "delivering" | "delivered";
+type OutboxRow = {
+  invite_id: string;
+  submission_id: string;
+  task_type: OutboxTaskType;
+  issue_number: number | null;
+  recipient: string | null;
+  business_name: string | null;
+  status: OutboxStatus;
+  attempts: number;
+  next_attempt_at: number;
+  updated_at: number;
+};
+
+type OnboardingInvitesEnvironment = TransactionalEmailEnvironment & {
+  GITHUB_ORG_TOKEN: string;
+};
+
+export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironment> {
+  constructor(ctx: DurableObjectState, env: OnboardingInvitesEnvironment) {
     super(ctx, env);
     ctx.blockConcurrencyWhile(async () => {
       ctx.storage.sql.exec(`
@@ -58,6 +83,22 @@ export class OnboardingInvites extends DurableObject {
         );
         CREATE INDEX IF NOT EXISTS onboarding_invites_status_expiry
           ON onboarding_invites(status, expires_at);
+        CREATE TABLE IF NOT EXISTS intake_outbox (
+          invite_id TEXT NOT NULL,
+          submission_id TEXT NOT NULL,
+          task_type TEXT NOT NULL CHECK(task_type IN ('workflow','receipt')),
+          issue_number INTEGER,
+          recipient TEXT,
+          business_name TEXT,
+          status TEXT NOT NULL CHECK(status IN ('pending','delivering','delivered')),
+          attempts INTEGER NOT NULL DEFAULT 0,
+          next_attempt_at INTEGER NOT NULL,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          PRIMARY KEY(invite_id, submission_id, task_type)
+        );
+        CREATE INDEX IF NOT EXISTS intake_outbox_due
+          ON intake_outbox(status, next_attempt_at);
       `);
       const columns = ctx.storage.sql
         .exec<{ name: string }>("PRAGMA table_info(onboarding_invites)")
@@ -68,6 +109,152 @@ export class OnboardingInvites extends DurableObject {
         );
       }
     });
+  }
+
+  async queueWorkflowDispatch(inviteId: string, submissionId: string, issueNumber: number, now = Date.now()) {
+    this.ctx.storage.sql.exec(
+      `INSERT OR IGNORE INTO intake_outbox
+       (invite_id, submission_id, task_type, issue_number, status, attempts, next_attempt_at, created_at, updated_at)
+       VALUES (?, ?, 'workflow', ?, 'pending', 0, ?, ?, ?)`,
+      inviteId,
+      submissionId,
+      issueNumber,
+      now,
+      now,
+      now,
+    );
+    await this.scheduleOutboxAlarm();
+    await this.deliverOutboxTask(inviteId, submissionId, "workflow", now);
+  }
+
+  async queueIntakeReceipt(inviteId: string, submissionId: string, recipient: string, businessName: string, now = Date.now()) {
+    this.ctx.storage.sql.exec(
+      `INSERT OR IGNORE INTO intake_outbox
+       (invite_id, submission_id, task_type, recipient, business_name, status, attempts, next_attempt_at, created_at, updated_at)
+       VALUES (?, ?, 'receipt', ?, ?, 'pending', 0, ?, ?, ?)`,
+      inviteId,
+      submissionId,
+      recipient,
+      businessName,
+      now,
+      now,
+      now,
+    );
+    await this.scheduleOutboxAlarm();
+    await this.deliverOutboxTask(inviteId, submissionId, "receipt", now);
+  }
+
+  async alarm() {
+    const now = Date.now();
+    const dueTasks = this.ctx.storage.sql
+      .exec<Pick<OutboxRow, "invite_id" | "submission_id" | "task_type">>(
+        `SELECT invite_id, submission_id, task_type FROM intake_outbox
+         WHERE status IN ('pending','delivering') AND next_attempt_at <= ?
+         ORDER BY next_attempt_at ASC LIMIT 20`,
+        now,
+      )
+      .toArray();
+    for (const task of dueTasks) {
+      await this.deliverOutboxTask(task.invite_id, task.submission_id, task.task_type, Date.now());
+    }
+    await this.scheduleOutboxAlarm();
+  }
+
+  private async deliverOutboxTask(inviteId: string, submissionId: string, taskType: OutboxTaskType, now: number) {
+    const claimed = this.ctx.storage.sql
+      .exec<OutboxRow>(
+        `UPDATE intake_outbox
+         SET status = 'delivering', attempts = attempts + 1, next_attempt_at = ?, updated_at = ?
+         WHERE invite_id = ? AND submission_id = ? AND task_type = ?
+           AND status IN ('pending','delivering') AND next_attempt_at <= ?
+         RETURNING *`,
+        now + OUTBOX_DELIVERY_LEASE_MS,
+        now,
+        inviteId,
+        submissionId,
+        taskType,
+        now,
+      )
+      .toArray()[0];
+    if (!claimed) return;
+
+    await this.scheduleOutboxAlarm();
+    try {
+      if (claimed.task_type === "workflow") {
+        await this.sendIntakeDispatch(claimed);
+      } else {
+        const receipt = renderIntakeReceivedEmail({ businessName: claimed.business_name || "your business" });
+        await sendEmail(this.env, {
+          to: claimed.recipient || "",
+          ...receipt,
+          tag: "client-intake-received",
+          idempotencyKey: `client-intake-received-${claimed.submission_id}`,
+          required: true,
+        });
+      }
+      this.ctx.storage.sql.exec(
+        `UPDATE intake_outbox SET status = 'delivered', updated_at = ?
+         WHERE invite_id = ? AND submission_id = ? AND task_type = ? AND status = 'delivering'`,
+        Date.now(),
+        inviteId,
+        submissionId,
+        taskType,
+      );
+    } catch (error) {
+      const completedAt = Date.now();
+      const retryDelay = Math.min(
+        OUTBOX_RETRY_MAX_MS,
+        OUTBOX_RETRY_BASE_MS * 2 ** Math.min(claimed.attempts - 1, 6),
+      );
+      this.ctx.storage.sql.exec(
+        `UPDATE intake_outbox SET status = 'pending', next_attempt_at = ?, updated_at = ?
+         WHERE invite_id = ? AND submission_id = ? AND task_type = ? AND status = 'delivering'`,
+        completedAt + retryDelay,
+        completedAt,
+        inviteId,
+        submissionId,
+        taskType,
+      );
+      console.error("Intake outbox delivery failed", {
+        taskType,
+        submissionId,
+        attempt: claimed.attempts,
+        error: error instanceof Error ? error.message.slice(0, 160) : "Unknown delivery error",
+      });
+    }
+    await this.scheduleOutboxAlarm();
+  }
+
+  private async sendIntakeDispatch(task: OutboxRow) {
+    const response = await fetch("https://api.github.com/repos/WrazyAI/launchloom/dispatches", {
+      method: "POST",
+      headers: {
+        Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${this.env.GITHUB_ORG_TOKEN}`,
+        "User-Agent": "LaunchLoom-Cloudflare-Worker",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        event_type: "intake-submitted",
+        client_payload: { issue: task.issue_number, submission_id: task.submission_id },
+      }),
+    });
+    if (!response.ok) throw new Error(`GitHub dispatch failed: ${response.status}`);
+  }
+
+  private async scheduleOutboxAlarm() {
+    const next = this.ctx.storage.sql
+      .exec<{ next_attempt_at: number | null }>(
+        `SELECT MIN(next_attempt_at) AS next_attempt_at FROM intake_outbox
+         WHERE status IN ('pending','delivering')`,
+      )
+      .toArray()[0]?.next_attempt_at;
+    if (next === null || next === undefined) {
+      await this.ctx.storage.deleteAlarm();
+    } else {
+      await this.ctx.storage.setAlarm(next);
+    }
   }
 
   private row(inviteId: string) {
