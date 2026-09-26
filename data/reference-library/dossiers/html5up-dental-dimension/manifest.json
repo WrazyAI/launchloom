@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-dental-dimension",
+  "productionEligible": true,
+  "referenceName": "Dimension: centered dental care index",
+  "familyId": "html5up-dimension-clinic",
+  "source": {
+    "name": "Dimension by HTML5 UP / AJ",
+    "url": "https://html5up.net/dimension",
+    "repository": "https://github.com/zce/html5up",
+    "commit": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "dimension/",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned source template contains its original CC BY 3.0 license text and attribution README in rights/. The adapted local screenshots and generated imagery are separately recorded there.",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "assetEvidencePaths": [
+      "rights/source-provenance.md",
+      "rights/source-revision.txt",
+      "rights/generated-assets.md",
+      "rights/generated-image-manifest.md",
+      "rights/imagegen-prompts.md",
+      "rights/openai-output-terms.md",
+      "rights/capture-record.md",
+      "rights/third-party-assets.md"
+    ]
+  },
+  "businessKinds": ["dental clinic", "dentist"],
+  "tags": {
+    "business": ["dental", "dentist", "preventive and restorative care"],
+    "style": ["cinematic clinical editorial", "quiet premium", "dark botanical"],
+    "composition": ["centered full-viewport stage", "segmented section index", "single overlay panel"],
+    "conversion": ["early care-conversation CTA", "panel-based appointment inquiry"],
+    "motion": ["modal fade and lift", "background defocus", "reduced-motion safe"],
+    "imagery": ["full-bleed clinic interior", "generated original clinical photography", "in-panel editorial image"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 900 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The initial page is a single viewport with a full-bleed, darkened clinical interior behind a centered logo mark, large two-line practice identity, one short care promise, one primary inquiry CTA, and a four-part navigation index. Selecting a destination opens one focused content panel above the blurred stage. The service panel is an editorial ruled list, approach uses three short steps, FAQs answer practical questions, and Contact carries the local-only sample form. Mobile keeps the stage centered, rearranges the four destinations into a 2 by 2 grid, and makes panels vertically scrollable. The photographs are original generated illustrations. This contract transfers geometry and interaction mechanics only, never the sample provider's identity, exact wording, colors, or image assets.",
+    "heroGeometry": { "mode": "full-viewport photographic stage with centered identity lockup", "alignment": "centered", "viewport": "single viewport opening with all primary controls visible" },
+    "navigationGeometry": { "mode": "segmented four-destination index", "placement": "centered below the hero lockup", "mobile": "two-column by two-row touch grid" },
+    "typography": { "display": "high-contrast editorial serif", "body": "neutral sans-serif", "scale": "large stacked identity with compact uppercase utility labels" },
+    "palette": { "surfaces": ["deep forest", "translucent charcoal panel"], "ink": "warm ivory", "accents": ["muted brass"], "contrastIntent": "high contrast over darkened photography" },
+    "imageTreatment": { "mode": "dimmed full-bleed clinical interior with in-panel editorial stills", "crop": "wide cover on desktop with focal-point adjustment on mobile", "focalPoint": "chair and natural light remain recognizable without reducing text contrast" },
+    "sectionSequence": ["hero", "services panel", "approach panel", "faqs panel", "contact panel"],
+    "servicePresentation": { "pattern": "short ruled service list inside a focused overlay", "interaction": "navigation item opens one panel at a time" },
+    "ctaPlacement": { "primary": "inside the centered hero lockup", "secondary": "inside services and contact panels", "early": "visible in the initial viewport" },
+    "motion": { "primitive": "panel fade and lift with background defocus", "library": "native CSS and browser APIs", "reducedMotion": "instant panel state changes and no blur transition" },
+    "mobileRecomposition": { "strategy": "retain centered stage and convert navigation into touch grid", "rules": ["stack title into short lines", "keep CTA visible above navigation", "make panels independently scrollable", "avoid horizontal overflow"] },
+    "prohibitedPatterns": ["generic split hero", "large repeated card grid", "pill navbar", "long why-us essay", "invented dental claims", "unverified prices, credentials, ratings, or patient stories"],
+    "requiredSignatureElements": [
+      { "id": "modal-care-index", "selector": "[data-reference-signature=modal-care-index]", "description": "centered photo stage with segmented Services, Approach, FAQs, Contact index" },
+      { "id": "single-overlay-panel", "selector": "#main article[role=dialog]", "description": "one focus-managed section panel open above the defocused stage" }
+    ],
+    "acceptanceChecks": [
+      "At 1440 by 900, the full-bleed centered hero and primary CTA fit within one viewport.",
+      "The initial navigation exposes Services, Approach, FAQs, and Contact as four distinct working destinations.",
+      "Selecting a navigation destination shows exactly one readable overlay panel and Escape closes it.",
+      "At 390 by 844, the four-way nav becomes a two-column grid and the page has no horizontal overflow.",
+      "No original demo photo, remote font, fake business contact, or unsourced claim appears in the page."
+    ]
+  },
+  "review": { "status": "reviewed", "reviewer": "Codex local-render QA", "date": "2026-09-25", "notes": "Verified desktop and mobile local full-page captures, modal navigation, imagery, and zero horizontal overflow. All photography is generated for this dossier; no original demo photography is included." }
+}

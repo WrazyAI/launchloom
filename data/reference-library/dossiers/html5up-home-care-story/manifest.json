@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-home-care-story",
+  "productionEligible": true,
+  "referenceName": "Story: home-care editorial chapters",
+  "familyId": "html5up-story-home-care",
+  "businessKinds": ["home care", "non-medical home support", "elder companionship"],
+  "source": {
+    "name": "Story by HTML5 UP / AJ",
+    "url": "https://html5up.net/story",
+    "repository": "https://github.com/zce/html5up",
+    "commit": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "story/",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned source template contains its original CC BY 3.0 license text and attribution README in rights/. The adapted local screenshots and generated imagery are separately recorded there.",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "assetEvidencePaths": [
+      "rights/source-provenance.md",
+      "rights/source-revision.txt",
+      "rights/generated-assets.md",
+      "rights/generated-image-manifest.md",
+      "rights/imagegen-prompts.md",
+      "rights/openai-output-terms.md",
+      "rights/capture-record.md",
+      "rights/third-party-assets.md"
+    ]
+  },
+  "businessKinds": ["home care", "non-medical home support", "elder companionship"],
+  "tags": {
+    "business": ["home care", "companionship", "family support"],
+    "style": ["calm editorial", "documentary warmth", "human-centered"],
+    "composition": ["split story opening", "alternating image chapters", "horizontal photo rail", "ruled service index"],
+    "conversion": ["early care-conversation CTA", "service-specific next steps", "contact close"],
+    "motion": ["scroll-triggered image reveal", "horizontal swipe gallery", "native FAQ disclosure"],
+    "imagery": ["everyday home scenes", "generated documentary-style photography", "natural light", "alternating wide crops"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 900 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The page opens with a full-screen split chapter: editorial copy on one side, a generous domestic photograph on the other, and a slim identity/navigation rail above. Three alternating spotlight sections create long-form story rhythm. A short service ledger follows, then a horizontally browsable strip of generated everyday-life images, plain-language FAQs, and a warm contact close. Mobile stacks photographs before their copy, keeps service rows full width, and turns the photo gallery into a touch-swipable rail. Generated people are illustrative and must not represent real provider staff or customers. This contract transfers layout and pacing only, not the fictional copy, brand, or images.",
+    "heroGeometry": { "mode": "full-screen split editorial opening", "alignment": "left text and right photographic field", "viewport": "headline, supporting copy, and care-conversation CTA visible in initial desktop viewport" },
+    "navigationGeometry": { "mode": "slim brand rail with inline text links", "placement": "over the top edge of the opening", "mobile": "compact inline links without a full-screen overlay" },
+    "typography": { "display": "editorial serif for section headlines", "body": "clear sans-serif with restrained line length", "scale": "large headline, small uppercase chapter labels, moderate body" },
+    "palette": { "surfaces": ["warm paper", "soft sage", "deep evergreen", "muted sand"], "ink": "deep green-black", "accents": ["moss green", "quiet natural ochre"], "contrastIntent": "warm but clearly readable, with white-on-dark only in the FAQ chapter" },
+    "imageTreatment": { "mode": "alternating full-bleed domestic photos and swipeable image rail", "crop": "wide chapter crops on desktop and stacked portrait-friendly crops on mobile", "focalPoint": "keep people and everyday activity legible without over-staging" },
+    "sectionSequence": ["hero", "services chapter", "routine chapter", "getting-started chapter", "service index", "image rail", "faqs", "contact"],
+    "servicePresentation": { "pattern": "editorial ruled index with a number, service name, one-line scope, and arrow", "interaction": "full-width touch row linking to a relevant next step" },
+    "ctaPlacement": { "primary": "inside hero copy", "secondary": "after individual story chapters and at contact close", "early": "immediately in the split opening" },
+    "motion": { "primitive": "viewport-triggered image fade and touch-scroll gallery", "library": "native CSS, IntersectionObserver, and horizontal overflow scrolling", "reducedMotion": "static fully visible chapters and no smooth-scroll dependency" },
+    "mobileRecomposition": { "strategy": "image-first single-column chapters", "rules": ["place image before corresponding copy", "keep service rows full width", "retain horizontal gallery as swipe rail", "disable fixed-background effects", "preserve readable line length"] },
+    "prohibitedPatterns": ["generic repeated card wall", "pill nav repeated across every reference", "wordy why-us section", "invented care credentials or clinical claims", "unverified rates, service area, or staff", "stock people presented as real customers"],
+    "requiredSignatureElements": [
+      { "id": "split-story-opening", "selector": "[data-reference-signature=split-story-opening]", "description": "full-screen split copy/photo opening with early conversation CTA" },
+      { "id": "alternating-care-chapters", "selector": "[data-reference-signature=alternating-care-chapters]", "description": "alternating image and copy chapters" },
+      { "id": "editorial-service-index", "selector": "[data-reference-signature=editorial-service-index]", "description": "ruled service ledger rather than cards" },
+      { "id": "horizontal-story-gallery", "selector": "[data-reference-signature=horizontal-story-gallery]", "description": "horizontally browsable everyday-scene strip" }
+    ],
+    "acceptanceChecks": [
+      "At 1440 by 900, the opening split layout shows the service promise and CTA without clipping.",
+      "Alternating image chapters lead into a ruled, concise service index and a horizontal image rail.",
+      "At 390 by 844, each split chapter becomes image-first and the page width stays within the viewport.",
+      "FAQs and contact appear as real page sections with keyboard-accessible controls and visible form status.",
+      "No generated person is represented as a real caregiver or customer, and no service claims are stated as verified facts."
+    ]
+  },
+  "review": { "status": "reviewed", "reviewer": "Codex local-render QA", "date": "2026-09-25", "notes": "Verified desktop and mobile full-page captures, section sequence, generated image loading, FAQ contrast after local override, and no page-level horizontal overflow. The horizontal gallery is intentionally swipeable." }
+}

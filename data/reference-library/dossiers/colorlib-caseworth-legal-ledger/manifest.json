@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-caseworth-legal-ledger",
+  "productionEligible": true,
+  "referenceName": "Caseworth written-fee professional ledger",
+  "familyId": "colorlib-caseworth-legal-ledger",
+  "source": {
+    "name": "Colorlib Bootstrap Templates Caseworth",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/caseworth",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned repository template is under MIT. Its retained per-template credits identify the bundled photographs as CC0/Public Domain. The MIT license and image credits are included here.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/CREDITS.txt"]
+  },
+  "provenance": {
+    "repositoryCommit": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "archiveSha256": "a08ab6e57a0db6c2dfd91a2c1afe310871d4cac27cd673f9f71b8cf0c0d9d13e",
+    "capture": "Pinned local template rendered at 1440px and 390px content widths. Lazy images were loaded; closed off-canvas drawer was hidden only in mobile capture because the library's Bootstrap alpha placed it in the page canvas. No visible source content was edited.",
+    "retrievedAt": "2026-09-25",
+    "attribution": "Colorlib Bootstrap Templates, MIT. Per-template CC0/Public Domain photo credits retained; source footer visible in screenshots."
+  },
+  "businessKinds": ["legal-services", "law-firm", "solicitor", "professional-services"],
+  "tags": {
+    "business": ["legal-services", "law-firm", "solicitor", "professional-services"],
+    "style": ["quiet-professional", "fee-transparent", "warm-stone", "serif-editorial", "restrained-navy"],
+    "composition": ["editorial-professional-hero", "practice-ledger", "people-rail", "fee-table", "insight-notes", "enquiry-sheet"],
+    "conversion": ["first-enquiry", "fee-explanation", "matter-fit", "consultation-request"],
+    "motion": ["fee-table-filter", "native-accordion", "progressive-enquiry-form"],
+    "imagery": ["cc0-office-photography", "historical-statue-image", "professional-portrait-crops"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A calm legal/accountancy practice page opens with a small utility/regulatory strip, quiet navigation, a serif positioning statement, and a portrait/statue image. A two-column practice area ledger is followed by people, transparent fixed-fee table, editorial updates, and an enquiry form with preparation guidance. The legal entities, named professionals, regulators, prices, response times and service claims shown are fictional demo content.",
+    "heroGeometry": { "mode": "editorial professional statement beside portrait image", "alignment": "left aligned serif promise paired with a right-side vertical image", "viewport": "the actual service scope, one contact action and the portrait fit in the first desktop scene" },
+    "navigationGeometry": { "mode": "fine utility strip and restrained law-practice navigation", "placement": "slim top utility line above a light navigation row", "mobile": "compact wordmark and enquiry action with anchor links in an accessible sheet" },
+    "typography": { "display": "refined serif display", "body": "quiet humanist sans", "scale": "medium editorial heading, compact practice labels, readable fee metadata" },
+    "palette": { "surfaces": ["warm white", "pale stone", "soft gray"], "ink": "charcoal", "accents": ["deep navy", "fine blue rule"], "contrastIntent": "restrained professional tone with clear action/input contrast" },
+    "imageTreatment": { "mode": "single relevant portrait or practice image", "crop": "vertical image beside an open hero; small people crops later", "focalPoint": "one calm subject anchors the opening without becoming a credential claim" },
+    "sectionSequence": ["utility", "navigation", "hero", "practice-ledger", "people", "fees", "insights", "faq", "enquiry", "footer"],
+    "servicePresentation": { "pattern": "two-column ruled practice-area ledger with concise scope note", "interaction": "direct practice links and optional fee table filtering" },
+    "ctaPlacement": { "primary": "initial enquiry in the top navigation and closing form", "secondary": "fee table link", "early": "next to the hero positioning statement" },
+    "motion": { "primitive": "small filter/disclosure state for practical tables and FAQs", "library": "native form controls and browser events", "reducedMotion": "static practice list, fee table and FAQ answers" },
+    "mobileRecomposition": { "strategy": "single-column professional ledger", "rules": ["put practice statement and action before portrait", "stack practice rows with notes", "convert fee table to labeled facts", "pair enquiry form with preparation guidance", "no horizontal overflow"] },
+    "prohibitedPatterns": ["copied legal claims, fees, names, images or regulatory identifiers", "invented credentials, jurisdiction, fixed fees, response promise or privilege claim", "stock people presented as the client firm's lawyers", "unverified rates or time estimates", "fake trust badge wall", "invented client testimonials", "generic benefit card grid"],
+    "requiredSignatureElements": [
+      { "id": "professional-opening", "selector": "[data-reference-signature=professional-opening]", "description": "measured statement beside one relevant image" },
+      { "id": "practice-area-ledger", "selector": "[data-reference-signature=practice-area-ledger]", "description": "two-column or ruled practice-area index" },
+      { "id": "transparent-fee-surface", "selector": "[data-reference-signature=transparent-fee-surface]", "description": "accurate fee table or honest alternative explanation" },
+      { "id": "matter-enquiry-sheet", "selector": "[data-reference-signature=matter-enquiry-sheet]", "description": "enquiry with matter context and useful preparation note" }
+    ],
+    "acceptanceChecks": ["all professional/regulatory facts are verified", "the practice-area ledger helps route a real enquiry", "fees and assumptions are current and client-approved", "legal advice content is only sourced from the client", "form language does not imply representation before intake", "mobile rows and fee details stay readable"]
+  },
+  "review": { "status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "pinned MIT source, per-template CC0/Public Domain photo evidence, desktop/mobile captures and transferable professional-services mechanics" }
+}

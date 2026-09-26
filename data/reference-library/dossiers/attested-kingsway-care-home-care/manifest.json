@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "attested-kingsway-care-home-care",
+  "productionEligible": true,
+  "referenceName": "Kingsway Care homecare service story",
+  "familyId": "attested-kingsway-care-home-care",
+  "businessKinds": ["home care", "homecare", "in-home care services"],
+  "source": {
+    "name": "Kingsway Care official website",
+    "url": "https://kingswaycare.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-25 permits internal retention of the full-page captures and their use as visual input to the LaunchLoom pipeline model. No source-owner grant or license was uploaded. See rights/requester-attestation.md.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/requester-attestation.md"]
+  },
+  "tags": {
+    "business": ["home care", "personal care", "companionship", "specialized in-home support"],
+    "style": ["warm local care", "bright editorial service", "human and reassuring", "high-contrast accent"],
+    "composition": ["split image-and-promise hero", "trust strip", "service index", "alternating story chapters", "closing action band"],
+    "conversion": ["consultation and phone actions in hero", "service-specific links", "repeated next step after decision sections"],
+    "motion": ["visitor-controlled review rail", "award carousel", "embedded video with visible still", "static mobile fallback"],
+    "imagery": ["caregiver and client photography", "founder and team imagery", "short film preview", "service and community photography"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 900 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The page opens with a compact utility header and a two-part promise: a saturated color field holds short care copy and consultation or phone actions while a human-scale care photograph occupies the adjacent half. A trust and award strip follows, then a centered care introduction and a six-item service index. Later chapters alternate service imagery with an about story, family decision support, review content, film previews, specialist topics, award marks, and news. A strong closing action band leads into a dense multi-column footer. Mobile stacks the promise and image, converts the service grid into a vertical list, and carries the same chapter order through to the footer. Transfer only the sequence and conversion placements. The original is a branded homecare provider, and its people, proof, claims, exact colors, words, and assets are not client material.",
+    "heroGeometry": { "mode": "asymmetrical color-field and care-photo split", "alignment": "left promise with paired action beside a right-hand human scene", "viewport": "opening makes the service and conversation path visible without scrolling" },
+    "navigationGeometry": { "mode": "compact utility strip over a shallow brand and category rail", "placement": "top edge with contact controls separated from the main links", "mobile": "compressed brand row and short utility navigation" },
+    "typography": { "display": "friendly bold sans headline", "body": "compact neutral sans", "scale": "short stacked promise, small utility labels, centered section titles" },
+    "palette": { "surfaces": ["saturated golden yellow", "white", "cool light gray"], "ink": "charcoal", "accents": ["deep blue-green action color", "yellow"], "contrastIntent": "clear dark text on bright brand fields with separate neutral information chapters" },
+    "imageTreatment": { "mode": "documentary caregiver, client, founder, and community photographs", "crop": "wide hero crop followed by contained landscape chapter images", "focalPoint": "keep care recipient and caregiver faces readable and dignified" },
+    "sectionSequence": ["utility and navigation", "split care promise", "trust and award strip", "service index", "provider story", "family conversation action", "client proof", "film and specialist topics", "awards and news", "closing action and footer"],
+    "servicePresentation": { "pattern": "short linked service tiles followed by a plain specialist-topic index", "interaction": "direct service links; optional carousels remain visitor controlled" },
+    "ctaPlacement": { "primary": "consultation action in the opening promise", "secondary": "phone action alongside the primary", "early": "repeat after the family decision-support chapter and in the closing band" },
+    "motion": { "primitive": "user-controlled review and award rails with optional embedded film", "library": "source behavior observed only; do not reuse source scripts", "reducedMotion": "keep all content visible in static rows and show a film still without autoplay" },
+    "mobileRecomposition": { "strategy": "single-column care chapters", "rules": ["keep the promise and contact actions before the first long scroll", "stack the service index as readable rows", "keep photographs adjacent to their supporting copy", "make all rails touch controlled", "avoid horizontal overflow"] },
+    "prohibitedPatterns": ["copying Kingsway identity, exact yellow, wording, photographs, staff, clients, badges, awards, reviews, locations, or claims", "unverified care credentials or outcomes", "repeated rounded-card walls", "long duplicate care claims", "autoplaying video or carousels", "low-contrast text over people"],
+    "requiredSignatureElements": [
+      { "id": "split-care-promise", "selector": "[data-reference-signature=split-care-promise]", "description": "short service promise paired with an adjacent human-scale care image and early action" },
+      { "id": "care-service-index", "selector": "[data-reference-signature=care-service-index]", "description": "scannable service choices with direct next steps" },
+      { "id": "family-decision-band", "selector": "[data-reference-signature=family-decision-band]", "description": "reassuring conversation prompt after explanatory content" },
+      { "id": "care-chapter-close", "selector": "[data-reference-signature=care-chapter-close]", "description": "clear closing contact region before the footer" }
+    ],
+    "acceptanceChecks": [
+      "The opening identifies the care service and presents one primary conversation action with a useful secondary contact option.",
+      "Service choices and later support chapters have distinct rhythm instead of repeating one card pattern.",
+      "The mobile layout preserves the opening action, scannable service rows, dignified image crops, and footer access.",
+      "Any review, award, location, credential, staff identity, care outcome, or availability claim is supplied by the client before use.",
+      "No source identity, original photography, exact copy, or branded proof appears in the generated site."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier completion",
+    "reviewedAt": "2026-09-25",
+    "scope": "official-source match, paired full-page captures, prompt, requester attestation, and rendered visual review",
+    "visualQuality": "pass",
+    "notes": "Both existing captures show the official Kingsway Care homepage from promise through footer. PNG pixel dimensions were read from the image headers: desktop 1440x6934 and mobile 390x11150. The original capture date and viewport heights were not embedded in the PNGs; the manifest records standard comparison viewport heights. Low-information source patterns such as repeated tiles, brand colors, reviews, awards, and people are explicitly excluded from transfer."
+  }
+}

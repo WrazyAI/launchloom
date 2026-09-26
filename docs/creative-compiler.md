@@ -11,9 +11,14 @@ lead endpoint, or ship an unverified layout.
    layer: business facts, SEO vocabulary, FAQs, service decisions, contact
    details, structured data, and approved assets.
 2. `compile-inspiration-pack.mjs` selects three independent route contracts with
-   one authoritative visual capsule per route. `analyze-reference-dna.mjs`
-   then inspects the actual desktop/mobile evidence and enriches Reference DNA
-   with measured headline occupancy, image occupancy, navigation and CTA
+   one authoritative visual capsule per route. Production compilation requires
+   a permission-cleared dossier for every selected route from
+   `data/reference-library/dossiers/<id>/`: a structured manifest, detailed
+   `design-prompt.md`, and full-page desktop and mobile screenshots. External
+   A1/gallery records without persistent-storage rights are discovery-only and
+   cannot be selected by the production compiler. `analyze-reference-dna.mjs`
+   receives the dossier prompt and both screenshot captures, then enriches
+   Reference DNA with measured headline occupancy, image occupancy, navigation and CTA
    coordinates, content-column width, section-height rhythm, aspect ratios,
    overlap relationships, surface transitions, and mobile geometry. Family
    defaults are fallback vocabulary only; screenshot-derived measurements are
@@ -23,10 +28,13 @@ lead endpoint, or ship an unverified layout.
    evidence record. Their section-height fractions describe the captured page,
    not CSS viewport units; the adapted desktop header and hero must still fit
    inside the 1536x864 browser viewport.
-   3. `author-production-experiences.mjs` asks the visual author for three
-   independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. The
-   author receives the complete Reference DNA and its desktop/mobile evidence,
-   then must expose the contract's signatures and geometry markers in the
+3. `author-production-experiences.mjs` asks the visual author for three
+   independent `Experience.jsx`, `styles.css`, and `motion.js` candidates. Each
+   authoring stage receives the complete Reference DNA, the dossier's detailed
+   design prompt, and its desktop/mobile evidence as a single authoritative
+   route contract. It must not average references or return to generic fallback
+   grammar. The screenshots are attached as multimodal evidence. Each candidate
+   must expose the contract's signatures and geometry markers in the
    rendered DOM. It can use React, the shared runtime, GSAP, and ScrollTrigger,
    but not network access, remote code, canvas, or Three.js by default. Model
    stages are globally limited to two in-flight requests so a three-candidate
@@ -154,10 +162,11 @@ new color palette or a renamed split hero.
 ## Controlled canaries
 
 `node scripts/run-creative-canary.mjs` is the creative-quality canary. It
-derives Reference DNA from Kokoro evidence, asks Luna to author the controlled
-Kokoro route, renders the authored candidate in the real Astro shell, compares
-its pixels to the reference, runs final visual QA, and writes a promotion
-report proving `creative-candidate` with no legacy fallback.
+selects a permission-cleared architecture dossier from the canonical local-SEO
+reference core, asks Luna to author that route for a controlled hypothetical
+architecture practice, renders the authored candidate in the real Astro shell,
+compares its pixels to the selected reference, runs final visual QA, and writes
+a promotion report proving `creative-candidate` with no legacy fallback.
 
 `node scripts/run-creative-renderer-canary.mjs` preserves the deterministic
 hand-authored Kokoro fixture for renderer/runtime plumbing tests. Passing the

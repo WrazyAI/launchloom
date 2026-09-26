@@ -497,6 +497,22 @@ function businessKindFor(intake, industry) {
     )
   )
     return "fitness";
+  if (/\b(?:dent(?:al|ist|istry)|orthodont(?:ist|ics?)|oral health|teeth whitening)\b/.test(facts))
+    return "dental";
+  if (/\b(?:law|law firm|lawyers?|attorneys?|legal|litigation|solicitors?|probate|estate planning|divorce)\b/.test(facts))
+    return "legal-services";
+  if (/\b(?:accountants?|accounting|accountancy|bookkeepers?|bookkeeping|payroll|vat returns?|tax returns?|tax advisors?|tax advisers?|tax preparation|tax planning|tax advice|chartered accountants?)\b/.test(facts))
+    return "accounting";
+  if (/\b(?:architect(?:ure)?|architectural design|interior design|interior designer)\b/.test(facts))
+    return "architecture";
+  if (/\b(?:hotel|inn|resort|lodging|guesthouse|bed and breakfast|boutique accommodation|overnight stays?)\b/.test(facts))
+    return "hospitality";
+  if (/\b(?:restaurant|cafe|café|bistro|pizzeria|dining room|catering|food menu|food and drink|food truck|coffee shop|table reservations?)\b/.test(facts))
+    return "restaurant";
+  if (/\b(?:event venue|wedding venue|conference venue|event space|private events?)\b/.test(facts))
+    return "event-venue";
+  if (/\b(?:beauty|salon|hair|barber|med.?spa|medical spa|aesthetic clinic|cosmetic treatment|grooming studio)\b/.test(facts))
+    return "beauty";
   return industry;
 }
 

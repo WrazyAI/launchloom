@@ -2,10 +2,14 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { buildInspirationPack } from "./inspiration-registry.mjs";
 import { enrichInspirationPack } from "./analyze-reference-dna.mjs";
 import { runRenderedCreativeRepair } from "./run-rendered-creative-repair.mjs";
 import { createReasoningPreflight } from "./reasoning-preflight-lib.mjs";
+import {
+  CREATIVE_CANARY_IMAGE_ASSETS,
+  buildCreativeCanaryPack,
+  selectCreativeCanaryReference,
+} from "./creative-canary-reference.mjs";
 import {
   loadA1ReferenceLibrary,
   mergeInspirationRegistries,
@@ -24,7 +28,7 @@ const args = Object.fromEntries(
 );
 
 const root = path.resolve(args.root || ".");
-const out = path.resolve(root, args.out || "artifacts/creative-canary-kokoro");
+const out = path.resolve(root, args.out || "artifacts/creative-canary-architecture");
 const siteRoot = path.join(root, "templates/client-site");
 const configPath = path.join(siteRoot, "src/site.config.json");
 const selectedDir = path.join(siteRoot, "src/generated-experiences/selected");
@@ -41,18 +45,18 @@ async function imageDataUri(relativePath) {
 async function canaryConfigFrom(original) {
   const config = JSON.parse(original);
   config.business = {
-    name: "Kokoro House Interiors",
-    tagline: "Spaces that make room for living.",
+    name: "Morrow & Pine Architecture",
+    tagline: "Spaces shaped around everyday life.",
     description:
       "A hypothetical architecture studio shaping warm, enduring interiors.",
     phone: "(503) 555-0186",
-    email: "studio@kokoro-house.example",
+    email: "studio@morrow-pine.example",
     address: "Portland, Oregon",
     serviceAreas: ["Portland", "Lake Oswego"],
     primaryCta: "Start a design conversation",
   };
   config.industry = "architecture";
-  config.businessKind = "interior design studio";
+  config.businessKind = "architecture";
   config.services = [
     {
       name: "Residential interiors",
@@ -95,22 +99,16 @@ async function canaryConfigFrom(original) {
   };
   config.assets = {
     logo: "",
-    photoOne: await imageDataUri(
-      "data/inspiration-evidence/creative-probe-kokoro/assets/hero-atrium.webp",
-    ),
-    photoTwo: await imageDataUri(
-      "data/inspiration-evidence/creative-probe-kokoro/assets/ridge-house.webp",
-    ),
-    photoThree: await imageDataUri(
-      "data/inspiration-evidence/creative-probe-kokoro/assets/project-mosaic.webp",
-    ),
+    photoOne: await imageDataUri(CREATIVE_CANARY_IMAGE_ASSETS.hero),
+    photoTwo: await imageDataUri(CREATIVE_CANARY_IMAGE_ASSETS.secondary),
+    photoThree: await imageDataUri(CREATIVE_CANARY_IMAGE_ASSETS.tertiary),
   };
   config.copy = {
     ...(config.copy || {}),
-    heroKicker: "Architecture for everyday rituals",
+    heroKicker: "Architecture shaped around everyday rituals",
     heroHeading: "Rooms that hold a life",
     heroBody: "A measured process for warm, enduring interiors.",
-    servicesHeading: "The Kokoro archive",
+    servicesHeading: "Selected work",
     contactHeading: "Begin with a conversation",
     imageChapterLabel: "Material, light, and the shape of a day",
     editorialIntro:
@@ -146,29 +144,9 @@ try {
     ),
     () => baseRegistry,
   );
-  const compiledPack = buildInspirationPack(
-    {
-      seed: "kokoro-model-canary",
-      industry: "architecture",
-      styleTerms: [
-        "kokoro",
-        "editorial",
-        "architecture",
-        "monumental serif",
-        "magazine archive",
-      ],
-      recentReferenceIds: [],
-      recentRouteSignatures: [],
-    },
-    registry,
-  );
+  const compiledPack = buildCreativeCanaryPack(root, registry);
   const inspirationPack = await enrichInspirationPack(compiledPack);
-  const kokoroRoute = inspirationPack.routes.find(
-    (route) =>
-      route.referenceDna?.familyId === "kokoro-editorial-architecture",
-  );
-  if (!kokoroRoute)
-    throw new Error("The controlled canary pack did not contain the Kokoro reference route.");
+  const architectureRoute = selectCreativeCanaryReference(inspirationPack);
 
   const canaryConfigPath = path.join(out, "site.config.json");
   const inspirationPath = path.join(out, "inspiration-pack.json");
@@ -184,7 +162,7 @@ try {
     mode: process.env.REASONING_PREFLIGHT_MODE || "shadow",
     model: process.env.REASONING_PREFLIGHT_MODEL || "jev-1.13.0",
     creativeModel: "openai/gpt-6-luna",
-    sessionKey: "creative-canary-kokoro",
+    sessionKey: "creative-canary-architecture",
   });
   await fs.writeFile(
     reasoningPreflightPath,
@@ -219,7 +197,7 @@ try {
   const entries = (
     await fs.readdir(authoredRoot, { withFileTypes: true })
   ).filter((entry) => entry.isDirectory() && /^candidate-[a-z]+$/u.test(entry.name));
-  let kokoroCandidate;
+  let architectureCandidate;
   for (const entry of entries) {
     const metadata = JSON.parse(
       await fs.readFile(
@@ -227,22 +205,19 @@ try {
         "utf8",
       ),
     );
-    if (
-      metadata.referenceFamilyId ===
-      "kokoro-editorial-architecture"
-    ) {
-      kokoroCandidate = { directory: entry.name, metadata };
+    if (metadata.referenceFamilyId === architectureRoute.referenceFamilyId) {
+      architectureCandidate = { directory: entry.name, metadata };
       break;
     }
   }
-  if (!kokoroCandidate)
-    throw new Error("Luna did not produce the controlled Kokoro candidate.");
+  if (!architectureCandidate)
+    throw new Error("Luna did not produce the selected architecture-reference candidate.");
 
-  const isolatedRoot = path.join(out, "kokoro-bakeoff-candidates");
+  const isolatedRoot = path.join(out, "architecture-bakeoff-candidates");
   await fs.mkdir(isolatedRoot, { recursive: true });
   await fs.cp(
-    path.join(authoredRoot, kokoroCandidate.directory),
-    path.join(isolatedRoot, kokoroCandidate.directory),
+    path.join(authoredRoot, architectureCandidate.directory),
+    path.join(isolatedRoot, architectureCandidate.directory),
     { recursive: true, force: true },
   );
 
@@ -259,8 +234,8 @@ try {
   });
   const bakeoffReport = repairResult.bakeoff;
 
-  if (bakeoffReport.selectedCandidateId !== kokoroCandidate.metadata.candidateId)
-    throw new Error("The Luna-authored Kokoro candidate did not pass the rendered creative repair loop.");
+  if (bakeoffReport.selectedCandidateId !== architectureCandidate.metadata.candidateId)
+    throw new Error("The selected architecture-reference candidate did not pass the rendered creative repair loop.");
 
   const selectedConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
   if (selectedConfig.design?.experience?.renderer !== "creative-candidate")
@@ -276,7 +251,7 @@ try {
     (visualReport.blockers || []).length
   )
     throw new Error(
-      `The Luna-authored Kokoro canary failed final visual QA: ${visualMajors
+      `The architecture-reference canary failed final visual QA: ${visualMajors
         .map((item) => item.evidence || item.category)
         .join(" | ") || visualReport.audit?.verdict}`,
     );
@@ -284,12 +259,12 @@ try {
 
   const candidateReport = bakeoffReport.candidates.find(
     (candidate) =>
-      candidate.candidateId === kokoroCandidate.metadata.candidateId,
+      candidate.candidateId === architectureCandidate.metadata.candidateId,
   );
   const promotionReport = {
     version: 2,
     status: "passed",
-    authorModel: kokoroCandidate.metadata.model,
+    authorModel: architectureCandidate.metadata.model,
     reasoning: {
       effort: creativeSession.reasoningEffort,
       recommendedEffort: creativeSession.recommendedEffort,
@@ -297,12 +272,12 @@ try {
       policyVersion: creativeSession.reasoningPolicyVersion,
       selectorModelVersion: creativeSession.selectorModelVersion,
     },
-    selectedCandidateId: kokoroCandidate.metadata.candidateId,
-    familyId: kokoroCandidate.metadata.familyId,
-    referenceFamilyId: kokoroCandidate.metadata.referenceFamilyId,
+    selectedCandidateId: architectureCandidate.metadata.candidateId,
+    familyId: architectureCandidate.metadata.familyId,
+    referenceFamilyId: architectureCandidate.metadata.referenceFamilyId,
     renderer: selectedConfig.design.experience.renderer,
     noLegacyRenderer: true,
-    referenceDna: kokoroCandidate.metadata.referenceDna,
+    referenceDna: architectureCandidate.metadata.referenceDna,
     renderedReferenceFidelity:
       candidateReport?.renderedReferenceFidelity || null,
     bakeoff: bakeoffReport,
@@ -310,7 +285,7 @@ try {
     screenshots: ["desktop", "compact", "mobile"].map((name) =>
       path.join(
         screenshotsDir,
-        `${kokoroCandidate.metadata.candidateId}-${name}.png`,
+        `${architectureCandidate.metadata.candidateId}-${name}.png`,
       ),
     ),
   };

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-landscaping-season-wheel",
+  "productionEligible": true,
+  "referenceName": "Landscaping portfolio with seasonal planning wheel",
+  "familyId": "spicer-landscaping-season-wheel",
+  "source": {
+    "name": "Spicer Designs Landscaping website template",
+    "url": "https://www.spicerdesigns.com/templates/landscaping",
+    "rights": "licensed",
+    "rightsEvidence": "The downloaded HTML package contains a CC BY 4.0 license and its source page permits commercial use with attribution. The package README identifies the sole raster asset as AI-generated placeholder art; the remaining project visuals are inline SVG/CSS. Asset and font provenance is recorded locally.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/ASSET-PROVENANCE.md", "rights/SOURCE-README.md"]
+  },
+  "provenance": {
+    "archiveSha256": "fe077fa8c1f5868bc7358487d9760c8342d7c41003bb41af90dcc229ed52a426",
+    "capture": "Full-page desktop and mobile screenshots captured from the local, unmodified plain-HTML distribution at 1440x1000 and 390x844. The static HTML package presents click-driven widgets in their initial state.",
+    "retrievedAt": "2026-09-25",
+    "attribution": "Spicer Designs, CC BY 4.0. The original Spicer Designs footer credit remains visible in both captures."
+  },
+  "businessKinds": ["landscaping", "garden-design", "lawn-care", "property-maintenance", "local-trades", "home-services"],
+  "tags": {
+    "business": ["landscaping", "garden-design", "lawn-care", "property-maintenance", "local-trades", "home-services"],
+    "style": ["botanical-editorial", "sage-and-evergreen", "warm-paper", "serif-display", "project-led"],
+    "composition": ["portfolio-as-hero", "illustrated-landscape-mosaic", "filterable-project-grid", "season-wheel", "plan-comparison-matrix", "estimate-sidecar", "service-route-ledger"],
+    "conversion": ["estimate-request", "project-scope-filter", "lot-size-estimator", "maintenance-plan-comparison", "coverage-qualification"],
+    "motion": ["project-category-filter", "season-selector", "lot-size-slider", "service-selection-state", "native-faq-disclosure"],
+    "imagery": ["ai-generated-garden-hero", "inline-svg-project-illustrations", "css-landscape-patterns", "no-staff-or-customer-photography"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A warm, botanical landscaping experience that promotes portfolio work before a service inventory. A quiet utility navigation and editorial serif hero sit over a low-contrast AI-generated garden image with a grid of illustrated landscape vignettes. Nine example projects lead into a four-season planning wheel, an explicit maintenance-plan comparison, a lot-size estimate builder, a constrained route coverage list, project-category proof, and an editorial FAQ close. Screenshot imagery and all sample facts are reference-only.",
+    "heroGeometry": { "mode": "portfolio-led illustrated landscape hero", "alignment": "large left-aligned editorial headline against a soft full-width landscape image and asymmetric grid of illustrated garden scenes", "viewport": "brand, primary promise, one-sentence scope and estimate action are visible in the opening desktop viewport" },
+    "navigationGeometry": { "mode": "quiet wordmark with direct section anchors", "placement": "compact top bar above the image-led hero", "mobile": "wordmark and call route remain first; anchor links wrap or compact without covering the opening" },
+    "typography": { "display": "expressive editorial serif with italic botanical accent", "body": "neutral sans serif", "scale": "large fluid hero headline, restrained uppercase section labels, compact but readable project metadata" },
+    "palette": { "surfaces": ["warm off-white", "pale sage", "muted leaf green"], "ink": "deep evergreen", "accents": ["garden green", "soft citrus leaf"], "contrastIntent": "calm natural contrast with dark green actions and sufficiently dark body text" },
+    "imageTreatment": { "mode": "soft AI-generated landscape atmosphere paired with hand-drawn inline-SVG project mosaics", "crop": "wide hero image with a text-safe wash; project diagrams use consistent landscape cards", "focalPoint": "quiet landscape color and planting geometry, never an identifiable client property or person" },
+    "sectionSequence": ["navigation", "portfolio-hero", "project-filter-and-grid", "season-planning-wheel", "maintenance-plan-comparison", "lot-size-estimator", "route-coverage-ledger", "project-proof", "questions", "attribution-footer"],
+    "servicePresentation": { "pattern": "portfolio first, then seasonal job selector, then a maintenance comparison matrix", "interaction": "project-category filters and a season selector inform the visitor before a lot-size and selected-service estimate" },
+    "ctaPlacement": { "primary": "estimate request in the opening and beside the estimator", "secondary": "portfolio navigation in the hero", "early": "before service details, immediately after the promise" },
+    "motion": { "primitive": "category filtering, season selection, and progressive estimate updates", "library": "plain HTML/CSS and browser events in the source family; downloaded static HTML captures initial states only", "reducedMotion": "keep the entire project set, season text, pricing rows and estimate explanation visible without transitions" },
+    "mobileRecomposition": { "strategy": "stacked editorial portfolio and practical service flow", "rules": ["keep hero promise and estimate action before the project tiles", "collapse the mosaic into a readable single-column project rhythm", "wrap or scroll filter controls without page-level horizontal overflow", "convert the plan matrix into labeled mobile rows", "keep the estimate total visible beside or directly below its form"] },
+    "prohibitedPatterns": ["copying Stonefield Landscape or Spicer brand assets, names, copy, or wording", "reusing demo prices, addresses, coverage, reviews, estimates, warranties, or schedule claims", "presenting AI-generated hero art as a photograph of a client property", "claiming staff or customers from stock or demo imagery", "inventing seasonal dates, per-visit costs, service routes, or plant guarantees", "generic rounded-card walls", "adding an unsupported live availability or route tracker"],
+    "requiredSignatureElements": [
+      { "id": "landscape-portfolio-opening", "selector": "[data-reference-signature=landscape-portfolio-opening]", "description": "project imagery or an approved landscape visual leads the page rather than a service-card grid" },
+      { "id": "season-planning-wheel", "selector": "[data-reference-signature=season-planning-wheel]", "description": "seasonal work selector whose copy and timing come from verified business inputs" },
+      { "id": "maintenance-comparison", "selector": "[data-reference-signature=maintenance-comparison]", "description": "plan comparison with a shared feature column and explicit inclusions" },
+      { "id": "property-estimator", "selector": "[data-reference-signature=property-estimator]", "description": "bounded estimate tool using verified service rates and visitor-supplied property size" },
+      { "id": "route-coverage-ledger", "selector": "[data-reference-signature=route-coverage-ledger]", "description": "clear coverage list derived from verified service areas, not inferred offices" }
+    ],
+    "acceptanceChecks": ["desktop opening keeps the promise and estimate action in the first viewport", "the project portfolio precedes service-plan detail", "season selector and price estimator expose a static no-JavaScript fallback", "all prices, route facts, guarantees and quotes come from sealed verified content", "mobile capture has no horizontal page overflow and the plan comparison remains legible", "the original attribution appears in both screenshot footers", "the AI-generated hero art is never claimed to depict a real customer property"]
+  },
+  "review": { "status": "licensed-reference-pilot", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "CC BY 4.0 package, bundled asset provenance, local full-page paired captures, and transferable design mechanics" }
+}

@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import { buildCandidateManifest } from "./creative-compiler.mjs";
 import { buildReferenceDna, validateReferenceDna } from "./reference-dna.mjs";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
+import { CREATIVE_CANARY_IMAGE_ASSETS } from "./creative-canary-reference.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -14,9 +15,9 @@ const out = path.resolve(root, args.out || "artifacts/creative-canary-kokoro");
 const imageDataUri = async (relativePath) =>
   `data:image/webp;base64,${(await fs.readFile(path.join(root, relativePath))).toString("base64")}`;
 const canaryImages = {
-  hero: await imageDataUri("data/inspiration-evidence/creative-probe-kokoro/assets/hero-atrium.webp"),
-  secondary: await imageDataUri("data/inspiration-evidence/creative-probe-kokoro/assets/ridge-house.webp"),
-  tertiary: await imageDataUri("data/inspiration-evidence/creative-probe-kokoro/assets/project-mosaic.webp"),
+  hero: await imageDataUri(CREATIVE_CANARY_IMAGE_ASSETS.hero),
+  secondary: await imageDataUri(CREATIVE_CANARY_IMAGE_ASSETS.secondary),
+  tertiary: await imageDataUri(CREATIVE_CANARY_IMAGE_ASSETS.tertiary),
 };
 const registry = JSON.parse(await fs.readFile(path.join(root, "data/inspiration-registry.json"), "utf8"));
 const record = registry.records.find((item) => item.id === "kokoro-spatial-editorial");
