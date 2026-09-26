@@ -7,6 +7,7 @@ import {
 } from "./creative-compiler.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import { cssCustomPropertyDeclarations } from "./creative-css-tokens.mjs";
 
 /**
  * @typedef {"contract" | "experience" | "styles" | "motion"} AuthorStage
@@ -137,7 +138,7 @@ function digest(value) {
  */
 export function redactPromptValue(value) {
   if (typeof value === "string") {
-    if (/^data:image\/[\w.+-]+;base64,/iu.test(value))
+    if (/^data:image\/[\w.+-]+(?:;[^,]*)?,/iu.test(value))
       return "[sealed client image asset]";
     if (value.length > 12_000)
       return `${value.slice(0, 256)}...[sealed value truncated]`;
@@ -656,18 +657,163 @@ function localContentBindingAliases(file, binding) {
   return aliases;
 }
 
+/**
+ * Resolve unambiguous local identifiers back to sealed content paths.
+ * Supports ordinary property aliases and object destructuring without using
+ * reference instrumentation as a substitute for proving the rendered binding.
+ */
+function localContentPathAliases(file) {
+  const declarations = [];
+  const nameCounts = new Map();
+  const recordNames = (name) => {
+    for (const value of bindingPatternNames(name))
+      nameCounts.set(value, (nameCounts.get(value) || 0) + 1);
+  };
+  const collect = (node) => {
+    if (ts.isVariableDeclaration(node)) {
+      recordNames(node.name);
+      if (node.initializer)
+        declarations.push({ name: node.name, initializer: node.initializer });
+    } else if (ts.isParameter(node)) {
+      recordNames(node.name);
+      if (ts.isObjectBindingPattern(node.name))
+        declarations.push({ name: node.name, initializer: null });
+    } else if (
+      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+      node.name
+    ) {
+      recordNames(node.name);
+    }
+    ts.forEachChild(node, collect);
+  };
+  collect(file);
+
+  const aliases = new Map();
+  const resolveExpressionPath = (expression) => {
+    if (!expression) return undefined;
+    if (
+      ts.isParenthesizedExpression(expression) ||
+      ts.isAsExpression(expression) ||
+      ts.isTypeAssertionExpression(expression) ||
+      ts.isSatisfiesExpression(expression)
+    )
+      return resolveExpressionPath(expression.expression);
+    if (ts.isIdentifier(expression))
+      return expression.text === "content"
+        ? "content"
+        : aliases.get(expression.text);
+    if (ts.isPropertyAccessExpression(expression)) {
+      const base = resolveExpressionPath(expression.expression);
+      return base ? `${base}.${expression.name.text}` : undefined;
+    }
+    if (
+      ts.isElementAccessExpression(expression) &&
+      expression.argumentExpression &&
+      (ts.isStringLiteral(expression.argumentExpression) ||
+        ts.isNoSubstitutionTemplateLiteral(expression.argumentExpression))
+    ) {
+      const base = resolveExpressionPath(expression.expression);
+      return base ? `${base}.${expression.argumentExpression.text}` : undefined;
+    }
+    return undefined;
+  };
+  const assignBinding = (name, basePath) => {
+    if (!basePath) return false;
+    let changed = false;
+    if (ts.isIdentifier(name)) {
+      if (
+        nameCounts.get(name.text) === 1 &&
+        aliases.get(name.text) !== basePath
+      ) {
+        aliases.set(name.text, basePath);
+        changed = true;
+      }
+      return changed;
+    }
+    if (!ts.isObjectBindingPattern(name)) return false;
+    for (const element of name.elements) {
+      if (element.dotDotDotToken || element.initializer) continue;
+      const keyNode = element.propertyName || element.name;
+      const key =
+        ts.isIdentifier(keyNode) ||
+        ts.isStringLiteral(keyNode) ||
+        ts.isNoSubstitutionTemplateLiteral(keyNode)
+          ? keyNode.text
+          : undefined;
+      if (!key) continue;
+      changed = assignBinding(element.name, `${basePath}.${key}`) || changed;
+    }
+    return changed;
+  };
+
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const declaration of declarations) {
+      let basePath;
+      if (declaration.initializer)
+        basePath = resolveExpressionPath(declaration.initializer);
+      else if (ts.isObjectBindingPattern(declaration.name)) basePath = "props";
+      if (
+        ts.isObjectBindingPattern(declaration.name) &&
+        basePath === "props"
+      ) {
+        for (const element of declaration.name.elements) {
+          if (element.dotDotDotToken || element.initializer) continue;
+          const keyNode = element.propertyName || element.name;
+          const key =
+            ts.isIdentifier(keyNode) ||
+            ts.isStringLiteral(keyNode) ||
+            ts.isNoSubstitutionTemplateLiteral(keyNode)
+              ? keyNode.text
+              : undefined;
+          if (key !== "content") continue;
+          changed = assignBinding(element.name, "content") || changed;
+        }
+        continue;
+      }
+      changed = assignBinding(declaration.name, basePath) || changed;
+    }
+  }
+  return { aliases, resolveExpressionPath };
+}
+
+function expressionReferencesResolvedContentBinding(
+  expression,
+  binding,
+  pathState,
+) {
+  let found = false;
+  const visit = (node) => {
+    if (!node || found) return;
+    if (pathState.resolveExpressionPath(node) === binding) {
+      found = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(expression);
+  return found;
+}
+
 function jsxChildrenContainBinding(children, binding, file) {
   const aliases = localContentBindingAliases(file, binding);
+  const pathState = localContentPathAliases(file);
   const visit = (items) => {
     for (const child of items || []) {
       if (
         ts.isJsxExpression(child) &&
-        expressionReferencesContentBinding(
+        (expressionReferencesContentBinding(
           child.expression,
           binding,
           aliases,
           file,
-        )
+        ) ||
+          expressionReferencesResolvedContentBinding(
+            child.expression,
+            binding,
+            pathState,
+          ))
       )
         return true;
       if (
@@ -1090,7 +1236,7 @@ export function restoreRequiredExperienceMarkers(
             repaired.file,
           );
         });
-        return matches.filter(
+        const semanticMatches = matches.filter(
           (candidate) =>
             !matches.some(
               (other) =>
@@ -1100,6 +1246,34 @@ export function restoreRequiredExperienceMarkers(
                 other.node.end < candidate.node.end,
             ),
         );
+
+        const originalHero = original.elements.find(({ opening }) =>
+          jsxAttribute(opening, "data-hero"),
+        );
+        for (const attributeName of [
+          "data-reference-section",
+          "data-hero-geometry",
+        ]) {
+          const originalValue = jsxAttributeValue(
+            jsxAttribute(originalHero?.opening, attributeName),
+            original.file,
+          ).trim();
+          if (!originalValue) continue;
+          const instrumented = repaired.elements.filter((element) => {
+            if (jsxOpeningName(element.opening) !== "section") return false;
+            return (
+              jsxAttributeValue(
+                jsxAttribute(element.opening, attributeName),
+                repaired.file,
+              ).trim() === originalValue
+            );
+          });
+          if (!instrumented.length) continue;
+          return semanticMatches.filter((candidate) =>
+            instrumented.includes(candidate),
+          );
+        }
+        return semanticMatches;
       },
     },
     {
@@ -1747,11 +1921,7 @@ function validateStyles(source, route) {
  * variables remain available when a candidate intentionally consumes them.
  */
 export function namespaceCreativeCss(source) {
-  const declared = new Set(
-    [...source.matchAll(/(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu)].map(
-      (match) => match[1],
-    ),
-  );
+  const declared = new Set(cssCustomPropertyDeclarations(source));
   if (!declared.size) return source;
   return source.replace(/--[A-Za-z][\w-]*/gu, (token) =>
     declared.has(token) && !token.startsWith("--ll-creative-")
@@ -2023,7 +2193,10 @@ export async function authorExperienceCandidates({
       const base = {
         route,
         contentTokens,
-        contentShape: content,
+        // The persisted/runtime manifest retains the original sealed asset
+        // values. Only model-bound content is redacted so inline client image
+        // bytes can never consume the authoring context window as text.
+        contentShape: redactPromptValue(content),
         visualBrief: routeContentManifest.visualBrief,
         rules,
       };

@@ -128,6 +128,67 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("redacts all inline client image URI forms only from model-bound content", async () => {
+    const inlineImages = {
+      canonical: `data:image/webp;base64,${"a".repeat(250_000)}`,
+      parameterized: "data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D%220%200%201%201%22%3E%3C/svg%3E",
+      percentEncoded: "data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%201%201%22%3E%3C/svg%3E",
+    };
+    const requests: AuthorStageRequest[] = [];
+
+    const result = await authorExperienceCandidates({
+      site: {
+        ...site,
+        assets: {
+          ...site.assets,
+          photoOne: inlineImages.canonical,
+          photoTwo: inlineImages.parameterized,
+          photoThree: inlineImages.percentEncoded,
+        },
+      },
+      inspirationPack,
+      generate: async (request) => {
+        requests.push(request);
+        return safeStage(request);
+      },
+    });
+
+    expect(requests).toHaveLength(12);
+    expect(
+      requests.every(
+        (request) =>
+          request.contentShape.hero.image === "[sealed client image asset]" &&
+          request.contentShape.hero.secondaryImage ===
+            "[sealed client image asset]" &&
+          request.contentShape.hero.tertiaryImage ===
+            "[sealed client image asset]",
+      ),
+    ).toBe(true);
+    expect(
+      requests.some((request) =>
+        JSON.stringify(request.contentShape).includes("data:image/"),
+      ),
+    ).toBe(false);
+
+    expect(result.contentManifest.values.hero.image).toBe(inlineImages.canonical);
+    expect(result.contentManifest.values.hero.secondaryImage).toBe(
+      inlineImages.parameterized,
+    );
+    expect(result.contentManifest.values.hero.tertiaryImage).toBe(
+      inlineImages.percentEncoded,
+    );
+    for (const candidate of result.candidates) {
+      const manifest = JSON.parse(candidate.files["content-manifest.json"]);
+      expect(manifest.values.hero.image).toBe(inlineImages.canonical);
+      expect(manifest.values.hero.secondaryImage).toBe(
+        inlineImages.parameterized,
+      );
+      expect(manifest.values.hero.tertiaryImage).toBe(
+        inlineImages.percentEncoded,
+      );
+    }
+  });
+
   it("keeps the client visual brief alongside sealed content", () => {
     const manifest = buildCreativeContentManifest({
       ...site,
@@ -594,6 +655,40 @@ describe("production experience author", () => {
     ).toThrow(/found 2 semantic targets/iu);
   });
 
+  it("restores data-hero from preserved reference instrumentation when repair aliases the heading", () => {
+    const original = `<section data-reference-section="hero" data-hero-geometry="split-editorial" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
+    const repaired = `export default function Experience({ content }) {
+      const { hero } = content;
+      return <section data-reference-section="hero" data-hero-geometry="split-editorial"><h1>{hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>;
+    }`;
+
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-repair-alias",
+    });
+
+    expect(restored).toContain(
+      'data-reference-section="hero" data-hero-geometry="split-editorial" data-hero',
+    );
+    expect(restored.match(/\sdata-hero(?=\s|>)/gu)).toHaveLength(1);
+  });
+
+  it("rejects hero marker restoration when preserved instrumentation and sealed heading diverge", () => {
+    const original = `<section data-reference-section="hero" data-hero-geometry="split-editorial" data-hero><h1>{content.hero.heading}</h1></section>`;
+    const repaired = `export default function Experience({ content }) {
+      const { hero } = content;
+      return <main>
+        <section data-reference-section="hero" data-hero-geometry="split-editorial"><p>Editorial intro</p></section>
+        <section><h1>{hero.heading}</h1></section>
+      </main>;
+    }`;
+
+    expect(() =>
+      restoreRequiredExperienceMarkers(repaired, original, {
+        id: "route-moved-heading",
+      }),
+    ).toThrow(/cannot safely restore data-hero: found 0 semantic targets/iu);
+  });
+
   it("deduplicates hero markers only when a unique semantic hero remains", () => {
     const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
     const duplicated = `${original}<section data-hero><h2>Decorative section</h2></section>`;
@@ -607,7 +702,7 @@ describe("production experience author", () => {
   });
 
   it("keeps refusing duplicate hero markers when the semantic target is ambiguous", () => {
-    const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1></section>`;
+    const original = `<section data-hero><h1>{content.hero.heading}</h1></section>`;
     const duplicated = `${original}<section data-hero><h1>{content.hero.heading}</h1></section>`;
 
     expect(() =>
@@ -787,7 +882,12 @@ describe("production experience author", () => {
 
   it("namespaces candidate-owned CSS variables without hiding host tokens", () => {
     const css = namespaceCreativeCss(
-      ":root { --ink: #f5f1e9; --accent: var(--ink); } .hero { color: var(--ink); background: var(--brand); }",
+      `:root {
+  /* authored palette */
+  --ink: #f5f1e9;
+  --accent: var(--ink);
+}
+.hero { color: var(--ink); background: var(--brand); }`,
     );
 
     expect(css).toContain("--ll-creative-ink: #f5f1e9");
@@ -795,6 +895,40 @@ describe("production experience author", () => {
     expect(css).toContain("color: var(--ll-creative-ink)");
     expect(css).toContain("background: var(--brand)");
     expect(css).not.toContain("--ink:");
+  });
+
+  it("ignores commented-out CSS token declarations during namespacing", () => {
+    const css = namespaceCreativeCss(
+      `/* --brand: red; */
+:root {
+  /* palette note: --ghost: pink; */
+  --ink: #111;
+}
+.hero {
+  color: var(--brand);
+  background: var(--ink);
+}`,
+    );
+
+    expect(css).toContain("/* --brand: red; */");
+    expect(css).toContain("color: var(--brand)");
+    expect(css).not.toContain("var(--ll-creative-brand)");
+    expect(css).toContain("--ll-creative-ink: #111");
+    expect(css).toContain("background: var(--ll-creative-ink)");
+  });
+
+  it("namespaces CSS tokens declared after nested rules", () => {
+    const css = namespaceCreativeCss(
+      `.hero {
+  & .child { color: red; }
+  --ink: blue;
+  color: var(--ink);
+}`,
+    );
+
+    expect(css).toContain("--ll-creative-ink: blue");
+    expect(css).toContain("color: var(--ll-creative-ink)");
+    expect(css).not.toMatch(/(^|[;{}])\s*--ink\s*:/gu);
   });
 
   it("authors three sealed and structurally independent candidate bundles", async () => {
