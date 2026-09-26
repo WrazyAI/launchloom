@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import type { LocalClientPipelineFixture } from "../scripts/local-client-generation.mjs";
 import {
   CLIENT_INTAKE_V2_SUBMISSION_FIELDS,
   createClientIntakeV2Submission,
@@ -82,9 +83,13 @@ describe("local client generation input", () => {
 
   it("preserves the open-ended 50+ radius without inventing an exact mile count", () => {
     const local = prepareLocalClientIntake({ ...formSubmission, serviceRadius: "50+" });
+    const fixture: LocalClientPipelineFixture = local.fixture;
+    const exactRadius: 10 | 20 | 30 | 50 | "50+" = fixture.serviceRadius;
+    const exactMiles: number | null = fixture.serviceRadiusMiles;
 
     expect(local.intake.serviceRadius).toBe("50+");
-    expect(local.fixture).toMatchObject({
+    expect([exactRadius, exactMiles]).toEqual(["50+", null]);
+    expect(fixture).toMatchObject({
       radius: "50+",
       serviceRadius: "50+",
       serviceRadiusMiles: null,

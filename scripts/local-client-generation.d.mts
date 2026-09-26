@@ -1,4 +1,4 @@
-import type { NormalizedClientIntake, ClientIntakeV2Submission } from "../src/lib/client-intake-v2.mjs";
+import type { NormalizedClientIntake, ClientIntakeV2Submission, ServiceRadius } from "../src/lib/client-intake-v2.mjs";
 
 export const LOCAL_CLIENT_INTAKE_INVITE_TOKEN: "local-fixture-only";
 
@@ -13,6 +13,8 @@ export type LocalClientPipelineFixture = {
   differentiators: string[];
   primaryCta: string;
   radius: string;
+  serviceRadius: ServiceRadius;
+  serviceRadiusMiles: number | null;
   coverage: string[];
   promise: string;
   description: string;
