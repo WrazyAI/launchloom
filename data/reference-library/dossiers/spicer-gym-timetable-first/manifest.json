@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-gym-timetable-first",
+  "productionEligible": true,
+  "referenceName": "Spicer timetable-first strength gym",
+  "familyId": "spicer-gym-timetable-first",
+  "source": {
+    "name": "Spicer Designs Gym template",
+    "url": "https://www.spicerdesigns.com/templates/gym",
+    "rights": "licensed",
+    "rightsEvidence": "The official downloadable template is licensed under Creative Commons Attribution 4.0. The source license is retained in this dossier, and the official preview preserves the required Spicer Designs attribution in its footer.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/ASSET-PROVENANCE.md"]
+  },
+  "provenance": {
+    "archiveSha256": "e7059bc6b667394c4b2d18f5b4d44e23cbe4f767d145f39e19d36b3c484b003e",
+    "capture": "Full-page screenshots were made from Spicer Designs' official live gym preview at 1440x900 and 390x844 after scrolling through the complete page to load lazy media. The official preview renders the same design as the licensed downloadable HTML package. No source text, layout, or imagery was edited; no source image file was separately retained.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 6559},
+    "mobileViewport": {"width": 390, "height": 844, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 9395},
+    "diagnostics": "At both viewports document width matched the viewport exactly. The source gym hero image decoded successfully. The captured design is a dark, timetable-led gym template; all sample memberships, prices, class schedules, coach identities, equipment counts, reviews and policies are fictional demo content.",
+    "attribution": "Spicer Designs, CC BY 4.0. Required attribution remains visible in the screenshot footer. Internal visual-mechanics reference only; do not ship source branding, text, code or imagery to client sites."
+  },
+  "businessKinds": ["fitness", "gym", "strength-training", "fitness-studio", "personal-training"],
+  "tags": {
+    "business": ["fitness", "gym", "strength-training", "fitness-studio", "personal-training"],
+    "style": ["dark-performance-utility", "acid-green-signal", "condensed-athletic-type", "no-nonsense-membership"],
+    "composition": ["hours-utility-rail", "poster-timetable-hero", "week-grid-schedule", "membership-comparison", "equipment-inventory", "induction-story"],
+    "conversion": ["schedule-first", "membership-terms-visible", "free-induction-path", "join-after-objection-handling"],
+    "motion": ["day-filtered-week-grid", "native-faq-disclosure", "static-reduced-motion-layout"],
+    "imagery": ["dark-equipment-atmosphere", "ai-generated-placeholder-hero", "no-people-required"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 900}},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}}
+  },
+  "referenceDna": {
+    "annotatedDescription": "A near-black strength-gym site makes the decision facts visible rather than hiding them behind a lead form: opening-hours utility line, compact identity/navigation, an atmospheric equipment scene behind a large condensed promise, two direct actions, then a week-grid class timetable. It continues with three membership levels and cancellation terms, a specific equipment inventory, an un-intimidating first-visit induction explanation, trainer profiles, member objections, concise FAQs, and a simple join/contact form. Acid green marks only key states and actions. The source's AI-made hero artwork is placeholder-only.",
+    "heroGeometry": {"mode": "full-width dark equipment scene with left-aligned stacked condensed headline", "alignment": "headline, concise policy note and paired actions occupy a narrow left column while gym equipment and shadow fill the right", "viewport": "one compact promise and both primary paths fit in the first desktop scene without requiring a scroll-trigger"},
+    "navigationGeometry": {"mode": "thin opening-hours utility rail followed by a compact wordmark and anchor nav", "placement": "top edge, with timetable and membership anchors prominent", "mobile": "small wordmark and menu control; no wide desktop nav compression or horizontal scroll"},
+    "typography": {"display": "bold condensed athletic grotesk", "body": "neutral legible sans", "scale": "short uppercase eyebrow, compressed multi-line hero, clear medium-size section titles, compact timetable labels"},
+    "palette": {"surfaces": ["near-black", "charcoal", "slightly lifted graphite"], "ink": "warm white", "accents": ["acid green", "muted gray"], "contrastIntent": "reserve bright green for selected schedule state, membership emphasis and actionable controls; maintain readable body contrast"},
+    "imageTreatment": {"mode": "dark atmospheric strength-equipment interior", "crop": "wide hero cover crop with a dark copy-safe gradient", "focalPoint": "equipment silhouette and subtle green practical light remain visible to the right; source artwork is not reusable client imagery"},
+    "sectionSequence": ["hours-utility", "navigation", "equipment-hero", "weekly-class-grid", "membership-tiers-and-terms", "equipment-inventory", "first-visit-induction", "trainer-profiles", "member-objections", "faq", "join-form", "footer"],
+    "servicePresentation": {"pattern": "weekly schedule first, followed by explicit membership tiers and a factual equipment inventory", "interaction": "day tabs may filter a verified timetable; classes, capacity, membership features and equipment must come from sealed client facts"},
+    "ctaPlacement": {"primary": "membership or trial/join path in the hero", "secondary": "first-visit induction path beside it", "early": "show the timetable immediately after the opening scene, before longer facility narrative"},
+    "motion": {"primitive": "visitor-controlled day selection for a weekly schedule with small, reduced-motion-safe state changes", "library": "native controls and CSS transitions", "reducedMotion": "render the schedule and all membership details statically with visible selected states"},
+    "mobileRecomposition": {"strategy": "vertical training decision sequence", "rules": ["keep opening message and join/visit actions before the schedule", "convert the week grid into readable day-selectable sessions rather than shrinking columns", "stack membership tiers with terms adjacent to prices", "present equipment groups in a vertical inventory", "preserve large touch targets and zero horizontal overflow"]},
+    "prohibitedPatterns": ["source gym brand, copy, phone, schedule, coach names or sample membership data", "invented prices, class capacity, opening hours, contract terms or equipment inventory", "source hero art presented as client-owned photography", "fake reviews, trainer biographies, results or health outcomes", "dark card wall with no typographic or timetable hierarchy", "fake live availability or booking behavior"],
+    "requiredSignatureElements": [
+      {"id": "gym-hours-rail", "selector": "[data-reference-signature=gym-hours-rail]", "description": "a narrow hours/policy rail above the brand navigation using only verified client facts"},
+      {"id": "timetable-hero", "selector": "[data-reference-signature=timetable-hero]", "description": "dark equipment-led poster hero with a compact service promise and visible next steps"},
+      {"id": "week-grid-schedule", "selector": "[data-reference-signature=week-grid-schedule]", "description": "class schedule is an early, legible decision surface"},
+      {"id": "membership-terms", "selector": "[data-reference-signature=membership-terms]", "description": "membership choices show client-approved price and terms without hidden exclusions"},
+      {"id": "first-visit-induction", "selector": "[data-reference-signature=first-visit-induction]", "description": "specific, fact-grounded explanation of what a new visitor can expect"}
+    ],
+    "acceptanceChecks": ["membership prices, hours, schedules and facility details come only from verified client inputs", "schedule remains readable and keyboard/touch operable on mobile", "the gym decision facts appear before extended brand narrative", "hero is legible at desktop 100 percent zoom", "all source art and identity are excluded from client deliverables", "mobile capture and rendered page have no horizontal overflow"]
+  },
+  "review": {"status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-26", "scope": "official source package license, official full-page desktop/mobile captures, reference prompt, and non-transferable demo facts"}
+}

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-fogo-island-inn-hospitality",
+  "productionEligible": true,
+  "referenceName": "Fogo Island Inn destination-led hospitality",
+  "familyId": "direct-fogo-island-inn-destination-story",
+  "source": {
+    "name": "Fogo Island Inn official website",
+    "url": "https://fogoislandinn.ca/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested on 2026-09-26 that clearance covers full-page screenshot retention, derived prompts, and pipeline-model visual-reference use. No source-owner grant file was uploaded.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/provenance.md", "rights/requester-attestation.md"]
+  },
+  "provenance": {
+    "capture": "Full-page captures from the official Fogo Island Inn domain. The essential-only cookie choice was applied before capture. Desktop and mobile screenshots were rendered at 1440x900 and 390x844 after scrolling and forcing lazy image decode; all image elements decoded and the document had no horizontal overflow.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 7720},
+    "mobileViewport": {"width": 390, "height": 844, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 11915},
+    "diagnostics": "The full page is complete at both sizes. The desktop opening is an atmospheric coastal scene followed by reservation, location, lodging, food, activities, community, journal, and contact chapters. Source logos, Michelin and Relais & Chateaux marks, property imagery, rates, room counts, community claims, and destination facts are reference-only.",
+    "attribution": "Fogo Island Inn official website. Screenshot/prompt retention and model-reference use are based on requester attestation; no source-owner document was attached. Do not use source marks, text, property photos, or claims in client deliverables."
+  },
+  "businessKinds": ["boutique-hotel", "inn", "lodging", "destination-stay", "hospitality"],
+  "tags": {
+    "business": ["boutique-hotel", "inn", "lodging", "destination-stay", "hospitality"],
+    "style": ["remote-coastal-cinematic", "earth-and-ocean-palette", "community-rooted-editorial", "slow-hospitality"],
+    "composition": ["full-bleed-landscape-opening", "reserve-first-utility-nav", "place-to-stay-to-food-to-activity-chapters", "destination-ledger", "journal-close"],
+    "conversion": ["date-selection-first", "stay-discovery", "rates-and-inclusions", "destination-planning"],
+    "motion": ["cinematic-image-sequence", "visitor-controlled-content-rails", "static-reduced-motion-chapters"],
+    "imagery": ["coastal-landscape-photography", "interior-and-food-chapters", "place-specific-outdoor-activity-scenes"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 900}},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}}
+  },
+  "referenceDna": {
+    "annotatedDescription": "A destination-first inn page uses the North Atlantic coast as its opening scene. A slim navigation row places booking beside destination and stay paths; an atmospheric full-bleed landscape carries a direct date-selection action. The page then moves from place context to lodging/rates, food, island experiences, community purpose, recent stories, and a richly linked footer. Photography and narrative are the primary navigational structure, with warm dark overlays and minimal surface chrome. This actual hotel is a visual reference only: its remote-island identity, community model, awards, copy, property, amenities, rates, photos, operating claims and booking details are not reusable client facts.",
+    "heroGeometry": {"mode": "immersive full-bleed coastal scene beneath a restrained reservation/navigation rail", "alignment": "small wordmark and reserve action sit across the top; image atmosphere fills the viewport while the lodging promise and date action remain direct", "viewport": "hero communicates a stay experience and exposes the first booking action without a multi-card dashboard"},
+    "navigationGeometry": {"mode": "low-chrome destination navigation with direct reserve action", "placement": "wordmark left, stay/destination/food/news paths across the center, reserve at the far edge", "mobile": "collapse destinations behind a menu while preserving a prominent reservation action"},
+    "typography": {"display": "quiet contemporary grotesk with occasional editorial serif accents", "body": "light, readable neutral sans", "scale": "large place-led statement, restrained captions, short section introductions, clear booking labels"},
+    "palette": {"surfaces": ["deep warm brown", "ocean charcoal", "soft limestone"], "ink": "warm white and dark charcoal", "accents": ["weathered blue", "muted brass", "natural greens"], "contrastIntent": "photographic overlays protect white navigation and hero text; body sections switch to calm light surfaces for sustained reading"},
+    "imageTreatment": {"mode": "large natural landscape, then specific room, food, and island imagery", "crop": "wide hero crop transitions into varied editorial image panels and smaller destination cards", "focalPoint": "shoreline light and rugged Atlantic coast establish place; client-owned imagery must carry the new business's actual destination"},
+    "sectionSequence": ["reservation-navigation", "coastal-stay-hero", "place-and-route", "rooms-and-rates", "food-and-drink", "island-activities", "community-or-place-story", "news-and-guides", "reservation-contact", "footer"],
+    "servicePresentation": {"pattern": "lodging is organized as an experience journey: stay, arrival, food, and activities, each with its own specific route", "interaction": "date selection, reservation link, visitor-controlled image/content rails, and destination details; use only integrations the client actually has"},
+    "ctaPlacement": {"primary": "date-selection/reservation action inside the opening scene", "secondary": "arrival or stay-details path after the location context", "early": "lodging details and rates follow place context before editorial/community chapters"},
+    "motion": {"primitive": "slow image reveal or gentle scene transition that reinforces a destination rather than concealing room/rate facts", "library": "native CSS or GSAP only where a measured reveal is purposeful", "reducedMotion": "static hero crop and complete visible image/section content"},
+    "mobileRecomposition": {"strategy": "immersive opening followed by stacked stay-planning chapters", "rules": ["keep reserve action visible in compact nav", "show destination context and date path before secondary stories", "stack room, rate, food and activity chapters as distinct full-width scenes", "avoid tiny overlays on photography", "no horizontal overflow"]},
+    "prohibitedPatterns": ["Fogo Island Inn name, logo, island geography, rates, room counts, awards, sustainability statements or source text", "source photography, dining photography, property images or social enterprise claims", "invented environmental/community impact, inclusive meal plans, activities, access times, amenities or booking terms", "fake scarcity, fake available dates, fabricated reviews or destination awards", "generic resort-card wall or unrelated luxury stock imagery"],
+    "requiredSignatureElements": [
+      {"id": "destination-hero-scene", "selector": "[data-reference-signature=destination-hero-scene]", "description": "a single immersive place-setting image with legible lodging promise"},
+      {"id": "reservation-utility-nav", "selector": "[data-reference-signature=reservation-utility-nav]", "description": "quiet destination navigation with a direct, real booking route"},
+      {"id": "stay-planning-chapters", "selector": "[data-reference-signature=stay-planning-chapters]", "description": "rooms/rates, food and activities appear as distinct journey stages, not one generic service grid"},
+      {"id": "place-specific-close", "selector": "[data-reference-signature=place-specific-close]", "description": "close with truthful arrival/contact details and destination guidance"}
+    ],
+    "acceptanceChecks": ["all location, room, dining, activity and booking claims come from verified client data", "the booking path works and uses actual availability only", "the hero and location are specific to the real property and service area", "photographic text contrast passes desktop and mobile checks", "mobile preserves the reservation action and section sequence", "no source brand, award, photo, claim or copy ships to the client's site"]
+  },
+  "review": {"status": "curated-permission-attested", "curator": "Codex", "reviewedAt": "2026-09-26", "scope": "requester-attested direct-site screenshots/model input, complete responsive capture, and non-transferable property facts"}
+}

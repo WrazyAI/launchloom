@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-change-accountants-york",
+  "productionEligible": true,
+  "referenceName": "Change Accountants York organic-growth practice",
+  "familyId": "direct-change-accountants-organic-growth",
+  "source": {
+    "name": "Change Accountants official website",
+    "url": "https://www.change-accountants.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested on 2026-09-26 that clearance covers full-page screenshot retention, derived prompts, and pipeline-model visual-reference use. No source-owner grant file was uploaded.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/provenance.md", "rights/requester-attestation.md"]
+  },
+  "provenance": {
+    "capture": "Direct official-site full-page capture after declining cookie consent. Images were eagerly loaded, the full page scrolled, and image decode verified. No page content or visual styling was changed.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 5030},
+    "mobileViewport": {"width": 390, "height": 844, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 8373},
+    "diagnostics": "The page uses a spare gray opening, asymmetrical portrait window, large green headline emphasis, service taxonomy, organic industry band, news, team, testimonial, quote action, and a distinctive footer. All image elements loaded and document width matched both viewports.",
+    "attribution": "Change Accountants official website. Screenshot/prompt retention and model-reference use are based on requester attestation; no source-owner document was attached."
+  },
+  "businessKinds": ["accounting", "accountant", "accountancy", "bookkeeping", "chartered-accountant"],
+  "tags": {
+    "business": ["accounting", "accountant", "accountancy", "bookkeeping", "chartered-accountant"],
+    "style": ["organic-growth-curve", "gray-paper-and-lime", "teal-editorial-surface", "independent-practice-humanism"],
+    "composition": ["asymmetric-portrait-hero", "oversized-accent-word", "two-audience-service-taxonomy", "industry-chip-map", "news-rail", "team-and-review-pair"],
+    "conversion": ["fixed-fee-quote", "practice-fit", "service-routing", "client-conversation"],
+    "motion": ["shape-mask-reveal", "native-industry-links", "static-reduced-motion-sections"],
+    "imagery": ["single-human-portrait-window", "real-team-photography", "editorial-client-scenes"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 900}},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}}
+  },
+  "referenceDna": {
+    "annotatedDescription": "A local York accounting practice uses a light gray canvas, compact wordmark navigation, and a large editorial opening where green-highlighted words and a rounded portrait window break a conventional split grid. A direct three-column service taxonomy, flowing organic industry band, teal news chapter, team portraits, quote paired with human context, centered fee enquiry, and sharp green footer stripe create a distinctive rhythm. It feels personable and contemporary rather than like a financial dashboard. Source identity, people, quote, rating, prices, client counts, registration marks, York details and copy are non-transferable.",
+    "heroGeometry": {"mode": "left-aligned oversized promise with a highlighted word and offset rounded portrait aperture", "alignment": "headline and actions sit at left while one large portrait/image window and organic shape anchor the right", "viewport": "opening establishes practice character and a clear enquiry route"},
+    "navigationGeometry": {"mode": "bare wordmark with evenly spaced service and insight links", "placement": "single light row at the top with no pill container", "mobile": "condensed brand and accessible menu while preserving direct contact"},
+    "typography": {"display": "rounded geometric sans with bold colored word accents", "body": "friendly medium-weight sans", "scale": "large two-line hero, sentence-case section headings, compact service labels and readable testimonial text"},
+    "palette": {"surfaces": ["cool light gray", "warm white", "deep teal"], "ink": "charcoal", "accents": ["lime green", "blue-green teal"], "contrastIntent": "large lime shapes alternate with teal blocks and white surfaces; avoid small lime text on white"},
+    "imageTreatment": {"mode": "cropped portrait window and candid practice/team scenes embedded in asymmetrical layouts", "crop": "wide hero aperture, medium landscape editorial images, simple team portraits", "focalPoint": "human practitioners balance the bright display typography; use only client-owned approved imagery"},
+    "sectionSequence": ["wordmark-navigation", "organic-editorial-hero", "business-and-personal-service-taxonomy", "industry-fit-band", "insights-cards", "team-introduction", "testimonial-and-human-image", "fixed-fee-enquiry", "ratings-strip", "contact-footer"],
+    "servicePresentation": {"pattern": "parallel service taxonomies for distinct customer types, followed by a sector-fit field", "interaction": "each service and sector is a direct route; show only client-approved offerings and industries"},
+    "ctaPlacement": {"primary": "quote/conversation action in the hero and again at the practical enquiry point", "secondary": "service or team route near the opening", "early": "show core accounting service categories immediately after the hero"},
+    "motion": {"primitive": "subtle organic shape/image reveal with no scroll-lock; taxonomy remains ordinary links", "library": "CSS transitions or one purposeful GSAP timeline", "reducedMotion": "static shape layers and immediately visible copy/images"},
+    "mobileRecomposition": {"strategy": "vertical practice story with one organic image aperture", "rules": ["stack headline before portrait and actions", "keep business and personal service groups distinct", "translate the desktop chip field to readable links", "stack team and proof in reading order", "keep enquiry action easy to reach", "no horizontal overflow"]},
+    "prohibitedPatterns": ["source identity, logo, staff, exact quote, client count, rating, fees, credentials or York location", "invented reviews, outcomes, client numbers, savings, response times or professional memberships", "source staff photos or client testimonials", "lime small text on white", "fabricated service specialties", "decorative color badge wall or generic card grid replacing the asymmetric rhythm"],
+    "requiredSignatureElements": [
+      {"id": "organic-accent-hero", "selector": "[data-reference-signature=organic-accent-hero]", "description": "asymmetric editorial headline with one controlled accent word and a distinct image aperture"},
+      {"id": "dual-service-taxonomy", "selector": "[data-reference-signature=dual-service-taxonomy]", "description": "distinct service groups aligned to verified customer types"},
+      {"id": "industry-fit-band", "selector": "[data-reference-signature=industry-fit-band]", "description": "sector routing only for practice areas confirmed by the client"},
+      {"id": "fixed-fee-enquiry", "selector": "[data-reference-signature=fixed-fee-enquiry]", "description": "clear fee/conversation route using actual pricing or an honest quote workflow"}
+    ],
+    "acceptanceChecks": ["local office/service area and credentials are verified", "service categories route to real client services", "fees and testimonials are evidence-backed", "hero is legible at desktop 100 percent zoom", "mobile taxonomy remains readable", "source imagery, names, logos and wording are excluded"]
+  },
+  "review": {"status": "curated-permission-attested", "curator": "Codex", "reviewedAt": "2026-09-26", "scope": "requester-attested direct-site evidence, local accountancy fit, and non-transferable source identity and claims"}
+}

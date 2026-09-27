@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "lapa-mesh-architects-editorial",
+  "productionEligible": true,
+  "referenceName": "Mesh asymmetrical architecture fieldnotes",
+  "familyId": "lapa-mesh-architects-editorial",
+  "source": {
+    "name": "Mesh Architects",
+    "url": "https://www.mesharchitects.co.uk/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested on 2026-09-25 that clearance covers full-page screenshot retention, derivative prompts, and sending screenshots to the pipeline model as visual reference. The source-specific grant was not attached.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/requester-attestation.md"]
+  },
+  "provenance": {
+    "discoveryPageUrl": "https://www.lapa.ninja/post/mesharchitects/",
+    "capture": "Full-page direct-site captures at 1440x1000 and 390x844 after visiting the whole page to trigger visible scroll reveals and eager image decoding. No source markup or site state was edited; gallery thumbnails were not saved.",
+    "retrievedAt": "2026-09-25",
+    "captureDimensions": { "desktop": [1440, 7631], "mobile": [390, 6713] },
+    "attribution": "Mesh Architects is identified as the captured site. Internal reference only; do not redistribute the screenshot or source assets."
+  },
+  "businessKinds": ["architecture", "architectural-design", "interior-design", "residential-architecture", "design-studio"],
+  "tags": {
+    "business": ["architecture", "architectural-design", "interior-design", "residential-architecture", "design-studio"],
+    "style": ["asymmetric-architecture-editorial", "orange-signal", "warm-paper", "project-led", "playful-precision"],
+    "composition": ["graphic-opening-field", "asymmetric-project-wall", "annotation-rail", "service-index", "dark-contact-close"],
+    "conversion": ["project-consultation", "portfolio-to-enquiry", "service-row-navigation"],
+    "motion": ["scroll-reveal", "subtle-project-reveal", "reduced-motion-static-gallery"],
+    "imagery": ["architectural-project-photography", "line-drawing-annotations", "asymmetric-image-scale"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A vivid graphic opening leads into warm paper with a brief architecture-practice statement. The portfolio uses uneven project-image scales, short written observations, an occasional side research rail, line-drawing notes, and a direct service list. The page closes on a dark contact panel. Source projects, identity, photos, any number-like hero mark, and claims belong to Mesh Architects and are not client facts.",
+    "heroGeometry": { "mode": "full-screen graphic color field with oversized abstract serial mark", "alignment": "graphic marker centered in opening; factual architecture statement follows on warm paper before a varied project collage", "viewport": "color field and enough of the factual practice statement appear at the first desktop fold" },
+    "navigationGeometry": { "mode": "micro wordmark and restrained text anchors", "placement": "small top-edge strip over or above the opening field", "mobile": "compact menu with visible brand and contact access" },
+    "typography": { "display": "bold expressive grotesk with compact editorial serif accents", "body": "neutral humanist sans", "scale": "large graphic brand mark, concise practice statement, small project captions and fine service labels" },
+    "palette": { "surfaces": ["signal orange", "warm cream", "charcoal"], "ink": "near-black", "accents": ["orange", "warm stone", "muted green"], "contrastIntent": "graphic opening contrast transitions to readable warm editorial project chapters" },
+    "imageTreatment": { "mode": "loose project collage interleaved with annotations and line drawings", "crop": "mixed tall and wide crops with varied image scale", "focalPoint": "architectural space and material detail, never inferred client proof" },
+    "sectionSequence": ["graphic-opening", "practice-statement", "project-collage", "annotation-rail", "featured-project", "service-index", "coverage", "faq", "contact-close"],
+    "servicePresentation": { "pattern": "type-led service index following an irregular portfolio sequence", "interaction": "direct service anchors and restrained project links" },
+    "ctaPlacement": { "primary": "project enquiry in the opening statement and dark closing panel", "secondary": "portfolio navigation", "early": "small consultation action directly after the practice statement" },
+    "motion": { "primitive": "subtle reveal of project notes and image groupings", "library": "native scroll-triggered opacity/position", "reducedMotion": "all project and service content visible in static order" },
+    "mobileRecomposition": { "strategy": "stacked asymmetric project journal", "rules": ["scale the graphic opening without presenting it as a metric", "interleave side-rail notes between project entries", "preserve alternation between image and short text", "keep service and contact routes visible", "no horizontal overflow"] },
+    "prohibitedPatterns": ["copied brand, logo, exact orange color, project images or words", "false numeric count or award", "invented project outcomes or client relationships", "generic symmetric split hero", "uniform rounded card grid", "unverified awards and staff", "hover-only or motion-obscured services"],
+    "requiredSignatureElements": [
+      { "id": "graphic-opening-field", "selector": "[data-reference-signature=graphic-opening-field]", "description": "strong graphic field before the concise local practice statement" },
+      { "id": "asymmetric-project-wall", "selector": "[data-reference-signature=asymmetric-project-wall]", "description": "varied project imagery and short factual annotations" },
+      { "id": "practice-annotation-rail", "selector": "[data-reference-signature=practice-annotation-rail]", "description": "secondary research or process notes, responsive to mobile flow" },
+      { "id": "type-service-index", "selector": "[data-reference-signature=type-service-index]", "description": "services expressed as a compact typographic index" }
+    ],
+    "acceptanceChecks": ["graphic mark is not interpreted as a business statistic", "service and location context are present in the opening text", "project assets and claims are client-approved", "mobile preserves an intentional image/text rhythm", "FAQ and enquiry remain discoverable", "no source brand, copy, image or award is reused"]
+  },
+  "review": { "status": "requester-attested-internal-and-model-reference", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "direct-site desktop/mobile capture, source-specific mechanics prompt and requester attestation; no source grant file uploaded" }
+}

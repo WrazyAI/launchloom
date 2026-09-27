@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-drafthouse-atlas",
+  "productionEligible": true,
+  "referenceName": "Drafthouse architectural project fieldbook",
+  "familyId": "colorlib-drafthouse-atlas",
+  "source": {
+    "name": "Colorlib Bootstrap Templates Drafthouse",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/drafthouse",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned repository template is under MIT. Its retained Drafthouse credits identify each bundled photo as CC0/Public Domain. Both notices are included in this dossier.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/CREDITS.txt"]
+  },
+  "provenance": {
+    "repositoryCommit": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "archiveSha256": "a08ab6e57a0db6c2dfd91a2c1afe310871d4cac27cd673f9f71b8cf0c0d9d13e",
+    "capture": "Pinned template rendered locally at 1440px and 390px content widths. Lazy images were loaded before capture; a closed off-canvas drawer was hidden only for the mobile capture because it otherwise expanded the page canvas. Visible page content and source markup were unchanged.",
+    "retrievedAt": "2026-09-25",
+    "attribution": "Colorlib Bootstrap Templates, MIT. Per-template photography credits retained; the source footer remains visible in both screenshots."
+  },
+  "businessKinds": ["architecture", "architectural-design", "interior-design", "design-studio"],
+  "tags": {
+    "business": ["architecture", "architectural-design", "interior-design", "design-studio"],
+    "style": ["architectural-editorial", "warm-stone", "project-fieldbook", "quiet-grotesk", "archival-photography"],
+    "composition": ["full-width-project-hero", "anchored-project-metadata", "project-index", "principles-ledger", "enquiry-sheet"],
+    "conversion": ["project-enquiry", "briefing-form", "project-context-capture"],
+    "motion": ["native-scrollspy", "in-page-project-navigation"],
+    "imagery": ["cc0-architectural-photography", "project-portfolio-crops", "archival-image-treatment"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A calm architecture studio fieldbook. A compact paper-toned navigation row sits above a full-width, image-led featured project; the title and small project metadata are anchored over the lower image edge. A narrow practice statement transitions into a dated project index, a ruled principles/process ledger, capabilities, awards, people, and a structured enquiry form. The source uses archival photographs and demo locations, awards, people, metrics, and project records, none of which are client facts.",
+    "heroGeometry": { "mode": "featured-project tableau with metadata", "alignment": "full-width image, with project name and compact facts anchored near its lower edge", "viewport": "top navigation and enough of the project image/title to establish the practice before scrolling" },
+    "navigationGeometry": { "mode": "compact architectural index", "placement": "shallow paper-colored horizontal strip", "mobile": "wordmark and one enquiry action remain visible; anchors collapse into a compact menu" },
+    "typography": { "display": "restrained neutral grotesk", "body": "quiet editorial sans", "scale": "medium display statements, small uppercase metadata labels, concise body copy" },
+    "palette": { "surfaces": ["warm paper", "limestone", "soft stone gray"], "ink": "charcoal", "accents": ["muted blue", "ochre", "fine graphite rules"], "contrastIntent": "low-chroma architectural calm while preserving readable body and action contrast" },
+    "imageTreatment": { "mode": "archival architectural project photography", "crop": "wide featured project with repeated varied project crops", "focalPoint": "building/site geometry remains legible and text sits in a quiet lower image zone" },
+    "sectionSequence": ["navigation", "project-hero", "practice-statement", "project-index", "principles-ledger", "services", "recognition", "team", "enquiry", "footer"],
+    "servicePresentation": { "pattern": "compact capability blocks after a project and principles archive", "interaction": "anchor navigation and understated project links" },
+    "ctaPlacement": { "primary": "project enquiry in navigation and structured closing form", "secondary": "project index", "early": "compact enquiry link near the featured project opening" },
+    "motion": { "primitive": "active section indication while reading project chapters", "library": "native scroll and in-page anchors", "reducedMotion": "static image chapters and direct anchor navigation" },
+    "mobileRecomposition": { "strategy": "single-column project archive", "rules": ["preserve featured image before project metadata", "stack project image and facts", "turn principles into ruled rows", "stack enquiry fields in reading order", "never use page-level horizontal scrolling"] },
+    "prohibitedPatterns": ["copied studio name, project copy, people, portraits or awards", "invented project area, stage, location, client or planning outcome", "historical or stock portrait presented as current staff", "portfolio image represented as client work without proof", "fake testimonials", "generic rounded-card project grid", "inferred office from project location"],
+    "requiredSignatureElements": [
+      { "id": "featured-project-tableau", "selector": "[data-reference-signature=featured-project-tableau]", "description": "full-width project image with restrained title and verified metadata" },
+      { "id": "project-index", "selector": "[data-reference-signature=project-index]", "description": "portfolio presented as documented project records" },
+      { "id": "principles-ledger", "selector": "[data-reference-signature=principles-ledger]", "description": "ruled process/principles list rather than repeated cards" },
+      { "id": "project-enquiry-sheet", "selector": "[data-reference-signature=project-enquiry-sheet]", "description": "enquiry that begins with project context" }
+    ],
+    "acceptanceChecks": ["portfolio imagery is client-approved and truthfully labeled", "service scope and service areas are factual", "people and awards appear only when confirmed", "the project index is visually distinct from generic cards", "the enquiry path asks only useful briefing questions", "mobile project metadata remains readable beside its image"]
+  },
+  "review": { "status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "pinned MIT template, per-image CC0/Public Domain evidence, full-page desktop/mobile captures, and transferable architecture mechanics" }
+}

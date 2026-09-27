@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-accountant-deadline-calendar",
+  "productionEligible": true,
+  "referenceName": "Spicer deadline-led accountancy calendar",
+  "familyId": "spicer-accountant-deadline-calendar",
+  "source": {
+    "name": "Spicer Designs Accountant template",
+    "url": "https://www.spicerdesigns.com/templates/accountant",
+    "rights": "licensed",
+    "rightsEvidence": "The official downloadable template is licensed under Creative Commons Attribution 4.0. The source license is retained in this dossier and the official preview retains the required Spicer Designs footer attribution.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/ASSET-PROVENANCE.md"]
+  },
+  "provenance": {
+    "archiveSha256": "736fbb8488546145e238df74a4b92b6e130f10fb5cf8a8e56a22bdb67a40b1c3",
+    "capture": "Full-page screenshots from the official live accountant preview at 1440x900 and 390x844 after complete-page scrolling. The official preview and downloadable HTML release use the same design. All visible image elements loaded; document width matched both viewports.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 6880},
+    "mobileViewport": {"width": 390, "height": 844, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 10105},
+    "diagnostics": "The source opens with a deadline rail and calendar, then fee tiers, switching, enquiry triggers, software/client-fit, FAQs and contact. Demo deadlines, fees, staff, reviews and tax claims are not transferable.",
+    "attribution": "Spicer Designs, CC BY 4.0. Required attribution remains visible in the captured footer. Internal visual reference only; do not ship source identity, copy, code, prices or hero artwork."
+  },
+  "businessKinds": ["accounting", "accountant", "accountancy", "bookkeeping", "tax-accounting"],
+  "tags": {
+    "business": ["accounting", "accountant", "accountancy", "bookkeeping", "tax-accounting"],
+    "style": ["deadline-utility-editorial", "cream-and-deep-green", "numbered-finance-table", "plainspoken-professional"],
+    "composition": ["deadline-status-rail", "calendar-led-hero", "tax-date-table", "fixed-fee-tier-comparison", "switching-process", "trigger-guide"],
+    "conversion": ["deadline-readiness", "published-fees", "accountant-switching", "short-enquiry"],
+    "motion": ["calendar-filter", "native-faq-disclosure", "static-deadline-table"],
+    "imagery": ["ai-generated-accounting-interior-placeholder", "documentary-desk-detail", "no-staff-photo-required"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 900}},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}}
+  },
+  "referenceDna": {
+    "annotatedDescription": "A deadline-led accounting practice opens with a narrow filing-deadline rail above compact navigation. A practical proposition pairs fixed-fee clarity with immediate fee and switching routes. A filing calendar follows, then a three-tier comparison with inclusions/exclusions, a switch-accountant walkthrough, common enquiry triggers, software/client fit, proof, FAQs, and an enquiry form. Cream/green surfaces, compact table labels, and bright active states make the page practical rather than corporate. Every sample amount, date, accountant, review and claim is fictitious template content.",
+    "heroGeometry": {"mode": "deadline rail above a photo-backed accountant promise with two decision links", "alignment": "compact fee message on the left and subdued accounting-workspace image on the right", "viewport": "deadline context, fee path and switch path fit the first desktop scene"},
+    "navigationGeometry": {"mode": "deadline status rail with anchored fee, switching and contact navigation", "placement": "thin status line first, compact wordmark and navigation below", "mobile": "keep the latest deadline context and contact route without squeezing desktop links"},
+    "typography": {"display": "bold clean sans with compact uppercase financial labels", "body": "high-legibility neutral sans", "scale": "oversized short promise, compact dates/fees, readable explanatory notes"},
+    "palette": {"surfaces": ["warm paper", "deep evergreen", "soft mint"], "ink": "charcoal", "accents": ["bright green", "muted coral"], "contrastIntent": "dates and actions receive accent; tables and fee notes keep accessible text contrast"},
+    "imageTreatment": {"mode": "subdued accounting-desk still life rather than stock people", "crop": "wide hero with quiet image contrast, later small documentary details", "focalPoint": "the calendar and fee structure carry primary visual weight; image is secondary"},
+    "sectionSequence": ["deadline-status-rail", "navigation", "fixed-fee-hero", "filing-calendar", "fee-tiers", "switching-guide", "enquiry-triggers", "software-and-client-fit", "proof", "faq", "contact-form", "footer"],
+    "servicePresentation": {"pattern": "chronological filing calendar followed by transparent fixed-fee tiers and switching guidance", "interaction": "calendar filters by business type only when dates and applicability are verified"},
+    "ctaPlacement": {"primary": "consultation/fee route beside the opening proposition", "secondary": "switching-guide route beside it", "early": "calendar and fee tiers appear before firm-history copy"},
+    "motion": {"primitive": "small calendar filters that explain obligations for a selected client type", "library": "native controls and CSS state", "reducedMotion": "complete static table without motion dependency"},
+    "mobileRecomposition": {"strategy": "chronological finance checklist", "rules": ["stack each calendar row as date, obligation, applicability and status", "stack fee tiers and keep inclusions/exclusions adjacent", "number switching steps vertically", "show jurisdiction next to each date", "no horizontal overflow"]},
+    "prohibitedPatterns": ["source brand, fees, staff, dates, services, reviews, advice or hero art", "deadlines copied without an active official jurisdictional source", "invented pricing, savings, switching time, tax outcomes or response promises", "fake countdowns or live compliance status", "unverified registrations, software partnerships or client logos", "generic card wall replacing the calendar and fee logic"],
+    "requiredSignatureElements": [
+      {"id": "deadline-status-rail", "selector": "[data-reference-signature=deadline-status-rail]", "description": "concise, fact-checked deadline context before primary navigation"},
+      {"id": "filing-calendar", "selector": "[data-reference-signature=filing-calendar]", "description": "dated obligations with verified jurisdiction and applicability"},
+      {"id": "fee-transparency", "selector": "[data-reference-signature=fee-transparency]", "description": "client-approved pricing or honest fee-setting explanation"},
+      {"id": "switching-guide", "selector": "[data-reference-signature=switching-guide]", "description": "practical switching process based on actual firm operations"}
+    ],
+    "acceptanceChecks": ["every date is current and tied to jurisdiction and applicability", "fees and inclusions are client supplied", "tax/accounting advice is jurisdiction-reviewed", "calendar and fee paths are visible before long firm history", "mobile calendar remains readable", "source content and art are excluded from deliverables"]
+  },
+  "review": {"status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-26", "scope": "official CC BY 4.0 package, paired captures, calendar mechanics and demo-content exclusions"}
+}

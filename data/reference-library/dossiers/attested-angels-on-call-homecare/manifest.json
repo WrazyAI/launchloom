@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "attested-angels-on-call-homecare",
+  "productionEligible": true,
+  "referenceName": "Angels on Call specialized homecare story",
+  "familyId": "attested-angels-on-call-homecare",
+  "businessKinds": ["specialized homecare", "private duty care", "home health services"],
+  "source": {
+    "name": "Angels on Call Homecare official website",
+    "url": "https://angelsoncallinc.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-25 permits internal retention of the full-page captures and their use as visual input to the LaunchLoom pipeline model. No source-owner grant or license was uploaded. See rights/requester-attestation.md.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/requester-attestation.md"]
+  },
+  "tags": {
+    "business": ["specialized homecare", "private duty care", "nursing and care coordination", "aging in place"],
+    "style": ["clinical but human", "purple-and-neutral source palette", "information-rich care", "structured expertise"],
+    "composition": ["photo-led overlay hero", "credential banner", "alternating care chapters", "icon-led expertise rows", "service catalog", "recognition and contact close"],
+    "conversion": ["consultation and phone actions in hero", "consultation repeated after explanation", "contact close after proof"],
+    "motion": ["static icon rows", "source-owned carousel behavior", "no required autoplay", "reduced-motion friendly chapter flow"],
+    "imagery": ["caregiver and client scenes", "care process photography", "clinical-supporting illustrations", "recognition marks in source capture"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 900 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The top includes a small logo and contact line above a dense violet navigation rail. A darkened care photograph carries a centered specialized-care promise and two immediate contact actions. A wide credential banner separates the opening from several alternating image-and-copy chapters. The longer middle section organizes expertise as repeated icon-led rows, followed by a boxed service catalog. An editorial care image and short relationship statement bridge toward a recognition panel, consultation close, newsletter form, and compact footer. Mobile compresses the navigation, places the image and opening copy in a narrow vertical composition, and stacks the expertise, service, and recognition content. The site is clinically positioned and highly information dense. For another provider, preserve only the hierarchy between the promise, explanation, service choices, proof, and contact. Never transfer source-specific credentials, clinical language, results, people, images, or claims.",
+    "heroGeometry": { "mode": "darkened-care-photo under a centered specialist-care statement", "alignment": "central title and concise supporting line over a full-width human scene", "viewport": "consultation and phone actions appear in the first view" },
+    "navigationGeometry": { "mode": "compact contact strip above a dense category navigation", "placement": "top edge with phone separated from service links", "mobile": "compressed logo, contact affordance, and menu control" },
+    "typography": { "display": "bold geometric sans", "body": "small neutral sans with restrained line length", "scale": "large chapter headings, compact clinical utility copy, repeated service labels" },
+    "palette": { "surfaces": ["violet", "white", "pale lavender", "light gray"], "ink": "deep violet and charcoal", "accents": ["white iconography", "violet action fields"], "contrastIntent": "high-contrast white bands and violet separators around dense care information" },
+    "imageTreatment": { "mode": "human-scale homecare photography paired with simple clinical support icons", "crop": "wide hero image followed by alternating contained scenes", "focalPoint": "keep caregiver and recipient interactions visible without implying client ownership of the source people" },
+    "sectionSequence": ["contact utility and navigation", "photo-led specialist-care promise", "recognition banner", "care context and process chapters", "expertise pillars", "service catalog", "relationship story", "recognition proof", "consultation close", "newsletter and footer"],
+    "servicePresentation": { "pattern": "icon-led expertise rows followed by grouped homecare service tiles", "interaction": "direct links to service detail; keep service choice independent from decorative icon" },
+    "ctaPlacement": { "primary": "consultation action inside the hero", "secondary": "phone action adjacent to the consultation", "early": "repeat after the explanatory and recognition chapters" },
+    "motion": { "primitive": "mostly static chapter flow with optional source-owned moving content", "library": "do not reuse source scripts or embeds", "reducedMotion": "render icon rows and proof panels as static content and avoid autoplay" },
+    "mobileRecomposition": { "strategy": "compact navigation followed by a single-column care guide", "rules": ["keep hero copy short and action controls touch sized", "use one care image at a time", "break long expertise copy into clearly separated rows", "avoid compressing text into a miniature brochure", "stack the service catalog without sideways page overflow"] },
+    "prohibitedPatterns": ["copying the source name, purple identity, wording, caregiver portraits, logos, accreditation marks, testimonials, medical claims, or outcomes", "unverified RN oversight, disease expertise, licensing, accreditations, safety results, or service availability", "tiny mobile body text", "a long wall of repeated icons or cards", "text over photography without a readable backing"],
+    "requiredSignatureElements": [
+      { "id": "care-promise-scene", "selector": "[data-reference-signature=care-promise-scene]", "description": "opening care promise set against one contextual homecare scene" },
+      { "id": "expertise-pillars", "selector": "[data-reference-signature=expertise-pillars]", "description": "clearly separated support topics with accessible labels" },
+      { "id": "service-catalog", "selector": "[data-reference-signature=service-catalog]", "description": "service options grouped as scannable links rather than an undifferentiated icon wall" },
+      { "id": "consultation-close", "selector": "[data-reference-signature=consultation-close]", "description": "plain next-step prompt following the explanatory chapters" }
+    ],
+    "acceptanceChecks": [
+      "The first view states the verified care scope and shows a clear consultation action without hiding it in navigation.",
+      "Care education, service choice, proof, and contact are separate chapters with readable text density.",
+      "The mobile page remains readable at 390 pixels and does not reduce the service catalog to tiny text or horizontal overflow.",
+      "Clinical terms, credentials, accreditation, outcomes, response time, service areas, and testimonials come only from verified client facts.",
+      "No original source identity, logos, photos, marks, or exact language is used in the generated site."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier completion",
+    "reviewedAt": "2026-09-25",
+    "scope": "official-source match, live desktop/mobile full-page captures, prompt, requester attestation, and rendered visual review",
+    "visualQuality": "pass",
+    "notes": "Direct captures returned HTTP 200 at 1440x900 and 390x844, with document width matching each viewport. Full-page files measure 1440x8197 and 390x14201. Page content and footer are present; visible source photography loaded. The original site is dense, so the prompt requires shorter copy, readable mobile type, factual proof, and distinct service grouping."
+  }
+}

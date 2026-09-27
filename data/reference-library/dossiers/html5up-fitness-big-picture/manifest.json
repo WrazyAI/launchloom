@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "html5up-fitness-big-picture",
+  "productionEligible": true,
+  "referenceName": "Big Picture: full-screen fitness chapters",
+  "familyId": "html5up-big-picture-fitness",
+  "businessKinds": ["fitness studio", "gym", "strength training"],
+  "source": {
+    "name": "Big Picture by HTML5 UP / AJ",
+    "url": "https://html5up.net/big-picture",
+    "repository": "https://github.com/zce/html5up",
+    "commit": "f32c95cd40e42659857e2318b6deb1f6be43da5d",
+    "templatePath": "big-picture/",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned source template contains its original CC BY 3.0 license text and attribution README in rights/. The adapted local screenshots and generated imagery are separately recorded there.",
+    "rightsEvidencePath": "rights/HTML5UP-CC-BY-3.0.txt",
+    "assetEvidencePaths": [
+      "rights/source-provenance.md",
+      "rights/source-revision.txt",
+      "rights/generated-assets.md",
+      "rights/generated-image-manifest.md",
+      "rights/imagegen-prompts.md",
+      "rights/openai-output-terms.md",
+      "rights/capture-record.md",
+      "rights/third-party-assets.md"
+    ]
+  },
+  "businessKinds": ["fitness studio", "gym", "strength training"],
+  "tags": {
+    "business": ["fitness", "gym", "strength coaching"],
+    "style": ["direct athletic editorial", "high-contrast", "neighborhood studio"],
+    "composition": ["full-screen scroll chapters", "alternating side-anchored content panels", "bright training gallery", "contrasting contact close"],
+    "conversion": ["early first-session CTA", "contact intake close", "scroll cue into service details"],
+    "motion": ["directional scroll anchors", "header state change", "static reduced-motion fallback"],
+    "imagery": ["full-bleed training photography", "generated studio scenes", "documentary movement", "editorial contact sheet"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 900 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "Big Picture presents a full-page sequence of image-backed, near-full-viewport chapters. The opening is a training poster with large uppercase headline and one early CTA. Two following photo scenes use opposite side-anchored dark content panels and directional down links. A bright gallery chapter changes the surface and rhythm; a warm, separate contact chapter closes the experience. A transparent compact header overlays the hero and becomes more solid after scrolling. Mobile retains the strong poster and chapter sequence but disables fixed background attachment and desktop scroll snapping, scales the display type, and turns the image gallery into a two-column grid. The photographs and fictional studio are generated placeholders. Transfer mechanics only, not exact copy, identity, imagery, or trade dress.",
+    "heroGeometry": { "mode": "full-viewport athletic image poster", "alignment": "large central statement over atmospheric image", "viewport": "headline, brief promise, and first-step scroll action visible in a 900 px desktop viewport" },
+    "navigationGeometry": { "mode": "transparent brand-and-links header", "placement": "top edge above the hero image", "mobile": "compact inline header with readable links and no overlay takeover" },
+    "typography": { "display": "bold condensed grotesk or system sans", "body": "clean neutral sans", "scale": "oversized uppercase poster headline with compact numbered chapter labels" },
+    "palette": { "surfaces": ["charcoal", "chalk", "warm stone"], "ink": "chalk-white on image panels and near-black on light chapters", "accents": ["controlled burnt coral"], "contrastIntent": "strong contrast with image overlays and separate light gallery surfaces" },
+    "imageTreatment": { "mode": "atmospheric full-bleed studio scenes plus bright gallery", "crop": "cover on desktop, subject-safe responsive crop on mobile, object-fit thumbnails in gallery", "focalPoint": "movement and equipment stay visible behind readable copy" },
+    "sectionSequence": ["hero poster", "training services scene", "coaching approach scene", "studio gallery", "contact intake"],
+    "servicePresentation": { "pattern": "one concise offering inside a side-anchored image chapter followed by a short process list", "interaction": "directional scroll links advance to the next chapter" },
+    "ctaPlacement": { "primary": "hero poster next-step action", "secondary": "contextual link in services and final intake form", "early": "visible within the first viewport" },
+    "motion": { "primitive": "scroll-linked chapter entrance and header surface transition", "library": "native CSS, anchor scrolling, and IntersectionObserver", "reducedMotion": "disable snapping and animation while preserving all sections and direct anchors" },
+    "mobileRecomposition": { "strategy": "poster-led stacked story chapters", "rules": ["disable fixed image attachment", "shrink display type before changing the message", "preserve alternate image-and-copy panels", "use a two-column touch gallery", "keep nav and CTA in view without overlap"] },
+    "prohibitedPatterns": ["generic service card grid", "CTA pushed below hero fold", "unverified gym metrics", "invented transformations or testimonials", "fixed mobile backgrounds", "scroll locks or long scrub animations"],
+    "requiredSignatureElements": [
+      { "id": "fullbleed-training-poster", "selector": "[data-reference-signature=fullbleed-training-poster]", "description": "full-screen fitness poster with prominent headline" },
+      { "id": "image-led-program-scene", "selector": "[data-reference-signature=image-led-program-scene]", "description": "right-anchored panel within an image-backed service chapter" },
+      { "id": "counterweight-story-scene", "selector": "[data-reference-signature=counterweight-story-scene]", "description": "opposite side-anchored approach chapter with short process list" },
+      { "id": "training-gallery", "selector": "[data-reference-signature=training-gallery]", "description": "distinct bright gallery chapter" }
+    ],
+    "acceptanceChecks": [
+      "At 1440 by 900, the opening image, title, and first-step link fit without clipping.",
+      "The next two chapters alternate content-panel alignment over distinct training images.",
+      "A contrasting gallery section and separate final contact section follow the image chapters.",
+      "At 390 by 844, image backgrounds scroll normally, gallery has two columns, and no page-level horizontal overflow occurs.",
+      "Motion never hides required copy, traps scrolling, or claims real fitness outcomes."
+    ]
+  },
+  "review": { "status": "reviewed", "reviewer": "Codex local-render QA", "date": "2026-09-25", "notes": "Verified desktop and mobile full-page captures, image loading, responsive chapter sequence, two-column gallery, reduced mobile overflow, and local-only inquiry form. The six gallery crops reuse three generated scenes and are illustrative only." }
+}

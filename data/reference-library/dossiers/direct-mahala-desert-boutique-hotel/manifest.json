@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-mahala-desert-boutique-hotel",
+  "productionEligible": true,
+  "referenceName": "Mahala playful desert-resort visual world",
+  "familyId": "direct-mahala-desert-resort-pop",
+  "source": {
+    "name": "Mahala Palm Springs official hotel website",
+    "url": "https://mahalahotel.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested that internal full-page desktop/mobile capture and derived design-prompt retention are cleared, and later explicitly confirmed that these screenshots may be sent to the LaunchLoom pipeline model as visual references. No hotel-owner grant or written license was uploaded. See the requester-attestation and provenance files.",
+    "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md",
+    "assetEvidencePaths": [
+      "rights/REQUESTER-ATTESTATION.md",
+      "rights/PROVENANCE.md"
+    ]
+  },
+  "provenance": {
+    "officialPage": "https://mahalahotel.com/",
+    "capturedAt": "2026-09-25",
+    "capture": {
+      "method": "Rendered the official website directly in an isolated agent-browser Chromium session; full-page screenshots were captured from the live source page, not from a gallery or third-party screenshot.",
+      "desktopViewport": { "width": 1536, "height": 864, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 12524 },
+      "mobileViewport": { "width": 390, "height": 844, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 20772 },
+      "diagnostics": "The document width matched both viewports with no horizontal overflow. The looping hero video had a ready 1920 by 1080 frame. Eighteen of 39 image elements loaded; the remaining elements were CSS-hidden, zero-rectangle carousel/gallery content, with no image requests reporting failure. The screenshots preserve the current visible gallery state only. Original photo/video/logo files are not separately included in this dossier."
+    },
+    "attribution": "Official source page: Mahala Palm Springs, https://mahalahotel.com/. Full-page captures retained under the requester-attested internal scope recorded in rights/REQUESTER-ATTESTATION.md."
+  },
+  "businessKinds": [
+    "boutique-hotel",
+    "resort",
+    "motel",
+    "lodging",
+    "hospitality"
+  ],
+  "tags": {
+    "business": ["boutique-hotel", "resort", "motel", "lodging", "hospitality"],
+    "style": ["retro-desert-pop", "mid-century-playful", "botanical-graphic", "sunset-ochre", "deep-tropical-green"],
+    "composition": ["video-poster-hero", "illustrated-place-story", "dense-photo-atlas", "cinematic-room-scene", "room-offering-grid", "merchandise-editorial-rail"],
+    "conversion": ["book-direct", "room-detail-path", "contact-inquiry", "shop-secondary"],
+    "motion": ["muted-looping-hero-video", "photo-gallery", "native-room-actions", "still-poster-fallback"],
+    "imagery": ["client-property-photography-priority", "lush-botanical-video-field", "illustrated-desert-card", "colorful-interior-mosaic", "room-detail-stills"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1536, "height": 864 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official boutique-hotel site uses a playful retro-desert visual identity rather than a conventional hospitality template. A tiny orange sun mark and wordmark sit above a short, looped botanical video hero with a central welcome statement. A deep teal patterned field holds a bright illustrated property card beside a compact narrative. The next section is an unusually dense photographic atlas on saturated golden yellow. A darker room photograph becomes a cinematic pause, followed by a lush foliage-backed room-offerings chapter with pale yellow cards. A dark contact form and a separate, highly graphic merchandise shelf close the full page. The system blends real interior/exterior photography with bold flat illustration, pattern, and strong color blocks. The specific logo, video, property art, room names, amenities, copy, prices, products, and booking claims belong to the source and must not be copied. The capture measures 1536 by 12524 desktop and 390 by 20772 portrait mobile; no horizontal overflow was measured.",
+    "heroGeometry": {
+      "mode": "compact wordmark over a botanical video/picture field with centered welcome copy",
+      "alignment": "centered opening set within a full-width atmospheric image",
+      "viewport": "brand, concise hospitality promise, and booking route remain the first visual moment"
+    },
+    "navigationGeometry": {
+      "mode": "small wordmark plus short utility links and a single direct booking control",
+      "placement": "shallow top bar above the video or hero field",
+      "mobile": "compressed brand and accessible menu/action; keep booking reachable without a large overlay"
+    },
+    "typography": {
+      "display": "rounded, friendly display sans or expressive wordmark treatment paired with compact neutral sans",
+      "body": "clean sans with high readability against saturated patterned surfaces",
+      "scale": "short central hero message, compact top navigation, clear room names, and readable amenity bullets"
+    },
+    "palette": {
+      "surfaces": ["sunset ochre", "warm pale yellow", "deep tropical green", "cream", "dark foliage"],
+      "ink": "deep green-black with white hero text",
+      "accents": ["orange sun", "pool turquoise", "electric leaf green"],
+      "contrastIntent": "bold color blocking with readable foregrounds; avoid light text on busy patterns without a solid backing"
+    },
+    "imageTreatment": {
+      "mode": "muted looping botanical hero, illustrated place vignette, dense photo atlas, cinematic room still, and close-up interiors",
+      "crop": "a mix of compact portrait tiles, landscape room stills, and full-bleed cinematic scenes",
+      "focalPoint": "maintain a clear subject inside each mosaic cell; use client-owned venue and room imagery, not source-site photography"
+    },
+    "sectionSequence": [
+      "botanical-video-or-poster-hero",
+      "illustrated-place-introduction",
+      "dense-property-photo-atlas",
+      "cinematic-room-scene",
+      "room-or-service-offerings",
+      "contact-inquiry",
+      "optional-products-or-gift-shop",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "room or hospitality offerings appear as a small grid of editorial cards with real photos, clear names, concise amenity facts, and a direct detail/booking action",
+      "interaction": "the photo atlas can link to room, experience, or gallery details; cards retain visible links and useful text without hover",
+      "adaptation": "use room cards only for actual lodging inventory; for a restaurant or local service, replace the section with a verified offering directory and remove the source merchandise section unless the client has a real shop"
+    },
+    "ctaPlacement": {
+      "primary": "direct booking route in the top navigation and repeated beside actual room or service decisions",
+      "secondary": "gallery, place story, contact, or shop when commerce exists",
+      "early": "make one real booking or inquiry action immediately findable without allowing the colorful identity to obscure it"
+    },
+    "motion": {
+      "primitive": "muted looping hero video paired with a still image and editorial scrolling chapters",
+      "library": "CSS/native browser behavior; no heavy animation framework required",
+      "reducedMotion": "replace video with a still poster, avoid parallax, and preserve the same booking and image content"
+    },
+    "mobileRecomposition": {
+      "strategy": "long portrait sequence with the illustrated story, mosaic, cinematic room, room offerings, contact, and optional shop stacked in order",
+      "rules": [
+        "keep the small brand and booking action readable at the top",
+        "stack illustration and narrative rather than shrinking them side by side",
+        "make the photo atlas scroll vertically with distinct tile sizing and no forced horizontal page movement",
+        "stack room/service cards with adequate text and touch target sizes",
+        "replace the hero video with a still on data saver or reduced motion and keep text legible"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying Mahala's name, orange circular brand mark, wordmark, illustration, video, photos, room names, amenities, products, text, prices, location, or booking promise",
+      "inventing rooms, amenities, capacity, rates, pet rules, accessibility, availability, or resort facilities",
+      "using source property imagery as a client's actual location or using stock imagery to imply client-owned rooms",
+      "using an autoplay video without a still poster, reduced-motion behavior, and an accessible booking route",
+      "copying the source merchandise shop for a client without a real catalog and checkout integration",
+      "placing text directly over dense patterns without contrast or reducing room details to unreadable microcopy"
+    ],
+    "requiredSignatureElements": [
+      { "id": "botanical-poster-hero", "selector": "[data-reference-signature=botanical-poster-hero]", "description": "expressive atmospheric hero with static poster fallback and direct action" },
+      { "id": "illustrated-place-card", "selector": "[data-reference-signature=illustrated-place-card]", "description": "custom illustration or graphic vignette paired with concise place narrative" },
+      { "id": "property-photo-atlas", "selector": "[data-reference-signature=property-photo-atlas]", "description": "dense but intentionally paced client-property image composition" },
+      { "id": "offering-detail-grid", "selector": "[data-reference-signature=offering-detail-grid]", "description": "small set of verified rooms, services, or offerings with direct actions" }
+    ],
+    "acceptanceChecks": [
+      "desktop preserves the bold retro-hospitality color and image rhythm without copying the source identity",
+      "mobile is a readable portrait stack with no horizontal overflow or booking-control obstruction",
+      "video has poster and reduced-motion/data-saving fallbacks and is never required to understand the offer",
+      "room names, amenities, prices, availability, contact details, and booking behavior bind only to verified content",
+      "source photographs, videos, logo, illustration, and merchandise assets are not copied into deployed client output"
+    ]
+  },
+  "review": {
+    "status": "requester-attested-visual-reference",
+    "reviewer": "LaunchLoom repository owner",
+    "reviewedAt": "2026-09-25",
+    "scope": "Official page rendered and captured at desktop and portrait-mobile widths; full-page screenshots and derived prompt are retained under requester attestation, including model-reference use. No owner grant file was uploaded."
+  }
+}

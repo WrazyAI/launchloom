@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-robins-kaplan-law",
+  "productionEligible": true,
+  "referenceName": "Robins Kaplan litigation firm homepage",
+  "familyId": "direct-robins-kaplan-law",
+  "businessKinds": ["law firm", "trial litigation", "professional services"],
+  "source": {
+    "name": "Robins Kaplan official website",
+    "url": "https://www.robinskaplan.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-25 permits internal retention of the full-page captures and their use as visual input to the LaunchLoom pipeline model. No source-owner grant or license was uploaded. See rights/requester-attestation.md.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/requester-attestation.md"]
+  },
+  "tags": {
+    "business": ["law firm", "trial litigation", "complex disputes", "professional services"],
+    "style": ["confident editorial", "architectural geometry", "high-stakes professional", "restrained red accent"],
+    "composition": ["angled city-image hero", "headline index", "editorial feature story", "testimonial field", "dark footer"],
+    "conversion": ["professional-search action in hero", "headline links", "contact navigation", "office links in footer"],
+    "motion": ["subtle geometric reveals", "native search affordance", "static layout fallback", "no required autoplay"],
+    "imagery": ["cityscape with diagonal masks", "editorial portrait feature", "abstract red line geometry", "source credential marks in footer"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1536, "height": 900 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The homepage uses a restrained top navigation above a split opening: positioning and a professional-search control sit in a clean left field while a city view fills the right through broad angled masks and fine geometric strokes. A pale headline index introduces recent firm news. A large editorial portrait and long feature story create a more human chapter, followed by a spacious client quote, a broad outcome statement, and a charcoal footer with social links, phone, offices, and credential marks. Mobile moves the city image above the promise, compresses navigation into a menu, stacks news links, and turns the feature into a portrait followed by readable copy. The design reads through contrast between architecture, editorial text, and restrained red linework. Transfer this pacing and framing only. Do not inherit the firm's identity, people, cases, case outcomes, quotations, marks, wording, or exact graphic shapes.",
+    "heroGeometry": { "mode": "asymmetric white positioning field with an angled city-image stage", "alignment": "left copy and professional-search control balanced by a large right image", "viewport": "opening message and first discovery action fit within the first screen" },
+    "navigationGeometry": { "mode": "single slim wordmark and uppercase link row", "placement": "top edge over a white field", "mobile": "small wordmark with separate search and menu controls" },
+    "typography": { "display": "condensed editorial sans for short headings", "body": "neutral sans for firm description", "scale": "large opening statement, broad section titles, compact news metadata" },
+    "palette": { "surfaces": ["white", "pale blue-gray", "charcoal"], "ink": "near-black", "accents": ["restrained red", "cool blue-gray"], "contrastIntent": "clear dark text on light fields with one dark closing panel; improve the pale desktop hero title contrast" },
+    "imageTreatment": { "mode": "city and professional portrait within angled geometric frames", "crop": "wide urban opening followed by a contained portrait feature", "focalPoint": "keep skyline detail and portrait subject inside the unmasked image area" },
+    "sectionSequence": ["navigation", "angled city and positioning hero", "headline index", "editorial firm story", "client quote", "large outcome statement", "social, office, and credential footer"],
+    "servicePresentation": { "pattern": "news and insight index followed by proof-led feature chapters", "interaction": "open headline links and a professional-search control" },
+    "ctaPlacement": { "primary": "professional-search action in the hero", "secondary": "contact link in the navigation", "early": "news and story links follow directly after the opening" },
+    "motion": { "primitive": "fine geometric linework and restrained image reveal", "library": "source behavior not imported", "reducedMotion": "show complete static image masks and keep all news and story links available" },
+    "mobileRecomposition": { "strategy": "image-first editorial sequence with stacked discovery and story chapters", "rules": ["put the city image before the positioning text", "keep search and contact controls visible and touch sized", "stack news items with clear date hierarchy", "maintain readable feature copy after the portrait", "avoid horizontal overflow"] },
+    "prohibitedPatterns": ["copying the Robins Kaplan wordmark, exact red slashes, city or partner photographs, quote, news, cases, results, credentials, or trade dress", "unverified verdicts, settlement figures, rankings, testimonials, awards, professional identities, or offices", "low-contrast gray headline on white", "decorative geometry that obscures copy", "generic card-wall replacement for the editorial sequence"],
+    "requiredSignatureElements": [
+      { "id": "angled-city-stage", "selector": "[data-reference-signature=angled-city-stage]", "description": "large city or context image framed by deliberate diagonal geometry" },
+      { "id": "headline-index", "selector": "[data-reference-signature=headline-index]", "description": "compact linked insight index with clear hierarchy" },
+      { "id": "editorial-feature", "selector": "[data-reference-signature=editorial-feature]", "description": "portrait or context-led story paired with a readable editorial column" },
+      { "id": "professional-close", "selector": "[data-reference-signature=professional-close]", "description": "dark, organized closing area with verified contact and office information" }
+    ],
+    "acceptanceChecks": [
+      "The opening explains the verified professional service in clear high-contrast text and presents a useful discovery action.",
+      "The page moves from positioning to timely information, human context, verified proof, and contact without borrowing source case content.",
+      "The mobile layout keeps image framing, navigation, article links, and contact details usable without width overflow.",
+      "Any legal practice claims, case results, quotations, rankings, awards, office locations, and staff facts are independently verified for the client.",
+      "Source imagery, identity, marks, exact words, cases, outcomes, and quotations never enter the client site."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier completion",
+    "reviewedAt": "2026-09-25",
+    "scope": "official-source match, paired full-page captures, prompt, requester attestation, and rendered visual review",
+    "visualQuality": "pass-with-caution",
+    "notes": "Both existing captures show the Robins Kaplan homepage from the geometric hero through its full footer. PNG pixel dimensions were read from their headers: desktop 1536x2963 and mobile 390x3808. The source's desktop hero heading is pale on white; the prompt prohibits repeating that contrast weakness. Original capture date and viewport heights were not embedded in the PNGs; the manifest records standard comparison viewport heights."
+  }
+}

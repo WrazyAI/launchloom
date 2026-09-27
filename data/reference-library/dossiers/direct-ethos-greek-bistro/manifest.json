@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-ethos-greek-bistro",
+  "productionEligible": true,
+  "referenceName": "Ethos circular dining atlas",
+  "familyId": "direct-ethos-circular-dining-atlas",
+  "source": {
+    "name": "ethos Greek Bistro official website",
+    "url": "https://www.ethosbistro.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested on 2026-09-25 that permission covers full-page screenshot retention, derived design prompts, and sending screenshots to the pipeline model as visual reference. The source-specific grant was not attached.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/requester-attestation.md"]
+  },
+  "provenance": {
+    "discoveryContext": "Found during direct-source search for contemporary local restaurant experiences. No gallery screenshot or downloaded source media was retained.",
+    "capture": "Captured from the official live domain at 1440x1000 and 390x844 after scrolling the entire page to load lazy images and reveal content. No source HTML, assets, or page state was changed.",
+    "retrievedAt": "2026-09-25",
+    "captureDimensions": { "desktop": [1440, 7463], "mobile": [390, 10962] },
+    "diagnostics": "All 54 image elements decoded, zero broken images, and document width matched 1440px desktop and 390px mobile.",
+    "attribution": "ethos Greek Bistro is the captured direct site. Screenshots are retained for internal visual reference and model input only under requester attestation."
+  },
+  "businessKinds": ["restaurant", "greek-restaurant", "mediterranean-restaurant", "catering", "multi-location-dining"],
+  "tags": {
+    "business": ["restaurant", "greek-restaurant", "mediterranean-restaurant", "catering", "multi-location-dining"],
+    "style": ["immersive-hospitality", "circular-wayfinding", "editorial-menu", "olive-accent", "cinematic-food"],
+    "composition": ["circular-image-nav", "editorial-welcome", "cinematic-process-chapter", "story-carousel", "service-choice-panel", "food-gallery"],
+    "conversion": ["reserve-table", "order-online", "catering-request", "location-hours", "menu-navigation"],
+    "motion": ["circle-anchor-navigation", "scroll-reveal", "story-carousel", "native-gallery-controls"],
+    "imagery": ["restaurant-interior-photography", "dish-photography", "cooking-process-frame", "food-gallery"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A direct restaurant site opens over full-bleed interior photography, with circular shortcuts to menu, catering, order and location actions. A light editorial restaurant introduction follows, then a cinematic food chapter, editorial/blog update circles, a three-choice action strip, a review panel, signature menu/gallery, and a dense dark footer with contact and hours. All brand words, food, reviews, addresses, offers, staff and rating content are source-specific and must not be transferred.",
+    "heroGeometry": { "mode": "immersive dining photograph with circular task navigation", "alignment": "full-bleed restaurant scene, small brand at top, circle shortcuts positioned in image-safe areas", "viewport": "clear identity and primary menu/reservation task visible in the opening" },
+    "navigationGeometry": { "mode": "thin utility header plus image-anchored circular shortcuts", "placement": "micro row at top, additional high-level routes over the hero photograph", "mobile": "preserve a few large touch-safe circular actions and move remaining links to a text row" },
+    "typography": { "display": "restrained editorial serif", "body": "compact readable grotesk", "scale": "small navigational labels, medium welcome heading, large menu/gallery captions" },
+    "palette": { "surfaces": ["deep olive", "warm cream", "soft white"], "ink": "near-black", "accents": ["lime", "olive", "muted brown"], "contrastIntent": "photographic drama at hero, quiet warm reading surfaces and high-contrast action controls" },
+    "imageTreatment": { "mode": "full-bleed restaurant interiors, cinematic food/process scene, and varied dish gallery", "crop": "wide cover hero, alternating large story panels, compact image gallery", "focalPoint": "real dining room or food object remains legible behind task labels" },
+    "sectionSequence": ["utility-navigation", "circular-hero", "welcome", "cinematic-food-story", "editorial-updates", "service-actions", "reviews", "menu-gallery", "location-contact"],
+    "servicePresentation": { "pattern": "separate menu, ordering, event/catering and location tasks rather than one generic service grid", "interaction": "direct anchor navigation and functional online-order/reservation routes only when connected" },
+    "ctaPlacement": { "primary": "menu or reservation task in hero shortcut", "secondary": "order/catering/location tasks when supported", "early": "over the opening image, with a text fallback immediately beneath it" },
+    "motion": { "primitive": "small circular anchor navigation, story image reveal and gallery controls", "library": "native anchors and browser controls", "reducedMotion": "still poster image and all navigation/gallery content available in static sequence" },
+    "mobileRecomposition": { "strategy": "photo-led single column with large task buttons", "rules": ["limit circular shortcuts to what fits as readable touch targets", "move extra routes into a simple text row", "stack restaurant story and service choices", "keep menu, location and primary action visible", "no horizontal page overflow"] },
+    "prohibitedPatterns": ["copied brand, food photography, menu, location, hours or source copy", "invented table availability, delivery, allergy claims, customer ratings or awards", "circular controls too small to tap", "fake live reservation/order state", "unverified map or storefront", "autoplay video without still fallback", "repeated carousel-only content"],
+    "requiredSignatureElements": [
+      { "id": "circular-dining-navigation", "selector": "[data-reference-signature=circular-dining-navigation]", "description": "clear circular shortcut navigation over the dining image" },
+      { "id": "editorial-restaurant-story", "selector": "[data-reference-signature=editorial-restaurant-story]", "description": "calmer editorial introduction after the image-led hero" },
+      { "id": "restaurant-service-choices", "selector": "[data-reference-signature=restaurant-service-choices]", "description": "separate and accurate menu/order/catering/location actions" },
+      { "id": "food-image-atlas", "selector": "[data-reference-signature=food-image-atlas]", "description": "food or place gallery that is not used as unsupported client proof" }
+    ],
+    "acceptanceChecks": ["restaurant identity and real location are visible as text", "menu, hours and location details match verified business data", "every action maps to an actual endpoint or route", "reviews and ratings are authentic and approved or omitted", "mobile circle navigation remains touch-safe", "no source image, copy or brand enters client output"]
+  },
+  "review": { "status": "requester-attested-internal-and-model-reference", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "direct-site paired screenshots, visual-mechanics prompt and requester attestation; no owner grant file uploaded" }
+}
