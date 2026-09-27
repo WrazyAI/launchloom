@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "web-beauty-true-man-barbers",
+  "productionEligible": true,
+  "referenceName": "True Man Barbers appointment story",
+  "familyId": "beauty-dark-serif-shop-hero",
+  "source": {
+    "name": "True Man Barbers appointment story official website",
+    "url": "https://truemanbarbers.co.uk/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 6129
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 8233
+    },
+    "diagnostics": "Observed shop-photo promise and booking, short practice introduction, service-and-price ledger beside craft photograph, four-step ritual, team portrait row. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "True Man Barbers appointment story official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "beauty",
+    "barber",
+    "grooming"
+  ],
+  "tags": {
+    "business": [
+      "beauty",
+      "barber",
+      "grooming"
+    ],
+    "style": [
+      "black-gold-barber",
+      "editorial-serif",
+      "warm-shadow-photography"
+    ],
+    "composition": [
+      "left-text-photo-hero",
+      "ledger-image-split",
+      "team-portrait-row"
+    ],
+    "conversion": [
+      "book-appointment",
+      "service-menu",
+      "directions"
+    ],
+    "motion": [
+      "subtle-hover",
+      "static-portrait-fallback"
+    ],
+    "imagery": [
+      "shop-interior",
+      "barber-craft",
+      "actual-team-portrait"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dark shop photograph carries a left-aligned cream serif promise, one gold booking button and a low service-symbol rail. Small square brand at upper left, sparse service/team/about/contact links and a bordered booking control. High-contrast editorial serif headings against warm sans service details; generous line spacing carries the dark layout. The page sequence runs from shop-photo promise and booking to short practice introduction to service-and-price ledger beside craft photograph toward customer quote, local visit panel, contact footer. Large barber close-up beside a price ledger, then team portrait cards and a small local image rail. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A dark shop photograph carries a left-aligned cream serif promise, one gold booking button and a low service-symbol rail.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Small square brand at upper left, sparse service/team/about/contact links and a bordered booking control.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "High-contrast editorial serif headings against warm sans service details; generous line spacing carries the dark layout.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Near-black",
+        "warm cream",
+        "gold and natural amber light from the shop photography."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "black-gold-barber",
+        "editorial-serif"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Large barber close-up beside a price ledger, then team portrait cards and a small local image rail.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "shop-photo promise and booking",
+      "short practice introduction",
+      "service-and-price ledger beside craft photograph",
+      "four-step ritual",
+      "team portrait row",
+      "customer quote",
+      "local visit panel",
+      "contact footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Present verified cut, shave and grooming categories as a simple list with price only if approved, followed by a concise visit process.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Book in the first viewport, after the service ledger and in the final local visit section.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "subtle-hover; static-portrait-fallback",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack the ledger before its image, turn the ritual into numbered vertical steps and keep the booking action visible without sticky overlap.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy employee portraits, customer quote, pricing, shop address, source mark or high-gloss black-and-gold trade dress verbatim.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "dark-serif-shop-hero",
+        "selector": "[data-reference-signature=dark-serif-shop-hero]",
+        "description": "A new-client interpretation of the observed dark serif shop hero relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "service-ledger-beside-craft-image",
+        "selector": "[data-reference-signature=service-ledger-beside-craft-image]",
+        "description": "A new-client interpretation of the observed service ledger beside craft image relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "four-step-ritual",
+        "selector": "[data-reference-signature=four-step-ritual]",
+        "description": "A new-client interpretation of the observed four-step ritual relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

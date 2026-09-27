@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "id": "web-roofing-tar",
+  "productionEligible": true,
+  "referenceName": "TAR Roofing Chicago residential contractor homepage",
+  "familyId": "web-roofing-tar",
+  "businessKinds": [
+    "roofing contractor",
+    "residential roofing",
+    "roofing"
+  ],
+  "source": {
+    "name": "TAR Roofing Chicago residential contractor official website",
+    "url": "https://tarroofing.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "roofing contractor",
+      "residential roofing",
+      "roofing"
+    ],
+    "style": [
+      "rounded, firm sans headings and short supporting paragraphs",
+      "white and light gray and deep navy surfaces",
+      "bright blue and pale blue accents"
+    ],
+    "composition": [
+      "a pale skyline image behind a left roof-service statement and a dark navy quote form on the right",
+      "skyline-quote-hero",
+      "circular-roof-chapters",
+      "roof-service-tabs"
+    ],
+    "conversion": [
+      "submit a roofing quote request",
+      "call or inspect service categories",
+      "early contact action"
+    ],
+    "motion": [
+      "service tab switching and gallery browsing; static first service and a usable link list are needed",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "large circular roof and house crops, a service house photograph, and a gallery mosaic",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official TAR Roofing Chicago residential contractor homepage was inspected in paired desktop and mobile full-page captures. The page opens with a pale skyline image behind a left roof-service statement and a dark navy quote form on the right. It uses two-tier white and dark-blue navigation with phone and service tabs. The visual system relies on rounded, firm sans headings and short supporting paragraphs; surfaces include white, light gray, deep navy and accents include bright blue, pale blue. Imagery is large circular roof and house crops, a service house photograph, and a gallery mosaic. The page then runs through skyline and quote hero, circular roof introduction, residential service image and tabs, curved blue process band, trust and company chapter, step-by-step process, project gallery, contact footer. Its service presentation is tabbed residential, condo, siding, and gutter choices next to a large property image. Mobile changes to move form and phone into an early compact flow, stack circular images with text, and turn service tabs into touch-safe rows. Transfer only the layout rhythm and decision path. Do not copy TAR identity, photographs, quote promises, rating, professional claims, project images, or exact curved graphic motifs.",
+    "heroGeometry": {
+      "mode": "a pale skyline image behind a left roof-service statement and a dark navy quote form on the right",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "two-tier white and dark-blue navigation with phone and service tabs",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "rounded, firm sans headings and short supporting paragraphs",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "light gray",
+        "deep navy"
+      ],
+      "ink": "dark blue",
+      "accents": [
+        "bright blue",
+        "pale blue"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "large circular roof and house crops, a service house photograph, and a gallery mosaic",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "skyline and quote hero",
+      "circular roof introduction",
+      "residential service image and tabs",
+      "curved blue process band",
+      "trust and company chapter",
+      "step-by-step process",
+      "project gallery",
+      "contact footer"
+    ],
+    "servicePresentation": {
+      "pattern": "tabbed residential, condo, siding, and gutter choices next to a large property image",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "submit a roofing quote request",
+      "secondary": "call or inspect service categories",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "service tab switching and gallery browsing; static first service and a usable link list are needed",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "move form and phone into an early compact flow, stack circular images with text, and turn service tabs into touch-safe rows",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy TAR identity, photographs, quote promises, rating, professional claims, project images, or exact curved graphic motifs.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "skyline-quote-hero",
+        "selector": "[data-reference-signature=skyline-quote-hero]",
+        "description": "skyline quote hero translated with client-specific content"
+      },
+      {
+        "id": "circular-roof-chapters",
+        "selector": "[data-reference-signature=circular-roof-chapters]",
+        "description": "circular roof chapters translated with client-specific content"
+      },
+      {
+        "id": "roof-service-tabs",
+        "selector": "[data-reference-signature=roof-service-tabs]",
+        "description": "roof service tabs translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified roofing contractor scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x5768; mobile 390x6185. Visible page sequence and mobile layout were reviewed. "
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "id": "web-hospitality-six-bells-inn",
+  "productionEligible": true,
+  "referenceName": "The Six Bells Inn: storybook border with room portrait grid",
+  "familyId": "web-hospitality-six-bells-inn-family",
+  "businessKinds": [
+    "boutique lodging",
+    "small hotel",
+    "inn",
+    "hospitality"
+  ],
+  "source": {
+    "name": "The Six Bells Inn official website",
+    "url": "https://thesixbellshotel.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "lodging",
+      "local hospitality",
+      "guest rooms",
+      "hospitality"
+    ],
+    "style": [
+      "large literary serif with cream lettering and green accents",
+      "parchment and forest green surfaces",
+      "dark green accent"
+    ],
+    "composition": [
+      "storybook exterior beneath a small forest-green booking ribbon",
+      "storybook border",
+      "room portrait grid",
+      "inn-and-table routes"
+    ],
+    "conversion": [
+      "room booking",
+      "stay enquiry"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "cozy interiors in small framed gallery windows",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct The Six Bells Inn website in Rosendale, New York uses storybook exterior beneath a small forest-green booking ribbon. Navigation is quiet lodge navigation with room and table routes. Its page moves through storybook opening, inn introduction, room gallery, restaurant and events, press quotations, shop feature, newsletter and contact, with named guest rooms shown as illustrated or photographic invitations. cozy interiors in small framed gallery windows. Transferable mechanics are storybook border, room portrait grid, inn-and-table routes. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "storybook exterior beneath a small forest-green booking ribbon",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "quiet lodge navigation with room and table routes",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "large literary serif with cream lettering and green accents",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "parchment",
+        "forest green",
+        "cream"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "dark green"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "cozy interiors in small framed gallery windows",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "storybook opening",
+      "inn introduction",
+      "room gallery",
+      "restaurant and events",
+      "press quotations",
+      "shop feature",
+      "newsletter and contact"
+    ],
+    "servicePresentation": {
+      "pattern": "named guest rooms shown as illustrated or photographic invitations",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "book room",
+      "secondary": "then book table",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "keep room cards readable and move decorative borders behind content",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing The Six Bells Inn identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "storybook-border",
+        "selector": "[data-reference-signature=storybook-border]",
+        "description": "Translate the observed storybook border mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "room-portrait-grid",
+        "selector": "[data-reference-signature=room-portrait-grid]",
+        "description": "Translate the observed room portrait grid mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "inn-and-table-routes",
+        "selector": "[data-reference-signature=inn-and-table-routes]",
+        "description": "Translate the observed inn-and-table routes mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses storybook border with client-cleared content.",
+      "Page sequence retains room portrait grid and inn-and-table routes as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

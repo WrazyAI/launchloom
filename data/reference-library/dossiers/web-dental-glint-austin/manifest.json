@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "id": "web-dental-glint-austin",
+  "productionEligible": true,
+  "referenceName": "Glint Dental: cinematic cream hero with warm photographic treatment tiles",
+  "familyId": "web-dental-glint-austin-family",
+  "businessKinds": [
+    "dental clinic",
+    "private dentist",
+    "family dentistry",
+    "dental"
+  ],
+  "source": {
+    "name": "Glint Dental official website",
+    "url": "https://glintatx.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "dental",
+      "local practice",
+      "patient care"
+    ],
+    "style": [
+      "oversized contemporary sans with selective italic emphasis",
+      "warm cream and rust surfaces",
+      "deep brown accent"
+    ],
+    "composition": [
+      "a muted cinematic city image with very large warm-white type",
+      "cinematic cream hero",
+      "warm photographic treatment tiles",
+      "rust clinician chapter"
+    ],
+    "conversion": [
+      "appointment booking",
+      "practice contact"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "warm treatment and clinician photography with generous rounded crops",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Glint Dental website in Austin, Texas uses a muted cinematic city image with very large warm-white type. Navigation is small cream navigation with one rounded booking control. Its page moves through cinematic opening, editorial proposition, photographic treatment tiles, clinician portrait feature, patient story strip, technology explanation, review carousel, contact close, with four large photographic treatment choices with short supporting labels. warm treatment and clinician photography with generous rounded crops. Transferable mechanics are cinematic cream hero, warm photographic treatment tiles, rust clinician chapter. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "a muted cinematic city image with very large warm-white type",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "small cream navigation with one rounded booking control",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "oversized contemporary sans with selective italic emphasis",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "warm cream",
+        "rust",
+        "soft beige"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "deep brown"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "warm treatment and clinician photography with generous rounded crops",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "cinematic opening",
+      "editorial proposition",
+      "photographic treatment tiles",
+      "clinician portrait feature",
+      "patient story strip",
+      "technology explanation",
+      "review carousel",
+      "contact close"
+    ],
+    "servicePresentation": {
+      "pattern": "four large photographic treatment choices with short supporting labels",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "book online",
+      "secondary": "then call",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "convert the four-photo treatment layout into a staggered single-column sequence",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Glint Dental identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "cinematic-cream-hero",
+        "selector": "[data-reference-signature=cinematic-cream-hero]",
+        "description": "Translate the observed cinematic cream hero mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "warm-photographic-treatment-tiles",
+        "selector": "[data-reference-signature=warm-photographic-treatment-tiles]",
+        "description": "Translate the observed warm photographic treatment tiles mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "rust-clinician-chapter",
+        "selector": "[data-reference-signature=rust-clinician-chapter]",
+        "description": "Translate the observed rust clinician chapter mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses cinematic cream hero with client-cleared content.",
+      "Page sequence retains warm photographic treatment tiles and rust clinician chapter as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

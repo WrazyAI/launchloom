@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "id": "web-auto-repair-urban-autocare",
+  "productionEligible": true,
+  "referenceName": "Urban Autocare: six-location switchboard with orange-on-dark hero",
+  "familyId": "web-auto-repair-urban-autocare-family",
+  "businessKinds": [
+    "auto repair shop",
+    "independent garage",
+    "vehicle servicing",
+    "auto-repair"
+  ],
+  "source": {
+    "name": "Urban Autocare official website",
+    "url": "https://www.urbanautocare.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "auto repair",
+      "local garage",
+      "vehicle maintenance",
+      "auto-repair"
+    ],
+    "style": [
+      "bold orange sans headings and dense black utility text",
+      "charcoal and white surfaces",
+      "orange accent"
+    ],
+    "composition": [
+      "dark automotive photo with orange service headline and many location actions",
+      "six-location switchboard",
+      "orange-on-dark hero",
+      "photographic service bands"
+    ],
+    "conversion": [
+      "service booking",
+      "garage contact"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "repair photos and shop scenes in robust horizontal bands",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Urban Autocare website in Denver, Colorado uses dark automotive photo with orange service headline and many location actions. Navigation is multi-location phone utility above main navigation. Its page moves through location utility, shop photo opening, service promise, six-location selector, service photography, warranty and trust explanation, reviews, schedule close, with services and locations are separate navigational groups. repair photos and shop scenes in robust horizontal bands. Transferable mechanics are six-location switchboard, orange-on-dark hero, photographic service bands. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "dark automotive photo with orange service headline and many location actions",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "multi-location phone utility above main navigation",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "bold orange sans headings and dense black utility text",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "charcoal",
+        "white",
+        "orange"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "orange"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "repair photos and shop scenes in robust horizontal bands",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "location utility",
+      "shop photo opening",
+      "service promise",
+      "six-location selector",
+      "service photography",
+      "warranty and trust explanation",
+      "reviews",
+      "schedule close"
+    ],
+    "servicePresentation": {
+      "pattern": "services and locations are separate navigational groups",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "schedule service",
+      "secondary": "then choose location",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "collapse six location choices into scannable labeled rows with clear phone actions",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Urban Autocare identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "six-location-switchboard",
+        "selector": "[data-reference-signature=six-location-switchboard]",
+        "description": "Translate the observed six-location switchboard mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "orange-on-dark-hero",
+        "selector": "[data-reference-signature=orange-on-dark-hero]",
+        "description": "Translate the observed orange-on-dark hero mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "photographic-service-bands",
+        "selector": "[data-reference-signature=photographic-service-bands]",
+        "description": "Translate the observed photographic service bands mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses six-location switchboard with client-cleared content.",
+      "Page sequence retains orange-on-dark hero and photographic service bands as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

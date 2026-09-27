@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "id": "web-roofing-joe-hall",
+  "productionEligible": true,
+  "referenceName": "Joe Hall Roofing and Contracting homepage",
+  "familyId": "web-roofing-joe-hall",
+  "businessKinds": [
+    "roofing contractor",
+    "residential roofing",
+    "commercial roofing",
+    "roofing"
+  ],
+  "source": {
+    "name": "Joe Hall Roofing and Contracting official website",
+    "url": "https://joehallroofing.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "roofing contractor",
+      "residential roofing",
+      "commercial roofing",
+      "roofing"
+    ],
+    "style": [
+      "tall condensed uppercase headlines with restrained body copy",
+      "white and charcoal and mint green surfaces",
+      "saturated green and pale mint accents"
+    ],
+    "composition": [
+      "a broad roof aerial under a centered white mission statement with the roof texture still visible",
+      "roof-aerial-mission",
+      "paired-roof-service-columns",
+      "angular-green-proof-bands"
+    ],
+    "conversion": [
+      "book a roof inspection",
+      "explore residential or commercial work",
+      "early contact action"
+    ],
+    "motion": [
+      "small recognition slider and simple reveal; no interaction is required to read services",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "roof aerial, team group portrait, and local building context",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official Joe Hall Roofing and Contracting homepage was inspected in paired desktop and mobile full-page captures. The page opens with a broad roof aerial under a centered white mission statement with the roof texture still visible. It uses crisp white and charcoal service row with a green inspection control. The visual system relies on tall condensed uppercase headlines with restrained body copy; surfaces include white, charcoal, mint green and accents include saturated green, pale mint. Imagery is roof aerial, team group portrait, and local building context. The page then runs through roof aerial mission hero, local introduction, residential and commercial pair, affiliation band, team portrait and story, recognition and review bands, social work and dark contact footer. Its service presentation is two spacious icon-led service columns for residential and commercial work. Mobile changes to keep the roof aerial and mission readable, stack the two services, and move team photo below its explanation. Transfer only the layout rhythm and decision path. Do not copy Joe Hall mark, mission wording, team portrait, awards, affiliations, specific years, roof imagery, or reviews.",
+    "heroGeometry": {
+      "mode": "a broad roof aerial under a centered white mission statement with the roof texture still visible",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "crisp white and charcoal service row with a green inspection control",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "tall condensed uppercase headlines with restrained body copy",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "charcoal",
+        "mint green"
+      ],
+      "ink": "charcoal",
+      "accents": [
+        "saturated green",
+        "pale mint"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "roof aerial, team group portrait, and local building context",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "roof aerial mission hero",
+      "local introduction",
+      "residential and commercial pair",
+      "affiliation band",
+      "team portrait and story",
+      "recognition and review bands",
+      "social work and dark contact footer"
+    ],
+    "servicePresentation": {
+      "pattern": "two spacious icon-led service columns for residential and commercial work",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "book a roof inspection",
+      "secondary": "explore residential or commercial work",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "small recognition slider and simple reveal; no interaction is required to read services",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "keep the roof aerial and mission readable, stack the two services, and move team photo below its explanation",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy Joe Hall mark, mission wording, team portrait, awards, affiliations, specific years, roof imagery, or reviews.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "roof-aerial-mission",
+        "selector": "[data-reference-signature=roof-aerial-mission]",
+        "description": "roof aerial mission translated with client-specific content"
+      },
+      {
+        "id": "paired-roof-service-columns",
+        "selector": "[data-reference-signature=paired-roof-service-columns]",
+        "description": "paired roof service columns translated with client-specific content"
+      },
+      {
+        "id": "angular-green-proof-bands",
+        "selector": "[data-reference-signature=angular-green-proof-bands]",
+        "description": "angular green proof bands translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified roofing contractor scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x3949; mobile 390x3870. Visible page sequence and mobile layout were reviewed. "
+  }
+}

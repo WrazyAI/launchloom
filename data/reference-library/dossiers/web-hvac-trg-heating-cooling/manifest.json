@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "id": "web-hvac-trg-heating-cooling",
+  "productionEligible": true,
+  "referenceName": "TRG Heating and Cooling service index",
+  "familyId": "hvac-equipment-montage-opening",
+  "source": {
+    "name": "TRG Heating and Cooling service index official website",
+    "url": "https://trgheatingandcooling.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 5968
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 7327
+    },
+    "diagnostics": "Observed equipment-led opening, local company introduction, service index, area index, FAQ accordion. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "TRG Heating and Cooling service index official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "hvac",
+    "heating-and-cooling",
+    "air-conditioning",
+    "ventilation"
+  ],
+  "tags": {
+    "business": [
+      "hvac",
+      "heating-and-cooling",
+      "air-conditioning",
+      "ventilation"
+    ],
+    "style": [
+      "aqua-white-hvac",
+      "utility-directory",
+      "local-service"
+    ],
+    "composition": [
+      "product-hero",
+      "plain-link-taxonomy",
+      "faq-before-proof"
+    ],
+    "conversion": [
+      "book-now",
+      "service-routing",
+      "area-routing"
+    ],
+    "motion": [
+      "faq-disclosure",
+      "static-media-fallback"
+    ],
+    "imagery": [
+      "equipment-montage",
+      "local-skyline"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A bright product-equipment composition and centered booking action lead into a blue local-service heading on white. Narrow local address/phone strip, simple home-gallery-services-contact links and a booking route. All-caps aqua headings, compact dark body copy and utilitarian plain service lists. The page sequence runs from equipment-led opening to local company introduction to service index toward review scene, partner strip, cityline footer. Equipment montage opens; community mark strip, review overlay and city skyline close later chapters. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A bright product-equipment composition and centered booking action lead into a blue local-service heading on white.",
+      "alignment": "centered",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Narrow local address/phone strip, simple home-gallery-services-contact links and a booking route.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "All-caps aqua headings, compact dark body copy and utilitarian plain service lists.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "White",
+        "aqua blue",
+        "navy and small red brand details."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "aqua-white-hvac",
+        "utility-directory"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Equipment montage opens; community mark strip, review overlay and city skyline close later chapters.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "equipment-led opening",
+      "local company introduction",
+      "service index",
+      "area index",
+      "FAQ accordion",
+      "community marks",
+      "review scene",
+      "partner strip",
+      "cityline footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Use two compact columns of verified heating, cooling, ventilation and maintenance links, followed by the real towns covered.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Book near the equipment opening and after service/area explanation.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "faq-disclosure; static-media-fallback",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Turn service and area columns into one-column tappable lists, remove the large blank media gap seen in the source, and keep the booking action adjacent to the first useful heading.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy equipment manufacturer marks, certifications, customer ratings, service-area list, local claims or the source's large empty video interval.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "equipment-montage-opening",
+        "selector": "[data-reference-signature=equipment-montage-opening]",
+        "description": "A new-client interpretation of the observed equipment montage opening relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "plain-service-and-coverage-index",
+        "selector": "[data-reference-signature=plain-service-and-coverage-index]",
+        "description": "A new-client interpretation of the observed plain service and coverage index relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "faq-before-review-proof",
+        "selector": "[data-reference-signature=faq-before-review-proof]",
+        "description": "A new-client interpretation of the observed FAQ before review proof relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

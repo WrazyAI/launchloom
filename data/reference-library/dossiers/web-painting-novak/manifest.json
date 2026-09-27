@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "id": "web-painting-novak",
+  "productionEligible": true,
+  "referenceName": "Novak Painting Group Phoenix homepage",
+  "familyId": "web-painting-novak",
+  "businessKinds": [
+    "painting contractor",
+    "residential painting",
+    "commercial painting",
+    "painting"
+  ],
+  "source": {
+    "name": "Novak Painting Group Phoenix official website",
+    "url": "https://www.novakpaintinggroup.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "painting contractor",
+      "residential painting",
+      "commercial painting",
+      "painting"
+    ],
+    "style": [
+      "high-contrast serif display paired with restrained readable sans",
+      "warm ivory and near-black and white surfaces",
+      "muted gold and sage and warm terracotta accents"
+    ],
+    "composition": [
+      "a warm-ivory editorial column with serif-style promise and embedded form is paired with a large refined living-room photograph",
+      "ivory-interior-form-hero",
+      "paint-layer-method",
+      "dark-project-photo-row"
+    ],
+    "conversion": [
+      "request a free estimate",
+      "call the Phoenix team",
+      "early contact action"
+    ],
+    "motion": [
+      "subtle project hover and FAQ disclosure; static color-layer rows convey the method",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "calm residential interiors, project thumbnails, and paint sample-like color strips",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official Novak Painting Group Phoenix homepage was inspected in paired desktop and mobile full-page captures. The page opens with a warm-ivory editorial column with serif-style promise and embedded form is paired with a large refined living-room photograph. It uses thin black and gold utility navigation with a small estimate control. The visual system relies on high-contrast serif display paired with restrained readable sans; surfaces include warm ivory, near-black, white and accents include muted gold, sage, warm terracotta. Imagery is calm residential interiors, project thumbnails, and paint sample-like color strips. The page then runs through split interior and estimate hero, layered finish-method chapter, dark company statement, painting service cards, project photo row, Greater Phoenix area, dark contact form, FAQ, gold closing statement. Its service presentation is quiet bordered service cards after a color-layer preparation explanation. Mobile changes to place the form before the hero image, stack service cards, and preserve contrast across black and ivory chapters. Transfer only the layout rhythm and decision path. Do not copy Novak identity, home photography, reviews, gold-and-black trade dress, licensed claims, project names, or response-time claims.",
+    "heroGeometry": {
+      "mode": "a warm-ivory editorial column with serif-style promise and embedded form is paired with a large refined living-room photograph",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "thin black and gold utility navigation with a small estimate control",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "high-contrast serif display paired with restrained readable sans",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "warm ivory",
+        "near-black",
+        "white"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "muted gold",
+        "sage",
+        "warm terracotta"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "calm residential interiors, project thumbnails, and paint sample-like color strips",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "split interior and estimate hero",
+      "layered finish-method chapter",
+      "dark company statement",
+      "painting service cards",
+      "project photo row",
+      "Greater Phoenix area",
+      "dark contact form",
+      "FAQ",
+      "gold closing statement"
+    ],
+    "servicePresentation": {
+      "pattern": "quiet bordered service cards after a color-layer preparation explanation",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "request a free estimate",
+      "secondary": "call the Phoenix team",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "subtle project hover and FAQ disclosure; static color-layer rows convey the method",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "place the form before the hero image, stack service cards, and preserve contrast across black and ivory chapters",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy Novak identity, home photography, reviews, gold-and-black trade dress, licensed claims, project names, or response-time claims.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "ivory-interior-form-hero",
+        "selector": "[data-reference-signature=ivory-interior-form-hero]",
+        "description": "ivory interior form hero translated with client-specific content"
+      },
+      {
+        "id": "paint-layer-method",
+        "selector": "[data-reference-signature=paint-layer-method]",
+        "description": "paint layer method translated with client-specific content"
+      },
+      {
+        "id": "dark-project-photo-row",
+        "selector": "[data-reference-signature=dark-project-photo-row]",
+        "description": "dark project photo row translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified painting contractor scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x8304; mobile 390x11856. Visible page sequence and mobile layout were reviewed. The mobile screenshot clips 7 pixels of off-canvas overflow to retain the requested 390-pixel viewport."
+  }
+}

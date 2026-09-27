@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "id": "quiet-care-consultation",
+  "productionEligible": false,
+  "referenceName": "Quiet care consultation study",
+  "familyId": "quiet-care-consultation",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/quiet-care-consultation",
+    "rights": "owned",
+    "rightsEvidence": "The inspiration registry records this as a LaunchLoom-owned original visual study. Exact original capture paths and matching screenshot hashes are documented in rights/provenance.md. Ownership is registry-recorded, not an independently audited asset-by-asset license.",
+    "sourceType": "LaunchLoom-owned original visual study, rendered in-house",
+    "rightsEvidencePath": "rights/provenance.md"
+  },
+  "businessKinds": [
+    "healthcare",
+    "home-care",
+    "elder-care",
+    "wellness"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Quiet care consultation study",
+    "heroGeometry": {
+      "mode": "warm editorial statement beside an illustrated person window",
+      "alignment": "left copy with a large right portrait illustration",
+      "viewport": "headline, short reassurance, and action"
+    },
+    "navigationGeometry": {
+      "mode": "quiet inline care links",
+      "placement": "top edge",
+      "mobile": "compact inline links"
+    },
+    "typography": {
+      "display": "editorial serif",
+      "body": "quiet neutral sans",
+      "scale": "large calm headline with short supporting copy"
+    },
+    "palette": {
+      "surfaces": [
+        "warm white",
+        "deep green",
+        "soft sage"
+      ],
+      "ink": "deep green",
+      "accents": [
+        "muted sage"
+      ],
+      "contrastIntent": "soft welcoming contrast"
+    },
+    "imageTreatment": {
+      "mode": "single illustrated person framed in a large arch",
+      "crop": "portrait crop inside a soft architectural mask",
+      "focalPoint": "person silhouette centered in the arch"
+    },
+    "sectionSequence": [
+      "hero",
+      "editorial-intro",
+      "services",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "ruled care-service rows",
+      "interaction": "simple direct links"
+    },
+    "ctaPlacement": {
+      "primary": "low-pressure conversation action",
+      "secondary": "service-row links",
+      "early": "in the opening copy"
+    },
+    "motion": {
+      "primitive": "subtle portrait-mask reveal",
+      "library": "css",
+      "reducedMotion": "show the complete illustration"
+    },
+    "mobileRecomposition": {
+      "strategy": "single-column care consultation",
+      "rules": [
+        "place the illustration after the promise",
+        "keep service rows full-width",
+        "keep contact action close to the form"
+      ]
+    },
+    "prohibitedPatterns": [
+      "clinical blue dashboard",
+      "generic service cards",
+      "invented staff portrait",
+      "long why-us essay"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "care-promise",
+        "selector": "[data-reference-signature=care-promise]",
+        "description": "warm editorial care promise"
+      },
+      {
+        "id": "care-service-ledger",
+        "selector": "[data-reference-signature=care-service-ledger]",
+        "description": "ruled care-service rows"
+      }
+    ],
+    "acceptanceChecks": [
+      "the portrait is clearly illustrative rather than a claimed staff member",
+      "the service rows remain scannable",
+      "the first action is low-pressure and visible"
+    ],
+    "annotatedDescription": "Archived LaunchLoom-owned visual study: Quiet care consultation study. The registry describes it as Owned LaunchLoom care study. The screenshot has a warm editorial opening, illustrated portrait window, deep-green reassurance section, and ruled care-service rows. Treat these as mechanics, not content or brand assets.. The opening uses warm editorial statement beside an illustrated person window, with quiet inline care links. The page rhythm is hero, editorial-intro, services, contact. Mobile translation: single-column care consultation. This dossier records transferable mechanics and original screenshot evidence for historical traceability only; it is not a production reference or a source of client facts, assets, or claims."
+  },
+  "review": {
+    "status": "owned-archive-not-for-production",
+    "curator": "Codex archival materialization",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical traceability of a registry-recorded LaunchLoom-owned study and its exact paired screenshots",
+    "notes": "productionEligible=false. Never add this dossier to the core collection or randomized production selection. Screenshot copies match the registered originals by SHA-256. Original capture date is not established by this materialization."
+  },
+  "tags": {
+    "business": [
+      "healthcare",
+      "home-care",
+      "elder-care",
+      "wellness"
+    ],
+    "style": [
+      "editorial serif",
+      "surfaces: warm white, deep green, soft sage",
+      "accents: muted sage"
+    ],
+    "composition": [
+      "warm editorial statement beside an illustrated person window",
+      "quiet inline care links",
+      "ruled care-service rows"
+    ],
+    "conversion": [
+      "low-pressure conversation action",
+      "service-row links",
+      "in the opening copy"
+    ],
+    "motion": [
+      "subtle portrait-mask reveal",
+      "show the complete illustration"
+    ],
+    "imagery": [
+      "single illustrated person framed in a large arch",
+      "portrait crop inside a soft architectural mask"
+    ]
+  }
+}

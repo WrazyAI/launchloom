@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "id": "jewelry-panconesi-sculptural-luxury",
+  "productionEligible": false,
+  "referenceName": "Panconesi sculptural luxury editorial commerce",
+  "familyId": "panconesi-sculptural-luxury-commerce",
+  "source": {
+    "name": "Panconesi official website",
+    "url": "https://marcopanconesi.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 that full-page screenshot retention, derived prompts and LaunchLoom pipeline-model visual-reference use are cleared. No source-owner grant was uploaded.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "First-party homepage https://marcopanconesi.com/ was rendered in headless Chromium; scrolled the full document to trigger lazy content, returned to top and captured paired viewport images.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 4517
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 4148
+    },
+    "diagnostics": "Two edge-to-edge portrait photographs form a controlled diptych, emphasizing the jewelry on faces rather than a conventional product-card hero. short editorial statement, four-image category row, objects image-and-text pair. Jewelry forms, model portraits, source copy, product pricing and Panconesi marks are non-transferable.",
+    "attribution": "Panconesi official website; archive capture uses https://marcopanconesi.com/. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "fine-jewelry",
+    "designer-jewelry",
+    "luxury-retail",
+    "sculptural-accessories",
+    "home-objects"
+  ],
+  "tags": {
+    "business": [
+      "fine-jewelry",
+      "designer-jewelry",
+      "luxury-retail",
+      "sculptural-accessories",
+      "home-objects"
+    ],
+    "style": [
+      "sculptural-luxury",
+      "gallery-editorial",
+      "restrained-monochrome",
+      "soft-metallic"
+    ],
+    "composition": [
+      "portrait-led-luxury-diptych",
+      "diptych-to-editorial-statement-to-image-grid-to-product-stories-to-taxonomy",
+      "portrait-diptych-opening",
+      "image-led-editorial-row",
+      "extreme-scale-hand-detail"
+    ],
+    "conversion": [
+      "collection-and-material-taxonomy",
+      "Keep a discreet discover route after the opening statement and direct collection links in the lower directory."
+    ],
+    "motion": [
+      "announcement-line",
+      "carousel-controls",
+      "category-disclosure"
+    ],
+    "imagery": [
+      "sculptural-jewelry-portrait-and-object-photography",
+      "Fashion portraits, close jewelry crops, a rectangular image row and an oversized hand-and-ring photograph establish scale."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "Two edge-to-edge portrait photographs form a controlled diptych, emphasizing the jewelry on faces rather than a conventional product-card hero. A very fine announcement line and centered brand navigation sit over the image field. Quiet contemporary sans for copy and category details, with large negative spaces and photograph-led hierarchy. White, near-black, skin and silver tones with muted warm object scenes. Fashion portraits, close jewelry crops, a rectangular image row and an oversized hand-and-ring photograph establish scale. The full sequence runs from portrait diptych to short editorial statement to four-image category row toward objects image-and-text pair, oversized hand detail, category directory and footer. Jewelry forms, model portraits, source copy, product pricing and Panconesi marks are non-transferable.",
+    "heroGeometry": {
+      "mode": "Two edge-to-edge portrait photographs form a controlled diptych, emphasizing the jewelry on faces rather than a conventional product-card hero.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "A very fine announcement line and centered brand navigation sit over the image field.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "Quiet contemporary sans for copy and category details, with large negative spaces and photograph-led hierarchy.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "White",
+        "near-black",
+        "skin and silver tones with muted warm object scenes"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "sculptural-luxury",
+        "gallery-editorial"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "Fashion portraits, close jewelry crops, a rectangular image row and an oversized hand-and-ring photograph establish scale.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "portrait diptych",
+      "short editorial statement",
+      "four-image category row",
+      "objects image-and-text pair",
+      "oversized hand detail",
+      "category directory and footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Use collection routing and material explanation for an actual jewelry client, never invent item properties or replicate the sculptural designs.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Keep a discreet discover route after the opening statement and direct collection links in the lower directory.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "announcement-line; carousel-controls; category-disclosure",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack or crop portraits while preserving the jewelry focal point, keep tiny labels readable and prevent the oversized final detail from clipping controls.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Jewelry forms, model portraits, source copy, product pricing and Panconesi marks are non-transferable.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "portrait-diptych-opening",
+        "selector": "[data-reference-signature=portrait-diptych-opening]",
+        "description": "Original client interpretation of the observed portrait diptych opening mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "image-led-editorial-row",
+        "selector": "[data-reference-signature=image-led-editorial-row]",
+        "description": "Original client interpretation of the observed image-led editorial row mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "extreme-scale-hand-detail",
+        "selector": "[data-reference-signature=extreme-scale-hand-detail]",
+        "description": "Original client interpretation of the observed extreme-scale hand detail mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. Jewelry forms, model portraits, source copy, product pricing and Panconesi marks are non-transferable. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

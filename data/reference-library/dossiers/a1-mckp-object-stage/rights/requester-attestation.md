@@ -1,0 +1,5 @@
+# Requester-attested screenshot and model-use clearance
+
+On 2026-09-26, the LaunchLoom requester confirmed clearance for retaining full-page desktop and mobile captures of MCKP interactive mockup product website, deriving this design-mechanics prompt, and sending these captures to the LaunchLoom pipeline model as internal visual-reference input. The captured source URL is https://mckp.live/.
+
+This dossier records requester-attested clearance. It is not a source-owner license, written grant, or independent legal verification; no source-owner grant file was attached. Keep these captures and prompt internal to the reference archive. Transfer only design mechanics. Do not publish these source captures, use them as client assets, or reproduce source copy, logos, photography, people, reviews, claims, prices, code, or trade dress. If the requester withdraws this clearance or its authority is found insufficient, disable use and remove the captures from model context pending an appropriate grant.

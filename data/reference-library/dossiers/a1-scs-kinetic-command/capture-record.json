@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://o-scs.com/?ref=a1.gallery",
+  "captures": {
+    "desktop": {
+      "url": "https://o-scs.com/?ref=a1.gallery",
+      "finalUrl": "https://o-scs.com/?ref=a1.gallery",
+      "httpStatus": 200,
+      "title": "Global Security & Executive Protection | SCS",
+      "capturedAt": "2026-09-26T11:08:11.569Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": true,
+      "image": {
+        "width": 1440,
+        "height": 20537,
+        "format": "png"
+      },
+      "rawImageWidth": 1441,
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 20537,
+      "documentWidth": 1441,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "mobile": {
+      "url": "https://o-scs.com/?ref=a1.gallery",
+      "finalUrl": "https://o-scs.com/?ref=a1.gallery",
+      "httpStatus": 200,
+      "title": "Global Security & Executive Protection | SCS",
+      "capturedAt": "2026-09-26T11:08:51.974Z",
+      "captureMethod": "playwright-scrolled-viewport-stitch-v1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "image": {
+        "width": 390,
+        "height": 19050,
+        "format": "png"
+      },
+      "rawImageWidth": 390,
+      "scrollRoot": ".body-inner.lenis",
+      "customScrollRoot": true,
+      "scrollHeight": 19050,
+      "documentWidth": 390,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 27
+    }
+  }
+}

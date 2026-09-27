@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-meridian-clinic",
+  "productionEligible": false,
+  "referenceName": "Meridian clinical utility and embedded booking",
+  "familyId": "colorlib-meridian-clinical-utility",
+  "source": {
+    "name": "Colorlib Bootstrap Templates, Meridian MIT/CC0 template",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/meridian",
+    "rights": "licensed",
+    "rightsEvidence": "Pinned Colorlib MIT template; its CREDITS.txt lists the CC0/Public Domain placeholder photographs. License and credits are retained locally.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": [
+      "rights/CREDITS.txt"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Pinned ColorlibHQ/bootstrap-templates revision f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf, meridian/index.html, rendered through a temporary local HTTP server in headless Chromium. Scrolled the entire document for lazy media, returned to top and captured at the exact viewport widths. Temporary source files were not retained in this dossier.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 3279
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 6814
+    },
+    "diagnostics": "A soft teal-lavender clinic opening pairs a large plain-language promise with an appointment form sidecar and synthetic numerical proof. split promise and booking form, six-service directory, clinician placeholders. All provider identities, wait times, ratings, insurance acceptance, clinic address, services and emergency availability are fictional.",
+    "attribution": "Colorlib Bootstrap Templates, Meridian MIT/CC0 template; archive capture uses http://127.0.0.1:8765/meridian/index.html. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "medical-clinic",
+    "primary-care",
+    "specialty-clinic",
+    "healthcare",
+    "dental-practice"
+  ],
+  "tags": {
+    "business": [
+      "medical-clinic",
+      "primary-care",
+      "specialty-clinic",
+      "healthcare",
+      "dental-practice"
+    ],
+    "style": [
+      "clinical-utility",
+      "calm-trustworthy",
+      "teal-accent",
+      "bright-modular"
+    ],
+    "composition": [
+      "split-clinical-opening-with-appointment-sidecar",
+      "utility-and-booking-to-services-to-team-to-patient-faq",
+      "appointment-sidecar",
+      "icon-service-directory",
+      "patient-faq-beside-hours"
+    ],
+    "conversion": [
+      "icon-led-service-directory",
+      "Place appointment action in header and beside the hero form, then repeat only at practical patient questions."
+    ],
+    "motion": [
+      "native-form-controls",
+      "disclosure-faq",
+      "accessible-drawer"
+    ],
+    "imagery": [
+      "single-cc0-skyline-placeholder-and-client-practice-images",
+      "One CC0 skyline hero image and flat placeholder clinician panels; the body depends on service icons and clear forms."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A soft teal-lavender clinic opening pairs a large plain-language promise with an appointment form sidecar and synthetic numerical proof. Dark emergency information strip above a white clinic menu and teal booking action. High-legibility contemporary sans with heavy service headers, compact form labels and small patient-info terms. White, pale cool gray, teal and lavender skyline overlay. One CC0 skyline hero image and flat placeholder clinician panels; the body depends on service icons and clear forms. The full sequence runs from clinic utility strip to split promise and booking form to six-service directory toward clinician placeholders, insurance list, patient FAQ and hours. All provider identities, wait times, ratings, insurance acceptance, clinic address, services and emergency availability are fictional.",
+    "heroGeometry": {
+      "mode": "A soft teal-lavender clinic opening pairs a large plain-language promise with an appointment form sidecar and synthetic numerical proof.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "Dark emergency information strip above a white clinic menu and teal booking action.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "High-legibility contemporary sans with heavy service headers, compact form labels and small patient-info terms.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "White",
+        "pale cool gray",
+        "teal and lavender skyline overlay"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "clinical-utility",
+        "calm-trustworthy"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "One CC0 skyline hero image and flat placeholder clinician panels; the body depends on service icons and clear forms.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "clinic utility strip",
+      "split promise and booking form",
+      "six-service directory",
+      "clinician placeholders",
+      "insurance list",
+      "patient FAQ and hours"
+    ],
+    "servicePresentation": {
+      "pattern": "Use a service directory only for verified clinical services and a genuine appointment flow; never copy the synthetic clinicians or outcomes.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Place appointment action in header and beside the hero form, then repeat only at practical patient questions.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "native-form-controls; disclosure-faq; accessible-drawer",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Move the booking form below the promise, stack service cards and clinician details, and keep patient FAQ, hours and emergency advice distinct.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "All provider identities, wait times, ratings, insurance acceptance, clinic address, services and emergency availability are fictional.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "appointment-sidecar",
+        "selector": "[data-reference-signature=appointment-sidecar]",
+        "description": "Original client interpretation of the observed appointment sidecar mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "icon-service-directory",
+        "selector": "[data-reference-signature=icon-service-directory]",
+        "description": "Original client interpretation of the observed icon service directory mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "patient-faq-beside-hours",
+        "selector": "[data-reference-signature=patient-faq-beside-hours]",
+        "description": "Original client interpretation of the observed patient FAQ beside hours mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. All provider identities, wait times, ratings, insurance acceptance, clinic address, services and emergency availability are fictional. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

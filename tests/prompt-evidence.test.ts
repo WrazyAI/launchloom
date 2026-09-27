@@ -31,7 +31,7 @@ describe("prompt evidence", () => {
 
   it("transcodes A1 AVIF reference screenshots into actual JPEG evidence", async () => {
     const source = path.resolve(
-      "data/inspiration-evidence/a1-gallery/craft-2025/desktop.avif",
+      "data/reference-library/dossiers/a1-craft-collage-field/screenshots/gallery-preview.avif",
     );
 
     const part = await promptImagePart(source);

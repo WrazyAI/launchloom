@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "id": "a1-scs-kinetic-command",
+  "productionEligible": false,
+  "archiveOnlyReason": "Curated cross-industry design mechanics. Not one of the six business-verified production references in a Local SEO Core niche.",
+  "referenceName": "SCS kinetic global command field",
+  "familyId": "a1-kinetic-command",
+  "source": {
+    "name": "SCS Global Security official website",
+    "url": "https://o-scs.com/",
+    "discoverySource": "A1 Gallery MCP / curated reference research",
+    "discoveryUrl": "https://www.a1.gallery/website/scs",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The LaunchLoom requester attested on 2026-09-26 that the exact SCS Global Security official website desktop/mobile captures and derived mechanics prompt may be retained internally and supplied to the pipeline model as visual reference. This is requester-attested clearance; no source-owner grant was attached or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "capture-record.json",
+      "rights/gallery-preview-provenance.md"
+    ]
+  },
+  "businessKinds": [
+    "security-services",
+    "professional-services",
+    "global-security"
+  ],
+  "tags": {
+    "business": [
+      "security-services",
+      "professional-services",
+      "global-security"
+    ],
+    "style": [
+      "kinetic-command",
+      "high-contrast",
+      "condensed-display",
+      "cinematic-gradient"
+    ],
+    "composition": [
+      "glowing-orbit-hero",
+      "oversized-action-statement",
+      "color-field-service-band",
+      "global-coordinate-ledger",
+      "editorial-intelligence-feed"
+    ],
+    "conversion": [
+      "work-with-us-action",
+      "service-selection",
+      "consultation-intake",
+      "global-contact-close"
+    ],
+    "motion": [
+      "scroll-linked-type-state",
+      "pinned-scene-transitions",
+      "global-map-pan",
+      "reduced-motion-static-scenes"
+    ],
+    "imagery": [
+      "abstract-orbital-light",
+      "high-contrast-documentary-scenes",
+      "global-location-index",
+      "editorial-field-notes"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshotHeight": 20537
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotHeight": 19050
+    }
+  },
+  "provenance": {
+    "retrievedAt": "2026-09-26",
+    "captureMethod": "playwright-native-full-page-v1",
+    "discoveryPage": "https://www.a1.gallery/website/scs",
+    "desktopCapture": {
+      "url": "https://o-scs.com/?ref=a1.gallery",
+      "finalUrl": "https://o-scs.com/?ref=a1.gallery",
+      "httpStatus": 200,
+      "title": "Global Security & Executive Protection | SCS",
+      "capturedAt": "2026-09-26T11:08:11.569Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": true,
+      "image": {
+        "width": 1440,
+        "height": 20537,
+        "format": "png"
+      },
+      "rawImageWidth": 1441,
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 20537,
+      "documentWidth": 1441,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "mobileCapture": {
+      "url": "https://o-scs.com/?ref=a1.gallery",
+      "finalUrl": "https://o-scs.com/?ref=a1.gallery",
+      "httpStatus": 200,
+      "title": "Global Security & Executive Protection | SCS",
+      "capturedAt": "2026-09-26T11:08:51.974Z",
+      "captureMethod": "playwright-scrolled-viewport-stitch-v1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "image": {
+        "width": 390,
+        "height": 19050,
+        "format": "png"
+      },
+      "rawImageWidth": 390,
+      "scrollRoot": ".body-inner.lenis",
+      "customScrollRoot": true,
+      "scrollHeight": 19050,
+      "documentWidth": 390,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 27
+    },
+    "desktopScreenshotSha256": "ff6672a931684ccfef776ebec30f6adacf7eab0db7b26ab1c7190932f9aa8067",
+    "mobileScreenshotSha256": "c02ab738cb806ea59cd717cfb1e1c157424916d60586ccd69f2102885a59ca4c",
+    "notes": "Screenshots are direct official-source page captures at declared desktop and mobile viewports. Custom scrolling surfaces are recorded and captured as scroll-position sequences. A1 metadata informed taxonomy and visual annotation only. Original source material is not copied into client deliverables."
+  },
+  "referenceDna": {
+    "annotatedDescription": "The site treats a serious global security firm like a cinematic control room: a black opening with an illuminated orange-to-cyan orbit around a huge two-line statement; minimal utility navigation; measured global proof; a sequence of dark and pale stages; a loud orange service manifesto; a technical world-presence index; editorial field notes; an explicit service catalog; a structured inquiry form; and a minimal dark close. It uses motion and contrast to signal operational focus, not decorative luxury.",
+    "heroGeometry": {
+      "mode": "full-viewport action poster with giant centered type and a luminous circular field",
+      "alignment": "small corner identity and utility controls surround one short centered statement",
+      "viewport": "brand category, regional/global scope, concrete service promise, and an inquiry action read immediately"
+    },
+    "navigationGeometry": {
+      "mode": "sparse command navigation with discreet section links and a single bright action",
+      "placement": "fine-print row at the top edge with a circular signal action",
+      "mobile": "compact menu and mark at top; expose the inquiry action without shrinking the statement"
+    },
+    "typography": {
+      "display": "condensed technical grotesk",
+      "body": "neutral compact sans with occasional mono coordinates",
+      "scale": "oversized short uppercase hero; very small operational labels; short explanatory lines"
+    },
+    "palette": {
+      "surfaces": [
+        "near black",
+        "charcoal",
+        "cold white",
+        "deep navy"
+      ],
+      "ink": "white on dark and almost-black on pale",
+      "accents": [
+        "signal orange",
+        "cyan",
+        "red-orange"
+      ],
+      "contrastIntent": "high contrast for operational copy; motion gradients remain behind text and never reduce legibility"
+    },
+    "imageTreatment": {
+      "mode": "luminous orbital graphics, global data and selective documentary imagery",
+      "crop": "full-bleed abstract field, poster-sized service band, then compact image-led field notes",
+      "focalPoint": "the illuminated center and the service/region being communicated"
+    },
+    "sectionSequence": [
+      "quiet command navigation",
+      "orbital type hero",
+      "global proof strip",
+      "pinned statement scenes",
+      "orange expertise poster",
+      "dark worldwide presence index",
+      "editorial field notes",
+      "service taxonomy",
+      "structured inquiry form",
+      "minimal corporate footer"
+    ],
+    "servicePresentation": {
+      "pattern": "services as a dense, oversized typographic list inside one deliberate signal-color band",
+      "interaction": "each service is a readable focus row linked to verified detail, not a grid of generic capability cards"
+    },
+    "ctaPlacement": {
+      "primary": "Work with us in navigation and hero",
+      "secondary": "open an inquiry or select a verified service",
+      "early": "visible in the opening navigation before the long cinematic sequence"
+    },
+    "motion": {
+      "primitive": "scroll-linked statement and background-field transitions across a contained scene",
+      "library": "native scroll state or GSAP ScrollTrigger with explicit cleanup",
+      "reducedMotion": "unpin every scene, show each statement once in normal flow, and disable continuous field drift"
+    },
+    "mobileRecomposition": {
+      "strategy": "vertical command narrative inside a touch-scrollable page, with scene motion simplified",
+      "rules": [
+        "keep the menu and identity controls compact",
+        "keep hero type to a short readable statement",
+        "replace wide data rows with stacked labeled values",
+        "turn service bands into clear vertical service links",
+        "ensure custom scroll containers remain keyboard and touch scrollable",
+        "never hide all page content behind a single fixed viewport"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying SCS identity, exact headline, logo, services, locations, contacts, or source imagery",
+      "repeated pinned text caused by an incorrectly measured scroll container",
+      "scroll hijacking or a page with no accessible native scroll path",
+      "strobing gradients, rapid flashes, or autoplay video without a still state",
+      "tiny operational text with inadequate contrast",
+      "invented locations, response promises, client logos, or security credentials"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "orbital-command-opening",
+        "selector": "[data-reference-signature=orbital-command-opening]",
+        "description": "short hero statement framed by an atmospheric but non-obscuring orbit or field"
+      },
+      {
+        "id": "service-signal-band",
+        "selector": "[data-reference-signature=service-signal-band]",
+        "description": "one high-signal service index distinct from the dark field"
+      },
+      {
+        "id": "global-proof-index",
+        "selector": "[data-reference-signature=global-proof-index]",
+        "description": "verified service-area or proof information in compact technical rows"
+      }
+    ],
+    "acceptanceChecks": [
+      "hero states the real trade or service area without unsupported claims",
+      "all page scenes are accessible with reduced motion and keyboard/touch scroll",
+      "service list links to real verified service content",
+      "locations and proof metrics are drawn only from business facts",
+      "mobile has no fixed-scene trap or horizontal overflow",
+      "contact action reaches the verified form or telephone number"
+    ]
+  },
+  "review": {
+    "status": "requester-attested-internal-archive-only",
+    "curator": "LaunchLoom reference curation",
+    "reviewedAt": "2026-09-26",
+    "scope": "Visual mechanics archive. productionEligible=false and excluded from every current production niche."
+  }
+}

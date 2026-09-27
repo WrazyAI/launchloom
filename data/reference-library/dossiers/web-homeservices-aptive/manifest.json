@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "id": "web-homeservices-aptive",
+  "productionEligible": true,
+  "referenceName": "Aptive residential pest control homepage",
+  "familyId": "web-homeservices-aptive",
+  "businessKinds": [
+    "pest control",
+    "residential pest services",
+    "home services",
+    "home-services"
+  ],
+  "source": {
+    "name": "Aptive residential pest control official website",
+    "url": "https://aptivepestcontrol.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "pest control",
+      "residential pest services",
+      "home services",
+      "home-services"
+    ],
+    "style": [
+      "rounded modern sans statements with calm small explanatory copy",
+      "forest green and warm off-white and pale sage surfaces",
+      "lime green and muted sage accents"
+    ],
+    "composition": [
+      "a dark-green photographic stage with a technician in a yard and a bright lime call action",
+      "garden-technician-hero",
+      "preventive-benefit-quartet",
+      "pest-visit-process"
+    ],
+    "conversion": [
+      "request pest-control quote",
+      "check service area or call",
+      "early contact action"
+    ],
+    "motion": [
+      "horizontal pest and article rails; static cards and open FAQ access are required",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "technician and home-garden scenes framed by organic leaf and lawn imagery",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official Aptive residential pest control homepage was inspected in paired desktop and mobile full-page captures. The page opens with a dark-green photographic stage with a technician in a yard and a bright lime call action. It uses light service navigation with a strong quote control and a slim offer strip. The visual system relies on rounded modern sans statements with calm small explanatory copy; surfaces include forest green, warm off-white, pale sage and accents include lime green, muted sage. Imagery is technician and home-garden scenes framed by organic leaf and lawn imagery. The page then runs through service navigation, technician-led image hero, four prevention benefits, proactive statement image band, promise and quote form, pest index, three-step visit process, forecast and coverage, reviews, advice, FAQ, footer. Its service presentation is small pest-category pictograms and a three-part inspection-treatment-communication process. Mobile changes to keep the service promise and quote action early, use single-column prevention benefits, and keep pest icons legible. Transfer only the layout rhythm and decision path. Do not copy the Aptive promise, staff imagery, pest forecast data, offer, review text, guarantees, or environmental claims.",
+    "heroGeometry": {
+      "mode": "a dark-green photographic stage with a technician in a yard and a bright lime call action",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "light service navigation with a strong quote control and a slim offer strip",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "rounded modern sans statements with calm small explanatory copy",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "forest green",
+        "warm off-white",
+        "pale sage"
+      ],
+      "ink": "dark green",
+      "accents": [
+        "lime green",
+        "muted sage"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "technician and home-garden scenes framed by organic leaf and lawn imagery",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "service navigation",
+      "technician-led image hero",
+      "four prevention benefits",
+      "proactive statement image band",
+      "promise and quote form",
+      "pest index",
+      "three-step visit process",
+      "forecast and coverage",
+      "reviews, advice, FAQ, footer"
+    ],
+    "servicePresentation": {
+      "pattern": "small pest-category pictograms and a three-part inspection-treatment-communication process",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "request pest-control quote",
+      "secondary": "check service area or call",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "horizontal pest and article rails; static cards and open FAQ access are required",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "keep the service promise and quote action early, use single-column prevention benefits, and keep pest icons legible",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy the Aptive promise, staff imagery, pest forecast data, offer, review text, guarantees, or environmental claims.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "garden-technician-hero",
+        "selector": "[data-reference-signature=garden-technician-hero]",
+        "description": "garden technician hero translated with client-specific content"
+      },
+      {
+        "id": "preventive-benefit-quartet",
+        "selector": "[data-reference-signature=preventive-benefit-quartet]",
+        "description": "preventive benefit quartet translated with client-specific content"
+      },
+      {
+        "id": "pest-visit-process",
+        "selector": "[data-reference-signature=pest-visit-process]",
+        "description": "pest visit process translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified home-service trades scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x10428; mobile 390x13854. Visible page sequence and mobile layout were reviewed. "
+  }
+}

@@ -44,24 +44,23 @@ describe("inspiration registry", () => {
     ).toBe(3);
   });
 
-  it("relaxes history when the current core trio is exhausted", () => {
+  it("avoids repeating the recent trio when a niche has more core references", () => {
     const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
     const initial = buildInspirationPack(baseRequest, registry, options);
+    const recentIds = initial.routes.map((route: any) => route.referenceDossier.id);
     const next = buildInspirationPack(
       {
         ...baseRequest,
-        recentReferenceIds: initial.routes.flatMap(
-          (route: any) => route.referenceIds,
-        ),
-        recentRouteSignatures: [initial.routes[0].signature],
+        recentReferenceIds: recentIds,
+        recentRouteSignatures: initial.routes.map((route: any) => route.signature),
       },
       registry,
       options,
     );
 
-    expect(next.request.freshnessFallback).toBe("history-relaxed");
-    expect(next.routes.map((route: any) => route.referenceDossier?.id).sort()).toEqual(
-      initial.routes.map((route: any) => route.referenceDossier?.id).sort(),
+    expect(next.request.freshnessFallback).toBe("fresh");
+    expect(next.routes.map((route: any) => route.referenceDossier?.id).sort()).not.toEqual(
+      [...recentIds].sort(),
     );
   });
 
@@ -103,27 +102,27 @@ describe("inspiration registry", () => {
   it("maps every owned design-family reference to the screenshot produced by that exact variant", () => {
     const expected = {
       "care-image-mosaic": [
-        "data/inspiration-evidence/design-family-demos/screenshots/image-mosaic-desktop.png",
+        "data/reference-library/dossiers/care-image-mosaic/screenshots/desktop.png",
         "care-modern-clinic-mosaic",
       ],
       "care-concierge-cinematic": [
-        "data/inspiration-evidence/design-family-demos/screenshots/cinematic-premium-desktop.png",
+        "data/reference-library/dossiers/care-concierge-cinematic/screenshots/desktop.png",
         "care-concierge-cinematic",
       ],
       "care-wellness-journal": [
-        "data/inspiration-evidence/design-family-demos/screenshots/atmospheric-editorial-desktop.png",
+        "data/reference-library/dossiers/care-wellness-journal/screenshots/desktop.png",
         "care-wellness-journal",
       ],
       "trade-project-showcase": [
-        "data/inspiration-evidence/design-family-demos/screenshots/project-showcase-desktop.png",
+        "data/reference-library/dossiers/trade-project-showcase/screenshots/desktop.png",
         "trades-project-led",
       ],
       "trades-field-report": [
-        "data/inspiration-evidence/design-family-demos/screenshots/studio-minimal-desktop.png",
+        "data/reference-library/dossiers/trades-field-report/screenshots/desktop.png",
         "trades-field-report",
       ],
       "quiet-care-consultation": [
-        "data/inspiration-evidence/a1-design-showcase/screenshots/quiet-practice-desktop.png",
+        "data/reference-library/dossiers/quiet-care-consultation/screenshots/desktop.png",
         "quiet-care-consultation",
       ],
     };
@@ -196,61 +195,45 @@ describe("inspiration registry", () => {
     }, registry)).toThrow(/a specific business kind is required/iu);
   });
 
-  it.each([
-    ["home-care", new Set([
-      "html5up-home-care-story",
-      "attested-angels-on-call-homecare",
-      "attested-kingsway-care-home-care",
-    ])],
-    ["fitness", new Set([
-      "html5up-fitness-big-picture",
-      "colorlib-ironworks-strength-club",
-      "spicer-gym-timetable-first",
-    ])],
-    ["legal-services", new Set([
-      "colorlib-caseworth-legal-ledger",
-      "direct-robins-kaplan-law",
-      "spicer-law-firm-results-ledger",
-    ])],
-    ["hospitality", new Set([
-      "direct-mahala-desert-boutique-hotel",
-      "direct-casa-cedo-boutique-hotel",
-      "direct-fogo-island-inn-hospitality",
-    ])],
-    ["accounting", new Set([
-      "spicer-accountant-deadline-calendar",
-      "direct-alex-co-accountants-practice",
-      "direct-change-accountants-york",
-    ])],
-  ])("has three registered, business-matched core references for %s", (industry, expectedIds) => {
-    const pack = buildInspirationPack({
-      ...baseRequest,
-      industry,
-      recentReferenceIds: [],
-      recentRouteSignatures: [],
-    }, registry, {
-      repositoryRoot: path.resolve("."),
-      requireDossiers: true,
-    });
-    const selected = new Set(pack.routes.map((route: any) => route.referenceDossier.id));
+  it.each(["auto-repair", "hvac", "roofing", "painting"])(
+    "selects a business-matched route trio from the six-reference %s niche",
+    (industry) => {
+      const core = JSON.parse(
+        fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"),
+      );
+      const niche = core.niches.find((entry: any) => entry.businessKind === industry);
+      if (!niche) throw new Error(`Missing core niche '${industry}'.`);
+      const pack = buildInspirationPack({
+        ...baseRequest,
+        industry,
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      }, registry, {
+        repositoryRoot: path.resolve("."),
+        requireDossiers: true,
+      });
+      const selected = new Set(pack.routes.map((route: any) => route.referenceDossier.id));
 
-    expect(pack.routes).toHaveLength(3);
-    expect(selected).toEqual(expectedIds);
-    expect(selected.has("attested-future-fitness")).toBe(false);
-    expect(selected.has("direct-grlica-law")).toBe(false);
-  });
+      expect(pack.routes).toHaveLength(3);
+      expect(niche.referenceIds).toHaveLength(6);
+      expect(selected.size).toBe(3);
+      expect([...selected].every((id) => niche.referenceIds.includes(id))).toBe(true);
+      expect(selected.has("attested-future-fitness")).toBe(false);
+      expect(selected.has("direct-grlica-law")).toBe(false);
+    },
+  );
 
-  it("defines an exact 30-dossier core with ten niches and production-randomizer coverage", () => {
+  it("defines an exact 84-dossier core with six verified references per niche and production-randomizer coverage", () => {
     const corePath = path.resolve("data/reference-library/core-collection.json");
     const core = JSON.parse(fs.readFileSync(corePath, "utf8"));
     expect(core.schemaVersion).toBe(1);
-    expect(core.id).toBe("local-seo-core-30");
-    expect(core.niches).toHaveLength(10);
-    expect(core.niches.every((niche: any) => niche.referenceIds.length === 3)).toBe(true);
+    expect(core.id).toBe("local-seo-core-84");
+    expect(core.niches).toHaveLength(14);
+    expect(core.niches.every((niche: any) => niche.referenceIds.length === 6)).toBe(true);
 
     const allIds = core.niches.flatMap((niche: any) => niche.referenceIds);
-    expect(allIds).toHaveLength(30);
-    expect(new Set(allIds).size).toBe(30);
+    expect(allIds).toHaveLength(84);
+    expect(new Set(allIds).size).toBe(84);
 
     for (const niche of core.niches) {
       const pack = buildInspirationPack({
@@ -264,7 +247,9 @@ describe("inspiration registry", () => {
       });
       assertReferenceDossierPack(pack, { repositoryRoot: path.resolve(".") });
       const selected = pack.routes.map((route: any) => route.referenceDossier.id);
-      expect(new Set(selected), niche.id).toEqual(new Set(niche.referenceIds));
+      expect(selected).toHaveLength(3);
+      expect(new Set(selected).size, niche.id).toBe(3);
+      expect(selected.every((id: string) => niche.referenceIds.includes(id)), niche.id).toBe(true);
 
       for (const id of niche.referenceIds) {
         const record = registry.records.find((item: any) => item.id === id);
@@ -310,28 +295,29 @@ describe("inspiration registry", () => {
       recentRouteSignatures: [],
     }, registry, { repositoryRoot: root, requireDossiers: true });
 
-    expect(pack.routes.map((route: any) => route.referenceDossier.id).sort()).toEqual(
-      [...niche.referenceIds].sort(),
-    );
+    const selectedIds = pack.routes.map((route: any) => route.referenceDossier.id);
+    expect(selectedIds).toHaveLength(3);
+    expect(new Set(selectedIds).size).toBe(3);
+    expect(selectedIds.every((id: string) => niche.referenceIds.includes(id))).toBe(true);
   }, 30_000);
 
   it("records when history must be relaxed to satisfy the three-route contract", () => {
+    const core = JSON.parse(
+      fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"),
+    );
+    const niche = core.niches.find((entry: any) => entry.businessKind === "home-care");
+    if (!niche) throw new Error("The home-care core niche is missing.");
     const request = {
       ...baseRequest,
-      recentReferenceIds: [
-        "html5up-home-care-story",
-        "attested-angels-on-call-homecare",
-        "attested-kingsway-care-home-care",
-      ],
+      recentReferenceIds: niche.referenceIds,
     };
     const initial = buildInspirationPack(request, registry, {
       repositoryRoot: path.resolve("."),
       requireDossiers: true,
     });
     expect(initial.request.freshnessFallback).toBe("history-relaxed");
-    expect(initial.routes.map((route: any) => route.referenceIds[0]).sort()).toEqual(
-      [...request.recentReferenceIds].sort(),
-    );
+    expect(initial.routes).toHaveLength(3);
+    expect(initial.routes.every((route: any) => niche.referenceIds.includes(route.referenceDossier.id))).toBe(true);
   });
 
   it("uses new approved source dossiers and never recycles the historical LaunchLoom studies", () => {
@@ -517,7 +503,7 @@ describe("inspiration registry", () => {
     })).toThrow(/(?:folder|manifest) is missing/iu);
   });
 
-  it("relaxes stale-history exclusions when they would make the three-route contract impossible", () => {
+  it("keeps a fresh route trio when expanded references provide alternatives to old signatures", () => {
     const pack = buildInspirationPack(
       {
         ...baseRequest,
@@ -537,9 +523,7 @@ describe("inspiration registry", () => {
     );
 
     expect(pack.routes).toHaveLength(3);
-    expect(["route-signatures-relaxed", "history-relaxed"]).toContain(
-      pack.request.freshnessFallback,
-    );
+    expect(pack.request.freshnessFallback).toBe("fresh");
   });
 
   it("fails clearly when the registry cannot supply three independent routes", () => {

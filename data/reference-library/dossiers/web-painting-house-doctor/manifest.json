@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "id": "web-painting-house-doctor",
+  "productionEligible": true,
+  "referenceName": "House Doctor Painting Bay Area homepage",
+  "familyId": "web-painting-house-doctor",
+  "businessKinds": [
+    "painting contractor",
+    "residential painting",
+    "commercial painting",
+    "painting"
+  ],
+  "source": {
+    "name": "House Doctor Painting Bay Area official website",
+    "url": "https://housedoctorpainting.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "painting contractor",
+      "residential painting",
+      "commercial painting",
+      "painting"
+    ],
+    "style": [
+      "confident editorial serif headings with restrained sans labels and body",
+      "white and near-black and warm off-white surfaces",
+      "signal red and soft gray accents"
+    ],
+    "composition": [
+      "a darkened exterior-home photograph supports a large white editorial service promise and two short contact controls",
+      "dark-home-editorial-hero",
+      "red-proof-strip",
+      "preparation-story-chapter"
+    ],
+    "conversion": [
+      "request a free painting estimate",
+      "call the painting team",
+      "early contact action"
+    ],
+    "motion": [
+      "gallery rail, FAQ disclosure, and video poster; static photo and text are enough to understand the offer",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "real painted homes, rooms, workplaces, and a process video poster",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official House Doctor Painting Bay Area homepage was inspected in paired desktop and mobile full-page captures. The page opens with a darkened exterior-home photograph supports a large white editorial service promise and two short contact controls. It uses very thin dark utility strip over an airy white service-navigation row. The visual system relies on confident editorial serif headings with restrained sans labels and body; surfaces include white, near-black, warm off-white and accents include signal red, soft gray. Imagery is real painted homes, rooms, workplaces, and a process video poster. The page then runs through exterior-home hero, red proof strip, four painting service cards, dark preparation chapter, customer proof, property-type feature, project gallery, video proof, service areas and FAQ, red estimate close. Its service presentation is four image cards covering interior, exterior, commercial, and deck or fence projects. Mobile changes to stack service cards and project samples, retain the red estimate action, and keep preparation steps in a clear order. Transfer only the layout rhythm and decision path. Do not copy House Doctor identity, project photographs, license number, guarantee, customer quotations, staff, or exact typography.",
+    "heroGeometry": {
+      "mode": "a darkened exterior-home photograph supports a large white editorial service promise and two short contact controls",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "very thin dark utility strip over an airy white service-navigation row",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "confident editorial serif headings with restrained sans labels and body",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "near-black",
+        "warm off-white"
+      ],
+      "ink": "charcoal",
+      "accents": [
+        "signal red",
+        "soft gray"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "real painted homes, rooms, workplaces, and a process video poster",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "exterior-home hero",
+      "red proof strip",
+      "four painting service cards",
+      "dark preparation chapter",
+      "customer proof",
+      "property-type feature",
+      "project gallery",
+      "video proof",
+      "service areas and FAQ",
+      "red estimate close"
+    ],
+    "servicePresentation": {
+      "pattern": "four image cards covering interior, exterior, commercial, and deck or fence projects",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "request a free painting estimate",
+      "secondary": "call the painting team",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "gallery rail, FAQ disclosure, and video poster; static photo and text are enough to understand the offer",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack service cards and project samples, retain the red estimate action, and keep preparation steps in a clear order",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy House Doctor identity, project photographs, license number, guarantee, customer quotations, staff, or exact typography.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "dark-home-editorial-hero",
+        "selector": "[data-reference-signature=dark-home-editorial-hero]",
+        "description": "dark home editorial hero translated with client-specific content"
+      },
+      {
+        "id": "red-proof-strip",
+        "selector": "[data-reference-signature=red-proof-strip]",
+        "description": "red proof strip translated with client-specific content"
+      },
+      {
+        "id": "preparation-story-chapter",
+        "selector": "[data-reference-signature=preparation-story-chapter]",
+        "description": "preparation story chapter translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified painting contractor scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x9826; mobile 390x15719. Visible page sequence and mobile layout were reviewed. "
+  }
+}

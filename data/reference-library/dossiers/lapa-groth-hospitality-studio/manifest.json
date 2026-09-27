@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "lapa-groth-hospitality-studio",
+  "productionEligible": false,
+  "referenceName": "Groth hospitality research rail and project archive",
+  "familyId": "lapa-groth-hospitality-studio",
+  "source": {
+    "name": "Groth Studio direct site; discovered via Lapa Ninja",
+    "url": "https://www.groth.studio/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 that full-page screenshot retention, derived prompts and LaunchLoom pipeline-model visual-reference use are cleared. No source-owner grant was uploaded.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "First-party homepage https://www.groth.studio/ was rendered in headless Chromium; scrolled the full document to trigger lazy content, returned to top and captured paired viewport images.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 8066
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 7675
+    },
+    "diagnostics": "An oversized black typographic masthead sits above a restrained practice statement, while a narrow rust-colored research rail runs along the right. right research rail, project archive pairs, drawn object annotations. Source projects, locations, photographs, drawings, client names and studio identity are non-transferable.",
+    "attribution": "Groth Studio direct site; discovered via Lapa Ninja; archive capture uses https://www.groth.studio/. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "interior-design",
+    "hospitality-design",
+    "architecture",
+    "restaurant-interiors",
+    "design-studio"
+  ],
+  "tags": {
+    "business": [
+      "interior-design",
+      "hospitality-design",
+      "architecture",
+      "restaurant-interiors",
+      "design-studio"
+    ],
+    "style": [
+      "typographic-masthead",
+      "warm-mineral-editorial",
+      "research-rail",
+      "diagrammatic",
+      "premium-hospitality"
+    ],
+    "composition": [
+      "oversized-wordmark-with-research-rail",
+      "masthead-to-research-to-project-records-to-dark-contact",
+      "oversized-word-masthead",
+      "rust-research-rail",
+      "project-photo-diagram-pairs"
+    ],
+    "conversion": [
+      "project-archive-followed-by-hospitality-capabilities",
+      "Offer work browsing near the opening and a direct project conversation at the archive close."
+    ],
+    "motion": [
+      "subtle-project-reveal",
+      "scroll-driven-content"
+    ],
+    "imagery": [
+      "paired-project-photography-and-line-drawings",
+      "Interior-project photographs pair with simple line diagrams in a long two-column archive sequence."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "An oversized black typographic masthead sits above a restrained practice statement, while a narrow rust-colored research rail runs along the right. Micro uppercase project, research, about and contact links keep the large masthead dominant. Heavy geometric grotesk headlines paired with tiny annotation-like captions and narrow project descriptions. Warm mineral cream, black, muted gray and rust orange. Interior-project photographs pair with simple line diagrams in a long two-column archive sequence. The full sequence runs from masthead and practice introduction to right research rail to project archive pairs toward project archive pairs, drawn object annotations, dark studio contact/footer. Source projects, locations, photographs, drawings, client names and studio identity are non-transferable.",
+    "heroGeometry": {
+      "mode": "An oversized black typographic masthead sits above a restrained practice statement, while a narrow rust-colored research rail runs along the right.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "Micro uppercase project, research, about and contact links keep the large masthead dominant.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "Heavy geometric grotesk headlines paired with tiny annotation-like captions and narrow project descriptions.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "Warm mineral cream",
+        "black",
+        "muted gray and rust orange"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "typographic-masthead",
+        "warm-mineral-editorial"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "Interior-project photographs pair with simple line diagrams in a long two-column archive sequence.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "masthead and practice introduction",
+      "right research rail",
+      "project archive pairs",
+      "drawn object annotations",
+      "dark studio contact/footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Use project records to explain actual design capabilities; do not convert an architect's work into generic room cards or claim hospitality work absent from the client portfolio.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Offer work browsing near the opening and a direct project conversation at the archive close.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "subtle-project-reveal; scroll-driven-content",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack research entries before or after the main archive without hiding them, pair each project image with its caption, and preserve the disciplined typographic scale.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Source projects, locations, photographs, drawings, client names and studio identity are non-transferable.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "oversized-word-masthead",
+        "selector": "[data-reference-signature=oversized-word-masthead]",
+        "description": "Original client interpretation of the observed oversized word masthead mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "rust-research-rail",
+        "selector": "[data-reference-signature=rust-research-rail]",
+        "description": "Original client interpretation of the observed rust research rail mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "project-photo-diagram-pairs",
+        "selector": "[data-reference-signature=project-photo-diagram-pairs]",
+        "description": "Original client interpretation of the observed project-photo diagram pairs mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. Source projects, locations, photographs, drawings, client names and studio identity are non-transferable. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "web-architecture-indie-interiors",
+  "productionEligible": true,
+  "referenceName": "Indie Interiors residential portfolio",
+  "familyId": "architecture-cinematic-interior-opening",
+  "source": {
+    "name": "Indie Interiors residential portfolio official website",
+    "url": "https://indieinteriors.co.uk/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 6540
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 8092
+    },
+    "diagnostics": "Observed immersive opening photograph, introductory statement band, studio split, services split, three-project gallery. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Indie Interiors residential portfolio official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "interior-design",
+    "interior-architecture",
+    "architecture"
+  ],
+  "tags": {
+    "business": [
+      "interior-design",
+      "interior-architecture",
+      "architecture"
+    ],
+    "style": [
+      "ivory-taupe-residential",
+      "quiet-luxury",
+      "small-serif-labels"
+    ],
+    "composition": [
+      "immersive-room-hero",
+      "alternating-splits",
+      "three-narrow-projects"
+    ],
+    "conversion": [
+      "consultation-route",
+      "project-exploration"
+    ],
+    "motion": [
+      "quiet-photo-reveal",
+      "static-fallback"
+    ],
+    "imagery": [
+      "residential-interiors",
+      "joinery-detail"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "An immersive warm interior opening with small centered serif copy gives way to a pale editorial introduction instead of a conventional feature-card row. Fine uppercase navigation and a monogram-like mark rest over a light, low-profile header. Small elegant serif headings and uppercase labels, with narrow calm paragraphs and high whitespace ratios. The page sequence runs from immersive opening photograph to introductory statement band to studio split toward award mark strip, enquiry split, quiet footer. Full-height residential interiors alternate with copy and a three-image project gallery; object and joinery details provide close-range texture. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "An immersive warm interior opening with small centered serif copy gives way to a pale editorial introduction instead of a conventional feature-card row.",
+      "alignment": "centered",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Fine uppercase navigation and a monogram-like mark rest over a light, low-profile header.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Small elegant serif headings and uppercase labels, with narrow calm paragraphs and high whitespace ratios.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Ivory",
+        "taupe",
+        "warm brown and dark espresso",
+        "with subtle bronze accents rather than bright interface color."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "ivory-taupe-residential",
+        "quiet-luxury"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Full-height residential interiors alternate with copy and a three-image project gallery; object and joinery details provide close-range texture.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "immersive opening photograph",
+      "introductory statement band",
+      "studio split",
+      "services split",
+      "three-project gallery",
+      "home-centered approach",
+      "award mark strip",
+      "enquiry split",
+      "quiet footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Explain interior design and procurement in one considered editorial chapter, then substantiate range through named project thumbnails.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Keep a consultation route in the top navigation and repeat it after the selected project sequence.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "quiet-photo-reveal; static-fallback",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack each interior photograph with its related copy; preserve individual project captions and keep the consultation link visible without overlaying a room image.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not adopt the studio monogram, image inventory, award logos, client-property names, or claims about project scale.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "cinematic-interior-opening",
+        "selector": "[data-reference-signature=cinematic-interior-opening]",
+        "description": "A new-client interpretation of the observed cinematic interior opening relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "alternating-interior-copy-splits",
+        "selector": "[data-reference-signature=alternating-interior-copy-splits]",
+        "description": "A new-client interpretation of the observed alternating interior-copy splits relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "three-project-portrait-gallery",
+        "selector": "[data-reference-signature=three-project-portrait-gallery]",
+        "description": "A new-client interpretation of the observed three-project portrait gallery relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

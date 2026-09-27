@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "id": "independent-retail-beepy-bella-art-world",
+  "productionEligible": false,
+  "referenceName": "Beepy Bella artist-led independent retail world",
+  "familyId": "independent-retail-artist-world",
+  "source": {
+    "name": "Beepy Bella official website",
+    "url": "https://beepybella.world/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 that full-page screenshot retention, derived prompts and LaunchLoom pipeline-model visual-reference use are cleared. No source-owner grant was uploaded.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "First-party homepage https://beepybella.world/ was rendered in headless Chromium; scrolled the full document to trigger lazy content, returned to top and captured paired viewport images.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 1000
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 3227
+    },
+    "diagnostics": "A split viewport places a macro purple object still at left and an isolated product inside a circular caption field on white at right. segmented utility navigation, orbital product caption and route. Do not copy product silhouettes, artwork, photographs, brand glyphs, item names, price or the artist's visual trademarks.",
+    "attribution": "Beepy Bella official website; archive capture uses https://beepybella.world/. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "independent-jewelry",
+    "artist-led-retail",
+    "creative-goods",
+    "fashion-accessories",
+    "independent-apparel"
+  ],
+  "tags": {
+    "business": [
+      "independent-jewelry",
+      "artist-led-retail",
+      "creative-goods",
+      "fashion-accessories",
+      "independent-apparel"
+    ],
+    "style": [
+      "eccentric-art-retail",
+      "whimsical-pop",
+      "high-contrast-white-space",
+      "handmade-world-building"
+    ],
+    "composition": [
+      "asymmetric-product-stage-with-orbital-caption",
+      "product-stage-to-curated-grid-to-artist-story-to-directory",
+      "split-object-stage",
+      "circular-caption-field",
+      "segmented-utility-bar"
+    ],
+    "conversion": [
+      "product-frontpage-grid-and-category-taxonomy",
+      "Offer a clear shop or collection route from the stage and a real cart/search path in the header."
+    ],
+    "motion": [
+      "orbit-caption",
+      "product-slider",
+      "static-media-fallback"
+    ],
+    "imagery": [
+      "macro-product-and-artist-process-photography",
+      "Oversized hand-made object photography drives the opening; the desktop document is viewport-locked rather than a long scrolling catalog."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A split viewport places a macro purple object still at left and an isolated product inside a circular caption field on white at right. The segmented monochrome store header makes shop, about, brand world, search and cart visible without hiding the product image. Plain small sans utility labels contrasted with playful circular lettering around an object. White and black linework against saturated lavender and pink product photography. Oversized hand-made object photography drives the opening; the desktop document is viewport-locked rather than a long scrolling catalog. The full sequence runs from split product-object stage to segmented utility navigation to orbital product caption and route toward segmented utility navigation, orbital product caption and route, shop and about routes. Do not copy product silhouettes, artwork, photographs, brand glyphs, item names, price or the artist's visual trademarks.",
+    "heroGeometry": {
+      "mode": "A split viewport places a macro purple object still at left and an isolated product inside a circular caption field on white at right.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "The segmented monochrome store header makes shop, about, brand world, search and cart visible without hiding the product image.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "Plain small sans utility labels contrasted with playful circular lettering around an object.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "White and black linework against saturated lavender and pink product photography"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "eccentric-art-retail",
+        "whimsical-pop"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "Oversized hand-made object photography drives the opening; the desktop document is viewport-locked rather than a long scrolling catalog.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "split product-object stage",
+      "segmented utility navigation",
+      "orbital product caption and route",
+      "shop and about routes"
+    ],
+    "servicePresentation": {
+      "pattern": "Treat the interaction as a retail product gateway, not as a service menu or proof of a local physical shop.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Offer a clear shop or collection route from the stage and a real cart/search path in the header.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "orbit-caption; product-slider; static-media-fallback",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "The captured mobile layout extends vertically; keep the object stage and circular caption readable without relying on a hover-only route.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy product silhouettes, artwork, photographs, brand glyphs, item names, price or the artist's visual trademarks.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "split-object-stage",
+        "selector": "[data-reference-signature=split-object-stage]",
+        "description": "Original client interpretation of the observed split object stage mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "circular-caption-field",
+        "selector": "[data-reference-signature=circular-caption-field]",
+        "description": "Original client interpretation of the observed circular caption field mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "segmented-utility-bar",
+        "selector": "[data-reference-signature=segmented-utility-bar]",
+        "description": "Original client interpretation of the observed segmented utility bar mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. Do not copy product silhouettes, artwork, photographs, brand glyphs, item names, price or the artist's visual trademarks. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

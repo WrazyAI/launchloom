@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "id": "a1-mckp-object-stage",
+  "productionEligible": false,
+  "archiveOnlyReason": "Curated cross-industry design mechanics. Not one of the six business-verified production references in a Local SEO Core niche.",
+  "referenceName": "MCKP interactive object stage",
+  "familyId": "a1-object-stage",
+  "source": {
+    "name": "MCKP interactive mockup product website",
+    "url": "https://mckp.live/",
+    "discoverySource": "A1 Gallery MCP / curated reference research",
+    "discoveryUrl": "https://www.a1.gallery/website/mckp",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The LaunchLoom requester attested on 2026-09-26 that the exact MCKP interactive mockup product website desktop/mobile captures and derived mechanics prompt may be retained internally and supplied to the pipeline model as visual reference. This is requester-attested clearance; no source-owner grant was attached or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "capture-record.json",
+      "rights/gallery-preview-provenance.md"
+    ]
+  },
+  "businessKinds": [
+    "design-software",
+    "software",
+    "creative-technology"
+  ],
+  "tags": {
+    "business": [
+      "design-software",
+      "software",
+      "creative-technology"
+    ],
+    "style": [
+      "dark-object-stage",
+      "technical-minimal",
+      "3d-product-render",
+      "instrument-serif-accent"
+    ],
+    "composition": [
+      "isolated-device-hero",
+      "floating-scene-gallery",
+      "interface-capability-atlas",
+      "integration-matrix",
+      "change-log-close"
+    ],
+    "conversion": [
+      "start-free",
+      "gallery-exploration",
+      "embed-workflow",
+      "product-upgrade"
+    ],
+    "motion": [
+      "cursor-aware-object-drift",
+      "scene-breathe",
+      "scroll-triggered-demo",
+      "static-object-poster"
+    ],
+    "imagery": [
+      "3d-device-render",
+      "dark-material-stage",
+      "interface-crop",
+      "responsive-product-scenes"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshotHeight": 11579
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotHeight": 11660
+    }
+  },
+  "provenance": {
+    "retrievedAt": "2026-09-26",
+    "captureMethod": "playwright-native-full-page-v1",
+    "discoveryPage": "https://www.a1.gallery/website/mckp",
+    "desktopCapture": {
+      "url": "https://mckp.live/?ref=a1.gallery",
+      "finalUrl": "https://mckp.live/?ref=a1.gallery",
+      "httpStatus": 200,
+      "title": "mckp.live — Interactive Mockups That Move",
+      "capturedAt": "2026-09-26T10:23:19.866Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": true,
+      "image": {
+        "width": 1440,
+        "height": 11579,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 11579,
+      "documentWidth": 1440,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "mobileCapture": {
+      "url": "https://mckp.live/?ref=a1.gallery",
+      "finalUrl": "https://mckp.live/?ref=a1.gallery",
+      "httpStatus": 200,
+      "title": "mckp.live — Interactive Mockups That Move",
+      "capturedAt": "2026-09-26T10:23:28.630Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "image": {
+        "width": 390,
+        "height": 11660,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 11660,
+      "documentWidth": 390,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "desktopScreenshotSha256": "1c33287fffc936c1c3888e7d895262d1914b3fdc79cfa9134d8a70c806a1497d",
+    "mobileScreenshotSha256": "c247fbf0cf1a50eb4b995020b8f27e90a0089a1f7f9e344559c598fe4aed6be3",
+    "notes": "Screenshots are direct official-source page captures at declared desktop and mobile viewports. Custom scrolling surfaces are recorded and captured as scroll-position sequences. A1 metadata informed taxonomy and visual annotation only. Original source material is not copied into client deliverables."
+  },
+  "referenceDna": {
+    "annotatedDescription": "A product object is staged in a near-black gallery: a compact utility nav, a two-line headline, an isolated tilted phone mockup on a textured dark plane, and minimal start/explore actions. The page then alternates scene galleries with precise explanations, an interactive embed demonstration, a dark capability atlas, a customization scene, integrations, change-log tiles, and one final invitation. Its visual energy comes from object rendering, lighting, and close-up product states rather than colorful cards.",
+    "heroGeometry": {
+      "mode": "monumental centered product headline above one tilted 3D device on a deep stage",
+      "alignment": "small top navigation, centered promise, tiny actions, large object as the central image",
+      "viewport": "identify the product, show the object, and offer a first exploration action without explanatory clutter"
+    },
+    "navigationGeometry": {
+      "mode": "small quiet utility links with a contrasting compact action",
+      "placement": "thin header along the top boundary of the dark canvas",
+      "mobile": "retain a tiny brand/action header and replace inline links with a touch-safe menu"
+    },
+    "typography": {
+      "display": "neutral modern sans with a restrained instrument-serif accent",
+      "body": "compact technical sans and mono labels",
+      "scale": "large two-line display headline, small product microcopy, medium feature headings"
+    },
+    "palette": {
+      "surfaces": [
+        "black",
+        "charcoal",
+        "smoke",
+        "select white/gray demo surfaces"
+      ],
+      "ink": "white and soft gray",
+      "accents": [
+        "electric blue",
+        "signal red",
+        "acid green"
+      ],
+      "contrastIntent": "dark scenes carry readable white type; bright interface demo panels are limited to clear product evidence"
+    },
+    "imageTreatment": {
+      "mode": "photoreal 3D device/mockup rendering against rough dark materials",
+      "crop": "isolated hero object, scene thumbnails, then close-up interface panels",
+      "focalPoint": "the device or interface state being demonstrated"
+    },
+    "sectionSequence": [
+      "micro utility navigation",
+      "isolated object hero",
+      "recent scene gallery",
+      "embed workflow demonstration",
+      "capability atlas",
+      "customization scene",
+      "integration matrix",
+      "change log",
+      "large final product invitation",
+      "small footer"
+    ],
+    "servicePresentation": {
+      "pattern": "capabilities appear as an ordered technical atlas with an image, interface state, and concise explanation",
+      "interaction": "clickable scene gallery and visible product controls with noninteractive screenshot fallback"
+    },
+    "ctaPlacement": {
+      "primary": "Start for free or the client's genuine main product action",
+      "secondary": "Explore the gallery or product",
+      "early": "directly beneath the hero object"
+    },
+    "motion": {
+      "primitive": "slow, cursor-aware object focus and scroll-revealed product scenes",
+      "library": "CSS perspective or restrained Three.js only where the object is central; otherwise native transforms",
+      "reducedMotion": "provide a static device render and immediate scene navigation"
+    },
+    "mobileRecomposition": {
+      "strategy": "object-first vertical sequence with poster fallbacks",
+      "rules": [
+        "show the device before small explanatory copy",
+        "stack scene previews into a vertical list or swipe-safe gallery",
+        "keep product interface labels legible",
+        "avoid sticky scaling stacks on narrow devices",
+        "disable cursor-only effects and provide touch interactions",
+        "preserve a static render if 3D is unavailable"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying MCKP's device renders, product UI, names, app screenshots, pricing, or claims",
+      "unrelated decorative 3D objects",
+      "heavy bento-card grid replacing the isolated object concept",
+      "unbounded video, WebGL, or GPU effects",
+      "cursor-only controls on touch",
+      "invented integrations, performance numbers, or product capabilities"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "isolated-product-object",
+        "selector": "[data-reference-signature=isolated-product-object]",
+        "description": "one clearly staged product object is the hero's visual anchor"
+      },
+      {
+        "id": "capability-scene-atlas",
+        "selector": "[data-reference-signature=capability-scene-atlas]",
+        "description": "product features are demonstrated with distinct scene/interface states"
+      },
+      {
+        "id": "static-object-fallback",
+        "selector": "[data-reference-signature=static-object-fallback]",
+        "description": "a stable, accessible still state exists when motion or 3D is unavailable"
+      }
+    ],
+    "acceptanceChecks": [
+      "the hero object is relevant to the client's real product",
+      "all scenes are generated/client-supplied, not copied from MCKP",
+      "mobile interactions work without a mouse",
+      "3D has a tested static fallback and does not block page content",
+      "feature claims and integrations are verified",
+      "final CTA and pricing, if shown, match the client's real offer"
+    ]
+  },
+  "review": {
+    "status": "requester-attested-internal-archive-only",
+    "curator": "LaunchLoom reference curation",
+    "reviewedAt": "2026-09-26",
+    "scope": "Visual mechanics archive. productionEligible=false and excluded from every current production niche."
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "id": "web-restaurant-zuni-cafe",
+  "productionEligible": true,
+  "referenceName": "Zuni Café: dark editorial chapters with menu directory",
+  "familyId": "web-restaurant-zuni-cafe-family",
+  "businessKinds": [
+    "restaurant",
+    "local dining",
+    "private dining"
+  ],
+  "source": {
+    "name": "Zuni Café official website",
+    "url": "https://zunicafe.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "restaurant",
+      "local dining",
+      "table reservations"
+    ],
+    "style": [
+      "large old-style serif display over compact warm body text",
+      "charcoal and espresso surfaces",
+      "amber accent"
+    ],
+    "composition": [
+      "a full-bleed evening exterior photograph above a dark editorial canvas",
+      "dark editorial chapters",
+      "menu directory",
+      "hours and location ledger"
+    ],
+    "conversion": [
+      "table reservation",
+      "menu exploration"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "restaurant exterior and dining photographs as selective editorial punctuation",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Zuni Café website in San Francisco, California uses a full-bleed evening exterior photograph above a dark editorial canvas. Navigation is short anchor navigation to menus, reservations and location. Its page moves through venue photograph, seasonal announcement, reservation details, restaurant story, menu directory, social image band, hours and location, with plain text menu categories instead of identical food cards. restaurant exterior and dining photographs as selective editorial punctuation. Transferable mechanics are dark editorial chapters, menu directory, hours and location ledger. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "a full-bleed evening exterior photograph above a dark editorial canvas",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "short anchor navigation to menus, reservations and location",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "large old-style serif display over compact warm body text",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "charcoal",
+        "espresso",
+        "warm gray"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "amber"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "restaurant exterior and dining photographs as selective editorial punctuation",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "venue photograph",
+      "seasonal announcement",
+      "reservation details",
+      "restaurant story",
+      "menu directory",
+      "social image band",
+      "hours and location"
+    ],
+    "servicePresentation": {
+      "pattern": "plain text menu categories instead of identical food cards",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "reserve table",
+      "secondary": "then inspect menus",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "keep menu and hours legible in a narrow single column below the venue image",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Zuni Café identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "dark-editorial-chapters",
+        "selector": "[data-reference-signature=dark-editorial-chapters]",
+        "description": "Translate the observed dark editorial chapters mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "menu-directory",
+        "selector": "[data-reference-signature=menu-directory]",
+        "description": "Translate the observed menu directory mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "hours-and-location-ledger",
+        "selector": "[data-reference-signature=hours-and-location-ledger]",
+        "description": "Translate the observed hours and location ledger mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses dark editorial chapters with client-cleared content.",
+      "Page sequence retains menu directory and hours and location ledger as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

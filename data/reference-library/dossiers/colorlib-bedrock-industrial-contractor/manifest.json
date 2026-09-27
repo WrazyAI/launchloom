@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-bedrock-industrial-contractor",
+  "productionEligible": false,
+  "referenceName": "Bedrock industrial contractor fieldbook",
+  "familyId": "colorlib-bedrock-industrial-contractor",
+  "source": {
+    "name": "Colorlib Bootstrap Templates MIT and CC0 template",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/bedrock",
+    "rights": "licensed",
+    "rightsEvidence": "Pinned Colorlib MIT template; its CREDITS.txt lists the CC0/Public Domain placeholder photographs. License and credits are retained locally.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": [
+      "rights/CREDITS.txt"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Pinned ColorlibHQ/bootstrap-templates revision f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf, bedrock/index.html, rendered through a temporary local HTTP server in headless Chromium. Scrolled the entire document for lazy media, returned to top and captured at the exact viewport widths. Temporary source files were not retained in this dossier.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 5555
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 8750
+    },
+    "diagnostics": "A pale construction-site photograph carries a very large black compressed headline, thin yellow rule and practical tender action. metrics strip, capability grid, numbered sector ledger. The template's company, metrics, accreditations, projects, tender values and people are fictional demo content.",
+    "attribution": "Colorlib Bootstrap Templates MIT and CC0 template; archive capture uses http://127.0.0.1:8765/bedrock/index.html. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "construction",
+    "civil-engineering",
+    "groundworks",
+    "commercial-contractor",
+    "local-trades"
+  ],
+  "tags": {
+    "business": [
+      "construction",
+      "civil-engineering",
+      "groundworks",
+      "commercial-contractor",
+      "local-trades"
+    ],
+    "style": [
+      "industrial-editorial",
+      "charcoal-and-warning-yellow",
+      "technical-grotesk"
+    ],
+    "composition": [
+      "oversized-industrial-poster-over-construction-site-photo",
+      "poster-to-capabilities-to-sectors-to-projects-to-tender",
+      "oversized-construction-poster",
+      "numbered-sector-ledger",
+      "process-to-tender-close"
+    ],
+    "conversion": [
+      "capability-grid-and-sector-ledger",
+      "Tender action in the first viewport and a detailed tender enquiry after process and project context."
+    ],
+    "motion": [
+      "theme-toggle",
+      "native-section-navigation"
+    ],
+    "imagery": [
+      "cc0-construction-photography-with-dark-overlay",
+      "Construction site, groundwork and project photographs are set into a relatively spare information grid."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A pale construction-site photograph carries a very large black compressed headline, thin yellow rule and practical tender action. Two-level utility navigation separates procurement/contact details from capabilities, sectors and project routes. Extra-heavy industrial grotesk for poster-like statements, narrow body text and small uppercase yellow chapter labels. Warm white, concrete gray, charcoal and warning yellow. Construction site, groundwork and project photographs are set into a relatively spare information grid. The full sequence runs from industrial poster hero to metrics strip to capability grid toward handover process, accreditation line, tender form. The template's company, metrics, accreditations, projects, tender values and people are fictional demo content.",
+    "heroGeometry": {
+      "mode": "A pale construction-site photograph carries a very large black compressed headline, thin yellow rule and practical tender action.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "Two-level utility navigation separates procurement/contact details from capabilities, sectors and project routes.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "Extra-heavy industrial grotesk for poster-like statements, narrow body text and small uppercase yellow chapter labels.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "Warm white",
+        "concrete gray",
+        "charcoal and warning yellow"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "industrial-editorial",
+        "charcoal-and-warning-yellow"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "Construction site, groundwork and project photographs are set into a relatively spare information grid.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "industrial poster hero",
+      "metrics strip",
+      "capability grid",
+      "numbered sector ledger",
+      "project cards",
+      "handover process",
+      "accreditation line",
+      "tender form"
+    ],
+    "servicePresentation": {
+      "pattern": "Show confirmed capabilities in a compact grid and organize sectors as linked rows only where the contractor serves them.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Tender action in the first viewport and a detailed tender enquiry after process and project context.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "theme-toggle; native-section-navigation",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Scale the compressed headline to fit, stack capabilities and project images, and keep the tender form readable; crop closed off-canvas drawer overflow to the viewport.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "The template's company, metrics, accreditations, projects, tender values and people are fictional demo content.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "oversized-construction-poster",
+        "selector": "[data-reference-signature=oversized-construction-poster]",
+        "description": "Original client interpretation of the observed oversized construction poster mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "numbered-sector-ledger",
+        "selector": "[data-reference-signature=numbered-sector-ledger]",
+        "description": "Original client interpretation of the observed numbered sector ledger mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "process-to-tender-close",
+        "selector": "[data-reference-signature=process-to-tender-close]",
+        "description": "Original client interpretation of the observed process-to-tender close mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. The template's company, metrics, accreditations, projects, tender values and people are fictional demo content. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

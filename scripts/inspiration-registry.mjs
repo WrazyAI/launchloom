@@ -43,7 +43,11 @@ const STRUCTURAL_FIELDS = [
   "typographyCategory",
 ];
 const BUSINESS_KIND_GROUPS = [
-  ["home-services", "local-trades", "home-repair", "handyman", "roofing", "plumbing", "electrical", "landscaping", "garage-door", "garage-door-repair", "construction", "civil-engineering", "groundworks", "storm-repair", "contractor"],
+  ["auto-repair", "auto-repair-shop", "auto-mechanic", "mechanic", "mechanic-shop", "garage", "independent-garage", "local-auto-repair", "independent-auto-service", "vehicle-diagnostics", "vehicle-servicing", "vehicle-maintenance", "brake-service", "car-repair", "automotive-repair"],
+  ["hvac", "hvac-contractor", "heating-and-cooling", "heating-cooling", "heating-and-cooling-contractor", "air-conditioning", "air-conditioning-and-heating", "heating-contractor", "cooling-contractor", "furnace-repair", "ac-repair"],
+  ["roofing", "roofer", "roofers", "roofing-contractor", "roofing-contractors", "commercial-roofing", "residential-roofing", "roof-repair", "roof-replacement"],
+  ["painting", "painter", "painters", "painting-contractor", "painting-contractors", "residential-painting", "commercial-painting", "residential-painter", "commercial-painter", "house-painter", "house-painting"],
+  ["home-services", "local-trades", "home-repair", "handyman", "plumbing", "electrical", "landscaping", "garage-door", "garage-door-repair", "construction", "civil-engineering", "groundworks", "storm-repair", "contractor"],
   ["dental", "dentist", "dentistry", "dental-clinic", "dental-practice", "oral-health", "preventive-and-restorative-care"],
   ["home-care", "homecare", "home-care-provider", "care-at-home", "home-support", "care", "caregiving", "elder-care", "senior-care", "elder-companionship", "companionship", "non-medical-home-support", "family-support", "specialized-homecare", "private-duty-care", "home-health-services", "nursing-and-care-coordination", "aging-in-place"],
   ["fitness", "gym", "strength-training", "personal-training", "sports-performance", "fitness-studio", "sports-club", "pilates", "yoga"],
@@ -54,7 +58,7 @@ const BUSINESS_KIND_GROUPS = [
   ["accounting", "accountant", "accountancy", "tax-accounting", "bookkeeping"],
   ["jewelry", "jewellery", "jewelery", "jeweler", "jeweller", "fine-jewelry", "fine-jewellery", "independent-jewelry", "designer-jewelry", "luxury-retail", "sculptural-accessories", "wearable-product"],
   ["beauty", "beauty-salon", "salon", "hair-salon", "hair-stylist", "hair-colorist", "cosmetology", "independent-beauty", "barber", "barbershop", "mens-grooming", "medical-spa", "med-spa", "clinical-beauty", "cosmetic-treatment", "spa", "skincare", "aesthetics", "aesthetic-clinic", "cosmetics"],
-  ["automotive", "auto", "auto-services", "auto-dealership", "used-car-dealer", "vehicle-sales", "auto-repair", "local-auto-repair", "independent-auto-service", "mechanic-shop", "vehicle-diagnostics", "brake-service", "car-repair", "mechanic"],
+  ["automotive", "auto", "auto-services", "auto-dealership", "used-car-dealer", "vehicle-sales"],
   ["events", "event-venue", "wedding-venue", "wedding", "event-services"],
   ["real-estate", "realtor", "real-estate-agent", "property", "home-sales", "property-management"],
 ];
@@ -90,7 +94,9 @@ export function businessKindMatches(record, industry) {
   const compatibleKinds = BUSINESS_KIND_GROUPS.find((group) => group.includes(target)) || [target];
   const recordKinds = [
     ...(Array.isArray(record?.industries) ? record.industries : []),
-    ...Object.values(record?.referenceTags || {}).flat(),
+    ...(Array.isArray(record?.referenceTags?.business)
+      ? record.referenceTags.business
+      : []),
   ].map(normalizeBusinessKind);
   return recordKinds.some((kind) => compatibleKinds.includes(kind));
 }

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://fruittiilondon.com/",
+  "captures": {
+    "desktop": {
+      "url": "https://fruittiilondon.com/",
+      "finalUrl": "https://fruittiilondon.com/",
+      "httpStatus": 200,
+      "title": "Fruittii London – LGBTQIA Hair Lab",
+      "capturedAt": "2026-09-27T03:24:17.585Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": true,
+      "image": {
+        "width": 1440,
+        "height": 4844,
+        "format": "png"
+      },
+      "rawImageWidth": 1455,
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollRootTop": 0,
+      "scrollHeight": 4844,
+      "documentWidth": 1440,
+      "brokenImages": [],
+      "unresolvedImages": [],
+      "iframeFailures": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "mobile": {
+      "url": "https://fruittiilondon.com/",
+      "finalUrl": "https://fruittiilondon.com/",
+      "httpStatus": 200,
+      "title": "Fruittii London – LGBTQIA Hair Lab",
+      "capturedAt": "2026-09-27T03:24:28.349Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "image": {
+        "width": 390,
+        "height": 5256,
+        "format": "png"
+      },
+      "rawImageWidth": 405,
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollRootTop": 0,
+      "scrollHeight": 5256,
+      "documentWidth": 390,
+      "brokenImages": [],
+      "unresolvedImages": [],
+      "iframeFailures": [],
+      "pageErrors": [],
+      "frames": 1
+    }
+  }
+}

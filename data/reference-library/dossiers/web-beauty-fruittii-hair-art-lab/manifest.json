@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "id": "web-beauty-fruittii-hair-art-lab",
+  "productionEligible": true,
+  "referenceName": "Fruittii London expressive hair-art studio",
+  "familyId": "beauty-counterculture-hair-art-editorial",
+  "source": {
+    "name": "Fruittii London official website",
+    "url": "https://fruittiilondon.com/",
+    "sourceType": "official direct business website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-approved project clearance for retaining this reference's full-page desktop/mobile screenshots, derived design prompt, and pipeline-model visual-reference use. No source-owner grant or license was supplied; see rights/requester-attestation.md.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md",
+      "screenshots/capture-record.json"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "businessKinds": [
+    "beauty",
+    "hair-salon",
+    "hair-styling",
+    "barber",
+    "grooming"
+  ],
+  "tags": {
+    "business": [
+      "beauty",
+      "hair-salon",
+      "hair-styling",
+      "barber",
+      "grooming"
+    ],
+    "style": [
+      "counterculture-beauty",
+      "expressive-hair-art",
+      "portrait-editorial",
+      "bright-signal-accent",
+      "white-space-interruption"
+    ],
+    "composition": [
+      "full-bleed-moving-image-opening",
+      "alternating-editorial-image-chapters",
+      "portrait-led-story-spread",
+      "compact-review-rail",
+      "community-close"
+    ],
+    "conversion": [
+      "early-booking-route",
+      "visual-service-discovery",
+      "inclusive-consultation",
+      "community-signup"
+    ],
+    "motion": [
+      "optional-hero-film-with-poster",
+      "native-touch-carousel",
+      "motion-independent-content"
+    ],
+    "imagery": [
+      "expressive-hair-portraiture",
+      "editorial-hair-transformation",
+      "salon-atmosphere",
+      "strong-image-to-white-space-contrast"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A visual, community-forward hair studio experience. A compact, low-chrome navigation sits over an edge-to-edge moving image of a hair-art process, followed by large white editorial chapters pairing brief studio context with expressive portrait photography. Rather than a repeated card grid, the page alternates copy fields and full-height portraits, then shifts into a concise social-proof rail, a centered community signup, and a dark utility footer. The source combines black and white space with bright chromatic accents and unusual hair imagery. Transfer the pacing, image/copy contrast, and expressive portrait role only. Create a distinct client palette and identity, use approved or generated images, and do not copy the source's name, exact rainbow wordmark, people, text, testimonials, contact information, or exact visual styling.",
+    "heroGeometry": {
+      "mode": "edge-to-edge expressive process-film opening",
+      "alignment": "full-bleed hair image with a small restrained identity/navigation layer; avoid placing a large copy card over the focal subject",
+      "viewport": "image-led first screen with a clear, accessible booking route and a readable one-line service promise nearby"
+    },
+    "navigationGeometry": {
+      "mode": "compact wordmark and minimal icon/section controls",
+      "placement": "quiet top edge integrated with the opening image rather than a large pill container",
+      "mobile": "small brand mark with a clearly named menu control and a separate accessible booking action; no icon-only ambiguity"
+    },
+    "typography": {
+      "display": "confident geometric grotesk or custom-feeling rounded display sans, selected from available licensed/system stacks",
+      "body": "clear neutral sans for service and visit information",
+      "scale": "short all-caps labels, oversized editorial phrases, compact centered story copy, touch-legible mobile text"
+    },
+    "palette": {
+      "surfaces": [
+        "clean white",
+        "deep ink",
+        "one light neutral"
+      ],
+      "ink": "near-black with readable white-on-dark utility text",
+      "accents": [
+        "one vivid client-specific signal color",
+        "optional restrained secondary highlight"
+      ],
+      "contrastIntent": "playful and expressive without sacrificing legibility; never rely on a rainbow gradient or pale accent text for essential copy"
+    },
+    "imageTreatment": {
+      "mode": "large editorial portraits, close hair-detail crops, and selective studio atmosphere",
+      "crop": "full-bleed opening media followed by alternating contained portrait crops; subject-safe on small screens",
+      "focalPoint": "hair silhouette, texture, color, and self-expression; no generated subject may be presented as the client's real team or customer"
+    },
+    "sectionSequence": [
+      "compact-navigation",
+      "expressive-hair-process-hero",
+      "studio-identity-editorial-chapter",
+      "hair-as-self-expression-image-chapter",
+      "inclusive-service-context-chapter",
+      "customer-proof-rail",
+      "community-signup",
+      "contact-and-visit-footer"
+    ],
+    "servicePresentation": {
+      "pattern": "visual service discovery supported by a concise, accessible service index; describe actual client services with short scope notes rather than copying a source service menu",
+      "interaction": "real service links or a touch-safe gallery rail; booking links work and do not require hover; service facts and inclusivity language come only from approved client tokens"
+    },
+    "ctaPlacement": {
+      "primary": "a visible booking or consultation route in the opening navigation and after the first editorial chapter",
+      "secondary": "a service-discovery or gallery route near the hero promise",
+      "early": "within the first viewport without covering the subject or obscuring a full-page image"
+    },
+    "motion": {
+      "primitive": "optional short process film or still-image sequence with an explicit poster/fallback; one restrained image reveal or touch-safe review rail",
+      "library": "native CSS transitions or one narrowly scoped GSAP sequence only when it improves the story",
+      "reducedMotion": "replace moving imagery with a poster, disable scroll-triggered transforms, and keep every service, action, and text chapter visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "image-first editorial stack with independent copy chapters and compact controls",
+      "rules": [
+        "keep the opening media subject visible and reserve a non-overlapping text/action zone",
+        "stack each alternating image and copy chapter in an intentional sequence rather than shrinking desktop columns",
+        "convert the proof rail into a touch-safe horizontal carousel or vertically readable quotes",
+        "make navigation and booking controls explicit, accessible, and at least 44 CSS px when actionable",
+        "remove source-like 15 px body overflow and verify document and body widths equal the viewport"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying the Fruittii identity, exact rainbow wordmark/colors, source page copy, source photography, testimonials, names, contact details, or overall trade dress",
+      "reusing any source person as the client's stylist, employee, or customer, or implying generated imagery depicts the client's real work",
+      "inventing client services, stylist credentials, inclusivity commitments, prices, hours, locations, review scores, or appointment availability",
+      "replacing the distinct editorial image/copy rhythm with a generic split hero or repeated rounded-card wall",
+      "autoplay-only motion, unlabelled icon controls, hover-only service content, clipped focal subjects, or horizontal overflow"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "expressive-image-opening",
+        "selector": "[data-reference-signature=expressive-image-opening]",
+        "description": "A full-bleed, subject-led opening image or video poster paired with a compact identity and a real early booking route."
+      },
+      {
+        "id": "alternating-editorial-chapters",
+        "selector": "[data-reference-signature=alternating-editorial-chapters]",
+        "description": "At least two intentional portrait/copy chapters with changing image placement and generous white space, not generic cards."
+      },
+      {
+        "id": "community-proof-close",
+        "selector": "[data-reference-signature=community-proof-close]",
+        "description": "A distinct late-page community or proof moment that transitions into a clear contact/visit close, using only verified client material."
+      }
+    ],
+    "acceptanceChecks": [
+      "desktop and mobile retain the edge-to-edge image opening and alternating editorial chapter rhythm",
+      "the page remains a hair/beauty business reference, not a medical aesthetics or clinical-treatment template",
+      "at least one real booking/contact action is visible early and all booking links work",
+      "client services, inclusivity claims, reviews, team facts, addresses, hours, and prices are sealed to verified intake values",
+      "motion has a still/reduced-motion fallback and does not hide essential content",
+      "no source name, exact wordmark, source photograph, quote, reviewer, or source-specific claim is reused",
+      "rendered body and document widths match both desktop and mobile viewports"
+    ]
+  },
+  "review": {
+    "status": "eligible-candidate-not-yet-added-to-production-pool",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-27",
+    "scope": "Official homepage and story page inspected, responsive full-page screenshots captured at desktop and mobile, business category verified from first-party content, and source overflow disclosed. Not added to or approved for a production niche pool."
+  }
+}

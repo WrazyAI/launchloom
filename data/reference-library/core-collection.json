@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "local-seo-core-30",
+  "id": "local-seo-core-84",
   "title": "LaunchLoom Local SEO Reference Core",
   "updatedAt": "2026-09-26",
-  "selectionContract": "Each niche has exactly three unique, production-eligible, business-matched dossiers. The randomizer must fail closed rather than fill from another niche.",
+  "selectionContract": "Each niche has exactly six unique, production-eligible, business-matched dossiers. The selector chooses three independent routes with seeded exposure balancing and fails closed rather than filling from another niche.",
   "rightsContract": "Every listed dossier has a local rights/provenance record. Direct-site permission status reflects requester attestation and is not represented as independently verified source-owner permission.",
   "sourceDesignRule": "Transfer composition, information hierarchy, service mechanics, responsive behavior, and motion only. Source identities, copy, imagery, facts, claims, prices, credentials, and trade dress do not transfer to client sites.",
   "niches": [
@@ -11,61 +11,183 @@
       "id": "home-services-trades",
       "label": "Home services and trades",
       "businessKind": "home-services",
-      "referenceIds": ["colorlib-fixwell-quote-desk", "spicer-roofing-storm-response", "spicer-landscaping-season-wheel"]
+      "referenceIds": [
+        "colorlib-fixwell-quote-desk",
+        "spicer-landscaping-season-wheel",
+        "web-homeservices-aptive",
+        "web-homeservices-mister-sparky",
+        "web-homeservices-morris-jenkins",
+        "web-homeservices-roto-rooter"
+      ]
     },
     {
       "id": "dental-practices",
       "label": "Dental practices",
       "businessKind": "dental",
-      "referenceIds": ["html5up-dental-dimension", "attested-one-manor-place-dental", "attested-dapper-dental"]
+      "referenceIds": [
+        "html5up-dental-dimension",
+        "attested-one-manor-place-dental",
+        "attested-dapper-dental",
+        "web-dental-gartside-street",
+        "web-dental-glint-austin",
+        "web-dental-smile-san-francisco"
+      ]
     },
     {
       "id": "home-care-providers",
       "label": "Home-care providers",
       "businessKind": "home-care",
-      "referenceIds": ["html5up-home-care-story", "attested-angels-on-call-homecare", "attested-kingsway-care-home-care"]
+      "referenceIds": [
+        "html5up-home-care-story",
+        "attested-angels-on-call-homecare",
+        "attested-kingsway-care-home-care",
+        "web-home-care-hp-homecare",
+        "web-home-care-ivy-homecare",
+        "web-home-care-kome-care"
+      ]
     },
     {
       "id": "gyms-and-fitness-studios",
       "label": "Gyms and fitness studios",
       "businessKind": "fitness",
-      "referenceIds": ["html5up-fitness-big-picture", "colorlib-ironworks-strength-club", "spicer-gym-timetable-first"]
+      "referenceIds": [
+        "html5up-fitness-big-picture",
+        "colorlib-ironworks-strength-club",
+        "spicer-gym-timetable-first",
+        "web-fitness-evolve-athletic",
+        "web-fitness-fit-this-hackney",
+        "web-fitness-one-ldn"
+      ]
     },
     {
       "id": "restaurants-and-cafes",
       "label": "Restaurants and cafes",
       "businessKind": "restaurant",
-      "referenceIds": ["colorlib-tavola-restaurant", "direct-amrit-palace-restaurant", "direct-ethos-greek-bistro"]
+      "referenceIds": [
+        "colorlib-tavola-restaurant",
+        "direct-amrit-palace-restaurant",
+        "direct-ethos-greek-bistro",
+        "web-restaurant-cafe-carmellini",
+        "web-restaurant-leons-new-york",
+        "web-restaurant-zuni-cafe"
+      ]
     },
     {
       "id": "hotels-and-lodging",
       "label": "Hotels and destination lodging",
       "businessKind": "hospitality",
-      "referenceIds": ["direct-mahala-desert-boutique-hotel", "direct-casa-cedo-boutique-hotel", "direct-fogo-island-inn-hospitality"]
+      "referenceIds": [
+        "direct-mahala-desert-boutique-hotel",
+        "direct-casa-cedo-boutique-hotel",
+        "direct-fogo-island-inn-hospitality",
+        "web-hospitality-long-story-short-hudson",
+        "web-hospitality-six-bells-inn",
+        "web-hospitality-wm-farmer-and-sons"
+      ]
     },
     {
       "id": "architecture-and-interiors",
       "label": "Architecture and interior design practices",
       "businessKind": "architecture",
-      "referenceIds": ["colorlib-drafthouse-atlas", "lapa-mcalpine-sanctuary", "lapa-mesh-architects-editorial"]
+      "referenceIds": [
+        "colorlib-drafthouse-atlas",
+        "lapa-mcalpine-sanctuary",
+        "lapa-mesh-architects-editorial",
+        "web-architecture-indie-interiors",
+        "web-architecture-simpson-studio",
+        "web-architecture-studio-peake"
+      ]
     },
     {
       "id": "law-firms",
       "label": "Law firms",
       "businessKind": "legal-services",
-      "referenceIds": ["colorlib-caseworth-legal-ledger", "direct-robins-kaplan-law", "spicer-law-firm-results-ledger"]
+      "referenceIds": [
+        "colorlib-caseworth-legal-ledger",
+        "direct-robins-kaplan-law",
+        "spicer-law-firm-results-ledger",
+        "web-legal-chaudhry-law",
+        "web-legal-flip-family-law",
+        "web-legal-valemus-law"
+      ]
     },
     {
       "id": "beauty-and-grooming",
       "label": "Beauty and grooming services",
       "businessKind": "beauty",
-      "referenceIds": ["spicer-barber-walk-in-queue", "spicer-hair-salon-stylist-menu", "spicer-med-spa-treatment-menu"]
+      "referenceIds": [
+        "spicer-barber-walk-in-queue",
+        "spicer-hair-salon-stylist-menu",
+        "web-beauty-fruittii-hair-art-lab",
+        "web-beauty-baba-barbers",
+        "web-beauty-salt-salon",
+        "web-beauty-true-man-barbers"
+      ]
     },
     {
       "id": "accountants-and-bookkeepers",
       "label": "Accountants and bookkeepers",
       "businessKind": "accounting",
-      "referenceIds": ["spicer-accountant-deadline-calendar", "direct-alex-co-accountants-practice", "direct-change-accountants-york"]
+      "referenceIds": [
+        "spicer-accountant-deadline-calendar",
+        "direct-alex-co-accountants-practice",
+        "direct-change-accountants-york",
+        "web-accounting-goodman-jones",
+        "web-accounting-taxace",
+        "web-accounting-whitestone"
+      ]
+    },
+    {
+      "id": "auto-repair-shops",
+      "label": "Auto repair shops",
+      "businessKind": "auto-repair",
+      "referenceIds": [
+        "web-auto-repair-abees-hi-tech",
+        "web-auto-repair-ade-auto-repairs",
+        "web-auto-repair-fallsbrook-motors",
+        "web-auto-repair-michael-auto",
+        "web-auto-repair-reliance-autos",
+        "web-auto-repair-urban-autocare"
+      ]
+    },
+    {
+      "id": "hvac-contractors",
+      "label": "HVAC contractors",
+      "businessKind": "hvac",
+      "referenceIds": [
+        "web-hvac-alamo-austin-air",
+        "web-hvac-allied-air-heat",
+        "web-hvac-city-wide-austin",
+        "web-hvac-finish-line-denver",
+        "web-hvac-russell-comfort",
+        "web-hvac-trg-heating-cooling"
+      ]
+    },
+    {
+      "id": "roofing-contractors",
+      "label": "Roofing contractors",
+      "businessKind": "roofing",
+      "referenceIds": [
+        "web-roofing-baker",
+        "web-roofing-joe-hall",
+        "web-roofing-olyn",
+        "web-roofing-quick-roofing",
+        "web-roofing-roofing-coats",
+        "web-roofing-tar"
+      ]
+    },
+    {
+      "id": "painting-contractors",
+      "label": "Painting contractors",
+      "businessKind": "painting",
+      "referenceIds": [
+        "web-painting-av",
+        "web-painting-concept-pro",
+        "web-painting-house-doctor",
+        "web-painting-mfl",
+        "web-painting-novak",
+        "web-painting-southern"
+      ]
     }
   ]
 }

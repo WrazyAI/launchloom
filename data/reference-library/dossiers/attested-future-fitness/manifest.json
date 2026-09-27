@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "id": "attested-future-fitness",
+  "productionEligible": false,
+  "referenceName": "Future: product-led personal training story",
+  "familyId": "attested-future-fitness-product",
+  "source": {
+    "name": "Future official fitness website",
+    "url": "https://future.co/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 that full-page screenshot retention, derived prompts and LaunchLoom pipeline-model visual-reference use are cleared. No source-owner grant was uploaded.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "First-party homepage https://future.co/ was rendered in headless Chromium; scrolled the full document to trigger lazy content, returned to top and captured paired viewport images.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 6397
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 5677
+    },
+    "diagnostics": "A full-width athletic portrait pairs a centered large coaching promise with a phone mockup and a small coach-finder action. coaching relationship cards, coach conversation phone, 360-degree roadmap panel. Do not reuse coach portraits, mobile UI, member results, subscription price, training claims or imply a local gym storefront.",
+    "attribution": "Future official fitness website; archive capture uses https://future.co/. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "fitness",
+    "personal-training",
+    "digital-coaching-platform"
+  ],
+  "tags": {
+    "business": [
+      "fitness",
+      "personal-training",
+      "digital-coaching-platform"
+    ],
+    "style": [
+      "warm-product-editorial",
+      "yellow-signal",
+      "coach-led",
+      "high-touch-digital"
+    ],
+    "composition": [
+      "immersive-personal-training-campaign-with-coach-discovery",
+      "promise-to-coaching-product-to-experience-to-results-to-coach-search",
+      "portrait-plus-phone-opening",
+      "coaching-relationship-panels",
+      "coach-search-close"
+    ],
+    "conversion": [
+      "product-story-with-coaching-features-and-plan-discovery",
+      "Coach finder near the opening and after the product explanation."
+    ],
+    "motion": [
+      "coach-finder",
+      "testimonial-rail",
+      "scroll-reveal"
+    ],
+    "imagery": [
+      "coach-and-workout-photography-with-product-device-scenes",
+      "Athlete photography, phone interface mockups, workout image panels and coach/member portraits carry the story."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A full-width athletic portrait pairs a centered large coaching promise with a phone mockup and a small coach-finder action. Minimal fitness product mark with coach, blog and coach-search routes atop the opening image. Soft editorial display serif for motivational statements, practical sans for product features and coach actions. Cool gray, black, white and restrained training-photo red. Athlete photography, phone interface mockups, workout image panels and coach/member portraits carry the story. The full sequence runs from athletic hero and phone mockup to coaching relationship cards to coach conversation phone toward 360-degree roadmap panel, member proof portraits, find-your-coach close. Do not reuse coach portraits, mobile UI, member results, subscription price, training claims or imply a local gym storefront.",
+    "heroGeometry": {
+      "mode": "A full-width athletic portrait pairs a centered large coaching promise with a phone mockup and a small coach-finder action.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "Minimal fitness product mark with coach, blog and coach-search routes atop the opening image.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "Soft editorial display serif for motivational statements, practical sans for product features and coach actions.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "Cool gray",
+        "black",
+        "white and restrained training-photo red"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "warm-product-editorial",
+        "yellow-signal"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "Athlete photography, phone interface mockups, workout image panels and coach/member portraits carry the story.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "athletic hero and phone mockup",
+      "coaching relationship cards",
+      "coach conversation phone",
+      "360-degree roadmap panel",
+      "member proof portraits",
+      "find-your-coach close"
+    ],
+    "servicePresentation": {
+      "pattern": "The source is a digital coaching product, not a physical neighborhood gym; translate only coaching-process hierarchy when the client's service really fits.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Coach finder near the opening and after the product explanation.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "coach-finder; testimonial-rail; scroll-reveal",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack phone mockups below the promise, keep portrait focal points and place coach discovery before long member proof.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not reuse coach portraits, mobile UI, member results, subscription price, training claims or imply a local gym storefront.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "portrait-plus-phone-opening",
+        "selector": "[data-reference-signature=portrait-plus-phone-opening]",
+        "description": "Original client interpretation of the observed portrait-plus-phone opening mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "coaching-relationship-panels",
+        "selector": "[data-reference-signature=coaching-relationship-panels]",
+        "description": "Original client interpretation of the observed coaching relationship panels mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "coach-search-close",
+        "selector": "[data-reference-signature=coach-search-close]",
+        "description": "Original client interpretation of the observed coach-search close mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. Do not reuse coach portraits, mobile UI, member results, subscription price, training claims or imply a local gym storefront. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

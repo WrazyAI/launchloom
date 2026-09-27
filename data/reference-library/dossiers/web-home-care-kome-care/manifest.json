@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "id": "web-home-care-kome-care",
+  "productionEligible": true,
+  "referenceName": "Kome Care: dual-audience referral fork with funding guidance",
+  "familyId": "web-home-care-kome-care-family",
+  "businessKinds": [
+    "home care",
+    "domiciliary care",
+    "in-home care",
+    "home-care"
+  ],
+  "source": {
+    "name": "Kome Care official website",
+    "url": "https://www.komecare.co.uk/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "home care",
+      "local care provider",
+      "family care planning",
+      "home-care"
+    ],
+    "style": [
+      "rounded geometric sans with strong navy headings",
+      "pale blue and white surfaces",
+      "navy accent"
+    ],
+    "composition": [
+      "pale care setting with an independent nurse-led message in navy",
+      "dual-audience referral fork",
+      "funding guidance",
+      "navy clinical trust band"
+    ],
+    "conversion": [
+      "care enquiry",
+      "phone consultation"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "supportive home and caregiver images, never anonymous stock staff claims",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Kome Care website in London, England uses pale care setting with an independent nurse-led message in navy. Navigation is phone and email utility above service navigation. Its page moves through care opening, service index, clinical trust explanation, family and professional referral split, funding guidance, testimonials, advice articles, contact, with labeled care options in calm modular tiles. supportive home and caregiver images, never anonymous stock staff claims. Transferable mechanics are dual-audience referral fork, funding guidance, navy clinical trust band. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "pale care setting with an independent nurse-led message in navy",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "phone and email utility above service navigation",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "rounded geometric sans with strong navy headings",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "pale blue",
+        "white",
+        "navy"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "navy"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "supportive home and caregiver images, never anonymous stock staff claims",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "care opening",
+      "service index",
+      "clinical trust explanation",
+      "family and professional referral split",
+      "funding guidance",
+      "testimonials",
+      "advice articles",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "labeled care options in calm modular tiles",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "enquire about care",
+      "secondary": "then professional referral",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack service options and split referral paths into large touch targets",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Kome Care identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "dual-audience-referral-fork",
+        "selector": "[data-reference-signature=dual-audience-referral-fork]",
+        "description": "Translate the observed dual-audience referral fork mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "funding-guidance",
+        "selector": "[data-reference-signature=funding-guidance]",
+        "description": "Translate the observed funding guidance mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "navy-clinical-trust-band",
+        "selector": "[data-reference-signature=navy-clinical-trust-band]",
+        "description": "Translate the observed navy clinical trust band mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses dual-audience referral fork with client-cleared content.",
+      "Page sequence retains funding guidance and navy clinical trust band as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

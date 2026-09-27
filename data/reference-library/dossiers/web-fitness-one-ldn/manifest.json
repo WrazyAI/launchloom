@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "id": "web-fitness-one-ldn",
+  "productionEligible": true,
+  "referenceName": "ONE LDN: lime performance callout with black training bands",
+  "familyId": "web-fitness-one-ldn-family",
+  "businessKinds": [
+    "fitness studio",
+    "local gym",
+    "personal training",
+    "fitness"
+  ],
+  "source": {
+    "name": "ONE LDN official website",
+    "url": "https://www.oneldn.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "fitness",
+      "local gym",
+      "coached training"
+    ],
+    "style": [
+      "wide condensed athletic display and small uppercase utilities",
+      "black and charcoal surfaces",
+      "neon lime accent"
+    ],
+    "composition": [
+      "waterfront training scene framed by black with a neon-lime performance callout",
+      "lime performance callout",
+      "black training bands",
+      "facility photography"
+    ],
+    "conversion": [
+      "trial booking",
+      "membership enquiry"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "industrial gym photography and broad black image bands",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct ONE LDN website in London, England uses waterfront training scene framed by black with a neon-lime performance callout. Navigation is dark compact menu with direct class booking. Its page moves through photo opening, facilities statement, gym and training imagery, performance amenities, community invite, social scene, location close, with facility and class routes presented as bold visual chapters. industrial gym photography and broad black image bands. Transferable mechanics are lime performance callout, black training bands, facility photography. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "waterfront training scene framed by black with a neon-lime performance callout",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "dark compact menu with direct class booking",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "wide condensed athletic display and small uppercase utilities",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "black",
+        "charcoal",
+        "lime"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "neon lime"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "industrial gym photography and broad black image bands",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "photo opening",
+      "facilities statement",
+      "gym and training imagery",
+      "performance amenities",
+      "community invite",
+      "social scene",
+      "location close"
+    ],
+    "servicePresentation": {
+      "pattern": "facility and class routes presented as bold visual chapters",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "book a class",
+      "secondary": "then explore membership",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "make each amenity chapter a vertically paced band with the lime action intact",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing ONE LDN identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "lime-performance-callout",
+        "selector": "[data-reference-signature=lime-performance-callout]",
+        "description": "Translate the observed lime performance callout mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "black-training-bands",
+        "selector": "[data-reference-signature=black-training-bands]",
+        "description": "Translate the observed black training bands mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "facility-photography",
+        "selector": "[data-reference-signature=facility-photography]",
+        "description": "Translate the observed facility photography mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses lime performance callout with client-cleared content.",
+      "Page sequence retains black training bands and facility photography as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

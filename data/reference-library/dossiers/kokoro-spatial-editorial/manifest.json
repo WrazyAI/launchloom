@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "id": "kokoro-spatial-editorial",
+  "productionEligible": false,
+  "archiveOnlyReason": "Curated cross-industry design mechanics. Not one of the six business-verified production references in a Local SEO Core niche.",
+  "referenceName": "Kokoro spatial architecture editorial",
+  "familyId": "kokoro-editorial-architecture",
+  "source": {
+    "name": "Kokoro architecture website template demo",
+    "url": "https://kokoro.framer.website/",
+    "discoverySource": "A1 Gallery MCP / curated reference research",
+    "discoveryUrl": "https://framplates.com/kokoro",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The LaunchLoom requester attested on 2026-09-26 that the exact Kokoro architecture website template demo desktop/mobile captures and derived mechanics prompt may be retained internally and supplied to the pipeline model as visual reference. This is requester-attested clearance; no source-owner grant was attached or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "capture-record.json",
+      "rights/migration-provenance.md"
+    ]
+  },
+  "businessKinds": [
+    "architecture",
+    "interior-design",
+    "architecture-studio"
+  ],
+  "tags": {
+    "business": [
+      "architecture",
+      "interior-design",
+      "architecture-studio"
+    ],
+    "style": [
+      "quiet-spatial-editorial",
+      "warm-material-photography",
+      "oversized-serif",
+      "two-level-identity"
+    ],
+    "composition": [
+      "monument-wordmark-opening",
+      "isolated-interior-scenes",
+      "editorial-thesis",
+      "magazine-ledger",
+      "cinematic-closing-scene"
+    ],
+    "conversion": [
+      "selected-work-discovery",
+      "studio-inquiry",
+      "direct-email-close"
+    ],
+    "motion": [
+      "slow-image-reveal",
+      "horizontal-scene-pan",
+      "reduced-motion-static"
+    ],
+    "imagery": [
+      "architectural-interiors",
+      "warm-wood-and-stone",
+      "full-bleed-material-scenes",
+      "wide-space-details"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshotHeight": 9782
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotHeight": 7234
+    }
+  },
+  "provenance": {
+    "retrievedAt": "2026-09-26",
+    "captureMethod": "playwright-native-full-page-v1",
+    "discoveryPage": "https://framplates.com/kokoro",
+    "desktopCapture": {
+      "url": "https://kokoro.framer.website/",
+      "finalUrl": "https://kokoro.framer.website/",
+      "httpStatus": 200,
+      "title": "Kokoro - Architect Website Template",
+      "capturedAt": "2026-09-26T10:24:23.525Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": true,
+      "image": {
+        "width": 1440,
+        "height": 9782,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 9782,
+      "documentWidth": 1440,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "mobileCapture": {
+      "url": "https://kokoro.framer.website/",
+      "finalUrl": "https://kokoro.framer.website/",
+      "httpStatus": 200,
+      "title": "Kokoro - Architect Website Template",
+      "capturedAt": "2026-09-26T10:24:31.167Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "image": {
+        "width": 390,
+        "height": 7234,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 7234,
+      "documentWidth": 390,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "desktopScreenshotSha256": "ce2fcff311123d7d951b5b2b314dd385f5493da8a9b509451775a6ebdcd473e7",
+    "mobileScreenshotSha256": "7f8ae7a48f610088a3dabe4aea76c801f5984d4b8f19d5a203537037897dd9af",
+    "notes": "Screenshots are direct official-source page captures at declared desktop and mobile viewports. Custom scrolling surfaces are recorded and captured as scroll-position sequences. A1 metadata informed taxonomy and visual annotation only. Original source material is not copied into client deliverables."
+  },
+  "referenceDna": {
+    "annotatedDescription": "The architecture demo uses a monumental two-level serif identity and a quiet editorial pace. The opening pairs micro-navigation at opposing corners with a broad identity and a centered architectural portrait that begins low in the desktop viewport and continues below the fold; on mobile, the identity gives way to a nearly full-width, tall scene. A centered architectural thesis follows the portrait. Wide room scenes interrupt a magazine/archive ledger with article titles and dates, then a final cinematic interior leads into a short invitation and email. This is image-led and typographic, not a split-hero/service-card template. Transfer hierarchy and spatial mechanics only; the secondary type treatment must be original.",
+    "heroGeometry": {
+      "mode": "monumental serif wordmark followed by an isolated portrait-oriented interior scene",
+      "alignment": "small corner navigation, giant studio identity, single vertical image, then a centered thesis",
+      "viewport": "at 1440x900 the broad wordmark occupies most of the first screen and the first 632x852px portrait frame begins near y=708px, so its lower portion continues below the fold; preserve this deliberate overlap of identity and emerging image instead of shrinking the image to fit. On 390x844 mobile the 358x782px image begins near y=246px and continues below the fold. A compact studio contact path remains in the corner navigation, with the larger inquiry after the thesis."
+    },
+    "navigationGeometry": {
+      "mode": "quiet opposing-corner utility navigation",
+      "placement": "a small factual service-area or business-context label in the upper left, with Services, FAQs, and Contact links in the opposing upper right; never repeat the full studio name in a tiny header above the monumental identity",
+      "mobile": "a factual location label at upper left and compact Menu control at upper right; expose Services, FAQs, Contact, and inquiry links in a touch-friendly menu without duplicating the full studio name"
+    },
+    "typography": {
+      "display": "high-contrast editorial serif identity in two deliberate typographic levels with an independent secondary type role; no copied script treatment",
+      "body": "quiet neutral sans",
+      "scale": "broad two-level identity with deliberate line breaks for long verified names; visually substantial before the first image, with quiet navigation, medium centered thesis, very small archive metadata, and restrained body copy"
+    },
+    "palette": {
+      "surfaces": [
+        "soft warm gray",
+        "ivory",
+        "deep charcoal",
+        "natural wood"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "restrained warm brown",
+        "soft olive"
+      ],
+      "contrastIntent": "photographs supply warmth; serif text remains dark and legible against clear untextured surfaces"
+    },
+    "imageTreatment": {
+      "mode": "architectural interiors treated as calm spatial objects",
+      "crop": "portrait hero/interior images, wide overlapping scene strip, then one full-bleed closing room",
+      "focalPoint": "structure, natural light, material and proportion"
+    },
+    "sectionSequence": [
+      "micro corner navigation",
+      "monument studio wordmark",
+      "portrait interior sequence",
+      "centered design thesis",
+      "wide spatial image strip",
+      "magazine/archive ledger",
+      "full-bleed final interior",
+      "centered inquiry invitation",
+      "email and minimal social footer"
+    ],
+    "servicePresentation": {
+      "pattern": "architecture capabilities are translated into an editorial project/archive index, not generic service cards",
+      "interaction": "browseable project/article rows with restrained date/metadata and a clear work detail link"
+    },
+    "ctaPlacement": {
+      "primary": "Discuss a project or verified studio inquiry after the separate thesis and again at the closing scene",
+      "secondary": "View selected works or journal",
+      "early": "place the first inquiry action after the portrait image and a clearly separate centered thesis; keep only compact native route links in desktop navigation and do not put the thesis under the identity or a large CTA over photography"
+    },
+    "motion": {
+      "primitive": "slow image reveal or restrained crop transition with a subtle horizontal scene pan",
+      "library": "native scroll-linked reveals or one GSAP timeline",
+      "reducedMotion": "settled full images, no pinned scroll or continuous camera movement"
+    },
+    "mobileRecomposition": {
+      "strategy": "vertical image-led architecture essay with ledger rows",
+      "rules": [
+        "scale the wordmark without horizontal clipping",
+        "keep image proportions tall and intentional",
+        "stack the scene strip or use a controlled touch rail",
+        "make the archive ledger readable and tappable",
+        "place inquiry after the thesis and final scene",
+        "preserve enough negative space without empty artificial sections"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying the Kokoro wordmark, script logo, story, project imagery, magazine topics, email, or exact trade dress",
+      "invented projects, awards, sustainability claims, square footage, or locations",
+      "unlicensed source interiors used as client work",
+      "decorative cursive used for long text",
+      "unbounded pinning or mobile scroll locks",
+      "empty whitespace used to hide missing content"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "monument-wordmark",
+        "selector": "[data-reference-signature=monument-wordmark]",
+        "description": "oversized spatial identity that leads into imagery"
+      },
+      {
+        "id": "magazine-ledger",
+        "selector": "[data-reference-signature=magazine-ledger]",
+        "description": "a restrained editorial index of real projects, notes or verified articles"
+      },
+      {
+        "id": "closing-interior-scene",
+        "selector": "[data-reference-signature=closing-interior-scene]",
+        "description": "one immersive final image before a direct inquiry invitation"
+      }
+    ],
+    "acceptanceChecks": [
+      "business category and location are visible for search relevance",
+      "all portfolio/project claims and images belong to the client or are generated",
+      "archive rows link to valid details and never fabricate dates",
+      "the opening identity has two visibly distinct typographic levels and is not reduced to one undersized line",
+      "the secondary type role is original and does not imitate the source script or signature styling",
+      "desktop navigation visibly occupies opposing corners, and mobile has a compact Menu control without a duplicate tiny studio wordmark",
+      "the centered thesis and first inquiry action follow the opening portrait rather than appearing beneath the identity",
+      "mobile preserves image-led rhythm without overflow",
+      "inquiry action is real and appears before page end",
+      "motion has a static reduced-motion equivalent"
+    ]
+  },
+  "review": {
+    "status": "requester-attested-internal-archive-only",
+    "curator": "LaunchLoom reference curation",
+    "reviewedAt": "2026-09-26",
+    "scope": "Visual mechanics archive. productionEligible=false and excluded from every current production niche."
+  }
+}

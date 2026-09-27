@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "id": "web-home-care-ivy-homecare",
+  "productionEligible": true,
+  "referenceName": "Ivy Homecare Services: forest-green service field with care-photo hero",
+  "familyId": "web-home-care-ivy-homecare-family",
+  "businessKinds": [
+    "home care",
+    "domiciliary care",
+    "in-home care",
+    "home-care"
+  ],
+  "source": {
+    "name": "Ivy Homecare Services official website",
+    "url": "https://ivyhomecareservices.co.uk/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "home care",
+      "local care provider",
+      "family care planning",
+      "home-care"
+    ],
+    "style": [
+      "direct sans hierarchy with broad green section headings",
+      "white and forest green surfaces",
+      "deep green accent"
+    ],
+    "composition": [
+      "caregiver photograph with a compact white message over a deep green field",
+      "forest-green service field",
+      "care-photo hero",
+      "support timing explanation"
+    ],
+    "conversion": [
+      "care enquiry",
+      "phone consultation"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "person-centred care photographs balanced against clean green panels",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Ivy Homecare Services website in London, England uses caregiver photograph with a compact white message over a deep green field. Navigation is plain service menu and early contact links. Its page moves through care-photo opening, independence explanation, benefit feature, service menu, support process, care promise, contact, with many care options arranged as a clear list of practical support. person-centred care photographs balanced against clean green panels. Transferable mechanics are forest-green service field, care-photo hero, support timing explanation. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "caregiver photograph with a compact white message over a deep green field",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "plain service menu and early contact links",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "direct sans hierarchy with broad green section headings",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "forest green",
+        "soft mint"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "deep green"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "person-centred care photographs balanced against clean green panels",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "care-photo opening",
+      "independence explanation",
+      "benefit feature",
+      "service menu",
+      "support process",
+      "care promise",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "many care options arranged as a clear list of practical support",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "contact the care team",
+      "secondary": "then browse services",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "turn the desktop multi-column support menu into paired or single-column rows",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Ivy Homecare Services identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "forest-green-service-field",
+        "selector": "[data-reference-signature=forest-green-service-field]",
+        "description": "Translate the observed forest-green service field mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "care-photo-hero",
+        "selector": "[data-reference-signature=care-photo-hero]",
+        "description": "Translate the observed care-photo hero mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "support-timing-explanation",
+        "selector": "[data-reference-signature=support-timing-explanation]",
+        "description": "Translate the observed support timing explanation mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses forest-green service field with client-cleared content.",
+      "Page sequence retains care-photo hero and support timing explanation as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}
