@@ -2,7 +2,10 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
+import {
+  buildInspirationPack,
+  referenceStructuralDistance,
+} from "../scripts/inspiration-registry.mjs";
 import { assertReferenceDossierPack, loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 
 const registry = JSON.parse(
@@ -20,6 +23,72 @@ const baseRequest = {
 const temporaryRoots: string[] = [];
 
 describe("inspiration registry", () => {
+  it("scores genuinely different reference mechanics farther apart", () => {
+    const shared = {
+      familyId: "family-a",
+      navigation: "compact top navigation",
+      heroGeometry: "wide image hero",
+      servicePresentation: "service ledger",
+      typographyCategory: "editorial serif",
+      imageStrategy: "documentary photography",
+      canonicalReferenceDna: {
+        sectionSequence: ["hero", "services", "process", "proof", "contact"],
+        requiredSignatureElements: [
+          { id: "hero-image", description: "wide documentary hero image" },
+          { id: "service-ledger", description: "linear service ledger" },
+        ],
+      },
+    };
+    const nearby = {
+      ...shared,
+      familyId: "family-b",
+      navigation: "compact header navigation",
+      heroGeometry: "wide photographic hero",
+      servicePresentation: "services ledger",
+      typographyCategory: "editorial display serif",
+      imageStrategy: "documentary imagery",
+    };
+    const distant = {
+      ...shared,
+      familyId: "family-c",
+      navigation: "floating corner menu",
+      heroGeometry: "oversized typographic monument",
+      servicePresentation: "horizontal program bands",
+      typographyCategory: "condensed grotesk poster type",
+      imageStrategy: "cropped object collage",
+      canonicalReferenceDna: {
+        sectionSequence: ["poster-hero", "image-mosaic", "program-bands", "story-rail", "contact"],
+        requiredSignatureElements: [
+          { id: "type-collision", description: "oversized type collides with image crop" },
+          { id: "mosaic-rail", description: "asymmetric image mosaic and horizontal rail" },
+        ],
+      },
+    };
+
+    expect(referenceStructuralDistance(shared, distant)).toBeGreaterThan(
+      referenceStructuralDistance(shared, nearby),
+    );
+  });
+
+  it("adds signature-specific acceptance checks to otherwise generic dossiers", () => {
+    const av = loadReferenceDossier(
+      "data/reference-library/dossiers/web-painting-av",
+    );
+    const concept = loadReferenceDossier(
+      "data/reference-library/dossiers/web-painting-concept-pro",
+    );
+
+    expect(av.referenceDna.acceptanceChecks).toContainEqual(
+      expect.stringContaining("dusk-house-hero"),
+    );
+    expect(concept.referenceDna.acceptanceChecks).toContainEqual(
+      expect.stringContaining("dark-home-quote-hero"),
+    );
+    expect(av.referenceDna.acceptanceChecks).not.toEqual(
+      concept.referenceDna.acceptanceChecks,
+    );
+  });
+
   it("builds three reproducible, structurally independent creative routes", () => {
     const first = buildInspirationPack(baseRequest, registry);
     const second = buildInspirationPack(baseRequest, registry);
