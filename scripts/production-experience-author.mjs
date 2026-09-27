@@ -2131,6 +2131,46 @@ export async function authorExperienceCandidates({
           validateExperience(experience, route, content);
         }
       }
+      let referenceRepairCycles = 0;
+      if (route.referenceDna?.complete) {
+        let fidelity = validateReferenceCandidate({
+          referenceDna: route.referenceDna,
+          experienceSource: experience,
+          stylesSource: "",
+          motionSource: "",
+        });
+        while (
+          (!fidelity.pass || !fidelity.visualPass) &&
+          referenceRepairCycles < 2
+        ) {
+          referenceRepairCycles += 1;
+          const repaired = await generateStageValue(
+            limitedGenerate,
+            {
+              ...base,
+              stage: "experience",
+              designContract,
+              previousSource: experience,
+              validationError: `Reference fidelity repair cycle ${referenceRepairCycles}/2. Fix every source-level finding without simplifying the assigned composition. CSS and motion will be authored only after this structure is stable: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
+            },
+            "content",
+            "experience",
+          );
+          experience = normalizeAuthoredSource(repaired.value);
+          complianceRepaired = true;
+          validateExperience(experience, route, content);
+          fidelity = validateReferenceCandidate({
+            referenceDna: route.referenceDna,
+            experienceSource: experience,
+            stylesSource: "",
+            motionSource: "",
+          });
+        }
+        if (!fidelity.pass || !fidelity.visualPass)
+          throw new Error(
+            `Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
+          );
+      }
       const [stylesOutput, motionOutput] = await Promise.all([
         generateValidatedSource({
           generate: limitedGenerate,
@@ -2157,44 +2197,16 @@ export async function authorExperienceCandidates({
       const styles = stylesOutput.source;
       const motion = motionOutput.source;
       complianceRepaired ||= stylesOutput.repaired || motionOutput.repaired;
-      let referenceRepairCycles = 0;
       if (route.referenceDna?.complete) {
-        let fidelity = validateReferenceCandidate({
+        const finalFidelity = validateReferenceCandidate({
           referenceDna: route.referenceDna,
           experienceSource: experience,
           stylesSource: styles,
           motionSource: motion,
         });
-        while (
-          (!fidelity.pass || !fidelity.visualPass) &&
-          referenceRepairCycles < 2
-        ) {
-          referenceRepairCycles += 1;
-          const repaired = await generateStageValue(
-            limitedGenerate,
-            {
-              ...base,
-              stage: "experience",
-              designContract,
-              previousSource: experience,
-              validationError: `Reference fidelity repair cycle ${referenceRepairCycles}/2. Fix every finding without simplifying the assigned composition: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
-            },
-            "content",
-            "experience",
-          );
-          experience = normalizeAuthoredSource(repaired.value);
-          complianceRepaired = true;
-          validateExperience(experience, route, content);
-          fidelity = validateReferenceCandidate({
-            referenceDna: route.referenceDna,
-            experienceSource: experience,
-            stylesSource: styles,
-            motionSource: motion,
-          });
-        }
-        if (!fidelity.pass || !fidelity.visualPass)
+        if (!finalFidelity.pass || !finalFidelity.visualPass)
           throw new Error(
-            `Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
+            `Reference fidelity failed for ${route.id}: ${finalFidelity.findings.map((item) => item.message).join(" | ")}`,
           );
       }
       const creativeManifest = buildCandidateManifest({
