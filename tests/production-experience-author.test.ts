@@ -1442,6 +1442,24 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("stabilizes reference-driven Experience repairs before authoring styles and motion", () => {
+    const source = readFileSync(
+      new URL("../scripts/production-experience-author.mjs", import.meta.url),
+      "utf8",
+    );
+    const repairIndex = source.indexOf(
+      "Reference fidelity repair cycle ${referenceRepairCycles}/2",
+    );
+    const stylesIndex = source.indexOf(
+      "const [stylesOutput, motionOutput] = await Promise.all",
+    );
+    const finalBundleCheckIndex = source.indexOf("const finalFidelity");
+
+    expect(repairIndex).toBeGreaterThan(-1);
+    expect(stylesIndex).toBeGreaterThan(repairIndex);
+    expect(finalBundleCheckIndex).toBeGreaterThan(stylesIndex);
+  });
+
   it("uses one final bounded experience repair after a failed repair", async () => {
     const result = await authorExperienceCandidates({
       site,
