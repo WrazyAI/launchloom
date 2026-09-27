@@ -133,19 +133,19 @@ export async function promptImagePart(filePath, { detail = "low" } = {}) {
 }
 
 /**
- * Keep both reference screenshots on an authoring pass. A repair retry keeps
- * the desktop image and the complete textual Reference DNA, avoiding another
- * large visual payload while preserving the analyzed mobile geometry.
+ * Keep desktop and mobile reference screenshots on every authoring pass.
+ * Repairs are precisely where responsive composition tends to regress, so
+ * dropping the mobile bitmap can encourage a desktop-only structural fix.
  *
  * @param {{ desktop?: string, mobile?: string }} reference
- * @param {{ retry?: boolean }} [options]
+ * @param {{ retry?: boolean }} [_options]
  * @returns {string[]}
  */
 export function selectAuthorReferenceScreenshots(
   reference,
-  { retry = false } = {},
+  _options = {},
 ) {
-  const paths = [reference?.desktop, ...(retry ? [] : [reference?.mobile])];
+  const paths = [reference?.desktop, reference?.mobile];
   return [...new Set(paths.filter(Boolean))].slice(0, 2);
 }
 
