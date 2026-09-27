@@ -1299,7 +1299,7 @@ describe("production experience author", () => {
       safeStage({ ...request, stage: "styles" }).content || "",
     );
     const baseMotion =
-      'export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; const node = document.querySelector(".hero"); return () => {}; }';
+      'export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; const node = document.querySelector(".hero"); /* MUTATION */ return () => {}; }';
 
     expect(() =>
       validateProductionCandidateFiles({
@@ -1307,8 +1307,8 @@ describe("production experience author", () => {
           experience,
           styles,
           motion: baseMotion.replace(
-            "return () => {}; }",
-            'node.textContent = "rewritten"; return () => {}; }',
+            "/* MUTATION */",
+            'node.textContent = "rewritten";',
           ),
         },
         route,
@@ -1321,8 +1321,8 @@ describe("production experience author", () => {
           experience,
           styles,
           motion: baseMotion.replace(
-            "return () => {}; }",
-            'node.style.setProperty("--accent", "1"); return () => {}; }',
+            "/* MUTATION */",
+            'node.style.setProperty("--accent", "1");',
           ),
         },
         route,
@@ -1335,8 +1335,8 @@ describe("production experience author", () => {
           experience,
           styles,
           motion: baseMotion.replace(
-            "return () => {}; }",
-            'node.style.setProperty("--ll-creative-progress", "1"); return () => {}; }',
+            "/* MUTATION */",
+            'node.style.setProperty("--ll-creative-progress", "1");',
           ),
         },
         route,
