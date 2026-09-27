@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { parseModelJson } from "./model-json.mjs";
 import {
   assertModelPromptTextBudget,
@@ -71,6 +72,12 @@ const reasoningEffort =
   (model === "openai/gpt-6-luna" ? "xhigh" : "low");
 const failureMode = args["failure-mode"] || "throw";
 const usage = [];
+const promptEvidence = [];
+
+function promptDigest(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
 const authorDeadline =
   Date.now() +
   Math.max(
@@ -318,7 +325,10 @@ async function requestStage(request) {
     Math.min(stageLimitMs, remainingMs),
   );
   try {
-    const userContent = [{ type: "text", text: routePromptPrefix(request) }];
+    const routePrompt = routePromptPrefix(request);
+    const stagePrompt = stagePromptSuffix(request);
+    const systemPrompt = authorSystemPrompt(request);
+    const userContent = [{ type: "text", text: routePrompt }];
     const evidencePaths = selectAuthorReferenceScreenshots(
       {
         desktop: request.route.referenceDna?.evidence?.desktopScreenshot?.path,
@@ -343,7 +353,7 @@ async function requestStage(request) {
         "End reusable route and reference context. Stage-specific work follows.",
       ),
     );
-    userContent.push({ type: "text", text: stagePromptSuffix(request) });
+    userContent.push({ type: "text", text: stagePrompt });
     const fallbackEfforts = {
       max: ["max", "medium", "low"],
       xhigh: ["xhigh", "high", "medium", "low"],
@@ -363,10 +373,18 @@ async function requestStage(request) {
           ? efforts.slice(1)
           : efforts
         : efforts;
+    const evidenceManifest = await Promise.all(
+      evidencePaths.map(async (screenshotPath) => {
+        const resolved = path.resolve(screenshotPath);
+        return {
+          path: screenshotPath,
+          digest: promptDigest(await fs.readFile(resolved)),
+        };
+      }),
+    );
     let lastError;
     for (const effort of requestedEfforts) {
       try {
-        const systemPrompt = authorSystemPrompt(request);
         assertModelPromptTextBudget([
           ...userContent,
           { type: "text", text: systemPrompt },
@@ -388,6 +406,24 @@ async function requestStage(request) {
           creativeSession?.reasoningPolicyVersion || "static-reasoning",
           systemPrompt,
         );
+        promptEvidence.push({
+          version: 1,
+          routeId: request.route.id,
+          referenceId:
+            request.route.referenceDossier?.id ||
+            request.route.referenceIds?.[0] ||
+            null,
+          referenceDossierDigest: request.route.referenceDossier?.digest || null,
+          stage: request.stage,
+          repair: Boolean(request.validationError),
+          effort,
+          sessionId,
+          promptCacheKey,
+          systemPromptDigest: promptDigest(systemPrompt),
+          routePromptDigest: promptDigest(routePrompt),
+          stagePromptDigest: promptDigest(stagePrompt),
+          evidence: evidenceManifest,
+        });
         const response = await openRouterChatCompletion({
           title: "LaunchLoom Production Experience Author",
           signal: controller.signal,
@@ -563,6 +599,19 @@ async function writeResult(result) {
     );
   }
   await fs.writeFile(
+    path.join(staging, "prompt-evidence.json"),
+    `${JSON.stringify(
+      {
+        version: 1,
+        model: result.model,
+        selectionKey: result.selectionKey,
+        records: promptEvidence,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  await fs.writeFile(
     path.join(staging, "creative-run.json"),
     `${JSON.stringify(
       {
@@ -589,6 +638,18 @@ async function writeResult(result) {
 async function writeFailure(error) {
   await fs.rm(outputPath, { recursive: true, force: true });
   await fs.mkdir(outputPath, { recursive: true });
+  await fs.writeFile(
+    path.join(outputPath, "prompt-evidence.json"),
+    `${JSON.stringify(
+      {
+        version: 1,
+        model,
+        records: promptEvidence,
+      },
+      null,
+      2,
+    )}\n`,
+  );
   await fs.writeFile(
     path.join(outputPath, "creative-run.json"),
     `${JSON.stringify(
