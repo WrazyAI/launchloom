@@ -2136,8 +2136,11 @@ export async function authorExperienceCandidates({
         let fidelity = validateReferenceCandidate({
           referenceDna: route.referenceDna,
           experienceSource: experience,
-          stylesSource: "",
-          motionSource: "",
+          // The pre-style repair pass validates Experience-owned reference
+          // mechanics. Neutral placeholders satisfy only the cross-stage
+          // presence checks; the real CSS/motion are fully validated below.
+          stylesSource: "@media (max-width: 1px) {}",
+          motionSource: "export function mountExperienceMotion() {}",
         });
         while (
           (!fidelity.pass || !fidelity.visualPass) &&
@@ -2162,8 +2165,8 @@ export async function authorExperienceCandidates({
           fidelity = validateReferenceCandidate({
             referenceDna: route.referenceDna,
             experienceSource: experience,
-            stylesSource: "",
-            motionSource: "",
+            stylesSource: "@media (max-width: 1px) {}",
+            motionSource: "export function mountExperienceMotion() {}",
           });
         }
         if (!fidelity.pass || !fidelity.visualPass)
