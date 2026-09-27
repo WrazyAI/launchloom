@@ -1,9 +1,9 @@
 import crypto from "node:crypto";
+import { redactPromptValue } from "./author-prompt-budget.mjs";
 import ts from "typescript";
 import {
   assertIndependentRoutes,
   buildCandidateManifest,
-  buildRouteContract,
 } from "./creative-compiler.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
@@ -123,6 +123,39 @@ function stableJson(value) {
   return JSON.stringify(value);
 }
 
+/** Keep a route's canonical design template from being serialized redundantly. */
+export function omitDuplicateRouteDesignTemplates(
+  routeDesignTemplate,
+  referenceDna,
+  evidence = [],
+) {
+  const routeTemplate = stableJson(routeDesignTemplate);
+  const matchesRouteTemplate = (value) => stableJson(value) === routeTemplate;
+  let normalizedReferenceDna = referenceDna;
+  if (referenceDna && typeof referenceDna === "object") {
+    normalizedReferenceDna = { ...referenceDna };
+    if (referenceDna.evidence && typeof referenceDna.evidence === "object") {
+      const { designTemplate, ...remainingEvidence } = referenceDna.evidence;
+      normalizedReferenceDna.evidence = matchesRouteTemplate(designTemplate)
+        ? remainingEvidence
+        : { ...referenceDna.evidence };
+    }
+  }
+  const normalizedEvidence = Array.isArray(evidence)
+    ? evidence.map((item) => {
+        if (!item || typeof item !== "object") return item;
+        const { designTemplate, ...remainingEvidence } = item;
+        return matchesRouteTemplate(designTemplate)
+          ? remainingEvidence
+          : { ...item };
+      })
+    : evidence;
+  return {
+    referenceDna: normalizedReferenceDna,
+    evidence: normalizedEvidence,
+  };
+}
+
 function digest(value) {
   return crypto.createHash("sha256").update(stableJson(value)).digest("hex");
 }
@@ -135,24 +168,7 @@ function digest(value) {
  * @param {unknown} value
  * @returns {unknown}
  */
-export function redactPromptValue(value) {
-  if (typeof value === "string") {
-    if (/^data:image\/[\w.+-]+;base64,/iu.test(value))
-      return "[sealed client image asset]";
-    if (value.length > 12_000)
-      return `${value.slice(0, 256)}...[sealed value truncated]`;
-    return value;
-  }
-  if (Array.isArray(value)) return value.map(redactPromptValue);
-  if (value && typeof value === "object")
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [
-        key,
-        redactPromptValue(item),
-      ]),
-    );
-  return value;
-}
+export { redactPromptValue };
 
 function visualBrief(site) {
   const style = site.style || {};
@@ -288,7 +304,10 @@ function assertInspirationPack(pack) {
     for (const route of contracts)
       validateReferenceDna(route.referenceDna, { requireEvidence: true });
   }
-  return contracts;
+  return contracts.map((contract, index) => {
+    const referenceDossier = pack.routes[index]?.referenceDossier;
+    return referenceDossier ? { ...contract, referenceDossier } : contract;
+  });
 }
 
 function asText(value, label) {
@@ -1080,6 +1099,11 @@ export function restoreRequiredExperienceMarkers(
   const markerSpecs = [
     {
       name: "data-hero",
+      targetAttributes: [
+        "data-reference-section",
+        "data-reference-signature",
+        "data-hero-geometry",
+      ],
       targets: () => {
         const matches = repaired.elements.filter((element) => {
           if (jsxOpeningName(element.opening) !== "section") return false;
@@ -1090,7 +1114,7 @@ export function restoreRequiredExperienceMarkers(
             repaired.file,
           );
         });
-        return matches.filter(
+        const semanticMatches = matches.filter(
           (candidate) =>
             !matches.some(
               (other) =>
@@ -1098,6 +1122,40 @@ export function restoreRequiredExperienceMarkers(
                 other.node.getStart(repaired.file) >
                   candidate.node.getStart(repaired.file) &&
                 other.node.end < candidate.node.end,
+            ),
+        );
+        if (semanticMatches.length > 1)
+          throw new Error(
+            `Candidate ${route.id} cannot safely restore data-hero: found ${semanticMatches.length} semantic targets.`,
+          );
+        if (semanticMatches.length > 0) return semanticMatches;
+
+        const originalHero = original.elements.find(({ opening }) =>
+          jsxAttribute(opening, "data-hero"),
+        );
+        const identityAttributes = [
+          "data-reference-section",
+          "data-reference-signature",
+          "data-hero-geometry",
+        ]
+          .map((name) => ({
+            name,
+            value: jsxAttributeValue(
+              jsxAttribute(originalHero?.opening, name),
+              original.file,
+            ).trim(),
+          }))
+          .filter(({ value }) => value);
+        if (identityAttributes.length === 0) return [];
+        return repaired.elements.filter(
+          ({ opening }) =>
+            jsxOpeningName(opening) === "section" &&
+            identityAttributes.every(
+              ({ name, value }) =>
+                jsxAttributeValue(
+                  jsxAttribute(opening, name),
+                  repaired.file,
+                ).trim() === value,
             ),
         );
       },
@@ -1337,9 +1395,9 @@ function hasPotentiallyHiddenJsxAttribute(opening) {
       const initializer = attribute.initializer;
       hidden = Boolean(
         !initializer ||
-          !ts.isJsxExpression(initializer) ||
-          !initializer.expression ||
-          !isBooleanLiteral(initializer.expression, false),
+        !ts.isJsxExpression(initializer) ||
+        !initializer.expression ||
+        !isBooleanLiteral(initializer.expression, false),
       );
       continue;
     }
@@ -1374,10 +1432,7 @@ function styleObjectDisplayNone(expression) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "display") continue;
     } else if (
@@ -1412,10 +1467,7 @@ function staticSpreadDisplayNone(attribute) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "style") continue;
     } else if (
@@ -1447,10 +1499,7 @@ function staticSpreadHiddenValue(attribute) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "hidden") continue;
     } else if (
@@ -2002,9 +2051,7 @@ export async function authorExperienceCandidates({
   const contentManifest = buildCreativeContentManifest(site);
   const rules = authorRules();
 
-  const routes = assertInspirationPack(inspirationPack).map((route) =>
-    buildRouteContract(route),
-  );
+  const routes = assertInspirationPack(inspirationPack);
   // OpenRouter's in-flight budget is shared across the account. Keep the
   // independent candidates, but never put more than two model stages in
   // flight at once. This protects the creative lane without falling back to a

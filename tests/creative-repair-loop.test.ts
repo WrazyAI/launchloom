@@ -79,6 +79,92 @@ describe("creative repair loop", () => {
     expect(diagnostics.join(" ")).not.toContain('"experience":"fixed"');
   });
 
+  it("redacts sealed client image data from repair text before provider transport", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-image-redaction-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const dataUri = `data:image/webp;base64,${"A".repeat(1024)}`;
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(repaired) },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        { category: "palette-adherence", evidence: "Use the client palette." },
+      ],
+      files: {
+        experience: "original JSX",
+        styles: "original CSS",
+        motion: "original motion",
+      },
+      screenshots: [],
+      contentManifest: {
+        values: { brand: { name: "Coastal Brush" }, hero: { image: dataUri } },
+        tokens: [],
+      },
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const textualPrompt = body.messages[1].content
+      .filter((part: { type: string; text?: string }) => part.type === "text")
+      .map((part: { text?: string }) => part.text || "")
+      .join("\n");
+    expect(textualPrompt).not.toContain(dataUri);
+    expect(textualPrompt).not.toContain("A".repeat(100));
+    expect(textualPrompt).toContain("[sealed client image asset]");
+  });
+
+  it("rejects an oversized repair prompt before provider transport", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-prompt-budget-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [
+          { category: "palette-adherence", evidence: "Palette mismatch" },
+        ],
+        files: {
+          experience: "x".repeat(400_001),
+          styles: "",
+          motion: "",
+        },
+        screenshots: [],
+      }),
+    ).rejects.toThrow(/exceeds the 400000 character safety budget/iu);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("keeps required section IDs and reference marker order explicit during repairs", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-reference-checklist-"),
@@ -177,6 +263,151 @@ describe("creative repair loop", () => {
     ).rejects.toThrow(
       "Creative repair response was truncated (finish_reason=length max_completion_tokens=48000 completion_tokens=48000 reasoning_tokens=47000 content_chars=1).",
     );
+  });
+
+  it("splits large repairs by source file while preserving the frozen max-effort session", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-file-scope-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const sourceFiles = {
+      experience: "original JSX",
+      styles: "x".repeat(21000),
+      motion: "original motion",
+    };
+    const repaired = {
+      experience: "complete JSX",
+      styles: "complete CSS",
+      motion: "complete motion",
+    };
+    const responses = [
+      {
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                file: "experience",
+                content: repaired.experience,
+              }),
+            },
+          },
+        ],
+        usage: {
+          completion_tokens: 1200,
+          completion_tokens_details: { reasoning_tokens: 700 },
+        },
+      },
+      {
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                file: "styles",
+                content: repaired.styles,
+              }),
+            },
+          },
+        ],
+        usage: {
+          completion_tokens: 1100,
+          completion_tokens_details: { reasoning_tokens: 650 },
+        },
+      },
+      {
+        choices: [
+          {
+            finish_reason: "stop",
+            message: {
+              content: JSON.stringify({
+                file: "motion",
+                content: repaired.motion,
+              }),
+            },
+          },
+        ],
+        usage: {
+          completion_tokens: 800,
+          completion_tokens_details: { reasoning_tokens: 500 },
+        },
+      },
+    ];
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(JSON.stringify(responses.shift())),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const diagnostics: string[] = [];
+
+    const result = await requestRepair({
+      model: "openai/gpt-6-luna",
+      referenceDna: {
+        familyId: "editorial-architecture",
+        referenceName: "Editorial architecture",
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        { category: "palette-adherence", evidence: "Palette mismatch" },
+      ],
+      files: sourceFiles,
+      screenshots: [],
+      creativeSession: {
+        sessionId:
+          "launchloom:creative:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        reasoningEffort: "max",
+        recommendedEffort: "max",
+        mode: "enforce",
+        reasoningPolicyVersion: "adaptive-reasoning-v1",
+        selectorModelVersion: "jev-1.13.0",
+      },
+      logger: (line: string) => diagnostics.push(line),
+    });
+
+    expect(result).toEqual(repaired);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const bodies = fetchMock.mock.calls.map((call) =>
+      JSON.parse(call[1].body as string),
+    );
+    expect(bodies.map((body) => body.reasoning.effort)).toEqual([
+      "max",
+      "max",
+      "max",
+    ]);
+    expect(new Set(bodies.map((body) => body.session_id))).toEqual(
+      new Set(["launchloom:creative:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]),
+    );
+    expect(
+      bodies.map((body) => body.response_format.json_schema.schema.required),
+    ).toEqual([
+      ["file", "content"],
+      ["file", "content"],
+      ["file", "content"],
+    ]);
+    expect(
+      bodies.map(
+        (body) => body.response_format.json_schema.schema.properties.file.enum,
+      ),
+    ).toEqual([
+      ["experience", "styles", "motion"],
+      ["experience", "styles", "motion"],
+      ["experience", "styles", "motion"],
+    ]);
+    const targetPrompts = bodies.map(
+      (body) =>
+        body.messages[1].content
+          .filter(
+            (part: { type: string; text?: string }) => part.type === "text",
+          )
+          .map((part: { text?: string }) => part.text || "")
+          .join("\n")
+          .match(/REPAIR TARGET: (experience|styles|motion)/u)?.[1],
+    );
+    expect(targetPrompts).toEqual(["experience", "styles", "motion"]);
+    expect(diagnostics.join(" ")).not.toContain("from=max to=xhigh");
   });
 
   it("classifies malformed non-truncated repair JSON with usage diagnostics", async () => {
@@ -329,7 +560,9 @@ describe("creative repair loop", () => {
     expect(prompt).toContain("CLIENT VISUAL BRIEF");
     expect(prompt).toContain("#f5f0e4");
     expect(prompt).toContain("Light tactile craft collage");
-    expect(prompt).toContain("Do not repair toward a generic LaunchLoom house style");
+    expect(prompt).toContain(
+      "Do not repair toward a generic LaunchLoom house style",
+    );
   });
 
   it("uses the frozen creative session effort and session id for repairs", async () => {

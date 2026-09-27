@@ -87,8 +87,8 @@ Instructions:
 
 	Lightbox Gallery:
 
- 		The actual gallery function is powered by my Poptrox plugin. For info on
- 		how that works, go here: github.com/ajlkn/jquery.poptrox
+		The actual gallery function is powered by my Poptrox plugin. For info on
+		how that works, go here: github.com/ajlkn/jquery.poptrox
 
 		Each image (the '...' bit in the above examples) should look like this:
 
@@ -119,8 +119,8 @@ Instructions:
 
     Icons:
 
-     	Powered by Font Awesome. Go here for a full listing of all the icons you can use:
-     	fontawesome.io
+	Powered by Font Awesome. Go here for a full listing of all the icons you can use:
+	fontawesome.io
 
 
 	Other Stuff:

@@ -1,9 +1,9 @@
 # Asset provenance and capture record
 
-Source package: Spicer Designs plain-HTML Landscaping template  
-Source page: https://www.spicerdesigns.com/templates/landscaping  
-Package URL: https://www.spicerdesigns.com/downloads/landscaping-template-html.zip  
-Downloaded: 2026-09-25  
+Source package: Spicer Designs plain-HTML Landscaping template
+Source page: https://www.spicerdesigns.com/templates/landscaping
+Package URL: https://www.spicerdesigns.com/downloads/landscaping-template-html.zip
+Downloaded: 2026-09-25
 Archive SHA-256: `fe077fa8c1f5868bc7358487d9760c8342d7c41003bb41af90dcc229ed52a426`
 
 The package `README.md` is preserved as `SOURCE-README.md` and identifies the

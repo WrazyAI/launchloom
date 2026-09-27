@@ -420,6 +420,8 @@ async function defaultRepairCandidate({
   const repairResponse = await requestRepair({
     model,
     referenceDna,
+    referenceDossier:
+      metadata.creativeManifest?.referenceDossier || metadata.referenceDossier,
     findings,
     files,
     screenshots,

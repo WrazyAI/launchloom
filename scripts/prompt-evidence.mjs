@@ -27,6 +27,7 @@ export async function promptImageDimensions(filePath) {
 }
 
 function looksLikeImage(input) {
+  const prefix = input.toString("utf8", 0, Math.min(input.length, 256)).trimStart();
   return (
     (input.length >= 8 && input[0] === 0x89 && input[1] === 0x50 && input[2] === 0x4e && input[3] === 0x47) ||
     (input.length >= 3 && input[0] === 0xff && input[1] === 0xd8 && input[2] === 0xff) ||
@@ -34,7 +35,9 @@ function looksLikeImage(input) {
     (input.length >= 12 &&
       input.toString("ascii", 4, 8) === "ftyp" &&
       /^(?:avif|avis|heic|heix|hevc|hevx|mif1|msf1)$/u.test(input.toString("ascii", 8, 12))) ||
-    (input.length >= 6 && (input.toString("ascii", 0, 6) === "GIF87a" || input.toString("ascii", 0, 6) === "GIF89a"))
+    (input.length >= 6 && (input.toString("ascii", 0, 6) === "GIF87a" || input.toString("ascii", 0, 6) === "GIF89a")) ||
+    prefix.startsWith("<svg") ||
+    (prefix.startsWith("<?xml") && /<svg\b/iu.test(prefix))
   );
 }
 

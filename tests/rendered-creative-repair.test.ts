@@ -10,7 +10,7 @@ import {
   writeCandidate,
 } from "../scripts/run-rendered-creative-repair.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
-import { buildReferenceDna } from "../scripts/reference-dna.mjs";
+import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 
 const roots: string[] = [];
 const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
@@ -549,9 +549,11 @@ export default function Experience({ content, runtime }) {
         "utf8",
       ),
     );
-    const referenceDna = buildReferenceDna(registry.records[1], {
-      requireEvidence: true,
-    });
+    const architectureReference = registry.records.find(
+      (record: any) => record.id === "lapa-mcalpine-sanctuary",
+    );
+    if (!architectureReference) throw new Error("The canonical architecture dossier is missing.");
+    const referenceDna = loadReferenceDossier(architectureReference.dossierPath).referenceDna;
     const content = {
       brand: {
         name: "Test Studio",
