@@ -1289,6 +1289,61 @@ describe("production experience author", () => {
     ).toBe(true);
   });
 
+  it("bounds motion DOM mutation to presentation-safe candidate state", () => {
+    const route = { id: "route-motion-mutation" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const baseMotion =
+      'export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; const node = document.querySelector(".hero"); return () => {}; }';
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles,
+          motion: baseMotion.replace(
+            "return () => {}; }",
+            'node.textContent = "rewritten"; return () => {}; }',
+          ),
+        },
+        route,
+      }),
+    ).toThrow(/must not rewrite visitor-facing content/iu);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles,
+          motion: baseMotion.replace(
+            "return () => {}; }",
+            'node.style.setProperty("--accent", "1"); return () => {}; }',
+          ),
+        },
+        route,
+      }),
+    ).toThrow(/--ll-creative/iu);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles,
+          motion: baseMotion.replace(
+            "return () => {}; }",
+            'node.style.setProperty("--ll-creative-progress", "1"); return () => {}; }',
+          ),
+        },
+        route,
+      }),
+    ).not.toThrow();
+  });
+
   it("repairs motion that omits its reduced-motion path", async () => {
     const result = await authorExperienceCandidates({
       site,
@@ -1507,6 +1562,21 @@ describe("production experience author", () => {
         },
       }),
     ).rejects.toThrow(/unsupported claim literal/i);
+  });
+
+  it("persists a sanitized prompt-evidence manifest for authored and failed runs", () => {
+    const source = readFileSync(
+      new URL("../scripts/author-production-experiences.mjs", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toContain('path.join(staging, "prompt-evidence.json")');
+    expect(source).toContain('path.join(outputPath, "prompt-evidence.json")');
+    expect(source).toContain("systemPromptDigest");
+    expect(source).toContain("routePromptDigest");
+    expect(source).toContain("stagePromptDigest");
+    expect(source).toContain("referenceDossierDigest");
+    expect(source).toContain("evidenceManifest");
   });
 
   it("persists generation inputs and authored candidates without success-run artifact duplication", () => {
