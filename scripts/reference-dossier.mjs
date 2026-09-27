@@ -142,6 +142,26 @@ function normalizeReferenceDna(manifest, screenshots) {
   const dna = manifest.referenceDna;
   if (!dna || typeof dna !== "object")
     throw new Error("Reference dossier is missing its structured referenceDna contract.");
+  const requiredSignatureElements = Array.isArray(dna.requiredSignatureElements)
+    ? dna.requiredSignatureElements
+    : [];
+  const genericAcceptanceChecks = safeList(
+    dna.acceptanceChecks,
+    "reference acceptance checks",
+    3,
+    30,
+  );
+  const signatureAcceptanceChecks = requiredSignatureElements
+    .map((item) => {
+      const id = requiredText(item?.id, "signature element id", 120);
+      const description = requiredText(
+        item?.description,
+        `signature element '${id}' description`,
+        320,
+      );
+      return `The rendered candidate visibly preserves reference signature '${id}': ${description}`;
+    })
+    .slice(0, Math.max(0, 30 - genericAcceptanceChecks.length));
   const value = {
     version: 2,
     familyId: requiredText(manifest.familyId, "familyId", 100),
@@ -166,10 +186,11 @@ function normalizeReferenceDna(manifest, screenshots) {
     motion: dna.motion,
     mobileRecomposition: dna.mobileRecomposition,
     prohibitedPatterns: safeList(dna.prohibitedPatterns, "prohibited patterns", 2, 30),
-    requiredSignatureElements: Array.isArray(dna.requiredSignatureElements)
-      ? dna.requiredSignatureElements
-      : [],
-    acceptanceChecks: safeList(dna.acceptanceChecks, "reference acceptance checks", 3, 30),
+    requiredSignatureElements,
+    acceptanceChecks: [
+      ...genericAcceptanceChecks,
+      ...signatureAcceptanceChecks,
+    ],
     measurements: null,
     analyzedFromEvidence: false,
     analyzerModel: "",
