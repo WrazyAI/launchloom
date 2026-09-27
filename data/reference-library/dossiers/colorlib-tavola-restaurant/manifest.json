@@ -11,7 +11,9 @@
     "rightsEvidence": "The pinned repository includes an MIT license for its source. The Tavola CREDITS.txt identifies every included photograph as CC0 1.0 or Public Domain Mark. Both records and Bootstrap's MIT notice are retained in this dossier.",
     "rightsEvidencePath": "rights/LICENSE",
     "assetEvidencePaths": [
-      "rights/CREDITS.txt",
+      "rights/CREDITS.txt"
+    ],
+    "provenanceEvidencePaths": [
       "rights/PROVENANCE.md"
     ]
   },
@@ -46,23 +48,61 @@
     "local-food"
   ],
   "tags": {
-    "business": ["restaurant", "cafe", "bistro", "food-retail"],
-    "style": ["warm-paper", "editorial-serif", "forest-ink", "terracotta-accent", "quiet-craft"],
-    "composition": ["menu-board-first", "photo-field-hero", "service-tabs", "split-kitchen-story", "asymmetric-room-mosaic"],
-    "conversion": ["reservation-first", "menu-discovery", "hours-and-directions", "dietary-reassurance"],
-    "motion": ["service-menu-tabs", "date-and-time-picker", "native-theme-switch", "no-scroll-jacking"],
-    "imagery": ["cc0-food-photography", "cc0-interior-photography", "warm-full-bleed-hero", "asymmetric-photo-mosaic"]
+    "business": [
+      "restaurant",
+      "cafe",
+      "bistro",
+      "food-retail"
+    ],
+    "style": [
+      "warm-paper",
+      "editorial-serif",
+      "forest-ink",
+      "terracotta-accent",
+      "quiet-craft"
+    ],
+    "composition": [
+      "menu-board-first",
+      "photo-field-hero",
+      "service-tabs",
+      "split-kitchen-story",
+      "asymmetric-room-mosaic"
+    ],
+    "conversion": [
+      "reservation-first",
+      "menu-discovery",
+      "hours-and-directions",
+      "dietary-reassurance"
+    ],
+    "motion": [
+      "service-menu-tabs",
+      "date-and-time-picker",
+      "native-theme-switch",
+      "no-scroll-jacking"
+    ],
+    "imagery": [
+      "cc0-food-photography",
+      "cc0-interior-photography",
+      "warm-full-bleed-hero",
+      "asymmetric-photo-mosaic"
+    ]
   },
   "evidence": {
     "desktop": {
       "path": "screenshots/desktop.png",
       "capture": "full-page",
-      "viewport": { "width": 1536, "height": 864 }
+      "viewport": {
+        "width": 1536,
+        "height": 864
+      }
     },
     "mobile": {
       "path": "screenshots/mobile.png",
       "capture": "full-page",
-      "viewport": { "width": 390, "height": 844 }
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
     }
   },
   "referenceDna": {
@@ -83,9 +123,15 @@
       "scale": "large but restrained hero type, small uppercase rules, compact menu labels, clear price alignment"
     },
     "palette": {
-      "surfaces": ["warm ivory", "pale sage-gray", "deep green-black"],
+      "surfaces": [
+        "warm ivory",
+        "pale sage-gray",
+        "deep green-black"
+      ],
       "ink": "soft near-black with muted gray-green secondary text",
-      "accents": ["restrained terracotta"],
+      "accents": [
+        "restrained terracotta"
+      ],
       "contrastIntent": "light paper-like content surfaces over a dark status strip, with one warm action accent"
     },
     "imageTreatment": {

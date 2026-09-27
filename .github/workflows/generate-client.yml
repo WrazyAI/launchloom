@@ -79,6 +79,7 @@ jobs:
           DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
+          LAUNCHLOOM_GENERATION_ID: ${{ github.run_id }}-attempt-${{ github.run_attempt }}
         run: |
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
           if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then

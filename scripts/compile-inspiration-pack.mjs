@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { buildInspirationPack } from "./inspiration-registry.mjs";
+import { referenceSelectionContext } from "./launch-history.mjs";
 import {
   loadA1ReferenceLibrary,
   mergeInspirationRegistries,
@@ -64,13 +65,11 @@ const [config, baseRegistry, history, intake, a1Library] = await Promise.all([
 const registry = a1Library
   ? mergeInspirationRegistries(baseRegistry, a1Library)
   : baseRegistry;
-const recent = Array.isArray(history.launches)
-  ? history.launches.slice(-30)
-  : [];
 const normalizedIndustry = String(config.businessKind || config.industry || "").toLowerCase();
 const industry = ["", "all", "general", "other"].includes(normalizedIndustry)
   ? intake.industry || config.businessKind || config.preset || "all"
   : normalizedIndustry;
+const selectionContext = referenceSelectionContext(history, industry);
 const styleTerms = [
   ...words(intake.stylePreference),
   ...words(intake.brandNotes),
@@ -78,21 +77,18 @@ const styleTerms = [
   ...words(config.design?.treatment?.typography),
   ...words(config.design?.recipe),
 ];
+const generationId = String(process.env.LAUNCHLOOM_GENERATION_ID || "").trim();
 const pack = buildInspirationPack(
   {
-    seed:
+    seed: generationId ||
       process.env.LAUNCHLOOM_INTAKE_ID ||
       intake.submissionId ||
       config.business?.name ||
       "launchloom-intake",
+    generationId: generationId || undefined,
     industry,
     styleTerms,
-    recentReferenceIds: recent.flatMap((launch) =>
-      Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
-    ),
-    recentRouteSignatures: recent.flatMap((launch) =>
-      Array.isArray(launch.routeSignatures) ? launch.routeSignatures : [],
-    ),
+    ...selectionContext,
   },
   registry,
   { repositoryRoot: repository, requireDossiers: true },

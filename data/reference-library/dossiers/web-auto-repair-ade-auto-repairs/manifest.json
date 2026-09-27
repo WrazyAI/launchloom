@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "id": "web-auto-repair-ade-auto-repairs",
+  "productionEligible": true,
+  "referenceName": "ADE Auto Repairs: serif repair promise with service index grid",
+  "familyId": "web-auto-repair-ade-auto-repairs-family",
+  "businessKinds": [
+    "auto repair shop",
+    "independent garage",
+    "vehicle servicing",
+    "auto-repair"
+  ],
+  "source": {
+    "name": "ADE Auto Repairs official website",
+    "url": "https://adeautorepairs.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "auto repair",
+      "local garage",
+      "vehicle maintenance",
+      "auto-repair"
+    ],
+    "style": [
+      "serif display mixed with compact sans service labels",
+      "white and pale gray surfaces",
+      "red accent"
+    ],
+    "composition": [
+      "white editorial repair statement with a strong red action",
+      "serif repair promise",
+      "service index grid",
+      "work-image gallery"
+    ],
+    "conversion": [
+      "service booking",
+      "garage contact"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "genuine car-repair and shop pictures balanced with whitespace",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct ADE Auto Repairs website in London, England uses white editorial repair statement with a strong red action. Navigation is minimal utility menu with direct phone access. Its page moves through editorial opening, vehicle scope ribbon, service grid, why choose explanation, process steps, customer proof, work gallery, visit and contact, with many repair tasks indexed in a dense but orderly grid. genuine car-repair and shop pictures balanced with whitespace. Transferable mechanics are serif repair promise, service index grid, work-image gallery. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "white editorial repair statement with a strong red action",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "minimal utility menu with direct phone access",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "serif display mixed with compact sans service labels",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "pale gray",
+        "near black"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "red"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "genuine car-repair and shop pictures balanced with whitespace",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "editorial opening",
+      "vehicle scope ribbon",
+      "service grid",
+      "why choose explanation",
+      "process steps",
+      "customer proof",
+      "work gallery",
+      "visit and contact"
+    ],
+    "servicePresentation": {
+      "pattern": "many repair tasks indexed in a dense but orderly grid",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "call garage",
+      "secondary": "then view pricing",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "reduce the grid to paired or single service rows and keep phone action obvious",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing ADE Auto Repairs identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "serif-repair-promise",
+        "selector": "[data-reference-signature=serif-repair-promise]",
+        "description": "Translate the observed serif repair promise mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "service-index-grid",
+        "selector": "[data-reference-signature=service-index-grid]",
+        "description": "Translate the observed service index grid mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "work-image-gallery",
+        "selector": "[data-reference-signature=work-image-gallery]",
+        "description": "Translate the observed work-image gallery mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses serif repair promise with client-cleared content.",
+      "Page sequence retains service index grid and work-image gallery as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

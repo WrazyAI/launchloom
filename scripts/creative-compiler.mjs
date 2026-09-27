@@ -226,7 +226,6 @@ export function assertIndependentRoutes(routes, expected = 3) {
     throw new Error(`Creative compilation requires exactly ${expected} routes.`);
   const contracts = routes.map(buildRouteContract);
   for (const field of [
-    "familyId",
     "navigation",
     "heroGeometry",
     "servicePresentation",

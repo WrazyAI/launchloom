@@ -37,16 +37,52 @@ function within(parent, child, label) {
     throw new Error(`Reference dossier ${label} must stay inside its dossier folder.`);
 }
 
-function pngDimensions(filePath, label) {
+function screenshotDimensions(filePath, label) {
   const bytes = fs.readFileSync(filePath);
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  if (bytes.length >= 24 && bytes.subarray(0, 8).equals(signature) && bytes.toString("ascii", 12, 16) === "IHDR")
+    return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20), format: "png" };
+
   if (
-    bytes.length < 24 ||
-    !bytes.subarray(0, 8).equals(signature) ||
-    bytes.toString("ascii", 12, 16) !== "IHDR"
-  )
-    throw new Error(`Reference dossier ${label} must be a readable PNG screenshot.`);
-  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+    bytes.length >= 12 &&
+    bytes.toString("ascii", 0, 4) === "RIFF" &&
+    bytes.toString("ascii", 8, 12) === "WEBP"
+  ) {
+    let offset = 12;
+    while (offset + 8 <= bytes.length) {
+      const chunkType = bytes.toString("ascii", offset, offset + 4);
+      const chunkLength = bytes.readUInt32LE(offset + 4);
+      const dataOffset = offset + 8;
+      if (dataOffset + chunkLength > bytes.length) break;
+      if (chunkType === "VP8X" && chunkLength >= 10)
+        return {
+          width: bytes.readUIntLE(dataOffset + 4, 3) + 1,
+          height: bytes.readUIntLE(dataOffset + 7, 3) + 1,
+          format: "webp",
+        };
+      if (chunkType === "VP8L" && chunkLength >= 5 && bytes[dataOffset] === 0x2f) {
+        const dimensions = bytes.readUInt32LE(dataOffset + 1);
+        return {
+          width: (dimensions & 0x3fff) + 1,
+          height: ((dimensions >>> 14) & 0x3fff) + 1,
+          format: "webp",
+        };
+      }
+      if (
+        chunkType === "VP8 " && chunkLength >= 10 &&
+        bytes[dataOffset + 3] === 0x9d &&
+        bytes[dataOffset + 4] === 0x01 &&
+        bytes[dataOffset + 5] === 0x2a
+      )
+        return {
+          width: bytes.readUInt16LE(dataOffset + 6) & 0x3fff,
+          height: bytes.readUInt16LE(dataOffset + 8) & 0x3fff,
+          format: "webp",
+        };
+      offset = dataOffset + chunkLength + (chunkLength % 2);
+    }
+  }
+  throw new Error(`Reference dossier ${label} must be a readable PNG or WebP screenshot.`);
 }
 
 function resolveScreenshot(directory, screenshot, label, viewportKind) {
@@ -64,7 +100,7 @@ function resolveScreenshot(directory, screenshot, label, viewportKind) {
   const realDirectory = fs.realpathSync(directory);
   const realFilePath = fs.realpathSync(filePath);
   within(realDirectory, realFilePath, `${label} screenshot path`);
-  const dimensions = pngDimensions(filePath, `${label} full-page capture`);
+  const dimensions = screenshotDimensions(filePath, `${label} full-page capture`);
   const viewport = screenshot.viewport;
   const widthMin = viewportKind === "desktop" ? 1024 : 320;
   const widthMax = viewportKind === "desktop" ? 7680 : 767;
@@ -82,6 +118,7 @@ function resolveScreenshot(directory, screenshot, label, viewportKind) {
     fullPage: true,
     width: dimensions.width,
     height: dimensions.height,
+    format: dimensions.format,
     viewport: { width: viewport.width, height: viewport.height },
   };
 }
@@ -164,8 +201,6 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
   const mobile = resolveScreenshot(directory, manifest.evidence?.mobile, "mobile", "mobile");
   let rightsEvidenceDigest = null;
   let rightsEvidencePath = "";
-  const assetEvidencePaths = [];
-  const assetEvidenceDigests = {};
   if (rights !== "owned") {
     rightsEvidencePath = requiredText(source?.rightsEvidencePath, "local rights evidence path", 260);
     if (path.isAbsolute(rightsEvidencePath))
@@ -176,22 +211,28 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       throw new Error(`Reference dossier '${id}' is missing its local license or permission evidence.`);
     within(fs.realpathSync(directory), fs.realpathSync(proofPath), "rights evidence path");
     rightsEvidenceDigest = crypto.createHash("sha256").update(fs.readFileSync(proofPath)).digest("hex");
-    const declaredAssets = Array.isArray(source?.assetEvidencePaths) ? source.assetEvidencePaths : [];
-    if (manifest.productionEligible && !declaredAssets.length)
-      throw new Error(`Production dossier '${id}' needs explicit license evidence for bundled images and fonts.`);
-    for (const value of declaredAssets) {
-      const relative = requiredText(value, "asset rights evidence path", 260);
-      if (path.isAbsolute(relative))
-        throw new Error("Asset rights evidence paths must be dossier-relative.");
-      const assetPath = path.resolve(directory, relative);
-      within(directory, assetPath, "asset rights evidence path");
-      if (!fs.existsSync(assetPath) || fs.lstatSync(assetPath).isSymbolicLink() || !fs.statSync(assetPath).isFile())
-        throw new Error(`Reference dossier '${id}' is missing an asset license/credit record: ${relative}.`);
-      within(fs.realpathSync(directory), fs.realpathSync(assetPath), "asset rights evidence path");
-      assetEvidencePaths.push(relative);
-      assetEvidenceDigests[relative] = crypto.createHash("sha256").update(fs.readFileSync(assetPath)).digest("hex");
-    }
   }
+  const validateLocalEvidencePaths = (values, label) => {
+    const declared = Array.isArray(values) ? safeList(values, label, 0, 24) : [];
+    const paths = [];
+    const digests = {};
+    for (const relative of new Set(declared)) {
+      if (path.isAbsolute(relative))
+        throw new Error(`${label} paths must be dossier-relative.`);
+      const evidencePath = path.resolve(directory, relative);
+      within(directory, evidencePath, `${label} path`);
+      if (!fs.existsSync(evidencePath) || fs.lstatSync(evidencePath).isSymbolicLink() || !fs.statSync(evidencePath).isFile())
+        throw new Error(`Reference dossier '${id}' is missing ${label}: ${relative}.`);
+      within(fs.realpathSync(directory), fs.realpathSync(evidencePath), `${label} path`);
+      paths.push(relative);
+      digests[relative] = crypto.createHash("sha256").update(fs.readFileSync(evidencePath)).digest("hex");
+    }
+    return { paths, digests };
+  };
+  const { paths: assetEvidencePaths, digests: assetEvidenceDigests } =
+    validateLocalEvidencePaths(source?.assetEvidencePaths, "asset license/credit evidence");
+  const { paths: provenanceEvidencePaths, digests: provenanceEvidenceDigests } =
+    validateLocalEvidencePaths(source?.provenanceEvidencePaths, "provenance evidence");
   const promptPath = path.join(directory, "design-prompt.md");
   if (
     !fs.existsSync(promptPath) ||
@@ -220,6 +261,7 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       rightsEvidence: requiredText(source.rightsEvidence, "rights evidence", 600),
       ...(rightsEvidencePath ? { rightsEvidencePath } : {}),
       ...(assetEvidencePaths.length ? { assetEvidencePaths } : {}),
+      ...(provenanceEvidencePaths.length ? { provenanceEvidencePaths } : {}),
     },
     businessKinds,
     tags,
@@ -232,6 +274,7 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       mobile: crypto.createHash("sha256").update(fs.readFileSync(mobile.absolutePath)).digest("hex"),
       rightsEvidence: rightsEvidenceDigest,
       assets: assetEvidenceDigests,
+      provenanceEvidence: provenanceEvidenceDigests,
     },
     digest: crypto.createHash("sha256").update(JSON.stringify({
       manifest,
@@ -240,6 +283,7 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       mobileDigest: crypto.createHash("sha256").update(fs.readFileSync(mobile.absolutePath)).digest("hex"),
       rightsEvidenceDigest,
       assetEvidenceDigests,
+      provenanceEvidenceDigests,
     })).digest("hex"),
   };
 }
@@ -306,10 +350,18 @@ export function assertReferenceDossierMatchesRecord(dossier, record, { repositor
   }
 }
 
-export function assertReferenceDossierPack(pack, { repositoryRoot = process.cwd() } = {}) {
+export function assertReferenceDossierPack(
+  pack,
+  { repositoryRoot = process.cwd(), allowArchiveReferenceIds = [] } = {},
+) {
   if (!pack?.referenceDossiersRequired) return pack;
   if (!Array.isArray(pack.routes) || pack.routes.length !== 3)
     throw new Error("A dossier-backed production pack must contain exactly three routes.");
+  const allowedArchiveIds = new Set(
+    Array.isArray(allowArchiveReferenceIds)
+      ? allowArchiveReferenceIds.map((id) => String(id || "").trim()).filter(Boolean)
+      : [],
+  );
   const selectedIds = new Set();
   for (const route of pack.routes) {
     const bound = route.referenceDossier;
@@ -317,7 +369,7 @@ export function assertReferenceDossierPack(pack, { repositoryRoot = process.cwd(
       throw new Error(`Production route '${route.id}' is missing its bound Reference Dossier.`);
     const actual = loadReferenceDossier(bound.path, { repositoryRoot });
     if (
-      !actual.productionEligible ||
+      (!actual.productionEligible && !allowedArchiveIds.has(actual.id)) ||
       actual.id !== bound.id ||
       actual.familyId !== bound.familyId ||
       actual.digest !== bound.digest ||

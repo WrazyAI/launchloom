@@ -151,7 +151,9 @@ function routeState(route) {
     ),
     sectionSequence: list(dna.sectionSequence || route?.sectionRhythm),
     typography: {
-      display: clean(dna.typography?.display || route?.typographyCategory || ""),
+      display: clean(
+        dna.typography?.display || route?.typographyCategory || "",
+      ),
       scale: clean(dna.typography?.scale || ""),
     },
     imageTreatment: clean(
@@ -183,12 +185,13 @@ function routeState(route) {
  * are deliberately excluded.
  */
 export function buildReasoningPreflightState(inspirationPack) {
-  const routes = (Array.isArray(inspirationPack?.routes)
-    ? inspirationPack.routes
-    : []
+  const routes = (
+    Array.isArray(inspirationPack?.routes) ? inspirationPack.routes : []
   ).map(routeState);
   if (!routes.length)
-    throw new Error("Reasoning preflight requires analyzed inspiration routes.");
+    throw new Error(
+      "Reasoning preflight requires analyzed inspiration routes.",
+    );
   return {
     routeCount: routes.length,
     routes,
@@ -226,12 +229,7 @@ function normalizedProbabilities(value, questionId) {
     probabilities[String(level)] =
       raw === undefined
         ? 0
-        : numeric(
-            raw,
-            `${questionId}.probabilities.${level}`,
-            0,
-            1,
-          );
+        : numeric(raw, `${questionId}.probabilities.${level}`, 0, 1);
   }
   const total = Object.values(probabilities).reduce(
     (sum, probability) => sum + probability,
@@ -251,9 +249,7 @@ export function normalizeReasoningJudgments(answers) {
     SCORE_IDS.map((questionId) => {
       const answer = answers[questionId];
       if (!answer || answer.type !== "score")
-        throw new Error(
-          `TypeSafe returned no Score answer for ${questionId}.`,
-        );
+        throw new Error(`TypeSafe returned no Score answer for ${questionId}.`);
       return [
         questionId,
         {
@@ -313,9 +309,7 @@ export function decideReasoningEffort(judgments) {
 
   const reasonCodes = [];
   for (const item of hardMax)
-    reasonCodes.push(
-      `hard-max:${item.id}:p3=${rounded(item.probability, 3)}`,
-    );
+    reasonCodes.push(`hard-max:${item.id}:p3=${rounded(item.probability, 3)}`);
   if (compositeScore >= POLICY.compositeThreshold)
     reasonCodes.push(`composite-max:${rounded(compositeScore, 3)}`);
   else if (borderline)
@@ -376,12 +370,8 @@ function normalizedMode(value) {
 }
 
 function usageSummary(usage) {
-  const inputTokens = Number(
-    usage?.input_tokens ?? usage?.inputTokens ?? 0,
-  );
-  const outputTokens = Number(
-    usage?.output_tokens ?? usage?.outputTokens ?? 0,
-  );
+  const inputTokens = Number(usage?.input_tokens ?? usage?.inputTokens ?? 0);
+  const outputTokens = Number(usage?.output_tokens ?? usage?.outputTokens ?? 0);
   const actualCostUsd = Number(
     usage?.cost_usd ?? usage?.costUsd ?? usage?.cost,
   );
@@ -413,8 +403,9 @@ function usageSummary(usage) {
 /**
  * Run one Jev preflight and freeze the reasoning effort for the creative
  * session. Successful shadow mode records the Jev recommendation while
- * executing xhigh; enforce mode executes the recommendation. Any selector
- * failure executes max in both modes as the quality-safe fallback.
+ * executing xhigh; enforce mode executes the recommendation. Selector failure
+ * executes the configured xhigh baseline in either mode, avoiding an
+ * ungrounded max-effort escalation when the selector is unavailable.
  *
  * @param {{
  *   inspirationPack?: Record<string, any>,
@@ -432,8 +423,7 @@ export async function createReasoningPreflight({
   inspirationPack,
   mode = DEFAULT_PREFLIGHT_MODE,
   model = process.env.REASONING_PREFLIGHT_MODEL || DEFAULT_TYPESAFE_MODEL,
-  creativeModel =
-    process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-6-luna",
+  creativeModel = process.env.CREATIVE_EXPERIENCE_MODEL || "openai/gpt-6-luna",
   sessionKey = "",
   apiKey = process.env.TYPESAFE_API_KEY,
   fetchImpl = fetch,
@@ -476,8 +466,8 @@ export async function createReasoningPreflight({
     };
   } catch (error) {
     decision = {
-      recommendedEffort: "max",
-      reasonCodes: ["selector-fallback:max"],
+      recommendedEffort: "xhigh",
+      reasonCodes: ["selector-fallback:xhigh"],
       compositeScore: null,
       minimumConfidence: null,
       normalizedScores: {},
@@ -502,7 +492,7 @@ export async function createReasoningPreflight({
   }
 
   const reasoningEffort = decision.fallbackUsed
-    ? "max"
+    ? "xhigh"
     : preflightMode === "shadow"
       ? "xhigh"
       : decision.recommendedEffort;
@@ -573,7 +563,9 @@ export function validateCreativeSessionConfig(
     throw new Error(
       `Creative session model ${value.creativeModel} does not match requested model ${creativeModel}.`,
     );
-  if (!/^launchloom:creative:[a-f0-9]{40}$/u.test(String(value.sessionId || "")))
+  if (
+    !/^launchloom:creative:[a-f0-9]{40}$/u.test(String(value.sessionId || ""))
+  )
     throw new Error("Creative session configuration has an invalid sessionId.");
   if (
     value.mode === "shadow" &&
@@ -583,13 +575,8 @@ export function validateCreativeSessionConfig(
     throw new Error(
       "Successful shadow reasoning sessions must execute the xhigh baseline.",
     );
-  if (
-    value.selector?.fallbackUsed &&
-    value.reasoningEffort !== "max"
-  )
-    throw new Error(
-      "Selector-fallback reasoning sessions must execute max.",
-    );
+  if (value.selector?.fallbackUsed && value.reasoningEffort !== "xhigh")
+    throw new Error("Selector-fallback reasoning sessions must execute xhigh.");
   if (
     value.mode === "enforce" &&
     value.reasoningEffort !== value.recommendedEffort

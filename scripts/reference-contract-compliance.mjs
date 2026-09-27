@@ -3,6 +3,8 @@ import { validateReferenceDna } from "./reference-dna.mjs";
 
 const slug = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "");
 
+export const canonicalReferenceMarkerSlug = (value) => slug(value);
+
 function finding(code, severity, message) {
   return { code, severity, message };
 }
@@ -55,17 +57,91 @@ function staticStringExpression(source, expression, seen = new Set()) {
   return staticStringExpression(source, declaration, seen);
 }
 
-function attributeValue(source, attribute) {
-  const literal = source.match(new RegExp(`${attribute}\\s*=\\s*["']([^"']+)["']`, "iu"))?.[1];
-  if (literal) return literal;
-  const expression = source.match(new RegExp(`${attribute}\\s*=\\s*\\{\\s*([^{}]+?)\\s*\\}`, "iu"))?.[1];
-  return staticStringExpression(source, expression);
+function jsxOpenings(source) {
+  const text = String(source || "");
+  const input = text.trimStart().startsWith("<") ? `<>${text}</>` : text;
+  const file = ts.createSourceFile(
+    "CreativeReferenceMarkers.tsx",
+    input,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  const openings = [];
+  const visit = (node) => {
+    if (ts.isJsxElement(node)) openings.push(node.openingElement);
+    else if (ts.isJsxSelfClosingElement(node)) openings.push(node);
+    ts.forEachChild(node, visit);
+  };
+  visit(file);
+  return { file, openings, source: text };
+}
+
+function jsxAttribute(opening, name, file) {
+  return opening.attributes.properties.find(
+    (property) =>
+      ts.isJsxAttribute(property) && property.name.getText(file) === name,
+  );
+}
+
+function jsxAttributeValue(opening, name, context) {
+  const attribute = jsxAttribute(opening, name, context.file);
+  if (!attribute?.initializer) return "";
+  if (ts.isStringLiteral(attribute.initializer)) return attribute.initializer.text;
+  if (
+    ts.isJsxExpression(attribute.initializer) &&
+    attribute.initializer.expression
+  )
+    return staticStringExpression(
+      context.source,
+      attribute.initializer.expression.getText(context.file),
+    );
+  return "";
+}
+
+function hasJsxAttribute(source, name) {
+  const context = jsxOpenings(source);
+  return context.openings.some((opening) =>
+    jsxAttribute(opening, name, context.file),
+  );
 }
 
 function markerMatches(source, attribute, expected) {
-  const actual = slug(attributeValue(source, attribute));
   const target = slug(expected);
-  return Boolean(actual && target && actual === target);
+  if (!target) return false;
+  const context = jsxOpenings(source);
+  return context.openings.some(
+    (opening) =>
+      slug(jsxAttributeValue(opening, attribute, context)) === target,
+  );
+}
+
+function serviceSectionMarkerStatus(source, expected) {
+  const target = slug(expected);
+  if (!target) return "missing";
+  const context = jsxOpenings(source);
+  const section = context.openings.find(
+    (opening) =>
+      opening.tagName.getText(context.file).toLowerCase() === "section" &&
+      jsxAttributeValue(opening, "id", context) === "services",
+  );
+  if (!section || !jsxAttribute(section, "data-service-presentation", context.file))
+    return "missing";
+  return slug(jsxAttributeValue(section, "data-service-presentation", context)) ===
+    target
+    ? "match"
+    : "mismatch";
+}
+
+function earlyConversionPlacementMatches(source, expected) {
+  const target = slug(expected);
+  if (!target) return false;
+  const context = jsxOpenings(source);
+  return context.openings.some(
+    (opening) =>
+      Boolean(jsxAttribute(opening, "data-early-conversion", context.file)) &&
+      slug(jsxAttributeValue(opening, "data-cta-placement", context)) === target,
+  );
 }
 
 function outputContentPaths(source) {
@@ -375,13 +451,42 @@ export function validateReferenceContractCompliance({
     findings.push(finding("navigation-geometry", "major", "The authored navigation is missing its reference geometry marker."));
   else if (!markerMatches(experienceSource, "data-navigation-geometry", referenceDna.navigationGeometry.mode))
     findings.push(finding("navigation-geometry-mismatch", "critical", "The authored navigation geometry does not match Reference DNA."));
-  if (!/data-service-presentation=/iu.test(experienceSource))
+  const serviceMarkerStatus = serviceSectionMarkerStatus(
+    experienceSource,
+    referenceDna.servicePresentation.pattern,
+  );
+  if (serviceMarkerStatus === "missing")
     findings.push(finding("service-presentation", "critical", "The authored service presentation is missing its reference marker."));
-  else if (!markerMatches(experienceSource, "data-service-presentation", referenceDna.servicePresentation.pattern))
+  else if (
+    serviceMarkerStatus !== "match" ||
+    (renderedDom &&
+      serviceSectionMarkerStatus(
+        renderedDom,
+        referenceDna.servicePresentation.pattern,
+      ) !== "match")
+  )
     findings.push(finding("service-presentation-mismatch", "critical", "The authored service presentation does not match Reference DNA."));
-  if (!/data-early-conversion(?:=|\s|>)/iu.test(experienceSource) || !/data-cta-placement=/iu.test(experienceSource))
+  const hasEarlyConversion = hasJsxAttribute(
+    experienceSource,
+    "data-early-conversion",
+  );
+  const hasPlacementAttribute = hasJsxAttribute(
+    experienceSource,
+    "data-cta-placement",
+  );
+  if (!hasEarlyConversion || !hasPlacementAttribute)
     findings.push(finding("cta-placement", "critical", "The early CTA is missing its explicit reference placement marker."));
-  else if (!markerMatches(experienceSource, "data-cta-placement", referenceDna.ctaPlacement.early))
+  else if (
+    !earlyConversionPlacementMatches(
+      experienceSource,
+      referenceDna.ctaPlacement.early,
+    ) ||
+    (renderedDom &&
+      !earlyConversionPlacementMatches(
+        renderedDom,
+        referenceDna.ctaPlacement.early,
+      ))
+  )
     findings.push(finding("cta-placement-mismatch", "critical", "The early CTA placement does not match Reference DNA."));
   if (!/data-mobile-recomposition=/iu.test(experienceSource) || !/@media/iu.test(stylesSource))
     findings.push(finding("mobile-recomposition", "critical", "The candidate does not declare a mobile recomposition and responsive CSS."));
@@ -394,7 +499,8 @@ export function validateReferenceContractCompliance({
   for (const pattern of referenceDna.prohibitedPatterns)
     if (hasProhibitedPattern(`${experienceSource}\n${renderedDom}`, pattern))
       findings.push(finding("prohibited-pattern", "critical", `Prohibited pattern detected: ${pattern}.`));
-  for (const match of stylesSource.matchAll(/--([a-z][\w-]*)\s*:/giu))
+  const liveStyles = stylesSource.replace(/\/\*[\s\S]*?\*\//gu, " ");
+  for (const match of liveStyles.matchAll(/--([a-z][\w-]*)\s*:/giu))
     if (!match[1].startsWith("ll-creative-"))
       findings.push(finding("css-token-collision", "critical", `Candidate CSS variable --${match[1]} is not isolated.`));
   const contentPaths = [...outputContentPaths(experienceSource)];

@@ -197,9 +197,7 @@ describe("adaptive reasoning preflight", () => {
     const decision = decideReasoningEffort(judgments);
     expect(decision.recommendedEffort).toBe("max");
     expect(decision.reasonCodes).toEqual(
-      expect.arrayContaining([
-        expect.stringMatching(/^uncertain-max:/u),
-      ]),
+      expect.arrayContaining([expect.stringMatching(/^uncertain-max:/u)]),
     );
   });
 
@@ -248,20 +246,21 @@ describe("adaptive reasoning preflight", () => {
   });
 
   it("enforce mode freezes the Jev recommendation for the session", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response(
-        JSON.stringify(
-          responsePayload({
-            referenceTranslation: scoreAnswer(2.8, 0.96, {
-              "0": 0,
-              "1": 0.02,
-              "2": 0.18,
-              "3": 0.8,
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify(
+            responsePayload({
+              referenceTranslation: scoreAnswer(2.8, 0.96, {
+                "0": 0,
+                "1": 0.02,
+                "2": 0.18,
+                "3": 0.8,
+              }),
             }),
-          }),
+          ),
+          { status: 200 },
         ),
-        { status: 200 },
-      ),
     );
 
     const first = await createReasoningPreflight({
@@ -285,7 +284,7 @@ describe("adaptive reasoning preflight", () => {
     expect(first.sessionId).toMatch(/^launchloom:creative:[a-f0-9]{40}$/u);
   });
 
-  it("rejects moving Jev aliases and records a max-safe selector fallback", async () => {
+  it("rejects moving Jev aliases and records an xhigh selector fallback", async () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error("should not call provider for an unpinned model");
     });
@@ -302,10 +301,10 @@ describe("adaptive reasoning preflight", () => {
     expect(result.selector.error).toMatchObject({
       code: "unpinned-model",
     });
-    expect(result.reasoningEffort).toBe("max");
+    expect(result.reasoningEffort).toBe("xhigh");
   });
 
-  it("falls back safely when Jev is unavailable", async () => {
+  it("uses the xhigh baseline when Jev is unavailable", async () => {
     const failingFetch = vi.fn(async () => {
       throw new Error("network down");
     });
@@ -318,8 +317,8 @@ describe("adaptive reasoning preflight", () => {
       fetchImpl: failingFetch as any,
     });
     expect(shadow.selector.fallbackUsed).toBe(true);
-    expect(shadow.recommendedEffort).toBe("max");
-    expect(shadow.reasoningEffort).toBe("max");
+    expect(shadow.recommendedEffort).toBe("xhigh");
+    expect(shadow.reasoningEffort).toBe("xhigh");
     expect(shadow.decision.shadowOverride).toBe(false);
 
     const enforced = await createReasoningPreflight({
@@ -330,9 +329,9 @@ describe("adaptive reasoning preflight", () => {
       fetchImpl: failingFetch as any,
     });
     expect(enforced.selector.fallbackUsed).toBe(true);
-    expect(enforced.recommendedEffort).toBe("max");
-    expect(enforced.reasoningEffort).toBe("max");
-    expect(enforced.decision.reasonCodes).toEqual(["selector-fallback:max"]);
+    expect(enforced.recommendedEffort).toBe("xhigh");
+    expect(enforced.reasoningEffort).toBe("xhigh");
+    expect(enforced.decision.reasonCodes).toEqual(["selector-fallback:xhigh"]);
   });
 
   it("fails closed when a persisted creative session contradicts its rollout mode", async () => {
@@ -351,7 +350,9 @@ describe("adaptive reasoning preflight", () => {
         ...shadow,
         reasoningEffort: "max",
       }),
-    ).toThrow(/Successful shadow reasoning sessions must execute the xhigh baseline/iu);
+    ).toThrow(
+      /Successful shadow reasoning sessions must execute the xhigh baseline/iu,
+    );
 
     const enforced = await createReasoningPreflight({
       inspirationPack: pack(),
@@ -366,8 +367,7 @@ describe("adaptive reasoning preflight", () => {
     expect(() =>
       validateCreativeSessionConfig({
         ...enforced,
-        reasoningEffort:
-          enforced.recommendedEffort === "max" ? "xhigh" : "max",
+        reasoningEffort: enforced.recommendedEffort === "max" ? "xhigh" : "max",
       }),
     ).toThrow(/must execute the frozen recommended effort/iu);
   });
@@ -402,7 +402,7 @@ describe("adaptive reasoning preflight", () => {
     ).toThrow(/decision reasoning effort does not match/iu);
   });
 
-  it("requires max when a persisted session records selector fallback", async () => {
+  it("requires xhigh when a persisted session records selector fallback", async () => {
     const session = await createReasoningPreflight({
       inspirationPack: pack(),
       mode: "shadow",
@@ -413,32 +413,33 @@ describe("adaptive reasoning preflight", () => {
       }) as any,
     });
     expect(session.selector.fallbackUsed).toBe(true);
-    expect(session.reasoningEffort).toBe("max");
+    expect(session.reasoningEffort).toBe("xhigh");
     expect(() =>
       validateCreativeSessionConfig({
         ...session,
-        reasoningEffort: "xhigh",
+        reasoningEffort: "max",
         decision: {
           ...session.decision,
-          reasoningEffort: "xhigh",
+          reasoningEffort: "max",
         },
       }),
-    ).toThrow(/Selector-fallback reasoning sessions must execute max/iu);
+    ).toThrow(/Selector-fallback reasoning sessions must execute xhigh/iu);
   });
 
   it("treats non-number Jev score values as selector failure", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response(
-        JSON.stringify(
-          responsePayload({
-            compositionNovelty: {
-              ...scoreAnswer(),
-              score: null,
-            },
-          }),
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify(
+            responsePayload({
+              compositionNovelty: {
+                ...scoreAnswer(),
+                score: null,
+              },
+            }),
+          ),
+          { status: 200 },
         ),
-        { status: 200 },
-      ),
     );
 
     const result = await createReasoningPreflight({
@@ -449,25 +450,26 @@ describe("adaptive reasoning preflight", () => {
       fetchImpl: fetchImpl as any,
     });
     expect(result.selector.fallbackUsed).toBe(true);
-    expect(result.recommendedEffort).toBe("max");
-    expect(result.reasoningEffort).toBe("max");
+    expect(result.recommendedEffort).toBe("xhigh");
+    expect(result.reasoningEffort).toBe("xhigh");
   });
 
   it("treats malformed Jev score distributions as selector failure", async () => {
-    const fetchImpl = vi.fn(async () =>
-      new Response(
-        JSON.stringify(
-          responsePayload({
-            interactionCoupling: scoreAnswer(1, 0.9, {
-              "0": 0.2,
-              "1": 0.2,
-              "2": 0.2,
-              "3": 0.2,
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify(
+            responsePayload({
+              interactionCoupling: scoreAnswer(1, 0.9, {
+                "0": 0.2,
+                "1": 0.2,
+                "2": 0.2,
+                "3": 0.2,
+              }),
             }),
-          }),
+          ),
+          { status: 200 },
         ),
-        { status: 200 },
-      ),
     );
 
     const result = await createReasoningPreflight({
@@ -478,6 +480,6 @@ describe("adaptive reasoning preflight", () => {
       fetchImpl: fetchImpl as any,
     });
     expect(result.selector.fallbackUsed).toBe(true);
-    expect(result.reasoningEffort).toBe("max");
+    expect(result.reasoningEffort).toBe("xhigh");
   });
 });

@@ -7,6 +7,7 @@ import {
 } from "./reference-dossier.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
 import { authorExperienceCandidates } from "./production-experience-author.mjs";
+import { assertAuthorPromptBudget } from "./author-prompt-budget.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
@@ -52,6 +53,9 @@ const outputPath = path.resolve(
 );
 const requestedModel = args.model || process.env.CREATIVE_EXPERIENCE_MODEL;
 const sessionPath = args.session ? path.resolve(args.session) : "";
+const canaryArchiveReferenceIds = args["canary-kokoro-acceptance"] === "true"
+  ? ["kokoro-spatial-editorial"]
+  : [];
 const sessionConfig = sessionPath
   ? JSON.parse(await fs.readFile(sessionPath, "utf8"))
   : null;
@@ -129,11 +133,13 @@ STRUCTURAL OUTPUT CHECK
 REFERENCE FIDELITY RULES
 - Do not average references or drift to a familiar LaunchLoom composition.
 - Treat the included permission-cleared Reference Dossier as the route's detailed design prompt; its full-page captures and structured Reference DNA are authoritative evidence.
-- A tall desktop reference may be a full-page capture. Its image-height fractions are not CSS vh. Use the recorded source capture dimensions and adapt the composition so the complete desktop header and hero fit within 1536x864 while preserving the reference's hierarchy, crop, and overlap.
+- A tall desktop reference may be a full-page capture. Its image-height fractions are not CSS vh. Use the recorded capture dimensions and Reference DNA to preserve the actual first-viewport composition. The reference's opening image or scene may continue below the first viewport; do not compress it solely to force the full frame above the fold. Keep visible text and controls unclipped and usable.
 - Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
 - Preserve assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
 - Include every required signature element and expose its data-reference-signature attribute in the rendered DOM.
 - Use one distinctive, purposeful interaction from the assigned family and provide its reduced-motion equivalent.
+- An early or primary CTA must never be styled as microcopy: use a readable label of at least 14px and a 44px minimum interactive block on mobile, with clear contrast and an affordance consistent with the reference family.
+- If verified client data has fewer entries than the reference, do not compress the matching section or shrink its typography. For an index/ledger, keep each available service as a distinct typographic chapter with the reference's spacious rhythm. Do not add invented filler to match the reference item count.
 - Keep business facts, SEO copy, contact details, and imagery bound to sealed content tokens. Never copy reference branding, copy, assets, or trade dress.
 
 STAGE SAFETY
@@ -221,7 +227,7 @@ function stagePromptSuffix(request) {
   if (request.stage === "contract")
     return `${repair}
 CONTRACT STAGE
-Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, hero geometry, early conversion, non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
+Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, hero geometry, route-specific primary and early CTA locations from Reference DNA, non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, desktop viewport behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not force an above-the-fold CTA when Reference DNA places it after the opening image or thesis. When content.process contains steps, include one designed conversion/process section before the contact section, marked data-required-section="conversion" and bound to the sealed content.process values. Choose a presentation that belongs to this route's reference family; do not turn it into a generic card wall. Do not return source files.`;
 
   if (request.stage === "experience")
     return `DESIGN CONTRACT
@@ -235,7 +241,7 @@ PREVIOUS JSX
 ${request.previousSource}
 ` : ""}
 EXPERIENCE STAGE
-Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". The hero's early conversion is a compact anchor or button linking to #contact, not the full four-field form. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
+Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". Place the single designated early conversion at the route-specific location in route.referenceDna.ctaPlacement.early and the primary action at route.referenceDna.ctaPlacement.primary. Use a compact anchor or button linking to #contact, not the full four-field form; follow the assigned DNA even when this means navigation or after the opening image/thesis rather than the hero. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the one designated early action at its assigned route location, and sections with ids services, faqs, and contact. When content.process has one or more steps, render every supplied step in exactly one designed <section data-required-section="conversion"> before the contact section, using content.process rather than hardcoded text; omit that section only when content.process is empty. Keep this section visually native to the route's assigned family, not a generic card wall. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
 
 Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" to each major section so the compiler can verify the assigned rhythm. Do not invent values: use the slugs from Reference DNA.`;
 
@@ -248,7 +254,7 @@ AUTHORED EXPERIENCE JSX
 ${request.experienceSource}
 
 STYLES STAGE
-Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. Style the exact markup without changing its structure. The header plus hero must have a measured bounding bottom no greater than the viewport height at 1536x864 and 1366x768 at 100 percent zoom. Use a compact hero composition: one headline, short body, one early CTA, and the image treatment. Do not make the hero grow to accommodate a contact form, service list, or long copy. Avoid large fixed padding and min-heights that exceed the viewport; use min-height: 0 where content can wrap. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
+Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. Style the exact markup without changing its structure. Match the assigned Reference DNA's first viewport at 1536x864 and 1366x768; full image frames may intentionally continue below the fold. Preserve its image start, crop, overlap, and CTA placement rather than forcing a universal compact hero or an above-fold CTA. Keep visible text and controls unclipped and usable. Keep CTA labels at least 14px with a minimum 44px mobile interaction block; never make the primary action look like a tiny utility label. Do not make the hero grow to accommodate a contact form, service list, or long copy. Avoid accidental clipping or overflow; use measured Reference DNA, not a universal compact-hero height. For an index/ledger service treatment, preserve clear typographic service entries and the assigned vertical rhythm even when the client has fewer verified entries. Recompose for 390x844 without horizontal overflow. Include visible focus, readable body type, and prefers-reduced-motion. Inspect the actual foreground/background pairings in every section, especially the footer, contact links, navigation, and form labels. Ensure at least 4.5:1 contrast for normal text and 3:1 for large text; dark surfaces require a light foreground and light surfaces require a dark foreground. Do not rely on inherited or host palette tokens without checking their rendered contrast. Use no remote URLs.`;
 
   return `${repair}
 DESIGN CONTRACT
@@ -350,6 +356,14 @@ async function requestStage(request) {
           creativeSession?.reasoningPolicyVersion || "static-reasoning",
           systemPrompt,
         );
+        const messages = [
+          {
+            role: "system",
+            content: promptCachedMessageContent(model, systemPrompt),
+          },
+          { role: "user", content: userContent },
+        ];
+        assertAuthorPromptBudget(messages);
         const response = await openRouterChatCompletion({
           title: "LaunchLoom Production Experience Author",
           signal: controller.signal,
@@ -364,13 +378,7 @@ async function requestStage(request) {
                 json_schema: authorStageSchema,
               },
               ...completionLimitRequestField(stageBudget.maxTokens),
-              messages: [
-                {
-                  role: "system",
-                  content: promptCachedMessageContent(model, systemPrompt),
-                },
-                { role: "user", content: userContent },
-              ],
+              messages,
             },
         });
         const {
@@ -576,6 +584,7 @@ try {
   ]);
   assertReferenceDossierPack(inspirationPack, {
     repositoryRoot: path.resolve(import.meta.dirname, ".."),
+    allowArchiveReferenceIds: canaryArchiveReferenceIds,
   });
   const result = await authorExperienceCandidates({
     site,

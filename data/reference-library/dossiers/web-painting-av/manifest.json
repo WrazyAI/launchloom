@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "id": "web-painting-av",
+  "productionEligible": true,
+  "referenceName": "AV Painting Seattle homepage",
+  "familyId": "web-painting-av",
+  "businessKinds": [
+    "painting contractor",
+    "residential painting",
+    "painting"
+  ],
+  "source": {
+    "name": "AV Painting Seattle official website",
+    "url": "https://www.avpainting.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "painting contractor",
+      "residential painting",
+      "painting"
+    ],
+    "style": [
+      "clear sans headings with warm gold accents and measured body copy",
+      "white and soft gray and charcoal surfaces",
+      "forest green and muted gold accents"
+    ],
+    "composition": [
+      "a wide dusk house photograph carries centered white service copy and a green estimate button",
+      "dusk-house-hero",
+      "photo-service-selector",
+      "three-step-painting-process"
+    ],
+    "conversion": [
+      "get a free estimate",
+      "call the local office",
+      "early contact action"
+    ],
+    "motion": [
+      "service tab selection and review slider; first service and links must remain visible without interaction",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "finished residential exteriors, preparation close-ups, and lived-in rooms",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official AV Painting Seattle homepage was inspected in paired desktop and mobile full-page captures. The page opens with a wide dusk house photograph carries centered white service copy and a green estimate button. It uses cream logo strip over dark horizontal service navigation with a green appointment block. The visual system relies on clear sans headings with warm gold accents and measured body copy; surfaces include white, soft gray, charcoal and accents include forest green, muted gold. Imagery is finished residential exteriors, preparation close-ups, and lived-in rooms. The page then runs through house-photo hero, split local-company introduction, tabbed exterior and interior showcase, three-step preparation process, financing image feature, three reasons to choose, residential case photo, review and footer. Its service presentation is photo-led service selector with vertical tabs for exterior, interior, and cabinet work. Mobile changes to stack the tabs as labeled service choices, preserve the house image, and keep estimate prompts after each major decision point. Transfer only the layout rhythm and decision path. Do not copy AV Painting branding, home photos, warranty term, financing claims, customer quotes, awards, or certification marks.",
+    "heroGeometry": {
+      "mode": "a wide dusk house photograph carries centered white service copy and a green estimate button",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "cream logo strip over dark horizontal service navigation with a green appointment block",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "clear sans headings with warm gold accents and measured body copy",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "soft gray",
+        "charcoal"
+      ],
+      "ink": "dark gray",
+      "accents": [
+        "forest green",
+        "muted gold"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "finished residential exteriors, preparation close-ups, and lived-in rooms",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "house-photo hero",
+      "split local-company introduction",
+      "tabbed exterior and interior showcase",
+      "three-step preparation process",
+      "financing image feature",
+      "three reasons to choose",
+      "residential case photo",
+      "review and footer"
+    ],
+    "servicePresentation": {
+      "pattern": "photo-led service selector with vertical tabs for exterior, interior, and cabinet work",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "get a free estimate",
+      "secondary": "call the local office",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "service tab selection and review slider; first service and links must remain visible without interaction",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the tabs as labeled service choices, preserve the house image, and keep estimate prompts after each major decision point",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy AV Painting branding, home photos, warranty term, financing claims, customer quotes, awards, or certification marks.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "dusk-house-hero",
+        "selector": "[data-reference-signature=dusk-house-hero]",
+        "description": "dusk house hero translated with client-specific content"
+      },
+      {
+        "id": "photo-service-selector",
+        "selector": "[data-reference-signature=photo-service-selector]",
+        "description": "photo service selector translated with client-specific content"
+      },
+      {
+        "id": "three-step-painting-process",
+        "selector": "[data-reference-signature=three-step-painting-process]",
+        "description": "three step painting process translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified painting contractor scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x6893; mobile 390x8692. Visible page sequence and mobile layout were reviewed. "
+  }
+}

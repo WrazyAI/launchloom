@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "id": "web-hvac-russell-comfort",
+  "productionEligible": true,
+  "referenceName": "Russell Comfort Solutions diagnostic HVAC",
+  "familyId": "hvac-mountain-photo-plus-diagnostic-promise",
+  "source": {
+    "name": "Russell Comfort Solutions diagnostic HVAC official website",
+    "url": "https://www.russellcomfort.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 16345
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 30453
+    },
+    "diagnostics": "Observed mountain repair hero, service taxonomy, diagnosis promise band, post-service care steps, call process. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Russell Comfort Solutions diagnostic HVAC official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "hvac",
+    "heating-and-cooling",
+    "air-conditioning",
+    "home-services"
+  ],
+  "tags": {
+    "business": [
+      "hvac",
+      "heating-and-cooling",
+      "air-conditioning",
+      "home-services"
+    ],
+    "style": [
+      "navy-red-hvac",
+      "diagnostic-direct",
+      "high-density-information"
+    ],
+    "composition": [
+      "photo-statement-hero",
+      "process-bands",
+      "long-form-faq"
+    ],
+    "conversion": [
+      "call",
+      "request-estimate",
+      "fault-routing"
+    ],
+    "motion": [
+      "accordion-questions",
+      "static-process"
+    ],
+    "imagery": [
+      "regional-landscape",
+      "service-context"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A Colorado mountain image under deep navy frames a large white repair promise, red call/request actions and a compact row of reasons to trust the process. Thin utility bar and straightforward heating, cooling and service links above the dramatic photo opening. Heavy readable sans statements, compact explanatory cards and clear red action labels. The page sequence runs from mountain repair hero to service taxonomy to diagnosis promise band toward FAQ, resource index, final contact. Mountain and Denver location scenes are sparse; most of the long page is text, process diagrams and service-choice cards. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A Colorado mountain image under deep navy frames a large white repair promise, red call/request actions and a compact row of reasons to trust the process.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Thin utility bar and straightforward heating, cooling and service links above the dramatic photo opening.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Heavy readable sans statements, compact explanatory cards and clear red action labels.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Midnight navy",
+        "white",
+        "red and restrained cyan."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "navy-red-hvac",
+        "diagnostic-direct"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Mountain and Denver location scenes are sparse; most of the long page is text, process diagrams and service-choice cards.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "mountain repair hero",
+      "service taxonomy",
+      "diagnosis promise band",
+      "post-service care steps",
+      "call process",
+      "urgent service band",
+      "local proof",
+      "common jobs",
+      "coverage",
+      "quote form",
+      "FAQ",
+      "resource index",
+      "final contact"
+    ],
+    "servicePresentation": {
+      "pattern": "Explain repair, installation and maintenance separately, followed by a realistic diagnostic process and common fault routes.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Pair a call action with an estimate request at the opening, after diagnostic proof and in the final contact block.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "accordion-questions; static-process",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Break the long service page into short named chapters, stack process cards, and keep the form and FAQ usable without nested horizontal scrolling.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not reuse same-day, emergency, flat-rate, pricing, certification, review, comparison or warranty claims without client evidence.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "mountain-photo-plus-diagnostic-promise",
+        "selector": "[data-reference-signature=mountain-photo-plus-diagnostic-promise]",
+        "description": "A new-client interpretation of the observed mountain photo plus diagnostic promise relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "dark-repair-process-band",
+        "selector": "[data-reference-signature=dark-repair-process-band]",
+        "description": "A new-client interpretation of the observed dark repair-process band relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "long-practical-faq-and-quote",
+        "selector": "[data-reference-signature=long-practical-faq-and-quote]",
+        "description": "A new-client interpretation of the observed long practical FAQ and quote relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

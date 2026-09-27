@@ -23,7 +23,7 @@ const PLACEMENTS = [
     aspectRatio: "16:9",
     maxWidth: 1600,
     alt: "featured service context",
-    focal: "Keep the main subject in the central safe crop with negative space for copy.",
+    focal: "Keep the main subject in a central crop-safe zone with uncluttered surroundings.",
   },
   {
     id: "secondary",
@@ -31,7 +31,7 @@ const PLACEMENTS = [
     aspectRatio: "4:3",
     maxWidth: 1200,
     alt: "supporting service context",
-    focal: "Keep the subject legible in a 4:3 crop and preserve a calm edge for overlays.",
+    focal: "Keep the subject legible in a 4:3 crop and avoid tiny text-like details.",
   },
   {
     id: "tertiary",
@@ -39,7 +39,7 @@ const PLACEMENTS = [
     aspectRatio: "3:2",
     maxWidth: 1200,
     alt: "detail of the service experience",
-    focal: "Use a tactile close crop with a clear subject at mobile width.",
+    focal: "Use a tactile close crop with one clear subject at mobile width.",
   },
 ];
 
@@ -95,114 +95,218 @@ function clientAssetPath(site, placement) {
   return slot ? site.assets?.[slot] || "" : "";
 }
 
-function visualDirection(site) {
-  const style = site.style || {};
-  return [style.visualDirection, style.preference, style.tone]
-    .map((value) => safePromptPart(value, 180))
-    .filter(Boolean)
-    .join(", ");
-}
-
 function promptFor(site, route, placement) {
-  const business = site.business || {};
-  const seo = site.seoResearch || {};
   const services = list((site.services || []).map((service) => service?.name));
-  const areas = list(business.serviceAreas, 3);
-  const vocabulary = list(seo.copyVocabulary, 5);
-  const problems = list(seo.customerQuestions, 3);
-  const routeLanguage = [
-    route?.familyId,
-    route?.heroGeometry,
-    route?.typographyCategory,
-    route?.signature,
-  ]
-    .map((value) => safePromptPart(value, 120))
-    .filter(Boolean)
-    .join(", ");
-  const direction = visualDirection(site);
   const dna = route?.referenceDna || {};
   const familyImageDirection = {
-    "kokoro-editorial-architecture": "warm architectural interiors, editorial still life, restrained dark palette, tactile natural materials",
-    "skyelite-cinematic-luxury": "luxury transport atmosphere, wide cinematic framing, soft horizon light, premium restraint",
-    "health-portal-masked-mosaic": "modular clinical imagery, calm human-safe materials, mask-friendly windows, clean neutral surfaces",
-    "3d-portfolio-object-led": "object-led renders, spatial compositions, sculptural materials, controlled studio lighting",
-    "veyra-kinetic-typography": "high-energy action documentary framing with clear subject silhouettes and bold negative space",
-    "digital-experiences-liquid-glass": "abstract atmospheric fields, liquid light, depth and translucent surfaces without readable text",
-    "vortex-editorial-studio": "editorial project stills, expressive but credible studio materials, wide moving-strip crops",
-    "neighborhood-table-collage": "warm neighborhood food market still life, playful flat color blocks, tactile ingredients, local table energy, and crop-safe product compositions",
+    "kokoro-editorial-architecture": "warm architectural interiors and tactile natural materials photographed as a quiet standalone scene",
+    "skyelite-cinematic-luxury": "premium transport materials, soft horizon light, and restrained cinematic atmosphere in one standalone scene",
+    "health-portal-masked-mosaic": "calm clinical materials, clean neutral surfaces, and simple forms that remain clear under close cropping",
+    "3d-portfolio-object-led": "one sculptural service-relevant object with realistic materials and controlled studio lighting",
+    "veyra-kinetic-typography": "high-energy sports equipment, surfaces, and environment with directional physical movement and no people",
+    "digital-experiences-liquid-glass": "abstract atmospheric fields, liquid light, depth, and translucent physical materials",
+    "vortex-editorial-studio": "expressive but credible studio materials and authored project details, photographed as an isolated scene",
+    "neighborhood-table-collage": "warm food-market still life with tactile ingredients, local table energy, and crop-safe product groupings",
+    "hvac-symptom-first-choice-grid": "equipment-only residential HVAC photography: a furnace, condenser, or diagnostic detail with no worker or person",
+    "hvac-mountain-photo-plus-diagnostic-promise": "heating and cooling equipment alone at an ordinary home, without people, resort cues, or aspirational lifestyle staging",
+    "hvac-local-aerial-hero": "an anonymous residential roofline and HVAC equipment only, with no people, specific address, or map",
+    "hvac-three-part-contact-ribbon": "one standalone residential HVAC equipment subject, no worker, face, tools in hand, text, or logo",
+    "hvac-dense-phone-first-header": "a close residential HVAC equipment detail only, no person, face, or handheld tool",
+    "hvac-equipment-montage-opening": "one coherent close view of HVAC equipment only, no workers or people, without graphic overlays or a montage",
+    "web-auto-repair-abees-hi-tech-family": "an unbranded brake rotor, socket set and plain workbench arranged as an automotive still life",
+    "web-auto-repair-ade-auto-repairs-family": "an isolated automotive brake rotor and clean repair tool arranged as a mechanical still life",
+    "web-auto-repair-fallsbrook-motors-family": "a yellow mechanical torque wrench and wheel nuts arranged as an automotive still life",
+    "web-auto-repair-michael-auto-family": "an unbranded engine component and diagnostic tool arranged as a dark technical still life",
+    "web-auto-repair-reliance-autos-family": "a small green automotive sensor and unbranded metal parts arranged as a clean still life",
+    "web-auto-repair-urban-autocare-family": "an unbranded wheel hub and mechanical parts arranged on a graphite workshop surface",
+    "web-painting-av": "close-up of freshly painted siding and trim at a house corner, framed only on the architectural surface",
+    "web-painting-concept-pro": "a dark painted exterior detail on an empty, unbranded home with no visible people",
+    "web-painting-house-doctor": "a paint-preparation surface study showing a primed wall and a fresh paint edge, without people",
+    "web-painting-mfl": "a coastal home exterior with carefully painted trim and no people or addresses",
+    "web-painting-novak": "an ivory interior wall and layered paint-surface study in an empty room",
+    "web-painting-southern": "a bright, empty room with a freshly painted wall and restrained color contrast",
   };
   const familyAssetBriefs = {
     "kokoro-editorial-architecture": {
       medium: "photorealistic architectural editorial photography",
-      hero: "Create an architectural tableau with strong negative space, warm material depth, and a crop that can support monumental type without becoming a split hero.",
-      secondary: "Create a vertical or offset interior chapter with tactile material detail and quiet editorial framing.",
-      tertiary: "Create an architectural still life or material study suited to a magazine/archive rhythm.",
+      hero: "Photograph one warm architectural interior with tactile materials, natural light, and a clear spatial focal point.",
+      secondary: "Photograph one interior detail with wood, stone, or daylight and quiet editorial restraint.",
+      tertiary: "Photograph one architectural material study as a clean still life.",
     },
     "skyelite-cinematic-luxury": {
       medium: "cinematic premium transport photography",
-      hero: "Create a wide atmospheric horizon scene with motion energy, restrained luxury, and centered copy-safe space.",
-      secondary: "Create a cinematic destination or transport detail with directional movement and broad tonal gradients.",
-      tertiary: "Create a premium material or travel detail that reads as a film still rather than a catalog card.",
+      hero: "Photograph one premium transport subject against a quiet horizon with believable movement and refined light.",
+      secondary: "Photograph one destination or transport detail with directional movement and broad tonal gradients.",
+      tertiary: "Photograph one premium material or travel detail as a cinematic still.",
     },
     "health-portal-masked-mosaic": {
       medium: "clean modular clinical photography",
-      hero: "Create one coherent clinical or wellness scene that can be cropped into multiple coordinated mask windows while keeping the subject relationship intact.",
-      secondary: "Create a second calm clinical scene with strong crop-safe zones for modular windows.",
-      tertiary: "Create a precise material, tool, or environment detail suitable for a masked mosaic.",
+      hero: "Photograph one calm clinical or wellness environment with clean neutral materials and a clear focal subject.",
+      secondary: "Photograph one second clinical detail with simple forms that tolerate varied crops.",
+      tertiary: "Photograph one precise material, tool, or environment detail.",
     },
     "3d-portfolio-object-led": {
       medium: "studio object render with realistic materials",
-      hero: "Create a single sculptural service-relevant object on a spatial stage with dramatic negative space and deep-focus lighting.",
-      secondary: "Create a second object-led composition that can anchor a stacked project chapter.",
-      tertiary: "Create a close object/material study with controlled studio depth, not lifestyle photography.",
+      hero: "Render one sculptural service-relevant object with realistic materials, depth, and controlled studio light.",
+      secondary: "Render one second object with distinct silhouette and consistent materials.",
+      tertiary: "Render one close object or material detail with controlled studio depth.",
     },
     "veyra-kinetic-typography": {
-      medium: "high-energy documentary action photography",
-      hero: "Create a full-frame action scene with a clear silhouette, directional energy, and large negative zones for oversized condensed type.",
-      secondary: "Create a directional performance scene suitable for horizontal program bands.",
-      tertiary: "Create a tight action or equipment detail with graphic contrast and motion cues.",
+      medium: "high-energy sports environment and equipment photography",
+      hero: "Photograph one dynamic sports environment with directional light and motion implied by equipment or terrain, no people.",
+      secondary: "Photograph one performance-space detail with physical movement cues and grounded material detail, no people.",
+      tertiary: "Photograph one tight equipment or surface detail with graphic contrast, no people.",
     },
     "digital-experiences-liquid-glass": {
       medium: "abstract spatial light composition",
-      hero: "Create an abstract atmospheric field with liquid light, depth, refraction, and quiet negative space for floating interface instruments.",
-      secondary: "Create a layered translucent spatial scene with controlled blur and depth, without literal UI text.",
-      tertiary: "Create a close abstract material/light study that can sit behind structural glass cells.",
+      hero: "Create one abstract atmospheric image with liquid light, depth, refraction, and translucent physical materials.",
+      secondary: "Create one layered translucent material study with controlled blur and depth.",
+      tertiary: "Create one close abstract study of light and material.",
     },
     "vortex-editorial-studio": {
       medium: "editorial project photography",
-      hero: "Create a restrained authored image with broad horizontal crop potential for a narrow-column studio composition.",
-      secondary: "Create a wide project still designed for a moving marquee strip.",
-      tertiary: "Create a project/material detail with strong editorial cropping and calm contrast.",
+      hero: "Photograph one authored project detail with restrained color and credible materials.",
+      secondary: "Photograph one wide project scene with a distinct subject and calm contrast.",
+      tertiary: "Photograph one close project or material detail with editorial restraint.",
     },
     "neighborhood-table-collage": {
       medium: "warm editorial food and market still-life photography",
-      hero: "Create a loose tabletop collage of bread, pastry, seasonal produce, and a welcoming neighborhood table. Use varied crop-safe product groupings and warm cream, sage, butter, and tomato color relationships rather than a symmetric split hero.",
-      secondary: "Create a tactile pastry shelf or market-counter scene with repeated product rhythm and generous negative space for a seasonal menu row.",
-      tertiary: "Create a close still life of bread, herbs, paper, or serving details with a tactile handmade feeling and an intentional crop for a graphic visit or order band.",
+      hero: "Photograph one warm neighborhood food still life with bread, pastry, produce, and tactile table materials.",
+      secondary: "Photograph one pastry shelf or market-counter detail with a natural repeated product rhythm.",
+      tertiary: "Photograph one close detail of bread, herbs, paper, or serving materials.",
+    },
+    "hvac-symptom-first-choice-grid": {
+      medium: "documentary residential HVAC service photography",
+      hero: "Photograph one outdoor condenser unit beside an ordinary home. Show equipment only, with no worker, person, face, hand, tool in hand, or label.",
+      secondary: "Create a close, tidy furnace or air-handler diagnostic scene with practical tools and no people, readable labels, or branded controls.",
+      tertiary: "Create a crop-safe heat-pump or vent detail with realistic materials, natural light, and a concise visual subject.",
+    },
+    "hvac-mountain-photo-plus-diagnostic-promise": {
+      medium: "grounded residential HVAC equipment photography",
+      hero: "Photograph one technically credible furnace or condenser at an ordinary home, equipment only. No worker, person, face, or resort staging.",
+      secondary: "Create a close furnace-service detail with safe, orderly diagnostic tools and clear equipment geometry.",
+      tertiary: "Create a heat-pump or thermostat-adjacent material detail without readable controls or implied product brands.",
+    },
+    "hvac-local-aerial-hero": {
+      medium: "residential HVAC service and neighborhood-context photography",
+      hero: "Photograph an anonymous residential roofline with visible heating or cooling equipment only. No people, worker, or specific address.",
+      secondary: "Create a residential condenser or furnace scene with crop-safe equipment and no identifiable residents.",
+      tertiary: "Create a simple, tactile equipment detail suited to a short service-routing section.",
+    },
+    "hvac-three-part-contact-ribbon": {
+      medium: "coordinated documentary HVAC service photography",
+      hero: "Photograph one residential HVAC equipment unit alone, with crisp edges and balanced natural light. No worker or person.",
+      secondary: "Create a matching furnace or air-handler scene with the same restrained contrast and a distinct diagnostic subject.",
+      tertiary: "Create a matching outdoor heat-pump detail that completes the set without turning it into product advertising.",
+    },
+    "hvac-dense-phone-first-header": {
+      medium: "compact-crop HVAC equipment photography",
+      hero: "Photograph one tightly framed residential HVAC equipment detail only, with a simple silhouette and no person.",
+      secondary: "Create a narrow-crop furnace diagnostic detail with clear silhouette and no fine text.",
+      tertiary: "Create a compact condenser or heat-pump material detail with a strong central subject.",
+    },
+    "hvac-equipment-montage-opening": {
+      medium: "residential HVAC equipment photography",
+      hero: "Photograph one coherent close view of furnace, condenser, or heat-pump equipment only, with natural light and neutral materials. No person or worker.",
+      secondary: "Create a closer equipment view with clean composition and no logos or readable labels.",
+      tertiary: "Create a quiet filter, vent, or heat-pump material detail to complete the montage rhythm.",
+    },
+    "web-auto-repair-abees-hi-tech-family": {
+      medium: "restrained automotive parts and tool still-life photography",
+      hero: "Photograph a brake rotor, socket set and workbench as an unbranded automotive still life; no repair bay, people, hands, or body parts.",
+      secondary: "Photograph a tidy automotive tool-and-parts still life on a workbench, with no people or readable labels.",
+      tertiary: "Photograph one close mechanical detail with clean edges and no person or branding.",
+    },
+    "web-auto-repair-ade-auto-repairs-family": {
+      medium: "precise mechanical-part still-life photography",
+      hero: "Photograph an isolated brake rotor and one clean repair tool as a precise mechanical still life, with no people, hands, or body parts.",
+      secondary: "Photograph a small arrangement of unbranded vehicle components on a neutral workshop surface, with no people.",
+      tertiary: "Photograph a close detail of a brake component with no labels, hands, or people.",
+    },
+    "web-auto-repair-fallsbrook-motors-family": {
+      medium: "bright automotive diagnostic-tool still-life photography",
+      hero: "Photograph a yellow torque wrench and wheel nuts on a neutral workbench as a mechanical still life; no screens, electronics, text, people, hands, or body parts.",
+      secondary: "Photograph an empty service bay with a distinct vehicle silhouette and one restrained yellow equipment accent, with no people.",
+      tertiary: "Photograph a close, unbranded tool or vehicle detail with no visible person.",
+    },
+    "web-auto-repair-michael-auto-family": {
+      medium: "high-contrast automotive diagnostic still-life photography",
+      hero: "Photograph a diagnostic tool and unbranded engine component on a dark workbench, with no people, hands, or body parts.",
+      secondary: "Photograph dark, unbranded engine parts and one diagnostic tool on a workbench, without people.",
+      tertiary: "Photograph a close mechanical detail in directional light with no human presence or logos.",
+    },
+    "web-auto-repair-reliance-autos-family": {
+      medium: "calm automotive sensor and part still-life photography",
+      hero: "Photograph a small green automotive sensor and unbranded metal parts on a clean workbench; no people, hands, or body parts.",
+      secondary: "Photograph a clean vehicle component and diagnostic tool on an empty workbench, with no people or branding.",
+      tertiary: "Photograph one mechanical material detail with neutral light and no human presence.",
+    },
+    "web-auto-repair-urban-autocare-family": {
+      medium: "graphic automotive component still-life photography",
+      hero: "Photograph an unbranded wheel hub and metal parts on a graphite workshop surface, with no people, hands, or body parts.",
+      secondary: "Photograph a close arrangement of unbranded automotive components against a dark workbench, no people or signage.",
+      tertiary: "Photograph one unbranded automotive component against a dark workshop surface, without people.",
+    },
+    "web-painting-av": {
+      medium: "crop-tight architectural paint-finish photography",
+      hero: "Photograph a close-up of freshly painted siding and trim at a house corner, framed only on the architectural surface; no people, tools, house numbers, signage, or logos.",
+      secondary: "Photograph a close painted trim detail in soft evening light without people or addresses.",
+      tertiary: "Photograph a restrained paint-and-wood surface detail with no labels or people.",
+    },
+    "web-painting-concept-pro": {
+      medium: "dark architectural painting photography",
+      hero: "Photograph a dark painted exterior detail on an empty, unbranded home, with no people, signage, or house numbers.",
+      secondary: "Photograph a dark interior wall and painted trim detail with one quiet reflected highlight; no people or text.",
+      tertiary: "Photograph a close dark paint-finish material detail without labels or logos.",
+    },
+    "web-painting-house-doctor": {
+      medium: "editorial paint-preparation and surface photography",
+      hero: "Photograph a paint-preparation surface study: a primed wall meeting a fresh paint edge in an empty room, no people, hands, or text.",
+      secondary: "Photograph an unbranded preparation tool and clean wall surface as a still life, with no people or labels.",
+      tertiary: "Photograph a close paint-layer and wall texture detail without signs, text, or people.",
+    },
+    "web-painting-mfl": {
+      medium: "coastal residential exterior painting photography",
+      hero: "Photograph a coastal home exterior with carefully painted trim and no people, addresses, or signage.",
+      secondary: "Photograph a close, crop-safe painted siding and trim detail in soft coastal daylight.",
+      tertiary: "Photograph a neutral paint finish and weathered wood material study without labels.",
+    },
+    "web-painting-novak": {
+      medium: "quiet interior finish and paint-layer photography",
+      hero: "Photograph an ivory interior wall and layered paint-surface study in an empty room, no people or text.",
+      secondary: "Photograph a plain interior corner with painted trim and natural light, without furniture branding or people.",
+      tertiary: "Photograph an unmarked paint swatch and wall-material still life without words or people.",
+    },
+    "web-painting-southern": {
+      medium: "bright residential interior painting photography",
+      hero: "Photograph a bright, empty room with a freshly painted wall and restrained color contrast; no people or signage.",
+      secondary: "Photograph a clean painted room corner with natural light and no identifiable home address or people.",
+      tertiary: "Photograph a close, unbranded paint finish and trim detail without words or people.",
     },
   };
   const familyBrief =
     familyAssetBriefs[dna.familyId] || {
       medium: "commercial editorial photography",
-      hero: "Create a distinctive hero scene whose geometry follows the assigned Reference DNA.",
-      secondary: "Create a supporting scene whose crop follows the assigned Reference DNA.",
-      tertiary: "Create a tactile supporting detail whose crop follows the assigned Reference DNA.",
+      hero: "Create one distinctive standalone image whose subject and crop fit the assigned image treatment.",
+      secondary: "Create one supporting image subject that fits the assigned image treatment.",
+      tertiary: "Create one tactile image detail that fits the assigned image treatment.",
     };
   const subject = services.length
     ? services.join(", ")
     : safePromptPart(site.businessKind || site.industry || "local service", 100) || "local service";
-  const areaContext = areas.length ? `Broad setting: ${areas.join(", ")}.` : "Do not imply a specific storefront or address.";
-  const vocabularyContext = vocabulary.length
-    ? `Natural customer language for context only: ${vocabulary.join(", ")}.`
-    : "";
-  const problemContext = problems.length
-    ? `Customer concerns to understand visually, without adding claims: ${problems.join("; ")}.`
-    : "";
-  const routeContext = routeLanguage ? `Creative route: ${routeLanguage}.` : "";
-  const dnaContext = dna.familyId
-    ? `Reference DNA family: ${safePromptPart(dna.familyId, 100)}. Hero geometry: ${safePromptPart(dna.heroGeometry?.mode, 100)}. Image treatment: ${safePromptPart(dna.imageTreatment?.mode, 120)}. Crop strategy: ${safePromptPart(dna.imageTreatment?.crop, 140)}. Palette intent: ${safePromptPart(dna.palette?.contrastIntent, 140)}. ${familyImageDirection[dna.familyId] || "Follow the assigned reference mechanics without copying a brand."}`
-    : "";
-  const directionContext = direction ? `Visual direction: ${direction}.` : "";
+  const routeImageTreatment = [
+    safePromptPart(dna.imageTreatment?.mode, 200),
+    safePromptPart(dna.imageTreatment?.crop, 160),
+  ]
+    .filter(Boolean)
+    .join("; ");
+  const imageDirection = [
+    safePromptPart(familyImageDirection[dna.familyId], 180),
+    routeImageTreatment,
+    safePromptPart(dna.palette?.contrastIntent, 80),
+  ]
+    .filter(Boolean)
+    .join("; ") || "Use a distinct image medium and a simple, credible crop.";
   const placementBrief =
     placement.id === "hero"
       ? familyBrief.hero
@@ -210,20 +314,13 @@ function promptFor(site, route, placement) {
         ? familyBrief.secondary
         : familyBrief.tertiary;
   const prompt = [
-    `Visual medium: ${familyBrief.medium}.`,
-    `Asset type: ${placement.id} image for a local-business website.`,
-    `Primary request: ${placementBrief}.`,
-    `Business context: ${subject}.`,
-    areaContext,
-    routeContext,
-    dnaContext,
-    directionContext,
-    vocabularyContext,
-    problemContext,
-    `Style: follow the assigned family mechanics and crop strategy. Preserve believable materials and production polish appropriate to ${familyBrief.medium}; do not normalize every family into the same editorial photograph.`,
-    "Constraints: no readable text, no logos, no watermark, no signage, no invented credentials, no branded products, no medical claims, no identifiable people, no faces, no customer or staff implication, and no copied real-world campaign.",
-    "Keep the image useful at the requested crop and avoid tiny details that disappear on mobile.",
-    placement.focal,
+    "Create exactly one standalone image asset: one physical scene, object, or clean illustration, never a website screenshot, web page, UI mockup, poster, advertisement, or interface.",
+    "Hard exclusions: no words, letters, pseudo-text, numbers, logos, watermarks, signage, labels, screens, menus, cards, buttons, forms, device frames, certificates, or branded products. No people, faces, hands, body parts, human reflections or silhouettes. Do not imply an actual employee or customer.",
+    `Image medium: ${familyBrief.medium}.`,
+    `Image subject: ${placementBrief}.`,
+    `Business context for subject selection only: ${subject}. Never render the supplied business or service names.`,
+    `Reference image treatment: ${imageDirection}.`,
+    `Use believable materials, realistic details, and a clean crop suitable for ${placement.id} placement. ${placement.focal}`,
   ]
     .filter(Boolean)
     .join(" ");

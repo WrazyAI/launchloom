@@ -207,6 +207,10 @@ function parseChoice(payload) {
   }
 }
 
+export function referenceAnalyzerViewportGuidance() {
+  return `The target desktop viewport is 1536x864. Preserve the opening composition shown by the reference at 100% zoom. A reference's first image or scene may intentionally continue below the first viewport; do not shrink the reference composition solely to fit the entire hero image above the fold. Measure the visible first-screen portion separately from the full image frame, keep visible text and controls legible, and record where the primary and secondary conversion paths actually appear. Do not relocate a below-fold CTA to match a generic hero pattern.`;
+}
+
 async function analyzeRoute(route, fetchImpl = fetch) {
   const dna = route.referenceDna || {};
   const desktop = dna.evidence?.desktopScreenshot?.path;
@@ -239,7 +243,7 @@ ${referenceDossierPromptBlock(route.referenceDossier) || "No dossier was attache
 
 SOURCE CAPTURE DIMENSIONS
 ${JSON.stringify(captureDimensions, null, 2)}
-The desktop image may be a full-page capture or page excerpt. Its total image height is not a browser viewport height. The production desktop viewport is 1536x864 and the complete header plus hero must fit inside it at 100% zoom. Preserve the reference's hierarchy, crop, overlap, and spacing when adapting it to that viewport.
+The desktop image may be a full-page capture or page excerpt. Its total image height is not a browser viewport height. ${referenceAnalyzerViewportGuidance()}
 
 Rules:
 - infer geometry from the screenshots, not from familiar templates
@@ -303,8 +307,14 @@ Rules:
   }
 }
 
-export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
-  assertReferenceDossierPack(pack, { repositoryRoot: path.resolve(import.meta.dirname, "..") });
+export async function enrichInspirationPack(
+  pack,
+  { fetchImpl = fetch, allowArchiveReferenceIds = [] } = {},
+) {
+  assertReferenceDossierPack(pack, {
+    repositoryRoot: path.resolve(import.meta.dirname, ".."),
+    allowArchiveReferenceIds,
+  });
   if (!process.env.OPENROUTER_API_KEY)
     throw new Error("OPENROUTER_API_KEY is required to derive Reference DNA from screenshots.");
   if (!Array.isArray(pack?.routes) || !pack.routes.length)

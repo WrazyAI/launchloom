@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "id": "a1-craft-collage-field",
+  "productionEligible": false,
+  "archiveOnlyReason": "Curated cross-industry design mechanics. Not one of the six business-verified production references in a Local SEO Core niche.",
+  "referenceName": "Craft illustrated product-systems narrative",
+  "familyId": "a1-collage-composition",
+  "source": {
+    "name": "Craft product website",
+    "url": "https://www.craft.do/",
+    "discoverySource": "A1 Gallery MCP / curated reference research",
+    "discoveryUrl": "https://www.a1.gallery/website/craft-2025",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The LaunchLoom requester attested on 2026-09-26 that the exact Craft product website desktop/mobile captures and derived mechanics prompt may be retained internally and supplied to the pipeline model as visual reference. This is requester-attested clearance; no source-owner grant was attached or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "capture-record.json",
+      "rights/gallery-preview-provenance.md"
+    ]
+  },
+  "businessKinds": [
+    "productivity-software",
+    "software",
+    "technology"
+  ],
+  "tags": {
+    "business": [
+      "productivity-software",
+      "software",
+      "technology"
+    ],
+    "style": [
+      "hand-drawn-product-collage",
+      "soft-editorial",
+      "pastel-surfaces",
+      "playful-precision"
+    ],
+    "composition": [
+      "illustrated-sky-opening",
+      "layered-product-ui",
+      "alternating-feature-panels",
+      "human-proof-pauses",
+      "plan-comparison-close"
+    ],
+    "conversion": [
+      "free-trial-entry",
+      "feature-discovery",
+      "plan-comparison",
+      "download-links"
+    ],
+    "motion": [
+      "cloud-depth-drift",
+      "product-window-reveal",
+      "swipe-safe-mobile-panels",
+      "static-reduced-motion-state"
+    ],
+    "imagery": [
+      "hand-drawn-cloud-landscape",
+      "product-interface-scenes",
+      "team-portrait-strip",
+      "app-platform-badges"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshotHeight": 11057
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotHeight": 14603
+    }
+  },
+  "provenance": {
+    "retrievedAt": "2026-09-26",
+    "captureMethod": "playwright-native-full-page-v1",
+    "discoveryPage": "https://www.a1.gallery/website/craft-2025",
+    "desktopCapture": {
+      "url": "https://www.craft.do/?ref=a1.gallery",
+      "finalUrl": "https://www.craft.do/?ref=a1.gallery",
+      "httpStatus": 200,
+      "title": "Craft — Productivity App for Notes, Tasks, and Docs",
+      "capturedAt": "2026-09-26T10:22:44.275Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": true,
+      "image": {
+        "width": 1440,
+        "height": 11057,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 11057,
+      "documentWidth": 1440,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "mobileCapture": {
+      "url": "https://www.craft.do/?ref=a1.gallery",
+      "finalUrl": "https://www.craft.do/?ref=a1.gallery",
+      "httpStatus": 200,
+      "title": "Craft — Productivity App for Notes, Tasks, and Docs",
+      "capturedAt": "2026-09-26T10:22:52.860Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "image": {
+        "width": 390,
+        "height": 14603,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 14603,
+      "documentWidth": 390,
+      "brokenImages": [],
+      "pageErrors": [
+        "Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+      ],
+      "frames": 1
+    },
+    "desktopScreenshotSha256": "ab701b96bd6f7578ca1bd03f6638faaa57a32eb530e92ec5f6ceae6cb4fa18bb",
+    "mobileScreenshotSha256": "b11743a05b39ca841e12f5fc6a22386a0e1222ac246a31028c94cefb1d79f84e",
+    "notes": "Screenshots are direct official-source page captures at declared desktop and mobile viewports. Custom scrolling surfaces are recorded and captured as scroll-position sequences. A1 metadata informed taxonomy and visual annotation only. Original source material is not copied into client deliverables."
+  },
+  "referenceDna": {
+    "annotatedDescription": "A light productivity product story begins with a soft blue illustrated sky and large centered promise, then places real interface imagery into layered paper-like windows. Small capability glyphs and a portrait strip create early rhythm. The rest alternates lavender, mint, yellow, and white feature panels with concise editorial copy, interface demos, one-line customer quotes, integrations, pricing, a green trial close, and a dense dark footer. The design uses product UI as its main imagery rather than a generic lifestyle hero.",
+    "heroGeometry": {
+      "mode": "centered product promise over a hand-drawn sky, with overlapping workspace windows at the lower edge",
+      "alignment": "compact top utility navigation, centered short headline, clear trial action, product UI anchoring the composition",
+      "viewport": "brand, product category, promise, trial path, and first product interface are visible without an unnecessary copy wall"
+    },
+    "navigationGeometry": {
+      "mode": "compact horizontal product navigation with account and trial actions",
+      "placement": "small floating capsule aligned near the top of the illustrated hero",
+      "mobile": "compress secondary links into a touch-safe menu while preserving product identity and the trial action"
+    },
+    "typography": {
+      "display": "expressive editorial serif",
+      "body": "neutral product sans",
+      "scale": "serif display used sparingly for promise and feature chapter; small interface labels remain crisp and sans-serif"
+    },
+    "palette": {
+      "surfaces": [
+        "warm white",
+        "powder blue",
+        "pale lavender",
+        "soft mint",
+        "butter yellow",
+        "charcoal"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "sky blue",
+        "leaf green",
+        "soft coral"
+      ],
+      "contrastIntent": "pastel chapter colors support illustration but all body copy and controls retain strong readable contrast"
+    },
+    "imageTreatment": {
+      "mode": "hand-drawn atmospheric illustration interleaved with crisp authentic product-interface compositions",
+      "crop": "wide hero artwork followed by centered floating UI windows and broad feature panels",
+      "focalPoint": "the interface state that demonstrates one product capability"
+    },
+    "sectionSequence": [
+      "capsule product navigation",
+      "illustrated sky hero",
+      "capability icon row",
+      "portrait-led social proof",
+      "lavender interface feature",
+      "mint integrations feature",
+      "quote pause",
+      "yellow calendar workflow",
+      "structured collections feature",
+      "connected-apps rail",
+      "plan comparison",
+      "green trial close",
+      "dark global footer"
+    ],
+    "servicePresentation": {
+      "pattern": "product capabilities as distinct jobs-to-be-done, demonstrated with real interface scenes instead of uniform service cards",
+      "interaction": "small icon index and optional horizontal app rail; keep every feature understandable without hover"
+    },
+    "ctaPlacement": {
+      "primary": "Start a free trial in the hero and closing green panel",
+      "secondary": "Explore the product or feature demos",
+      "early": "inside the opening view after the product promise"
+    },
+    "motion": {
+      "primitive": "gentle depth shifts between illustrated clouds and floating UI panels",
+      "library": "native transforms and low-amplitude scroll reveals",
+      "reducedMotion": "show all UI panels in their settled positions and preserve the complete reading order"
+    },
+    "mobileRecomposition": {
+      "strategy": "single-column product narrative with contained horizontal product rails",
+      "rules": [
+        "keep the hero promise and trial control in the first screen",
+        "stack interface windows rather than shrinking them",
+        "use swipe-safe rails only for genuinely browseable products",
+        "retain each chapter's pastel identity without losing readable contrast",
+        "keep the footer useful at narrow widths"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying Craft names, copy, interface, logos, photos, pricing, or product claims",
+      "uniform feature-card wall",
+      "decorative interface screenshots that do not explain a verified capability",
+      "pastel text with insufficient contrast",
+      "hover-only product content",
+      "using source portraits as client customers or staff"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "illustrated-sky-opening",
+        "selector": "[data-reference-signature=illustrated-sky-opening]",
+        "description": "quiet illustrated horizon above a compact workspace preview"
+      },
+      {
+        "id": "capability-color-chapters",
+        "selector": "[data-reference-signature=capability-color-chapters]",
+        "description": "feature chapters use distinct but coordinated surface colors and product evidence"
+      },
+      {
+        "id": "trial-close",
+        "selector": "[data-reference-signature=trial-close]",
+        "description": "a visually distinct final trial invitation before the footer"
+      }
+    ],
+    "acceptanceChecks": [
+      "the hero states a verified product promise and primary action",
+      "each capability chapter explains one real customer job",
+      "interface imagery is client-provided or newly generated, never copied from the reference",
+      "mobile keeps product UI legible and page width at the viewport",
+      "trial links, integrations, and plan details are verified before publishing",
+      "no source proof, review, price, or claim is transplanted"
+    ]
+  },
+  "review": {
+    "status": "requester-attested-internal-archive-only",
+    "curator": "LaunchLoom reference curation",
+    "reviewedAt": "2026-09-26",
+    "scope": "Visual mechanics archive. productionEligible=false and excluded from every current production niche."
+  }
+}

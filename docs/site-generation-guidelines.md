@@ -184,6 +184,18 @@ checks the exact triggering reviewer request against the new screenshots. A
 revision is not complete merely because the page remains attractive; the
 specific request must be visibly satisfied or the bounded repair loop continues.
 
+Human creative repairs are resolved to stable `data-reference-section` markers
+before Luna is called. Ambiguous targets, partial site-wide requests with
+exceptions, missing markers, or contradictory keep/change instructions go to
+manual attention. The source gate preserves section order and all unrequested
+JSX, permits CSS changes only beneath the requested section markers, and
+rejects changed JSX prop spreads because they can hide visitor-facing claims.
+New static visitor copy still needs factual review. Motion changes require an
+explicit motion request and are limited to declared section targets through
+the supported GSAP hook; direct DOM mutation and external/page-wide effects are
+rejected. Every accepted edit continues through the normal render, visual, and
+human-feedback gates.
+
 Human delivery order is invariant:
 
 1. Every initial generated preview goes to the developer first.

@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "id": "web-hvac-finish-line-denver",
+  "productionEligible": true,
+  "referenceName": "Finish Line Heating and Cooling information page",
+  "familyId": "hvac-dense-phone-first-header",
+  "source": {
+    "name": "Finish Line Heating and Cooling information page official website",
+    "url": "https://www.finishlineheatingandcooling.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Chromium capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, then returned to top. A CDP beyond-viewport clip kept the full document length at the exact viewport width; no page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 4919
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 9575
+    },
+    "diagnostics": "Observed utility identity and phone, skyline banner, equipment-and-copy split, blue service taxonomy band, company explanation. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Finish Line Heating and Cooling information page official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "hvac",
+    "heating-and-cooling",
+    "air-conditioning",
+    "home-services"
+  ],
+  "tags": {
+    "business": [
+      "hvac",
+      "heating-and-cooling",
+      "air-conditioning",
+      "home-services"
+    ],
+    "style": [
+      "blue-technical-hvac",
+      "legacy-practical",
+      "phone-first"
+    ],
+    "composition": [
+      "utility-heavy-header",
+      "machine-image-split",
+      "dark-service-band"
+    ],
+    "conversion": [
+      "phone",
+      "appointment",
+      "quote"
+    ],
+    "motion": [
+      "static-information",
+      "simple-link-states"
+    ],
+    "imagery": [
+      "hvac-equipment",
+      "city-skyline",
+      "service-article"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dense logo-phone header leads into a skyline banner; the main explanation then pairs left technical copy with large HVAC equipment photographs. Dark blue horizontal home, product/service, resource and appointment links below the utility header. Condensed blue uppercase section labels over smaller practical sans body copy. The page sequence runs from utility identity and phone to skyline banner to equipment-and-copy split toward testimonial band, service article cards, contact exit. Denver skyline, HVAC product cutouts and recent service-article thumbnails, with little decorative stock lifestyle imagery. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A dense logo-phone header leads into a skyline banner; the main explanation then pairs left technical copy with large HVAC equipment photographs.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Dark blue horizontal home, product/service, resource and appointment links below the utility header.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Condensed blue uppercase section labels over smaller practical sans body copy.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Deep blue",
+        "pale sky blue",
+        "white and gray machinery tones."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "blue-technical-hvac",
+        "legacy-practical"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Denver skyline, HVAC product cutouts and recent service-article thumbnails, with little decorative stock lifestyle imagery.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "utility identity and phone",
+      "skyline banner",
+      "equipment-and-copy split",
+      "blue service taxonomy band",
+      "company explanation",
+      "testimonial band",
+      "service article cards",
+      "contact exit"
+    ],
+    "servicePresentation": {
+      "pattern": "Place confirmed AC, furnace, boiler and comfort categories into a clear technical taxonomy, avoiding equipment that the client does not install.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Book in the header and provide a distinct appointment or quote action after service scope.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "static-information; simple-link-states",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack product imagery beside its relevant copy, keep the service taxonomy scannable, and eliminate the source's excessive trailing whitespace.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not transfer its exact checkered brand identity, manufacturer equipment cutouts, years, family story, city skyline, customer testimonial or unused page whitespace.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "dense-phone-first-header",
+        "selector": "[data-reference-signature=dense-phone-first-header]",
+        "description": "A new-client interpretation of the observed dense phone-first header relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "equipment-copy-split",
+        "selector": "[data-reference-signature=equipment-copy-split]",
+        "description": "A new-client interpretation of the observed equipment-copy split relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "blue-service-taxonomy-band",
+        "selector": "[data-reference-signature=blue-service-taxonomy-band]",
+        "description": "A new-client interpretation of the observed blue service taxonomy band relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

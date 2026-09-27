@@ -1,6 +1,6 @@
 # Inspiration registry
 
-The inspiration registry is the route-selection index. Production candidates resolve to complete dossier folders in `data/reference-library/dossiers`; each chosen route receives one authoritative screenshot-backed design capsule. The curated Local SEO Core is exactly 30 unique references across 10 niches, three per niche, defined in `data/reference-library/core-collection.json`.
+The inspiration registry is the route-selection index. Production candidates resolve to complete dossier folders in `data/reference-library/dossiers`; each chosen route receives one authoritative screenshot-backed design capsule. The curated Local SEO Core contains exactly 84 unique references across 14 niches, six per niche, defined in `data/reference-library/core-collection.json`. Every generation samples three structurally independent references from the matching six-reference niche.
 
 ## Permission-cleared dossier library
 
@@ -24,20 +24,22 @@ prohibited patterns, and local-business conversion/SEO constraints. It is not
 source-site copy.
 
 The active core niches are home services/trades, dental, home care, fitness,
-restaurants, lodging, architecture/interior design, law, beauty/grooming, and
-accounting. The test suite verifies each niche against the production
-randomizer and confirms the 30 IDs are unique. The selector uses only
-business-compatible production dossiers and fails closed when fewer than
-three independent matches exist; it does not fill with unrelated industries.
+restaurants, lodging, architecture/interior design, law, beauty/grooming,
+accounting, auto repair, HVAC, roofing, and painting. The test suite verifies
+six unique dossiers per niche, unique first-party source URLs, and seeded
+variety across every niche. The selector uses only business-compatible
+production dossiers and fails closed when it cannot supply three independent
+matches; it does not fill with unrelated industries. The licensed Spicer
+roofing template remains catalogued in its dossier but is deliberately not
+counted as one of the six real roofing business websites.
 An empty or generic business kind such as `all`, `general`, or `small-business`
 also fails closed instead of mixing references from multiple niches.
 
-Historical LaunchLoom studies and rejected or out-of-scope registry entries
-remain in legacy discovery folders or archive records, not in the canonical
-production dossier directory. The runtime selector restricts production to
-IDs listed in `core-collection.json`; archive entries are not loaded or used as
-fallback. Their migration or disposition is part of the reference-library
-expansion, not this 30-dossier baseline.
+Historical LaunchLoom studies, rejected captures, and discovery-only records
+remain outside the production core and are never fallback candidates. The
+runtime selector restricts production to IDs listed in `core-collection.json`.
+An out-of-core record cannot influence the production choice even if it remains
+in the broader registry for traceability.
 
 Rights evidence is explicit. The CC BY/MIT dossiers include source licenses
 and image credits. Direct-site dossiers record the requester’s attestation for
@@ -66,12 +68,14 @@ in the dossier. The dossier digest binds both screenshot bytes and that proof.
 
 ## A1 Gallery evidence
 
-`data/a1-reference-library.json` is a supplemental discovery cache built from
-the A1 Gallery MCP. Its reference-only records are not production-eligible until
-the exact visual evidence, rights, full-page mobile capture, and detailed prompt
-have been cleared and assembled into a dossier. The external screenshots remain
-reference evidence only. They are never client assets, and their source copy,
-branding, imagery, and trade dress must not be reproduced.
+`data/a1-reference-library.json` remains a supplemental discovery cache built
+from the A1 Gallery MCP. Six curated A1/Kokoro captures also have complete,
+archive-only dossiers in `data/reference-library/dossiers` and are listed in
+`data/reference-library/archive-index.json`. Each includes full-page desktop and
+mobile evidence, a detailed mechanics prompt, and a requester-attestation file.
+They are excluded from the 84-reference Local SEO production core because they
+are cross-industry design studies, not verified niche business references.
+Their screenshots are internal visual evidence only, never client assets.
 
 The production workflow does not load this cache by default. It can be read
 explicitly for local discovery/testing, but route selection remains restricted
@@ -84,10 +88,13 @@ npm run compile:inspiration -- \
   --out .launchloom/inspiration-pack.json
 ```
 
-No A1 screenshot is copied into a dossier or supplied to a production author
-under the current permission-cleared-only retention rule. If a future written
-license permits persistence, create a complete dossier and use the screenshot
-as one authoritative capsule, never an averaged reference set.
+The six archive dossiers record the requester's 2026-09-26 attestation that
+these exact captures may be retained internally and sent to the pipeline model.
+No independent source-owner grant was attached or verified. This limitation is
+written into each dossier and the captures remain outside production selection.
+Use `scripts/materialize-a1-archive-dossiers.mjs` to validate or refresh those
+six dossiers from their recorded captures; it validates the staged screenshots,
+rights note, structured DNA, and prompt before writing.
 
 ## Interface
 
@@ -95,6 +102,22 @@ Call `buildInspirationPack(request, registry)` for selection tests. The
 production compiler calls `buildInspirationPack(request, registry, {
 repositoryRoot, requireDossiers: true })`. Its pack is deterministic for the
 same seed, eligible dossier library, style context, and recent-launch history.
+The selector evaluates structurally independent trios, avoids the last twelve
+exact trios when alternatives exist, minimizes per-reference exposure over the
+latest 30 launches for that niche, then rotates deterministically among equally
+exposed trios. Style terms order those trios without narrowing the eligible set.
+Among the lowest-exposure trios, renderer-family variety gets a bounded extra
+turn in the deterministic rotation. Pools of 13 to 20 trios use a 24-slot ring
+whose repeated trios are twelve slots apart; smaller pools give one varied trio
+an extra slot. The previous twelve exact trios stay excluded while alternatives
+exist, preserving consecutive-launch freshness even as exposure changes. All
+structurally independent combinations remain eligible, including same-family
+trios; family variety never overrides lower per-reference exposure.
+`selectionReceipt` records the eligible pool, selected IDs, combination count,
+exposure score, history fallback mode, selected renderer family IDs and count,
+whether a multi-family trio is feasible, and the maximum feasible renderer
+family count. Renderer families use the same `familyForRoute` resolution as the
+compiled routes, not dossier `referenceFamilyId` labels.
 The CLI passes `site.config.businessKind` when present, ahead of the broader
 display `industry`. Site-config generation derives specific kinds from the
 submitted business facts (for example, dental vs. wellness or restaurant vs.
@@ -102,13 +125,19 @@ hotel) so broad intake categories do not mix unrelated visual journeys.
 
 The module owns normalization, rights validation, dossier loading, screenshot
 identity checks, relevance scoring, deterministic tie-breaking, structural
-separation, recent-history exclusion, bounded freshness fallback, and evidence
-shaping. Callers never receive download locations. Fresh references and route
-signatures are preferred; if those exclusions make three independent routes
-impossible, route-signature exclusions are relaxed first, then reference
-exclusions, and the selected mode is recorded in the pack summary.
+separation, soft recent-exposure balancing, bounded exact-trio freshness, and
+evidence shaping. Callers never receive download locations. Recently used route
+trios are avoided while feasible, but individual references are never
+hard-banned: exposure only lowers their score so every design can recur and all
+six remain reachable even under repeated traffic. Style relevance orders
+equally exposed choices; renderer-family variety is a bounded frequency
+preference and never an eligibility rule.
 
-Each route must differ in navigation, hero geometry, service presentation, and typography category. References cannot be reused across routes. If the full registry cannot supply three independent routes, compilation stops with an explicit error.
+Each route must differ in navigation, hero geometry, service presentation, and
+typography category. References cannot be reused across routes within a pack;
+broad family labels may repeat if the actual structural mechanics differ. If
+the full registry cannot supply three independent routes, compilation stops
+with an explicit error.
 
 ## Screenshot and family identity
 
@@ -187,4 +216,4 @@ The model may author composition and motion, but visitor-facing business content
 
 Phase 2 runs in shadow mode: candidate source and usage evidence are retained, while the existing reviewed Astro experience remains the deployed preview. Rendering, screenshot gates, repair, and creative winner promotion belong to Phase 3.
 
-`data/recent-launch-signatures.json` records generated previews: the selected pack and variant, the layout fingerprint, the stage, and the reference IDs and route signatures that informed the design. `generate-client.yml` writes an entry after a successful preview deployment, and both the inspiration compiler and the experience bakeoff read it to exclude recently used references and layouts. Model-authored winner promotion still belongs to Phase 3.
+`data/recent-launch-signatures.json` records generated previews: the selected pack and variant, the layout fingerprint, the stage, and the reference IDs and route signatures that informed the design. Launch history is bounded to 30 entries per business kind (and 500 total); generation attempts receive unique seeds while intake IDs remain available for stable business context. The selector avoids the previous twelve exact reference trios where alternatives exist; route-signature recency remains five launches. Per-reference exposure balances repeated usage, while every individual reference remains eligible. Model-authored winner promotion still belongs to Phase 3.

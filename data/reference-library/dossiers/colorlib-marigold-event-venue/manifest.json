@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-marigold-event-venue",
+  "productionEligible": false,
+  "referenceName": "Marigold centered invitation and event timeline",
+  "familyId": "colorlib-marigold-event-editorial",
+  "source": {
+    "name": "Colorlib Bootstrap Templates, Marigold MIT/CC0 template",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/marigold",
+    "rights": "licensed",
+    "rightsEvidence": "Pinned Colorlib MIT template; its CREDITS.txt lists the CC0/Public Domain placeholder photographs. License and credits are retained locally.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": [
+      "rights/CREDITS.txt"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Pinned ColorlibHQ/bootstrap-templates revision f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf, marigold/index.html, rendered through a temporary local HTTP server in headless Chromium. Scrolled the entire document for lazy media, returned to top and captured at the exact viewport widths. Temporary source files were not retained in this dossier.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 5392
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 6695
+    },
+    "diagnostics": "A monochrome full-viewport couple photograph is overlaid with a centered serif invitation, date line and quiet response action. couple story split, ruled day timeline, irregular photo mosaic. Couple identity, dates, guest details, venue address, gift requests and RSVP claims are fictional template data.",
+    "attribution": "Colorlib Bootstrap Templates, Marigold MIT/CC0 template; archive capture uses http://127.0.0.1:8765/marigold/index.html. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "event-venue",
+    "wedding-venue",
+    "event-planner",
+    "private-events"
+  ],
+  "tags": {
+    "business": [
+      "event-venue",
+      "wedding-venue",
+      "event-planner",
+      "private-events"
+    ],
+    "style": [
+      "centered-invitation",
+      "romantic-editorial",
+      "muted-photography",
+      "warm-paper"
+    ],
+    "composition": [
+      "centered-full-viewport-event-poster",
+      "invitation-to-story-to-timeline-to-photo-mosaic-to-enquiry",
+      "centered-invitation-poster",
+      "ruled-event-timeline",
+      "irregular-event-mosaic"
+    ],
+    "conversion": [
+      "ruled-event-timeline-and-availability-inquiry",
+      "One RSVP action in the opening and a form after travel/day details."
+    ],
+    "motion": [
+      "optional-verified-date-counter",
+      "native-drawer",
+      "accessible-form-controls"
+    ],
+    "imagery": [
+      "cc0-event-photography-with-cover-and-irregular-mosaic-crops",
+      "A single hero, landscape story photograph and irregular floral/event mosaic lead the page."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A monochrome full-viewport couple photograph is overlaid with a centered serif invitation, date line and quiet response action. Tiny spaced event-story, day, travel, stay, gift and RSVP links sit over the image. High-contrast editorial serif for names and chapter titles, small uppercase labels and modest practical body copy. Warm paper, near-black, muted blush and photographic gray. A single hero, landscape story photograph and irregular floral/event mosaic lead the page. The full sequence runs from centered photo invitation to couple story split to ruled day timeline toward RSVP form, gift options, small footer. Couple identity, dates, guest details, venue address, gift requests and RSVP claims are fictional template data.",
+    "heroGeometry": {
+      "mode": "A monochrome full-viewport couple photograph is overlaid with a centered serif invitation, date line and quiet response action.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "Tiny spaced event-story, day, travel, stay, gift and RSVP links sit over the image.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "High-contrast editorial serif for names and chapter titles, small uppercase labels and modest practical body copy.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "Warm paper",
+        "near-black",
+        "muted blush and photographic gray"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "centered-invitation",
+        "romantic-editorial"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "A single hero, landscape story photograph and irregular floral/event mosaic lead the page.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "centered photo invitation",
+      "couple story split",
+      "ruled day timeline",
+      "irregular photo mosaic",
+      "RSVP form",
+      "gift options",
+      "small footer"
+    ],
+    "servicePresentation": {
+      "pattern": "The ruled event timeline and guest response mechanics are for a known event; do not present this as an actual venue's booking inventory.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "One RSVP action in the opening and a form after travel/day details.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "optional-verified-date-counter; native-drawer; accessible-form-controls",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Keep invitation text legible over the monochrome crop, stack schedule rows in order and show every RSVP field without overlapping the image.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Couple identity, dates, guest details, venue address, gift requests and RSVP claims are fictional template data.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "centered-invitation-poster",
+        "selector": "[data-reference-signature=centered-invitation-poster]",
+        "description": "Original client interpretation of the observed centered invitation poster mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "ruled-event-timeline",
+        "selector": "[data-reference-signature=ruled-event-timeline]",
+        "description": "Original client interpretation of the observed ruled event timeline mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "irregular-event-mosaic",
+        "selector": "[data-reference-signature=irregular-event-mosaic]",
+        "description": "Original client interpretation of the observed irregular event mosaic mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. Couple identity, dates, guest details, venue address, gift requests and RSVP claims are fictional template data. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

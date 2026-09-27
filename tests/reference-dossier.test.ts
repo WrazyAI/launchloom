@@ -1,7 +1,9 @@
 import fs from "node:fs";
+import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
+import sharp from "sharp";
 import { afterEach, describe, expect, it } from "vitest";
 import { promptImageDimensions, promptImagePart } from "../scripts/prompt-evidence.mjs";
 import {
@@ -85,6 +87,117 @@ afterEach(() => {
 });
 
 describe("reference dossiers", () => {
+  it("keeps the 31 curated archive dossiers complete, unique, and outside the production core", () => {
+    const root = path.resolve(".");
+    const archive = JSON.parse(fs.readFileSync(path.join(root, "data/reference-library/archive-index.json"), "utf8"));
+    const core = JSON.parse(fs.readFileSync(path.join(root, "data/reference-library/core-collection.json"), "utf8"));
+    const registry = JSON.parse(fs.readFileSync(path.join(root, "data/inspiration-registry.json"), "utf8"));
+    const coreIds = new Set(core.niches.flatMap((niche: any) => niche.referenceIds));
+    const archiveIds = archive.entries.map((entry: any) => entry.id);
+
+    expect(archive.entries).toHaveLength(31);
+    expect(new Set(archiveIds).size).toBe(31);
+    expect(archiveIds.some((id: string) => coreIds.has(id))).toBe(false);
+    for (const entry of archive.entries) {
+      const record = registry.records.find((item: any) => item.id === entry.id);
+      expect(record, entry.id).toBeTruthy();
+      const dossier = loadReferenceDossier(record.dossierPath, { repositoryRoot: root });
+      expect(dossier.productionEligible, entry.id).toBe(false);
+      expect(dossier.evidence.desktop.fullPage, entry.id).toBe(true);
+      expect(dossier.evidence.mobile.fullPage, entry.id).toBe(true);
+      expect(dossier.designPrompt.length, entry.id).toBeGreaterThanOrEqual(900);
+    }
+  });
+
+  it("explains every archive exclusion with dossier evidence and a truthful rights basis", () => {
+    const root = path.resolve(".");
+    const archive = JSON.parse(fs.readFileSync(path.join(root, "data/reference-library/archive-index.json"), "utf8"));
+    const allowedReasons = new Set([
+      "cross-industry-study", "historical-owned-study", "outside-core-subject",
+      "digital-coaching-not-local-gym", "fictional-template-facts",
+      "template-not-real-business", "niche-fit-review-required",
+      "excluded-from-real-business-core",
+    ]);
+    const allowedFits = new Set(["outside-core-niche", "core-adjacent", "core-subject"]);
+    const allowedSources = new Set(["direct-site", "licensed-template", "owned-study"]);
+
+    for (const entry of archive.entries) {
+      const manifest = JSON.parse(fs.readFileSync(path.join(root, entry.dossierPath, "manifest.json"), "utf8"));
+      expect(entry.productionEligible, entry.id).toBe(false);
+      expect(entry.productionEligible, entry.id).toBe(manifest.productionEligible);
+      expect(allowedFits.has(entry.coreNicheFit), entry.id).toBe(true);
+      expect(allowedSources.has(entry.sourceKind), entry.id).toBe(true);
+      expect(entry.exclusion.summary.length, entry.id).toBeGreaterThan(20);
+      expect(entry.exclusion.codes.length, entry.id).toBeGreaterThan(0);
+      expect(entry.exclusion.codes.every((code: string) => allowedReasons.has(code)), entry.id).toBe(true);
+      expect(entry.exclusion.evidence.length, entry.id).toBeGreaterThan(0);
+      for (const evidence of entry.exclusion.evidence) {
+        expect(evidence.path, entry.id).toBe("manifest.json");
+        const value = evidence.field.split(".").reduce((item: any, key: string) => item?.[key], manifest);
+        expect(value, `${entry.id} ${evidence.field}`).toBeTruthy();
+      }
+      expect(entry.rightsBasis.evidencePath, entry.id).toBe(manifest.source.rightsEvidencePath);
+      expect(fs.existsSync(path.join(root, entry.dossierPath, entry.rightsBasis.evidencePath)), entry.id).toBe(true);
+      if (entry.rights === "permission-cleared") {
+        expect(entry.rightsBasis.kind, entry.id).toBe("requester-attestation");
+        expect(entry.rightsBasis.sourceOwnerGrantAttached, entry.id).toBe(false);
+        expect(entry.rightsBasis.independentlyVerified, entry.id).toBe(false);
+      } else {
+        expect(entry.rightsBasis.kind, entry.id).toBe(entry.rights === "licensed" ? "local-license" : "registry-recorded-owned");
+      }
+    }
+
+    const byId = Object.fromEntries(archive.entries.map((entry: any) => [entry.id, entry]));
+    expect(byId["attested-future-fitness"].exclusion.codes).toContain("digital-coaching-not-local-gym");
+    expect(byId["colorlib-marigold-event-venue"].exclusion.codes).toContain("template-not-real-business");
+    expect(byId["spicer-roofing-storm-response"].exclusion.codes).toContain("excluded-from-real-business-core");
+    expect(byId["spicer-med-spa-treatment-menu"].exclusion.codes).toContain("template-not-real-business");
+  });
+
+  it("keeps supplemental and retired screenshot pointers inside the canonical library", () => {
+    const root = path.resolve(".");
+    const a1 = JSON.parse(fs.readFileSync(path.join(root, "data/a1-reference-library.json"), "utf8"));
+    const registry = JSON.parse(fs.readFileSync(path.join(root, "data/inspiration-registry.json"), "utf8"));
+    const archive = JSON.parse(fs.readFileSync(path.join(root, "data/reference-library/archive-index.json"), "utf8"));
+
+    for (const record of a1.records) {
+      if (!record.screenshotPath) continue;
+      expect(record.screenshotPath, record.id).toMatch(/^data\/reference-library\/dossiers\//u);
+      expect(fs.existsSync(path.join(root, record.screenshotPath)), record.id).toBe(true);
+    }
+    for (const record of registry.retiredRecords || [])
+      expect(record.screenshotPath, record.id).toMatch(/^data\/reference-library\/dossiers\//u);
+    for (const record of archive.entries) {
+      const sourceUrl = new URL(record.sourceUrl);
+      expect(sourceUrl.pathname, record.id).not.toContain("/data/inspiration-evidence/");
+    }
+  });
+
+  it("binds the six A1/Kokoro archive captures to their recorded source and screenshot hashes", () => {
+    const ids = [
+      "a1-craft-collage-field",
+      "a1-scs-kinetic-command",
+      "a1-mckp-object-stage",
+      "a1-uncommon-founder-atlas",
+      "a1-ethan-cinematic-3d",
+      "kokoro-spatial-editorial",
+    ];
+    for (const id of ids) {
+      const dossierPath = `data/reference-library/dossiers/${id}`;
+      const manifest = JSON.parse(fs.readFileSync(path.join(dossierPath, "manifest.json"), "utf8"));
+      const dossier = loadReferenceDossier(dossierPath, { repositoryRoot: path.resolve(".") });
+      expect(dossier.productionEligible, id).toBe(false);
+      expect(dossier.source.rights, id).toBe("permission-cleared");
+      expect(dossier.source.rightsEvidence, id).toMatch(/requester-attested/iu);
+      for (const kind of ["desktop", "mobile"] as const) {
+        const screenshotPath = path.join(dossierPath, manifest.evidence[kind].path);
+        const actualHash = crypto.createHash("sha256").update(fs.readFileSync(screenshotPath)).digest("hex");
+        expect(manifest.provenance[`${kind}ScreenshotSha256`], `${id} ${kind}`).toBe(actualHash);
+        expect(dossier.evidenceDigests[kind], `${id} ${kind} loader digest`).toBe(actualHash);
+      }
+    }
+  });
+
   it("loads a complete rights-cleared dossier with full-page desktop and mobile evidence", () => {
     const fixture = createDossier();
     const dossier = loadReferenceDossier(fixture.dossierPath, {
@@ -109,6 +222,28 @@ describe("reference dossiers", () => {
     });
     expect(dossier.designPrompt).toContain("## Signature elements");
     expect(dossier.digest).toMatch(/^[a-f0-9]{64}$/u);
+  });
+
+  it("validates full-page WebP desktop and mobile captures without changing their dimensions", async () => {
+    const fixture = createDossier();
+    const desktopPath = path.join(fixture.directory, "screenshots", "desktop.webp");
+    const mobilePath = path.join(fixture.directory, "screenshots", "mobile.webp");
+    await sharp({ create: { width: 1440, height: 2400, channels: 3, background: "#eee" } })
+      .webp({ quality: 91 }).toFile(desktopPath);
+    await sharp({ create: { width: 390, height: 2800, channels: 3, background: "#eee" } })
+      .webp({ lossless: true }).toFile(mobilePath);
+    const manifestPath = path.join(fixture.directory, "manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    manifest.evidence.desktop.path = "screenshots/desktop.webp";
+    manifest.evidence.mobile.path = "screenshots/mobile.webp";
+    fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+    const dossier = loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    });
+
+    expect(dossier.evidence.desktop).toMatchObject({ width: 1440, height: 2400, fullPage: true });
+    expect(dossier.evidence.mobile).toMatchObject({ width: 390, height: 2800, fullPage: true });
   });
 
   it("fails closed when either required viewport capture is missing or not full-page", () => {
@@ -150,6 +285,46 @@ describe("reference dossiers", () => {
       },
     });
     expect(() => loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot })).toThrow(/local rights evidence path/iu);
+  });
+
+  it("accepts screenshot-only production references with explicit permission but no bundled source assets", () => {
+    const fixture = createDossier({
+      productionEligible: true,
+      source: {
+        name: "Permission-cleared local business",
+        url: "https://example.test/business",
+        rights: "permission-cleared",
+        rightsEvidence: "Requester permission covers retaining and model-referencing these screenshots.",
+        rightsEvidencePath: "rights/requester-attestation.md",
+        provenanceEvidencePaths: ["rights/capture-record.md"],
+      },
+      tags: {
+        business: ["local-service"],
+        style: ["editorial"],
+        composition: ["centered"],
+        conversion: ["contact"],
+        motion: ["still-first"],
+        imagery: ["reference screenshots only"],
+      },
+    });
+    fs.mkdirSync(path.join(fixture.directory, "rights"), { recursive: true });
+    fs.writeFileSync(
+      path.join(fixture.directory, "rights/requester-attestation.md"),
+      "Explicit screenshot retention and model-reference permission.",
+    );
+    fs.writeFileSync(
+      path.join(fixture.directory, "rights/capture-record.md"),
+      "Captured the official site at the manifest desktop and mobile viewports.",
+    );
+
+    const dossier = loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    });
+
+    expect(dossier.source.rightsEvidencePath).toBe("rights/requester-attestation.md");
+    expect(dossier.source.assetEvidencePaths).toBeUndefined();
+    expect(dossier.source.provenanceEvidencePaths).toEqual(["rights/capture-record.md"]);
+    expect(dossier.evidenceDigests.provenanceEvidence).toHaveProperty("rights/capture-record.md");
   });
 
   it("rejects screenshot paths that escape the dossier folder", () => {
@@ -241,6 +416,8 @@ describe("reference dossiers", () => {
     const sourceRegistry = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8"));
     const record = sourceRegistry.records.find((item: any) => item.id === "care-image-mosaic");
     if (!record) throw new Error("The owned care-image-mosaic record is missing.");
+    record.screenshotPath = "data/inspiration-evidence/seed-source/desktop.png";
+    record.mobileScreenshotPath = "data/inspiration-evidence/seed-source/mobile.png";
     const registryDirectory = path.join(root, "data");
     fs.mkdirSync(registryDirectory, { recursive: true });
     fs.writeFileSync(

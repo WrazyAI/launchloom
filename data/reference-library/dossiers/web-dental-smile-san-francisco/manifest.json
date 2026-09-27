@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "id": "web-dental-smile-san-francisco",
+  "productionEligible": true,
+  "referenceName": "Smile! San Francisco: city-scene promise with service matrix",
+  "familyId": "web-dental-smile-san-francisco-family",
+  "businessKinds": [
+    "dental clinic",
+    "private dentist",
+    "family dentistry",
+    "dental"
+  ],
+  "source": {
+    "name": "Smile! San Francisco official website",
+    "url": "https://smilesanfrancisco.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "dental",
+      "local practice",
+      "patient care"
+    ],
+    "style": [
+      "restrained serif headlines with compact blue sans labels",
+      "white and cool blue-gray surfaces",
+      "dark blue accent"
+    ],
+    "composition": [
+      "a city panorama behind a centered translucent text panel",
+      "city-scene promise",
+      "service matrix",
+      "blue booking close"
+    ],
+    "conversion": [
+      "appointment booking",
+      "practice contact"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "wide city context and authentic practice scenes",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Smile! San Francisco website in San Francisco, California uses a city panorama behind a centered translucent text panel. Navigation is thin white utility header with visible appointment and phone actions. Its page moves through city-photo opening, human-scale practice video, asymmetric clinician and treatment collage, compact service matrix, choice rationale, review band, office image strip, solid blue booking close, with small named treatments gathered into a restrained matrix. wide city context and authentic practice scenes. Transferable mechanics are city-scene promise, service matrix, blue booking close. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "a city panorama behind a centered translucent text panel",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "thin white utility header with visible appointment and phone actions",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "restrained serif headlines with compact blue sans labels",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "cool blue-gray",
+        "deep blue"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "dark blue"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "wide city context and authentic practice scenes",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "city-photo opening",
+      "human-scale practice video",
+      "asymmetric clinician and treatment collage",
+      "compact service matrix",
+      "choice rationale",
+      "review band",
+      "office image strip",
+      "solid blue booking close"
+    ],
+    "servicePresentation": {
+      "pattern": "small named treatments gathered into a restrained matrix",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "schedule appointment",
+      "secondary": "then call",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the practice collage and service matrix into clear single-column reading order",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Smile! San Francisco identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "city-scene-promise",
+        "selector": "[data-reference-signature=city-scene-promise]",
+        "description": "Translate the observed city-scene promise mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "service-matrix",
+        "selector": "[data-reference-signature=service-matrix]",
+        "description": "Translate the observed service matrix mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "blue-booking-close",
+        "selector": "[data-reference-signature=blue-booking-close]",
+        "description": "Translate the observed blue booking close mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses city-scene promise with client-cleared content.",
+      "Page sequence retains service matrix and blue booking close as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

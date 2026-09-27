@@ -1,3 +1,5 @@
+import { heroViewportFitFailure } from "./creative-viewport-policy.mjs";
+
 const requiredViewports = [
   ["desktop", 1536, 864],
   ["compact", 1366, 768],
@@ -55,8 +57,11 @@ export function candidateDiagnosticSafety(candidate) {
     if (evidence.creativeRenderer !== "creative-candidate")
       reasons.push(`${name}-renderer-integrity`);
     if (
-      name !== "mobile" &&
-      Number(evidence.heroBottom) > Number(evidence.viewportHeight) + 1
+      heroViewportFitFailure(
+        evidence,
+        { name, height },
+        candidate.manifest?.referenceDna,
+      )
     )
       reasons.push(`${name}-hero-overflow`);
   }

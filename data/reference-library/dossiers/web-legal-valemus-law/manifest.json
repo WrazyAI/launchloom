@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "id": "web-legal-valemus-law",
+  "productionEligible": true,
+  "referenceName": "Valemus Law multidisciplinary practice",
+  "familyId": "legal-three-part-reassurance-strip",
+  "source": {
+    "name": "Valemus Law multidisciplinary practice official website",
+    "url": "https://www.valemuslaw.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 6412
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 11110
+    },
+    "diagnostics": "Observed firm navigation, cityscape introduction, three-value overview, charcoal news chapter, practice-area split. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Valemus Law multidisciplinary practice official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "legal-services",
+    "law-firm",
+    "family-law",
+    "business-law"
+  ],
+  "tags": {
+    "business": [
+      "legal-services",
+      "law-firm",
+      "family-law",
+      "business-law"
+    ],
+    "style": [
+      "cool-neutral-legal",
+      "small-uppercase-headings",
+      "documentary"
+    ],
+    "composition": [
+      "cityscape-banner",
+      "three-value-columns",
+      "image-copy-alternation"
+    ],
+    "conversion": [
+      "practice-area-routing",
+      "person-routing",
+      "consultation"
+    ],
+    "motion": [
+      "simple-scroll-flow",
+      "static-reduced-motion"
+    ],
+    "imagery": [
+      "cityscape",
+      "legal-work-detail",
+      "team-meeting"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A wide cityscape banner with centered firm introduction leads into three slim value columns before the page turns into long service and people chapters. Narrow white row with small firm emblem, subdued legal-topic links, contact route and search. Compact uppercase sans section labels, restrained gray body copy and centered chapter headings. The page sequence runs from firm navigation to cityscape introduction to three-value overview toward latest-news cards, podcast band, contact footer. Cityscape first, then legal-work and meeting photographs beside text; brochure mockup and practitioner portraits are later proof devices. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A wide cityscape banner with centered firm introduction leads into three slim value columns before the page turns into long service and people chapters.",
+      "alignment": "centered",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Narrow white row with small firm emblem, subdued legal-topic links, contact route and search.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Compact uppercase sans section labels, restrained gray body copy and centered chapter headings.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Sky blue imagery",
+        "white",
+        "charcoal gray and dark indigo action rectangles."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "cool-neutral-legal",
+        "small-uppercase-headings"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Cityscape first, then legal-work and meeting photographs beside text; brochure mockup and practitioner portraits are later proof devices.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "firm navigation",
+      "cityscape introduction",
+      "three-value overview",
+      "charcoal news chapter",
+      "practice-area split",
+      "people split",
+      "brochure band",
+      "testimonial",
+      "latest-news cards",
+      "podcast band",
+      "contact footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Use image-and-copy splits for practice areas and people so a visitor can tell expertise from process; retain a distinct news or resource section only with real content.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Pair an introductory contact path with direct practice-area and people links, then offer a final contact route.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "simple-scroll-flow; static-reduced-motion",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack the three value columns, move image above its linked copy, and keep legal resources separate from the actual consultation path.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy the skyline photograph, people, brochure, podcast, source testimonials or professional claims.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "three-part-reassurance-strip",
+        "selector": "[data-reference-signature=three-part-reassurance-strip]",
+        "description": "A new-client interpretation of the observed three-part reassurance strip relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "alternating-practice-and-people-splits",
+        "selector": "[data-reference-signature=alternating-practice-and-people-splits]",
+        "description": "A new-client interpretation of the observed alternating practice-and-people splits relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "dark-editorial-news-band",
+        "selector": "[data-reference-signature=dark-editorial-news-band]",
+        "description": "A new-client interpretation of the observed dark editorial news band relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

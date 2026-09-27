@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://www.ethansuero.com/",
+  "captures": {
+    "desktop": {
+      "url": "https://www.ethansuero.com/",
+      "finalUrl": "https://www.ethansuero.com/",
+      "httpStatus": 200,
+      "title": "Ethan Suero — Webflow Websites & Branding for B2B Marketing Teams",
+      "capturedAt": "2026-09-26T10:24:02.991Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": true,
+      "image": {
+        "width": 1440,
+        "height": 10169,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 10169,
+      "documentWidth": 1440,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "mobile": {
+      "url": "https://www.ethansuero.com/",
+      "finalUrl": "https://www.ethansuero.com/",
+      "httpStatus": 200,
+      "title": "Ethan Suero — Webflow Websites & Branding for B2B Marketing Teams",
+      "capturedAt": "2026-09-26T10:24:13.555Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "image": {
+        "width": 390,
+        "height": 7902,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 7902,
+      "documentWidth": 390,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    }
+  }
+}

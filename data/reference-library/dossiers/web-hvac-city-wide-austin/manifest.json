@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "web-hvac-city-wide-austin",
+  "productionEligible": true,
+  "referenceName": "City Wide Services diagnostic HVAC route",
+  "familyId": "hvac-symptom-first-choice-grid",
+  "source": {
+    "name": "City Wide Services diagnostic HVAC route official website",
+    "url": "https://citywideaustin.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 7504
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 11853
+    },
+    "diagnostics": "Observed technician hero, symptom-choice cards, service photograph grid, diagnosis approach split, customer proof. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "City Wide Services diagnostic HVAC route official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "hvac",
+    "heating-and-cooling",
+    "air-conditioning",
+    "home-services"
+  ],
+  "tags": {
+    "business": [
+      "hvac",
+      "heating-and-cooling",
+      "air-conditioning",
+      "home-services"
+    ],
+    "style": [
+      "navy-cream-local",
+      "practical-editorial",
+      "rust-action"
+    ],
+    "composition": [
+      "photo-and-choice-opening",
+      "service-photo-grid",
+      "decision-comparison"
+    ],
+    "conversion": [
+      "call",
+      "schedule",
+      "symptom-routing"
+    ],
+    "motion": [
+      "card-hover",
+      "static-diagram"
+    ],
+    "imagery": [
+      "actual-technician",
+      "service-equipment",
+      "schematic-coverage"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dark technician-at-condenser photograph supports a left-aligned plainspoken repair promise, two contact actions and a low trust detail rail. Thin service-area utility line, white brand row, service links, call number and contrasting schedule action. Large friendly sans headlines, compact status labels and concise visitor-centered task descriptions. The page sequence runs from technician hero to symptom-choice cards to service photograph grid toward metro coverage diagram, before-you-call FAQ, lead action and footer. Authentic technician scenes fill a service photo grid, while a simple circular metro diagram handles locality without pretending to be a literal map. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A dark technician-at-condenser photograph supports a left-aligned plainspoken repair promise, two contact actions and a low trust detail rail.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Thin service-area utility line, white brand row, service links, call number and contrasting schedule action.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Large friendly sans headlines, compact status labels and concise visitor-centered task descriptions.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Deep navy",
+        "cream",
+        "slate blue and small rust-red action accents."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "navy-cream-local",
+        "practical-editorial"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Authentic technician scenes fill a service photo grid, while a simple circular metro diagram handles locality without pretending to be a literal map.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "technician hero",
+      "symptom-choice cards",
+      "service photograph grid",
+      "diagnosis approach split",
+      "customer proof",
+      "repair-versus-replace comparison",
+      "metro coverage diagram",
+      "before-you-call FAQ",
+      "lead action and footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Start with what the system is doing, route to confirmed AC/heating/maintenance service, and explain diagnosis and repair-or-replace decisions.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Call or schedule in the opening, repeat after the comparison and final FAQ.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "card-hover; static-diagram",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack symptom choices as full-width controls, preserve photo captions, and move the coverage diagram below the explanatory text.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy technician photos, review quotes, years in business, claimed no-pressure policy, map areas or repair promises.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "symptom-first-choice-grid",
+        "selector": "[data-reference-signature=symptom-first-choice-grid]",
+        "description": "A new-client interpretation of the observed symptom-first choice grid relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "diagnosis-over-pressure-chapter",
+        "selector": "[data-reference-signature=diagnosis-over-pressure-chapter]",
+        "description": "A new-client interpretation of the observed diagnosis-over-pressure chapter relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "metro-radial-diagram",
+        "selector": "[data-reference-signature=metro-radial-diagram]",
+        "description": "A new-client interpretation of the observed metro radial diagram relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "id": "web-architecture-simpson-studio",
+  "productionEligible": true,
+  "referenceName": "Simpson Studio integrated architecture and interiors",
+  "familyId": "architecture-uncaptioned-room-image-opening",
+  "source": {
+    "name": "Simpson Studio integrated architecture and interiors official website",
+    "url": "https://www.simpson-studio.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 8411
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 10545
+    },
+    "diagnostics": "Observed image-led opening, studio promise and work action, integrated process split, architecture-interiors-making service stack, project introduction and thumbnail index. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Simpson Studio integrated architecture and interiors official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "architecture",
+    "interior-design",
+    "interior-architecture"
+  ],
+  "tags": {
+    "business": [
+      "architecture",
+      "interior-design",
+      "interior-architecture"
+    ],
+    "style": [
+      "warm-white-editorial",
+      "material-led-neutral",
+      "minimal-modern"
+    ],
+    "composition": [
+      "photograph-before-headline",
+      "offset-image-text-chapters",
+      "thumbnail-work-index"
+    ],
+    "conversion": [
+      "portfolio-route",
+      "project-enquiry"
+    ],
+    "motion": [
+      "static-photography",
+      "subtle-image-transition"
+    ],
+    "imagery": [
+      "architectural-room-stills",
+      "material-details"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A large, uncaptioned interior photograph leads, followed by a left-aligned studio proposition and a small black work action in a separate white band. A compact wordmark and thin, widely spaced project, studio, services and contact links sit on a plain white top row. Restrained modern sans; modest but confident headings, narrow body measure and generous vertical whitespace let the rooms carry the visual weight. The page sequence runs from image-led opening to studio promise and work action to integrated process split toward awards text field, project conversation, minimal footer. Large architectural photographs alternate with quiet text blocks; a low, horizontal row of project thumbnails acts as an index. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A large, uncaptioned interior photograph leads, followed by a left-aligned studio proposition and a small black work action in a separate white band.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "A compact wordmark and thin, widely spaced project, studio, services and contact links sit on a plain white top row.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Restrained modern sans; modest but confident headings, narrow body measure and generous vertical whitespace let the rooms carry the visual weight.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Warm white",
+        "pale stone and charcoal",
+        "with material color supplied by project photography rather than decorative UI color."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "warm-white-editorial",
+        "material-led-neutral"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Large architectural photographs alternate with quiet text blocks; a low, horizontal row of project thumbnails acts as an index.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "image-led opening",
+      "studio promise and work action",
+      "integrated process split",
+      "architecture-interiors-making service stack",
+      "project introduction and thumbnail index",
+      "studio location chapter",
+      "client proof columns",
+      "awards text field",
+      "project conversation",
+      "minimal footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Use a vertical, editorial service stack for the studio's disciplines, not uniform cards; each discipline gets its own concise scope statement.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Place the first work action immediately after the photograph, then a project enquiry after the portfolio and proof.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "static-photography; subtle-image-transition",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack the image, promise, action and service descriptions in reading order; preserve a usable project thumbnail index without a clipped carousel.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy this studio's project images, awards, place names, cabinetry examples or client testimonials.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "uncaptioned-room-image-opening",
+        "selector": "[data-reference-signature=uncaptioned-room-image-opening]",
+        "description": "A new-client interpretation of the observed uncaptioned room-image opening relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "quiet-service-stack",
+        "selector": "[data-reference-signature=quiet-service-stack]",
+        "description": "A new-client interpretation of the observed quiet service stack relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "low-project-thumbnail-index",
+        "selector": "[data-reference-signature=low-project-thumbnail-index]",
+        "description": "A new-client interpretation of the observed low project-thumbnail index relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

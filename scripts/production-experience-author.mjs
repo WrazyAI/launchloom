@@ -7,6 +7,13 @@ import {
 } from "./creative-compiler.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import { canonicalReferenceMarkerSlug } from "./reference-contract-compliance.mjs";
+import {
+  findUnsafeMotionDomProperty,
+  findUnsafeJsxBehavior,
+  findUnsealedContactDestinations,
+  findUnsupportedClaimCopy,
+} from "./creative-revision-scope.mjs";
 
 /**
  * @typedef {"contract" | "experience" | "styles" | "motion"} AuthorStage
@@ -40,17 +47,6 @@ const requiredRouteKeys = [
   "imageStrategy",
   "signature",
 ];
-const allowedInterfaceCopy = new Set([
-  "Services",
-  "FAQs",
-  "Contact",
-  "Menu",
-  "Close",
-  "Main navigation",
-  "Open menu",
-  "Close menu",
-]);
-
 const contentTokenDefinitions = [
   ["content.brand.name", "string"],
   ["content.brand.logo", "string?"],
@@ -136,11 +132,11 @@ function digest(value) {
  */
 export function redactPromptValue(value) {
   if (typeof value === "string") {
-    if (/^data:image\/[\w.+-]+;base64,/iu.test(value))
-      return "[sealed client image asset]";
-    if (value.length > 12_000)
-      return `${value.slice(0, 256)}...[sealed value truncated]`;
-    return value;
+    if (/data:image\//iu.test(value)) return "[sealed client image asset]";
+    const redacted = value;
+    if (redacted.length > 12_000)
+      return `[sealed value truncated; original length ${value.length}]`;
+    return redacted;
   }
   if (Array.isArray(value)) return value.map(redactPromptValue);
   if (value && typeof value === "object")
@@ -878,6 +874,70 @@ export function restoreRequiredSectionIdsOnSemanticSections(
   return restored;
 }
 
+/**
+ * Bind the services section's internal marker to the detailed DNA pattern.
+ * The marker is compiler metadata, not a visual claim; rendered-reference
+ * evaluation remains responsible for determining whether the section matches.
+ * @param {string} source
+ * @param {{ id: string; servicePresentation?: string; referenceDna?: { servicePresentation?: { pattern?: string } } }} route
+ */
+export function restoreReferenceServicePresentationMarker(
+  source,
+  route = { id: "candidate" },
+) {
+  const pattern = route.referenceDna?.servicePresentation?.pattern;
+  if (!pattern) return source;
+  const { file, elements } = collectJsxElements(source);
+  const services = elements.filter(
+    (element) =>
+      jsxOpeningName(element.opening) === "section" &&
+      idAttributeValue(element, file).value === "services",
+  );
+  if (services.length !== 1)
+    throw new Error(
+      `Candidate ${route.id} cannot bind its Reference DNA service marker: found ${services.length} semantic services sections.`,
+    );
+
+  const target = services[0];
+  const markerAttributes = jsxAttributes(target.opening).filter(
+    (attribute) =>
+      ts.isJsxAttribute(attribute) &&
+      attribute.name.getText(file) === "data-service-presentation",
+  );
+  if (markerAttributes.length > 1)
+    throw new Error(
+      `Candidate ${route.id} has duplicate data-service-presentation attributes.`,
+    );
+  const markerValue = canonicalReferenceMarkerSlug(pattern);
+  const markerAttribute = markerAttributes[0];
+  if (
+    markerAttribute &&
+    jsxAttributeValue(markerAttribute, file).trim() === markerValue
+  )
+    return source;
+  if (
+    markerAttribute &&
+    jsxAttributes(target.opening).some(
+      (attribute) =>
+        ts.isJsxSpreadAttribute(attribute) &&
+        attribute.getStart(file) > markerAttribute.getStart(file),
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} may override data-service-presentation with a later spread.`,
+    );
+
+  const attributeText = `data-service-presentation="${markerValue}"`;
+  if (markerAttribute)
+    return `${source.slice(0, markerAttribute.getStart(file))}${attributeText}${source.slice(markerAttribute.end)}`;
+  const insertionPoint = jsxAttributeInsertionPoint(source, target.opening, file);
+  if (insertionPoint < 0)
+    throw new Error(
+      `Candidate ${route.id} has an invalid services section opening tag.`,
+    );
+  return `${source.slice(0, insertionPoint)} ${attributeText}${source.slice(insertionPoint)}`;
+}
+
 function resolveSealedImageExpression(node, content) {
   if (!node) return { resolved: false };
   if (ts.isParenthesizedExpression(node))
@@ -1044,6 +1104,9 @@ export function restoreImageAltsFromOriginal(
  * Restore lost opening-scene markers only when the repaired JSX still has a
  * unique semantic hero and contact-bound primary action. Otherwise validation
  * remains fail-closed instead of attaching markers to arbitrary elements.
+ * @param {string} repairedSource
+ * @param {string} originalSource
+ * @param {{id?: string, referenceDna?: {ctaPlacement?: {early?: string}}}} [route]
  */
 export function restoreRequiredExperienceMarkers(
   repairedSource,
@@ -1057,6 +1120,31 @@ export function restoreRequiredExperienceMarkers(
     {
       name: "data-hero",
       targets: () => {
+        const originalHero = original.elements.find(({ opening }) =>
+          jsxAttribute(opening, "data-hero"),
+        );
+        for (const attributeName of [
+          "data-reference-section",
+          "data-reference-signature",
+          "data-signature",
+          "id",
+          "className",
+        ]) {
+          const originalIdentity = jsxAttributeValue(
+            jsxAttribute(originalHero?.opening, attributeName),
+            original.file,
+          ).trim();
+          if (!originalIdentity) continue;
+          const matchingIdentity = repaired.elements.filter((element) =>
+            jsxOpeningName(element.opening) === "section" &&
+            jsxAttributeValue(
+              jsxAttribute(element.opening, attributeName),
+              repaired.file,
+            ).trim() === originalIdentity,
+          );
+          if (matchingIdentity.length === 1) return matchingIdentity;
+        }
+
         const matches = repaired.elements.filter((element) => {
           if (jsxOpeningName(element.opening) !== "section") return false;
           return jsxDescendantElementContainsBinding(
@@ -1168,6 +1256,92 @@ export function restoreRequiredExperienceMarkers(
 
   let restored = repairedSource;
   for (const edit of edits.sort((a, b) => b.start - a.start))
+    restored = `${restored.slice(0, edit.start)}${edit.text}${restored.slice(edit.end)}`;
+  return restoreReferenceCtaPlacementMarker(restored, route);
+}
+
+export function restoreReferenceCtaPlacementMarker(source, route) {
+  const placement = route.referenceDna?.ctaPlacement?.early;
+  if (!placement) return source;
+  const markerValue = canonicalReferenceMarkerSlug(placement);
+  const { file, elements } = collectJsxElements(source);
+  const targets = elements.filter(({ opening, node }) => {
+    const tag = jsxOpeningName(opening).toLowerCase();
+    if (!ts.isJsxElement(node) || !["a", "button"].includes(tag)) return false;
+    if (!jsxAttribute(opening, "data-early-conversion")) return false;
+    return tag === "button" ||
+      jsxAttributeValue(jsxAttribute(opening, "href"), file).trim() ===
+        "#contact";
+  });
+  if (targets.length !== 1)
+    throw new Error(
+      `Candidate ${route.id} cannot safely restore data-cta-placement: found ${targets.length} marked early anchor or button actions.`,
+    );
+
+  const target = targets[0];
+  const targetEarlyMarker = jsxAttribute(
+    target.opening,
+    "data-early-conversion",
+  );
+  const targetMarker = jsxAttribute(
+    target.opening,
+    "data-cta-placement",
+  );
+  const edits = [];
+  for (const element of elements) {
+    if (element === target) continue;
+    for (const name of ["data-early-conversion", "data-cta-placement"]) {
+      const marker = jsxAttribute(element.opening, name);
+      if (!marker) continue;
+      const overridden = jsxAttributes(element.opening).some(
+        (attribute) =>
+          ts.isJsxSpreadAttribute(attribute) &&
+          attribute.getStart(file) > marker.getStart(file),
+      );
+      if (overridden)
+        throw new Error(
+          `Candidate ${route.id} may override a misplaced ${name} marker with a later JSX spread.`,
+        );
+      edits.push({ start: marker.getStart(file), end: marker.end, text: "" });
+    }
+  }
+
+  if (targetMarker) {
+    const overridden = jsxAttributes(target.opening).some(
+      (attribute) =>
+        ts.isJsxSpreadAttribute(attribute) &&
+        attribute.getStart(file) > targetMarker.getStart(file),
+    );
+    if (overridden)
+      throw new Error(
+        `Candidate ${route.id} may override data-cta-placement with a later JSX spread.`,
+      );
+    if (jsxAttributeValue(targetMarker, file).trim() !== markerValue)
+      edits.push({
+        start: targetMarker.getStart(file),
+        end: targetMarker.end,
+        text: `data-cta-placement="${markerValue}"`,
+      });
+  }
+  const missingTargetMarkers = [
+    !targetEarlyMarker && "data-early-conversion",
+    !targetMarker && `data-cta-placement="${markerValue}"`,
+  ].filter(Boolean);
+  if (missingTargetMarkers.length) {
+    const insertion = jsxAttributeInsertionPoint(source, target.opening, file);
+    if (insertion < 0)
+      throw new Error(
+        `Candidate ${route.id} has an invalid designated CTA opening tag.`,
+      );
+    edits.push({
+      start: insertion,
+      end: insertion,
+      text: ` ${missingTargetMarkers.join(" ")}`,
+    });
+  }
+
+  let restored = source;
+  for (const edit of edits.sort((left, right) => right.start - left.start))
     restored = `${restored.slice(0, edit.start)}${edit.text}${restored.slice(edit.end)}`;
   return restored;
 }
@@ -1511,23 +1685,7 @@ function isStaticallyUnreachable(node) {
 }
 
 function unsupportedClaimLiterals(source) {
-  const withoutImports = source.replace(/^\s*import[^;]+;?\s*$/gmu, "");
-  const textNodes = [...withoutImports.matchAll(/>([^<>{}\n]+)</gu)].map(
-    (match) => match[1].trim(),
-  );
-  const visitorAttributes = [
-    ...withoutImports.matchAll(
-      /\b(?:alt|aria-label|placeholder|title)\s*=\s*["']([^"']+)["']/gu,
-    ),
-  ].map((match) => match[1].trim());
-  return [...textNodes, ...visitorAttributes].filter(
-    (value) =>
-      value &&
-      !allowedInterfaceCopy.has(value) &&
-      /\b(?:award(?:-?winning)?|certified|licensed|insured|guaranteed?|best|number one|#1|five[- ]star|top[- ]rated|years? of experience)\b/iu.test(
-        value,
-      ),
-  );
+  return findUnsupportedClaimCopy(source);
 }
 
 function scalarContentValues(value) {
@@ -1619,6 +1777,7 @@ function validateExperience(source, route, content) {
     if (pattern.test(source))
       throw new Error(`Candidate ${route.id} contains forbidden ${label}.`);
   assertRequiredSectionAnchors(source, route);
+  assertRequiredConversionSection(source, route, content);
   if (
     !/import\s+\{[^}]*\bLeadForm\b[^}]*\}\s+from\s+["']@launchloom\/runtime["']/u.test(
       source,
@@ -1676,6 +1835,16 @@ function validateExperience(source, route, content) {
       throw new Error(
         `Candidate ${route.id} navigation must expose literal <a href="#${target}"> inside a visible native <nav>.`,
       );
+  const unsafeBehavior = findUnsafeJsxBehavior(source);
+  if (unsafeBehavior.length)
+    throw new Error(
+      `Candidate ${route.id} contains unsafe JSX behavior: ${unsafeBehavior[0]}. Use the shared LaunchLoom runtime for page interactions.`,
+    );
+  const unsealedDestinations = findUnsealedContactDestinations(source);
+  if (unsealedDestinations.length)
+    throw new Error(
+      `Candidate ${route.id} contact destinations must use sealed business content: ${unsealedDestinations[0]}.`,
+    );
   for (const binding of requiredExperienceBindings)
     if (
       !helperSealedBindings.has(binding.token) &&
@@ -1695,6 +1864,50 @@ function validateExperience(source, route, content) {
   if (embeddedFact)
     throw new Error(
       `Candidate ${route.id} hardcodes sealed content instead of using a token: ${embeddedFact}`,
+    );
+}
+
+function assertRequiredConversionSection(source, route, content) {
+  const processSteps = Array.isArray(content?.process)
+    ? content.process.filter(
+        (step) => typeof step === "string" && step.trim().length > 0,
+      )
+    : [];
+  if (processSteps.length === 0) return;
+
+  const { file, elements } = collectJsxElements(source);
+  const conversionSections = elements.filter(
+    (element) =>
+      jsxOpeningName(element.opening) === "section" &&
+      jsxAttributeValue(
+        jsxAttribute(element.opening, "data-required-section"),
+        file,
+      ) === "conversion",
+  );
+  if (
+    conversionSections.length !== 1 ||
+    !jsxChildrenContainBinding(
+      conversionSections[0]?.node?.children,
+      "content.process",
+      file,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} must render exactly one marked conversion section bound to content.process when process steps are supplied.`,
+    );
+
+  const contactSection = elements.find(
+    (element) =>
+      jsxOpeningName(element.opening) === "section" &&
+      idAttributeValue(element, file).value === "contact",
+  );
+  if (
+    !contactSection ||
+    conversionSections[0].node.getStart(file) >=
+      contactSection.node.getStart(file)
+  )
+    throw new Error(
+      `Candidate ${route.id} must place its conversion section before the contact section.`,
     );
 }
 
@@ -1723,9 +1936,10 @@ function validateStyles(source, route) {
  * variables remain available when a candidate intentionally consumes them.
  */
 export function namespaceCreativeCss(source) {
+  const commentFree = source.replace(/\/\*[\s\S]*?\*\//gu, " ");
   const declared = new Set(
-    [...source.matchAll(/(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu)].map(
-      (match) => match[1],
+    [...commentFree.matchAll(/(--[A-Za-z][\w-]*)\s*:/gu)].map((match) =>
+      match[1],
     ),
   );
   if (!declared.size) return source;
@@ -1738,6 +1952,11 @@ export function namespaceCreativeCss(source) {
 
 function validateMotion(source, route) {
   syntaxErrorFor(source, route, "motion.js", false);
+  const unsafeProperty = findUnsafeMotionDomProperty(source);
+  if (unsafeProperty)
+    throw new Error(
+      `Candidate ${route.id} motion cannot change DOM text, HTML, or attributes through ${unsafeProperty}.`,
+    );
   for (const specifier of importSpecifiers(source))
     if (!allowedImports.has(specifier))
       throw new Error(
@@ -1814,18 +2033,37 @@ export function validateProductionCandidateFiles({
   };
 }
 
-function authorRules() {
+function conciseReferenceText(value, limit = 420) {
+  return String(value || "")
+    .replace(/[\u0000-\u001f\u007f]/gu, " ")
+    .replace(/\s+/gu, " ")
+    .trim()
+    .slice(0, limit);
+}
+
+export function authorRules(route = {}) {
+  const referenceDna = route.referenceDna || {};
+  const heroViewport = conciseReferenceText(
+    referenceDna.heroGeometry?.viewport,
+  );
+  const primaryCta = conciseReferenceText(referenceDna.ctaPlacement?.primary, 280);
+  const earlyCta = conciseReferenceText(referenceDna.ctaPlacement?.early, 280);
   return [
     "Do not hardcode business facts or marketing copy. Render all visitor-facing business content through the supplied content tokens.",
+    "Build tel: and mailto: links directly from content.brand.phone and content.brand.email. Never hardcode or derive unverified contact destinations.",
     "Use only React, @launchloom/runtime, GSAP, and GSAP ScrollTrigger in Experience.jsx. The deterministic host imports and mounts motion.js; do not import or invoke ./motion.js from Experience.jsx.",
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
-    "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
+    "Expose Services, FAQs, and Contact navigation. Place the main conversion according to route.referenceDna.ctaPlacement.primary and preserve route.referenceDna.ctaPlacement.early; do not move a later CTA into the hero merely to match a generic template.",
+    `Assigned Reference DNA CTA placement: primary=${JSON.stringify(primaryCta || "follow the route DNA and screenshots")}; early=${JSON.stringify(earlyCta || "follow the route DNA and screenshots")}.`,
     "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; use a compact anchor CTA for early conversion and do not fake a form or create a second lead endpoint.",
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
+    'When content.process is non-empty, render one family-appropriate <section data-required-section="conversion"> before contact and bind every step from content.process; never omit these verified steps or invent replacements.',
+    "Maintain WCAG AA contrast throughout the rendered page: dark surfaces require light text, and light surfaces require dark text. Check the actual foreground/background pairing for every section, including footer and contact details.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",
-    "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact: no full LeadForm, service list, or long-copy block in the first fold.",
+    "At 1536x864 and 1366x768, preserve the assigned Reference DNA's opening geometry at 100 percent zoom. Read route.referenceDna.heroGeometry.viewport and match its image start, crop, overlap, and continuation; the reference's image frame may extend below the fold, so do not compress it merely to fit it above the fold. Keep visible text and controls unclipped and usable, and do not put a full LeadForm, service list, or long-copy block into the opening scene.",
+    `Assigned Reference DNA hero viewport geometry: ${JSON.stringify(heroViewport || "derive from the assigned screenshots; preserve any intentional below-fold continuation")}.`,
     "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
   ].join("\n");
 }
@@ -1976,8 +2214,6 @@ export async function authorExperienceCandidates({
   if (typeof generate !== "function")
     throw new Error("A generation adapter is required.");
   const contentManifest = buildCreativeContentManifest(site);
-  const rules = authorRules();
-
   const routes = assertInspirationPack(inspirationPack).map((route) =>
     buildRouteContract(route),
   );
@@ -1994,9 +2230,15 @@ export async function authorExperienceCandidates({
   const limitedGenerate = createGenerationLimiter(generate, maxConcurrency);
   const authoredResults = await Promise.allSettled(
     routes.map(async (route, index) => {
+      const rules = authorRules(route);
       const routeContentManifest = buildCreativeContentManifest(site, route);
       const content = routeContentManifest.values;
-      const base = { route, contentTokens, contentShape: content, rules };
+      const base = {
+        route,
+        contentTokens,
+        contentShape: redactPromptValue(content),
+        rules,
+      };
       const contractResult = await generateContract(limitedGenerate, {
         ...base,
         stage: "contract",
@@ -2013,6 +2255,10 @@ export async function authorExperienceCandidates({
       let complianceRepaired =
         contractResult.repaired || experienceResult.repaired;
       try {
+        experience = restoreReferenceCtaPlacementMarker(
+          restoreReferenceServicePresentationMarker(experience, route),
+          route,
+        );
         validateExperience(experience, route, content);
       } catch (error) {
         complianceRepaired = true;
@@ -2031,7 +2277,13 @@ export async function authorExperienceCandidates({
             "content",
             "experience",
           );
-          experience = normalizeAuthoredSource(repairedExperience.value);
+          experience = restoreReferenceCtaPlacementMarker(
+            restoreReferenceServicePresentationMarker(
+              normalizeAuthoredSource(repairedExperience.value),
+              route,
+            ),
+            route,
+          );
           validateExperience(experience, route, content);
         } catch (repairError) {
           const repairMessage =
@@ -2050,7 +2302,13 @@ export async function authorExperienceCandidates({
             "content",
             "experience",
           );
-          experience = normalizeAuthoredSource(finalRepair.value);
+          experience = restoreReferenceCtaPlacementMarker(
+            restoreReferenceServicePresentationMarker(
+              normalizeAuthoredSource(finalRepair.value),
+              route,
+            ),
+            route,
+          );
           validateExperience(experience, route, content);
         }
       }
@@ -2105,7 +2363,13 @@ export async function authorExperienceCandidates({
             "content",
             "experience",
           );
-          experience = normalizeAuthoredSource(repaired.value);
+          experience = restoreReferenceCtaPlacementMarker(
+            restoreReferenceServicePresentationMarker(
+              normalizeAuthoredSource(repaired.value),
+              route,
+            ),
+            route,
+          );
           complianceRepaired = true;
           validateExperience(experience, route, content);
           fidelity = validateReferenceCandidate({

@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "id": "trade-project-showcase",
+  "productionEligible": false,
+  "referenceName": "Trades project-led study",
+  "familyId": "trades-project-led",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/trade-project-showcase",
+    "rights": "owned",
+    "rightsEvidence": "The inspiration registry records this as a LaunchLoom-owned original visual study. Exact original capture paths and matching screenshot hashes are documented in rights/provenance.md. Ownership is registry-recorded, not an independently audited asset-by-asset license.",
+    "sourceType": "LaunchLoom-owned original visual study, rendered in-house",
+    "rightsEvidencePath": "rights/provenance.md"
+  },
+  "businessKinds": [
+    "local-trades",
+    "home-services",
+    "garage-door-repair",
+    "contractors"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Trades project-led study",
+    "heroGeometry": {
+      "mode": "oversized service poster beside a three-window project image stack",
+      "alignment": "dark text field beside tall image crops",
+      "viewport": "headline and request action visible before the next section"
+    },
+    "navigationGeometry": {
+      "mode": "small wordmark and direct utility links",
+      "placement": "top edge",
+      "mobile": "condensed inline links"
+    },
+    "typography": {
+      "display": "bold compressed sans",
+      "body": "technical sans",
+      "scale": "very large multi-line service statement"
+    },
+    "palette": {
+      "surfaces": [
+        "near-black",
+        "deep green",
+        "warm white"
+      ],
+      "ink": "warm white",
+      "accents": [
+        "service orange"
+      ],
+      "contrastIntent": "high-contrast trade-service poster"
+    },
+    "imageTreatment": {
+      "mode": "project-led image windows",
+      "crop": "one tall crop with two supporting windows",
+      "focalPoint": "finished work or equipment"
+    },
+    "sectionSequence": [
+      "hero",
+      "image-chapter",
+      "services",
+      "process",
+      "coverage",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "large-type service index",
+      "interaction": "open or navigate by service row"
+    },
+    "ctaPlacement": {
+      "primary": "request action within poster hero",
+      "secondary": "call action beside primary request",
+      "early": "inside the opening poster"
+    },
+    "motion": {
+      "primitive": "layered image-mask reveal",
+      "library": "gsap-scrolltrigger",
+      "reducedMotion": "show the project image stack statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "poster-first image stack",
+      "rules": [
+        "reduce headline scale before cropping",
+        "stack image windows in document order",
+        "keep both request and call actions reachable"
+      ]
+    },
+    "prohibitedPatterns": [
+      "3D object stage",
+      "decorative number columns",
+      "uniform service-card grid",
+      "split hero with tiny text"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "trade-poster",
+        "selector": "[data-reference-signature=trade-poster]",
+        "description": "large service poster headline"
+      },
+      {
+        "id": "project-window-stack",
+        "selector": "[data-reference-signature=project-window-stack]",
+        "description": "asymmetric vertical project image windows"
+      }
+    ],
+    "acceptanceChecks": [
+      "the service promise dominates the hero",
+      "images are clearly project evidence, not abstract decoration",
+      "service index follows the opening scene"
+    ],
+    "annotatedDescription": "Archived LaunchLoom-owned visual study: Trades project-led study. The registry describes it as Owned rendered garage-door repair study. The screenshot shows a large service poster beside finished-work image windows, followed by a direct repair index. It is not a 3D portfolio or sticky project stack.. The opening uses oversized service poster beside a three-window project image stack, with small wordmark and direct utility links. The page rhythm is hero, image-chapter, services, process, coverage, faq, contact. Mobile translation: poster-first image stack. This dossier records transferable mechanics and original screenshot evidence for historical traceability only; it is not a production reference or a source of client facts, assets, or claims."
+  },
+  "review": {
+    "status": "owned-archive-not-for-production",
+    "curator": "Codex archival materialization",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical traceability of a registry-recorded LaunchLoom-owned study and its exact paired screenshots",
+    "notes": "productionEligible=false. Never add this dossier to the core collection or randomized production selection. Screenshot copies match the registered originals by SHA-256. Original capture date is not established by this materialization."
+  },
+  "tags": {
+    "business": [
+      "local-trades",
+      "home-services",
+      "garage-door-repair",
+      "contractors"
+    ],
+    "style": [
+      "bold compressed sans",
+      "surfaces: near-black, deep green, warm white",
+      "accents: service orange"
+    ],
+    "composition": [
+      "oversized service poster beside a three-window project image stack",
+      "small wordmark and direct utility links",
+      "large-type service index"
+    ],
+    "conversion": [
+      "request action within poster hero",
+      "call action beside primary request",
+      "inside the opening poster"
+    ],
+    "motion": [
+      "layered image-mask reveal",
+      "show the project image stack statically"
+    ],
+    "imagery": [
+      "project-led image windows",
+      "one tall crop with two supporting windows"
+    ]
+  }
+}

@@ -1,7 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { businessKindMatches } from "./inspiration-registry.mjs";
 
-const HISTORY_LIMIT = 50;
+const HISTORY_PER_KIND_LIMIT = 30;
+const UNKNOWN_KIND_HISTORY_LIMIT = 50;
+const HISTORY_LIMIT = 500;
 
 export function defaultHistoryPath() {
   return path.join(import.meta.dirname, "..", "data", "recent-launch-signatures.json");
@@ -66,17 +69,79 @@ export function launchRecordFrom({
   if (!packId || !fingerprint)
     throw new Error("A launch record needs a pack id and layout fingerprint.");
   const routes = Array.isArray(inspiration?.routes) ? inspiration.routes : [];
+  const businessName = String(config?.business?.name || "").trim();
+  const timestampId = launchedAt.replace(/[^0-9]/gu, "");
   return {
-    id: `${launchedAt.slice(0, 10)}-${slug(config?.business?.name)}`,
+    id: `${timestampId}-${slug(businessName)}`,
     launchedAt,
     stage: stage === "production" ? "production" : "preview",
-    businessName: String(config?.business?.name || "").trim(),
+    businessName,
+    businessKind: String(
+      inspiration?.request?.industry || config?.businessKind || config?.industry || "",
+    ).trim().toLowerCase(),
+    generationId: String(inspiration?.request?.generationId || "").trim() || undefined,
+    inspirationSeed: String(inspiration?.request?.seed || "").trim() || undefined,
     recipe: String(config?.design?.recipe || "").trim(),
     packId,
     variantId,
     layoutFingerprint: fingerprint,
-    referenceIds: cleanList(routes.map((route) => route.referenceId)),
+    referenceIds: cleanList(
+      routes.flatMap((route) => [
+        route.referenceId,
+        ...(Array.isArray(route.referenceIds) ? route.referenceIds : []),
+      ]),
+    ),
     routeSignatures: cleanList(routes.map((route) => route.signature)),
+  };
+}
+
+function boundedLaunchHistory(launches) {
+  const countsByKind = new Map();
+  let unknownKindCount = 0;
+  const retained = [];
+  for (const launch of [...launches].reverse()) {
+    const businessKind = String(launch.businessKind || "").trim().toLowerCase();
+    if (businessKind) {
+      const count = countsByKind.get(businessKind) || 0;
+      if (count >= HISTORY_PER_KIND_LIMIT) continue;
+      countsByKind.set(businessKind, count + 1);
+    } else {
+      if (unknownKindCount >= UNKNOWN_KIND_HISTORY_LIMIT) continue;
+      unknownKindCount += 1;
+    }
+    retained.push(launch);
+    if (retained.length >= HISTORY_LIMIT) break;
+  }
+  return retained.reverse();
+}
+
+export function referenceSelectionContext(history, businessKind) {
+  const nicheLaunches = (history?.launches || []).filter((launch) => {
+    const recordedKind = String(launch.businessKind || "").trim();
+    return recordedKind && businessKindMatches({ industries: [recordedKind] }, businessKind);
+  });
+  const exposureLaunches = nicheLaunches.slice(-30);
+  const referenceExposure = {};
+  for (const launch of exposureLaunches)
+    for (const referenceId of cleanList(launch.referenceIds))
+      referenceExposure[referenceId] = (referenceExposure[referenceId] || 0) + 1;
+  const lastLaunch = nicheLaunches.at(-1);
+  const recentReferenceSets = nicheLaunches
+    .slice(-12)
+    .map((launch) => cleanList(launch.referenceIds))
+    .filter((ids) => ids.length === 3);
+  const signatureLaunches = nicheLaunches.slice(-5);
+  return {
+    recentReferenceIds: cleanList(lastLaunch?.referenceIds),
+    recentReferenceSets,
+    recentRouteSignatures: cleanList(
+      signatureLaunches.flatMap((launch) => launch.routeSignatures || []),
+    ),
+    referenceExposure: Object.fromEntries(
+      Object.entries(referenceExposure).sort(([left], [right]) =>
+        left.localeCompare(right),
+      ),
+    ),
   };
 }
 
@@ -85,10 +150,10 @@ export async function recordLaunch(
   historyPath = defaultHistoryPath(),
 ) {
   const history = await readLaunchHistory(historyPath);
-  const launches = [
+  const launches = boundedLaunchHistory([
     ...history.launches.filter((launch) => launch.id !== entry.id),
     entry,
-  ].slice(-HISTORY_LIMIT);
+  ]);
   const next = {
     version: 1,
     updatedAt: new Date().toISOString(),

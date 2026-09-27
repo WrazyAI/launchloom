@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "id": "jewelry-taya-memory-wearable",
+  "productionEligible": false,
+  "referenceName": "Taya wearable jewelry product story",
+  "familyId": "taya-memory-wearable-editorial",
+  "source": {
+    "name": "Taya official website",
+    "url": "https://tayanecklace.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 that full-page screenshot retention, derived prompts and LaunchLoom pipeline-model visual-reference use are cleared. No source-owner grant was uploaded.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "First-party homepage https://tayanecklace.com/ was rendered in headless Chromium; scrolled the full document to trigger lazy content, returned to top and captured paired viewport images.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 5141
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 5531
+    },
+    "diagnostics": "A close crop of a pendant on a person carries a white serif promise near the lower edge with a small preorder control above. floating necklace motif, product idea, film/story panel. Do not copy hardware design, wearable images, memory-recording claims, battery/durability promises, privacy statements or testimonials.",
+    "attribution": "Taya official website; archive capture uses https://tayanecklace.com/. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "fine-jewelry",
+    "wearable-product",
+    "independent-retail",
+    "consumer-electronics",
+    "product-launch"
+  ],
+  "tags": {
+    "business": [
+      "fine-jewelry",
+      "wearable-product",
+      "independent-retail",
+      "consumer-electronics",
+      "product-launch"
+    ],
+    "style": [
+      "minimal-product-editorial",
+      "warm-ivory",
+      "soft-gold",
+      "jewelry-first-technology"
+    ],
+    "composition": [
+      "immersive-close-cropped-campaign-image",
+      "campaign-to-product-story-to-features-to-privacy-to-testimonials",
+      "pendant-close-crop-hero",
+      "floating-necklace-line",
+      "four-tile-feature-rail"
+    ],
+    "conversion": [
+      "product-education-and-feature-rail",
+      "Offer preorder only if available; otherwise a truthful product update or contact action should appear at the first decision point."
+    ],
+    "motion": [
+      "product-line-draw",
+      "feature-rail",
+      "scroll-reveal"
+    ],
+    "imagery": [
+      "natural-light-wearable-portrait-and-macro-pendant-still-life",
+      "Wearable portrait, floating necklace line, paper-and-hand film still and four feature tiles explain the product."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A close crop of a pendant on a person carries a white serif promise near the lower edge with a small preorder control above. Minimal menu icon, centered wordmark and preorder route overlay the campaign image. Elegant editorial serif display alongside small neutral product explanation and understated button labels. Warm ivory, black, natural skin tones and soft gold pendant imagery. Wearable portrait, floating necklace line, paper-and-hand film still and four feature tiles explain the product. The full sequence runs from wearable photo promise to floating necklace motif to product idea toward privacy explanation, testimonials, preorder footer. Do not copy hardware design, wearable images, memory-recording claims, battery/durability promises, privacy statements or testimonials.",
+    "heroGeometry": {
+      "mode": "A close crop of a pendant on a person carries a white serif promise near the lower edge with a small preorder control above.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "Minimal menu icon, centered wordmark and preorder route overlay the campaign image.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "Elegant editorial serif display alongside small neutral product explanation and understated button labels.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "Warm ivory",
+        "black",
+        "natural skin tones and soft gold pendant imagery"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "minimal-product-editorial",
+        "warm-ivory"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "Wearable portrait, floating necklace line, paper-and-hand film still and four feature tiles explain the product.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "wearable photo promise",
+      "floating necklace motif",
+      "product idea",
+      "film/story panel",
+      "jewelry-first statement",
+      "feature tiles",
+      "privacy explanation",
+      "testimonials",
+      "preorder footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Explain verified product function in a focused feature rail; product behavior, recording/privacy claims and preorders require direct client evidence.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Offer preorder only if available; otherwise a truthful product update or contact action should appear at the first decision point.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "product-line-draw; feature-rail; scroll-reveal",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Reduce the campaign crop without losing the pendant, reflow feature tiles into a vertical sequence and keep film controls and disclosures accessible.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy hardware design, wearable images, memory-recording claims, battery/durability promises, privacy statements or testimonials.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "pendant-close-crop-hero",
+        "selector": "[data-reference-signature=pendant-close-crop-hero]",
+        "description": "Original client interpretation of the observed pendant close-crop hero mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "floating-necklace-line",
+        "selector": "[data-reference-signature=floating-necklace-line]",
+        "description": "Original client interpretation of the observed floating necklace line mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "four-tile-feature-rail",
+        "selector": "[data-reference-signature=four-tile-feature-rail]",
+        "description": "Original client interpretation of the observed four-tile feature rail mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. Do not copy hardware design, wearable images, memory-recording claims, battery/durability promises, privacy statements or testimonials. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

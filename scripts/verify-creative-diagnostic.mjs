@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { chromium } from "playwright";
+import { heroViewportFitFailure } from "./creative-viewport-policy.mjs";
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce(
@@ -13,6 +14,17 @@ const args = Object.fromEntries(
 const dist = path.resolve(args.dist || "dist");
 const candidateId = String(args.candidate || "");
 const screenshots = path.resolve(args.screenshots || ".launchloom/creative-diagnostic-screenshots");
+const selectedManifestPath = path.resolve(
+  args.manifest || "src/generated-experiences/selected/manifest.json",
+);
+const selectedManifest = await fs
+  .readFile(selectedManifestPath, "utf8")
+  .then(JSON.parse)
+  .catch(() => null);
+const referenceDna =
+  selectedManifest?.referenceDna ||
+  selectedManifest?.creativeManifest?.referenceDna ||
+  null;
 const types = {
   ".css": "text/css",
   ".html": "text/html",
@@ -67,6 +79,7 @@ try {
     const state = await page.evaluate(() => {
       const creative = document.querySelector("[data-creative-host='true']");
       const hero = creative?.querySelector("[data-hero]");
+      const openingImage = hero?.querySelector("img");
       return {
         robots: document.querySelector('meta[name="robots"]')?.getAttribute("content") || "",
         canonical: Boolean(document.querySelector('link[rel="canonical"]')),
@@ -81,6 +94,11 @@ try {
         brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
         unnamedControls: [...document.querySelectorAll("button, a")].filter((element) => !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
         heroBottom: hero?.getBoundingClientRect().bottom || 0,
+        openingImage: {
+          bottomRatio: openingImage
+            ? openingImage.getBoundingClientRect().bottom / innerHeight
+            : 0,
+        },
       };
     });
     if (!/(^|,\s*)noindex(,|$)/iu.test(state.robots) || !/(^|,\s*)nofollow(,|$)/iu.test(state.robots)) failures.push(`${viewport.name}: preview is not noindex,nofollow`);
@@ -92,7 +110,8 @@ try {
     if (state.missingAlt) failures.push(`${viewport.name}: image missing alt text`);
     if (state.brokenImages) failures.push(`${viewport.name}: broken image`);
     if (state.unnamedControls) failures.push(`${viewport.name}: unnamed interactive control`);
-    if (viewport.name !== "mobile" && state.heroBottom > viewport.height + 1) failures.push(`${viewport.name}: opening hero does not fit the viewport`);
+    if (heroViewportFitFailure(state, viewport, referenceDna))
+      failures.push(`${viewport.name}: opening hero does not fit the viewport`);
     if (browserErrors.length) failures.push(`${viewport.name}: browser errors: ${browserErrors.join("; ")}`);
     await page.screenshot({ path: path.join(screenshots, `${viewport.name}.png`), fullPage: true });
     console.log(JSON.stringify({ viewport: viewport.name, state, browserErrors }));

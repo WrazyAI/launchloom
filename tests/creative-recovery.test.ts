@@ -51,6 +51,23 @@ describe("creative recovery diagnostics", () => {
     expect(result).toEqual({ safe: true, reasons: [] });
   });
 
+  it("allows explicit below-fold reference geometry when the opening image crosses the fold", () => {
+    const item: any = candidate("candidate-kokoro", 84);
+    item.manifest = {
+      referenceDna: {
+        heroGeometry: {
+          viewport: "The portrait image starts near 0.79 and continues below the fold.",
+        },
+      },
+    };
+    item.viewports[0].heroBottom = 1501;
+    item.viewports[0].openingImage = { bottomRatio: 1.74 };
+    item.viewports[1].heroBottom = 1321;
+    item.viewports[1].openingImage = { bottomRatio: 1.72 };
+
+    expect(candidateDiagnosticSafety(item)).toEqual({ safe: true, reasons: [] });
+  });
+
   it.each([
     ["desktop overflow", (item: any) => (item.viewports[0].overflow = true)],
     ["missing mobile capture", (item: any) => (item.viewports = item.viewports.slice(0, 2))],

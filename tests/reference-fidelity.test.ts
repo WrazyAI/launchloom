@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 import { validateReferenceCandidate } from "../scripts/reference-fidelity.mjs";
+import { namespaceCreativeCss } from "../scripts/production-experience-author.mjs";
 
 const record = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8")).records[0];
 const dna = buildReferenceDna(record, { requireEvidence: true });
@@ -34,6 +35,37 @@ describe("reference fidelity validator", () => {
     expect(report.pass).toBe(true);
   });
 
+  it("does not treat documented CSS variable examples inside comments as live token collisions", () => {
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: `${validStyles}\n/* Example host token: --secondary: #ddd; */`,
+      motionSource: validMotion,
+    });
+
+    expect(report.pass).toBe(true);
+    expect(report.hardFindings).not.toContainEqual(
+      expect.objectContaining({ code: "css-token-collision" }),
+    );
+  });
+
+  it("namespaces custom-property names wherever the fidelity scanner recognizes a collision", () => {
+    const candidateStyles = namespaceCreativeCss(
+      `${validStyles}\n@supports (--primary: #123456) { .hero { color: var(--primary); } }`,
+    );
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: candidateStyles,
+      motionSource: validMotion,
+    });
+
+    expect(candidateStyles).toContain("@supports (--ll-creative-primary:");
+    expect(report.hardFindings).not.toContainEqual(
+      expect.objectContaining({ code: "css-token-collision" }),
+    );
+  });
+
   it.each(["data-reference-pattern", "data-layout", "data-grammar", "className", "class"])("detects prohibited patterns in %s values", (attribute) => {
     const report = validateReferenceCandidate({
       referenceDna: { ...dna, prohibitedPatterns: [...dna.prohibitedPatterns, "cards"] },
@@ -57,6 +89,58 @@ describe("reference fidelity validator", () => {
     const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: humanReadable, stylesSource: validStyles, motionSource: validMotion });
     expect(report.pass).toBe(true);
     expect(report.findings).toEqual([]);
+  });
+
+  it("uses the services section marker instead of a shortened page-root summary", () => {
+    const sourceWithRootSummary = validExperience.replace(
+      "<main ",
+      '<main data-service-presentation="editorial-index-summary" ',
+    );
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: sourceWithRootSummary,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+    expect(report.visualFindings).not.toContainEqual(
+      expect.objectContaining({ code: "service-presentation-mismatch" }),
+    );
+  });
+
+  it("does not accept a page-root service marker without a services-section marker", () => {
+    const markerOnlyOnRoot = validExperience
+      .replace(' data-service-presentation="magazine-archive-ledger"', "")
+      .replace(
+        "<main ",
+        '<main data-service-presentation="magazine-archive-ledger" ',
+      );
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: markerOnlyOnRoot,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+    expect(report.visualFindings).toContainEqual(
+      expect.objectContaining({ code: "service-presentation" }),
+    );
+  });
+
+  it("requires the CTA placement marker on the designated early action", () => {
+    const markerOnlyOnRoot = validExperience
+      .replace(' data-cta-placement="after-hero-image"', "")
+      .replace(
+        "<main ",
+        '<main data-cta-placement="after-hero-image" ',
+      );
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: markerOnlyOnRoot,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+    expect(report.visualFindings).toContainEqual(
+      expect.objectContaining({ code: "cta-placement-mismatch" }),
+    );
   });
 
   it("resolves static JSX marker constants without executing authored code", () => {

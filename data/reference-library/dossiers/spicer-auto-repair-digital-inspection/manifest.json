@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-auto-repair-digital-inspection",
+  "productionEligible": false,
+  "referenceName": "Spicer local auto-repair symptom triage and inspection",
+  "familyId": "spicer-auto-repair-digital-inspection",
+  "source": {
+    "name": "Spicer Designs Auto Repair CC BY 4.0 template",
+    "url": "https://www.spicerdesigns.com/templates/auto-repair",
+    "rights": "licensed",
+    "rightsEvidence": "Spicer Designs template page states CC BY 4.0; the local license and placeholder-art provenance describe attribution and asset limits.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": [
+      "rights/asset-provenance.md"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Linked Spicer Designs first-party live preview https://www.spicerdesigns.com/preview/auto-repair was rendered in headless Chromium; registry source URL is its template information page. Scrolled the full document, returned to top and captured paired viewport images.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 6011
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 8736
+    },
+    "diagnostics": "A very dark garage photograph carries an oversized white-and-red diagnostic promise and two square next-step controls. symptom-selector panel, six-capability grid, inspection-step sequence. Template labour rate, diagnostic fee, vehicle makes, qualifications, customer reviews, warranty terms and phone are fictional.",
+    "attribution": "Spicer Designs Auto Repair CC BY 4.0 template; archive capture uses https://www.spicerdesigns.com/preview/auto-repair. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "local-auto-repair",
+    "mechanic-shop",
+    "vehicle-diagnostics",
+    "brake-service",
+    "independent-auto-service"
+  ],
+  "tags": {
+    "business": [
+      "local-auto-repair",
+      "mechanic-shop",
+      "vehicle-diagnostics",
+      "brake-service",
+      "independent-auto-service"
+    ],
+    "style": [
+      "diagnostic-workshop-editorial",
+      "near-black-and-signal-red",
+      "evidence-led-service",
+      "technical-quiet"
+    ],
+    "composition": [
+      "dark-workshop-image-with-left-diagnostic-poster",
+      "bay-promise-to-symptoms-to-labour-context-to-inspection-to-contact",
+      "dark-diagnostic-hero",
+      "symptom-to-inspection-routing",
+      "six-step-inspection-ledger"
+    ],
+    "conversion": [
+      "symptom-triage-to-capabilities-to-inspection-steps",
+      "Book a diagnostic in the opening and after the inspection explanation, with a final form only when submissions work."
+    ],
+    "motion": [
+      "symptom-selection",
+      "inspection-sequence",
+      "native-faq"
+    ],
+    "imagery": [
+      "ai-generated-bay-placeholders-and-equipment-details",
+      "Atmospheric repair-bay image supports the opening; the rest is highly structured symptom, service and process panels."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A very dark garage photograph carries an oversized white-and-red diagnostic promise and two square next-step controls. Small hours/credentials strip and service, symptoms, inspection and booking anchors frame the opening. Heavy technical sans display with compact red category labels and data-like service terms. Near-black, charcoal, white and signal red. Atmospheric repair-bay image supports the opening; the rest is highly structured symptom, service and process panels. The full sequence runs from garage promise to symptom-selector panel to six-capability grid toward customer proof, FAQ, booking form. Template labour rate, diagnostic fee, vehicle makes, qualifications, customer reviews, warranty terms and phone are fictional.",
+    "heroGeometry": {
+      "mode": "A very dark garage photograph carries an oversized white-and-red diagnostic promise and two square next-step controls.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "Small hours/credentials strip and service, symptoms, inspection and booking anchors frame the opening.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "Heavy technical sans display with compact red category labels and data-like service terms.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "Near-black",
+        "charcoal",
+        "white and signal red"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "diagnostic-workshop-editorial",
+        "near-black-and-signal-red"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "Atmospheric repair-bay image supports the opening; the rest is highly structured symptom, service and process panels.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "garage promise",
+      "symptom-selector panel",
+      "six-capability grid",
+      "inspection-step sequence",
+      "vehicle makes row",
+      "warranty pledges",
+      "customer proof",
+      "FAQ",
+      "booking form"
+    ],
+    "servicePresentation": {
+      "pattern": "Use problem-first symptom choices to guide a real customer to a genuine inspection workflow; prices, make coverage and warranties require client facts.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Book a diagnostic in the opening and after the inspection explanation, with a final form only when submissions work.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "symptom-selection; inspection-sequence; native-faq",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack symptom choices and service cards, keep the diagnostic fee explanation visible before the booking action and avoid dark text on dark photography.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Template labour rate, diagnostic fee, vehicle makes, qualifications, customer reviews, warranty terms and phone are fictional.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "dark-diagnostic-hero",
+        "selector": "[data-reference-signature=dark-diagnostic-hero]",
+        "description": "Original client interpretation of the observed dark diagnostic hero mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "symptom-to-inspection-routing",
+        "selector": "[data-reference-signature=symptom-to-inspection-routing]",
+        "description": "Original client interpretation of the observed symptom-to-inspection routing mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "six-step-inspection-ledger",
+        "selector": "[data-reference-signature=six-step-inspection-ledger]",
+        "description": "Original client interpretation of the observed six-step inspection ledger mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. Template labour rate, diagnostic fee, vehicle makes, qualifications, customer reviews, warranty terms and phone are fictional. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

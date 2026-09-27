@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "id": "web-painting-mfl",
+  "productionEligible": true,
+  "referenceName": "MFL Painting San Diego homepage",
+  "familyId": "web-painting-mfl",
+  "businessKinds": [
+    "painting contractor",
+    "residential painting",
+    "commercial painting",
+    "painting"
+  ],
+  "source": {
+    "name": "MFL Painting San Diego official website",
+    "url": "https://mflpainting.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "painting contractor",
+      "residential painting",
+      "commercial painting",
+      "painting"
+    ],
+    "style": [
+      "large modern sans statements, small uppercase labels, and compact practical copy",
+      "warm cream and navy and white surfaces",
+      "gold and sky blue accents"
+    ],
+    "composition": [
+      "a coastal-house image carries a navy overlay, stacked gold-and-white statement, and an estimate form alongside",
+      "coastal-house-form-hero",
+      "three-audience-row",
+      "four-step-paint-process"
+    ],
+    "conversion": [
+      "book a painting estimate",
+      "call or inspect projects",
+      "early contact action"
+    ],
+    "motion": [
+      "project and FAQ disclosures only; all service descriptions should be readable at rest",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "residential project photography with a few before-and-after work scenes",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official MFL Painting San Diego homepage was inspected in paired desktop and mobile full-page captures. The page opens with a coastal-house image carries a navy overlay, stacked gold-and-white statement, and an estimate form alongside. It uses small white service navigation with a gold estimate action. The visual system relies on large modern sans statements, small uppercase labels, and compact practical copy; surfaces include warm cream, navy, white and accents include gold, sky blue. Imagery is residential project photography with a few before-and-after work scenes. The page then runs through coastal-home and form hero, navy business introduction, three audience cards, service list, four-step process, three-project gallery, San Diego area grid, review cards, FAQ and estimate close. Its service presentation is service list for interior, exterior, cabinetry, and wood staining followed by process and project context. Mobile changes to keep the gold estimate action easy to reach, stack audience and service entries, and maintain project images at useful size. Transfer only the layout rhythm and decision path. Do not copy MFL logo, faith statement, license number, project photos, timelines, reviews, guarantees, or service-area claims.",
+    "heroGeometry": {
+      "mode": "a coastal-house image carries a navy overlay, stacked gold-and-white statement, and an estimate form alongside",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "small white service navigation with a gold estimate action",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "large modern sans statements, small uppercase labels, and compact practical copy",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "warm cream",
+        "navy",
+        "white"
+      ],
+      "ink": "dark navy",
+      "accents": [
+        "gold",
+        "sky blue"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "residential project photography with a few before-and-after work scenes",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "coastal-home and form hero",
+      "navy business introduction",
+      "three audience cards",
+      "service list",
+      "four-step process",
+      "three-project gallery",
+      "San Diego area grid",
+      "review cards",
+      "FAQ and estimate close"
+    ],
+    "servicePresentation": {
+      "pattern": "service list for interior, exterior, cabinetry, and wood staining followed by process and project context",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "book a painting estimate",
+      "secondary": "call or inspect projects",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "project and FAQ disclosures only; all service descriptions should be readable at rest",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "keep the gold estimate action easy to reach, stack audience and service entries, and maintain project images at useful size",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy MFL logo, faith statement, license number, project photos, timelines, reviews, guarantees, or service-area claims.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "coastal-house-form-hero",
+        "selector": "[data-reference-signature=coastal-house-form-hero]",
+        "description": "coastal house form hero translated with client-specific content"
+      },
+      {
+        "id": "three-audience-row",
+        "selector": "[data-reference-signature=three-audience-row]",
+        "description": "three audience row translated with client-specific content"
+      },
+      {
+        "id": "four-step-paint-process",
+        "selector": "[data-reference-signature=four-step-paint-process]",
+        "description": "four step paint process translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified painting contractor scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x11624; mobile 390x19135. Visible page sequence and mobile layout were reviewed. "
+  }
+}

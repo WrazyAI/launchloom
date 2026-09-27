@@ -13,40 +13,59 @@ const JPEG_QUALITY = 72;
 const MAX_BYTES = 900_000;
 const preparedCache = new Map();
 
-function cacheKey(filePath) {
-  return path.resolve(filePath);
+function cacheKey(filePath, crop) {
+  const resolved = path.resolve(filePath);
+  return crop
+    ? `${resolved}::crop:${crop.left},${crop.top},${crop.width},${crop.height}`
+    : resolved;
 }
 
 /** Return source pixel dimensions before prompt transport resizes an image. */
 export async function promptImageDimensions(filePath) {
   const input = await fs.readFile(cacheKey(filePath));
-  if (!looksLikeImage(input)) throw new Error(`Prompt evidence is not an image: ${filePath}`);
+  if (!looksLikeImage(input))
+    throw new Error(`Prompt evidence is not an image: ${filePath}`);
   const { width, height } = await sharp(input).metadata();
-  if (!width || !height) throw new Error(`Prompt evidence has no dimensions: ${filePath}`);
+  if (!width || !height)
+    throw new Error(`Prompt evidence has no dimensions: ${filePath}`);
   return { width, height };
 }
 
 function looksLikeImage(input) {
   return (
-    (input.length >= 8 && input[0] === 0x89 && input[1] === 0x50 && input[2] === 0x4e && input[3] === 0x47) ||
-    (input.length >= 3 && input[0] === 0xff && input[1] === 0xd8 && input[2] === 0xff) ||
-    (input.length >= 12 && input.toString("ascii", 0, 4) === "RIFF" && input.toString("ascii", 8, 12) === "WEBP") ||
+    (input.length >= 8 &&
+      input[0] === 0x89 &&
+      input[1] === 0x50 &&
+      input[2] === 0x4e &&
+      input[3] === 0x47) ||
+    (input.length >= 3 &&
+      input[0] === 0xff &&
+      input[1] === 0xd8 &&
+      input[2] === 0xff) ||
+    (input.length >= 12 &&
+      input.toString("ascii", 0, 4) === "RIFF" &&
+      input.toString("ascii", 8, 12) === "WEBP") ||
     (input.length >= 12 &&
       input.toString("ascii", 4, 8) === "ftyp" &&
-      /^(?:avif|avis|heic|heix|hevc|hevx|mif1|msf1)$/u.test(input.toString("ascii", 8, 12))) ||
-    (input.length >= 6 && (input.toString("ascii", 0, 6) === "GIF87a" || input.toString("ascii", 0, 6) === "GIF89a"))
+      /^(?:avif|avis|heic|heix|hevc|hevx|mif1|msf1)$/u.test(
+        input.toString("ascii", 8, 12),
+      )) ||
+    (input.length >= 6 &&
+      (input.toString("ascii", 0, 6) === "GIF87a" ||
+        input.toString("ascii", 0, 6) === "GIF89a"))
   );
 }
 
 function fallbackPromptImage(resolved, input) {
   const extension = path.extname(resolved).toLowerCase();
-  const mime = extension === ".png"
-    ? "image/png"
-    : extension === ".webp"
-      ? "image/webp"
-      : extension === ".gif"
-        ? "image/gif"
-        : "image/jpeg";
+  const mime =
+    extension === ".png"
+      ? "image/png"
+      : extension === ".webp"
+        ? "image/webp"
+        : extension === ".gif"
+          ? "image/gif"
+          : "image/jpeg";
   return {
     dataUrl: `data:${mime};base64,${input.toString("base64")}`,
     bytes: input.length,
@@ -55,24 +74,46 @@ function fallbackPromptImage(resolved, input) {
   };
 }
 
-async function preparePromptImage(filePath) {
-  const resolved = cacheKey(filePath);
-  const cached = preparedCache.get(resolved);
+async function preparePromptImage(filePath, { crop } = {}) {
+  const resolved = path.resolve(filePath);
+  const preparedKey = cacheKey(resolved, crop);
+  const cached = preparedCache.get(preparedKey);
   if (cached) return cached;
 
   const input = await fs.readFile(resolved);
   if (!looksLikeImage(input)) {
+    if (crop)
+      throw new Error(
+        `Prompt evidence crop requires a supported image: ${resolved}`,
+      );
     if (input.length > MAX_BYTES)
       throw new Error(`Prompt evidence is not a supported image: ${resolved}`);
     const result = fallbackPromptImage(resolved, input);
-    preparedCache.set(resolved, result);
+    preparedCache.set(preparedKey, result);
     return result;
   }
-  let quality = JPEG_QUALITY;
-  let output;
-  try {
-    output = await sharp(input)
-      .rotate()
+  let cropRegion = null;
+  if (crop) {
+    const metadata = await sharp(input).metadata();
+    const validCrop =
+      Number.isInteger(crop.left) &&
+      Number.isInteger(crop.top) &&
+      Number.isInteger(crop.width) &&
+      Number.isInteger(crop.height) &&
+      crop.left >= 0 &&
+      crop.top >= 0 &&
+      crop.width > 0 &&
+      crop.height > 0 &&
+      crop.left + crop.width <= (metadata.width || 0) &&
+      crop.top + crop.height <= (metadata.height || 0);
+    if (!validCrop)
+      throw new Error(`Prompt evidence crop exceeds image bounds: ${resolved}`);
+    cropRegion = crop;
+  }
+  const render = (quality) => {
+    let image = sharp(input).rotate();
+    if (cropRegion) image = image.extract(cropRegion);
+    return image
       .resize({
         width: MAX_WIDTH,
         height: MAX_HEIGHT,
@@ -81,6 +122,11 @@ async function preparePromptImage(filePath) {
       })
       .jpeg({ quality, progressive: true, mozjpeg: true })
       .toBuffer();
+  };
+  let quality = JPEG_QUALITY;
+  let output;
+  try {
+    output = await render(quality);
   } catch (error) {
     // A recognized image must never be sent under a mismatched MIME type.
     // Tiny non-image test fixtures still use the fallback above.
@@ -91,16 +137,7 @@ async function preparePromptImage(filePath) {
 
   while (output.length > MAX_BYTES && quality > 48) {
     quality -= 8;
-    output = await sharp(input)
-      .rotate()
-      .resize({
-        width: MAX_WIDTH,
-        height: MAX_HEIGHT,
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .jpeg({ quality, progressive: true, mozjpeg: true })
-      .toBuffer();
+    output = await render(quality);
   }
 
   const result = {
@@ -109,7 +146,7 @@ async function preparePromptImage(filePath) {
     quality,
     sourcePath: resolved,
   };
-  preparedCache.set(resolved, result);
+  preparedCache.set(preparedKey, result);
   return result;
 }
 
@@ -119,10 +156,10 @@ async function preparePromptImage(filePath) {
  * reduced so the textual contract and authored source remain usable.
  *
  * @param {string} filePath
- * @param {{ detail?: "low" | "high" }} [options]
+ * @param {{ detail?: "low" | "high", crop?: {left: number, top: number, width: number, height: number} }} [options]
  */
-export async function promptImagePart(filePath, { detail = "low" } = {}) {
-  const prepared = await preparePromptImage(filePath);
+export async function promptImagePart(filePath, { detail = "low", crop } = {}) {
+  const prepared = await preparePromptImage(filePath, { crop });
   return {
     type: "image_url",
     image_url: { url: prepared.dataUrl, detail },
@@ -166,6 +203,8 @@ export function selectRepairScreenshots(screenshots) {
  * to use the operating system temp area without putting prompt-only images in
  * the generated site.
  */
-export async function createPromptEvidenceDirectory(prefix = "launchloom-evidence-") {
+export async function createPromptEvidenceDirectory(
+  prefix = "launchloom-evidence-",
+) {
   return fs.mkdtemp(path.join(os.tmpdir(), prefix));
 }

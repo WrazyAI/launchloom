@@ -432,6 +432,43 @@ function processStepText(value) {
   return text(value, 120);
 }
 
+function vehicleSalesFor(intake) {
+  const facts = [intake.businessName, intake.services].join(" ").toLowerCase();
+  return /\b(?:auto|car|vehicle)\s+(?:dealership|dealers?|sales)\b|\b(?:new|used)\s+(?:cars|vehicles)\b|\b(?:cars|vehicles)\s+for sale\b/.test(
+    facts,
+  );
+}
+
+function tradeBusinessKindFor(intake) {
+  const facts = [intake.businessName, intake.services].join(" ").toLowerCase();
+  if (
+    !vehicleSalesFor(intake) &&
+    /\b(?:auto(?:motive)?|car|vehicle)\s+(?:repairs?|mechanics?|servicing)\b|\b(?:brake repairs?|oil changes?|vehicle diagnostics?|engine repairs?|transmission repairs?)\b/.test(
+      facts,
+    )
+  )
+    return "auto-repair";
+  if (
+    /\bhvac\b|\bheating\s+(?:and|&)\s+cooling\b|\b(?:air conditioning|heat pump|furnace)\s+(?:installation|repairs?|servic(?:e|ing)|maintenance)\b/.test(
+      facts,
+    )
+  )
+    return "hvac";
+  if (
+    /\broof(?:ing|ers?)\b|\broof\s+(?:repairs?|replacement|installation|leaks?)\b/.test(
+      facts,
+    )
+  )
+    return "roofing";
+  if (
+    /\b(?:house|home|interior|exterior|residential|commercial)\s+paint(?:ing|ers?)\b|\bpaint(?:ing|ers?)\s+(?:contractors?|services?|company|co\.?)\b/.test(
+      facts,
+    )
+  )
+    return "painting";
+  return "";
+}
+
 function industryFor(intake) {
   const selected = text(intake.industry, 80).toLowerCase();
   if (
@@ -455,6 +492,8 @@ function industryFor(intake) {
     .join(" ")
     .toLowerCase();
   if (/\b(?:pet|dog|cat|groom\w*|veterinar\w*)\b/.test(facts)) return "other";
+  if (vehicleSalesFor(intake)) return "other";
+  if (tradeBusinessKindFor(intake)) return "home-services";
   if (
     /health|care|wellness|clinic|therapy|dental|medspa|medical|beauty/.test(
       facts,
@@ -483,6 +522,7 @@ function businessKindFor(intake, industry) {
   ]
     .join(" ")
     .toLowerCase();
+  if (vehicleSalesFor(intake)) return "other";
   if (
     /home care|home health|caregiver|senior care|elder care|personal care|respite/.test(
       facts,
@@ -491,6 +531,10 @@ function businessKindFor(intake, industry) {
     return "home-care";
   if (/garage door|overhead door|door opener|torsion spring/.test(facts))
     return "garage-door";
+  if (industry === "home-services") {
+    const tradeKind = tradeBusinessKindFor(intake);
+    if (tradeKind) return tradeKind;
+  }
   if (
     /athletic club|fitness|gym|strength training|personal training|sports performance|recovery club/.test(
       facts,

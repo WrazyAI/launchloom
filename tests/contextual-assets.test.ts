@@ -51,6 +51,74 @@ async function fakeImageResponse() {
 }
 
 describe("contextual image generation", () => {
+  it("directs HVAC reference imagery toward diagnostics and equipment, not lifestyle stock", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-hvac-"));
+    const prompts: string[] = [];
+    const site = fixture();
+    site.businessKind = "hvac";
+    site.industry = "hvac";
+    site.services = [
+      { name: "Furnace diagnostics and repair" },
+      { name: "Air conditioning repair" },
+    ];
+    site.business.serviceAreas = ["Minneapolis", "St. Paul"];
+    site.style = {
+      tone: "direct and technically clear",
+      visualDirection: "service diagnostics with equipment context",
+    };
+    site.seoResearch = {
+      copyVocabulary: ["HVAC diagnostic visit", "furnace repair"],
+      customerQuestions: ["What happens during an HVAC diagnostic visit?"],
+    };
+    const result = await generate({
+      site,
+      inspiration: {
+        routes: [
+          {
+            id: "hvac-route",
+            familyId: "utility-diagnostic",
+            heroGeometry: "symptom-first service opening with giant header, nav, and button row",
+            typographyCategory: "oversized sans display with micro navigation",
+            referenceDna: {
+              familyId: "hvac-symptom-first-choice-grid",
+              heroGeometry: {
+                mode: "technician-and-equipment diagnostic beneath a giant text header",
+              },
+              imageTreatment: {
+                mode: "HVAC equipment and service-context photography",
+                crop: "wide equipment frame with a clear diagnostic subject",
+              },
+              palette: { contrastIntent: "deep navy, cream, and restrained rust" },
+            },
+          },
+        ],
+      },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          prompts.push(options.input.prompt);
+          return { data: { images: [{ url: "https://fal.example/hvac.jpg" }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(result.manifest.placements).toHaveLength(1);
+    expect(prompts[0]).toMatch(/outdoor condenser|HVAC equipment|diagnostic tools/iu);
+    expect(prompts[0]).not.toMatch(/commercial editorial photography/iu);
+    expect(prompts[0]).not.toMatch(/warm neighborhood food market/iu);
+    expect(prompts[0]).toMatch(/one standalone image asset/iu);
+    expect(prompts[0]).toMatch(/never a website screenshot, web page, UI mockup/iu);
+    expect(prompts[0]).not.toContain("giant header, nav, and button row");
+    expect(prompts[0]).not.toContain("oversized sans display with micro navigation");
+    expect(prompts[0]).not.toContain("giant text header");
+    expect(prompts[0]).not.toContain("What happens during an HVAC diagnostic visit?");
+    expect(prompts[0]).toMatch(/no people, faces, hands, body parts/iu);
+  });
+
   it("writes local optimized WebP assets and keeps provider URLs out of site config", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const manifestPath = join(outputDir, "generated-assets.json");
@@ -170,6 +238,7 @@ describe("contextual image generation", () => {
     const routes = [1, 2, 3].map((number) => ({
       id: `route-invalid-${number}`,
       signature: `invalid-budget-${number}`,
+      imageStrategy: `invalid-budget-${number}`,
     }));
     let requests = 0;
     const result = await generate({
@@ -295,6 +364,169 @@ describe("contextual image generation", () => {
       expect(manifest.placements).toHaveLength(1);
   });
 
+  it("uses arbitrary route Reference DNA to keep image prompts and assets independent", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-route-dna-"));
+    const prompts: string[] = [];
+    const routes = [
+      ["auto-family-ledger", "ruled service ledger with selective workshop photography"],
+      ["auto-family-parts", "close mechanical part studies with warm metal surfaces"],
+      ["auto-family-switchboard", "wide repair-bay scene with a strong yellow focal accent"],
+    ].map(([familyId, imageMode], index) => ({
+      id: `auto-route-${index + 1}`,
+      familyId: `renderer-${index + 1}`,
+      referenceDna: {
+        familyId,
+        imageTreatment: {
+          mode: imageMode,
+          crop: "crop-safe automotive workshop photography",
+          focalPoint: "one clear vehicle-repair subject",
+        },
+        palette: { contrastIntent: "clear readable contrast" },
+      },
+    }));
+    let request = 0;
+    const result = await generate({
+      site: fixture(),
+      inspiration: { routes },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 3,
+      maxRequests: 3,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          request += 1;
+          prompts.push(options.input.prompt);
+          return {
+            requestId: `route-dna-${request}`,
+            data: { images: [{ url: `https://fal.example/route-${request}.jpg` }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(prompts).toHaveLength(3);
+    expect(new Set(prompts).size).toBe(3);
+    expect(prompts[0]).toContain("ruled service ledger with selective workshop photography");
+    expect(prompts[1]).toContain("close mechanical part studies with warm metal surfaces");
+    expect(prompts[2]).toContain("wide repair-bay scene with a strong yellow focal accent");
+    expect(new Set(result.manifest.routes.map((entry: any) => entry.placements[0].path)).size)
+      .toBe(3);
+  });
+
+  it("keeps human subjects excluded when auto-repair reference notes mention faces", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-auto-repair-") );
+    const prompts: string[] = [];
+    const examples = [
+      ["web-auto-repair-abees-hi-tech-family", "brake rotor, socket set and workbench"],
+      ["web-auto-repair-ade-auto-repairs-family", "isolated brake rotor"],
+      ["web-auto-repair-fallsbrook-motors-family", "yellow torque wrench and wheel nuts"],
+    ];
+    const result = await generate({
+      site: {
+        ...fixture(),
+        businessKind: "auto-repair",
+        industry: "auto-repair",
+        services: [
+          { name: "Brake service and repair" },
+          { name: "Check-engine diagnostics" },
+        ],
+      },
+      inspiration: {
+        routes: examples.map(([familyId], index) => ({
+          id: `auto-safe-route-${index + 1}`,
+          familyId: `renderer-${index + 1}`,
+          referenceDna: {
+            familyId,
+            imageTreatment: {
+              mode: "selective workshop photography",
+              crop: "wide repair-bay crop",
+              focalPoint: "preserve contextual subjects and keep text clear of faces",
+            },
+            palette: { contrastIntent: "clear readable contrast" },
+          },
+        })),
+      },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 3,
+      maxRequests: 3,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          prompts.push(options.input.prompt);
+          return { data: { images: [{ url: "https://fal.example/auto-repair.jpg" }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(result.manifest.placements).toHaveLength(3);
+    expect(prompts).toHaveLength(3);
+    expect(
+      prompts.every((prompt, index) => prompt.includes(examples[index][1])),
+    ).toBe(true);
+    expect(prompts.join(" ")).not.toContain("keep text clear of faces");
+    expect(prompts.every((prompt) => /no people, faces, hands, body parts/iu.test(prompt))).toBe(true);
+  });
+
+  it("directs painting references toward distinct, people-free architectural imagery", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-painting-"));
+    const prompts: string[] = [];
+    const examples = [
+      ["web-painting-av", "close-up of freshly painted siding and trim"],
+      ["web-painting-concept-pro", "dark painted exterior detail"],
+      ["web-painting-house-doctor", "paint-preparation surface study"],
+    ];
+    const result = await generate({
+      site: {
+        ...fixture(),
+        businessKind: "painting",
+        industry: "painting",
+        services: [
+          { name: "Interior painting" },
+          { name: "Exterior repainting" },
+          { name: "Cabinet refinishing" },
+        ],
+      },
+      inspiration: {
+        routes: examples.map(([familyId], index) => ({
+          id: `painting-safe-route-${index + 1}`,
+          familyId: `renderer-${index + 1}`,
+          referenceDna: {
+            familyId,
+            imageTreatment: {
+              mode: "architectural surfaces and paint-finish photography",
+              crop: "wide exterior or interior detail crop",
+              focalPoint: "preserve contextual subjects and keep text clear of faces",
+            },
+            palette: { contrastIntent: "clear readable contrast" },
+          },
+        })),
+      },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 3,
+      maxRequests: 3,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          prompts.push(options.input.prompt);
+          return { data: { images: [{ url: "https://fal.example/painting.jpg" }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(result.manifest.placements).toHaveLength(3);
+    expect(
+      prompts.every((prompt, index) => prompt.includes(examples[index][1])),
+    ).toBe(true);
+    expect(prompts.join(" ")).not.toContain("keep text clear of faces");
+    expect(prompts.every((prompt) => /no people, faces, hands, body parts/iu.test(prompt))).toBe(true);
+  });
+
   it("binds the first supplied secondary client asset to every route", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const site = fixture();
@@ -331,7 +563,7 @@ describe("contextual image generation", () => {
       falClient: {
         config() {},
         async subscribe(_model: string, options: { input: { prompt: string } }) {
-          calls.push(options.input.prompt.match(/budget-route-\d/)![0]);
+          calls.push(options.input.prompt);
           if (!options.input.prompt.includes("Make the subject simpler"))
             throw new Error("Retry this placement.");
           return { data: { images: [{ url: "https://fal.example/retry.jpg" }] } };
@@ -340,7 +572,8 @@ describe("contextual image generation", () => {
       fetchImpl: async () => fakeImageResponse(),
     });
 
-    expect(calls).toEqual(routes.flatMap((route) => Array(2).fill(route.signature)));
+    expect(calls).toHaveLength(6);
+    expect(calls.filter((prompt) => prompt.includes("Make the subject simpler"))).toHaveLength(3);
     expect(result.requests).toBe(6);
     expect(result.requests).toBeLessThanOrEqual(maxRequests);
     for (const manifest of result.manifest.routes) {
@@ -372,13 +605,13 @@ describe("contextual image generation", () => {
       falClient: {
         config() {},
         async subscribe(_model: string, options: { input: { prompt: string } }) {
-          calls.push(options.input.prompt.match(/budget-route-\d/)![0]);
+          calls.push(options.input.prompt);
           throw new Error("Provider unavailable.");
         },
       },
     });
 
-    expect(calls).toEqual(routes.slice(0, Math.max(0, maxRequests)).map((route) => route.signature));
+    expect(calls).toHaveLength(Math.max(0, maxRequests));
     expect(result.requests).toBe(Math.max(0, maxRequests));
     expect(result.manifest.routes).toHaveLength(3);
     expect(result.manifest.placements).toHaveLength(0);

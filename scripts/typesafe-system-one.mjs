@@ -31,7 +31,7 @@ function safeBody(value, limit = 1_500) {
 
 /**
  * Call TypeSafe System One once. The reasoning router deliberately avoids an
- * internal retry cascade; the caller owns the max-safe fallback.
+ * internal retry cascade; the caller owns the configured xhigh-baseline fallback.
  *
  * @param {{
  *   apiKey?: string,

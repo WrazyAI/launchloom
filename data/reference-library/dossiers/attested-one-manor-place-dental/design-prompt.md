@@ -16,7 +16,7 @@ Preserve these design mechanics: an oversized practice wordmark with an editoria
 
 # Prohibited patterns
 
-Do not rebuild the screenshot one-to-one, reproduce its name/logo/fonts/photography/team/reviews, use the exact source wording, or invent local addresses, appointment hours, staff, credentials, ratings, dental pricing, claims, guarantees, insurance acceptance, or treatment outcomes. Avoid generic service card grids, long why-us essays, fake clinical authority, anonymous patient quotes, and decorative buttons with no action. Do not overstuff SEO phrases or place small text over busy imagery. Never use an em dash in rendered copy. External source screenshots are reference-only; they do not replace a client's own verified facts or permission-cleared imagery.
+Do not rebuild the screenshot one-to-one, reproduce its name/logo/fonts/photography/team/reviews, use the exact source wording, or invent local addresses, appointment hours, staff, credentials, ratings, dental pricing, claims, guarantees, insurance acceptance, or treatment outcomes. Do not reuse the source's broken `via.placeholder.com` image or reproduce a broken-image state; use a client asset or route-specific generated image that passes validation. Avoid generic service card grids, long why-us essays, fake clinical authority, anonymous patient quotes, and decorative buttons with no action. Do not overstuff SEO phrases or place small text over busy imagery. Never use an em dash in rendered copy. External source screenshots are reference-only; they do not replace a client's own verified facts or permission-cleared imagery.
 
 # Content and SEO constraints
 

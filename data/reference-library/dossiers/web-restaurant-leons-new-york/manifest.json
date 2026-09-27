@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "id": "web-restaurant-leons-new-york",
+  "productionEligible": true,
+  "referenceName": "Leon's: cream and green palette with interior carousel",
+  "familyId": "web-restaurant-leons-new-york-family",
+  "businessKinds": [
+    "restaurant",
+    "local dining",
+    "private dining"
+  ],
+  "source": {
+    "name": "Leon's official website",
+    "url": "https://www.leonsnyc.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "restaurant",
+      "local dining",
+      "table reservations"
+    ],
+    "style": [
+      "green refined serif headings on warm paper",
+      "cream and forest green surfaces",
+      "forest green accent"
+    ],
+    "composition": [
+      "a bright interior carousel beneath a centered typographic identity",
+      "cream and green palette",
+      "interior carousel",
+      "alternating food editorial"
+    ],
+    "conversion": [
+      "table reservation",
+      "menu exploration"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "interior and food photos in alternating half-width compositions",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Leon's website in New York, New York uses a bright interior carousel beneath a centered typographic identity. Navigation is cream navigation row with immediate reserve, menu and hours links. Its page moves through interior photo opening, hours introduction, featured dish vignette, private dining feature, restaurant story, food-photo close, contact footer, with service decisions are reservation, menu, hours and private dining rather than a service grid. interior and food photos in alternating half-width compositions. Transferable mechanics are cream and green palette, interior carousel, alternating food editorial. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "a bright interior carousel beneath a centered typographic identity",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "cream navigation row with immediate reserve, menu and hours links",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "green refined serif headings on warm paper",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "cream",
+        "forest green",
+        "warm white"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "forest green"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "interior and food photos in alternating half-width compositions",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "interior photo opening",
+      "hours introduction",
+      "featured dish vignette",
+      "private dining feature",
+      "restaurant story",
+      "food-photo close",
+      "contact footer"
+    ],
+    "servicePresentation": {
+      "pattern": "service decisions are reservation, menu, hours and private dining rather than a service grid",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "reserve",
+      "secondary": "then view menus",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack editorial image/text pairs without hiding hours or booking",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Leon's identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "cream-and-green-palette",
+        "selector": "[data-reference-signature=cream-and-green-palette]",
+        "description": "Translate the observed cream and green palette mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "interior-carousel",
+        "selector": "[data-reference-signature=interior-carousel]",
+        "description": "Translate the observed interior carousel mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "alternating-food-editorial",
+        "selector": "[data-reference-signature=alternating-food-editorial]",
+        "description": "Translate the observed alternating food editorial mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses cream and green palette with client-cleared content.",
+      "Page sequence retains interior carousel and alternating food editorial as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

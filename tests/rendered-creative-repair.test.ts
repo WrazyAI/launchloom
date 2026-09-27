@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
+  defaultRepairCandidate,
   collectAvailableScreenshots,
   runRenderedCreativeRepair,
   runVisualGateProcess,
@@ -43,7 +44,15 @@ async function fixture(candidateIds = ["candidate-a", "candidate-b"]) {
     await fs.mkdir(directory, { recursive: true });
     await fs.writeFile(
       path.join(directory, "metadata.json"),
-      JSON.stringify({ candidateId, referenceDna: { familyId: candidateId } }),
+      JSON.stringify({
+        candidateId,
+        referenceDna: { familyId: candidateId },
+        creativeRepairScope: {
+          version: 1,
+          sectionIds: ["hero"],
+          allowMotion: false,
+        },
+      }),
     );
     await fs.writeFile(
       path.join(directory, "Experience.jsx"),
@@ -157,6 +166,108 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("asks Luna to correct a rejected repair before excluding the candidate", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-validation-repair-"),
+    );
+    roots.push(root);
+    const candidateDir = path.join(root, "candidate-a");
+    await fs.mkdir(candidateDir, { recursive: true });
+    const content = {
+      hero: {
+        heading: "Rooms shaped around daily life",
+        primaryLabel: "Start a design conversation",
+      },
+      services: [
+        {
+          name: "Residential interiors",
+          description: "Measured interior schemes.",
+        },
+      ],
+      faqs: [
+        {
+          question: "How does it work?",
+          answer: "We begin with a conversation.",
+        },
+      ],
+      process: ["Listen to the brief", "Shape the direction"],
+    };
+    const processSection = `<section data-required-section="conversion">{content.process.map((step) => <p key={step}>{step}</p>)}</section>`;
+    const validExperience = `import { LeadForm } from "@launchloom/runtime";
+export default function Experience({ content, runtime }) {
+  return <main>
+    <nav><a href="#services">Services</a><a href="#faqs">FAQs</a><a href="#contact">Contact</a></nav>
+    <section id="hero" data-hero><h1 className="opening-title">{content.hero.heading}</h1><a data-early-conversion href="#contact">{content.hero.primaryLabel}</a></section>
+    <section id="services">{content.services.map((service) => <p key={service.name}>{service.name} {service.description}</p>)}</section>
+    <section id="faqs">{content.faqs.map((faq) => <p key={faq.question}>{faq.question} {faq.answer}</p>)}</section>
+    ${processSection}
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`;
+    const invalidExperience = validExperience.replace(processSection, "");
+    const repairedExperience = validExperience.replace(
+      'className="opening-title"',
+      'className="opening-title revised"',
+    );
+    const initialFiles = {
+      experience: validExperience,
+      styles: "main { color: #222; }",
+      motion:
+        "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
+    };
+    await Promise.all([
+      fs.writeFile(
+        path.join(candidateDir, "Experience.jsx"),
+        initialFiles.experience,
+      ),
+      fs.writeFile(path.join(candidateDir, "styles.css"), initialFiles.styles),
+      fs.writeFile(path.join(candidateDir, "motion.js"), initialFiles.motion),
+    ]);
+    await fs.writeFile(
+      path.join(candidateDir, "metadata.json"),
+      JSON.stringify({
+        candidateId: "candidate-a",
+        routeId: "route-01",
+        referenceDna: { familyId: "test-family" },
+      }),
+    );
+    await fs.writeFile(
+      path.join(candidateDir, "content-manifest.json"),
+      JSON.stringify({ values: content, tokens: [] }),
+    );
+
+    const attempts: Array<{ validationError?: string }> = [];
+    const result = await defaultRepairCandidate({
+      candidateDir,
+      findings: ["Increase the scale of the opening portrait."],
+      screenshots: [],
+      model: "openai/gpt-6-luna",
+      requestRepairImpl: async (request: any) => {
+        attempts.push({ validationError: request.validationError });
+        return {
+          experience:
+            attempts.length === 1 ? invalidExperience : repairedExperience,
+          styles: initialFiles.styles,
+          motion: initialFiles.motion,
+        };
+      },
+      validateCandidateImpl: ({ files, route, content: values }: any) =>
+        validateProductionCandidateFiles({
+          files,
+          route: { id: route.id },
+          content: values,
+        }),
+    });
+
+    expect(attempts).toHaveLength(2);
+    expect(attempts[0].validationError).toBe("");
+    expect(attempts[1].validationError).toMatch(
+      /conversion section bound to content\.process/iu,
+    );
+    expect(result.experience).toContain(processSection);
+    expect(result.experience).toContain('className="opening-title revised"');
+  });
+
   it("keeps preview available when one candidate repair violates its sealed-content contract", async () => {
     const { root, candidates } = await fixture([
       "candidate-a",
@@ -540,6 +651,54 @@ export default function Experience({ content, runtime }) {
     ).rejects.toThrow(/content\.hero\.image/iu);
   });
 
+  it("preserves the prepared section scope across a human repair and visual-gate retry", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const candidateDir = path.join(candidates, "candidate-a");
+    const metadataPath = path.join(candidateDir, "metadata.json");
+    const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+    const declaredScope = {
+      version: 1,
+      sectionIds: ["hero"],
+      allowMotion: false,
+      requestText: "Revise the hero section.",
+    };
+    metadata.creativeRepairScope = declaredScope;
+    await fs.writeFile(metadataPath, JSON.stringify(metadata));
+
+    const repairScopes: unknown[] = [];
+    let visualGateCalls = 0;
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      requestedFindings: ["Revise the hero section."],
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(
+          options,
+          report({ candidates: [candidate("candidate-a")] }),
+        ),
+      runVisualGateImpl: (options: any) => {
+        visualGateCalls += 1;
+        return visualGate(options, visualGateCalls === 1 ? "revise" : "pass");
+      },
+      runHumanGateImpl: async () => ({
+        audit: { verdict: "pass", findings: [] },
+      }),
+      repairCandidateImpl: async ({ creativeRepairScope }: any) => {
+        repairScopes.push(creativeRepairScope);
+      },
+      promoteImpl: async ({ candidateDir: promotedDir }: any) => ({
+        candidateId: path.basename(promotedDir),
+      }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(visualGateCalls).toBe(2);
+    expect(repairScopes).toEqual([declaredScope, declaredScope]);
+  });
+
   it("restores split-heading hero markers and reviewed image alt text in the full repair flow", async () => {
     process.env.OPENROUTER_API_KEY = "test-openrouter-key";
     const { root, candidates } = await fixture(["candidate-a"]);
@@ -566,7 +725,7 @@ export default function Experience({ content, runtime }) {
         heading: "Thoughtful work, made personal",
         body: "A clear first conversation about what you need.",
         primaryLabel: "Start a conversation",
-        image: "/images/hero.webp",
+        image: `data:image/webp;charset=utf-8;base64,${"A".repeat(410_000)}`,
         secondaryImage: "/images/ornament.webp",
       },
       services: [
@@ -686,6 +845,15 @@ export default function Experience({ content, runtime }) {
     expect(repairText).toContain(
       'Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text',
     );
+    expect(repairText).not.toContain("data:image/");
+    expect(repairText).toContain("[sealed client image asset]");
+    const persistedContentManifest = JSON.parse(
+      await fs.readFile(
+        path.join(candidateDir, "content-manifest.json"),
+        "utf8",
+      ),
+    );
+    expect(persistedContentManifest.values.hero.image).toBe(content.hero.image);
     expect(visualGateCalls).toBe(2);
     const repaired = await fs.readFile(
       path.join(candidateDir, "Experience.jsx"),
@@ -1127,7 +1295,13 @@ export default function Experience({ content, runtime }) {
         );
         if (bakeoffCalls === 1) {
           for (const viewport of ["desktop", "mobile"])
-            await fs.writeFile(path.join(options.screenshotsDir, `candidate-a-${viewport}-viewport.png`), "viewport pixels");
+            await fs.writeFile(
+              path.join(
+                options.screenshotsDir,
+                `candidate-a-${viewport}-viewport.png`,
+              ),
+              "viewport pixels",
+            );
         }
         return result;
       },
@@ -1148,7 +1322,9 @@ export default function Experience({ content, runtime }) {
     expect(result.status).toBe("passed");
     expect(bakeoffCalls).toBe(2);
     expect(repairs).toHaveLength(1);
-    expect(repairs[0].screenshots.map((file: string) => path.basename(file))).toEqual([
+    expect(
+      repairs[0].screenshots.map((file: string) => path.basename(file)),
+    ).toEqual([
       "candidate-a-desktop-viewport.png",
       "candidate-a-mobile-viewport.png",
       "candidate-a-desktop.png",
@@ -1290,6 +1466,45 @@ process.exit(1);
         visualGateScript: scriptPath,
       }),
     ).rejects.toThrow(/Creative visual gate could not run/iu);
+  });
+
+  it("returns a failed visual-gate decision on nonzero exit for bounded repair", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-visual-gate-findings-"),
+    );
+    roots.push(root);
+    const siteDir = path.join(root, "site");
+    const screenshotsDir = path.join(root, "screenshots");
+    const reportPath = path.join(root, "visual-gate.json");
+    const scriptPath = path.join(root, "failing-visual-gate.mjs");
+    await fs.mkdir(path.join(siteDir, "src"), { recursive: true });
+    await fs.mkdir(screenshotsDir, { recursive: true });
+    await fs.writeFile(
+      path.join(siteDir, "src/site.config.json"),
+      JSON.stringify({ design: { experience: {} } }),
+    );
+    await fs.writeFile(
+      scriptPath,
+      `import fs from "node:fs";
+const args = Object.fromEntries(process.argv.slice(2).reduce((pairs, value, index, all) => index % 2 === 0 ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]] : pairs, []));
+const finding = { category: "content-integrity", severity: "major", viewport: "desktop", evidence: "Footer text is too dark on its dark surface.", recommendation: "Use a high-contrast footer text color." };
+fs.writeFileSync(args.report, JSON.stringify({ mode: "verify", blockers: [finding], audit: { verdict: "revise", findings: [finding] } }));
+process.exit(1);
+`,
+    );
+
+    const decision = await runVisualGateProcess({
+      siteDir,
+      screenshotsDir,
+      reportPath,
+      visualGateScript: scriptPath,
+    });
+
+    expect(decision.processExitCode).toBe(1);
+    expect(decision.audit.verdict).toBe("revise");
+    expect(decision.blockers[0].recommendation).toBe(
+      "Use a high-contrast footer text color.",
+    );
   });
 
   it("restores the original three-file bundle if a staged repair swap fails", async () => {

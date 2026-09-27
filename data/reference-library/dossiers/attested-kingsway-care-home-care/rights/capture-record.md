@@ -1,8 +1,9 @@
 # Capture record
 
-The existing paired files were checked as PNG images and their IHDR pixel dimensions were read directly:
+The official homepage was recaptured with Playwright Chromium on 2026-09-26:
 
-- `screenshots/desktop.png`: 1440 × 6934 pixels.
-- `screenshots/mobile.png`: 390 × 11150 pixels.
+- Desktop: `screenshots/desktop.png`, 1440 × 6900 pixels; viewport 1440 × 900 CSS px; captured 23:18:23 UTC; HTTP 200.
+- Mobile: `screenshots/mobile.png`, 390 × 11181 pixels; viewport 390 × 844 CSS px; captured 23:18:38 UTC; HTTP 200.
+- No page errors or failed image requests were recorded.
 
-Both images show the homepage from its opening section through the footer. The desktop and mobile layout modes are apparent from their pixel widths and content reflow. The original viewport heights and capture timestamp are not recoverable from the files. The manifest records 900 px desktop and 844 px mobile comparison viewports for the dossier loader; these values are not claimed as recovered original browser settings. Source identity was cross-checked against the official homepage. The full-page page captures are the only retained source evidence; no separate website assets were downloaded.
+The source page extends 19 px beyond the desktop viewport (native capture width 1459 px); the retained desktop screenshot is clipped to 1440 px to represent the visible viewport. Mobile fits its 390 px viewport. Both retained captures show the current homepage from the top through the footer. The requester attestation covers screenshot retention and model-reference use; no source image or other website asset was downloaded separately.

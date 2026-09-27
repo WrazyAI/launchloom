@@ -424,6 +424,92 @@ describe("site configuration", () => {
     expect(config.businessKind).toBe(expectedKind);
   });
 
+  it.each([
+    {
+      businessName: "Urban Auto Care",
+      services: "Brake repair\nOil changes\nVehicle diagnostics",
+      expectedKind: "auto-repair",
+    },
+    {
+      businessName: "Northline Heating and Cooling",
+      services: "Air conditioning installation\nHeat pump servicing",
+      expectedKind: "hvac",
+    },
+    {
+      businessName: "Baker Roofing",
+      services: "Roof replacement\nLeak repairs",
+      expectedKind: "roofing",
+    },
+    {
+      businessName: "Novak Painting",
+      services: "Interior house painting\nExterior painting",
+      expectedKind: "painting",
+    },
+  ])(
+    "routes $businessName to its specific trade references",
+    ({ businessName, services, expectedKind }) => {
+      const config = normalise(
+        {},
+        { businessName, services, preset: "home-services" },
+      );
+      expect(config.industry).toBe("home-services");
+      expect(config.businessKind).toBe(expectedKind);
+    },
+  );
+
+  it.each([
+    {
+      businessName: "Cedar Auto Dealership",
+      services:
+        "New and used vehicle sales\nBrake repair appointments for cars sold here",
+      industry: "home-services",
+      expectedKind: "other",
+    },
+    {
+      businessName: "Cedar Auto Dealership",
+      services:
+        "Used vehicle sales\nBrake repair appointments for cars sold here",
+      expectedKind: "other",
+    },
+    {
+      businessName: "Harbor Plumbing",
+      services: "Drain cleaning\nWater heater repairs",
+      industry: "home-services",
+      expectedKind: "home-services",
+    },
+    {
+      businessName: "Starry Face Painting",
+      services: "Face painting for birthday parties",
+      industry: "other",
+      expectedKind: "other",
+    },
+    {
+      businessName: "Roofline Software",
+      services: "Scheduling software for roofing contractors",
+      industry: "technology",
+      expectedKind: "technology",
+    },
+  ])(
+    "does not route $businessName into an unrelated trade reference pool",
+    ({ businessName, services, industry, expectedKind }) => {
+      const config = normalise({}, { businessName, services, industry });
+      expect(config.businessKind).toBe(expectedKind);
+    },
+  );
+
+  it("does not treat a painting style note as a painting service", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning\nWater heater repairs",
+        brandNotes: "Use an interior painting inspired color palette.",
+        industry: "home-services",
+      },
+    );
+    expect(config.businessKind).toBe("home-services");
+  });
+
   it("selects a stable but intake-specific complete design variant", () => {
     const previous = process.env.LAUNCHLOOM_INTAKE_ID;
     process.env.LAUNCHLOOM_INTAKE_ID = "20";

@@ -1,6 +1,7 @@
 import { buildCreativeContentManifest } from "./production-experience-author.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { resolveCreativeRevisionScope } from "./creative-revision-scope.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -76,6 +77,25 @@ const selectedDir = path.join(
 for (const file of ["Experience.jsx", "styles.css", "motion.js"])
   await fs.access(path.join(selectedDir, file));
 
+let creativeRepairScope = null;
+if (repairRequired) {
+  const declaration = config.revisionReport?.creativeRepairScope;
+  if (
+    !declaration ||
+    declaration.version !== 1 ||
+    !Array.isArray(declaration.feedbackItems) ||
+    !declaration.feedbackItems.length
+  )
+    throw new Error(
+      "Manual attention required: creative feedback has no declared source scope.",
+    );
+  creativeRepairScope = resolveCreativeRevisionScope({
+    source: await fs.readFile(path.join(selectedDir, "Experience.jsx"), "utf8"),
+    feedbackItems: declaration.feedbackItems,
+    requestText: declaration.requestText,
+  });
+}
+
 await fs.rm(outDir, { recursive: true, force: true });
 const candidateDir = path.join(outDir, candidateId);
 await fs.mkdir(candidateDir, { recursive: true });
@@ -90,6 +110,8 @@ const contractPath = path.join(candidateDir, "contract.json");
 const metadataPath = path.join(candidateDir, "metadata.json");
 const contract = JSON.parse(await fs.readFile(contractPath, "utf8"));
 const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+delete metadata.creativeRepairScope;
+if (creativeRepairScope) metadata.creativeRepairScope = creativeRepairScope;
 const contentManifest = buildCreativeContentManifest(config, contract.route);
 metadata.contentManifestDigest = contentManifest.digest;
 if (metadata.creativeManifest)
@@ -111,5 +133,6 @@ console.log(
     repairRequired,
     candidateId,
     candidateDir,
+    creativeRepairScope,
   }),
 );

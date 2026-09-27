@@ -14,8 +14,7 @@ cost policy.
 
 - `shadow` — default. A successful Jev preflight records the effort it would
   recommend, while the frozen production session executes at `xhigh`. If the
-  selector itself fails, the session executes `max` as the quality-safe
-  fallback.
+  selector itself fails, the session stays at the configured `xhigh` baseline.
 - `enforce` — the frozen production session executes the Jev-backed
   deterministic routing result: `xhigh` or `max`.
 
@@ -30,7 +29,7 @@ The selector uses the direct TypeSafe System One HTTP API with the pinned model
 
 Only explicit versioned Jev identifiers such as `jev-1.13.0` are accepted.
 Moving aliases such as `jev-latest` are treated as selector configuration
-failure and follow the same max-safe fallback path. Model upgrades therefore
+failure and follow the same baseline fallback path. Model upgrades therefore
 remain deliberate and observable.
 
 Environment:
@@ -82,9 +81,9 @@ TypeSafe is not a generation dependency.
 If the selector is unavailable, times out, returns an invalid envelope, or
 returns invalid score distributions:
 
-- the recommendation becomes `max`;
+- the recommendation and execution effort become `xhigh`;
 - `fallbackUsed` is recorded;
-- both enforce and shadow mode execute `max` for that failed-selector session;
+- both enforce and shadow mode execute `xhigh` for that failed-selector session;
 - successful shadow sessions still execute the fixed `xhigh` baseline.
 
 There is no selector retry cascade.

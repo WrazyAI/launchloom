@@ -95,9 +95,12 @@ export function FAQList({ content }: { content: CreativeContent }) {
     <div className="launchloom-faq-list" data-runtime="faq-list">
       {content.faqs.map((faq) => (
         <details key={faq.question}>
-          <summary>
+          <summary className="launchloom-faq-summary">
             {faq.question}
-            <span aria-hidden="true">+</span>
+            <span
+              className="launchloom-faq-indicator"
+              aria-hidden="true"
+            />
           </summary>
           <p>{faq.answer}</p>
         </details>

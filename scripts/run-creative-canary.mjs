@@ -14,6 +14,7 @@ import {
   loadA1ReferenceLibrary,
   mergeInspirationRegistries,
 } from "./a1-reference-library.mjs";
+import { missingCanaryCandidateDiagnostic } from "./creative-canary-diagnostics.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -145,7 +146,9 @@ try {
     () => baseRegistry,
   );
   const compiledPack = buildCreativeCanaryPack(root, registry);
-  const inspirationPack = await enrichInspirationPack(compiledPack);
+  const inspirationPack = await enrichInspirationPack(compiledPack, {
+    allowArchiveReferenceIds: ["kokoro-spatial-editorial"],
+  });
   const architectureRoute = selectCreativeCanaryReference(inspirationPack);
 
   const canaryConfigPath = path.join(out, "site.config.json");
@@ -183,6 +186,8 @@ try {
       reasoningPreflightPath,
       "--failure-mode",
       "throw",
+      "--canary-kokoro-acceptance",
+      "true",
     ],
     {
       cwd: root,
@@ -210,8 +215,15 @@ try {
       break;
     }
   }
-  if (!architectureCandidate)
-    throw new Error("Luna did not produce the selected architecture-reference candidate.");
+  if (!architectureCandidate) {
+    const creativeRun = await fs
+      .readFile(path.join(authoredRoot, "creative-run.json"), "utf8")
+      .then(JSON.parse)
+      .catch(() => null);
+    throw new Error(
+      missingCanaryCandidateDiagnostic(architectureRoute, creativeRun),
+    );
+  }
 
   const isolatedRoot = path.join(out, "architecture-bakeoff-candidates");
   await fs.mkdir(isolatedRoot, { recursive: true });

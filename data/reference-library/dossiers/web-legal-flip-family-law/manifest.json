@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "id": "web-legal-flip-family-law",
+  "productionEligible": true,
+  "referenceName": "FLiP family-law guidance",
+  "familyId": "legal-coral-and-photo-split-opening",
+  "source": {
+    "name": "FLiP family-law guidance official website",
+    "url": "https://www.flip.co.uk/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 4721
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 5348
+    },
+    "diagnostics": "Observed split introduction and dual action, navy issue/service matrix, recommendation quote, sand contact-method band, team photograph split. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "FLiP family-law guidance official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "legal-services",
+    "law-firm",
+    "family-law"
+  ],
+  "tags": {
+    "business": [
+      "legal-services",
+      "law-firm",
+      "family-law"
+    ],
+    "style": [
+      "coral-navy-sand",
+      "empathetic-serif",
+      "decision-chapters"
+    ],
+    "composition": [
+      "half-and-half-hero",
+      "dark-service-matrix",
+      "contact-icon-band"
+    ],
+    "conversion": [
+      "guided-start",
+      "consultation-choice",
+      "issue-routing"
+    ],
+    "motion": [
+      "manual-carousel",
+      "static-fallback"
+    ],
+    "imagery": [
+      "city-building",
+      "verified-team",
+      "editorial-stories"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A coral text half and London building photograph half create a strict split hero; two stacked actions offer immediate online or consultation routes. White nameplate navigation with slim gold and coral utility buttons before the main menu. Soft serif narrative type paired with direct small sans labels and dark navy practical text. The page sequence runs from split introduction and dual action to navy issue/service matrix to recommendation quote toward insight stories, online start action, credential footer. Architecture, team and editorial insight photographs punctuate large typography and service matrices. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A coral text half and London building photograph half create a strict split hero; two stacked actions offer immediate online or consultation routes.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "White nameplate navigation with slim gold and coral utility buttons before the main menu.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Soft serif narrative type paired with direct small sans labels and dark navy practical text.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Coral",
+        "deep navy",
+        "warm sand and white; each color marks a separate decision chapter."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "coral-navy-sand",
+        "empathetic-serif"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Architecture, team and editorial insight photographs punctuate large typography and service matrices.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "split introduction and dual action",
+      "navy issue/service matrix",
+      "recommendation quote",
+      "sand contact-method band",
+      "team photograph split",
+      "navy visitor-question matrix",
+      "insight stories",
+      "online start action",
+      "credential footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Organize services by the visitor's family-law problem in a dark contrast band, with direct links and no invented specialisms.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Offer one main get-started action and one consultation alternative in the hero; repeat a guided start after issue and proof sections.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "manual-carousel; static-fallback",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Place the coral text and actions before the building image, turn service matrices into stacked links, and keep contact methods large enough to tap.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy FLiP's identity, named lawyers, awards, recommendations, London location, or implied legal outcomes.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "coral-and-photo-split-opening",
+        "selector": "[data-reference-signature=coral-and-photo-split-opening]",
+        "description": "A new-client interpretation of the observed coral-and-photo split opening relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "navy-issue-matrix",
+        "selector": "[data-reference-signature=navy-issue-matrix]",
+        "description": "A new-client interpretation of the observed navy issue matrix relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "sand-contact-method-band",
+        "selector": "[data-reference-signature=sand-contact-method-band]",
+        "description": "A new-client interpretation of the observed sand contact-method band relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

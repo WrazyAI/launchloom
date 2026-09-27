@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "id": "web-hospitality-long-story-short-hudson",
+  "productionEligible": true,
+  "referenceName": "Long Story Short: blush room gallery with red editorial passages",
+  "familyId": "web-hospitality-long-story-short-hudson-family",
+  "businessKinds": [
+    "boutique lodging",
+    "small hotel",
+    "inn",
+    "hospitality"
+  ],
+  "source": {
+    "name": "Long Story Short official website",
+    "url": "https://www.longstoryshortny.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "lodging",
+      "local hospitality",
+      "guest rooms",
+      "hospitality"
+    ],
+    "style": [
+      "soft editorial serif with red accent passages",
+      "pale blush and warm white surfaces",
+      "red accent"
+    ],
+    "composition": [
+      "bright residential interior with a centered stay enquiry",
+      "blush room gallery",
+      "red editorial passages",
+      "dual space and place routes"
+    ],
+    "conversion": [
+      "room booking",
+      "stay enquiry"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "many real rooms collected in a staggered photo gallery",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Long Story Short website in Hudson, New York uses bright residential interior with a centered stay enquiry. Navigation is thin wordmark navigation and request-stay control. Its page moves through interior opening, private-stay explanation, gathering proposition, space gallery, experience feature, Hudson guide, guest reactions, stay close, with the space and local experience are presented as two separate planning paths. many real rooms collected in a staggered photo gallery. Transferable mechanics are blush room gallery, red editorial passages, dual space and place routes. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "bright residential interior with a centered stay enquiry",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "thin wordmark navigation and request-stay control",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "soft editorial serif with red accent passages",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "pale blush",
+        "warm white",
+        "soft gray"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "red"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "many real rooms collected in a staggered photo gallery",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "interior opening",
+      "private-stay explanation",
+      "gathering proposition",
+      "space gallery",
+      "experience feature",
+      "Hudson guide",
+      "guest reactions",
+      "stay close"
+    ],
+    "servicePresentation": {
+      "pattern": "the space and local experience are presented as two separate planning paths",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "request stay",
+      "secondary": "then explore space",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "preserve the airy gallery and central enquiry rhythm without tiny text",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Long Story Short identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "blush-room-gallery",
+        "selector": "[data-reference-signature=blush-room-gallery]",
+        "description": "Translate the observed blush room gallery mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "red-editorial-passages",
+        "selector": "[data-reference-signature=red-editorial-passages]",
+        "description": "Translate the observed red editorial passages mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "dual-space-and-place-routes",
+        "selector": "[data-reference-signature=dual-space-and-place-routes]",
+        "description": "Translate the observed dual space and place routes mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses blush room gallery with client-cleared content.",
+      "Page sequence retains red editorial passages and dual space and place routes as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

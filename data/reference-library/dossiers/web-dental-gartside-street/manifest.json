@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "id": "web-dental-gartside-street",
+  "productionEligible": true,
+  "referenceName": "Gartside Street Dental Lounge: navy opening stage with grouped treatment index",
+  "familyId": "web-dental-gartside-street-family",
+  "businessKinds": [
+    "dental clinic",
+    "private dentist",
+    "family dentistry",
+    "dental"
+  ],
+  "source": {
+    "name": "Gartside Street Dental Lounge official website",
+    "url": "https://gartsidestreetdental.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "dental",
+      "local practice",
+      "patient care"
+    ],
+    "style": [
+      "elegant high-contrast serif headlines with clear sans body",
+      "midnight navy and white surfaces",
+      "warm coral accent"
+    ],
+    "composition": [
+      "deep navy welcome panel balancing a large portrait or clinic image",
+      "navy opening stage",
+      "grouped treatment index",
+      "facility image chapter"
+    ],
+    "conversion": [
+      "appointment booking",
+      "practice contact"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "practice rooms and people arranged as editorial panels",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Gartside Street Dental Lounge website in Manchester, England uses deep navy welcome panel balancing a large portrait or clinic image. Navigation is dark bar with direct consultation and contact routes. Its page moves through dark opening, welcome statement, practice story, treatment index, facilities feature, team profiles, patient review area, visit and consultation close, with distinct treatment groups after the opening narrative. practice rooms and people arranged as editorial panels. Transferable mechanics are navy opening stage, grouped treatment index, facility image chapter. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "deep navy welcome panel balancing a large portrait or clinic image",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "dark bar with direct consultation and contact routes",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "elegant high-contrast serif headlines with clear sans body",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "midnight navy",
+        "white",
+        "cool gray"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "warm coral"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "practice rooms and people arranged as editorial panels",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "dark opening",
+      "welcome statement",
+      "practice story",
+      "treatment index",
+      "facilities feature",
+      "team profiles",
+      "patient review area",
+      "visit and consultation close"
+    ],
+    "servicePresentation": {
+      "pattern": "distinct treatment groups after the opening narrative",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "book consultation",
+      "secondary": "then call",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the alternating navy and white chapters while keeping consultation visible",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Gartside Street Dental Lounge identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "navy-opening-stage",
+        "selector": "[data-reference-signature=navy-opening-stage]",
+        "description": "Translate the observed navy opening stage mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "grouped-treatment-index",
+        "selector": "[data-reference-signature=grouped-treatment-index]",
+        "description": "Translate the observed grouped treatment index mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "facility-image-chapter",
+        "selector": "[data-reference-signature=facility-image-chapter]",
+        "description": "Translate the observed facility image chapter mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses navy opening stage with client-cleared content.",
+      "Page sequence retains grouped treatment index and facility image chapter as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

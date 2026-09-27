@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "id": "web-roofing-roofing-coats",
+  "productionEligible": true,
+  "referenceName": "Roofing Coats Chicago contractor homepage",
+  "familyId": "web-roofing-roofing-coats",
+  "businessKinds": [
+    "roofing contractor",
+    "residential roofing",
+    "commercial roofing",
+    "roofing"
+  ],
+  "source": {
+    "name": "Roofing Coats Chicago contractor official website",
+    "url": "https://www.roofingcoats.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "roofing contractor",
+      "residential roofing",
+      "commercial roofing",
+      "roofing"
+    ],
+    "style": [
+      "bold straightforward sans headings and compact service copy",
+      "white and pale blue and royal blue and medium gray surfaces",
+      "yellow and royal blue accents"
+    ],
+    "composition": [
+      "a white and pale-blue split opening pairs service text and two bordered actions with a house-roof construction illustration",
+      "roof-construction-split-hero",
+      "blue-emergency-contact-strip",
+      "service-and-callback-close"
+    ],
+    "conversion": [
+      "get an estimate or book an appointment",
+      "call for emergency roof help",
+      "early contact action"
+    ],
+    "motion": [
+      "minimal service hover and review rail; static content remains sufficient",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "roof-frame illustration, workers installing material, and service close-ups",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official Roofing Coats Chicago contractor homepage was inspected in paired desktop and mobile full-page captures. The page opens with a white and pale-blue split opening pairs service text and two bordered actions with a house-roof construction illustration. It uses compact white logo row with blue estimate control. The visual system relies on bold straightforward sans headings and compact service copy; surfaces include white, pale blue, royal blue, medium gray and accents include yellow, royal blue. Imagery is roof-frame illustration, workers installing material, and service close-ups. The page then runs through estimate navigation, split construction hero, blue appointment and hours strip, local roofing explanation, repair photo chapter, six-service grid, request callback form, customer review strip, emergency close and footer. Its service presentation is simple multi-row service cells for installation, repair, replacement, snow removal, gutters, and siding. Mobile changes to stack opening illustration after copy, keep emergency call and estimate adjacent, and make the request form readable. Transfer only the layout rhythm and decision path. Do not copy roof illustrations, contractor photographs, license claims, emergency hours, testimonials, phone numbers, or exact blue-and-yellow brand treatment.",
+    "heroGeometry": {
+      "mode": "a white and pale-blue split opening pairs service text and two bordered actions with a house-roof construction illustration",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "compact white logo row with blue estimate control",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "bold straightforward sans headings and compact service copy",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "pale blue",
+        "royal blue",
+        "medium gray"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "yellow",
+        "royal blue"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "roof-frame illustration, workers installing material, and service close-ups",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "estimate navigation",
+      "split construction hero",
+      "blue appointment and hours strip",
+      "local roofing explanation",
+      "repair photo chapter",
+      "six-service grid",
+      "request callback form",
+      "customer review strip",
+      "emergency close and footer"
+    ],
+    "servicePresentation": {
+      "pattern": "simple multi-row service cells for installation, repair, replacement, snow removal, gutters, and siding",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "get an estimate or book an appointment",
+      "secondary": "call for emergency roof help",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "minimal service hover and review rail; static content remains sufficient",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack opening illustration after copy, keep emergency call and estimate adjacent, and make the request form readable",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy roof illustrations, contractor photographs, license claims, emergency hours, testimonials, phone numbers, or exact blue-and-yellow brand treatment.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "roof-construction-split-hero",
+        "selector": "[data-reference-signature=roof-construction-split-hero]",
+        "description": "roof construction split hero translated with client-specific content"
+      },
+      {
+        "id": "blue-emergency-contact-strip",
+        "selector": "[data-reference-signature=blue-emergency-contact-strip]",
+        "description": "blue emergency contact strip translated with client-specific content"
+      },
+      {
+        "id": "service-and-callback-close",
+        "selector": "[data-reference-signature=service-and-callback-close]",
+        "description": "service and callback close translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified roofing contractor scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x6502; mobile 390x10333. Visible page sequence and mobile layout were reviewed. "
+  }
+}

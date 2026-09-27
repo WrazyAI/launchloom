@@ -16,7 +16,7 @@ Retain the high-contrast dark surface, oversized outlined display phrase, compac
 
 # Prohibited patterns
 
-Do not duplicate Dapper Dental's name/logo, photos, actual address, people, testimonials, awards, claims, prices, service details, or exact language. Do not invent "pain free" claims, medical outcomes, awards, credentials, membership perks, premium amenities, rates, office location, schedules, or clinician identities. Avoid the exact outlined text face, photo choices, composition, and color arrangement that would make the new page look like a clone. Do not use generic white cards on dark backgrounds, hide essential contact information, add a giant unreadable headline, or imply that a generated person is a real dentist or patient. Never use an em dash in page copy.
+Do not duplicate Dapper Dental's name/logo, photos, actual address, people, testimonials, awards, claims, prices, service details, or exact language. Do not invent "pain free" claims, medical outcomes, awards, credentials, membership perks, premium amenities, rates, office location, schedules, or clinician identities. Avoid the exact outlined text face, photo choices, composition, and color arrangement that would make the new page look like a clone. Do not reproduce the source's incomplete image loading or security-blocked Vimeo embed. Do not use generic white cards on dark backgrounds, hide essential contact information, add a giant unreadable headline, or imply that a generated person is a real dentist or patient. Never use an em dash in page copy.
 
 # Content and SEO constraints
 

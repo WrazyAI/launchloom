@@ -21,6 +21,8 @@ import {
 } from "./openrouter-client.mjs";
 import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
+import { redactPromptValue } from "./production-experience-author.mjs";
+import { assertAuthorPromptBudget } from "./author-prompt-budget.mjs";
 
 const REPAIR_SCHEMA = {
   name: "launchloom_creative_repair",
@@ -411,6 +413,9 @@ export async function resolveReferenceEvidencePath(record) {
  *   screenshots?: string[],
  *   contentManifest?: Record<string, any>,
  *   creativeSession?: Record<string, any> | null,
+ *   creativeRepairScope?: Record<string, any> | null,
+ *   validationError?: string,
+ *   validationAttempt?: number,
  *   logger?: (message: string) => void,
  * }} [options]
  * @returns {Promise<Record<string, any>>}
@@ -423,6 +428,9 @@ export async function requestRepair({
   screenshots,
   contentManifest = {},
   creativeSession = null,
+  creativeRepairScope = null,
+  validationError = "",
+  validationAttempt = 1,
   logger = console.log,
 }) {
   const humanReview = (findings || []).some(
@@ -453,6 +461,12 @@ export async function requestRepair({
     : referenceMismatch
       ? "Repair this authored LaunchLoom candidate to address the measured rendered-reference and visual findings. You may change composition, layout, hierarchy, section rhythm, image placement or crop, navigation geometry, and motion where needed to fix those findings. Do not preserve any composition or design mechanic explicitly identified as failing. Preserve verified business facts, sealed content bindings, accessibility, required functionality, and the assigned Reference DNA family and signature intent. Do not convert it into a legacy renderer."
       : "Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.";
+  const sourceScopeInstruction = creativeRepairScope
+    ? `
+
+MACHINE-ENFORCED HUMAN SOURCE SCOPE
+The only JSX section subtrees you may change are the unique data-reference-section markers listed here: ${creativeRepairScope.sectionIds.join(", ")}. Keep all section markers and their DOM order unchanged. Any CSS change must be inside a selector rooted in exactly one listed [data-reference-section="..."] marker; do not edit :root, body, shared shell, or unrelated section rules. Motion changes are ${creativeRepairScope.allowMotion ? "explicitly authorized only for this request" : "not authorized"}.`
+    : "";
 
   const desktopReference = referenceDna?.evidence?.desktopScreenshot;
   if (
@@ -468,7 +482,7 @@ export async function requestRepair({
   const contentTokens = Array.isArray(contentManifest?.tokens)
     ? contentManifest.tokens.map((item) => item.token).filter(Boolean)
     : [];
-  const contentShape = contentManifest?.values || {};
+  const contentShape = redactPromptValue(contentManifest?.values || {});
   const content = [
     {
       type: "text",
@@ -500,7 +514,10 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     try {
       if (!resolved) throw new Error("No accessible reference screenshot.");
       const dimensions = await imageSizeLabel(resolved);
-      content.push({ type: "text", text: `Assigned reference evidence (${dimensions}). Its capture height may span multiple page sections and is not a browser viewport height. Reference DNA section-height fractions must not be used directly as CSS vh. The desktop header and complete hero must fit within 1536x864.` });
+      content.push({
+        type: "text",
+        text: `Assigned reference evidence (${dimensions}). Its capture height may span multiple page sections and is not a browser viewport height. Reference DNA section-height fractions must not be used directly as CSS vh. The desktop header and complete hero must fit within 1536x864.`,
+      });
       content.push(await imagePart(resolved));
     } catch (cause) {
       throw new ReferenceEvidenceError(
@@ -511,6 +528,9 @@ Use these helpers instead of inventing network calls or duplicating platform beh
   }
 
   const structuralChecklist = referenceImplementationChecklist(referenceDna);
+  const validationCorrection = validationError
+    ? `\n\nSOURCE VALIDATION CORRECTION (attempt ${validationAttempt}/2)\nThe previous complete repair response failed this deterministic source validation:\n${clean(validationError, 1200)}\nReturn complete corrected files that fix this exact validation error. Preserve all other required sections, sealed content bindings, and the assigned visual repair.\n`
+    : "";
 
   content.push(
     promptCachedText(
@@ -520,10 +540,11 @@ Use these helpers instead of inventing network calls or duplicating platform beh
   );
   content.push({
     type: "text",
-    text: `${repairInstruction}
+    text: `${repairInstruction}${sourceScopeInstruction}
 
 FINDINGS
 ${JSON.stringify(findings, null, 2)}
+${validationCorrection}
 
 CURRENT EXPERIENCE.JSX
 ${files.experience}
@@ -538,6 +559,8 @@ REQUIRED STRUCTURAL CHECKLIST
 ${structuralChecklist}
 Keep each required ID and section marker on its semantically matching visible section, in the exact specified DOM order, while making the requested repair. Do not remove or rename them.
 
+REQUIRED EARLY-CONVERSION CTA: preserve exactly one contact-bound primary CTA anchor using href="#contact", the data-early-conversion marker, and the sealed {content.hero.primaryLabel} binding together on the same anchor. Never replace its label with literal copy, remove its marker, or omit the CTA. Prefer changing its CSS placement before changing its semantic element.
+
 ALT-TEXT CONTRACT
 Every <img> must have a usable alt attribute. Use concise descriptive alt text for informative images. Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text. Preserve the reviewed description when reusing a known informative image, even if its crop or position changes. Do not replace an informative description with generic filler such as "Decorative image".
 
@@ -546,9 +569,12 @@ Return complete files. Keep required reference signatures and safety/content con
   for (const screenshot of screenshots.slice(0, 3)) {
     const dimensions = await imageSizeLabel(screenshot);
     const viewportCapture = /-viewport\.png$/u.test(screenshot);
-    content.push({ type: "text", text: viewportCapture
-      ? `Current candidate first browser viewport (${dimensions}). Judge hero geometry, typography, and mobile recomposition at this scale.`
-      : `Current candidate full-page overview (${dimensions}). Use it for section rhythm, not to infer browser-scale typography or hero height.` });
+    content.push({
+      type: "text",
+      text: viewportCapture
+        ? `Current candidate first browser viewport (${dimensions}). Judge hero geometry, typography, and mobile recomposition at this scale.`
+        : `Current candidate full-page overview (${dimensions}). Use it for section rhythm, not to infer browser-scale typography or hero height.`,
+    });
     content.push(await imagePart(screenshot));
   }
 
@@ -572,6 +598,15 @@ Return complete files. Keep required reference signatures and safety/content con
     creativeSession?.reasoningPolicyVersion || "static-reasoning",
     stableReferenceDna,
   );
+  const messages = [
+    {
+      role: "system",
+      content:
+        "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
+    },
+    { role: "user", content },
+  ];
+  assertAuthorPromptBudget(messages);
   const response = await openRouterChatCompletion({
     title: "LaunchLoom creative repair",
     sessionId,
@@ -585,14 +620,7 @@ Return complete files. Keep required reference signatures and safety/content con
       },
       response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
       ...completionLimitRequestField(CREATIVE_REPAIR_MAX_COMPLETION_TOKENS),
-      messages: [
-        {
-          role: "system",
-          content:
-            "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
-        },
-        { role: "user", content },
-      ],
+      messages,
     },
   });
   const payload = await response.json().catch(() => ({}));

@@ -3,10 +3,15 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
+import { chromium } from "playwright";
 import { buildCandidateManifest } from "../scripts/creative-compiler.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
 import { promoteCreativeCandidate } from "../scripts/promote-creative-candidate.mjs";
-import { runCreativeBakeoff } from "../scripts/run-creative-bakeoff.mjs";
+import {
+  fullPageCaptureErrors,
+  prepareFullPageCapture,
+  runCreativeBakeoff,
+} from "../scripts/run-creative-bakeoff.mjs";
 
 const tempRoots: string[] = [];
 
@@ -34,8 +39,14 @@ async function makeFixture() {
     contentManifestDigest: "content-digest",
     assets: ["content.hero.image"],
   });
-  await fs.writeFile(path.join(root, "src/site.config.json"), JSON.stringify({ design: { recipe: "general-editorial", sections: [] } }));
-  await fs.writeFile(path.join(root, "candidate-a/metadata.json"), JSON.stringify({ ...manifest, creativeManifest: manifest }));
+  await fs.writeFile(
+    path.join(root, "src/site.config.json"),
+    JSON.stringify({ design: { recipe: "general-editorial", sections: [] } }),
+  );
+  await fs.writeFile(
+    path.join(root, "candidate-a/metadata.json"),
+    JSON.stringify({ ...manifest, creativeManifest: manifest }),
+  );
   await fs.writeFile(
     path.join(root, "candidate-a/Experience.jsx"),
     `import { LeadForm } from "@launchloom/runtime";
@@ -46,16 +57,70 @@ export default function Experience({ content, runtime }) {
     <section id="contact"><LeadForm content={content} runtime={runtime} /></section></main>;
 }`,
   );
-  await fs.writeFile(path.join(root, "candidate-a/styles.css"), "[data-hero]{min-height:40rem}");
-  await fs.writeFile(path.join(root, "candidate-a/motion.js"), "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {}; return () => {}; }");
+  await fs.writeFile(
+    path.join(root, "candidate-a/styles.css"),
+    "[data-hero]{min-height:40rem}",
+  );
+  await fs.writeFile(
+    path.join(root, "candidate-a/motion.js"),
+    "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {}; return () => {}; }",
+  );
   return root;
 }
 
 afterEach(async () => {
-  await Promise.all(tempRoots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    tempRoots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
+  );
 });
 
 describe("creative candidate promotion", () => {
+  it("records browser errors that first occur during full-page capture", () => {
+    expect(
+      fullPageCaptureErrors(
+        ["before capture", "reveal hook failed"],
+        1,
+        "mobile",
+      ),
+    ).toEqual([
+      "mobile: browser error during full-page capture: reveal hook failed",
+    ]);
+  });
+
+  it("scrolls through reveal content before taking a full-page overview", async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const page = await browser.newPage({
+        viewport: { width: 1000, height: 800 },
+      });
+      await page.setContent(`<!doctype html><html><head><style>
+        html, body { margin: 0; }
+        main { height: 2400px; }
+        #revealed { position: absolute; top: 1500px; opacity: 0; }
+        #revealed.visible { opacity: 1; }
+      </style></head><body><main></main><p id="revealed">A scroll-revealed image chapter</p>
+      <script>
+        let scheduled = false;
+        window.addEventListener("scroll", () => {
+          if (window.scrollY < 900 || scheduled) return;
+          scheduled = true;
+          setTimeout(() => document.querySelector("#revealed").classList.add("visible"), 100);
+        });
+      </script></body></html>`);
+
+      await prepareFullPageCapture(page, { viewportHeight: 800 });
+
+      expect(await page.locator("#revealed").getAttribute("class")).toMatch(
+        /visible/u,
+      );
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    } finally {
+      await browser.close();
+    }
+  }, 15_000);
+
   it("omits validator-rejected candidates from a later bakeoff", async () => {
     const root = await makeFixture();
 
@@ -88,10 +153,20 @@ describe("creative candidate promotion", () => {
 
   it("copies a validated candidate and switches the site renderer", async () => {
     const root = await makeFixture();
-    const result = await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+    const result = await promoteCreativeCandidate({
+      siteDir: root,
+      candidateDir: "candidate-a",
+    });
     expect(result.candidateId).toBe("candidate-a");
-    expect(await fs.readFile(path.join(root, "src/generated-experiences/selected/Experience.jsx"), "utf8")).toContain("LeadForm");
-    const config = JSON.parse(await fs.readFile(path.join(root, "src/site.config.json"), "utf8"));
+    expect(
+      await fs.readFile(
+        path.join(root, "src/generated-experiences/selected/Experience.jsx"),
+        "utf8",
+      ),
+    ).toContain("LeadForm");
+    const config = JSON.parse(
+      await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),
+    );
     expect(config.design.experience.renderer).toBe("creative-candidate");
     expect(config.design.experience.familyId).toBe("editorial-monument");
   });
@@ -108,7 +183,10 @@ describe("creative candidate promotion", () => {
       ),
     );
 
-    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+    await promoteCreativeCandidate({
+      siteDir: root,
+      candidateDir: "candidate-a",
+    });
 
     const selected = await fs.readFile(
       path.join(root, "src/generated-experiences/selected/Experience.jsx"),
@@ -122,8 +200,13 @@ describe("creative candidate promotion", () => {
     const root = await makeFixture();
     const file = path.join(root, "candidate-a/Experience.jsx");
     const source = await fs.readFile(file, "utf8");
-    await fs.writeFile(file, source.replace('import { LeadForm } from "@launchloom/runtime";\n', ""));
-    await expect(promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" })).rejects.toThrow(/shared LeadForm runtime/iu);
+    await fs.writeFile(
+      file,
+      source.replace('import { LeadForm } from "@launchloom/runtime";\n', ""),
+    );
+    await expect(
+      promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" }),
+    ).rejects.toThrow(/shared LeadForm runtime/iu);
   });
 
   it("renders a candidate in the real Astro shell before reporting diversity fallback", async () => {
@@ -142,6 +225,15 @@ describe("creative candidate promotion", () => {
 
   it("uses rendered diversity as the sole v2 production diversity authority", async () => {
     const root = await makeFixture();
+    const experiencePath = path.join(root, "candidate-a/Experience.jsx");
+    const experience = await fs.readFile(experiencePath, "utf8");
+    await fs.writeFile(
+      experiencePath,
+      experience.replace(
+        'style={{ display: "none" }}',
+        'style={{ display: "block", width: "50vw", height: "100px", marginLeft: "auto", marginRight: "auto" }}',
+      ),
+    );
     const record = JSON.parse(
       await fs.readFile("data/inspiration-registry.json", "utf8"),
     ).records[0];
@@ -198,24 +290,24 @@ describe("creative candidate promotion", () => {
     const renderedReferenceEvaluator = async (input: any) => {
       fidelityEvidence.push(input);
       return {
-      version: 1,
-      model: "test/model",
-      score: 100,
-      pass: true,
-      audit: {
-        scores: {
-          heroGeometry: 100,
-          typography: 100,
-          spatialRhythm: 100,
-          imagery: 100,
-          servicePresentation: 100,
-          navigation: 100,
-          ctaPlacement: 100,
-          mobileRecomposition: 100,
-          interactionEvidence: 100,
+        version: 1,
+        model: "test/model",
+        score: 100,
+        pass: true,
+        audit: {
+          scores: {
+            heroGeometry: 100,
+            typography: 100,
+            spatialRhythm: 100,
+            imagery: 100,
+            servicePresentation: 100,
+            navigation: 100,
+            ctaPlacement: 100,
+            mobileRecomposition: 100,
+            interactionEvidence: 100,
+          },
+          findings: [],
         },
-        findings: [],
-      },
       };
     };
 
@@ -249,16 +341,35 @@ describe("creative candidate promotion", () => {
 
       expect(report.diversity.pass).toBe(false);
       const firstEvidence = fidelityEvidence[0];
-      const viewportImage = await sharp(firstEvidence.candidateScreenshots.desktop).metadata();
-      const pageOverview = await sharp(firstEvidence.candidateScreenshots.fullDesktop).metadata();
-      expect({ width: viewportImage.width, height: viewportImage.height }).toEqual({ width: 1536, height: 864 });
+      const viewportImage = await sharp(
+        firstEvidence.candidateScreenshots.desktop,
+      ).metadata();
+      const pageOverview = await sharp(
+        firstEvidence.candidateScreenshots.fullDesktop,
+      ).metadata();
+      expect({
+        width: viewportImage.width,
+        height: viewportImage.height,
+      }).toEqual({ width: 1536, height: 864 });
       expect(pageOverview.width).toBe(1536);
       expect(pageOverview.height).toBeGreaterThanOrEqual(864);
       expect(firstEvidence.renderedGeometry.desktop.viewportHeight).toBe(864);
+      expect(
+        firstEvidence.renderedGeometry.desktop.openingImage.widthRatio,
+      ).toBeCloseTo(0.5, 2);
+      expect(
+        firstEvidence.renderedGeometry.desktop.openingImage.centerOffsetRatio,
+      ).toBeCloseTo(0, 2);
+      expect(
+        firstEvidence.renderedGeometry.desktop.headline.widthRatio,
+      ).toBeGreaterThan(0);
+      expect(
+        firstEvidence.renderedGeometry.mobile.openingImage.widthRatio,
+      ).toBeCloseTo(0.5, 2);
       expect(report.visualDiversity.pass).toBe(true);
-      expect(report.candidates.every((candidate: any) => candidate.eligible)).toBe(
-        true,
-      );
+      expect(
+        report.candidates.every((candidate: any) => candidate.eligible),
+      ).toBe(true);
       expect(report.selectedCandidateId).not.toBeNull();
       expect(report.promotionReady).toBe(true);
 
@@ -292,9 +403,7 @@ describe("creative candidate promotion", () => {
       });
       expect(blocked.selectedCandidateId).not.toBeNull();
       expect(blocked.promotionReady).toBe(false);
-      const blockedConfig = JSON.parse(
-        await fs.readFile(configPath, "utf8"),
-      );
+      const blockedConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
       expect(blockedConfig).toEqual(JSON.parse(originalConfig));
     } finally {
       await fs.writeFile(configPath, originalConfig);
@@ -331,16 +440,33 @@ describe("creative candidate promotion", () => {
     await fs.writeFile(
       experiencePath,
       experience
-        .replace("<main>", '<main data-mobile-recomposition="wrong-layout" data-motion-primitive="wrong-motion">')
+        .replace(
+          "<main>",
+          '<main data-mobile-recomposition="wrong-layout" data-motion-primitive="wrong-motion">',
+        )
         .replace("<nav>", '<nav data-navigation-geometry="wrong-navigation">')
-        .replace("<section data-hero>", '<section data-hero data-hero-geometry="wrong-hero"><img src={content.hero.image} alt={content.hero.heading} style={{ display: "none" }} />')
-        .replace('<section id="services">', '<section id="services" data-service-presentation="wrong-services">')
-        .replace("<button data-early-conversion>", '<button data-early-conversion data-cta-placement="wrong-cta">'),
+        .replace(
+          "<section data-hero>",
+          '<section data-hero data-hero-geometry="wrong-hero"><img src={content.hero.image} alt={content.hero.heading} style={{ display: "none" }} />',
+        )
+        .replace(
+          '<section id="services">',
+          '<section id="services" data-service-presentation="wrong-services">',
+        )
+        .replace(
+          "<button data-early-conversion>",
+          '<button data-early-conversion data-cta-placement="wrong-cta">',
+        ),
     );
     const siteRoot = path.resolve("templates/client-site");
     const configPath = path.join(siteRoot, "src/site.config.json");
-    const selectedPath = path.join(siteRoot, "src/generated-experiences/selected");
-    const selectedBackup = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-selected-"));
+    const selectedPath = path.join(
+      siteRoot,
+      "src/generated-experiences/selected",
+    );
+    const selectedBackup = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-selected-"),
+    );
     const originalConfig = await fs.readFile(configPath, "utf8");
     await fs.cp(selectedPath, selectedBackup, { recursive: true });
     try {
@@ -372,7 +498,9 @@ describe("creative candidate promotion", () => {
         }),
       });
       expect(report.candidates[0].valid).toBe(true);
-      expect(report.candidates[0].referenceFidelity.sourceVisualFindings.length).toBeGreaterThan(0);
+      expect(
+        report.candidates[0].referenceFidelity.sourceVisualFindings.length,
+      ).toBeGreaterThan(0);
       expect(
         new Set(
           report.candidates[0].referenceFidelity.renderedVisualFindings.map(

@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "id": "web-restaurant-cafe-carmellini",
+  "productionEligible": true,
+  "referenceName": "Café Carmellini: ornate room hero with navy bordered splits",
+  "familyId": "web-restaurant-cafe-carmellini-family",
+  "businessKinds": [
+    "restaurant",
+    "local dining",
+    "private dining"
+  ],
+  "source": {
+    "name": "Café Carmellini official website",
+    "url": "https://www.cafecarmellini.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "restaurant",
+      "local dining",
+      "table reservations"
+    ],
+    "style": [
+      "flowing script heading against very restrained serif copy",
+      "deep navy and gold surfaces",
+      "copper accent"
+    ],
+    "composition": [
+      "ornate full-screen dining-room image with quiet booking utility",
+      "ornate room hero",
+      "navy bordered splits",
+      "script labels"
+    ],
+    "conversion": [
+      "table reservation",
+      "menu exploration"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "high-key plated dishes cropped inside symmetrical navy frames",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Café Carmellini website in New York, New York uses ornate full-screen dining-room image with quiet booking utility. Navigation is small over-image reservation control and folded menu. Its page moves through grand-room opening, brief dining introduction, framed split menu chapter, framed split private-event chapter, fine-pattern footer, with two decisive routes for menu and private-event enquiry. high-key plated dishes cropped inside symmetrical navy frames. Transferable mechanics are ornate room hero, navy bordered splits, script labels. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "ornate full-screen dining-room image with quiet booking utility",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "small over-image reservation control and folded menu",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "flowing script heading against very restrained serif copy",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "deep navy",
+        "gold",
+        "warm cream"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "copper"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "high-key plated dishes cropped inside symmetrical navy frames",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "grand-room opening",
+      "brief dining introduction",
+      "framed split menu chapter",
+      "framed split private-event chapter",
+      "fine-pattern footer"
+    ],
+    "servicePresentation": {
+      "pattern": "two decisive routes for menu and private-event enquiry",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "reserve table",
+      "secondary": "then inspect menu",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "turn alternating split panels into image-first vertical chapters with outlined actions",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Café Carmellini identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "ornate-room-hero",
+        "selector": "[data-reference-signature=ornate-room-hero]",
+        "description": "Translate the observed ornate room hero mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "navy-bordered-splits",
+        "selector": "[data-reference-signature=navy-bordered-splits]",
+        "description": "Translate the observed navy bordered splits mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "script-labels",
+        "selector": "[data-reference-signature=script-labels]",
+        "description": "Translate the observed script labels mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses ornate room hero with client-cleared content.",
+      "Page sequence retains navy bordered splits and script labels as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

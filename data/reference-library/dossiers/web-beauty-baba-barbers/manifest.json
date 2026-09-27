@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "id": "web-beauty-baba-barbers",
+  "productionEligible": true,
+  "referenceName": "Baba Barbers craft and booking",
+  "familyId": "beauty-booking-panel-in-image-hero",
+  "source": {
+    "name": "Baba Barbers craft and booking official website",
+    "url": "https://www.bababarbers.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 10472
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 15449
+    },
+    "diagnostics": "Observed dark hero and booking panel, circular price/service menu, craft story cards, chair-side process strip, interior gallery. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Baba Barbers craft and booking official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "beauty",
+    "barber",
+    "grooming"
+  ],
+  "tags": {
+    "business": [
+      "beauty",
+      "barber",
+      "grooming"
+    ],
+    "style": [
+      "dark-teal-gold",
+      "barber-craft",
+      "decorative-point-light"
+    ],
+    "composition": [
+      "hero-plus-booking-panel",
+      "circular-price-grid",
+      "long-visual-chapters"
+    ],
+    "conversion": [
+      "book-chair",
+      "service-selection",
+      "visit-details"
+    ],
+    "motion": [
+      "light-reveal",
+      "static-essential-content"
+    ],
+    "imagery": [
+      "authentic-barber-interior",
+      "hands-at-work",
+      "client-consented-results"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A deep teal barber-shop photograph supports a left promise while a small booking panel floats on the right; restrained gold points add depth. A slim warm-accent utility strip and compact service, story, gallery and booking links sit above the opening. Large italic or calligraphic serif chapter titles, small uppercase labels and compact practical service copy. The page sequence runs from dark hero and booking panel to circular price/service menu to craft story cards toward booking band, local visit details, dense dark footer. Salon atmosphere, craft archive, hands-at-work strips and haircut results appear in separate chapter-sized groups. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A deep teal barber-shop photograph supports a left promise while a small booking panel floats on the right; restrained gold points add depth.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "A slim warm-accent utility strip and compact service, story, gallery and booking links sit above the opening.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Large italic or calligraphic serif chapter titles, small uppercase labels and compact practical service copy.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Dark teal",
+        "near-black",
+        "gold and small coral accents",
+        "with illuminated portrait photography."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "dark-teal-gold",
+        "barber-craft"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Salon atmosphere, craft archive, hands-at-work strips and haircut results appear in separate chapter-sized groups.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "dark hero and booking panel",
+      "circular price/service menu",
+      "craft story cards",
+      "chair-side process strip",
+      "interior gallery",
+      "recent haircut results",
+      "booking band",
+      "local visit details",
+      "dense dark footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Use a visually legible service price menu only when actual services and prices are supplied; otherwise show scope and a booking route.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Put booking beside the opening promise and repeat it after results and visit information.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "light-reveal; static-essential-content",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Move booking panel into the flow below the promise, make circular service units linear, and preserve image-strip reading order without tiny text.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not reuse the source's exact dark decorative motif, barber faces, prices, origin story, photographs or location details.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "booking-panel-in-image-hero",
+        "selector": "[data-reference-signature=booking-panel-in-image-hero]",
+        "description": "A new-client interpretation of the observed booking panel in image hero relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "circular-service-index",
+        "selector": "[data-reference-signature=circular-service-index]",
+        "description": "A new-client interpretation of the observed circular service index relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "craft-process-photo-strip",
+        "selector": "[data-reference-signature=craft-process-photo-strip]",
+        "description": "A new-client interpretation of the observed craft-process photo strip relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "id": "clear-counsel-ledger",
+  "productionEligible": false,
+  "referenceName": "LaunchLoom clear-counsel study",
+  "familyId": "launchloom-clear-counsel",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/clear-counsel-ledger",
+    "rights": "owned",
+    "rightsEvidence": "The inspiration registry records this as a LaunchLoom-owned original visual study. Exact original capture paths and matching screenshot hashes are documented in rights/provenance.md. Ownership is registry-recorded, not an independently audited asset-by-asset license.",
+    "sourceType": "LaunchLoom-owned original visual study, rendered in-house",
+    "rightsEvidencePath": "rights/provenance.md"
+  },
+  "businessKinds": [
+    "legal",
+    "financial",
+    "consulting",
+    "engineering"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "LaunchLoom clear-counsel study",
+    "heroGeometry": {
+      "mode": "narrow professional positioning beside portrait proof",
+      "alignment": "quiet asymmetrical editorial columns",
+      "viewport": "positioning and primary contact action in the opening"
+    },
+    "navigationGeometry": {
+      "mode": "small wordmark with direct links",
+      "placement": "top edge",
+      "mobile": "simple compact menu"
+    },
+    "typography": {
+      "display": "editorial serif display",
+      "body": "humanist sans",
+      "scale": "large restrained statement with fine labels"
+    },
+    "palette": {
+      "surfaces": [
+        "warm white",
+        "ink",
+        "muted ochre"
+      ],
+      "ink": "ink",
+      "accents": [
+        "muted ochre"
+      ],
+      "contrastIntent": "high-legibility professional contrast"
+    },
+    "imageTreatment": {
+      "mode": "single professional portrait with generous negative space",
+      "crop": "vertical portrait crop",
+      "focalPoint": "face and hands kept in frame"
+    },
+    "sectionSequence": [
+      "hero",
+      "editorial-intro",
+      "proof",
+      "magazine-archive",
+      "process",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "ruled expertise ledger",
+      "interaction": "direct topic links"
+    },
+    "ctaPlacement": {
+      "primary": "consultation action near positioning",
+      "secondary": "expertise ledger links",
+      "early": "after opening proof"
+    },
+    "motion": {
+      "primitive": "subtle ledger-row reveal",
+      "library": "css",
+      "reducedMotion": "static portrait and service rows"
+    },
+    "mobileRecomposition": {
+      "strategy": "single-column expertise page",
+      "rules": [
+        "stack portrait after the positioning statement",
+        "turn ledger into touch rows",
+        "keep credentials factual and supplied"
+      ]
+    },
+    "prohibitedPatterns": [
+      "unverified client logo wall",
+      "invented testimonials",
+      "generic split hero",
+      "decorative result metrics"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "professional-positioning",
+        "selector": "[data-reference-signature=professional-positioning]",
+        "description": "narrow confident positioning statement"
+      },
+      {
+        "id": "expertise-ledger",
+        "selector": "[data-reference-signature=expertise-ledger]",
+        "description": "ruled expertise or service rows"
+      }
+    ],
+    "acceptanceChecks": [
+      "portrait is supporting proof, not a stock identity claim",
+      "expertise is presented as a ledger rather than cards",
+      "only verified credentials or outcomes appear"
+    ],
+    "annotatedDescription": "Archived LaunchLoom-owned visual study: LaunchLoom clear-counsel study. The registry describes it as Owned LaunchLoom design study used as visual evidence. Original LaunchLoom study for trust-sensitive professional services.. The opening uses narrow professional positioning beside portrait proof, with small wordmark with direct links. The page rhythm is hero, editorial-intro, proof, magazine-archive, process, faq, contact. Mobile translation: single-column expertise page. This dossier records transferable mechanics and original screenshot evidence for historical traceability only; it is not a production reference or a source of client facts, assets, or claims."
+  },
+  "review": {
+    "status": "owned-archive-not-for-production",
+    "curator": "Codex archival materialization",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical traceability of a registry-recorded LaunchLoom-owned study and its exact paired screenshots",
+    "notes": "productionEligible=false. Never add this dossier to the core collection or randomized production selection. Screenshot copies match the registered originals by SHA-256. Original capture date is not established by this materialization."
+  },
+  "tags": {
+    "business": [
+      "legal",
+      "financial",
+      "consulting",
+      "engineering"
+    ],
+    "style": [
+      "editorial serif display",
+      "surfaces: warm white, ink, muted ochre",
+      "accents: muted ochre"
+    ],
+    "composition": [
+      "narrow professional positioning beside portrait proof",
+      "small wordmark with direct links",
+      "ruled expertise ledger"
+    ],
+    "conversion": [
+      "consultation action near positioning",
+      "expertise ledger links",
+      "after opening proof"
+    ],
+    "motion": [
+      "subtle ledger-row reveal",
+      "static portrait and service rows"
+    ],
+    "imagery": [
+      "single professional portrait with generous negative space",
+      "vertical portrait crop"
+    ]
+  }
+}

@@ -124,6 +124,9 @@ describe("creative repair loop", () => {
     expect(prompt).toContain(
       'REQUIRED NAVIGATION LINKS (EVERY ROUTE, INCLUDING WHEN REFERENCE DNA IS NULL): include visible native lowercase <nav> containing literal JSX anchors <a href="#services">Services</a>, <a href="#faqs">FAQs</a>, and <a href="#contact">Contact</a>. Do not remove, replace, or convert these anchors to components or click handlers.',
     );
+    expect(prompt).toContain(
+      'REQUIRED EARLY-CONVERSION CTA: preserve exactly one contact-bound primary CTA anchor using href="#contact", the data-early-conversion marker, and the sealed {content.hero.primaryLabel} binding together on the same anchor. Never replace its label with literal copy, remove its marker, or omit the CTA. Prefer changing its CSS placement before changing its semantic element.',
+    );
     expect(prompt).toContain('data-reference-section="hero"');
     expect(prompt).toContain('data-reference-section="services"');
     expect(prompt).toContain('data-reference-section="faqs"');

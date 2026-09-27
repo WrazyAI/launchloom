@@ -66,7 +66,16 @@ describe("human creative revision lifecycle", () => {
             candidateId: "candidate-a",
           },
         },
-        revisionReport: { creativeSourceRepairRequired: true },
+        revisionReport: {
+          creativeSourceRepairRequired: true,
+          creativeRepairScope: {
+            version: 1,
+            requestText: "Please update the hero section.",
+            feedbackItems: [
+              { feedbackIndex: 0, feedback: "Please update the hero section." },
+            ],
+          },
+        },
       }),
     );
     await fs.writeFile(
@@ -93,8 +102,18 @@ describe("human creative revision lifecycle", () => {
         tokens: [],
       }),
     );
+    const selectedExperience = `export default function Experience() { return <main>
+      <section data-reference-section="hero" data-hero></section>
+      <section id="services" data-reference-section="services" data-service-presentation="rows"></section>
+      <section id="faqs" data-reference-section="faqs"></section>
+      <section id="contact" data-reference-section="contact"></section>
+    </main>; }`;
     for (const [name, original, selected] of [
-      ["Experience.jsx", "original experience", "current selected experience"],
+      [
+        "Experience.jsx",
+        "original experience",
+        selectedExperience,
+      ],
       ["styles.css", "original styles", "current selected styles"],
       ["motion.js", "original motion", "current selected motion"],
     ] as const) {
@@ -125,7 +144,7 @@ describe("human creative revision lifecycle", () => {
         path.join(outDir, "candidate-a/Experience.jsx"),
         "utf8",
       ),
-    ).toBe("current selected experience");
+    ).toBe(selectedExperience);
     expect(
       await fs.readFile(path.join(outDir, "candidate-a/styles.css"), "utf8"),
     ).toBe("current selected styles");
@@ -163,6 +182,13 @@ describe("human creative revision lifecycle", () => {
     expect(refreshedContract.creativeManifest.contentManifestDigest).toBe(
       refreshedManifest.digest,
     );
+    expect(refreshedMetadata.creativeRepairScope).toEqual({
+      version: 1,
+      sectionIds: ["hero"],
+      allowMotion: false,
+      feedbackIndexes: [0],
+      requestText: "Please update the hero section.",
+    });
   });
 
   it("fails before resolving a missing output path and leaves the working directory intact", async () => {

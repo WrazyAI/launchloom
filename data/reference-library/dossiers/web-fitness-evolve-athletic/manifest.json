@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "id": "web-fitness-evolve-athletic",
+  "productionEligible": true,
+  "referenceName": "Evolve Athletic: editorial training statement with weekly timetable",
+  "familyId": "web-fitness-evolve-athletic-family",
+  "businessKinds": [
+    "fitness studio",
+    "local gym",
+    "personal training",
+    "fitness"
+  ],
+  "source": {
+    "name": "Evolve Athletic official website",
+    "url": "https://evolveathletic.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "fitness",
+      "local gym",
+      "coached training"
+    ],
+    "style": [
+      "warm expressive serif display with small functional sans labels",
+      "white and black surfaces",
+      "red accent"
+    ],
+    "composition": [
+      "large editorial performance statement on white with black-and-white movement imagery",
+      "editorial training statement",
+      "weekly timetable",
+      "coach directory"
+    ],
+    "conversion": [
+      "trial booking",
+      "membership enquiry"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "monochrome training images used as full-width pauses",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Evolve Athletic website in London, England uses large editorial performance statement on white with black-and-white movement imagery. Navigation is minimal top links for coaching, timetable and trial. Its page moves through performance opening, training philosophy, three training paths, weekly class timetable, coach portraits, goal enquiry, specialist network, trial close, with coaching paths and a real weekly timetable hold the middle of the page. monochrome training images used as full-width pauses. Transferable mechanics are editorial training statement, weekly timetable, coach directory. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "large editorial performance statement on white with black-and-white movement imagery",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "minimal top links for coaching, timetable and trial",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "warm expressive serif display with small functional sans labels",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "black",
+        "light gray"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "red"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "monochrome training images used as full-width pauses",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "performance opening",
+      "training philosophy",
+      "three training paths",
+      "weekly class timetable",
+      "coach portraits",
+      "goal enquiry",
+      "specialist network",
+      "trial close"
+    ],
+    "servicePresentation": {
+      "pattern": "coaching paths and a real weekly timetable hold the middle of the page",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "claim trial",
+      "secondary": "then view schedule",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "reflow timetable into readable day rows rather than squeezing seven columns",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Evolve Athletic identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "editorial-training-statement",
+        "selector": "[data-reference-signature=editorial-training-statement]",
+        "description": "Translate the observed editorial training statement mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "weekly-timetable",
+        "selector": "[data-reference-signature=weekly-timetable]",
+        "description": "Translate the observed weekly timetable mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "coach-directory",
+        "selector": "[data-reference-signature=coach-directory]",
+        "description": "Translate the observed coach directory mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses editorial training statement with client-cleared content.",
+      "Page sequence retains weekly timetable and coach directory as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

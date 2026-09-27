@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "web-hvac-allied-air-heat",
+  "productionEligible": true,
+  "referenceName": "Allied Air Conditioning and Heating service map",
+  "familyId": "hvac-three-part-contact-ribbon",
+  "source": {
+    "name": "Allied Air Conditioning and Heating service map official website",
+    "url": "https://alliedairheat.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Chromium capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, then returned to top. A CDP beyond-viewport clip kept the full document length at the exact viewport width; no page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 900,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 9988
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 11762
+    },
+    "diagnostics": "Observed house-photo opening, phone-and-quote ribbon, service two-by-two image grid, repair-maintenance explanations, family/service photo split. The desktop source document is 1560 px wide at the 1440 px viewport and is cropped to the viewport; mobile document width matches 390 px. No page errors or confirmed broken image requests were recorded. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Allied Air Conditioning and Heating service map official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "hvac",
+    "heating-and-cooling",
+    "air-conditioning",
+    "home-services"
+  ],
+  "tags": {
+    "business": [
+      "hvac",
+      "heating-and-cooling",
+      "air-conditioning",
+      "home-services"
+    ],
+    "style": [
+      "blue-red-service",
+      "direct-local",
+      "high-contrast"
+    ],
+    "composition": [
+      "hero-contact-ribbon",
+      "photo-service-grid",
+      "map-footer"
+    ],
+    "conversion": [
+      "call",
+      "quote",
+      "service-area-check"
+    ],
+    "motion": [
+      "simple-hover",
+      "static-cards"
+    ],
+    "imagery": [
+      "technician-at-work",
+      "local-family",
+      "service-map"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A suburban-home photo carries the firm introduction while a conspicuous three-part phone and quote ribbon occupies the lower hero edge. Blue service link line and a bright quote control above the hero, with contact routes visible early. Direct sans headings in saturated blue, slim body paragraphs and red underline/CTA accents. The page sequence runs from house-photo opening to phone-and-quote ribbon to service two-by-two image grid toward customer quote chapter, service-area map, blue contact footer. Technician action photos form a two-by-two service grid; family/team, financing, testimonials and mapped service area follow. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A suburban-home photo carries the firm introduction while a conspicuous three-part phone and quote ribbon occupies the lower hero edge.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Blue service link line and a bright quote control above the hero, with contact routes visible early.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Direct sans headings in saturated blue, slim body paragraphs and red underline/CTA accents.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "White",
+        "royal blue",
+        "urgent red and cool gray."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "blue-red-service",
+        "direct-local"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Technician action photos form a two-by-two service grid; family/team, financing, testimonials and mapped service area follow.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "house-photo opening",
+      "phone-and-quote ribbon",
+      "service two-by-two image grid",
+      "repair-maintenance explanations",
+      "family/service photo split",
+      "financing and specialty services",
+      "customer quote chapter",
+      "service-area map",
+      "blue contact footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Use a heating/cooling/air-quality/ductless service grid only for services the client actually performs; each photo should identify a problem or task.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Phone and quote routes are immediate, then recur after the service grid and coverage section.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "simple-hover; static-cards",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Recompose the contact ribbon as stacked full-width actions and convert the image grid to single service rows with unclipped captions.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not reuse source team, Carrier and partner badges, second-opinion offer, ratings, exact map or source logo; avoid the source desktop overflow.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "three-part-contact-ribbon",
+        "selector": "[data-reference-signature=three-part-contact-ribbon]",
+        "description": "A new-client interpretation of the observed three-part contact ribbon relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "two-by-two-technician-service-grid",
+        "selector": "[data-reference-signature=two-by-two-technician-service-grid]",
+        "description": "A new-client interpretation of the observed two-by-two technician service grid relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "service-area-map",
+        "selector": "[data-reference-signature=service-area-map]",
+        "description": "A new-client interpretation of the observed service-area map relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

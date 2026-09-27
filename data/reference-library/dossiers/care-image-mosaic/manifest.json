@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "id": "care-image-mosaic",
+  "productionEligible": false,
+  "referenceName": "Care modern-clinic image mosaic study",
+  "familyId": "care-modern-clinic-mosaic",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/care-image-mosaic",
+    "rights": "owned",
+    "rightsEvidence": "The inspiration registry records this as a LaunchLoom-owned original visual study. Exact original capture paths and matching screenshot hashes are documented in rights/provenance.md. Ownership is registry-recorded, not an independently audited asset-by-asset license.",
+    "sourceType": "LaunchLoom-owned original visual study, rendered in-house",
+    "rightsEvidencePath": "rights/provenance.md"
+  },
+  "businessKinds": [
+    "healthcare",
+    "home-care",
+    "elder-care",
+    "wellness"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Care modern-clinic image mosaic study",
+    "heroGeometry": {
+      "mode": "left-aligned care statement beside offset image windows",
+      "alignment": "asymmetric copy-and-mosaic composition",
+      "viewport": "opening statement and image cluster"
+    },
+    "navigationGeometry": {
+      "mode": "compact utility links",
+      "placement": "top edge",
+      "mobile": "simple inline links"
+    },
+    "typography": {
+      "display": "humanist grotesk",
+      "body": "neutral sans",
+      "scale": "large stacked headline with concise supporting text"
+    },
+    "palette": {
+      "surfaces": [
+        "warm white",
+        "soft sage",
+        "deep green"
+      ],
+      "ink": "deep green",
+      "accents": [
+        "muted yellow",
+        "sage"
+      ],
+      "contrastIntent": "calm contrast with restrained color panels"
+    },
+    "imageTreatment": {
+      "mode": "offset care-image mosaic",
+      "crop": "one broad landscape crop with smaller supporting windows",
+      "focalPoint": "people and setting kept recognizable"
+    },
+    "sectionSequence": [
+      "hero",
+      "image-mosaic",
+      "conversion-band",
+      "editorial-intro",
+      "services",
+      "process",
+      "faq",
+      "proof",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "open editorial service panels",
+      "interaction": "row expansion or direct service links"
+    },
+    "ctaPlacement": {
+      "primary": "first-conversation action within the opening region",
+      "secondary": "service-specific next step",
+      "early": "immediately after hero"
+    },
+    "motion": {
+      "primitive": "staggered image-window reveal",
+      "library": "css",
+      "reducedMotion": "show the complete still mosaic"
+    },
+    "mobileRecomposition": {
+      "strategy": "image-first stacked mosaic",
+      "rules": [
+        "stack image windows without overlap",
+        "keep headline and primary action before supporting copy",
+        "preserve service-row tap targets"
+      ]
+    },
+    "prohibitedPatterns": [
+      "unrelated image grid",
+      "generic bento-card wall",
+      "long why-us paragraph",
+      "duplicated care claims"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "care-image-mosaic",
+        "selector": "[data-reference-signature=care-image-mosaic]",
+        "description": "offset image windows beside the care promise"
+      },
+      {
+        "id": "open-service-panels",
+        "selector": "[data-reference-signature=open-service-panels]",
+        "description": "open service rows instead of a uniform card wall"
+      }
+    ],
+    "acceptanceChecks": [
+      "the hero image cluster and copy are asymmetrical",
+      "the first conversion action follows the opening promise",
+      "service options remain scannable"
+    ],
+    "annotatedDescription": "Archived LaunchLoom-owned visual study: Care modern-clinic image mosaic study. The registry describes it as Owned rendered care-site study. Reference its offset care-image mosaic, restrained surface transitions, and open service rows. Do not reproduce its business identity or copy.. The opening uses left-aligned care statement beside offset image windows, with compact utility links. The page rhythm is hero, image-mosaic, conversion-band, editorial-intro, services, process, faq, proof, contact. Mobile translation: image-first stacked mosaic. This dossier records transferable mechanics and original screenshot evidence for historical traceability only; it is not a production reference or a source of client facts, assets, or claims."
+  },
+  "review": {
+    "status": "owned-archive-not-for-production",
+    "curator": "Codex archival materialization",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical traceability of a registry-recorded LaunchLoom-owned study and its exact paired screenshots",
+    "notes": "productionEligible=false. Never add this dossier to the core collection or randomized production selection. Screenshot copies match the registered originals by SHA-256. Original capture date is not established by this materialization."
+  },
+  "tags": {
+    "business": [
+      "healthcare",
+      "home-care",
+      "elder-care",
+      "wellness"
+    ],
+    "style": [
+      "humanist grotesk",
+      "surfaces: warm white, soft sage, deep green",
+      "accents: muted yellow, sage"
+    ],
+    "composition": [
+      "left-aligned care statement beside offset image windows",
+      "compact utility links",
+      "open editorial service panels"
+    ],
+    "conversion": [
+      "first-conversation action within the opening region",
+      "service-specific next step",
+      "immediately after hero"
+    ],
+    "motion": [
+      "staggered image-window reveal",
+      "show the complete still mosaic"
+    ],
+    "imagery": [
+      "offset care-image mosaic",
+      "one broad landscape crop with smaller supporting windows"
+    ]
+  }
+}

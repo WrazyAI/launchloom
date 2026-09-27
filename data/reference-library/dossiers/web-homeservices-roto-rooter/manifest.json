@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "id": "web-homeservices-roto-rooter",
+  "productionEligible": true,
+  "referenceName": "Roto-Rooter plumbing and drain services homepage",
+  "familyId": "web-homeservices-roto-rooter",
+  "businessKinds": [
+    "plumbing",
+    "drain cleaning",
+    "home services",
+    "home-services"
+  ],
+  "source": {
+    "name": "Roto-Rooter plumbing and drain services official website",
+    "url": "https://www.rotorooter.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "plumbing",
+      "drain cleaning",
+      "home services",
+      "home-services"
+    ],
+    "style": [
+      "condensed uppercase sans headings with plain sans explanations",
+      "lavender gray and white and deep purple surfaces",
+      "service red and pale lavender accents"
+    ],
+    "composition": [
+      "a pale-lavender split stage pairs a service van and technician with a large phone number and ZIP finder",
+      "van-and-location-hero",
+      "diagonal-service-grid",
+      "technician-reassurance"
+    ],
+    "conversion": [
+      "find a local plumber or schedule service",
+      "call the local service number",
+      "early contact action"
+    ],
+    "motion": [
+      "service carousel and video previews; a static service grid and poster frames suffice",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "documentary van and technician photographs, followed by service and customer scenes",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official Roto-Rooter plumbing and drain services homepage was inspected in paired desktop and mobile full-page captures. The page opens with a pale-lavender split stage pairs a service van and technician with a large phone number and ZIP finder. It uses stacked utility navigation with a location action, service menus, and a red schedule button. The visual system relies on condensed uppercase sans headings with plain sans explanations; surfaces include lavender gray, white, deep purple and accents include service red, pale lavender. Imagery is documentary van and technician photographs, followed by service and customer scenes. The page then runs through utility navigation, split service hero, diagonal purple service grid, technician and trust explanation, question and video chapters, review band, contact footer. Its service presentation is four illustrated service tiles for urgent plumbing, water damage, drains, and water heaters. Mobile changes to stack the van above the contact finder, convert service tiles to a narrow sequence, and retain a visible call action. Transfer only the layout rhythm and decision path. Do not copy uniforms, vans, slogans, review cards, phone number, service guarantees, or employee portraits.",
+    "heroGeometry": {
+      "mode": "a pale-lavender split stage pairs a service van and technician with a large phone number and ZIP finder",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "stacked utility navigation with a location action, service menus, and a red schedule button",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "condensed uppercase sans headings with plain sans explanations",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "lavender gray",
+        "white",
+        "deep purple"
+      ],
+      "ink": "deep purple",
+      "accents": [
+        "service red",
+        "pale lavender"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "documentary van and technician photographs, followed by service and customer scenes",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "utility navigation",
+      "split service hero",
+      "diagonal purple service grid",
+      "technician and trust explanation",
+      "question and video chapters",
+      "review band",
+      "contact footer"
+    ],
+    "servicePresentation": {
+      "pattern": "four illustrated service tiles for urgent plumbing, water damage, drains, and water heaters",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "find a local plumber or schedule service",
+      "secondary": "call the local service number",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "service carousel and video previews; a static service grid and poster frames suffice",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack the van above the contact finder, convert service tiles to a narrow sequence, and retain a visible call action",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy uniforms, vans, slogans, review cards, phone number, service guarantees, or employee portraits.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "van-and-location-hero",
+        "selector": "[data-reference-signature=van-and-location-hero]",
+        "description": "van and location hero translated with client-specific content"
+      },
+      {
+        "id": "diagonal-service-grid",
+        "selector": "[data-reference-signature=diagonal-service-grid]",
+        "description": "diagonal service grid translated with client-specific content"
+      },
+      {
+        "id": "technician-reassurance",
+        "selector": "[data-reference-signature=technician-reassurance]",
+        "description": "technician reassurance translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified home-service trades scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x4588; mobile 390x6708. Visible page sequence and mobile layout were reviewed. "
+  }
+}

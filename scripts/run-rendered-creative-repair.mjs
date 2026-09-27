@@ -12,6 +12,17 @@ import {
 } from "./production-experience-author.mjs";
 import { runHumanRevisionGate } from "./human-revision-gate.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
+import {
+  assertCreativeRevisionScope,
+  createCreativeRepairScopeDeclaration,
+  resolveCreativeRevisionScope,
+} from "./creative-revision-scope.mjs";
+
+export {
+  assertCreativeRevisionScope,
+  createCreativeRepairScopeDeclaration,
+  resolveCreativeRevisionScope,
+};
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
 const REPAIR_FILES = ["Experience.jsx", "styles.css", "motion.js"];
@@ -340,13 +351,17 @@ export async function runVisualGateProcess({
     { cwd: siteDir },
   );
   const report = await readJson(reportPath).catch(() => null);
-  if (!report)
-    throw new Error(
-      `Creative visual gate produced no report (exit ${result.code}): ${result.stderr.slice(-1200)}`,
-    );
-  if (result.code !== 0 || report.status === "error")
+  if (result.code !== 0 && report?.audit?.verdict === "pass")
     throw new Error(
       `Creative visual gate could not run: ${report.error || result.stderr.slice(-1200) || `process exited ${result.code}`}`,
+    );
+  const hasGateDecision =
+    report?.mode === "verify" &&
+    Array.isArray(report.blockers) &&
+    ["pass", "revise", "block"].includes(report.audit?.verdict);
+  if (!hasGateDecision || report.status === "error" || report.error)
+    throw new Error(
+      `Creative visual gate produced no report (exit ${result.code}): ${result.stderr.slice(-1200)}`,
     );
   return { ...report, processExitCode: result.code };
 }
@@ -402,12 +417,20 @@ async function validateCandidateReasoningBindings(
   return candidateCount;
 }
 
-async function defaultRepairCandidate({
+/**
+ * @param {{candidateDir: string, findings: string[], screenshots: string[], model: string, creativeSession?: Record<string, unknown> | null, creativeRepairScope?: Record<string, unknown> | null, humanCreativeRepair?: boolean, requestRepairImpl?: typeof requestRepair, validateCandidateImpl?: typeof validateProductionCandidateFiles}} options
+ * @returns {Promise<Record<string, string>>}
+ */
+export async function defaultRepairCandidate({
   candidateDir,
   findings,
   screenshots,
   model,
   creativeSession = null,
+  creativeRepairScope = null,
+  humanCreativeRepair = false,
+  requestRepairImpl = requestRepair,
+  validateCandidateImpl = validateProductionCandidateFiles,
 } = {}) {
   const { metadata, contentManifest, content, files } =
     await readCandidate(candidateDir);
@@ -417,46 +440,83 @@ async function defaultRepairCandidate({
     throw new Error(
       `${metadata.candidateId || candidateDir} has no Reference DNA.`,
     );
-  const repairResponse = await requestRepair({
-    model,
+  const route = {
+    id: metadata.routeId || metadata.candidateId || "rendered-repair",
     referenceDna,
-    findings,
-    files,
-    screenshots,
-    contentManifest,
-    creativeSession,
-  });
+  };
+  if (humanCreativeRepair) {
+    try {
+      assertCreativeRevisionScope(files, files, creativeRepairScope);
+    } catch (error) {
+      throw repairOutputRejected(error);
+    }
+  }
+  let baselineFiles = files;
+  if (humanCreativeRepair) {
+    try {
+      baselineFiles = validateCandidateImpl({ files, route, content }).files;
+    } catch (error) {
+      throw repairOutputRejected(error);
+    }
+  }
   let validated;
-  try {
-    const modelRepaired = normalizeRepair(repairResponse);
-    const repaired = {
-      ...modelRepaired,
-      experience: restoreImageAltsFromOriginal(
-        restoreRequiredExperienceMarkers(
-          restoreRequiredSectionIdsOnSemanticSections(
-            modelRepaired.experience,
+  let validationError = "";
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    const repairResponse = await requestRepairImpl({
+      model,
+      referenceDna,
+      findings,
+      files,
+      screenshots,
+      contentManifest,
+      creativeSession,
+      creativeRepairScope: humanCreativeRepair ? creativeRepairScope : null,
+      validationError,
+      validationAttempt: attempt,
+    });
+    try {
+      const modelRepaired = normalizeRepair(repairResponse);
+      const repaired = {
+        ...modelRepaired,
+        experience: restoreImageAltsFromOriginal(
+          restoreRequiredExperienceMarkers(
+            restoreRequiredSectionIdsOnSemanticSections(
+              modelRepaired.experience,
+              {
+                id:
+                  metadata.routeId || metadata.candidateId || "rendered-repair",
+              },
+            ),
+            files.experience,
             {
               id: metadata.routeId || metadata.candidateId || "rendered-repair",
             },
           ),
           files.experience,
-          { id: metadata.routeId || metadata.candidateId || "rendered-repair" },
+          content,
         ),
-        files.experience,
+      };
+      validated = validateCandidateImpl({
+        files: repaired,
+        route,
         content,
-      ),
-    };
-    validated = validateProductionCandidateFiles({
-      files: repaired,
-      route: {
-        id: metadata.routeId || metadata.candidateId || "rendered-repair",
-        referenceDna,
-      },
-      content,
-    });
-  } catch (error) {
-    throw repairOutputRejected(error);
+      });
+      if (humanCreativeRepair)
+        assertCreativeRevisionScope(
+          baselineFiles,
+          validated.files,
+          creativeRepairScope,
+        );
+      break;
+    } catch (error) {
+      if (attempt === 2) throw repairOutputRejected(error);
+      validationError = safeRepairRejectionMessage(error);
+    }
   }
+  if (!validated)
+    throw repairOutputRejected(
+      new Error("Creative repair produced no validated files."),
+    );
   await writeCandidate(candidateDir, validated.files);
   return validated.files;
 }
@@ -620,6 +680,7 @@ export async function runRenderedCreativeRepair({
   const evidenceRoot = path.resolve(root, outDir);
   const cycleLimit = boundedCycles(maxCycles);
   const cycleUse = new Map();
+  const creativeScopeByCandidate = new Map();
   const history = [];
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession
@@ -667,6 +728,40 @@ export async function runRenderedCreativeRepair({
       candidateRoot,
       candidateDirectory,
     );
+    let creativeRepairScope = null;
+    if (humanFeedback) {
+      if (creativeScopeByCandidate.has(candidateId)) {
+        creativeRepairScope = creativeScopeByCandidate.get(candidateId);
+      } else {
+        const metadata = await readJson(
+          path.join(candidateDir, "metadata.json"),
+        );
+        const preparedScope = metadata.creativeRepairScope;
+        if (
+          !preparedScope ||
+          preparedScope.version !== 1 ||
+          !Array.isArray(preparedScope.sectionIds) ||
+          !preparedScope.sectionIds.length
+        )
+          throw new Error(
+            `Human creative repair for ${candidateId} has no resolved source scope. Route it to manual attention.`,
+          );
+        const normalizeRequest = (value) =>
+          String(value || "")
+            .replace(/\s+/gu, " ")
+            .trim();
+        if (
+          preparedScope.requestText &&
+          normalizeRequest(preparedScope.requestText) !==
+            normalizeRequest(humanFeedback)
+        )
+          throw new Error(
+            `Human creative repair scope for ${candidateId} does not match the current feedback. Route it to manual attention.`,
+          );
+        creativeRepairScope = structuredClone(preparedScope);
+        creativeScopeByCandidate.set(candidateId, creativeRepairScope);
+      }
+    }
     // Show Luna the real browser-scale desktop/mobile compositions first, then
     // the full page for section rhythm. Older evidence sets fall back to the
     // original full-page captures.
@@ -676,9 +771,11 @@ export async function runRenderedCreativeRepair({
     const fullPageScreenshots = VIEWPORTS.map((viewport) =>
       path.join(screenshotsDir, `${candidateId}-${viewport}.png`),
     );
-    const screenshots = (await collectAvailableScreenshots(viewportScreenshots)).length === viewportScreenshots.length
-      ? [...viewportScreenshots, fullPageScreenshots[0]]
-      : fullPageScreenshots;
+    const screenshots =
+      (await collectAvailableScreenshots(viewportScreenshots)).length ===
+      viewportScreenshots.length
+        ? [...viewportScreenshots, fullPageScreenshots[0]]
+        : fullPageScreenshots;
     // A build failure can legitimately leave an ENOENT screenshot, but
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);
@@ -691,6 +788,9 @@ export async function runRenderedCreativeRepair({
         screenshots: availableScreenshots,
         model: resolvedModel,
         creativeSession: frozenCreativeSession,
+        creativeRepairScope,
+        humanCreativeRepair: Boolean(humanFeedback),
+        reason,
         cycle: nextCycle,
         maxCycles: cycleLimit,
       });

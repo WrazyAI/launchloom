@@ -5,6 +5,8 @@ import ts from "typescript";
 import {
   authorExperienceCandidates,
   namespaceCreativeCss,
+  redactPromptValue,
+  restoreReferenceServicePresentationMarker,
   restoreImageAltsFromOriginal,
   restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
@@ -127,6 +129,58 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("binds the service marker to the detailed Reference DNA rather than the route shorthand", () => {
+    const source = `<main><section id="services" data-service-presentation="vertical-serif-project-and-service-index">{content.services}</section></main>`;
+    const restored = restoreReferenceServicePresentationMarker(source, {
+      id: "route-01",
+      servicePresentation: "vertical-serif-project-and-service-index",
+      referenceDna: {
+        servicePresentation: {
+          pattern: "A narrow centered vertical serif index with generous space between entries",
+        },
+      },
+    });
+
+    expect(restored).toContain(
+      'data-service-presentation="a-narrow-centered-vertical-serif-index-with-generous-space-between-entries"',
+    );
+    expect(restored).not.toContain('data-service-presentation="vertical-serif-project-and-service-index"');
+  });
+
+  it("preserves visible CTA affordance and reference rhythm with sparse verified content", () => {
+    const source = readFileSync("scripts/author-production-experiences.mjs", "utf8");
+
+    expect(source).toContain("never be styled as microcopy");
+    expect(source).toContain("label of at least 14px");
+    expect(source).toContain("44px minimum interactive block");
+    expect(source).toContain("do not compress the matching section or shrink its typography");
+    expect(source).toContain("Do not add invented filler to match the reference item count");
+  });
+
+  it("instructs authors to render the sealed process section when steps exist", () => {
+    const source = readFileSync("scripts/author-production-experiences.mjs", "utf8");
+
+    expect(source).toContain("content.process");
+    expect(source).toContain('data-required-section="conversion"');
+    expect(source).toContain("before the contact section");
+  });
+
+  it("requires readable foreground and background contrast throughout the page", () => {
+    const rules = readFileSync(
+      "scripts/production-experience-author.mjs",
+      "utf8",
+    );
+    const stagePrompt = readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+
+    expect(rules).toContain("WCAG AA contrast");
+    expect(rules).toContain("dark surfaces require light text");
+    expect(stagePrompt).toContain("especially the footer");
+    expect(stagePrompt).toContain("4.5:1 contrast for normal text");
+  });
+
   it("accepts decorative empty alts but rejects missing or nullish alt values", () => {
     const route = { id: "route-decorative-alt" };
     const request = {
@@ -502,6 +556,71 @@ describe("production experience author", () => {
     ).toThrow(/missing required sealed binding content\.faqs/iu);
   });
 
+  it("requires populated process steps in one marked conversion section", () => {
+    const route = { id: "route-process-section" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const content = { process: ["Listen to the brief", "Shape the direction"] };
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content,
+      }),
+    ).toThrow(/must render.*conversion section.*content\.process/iu);
+
+    const withConversion = experience.replace(
+      '<section id="faqs">',
+      '<section id="conversion" data-required-section="conversion"><ol>{content.process.map((step) => <li key={step}>{step}</li>)}</ol></section><section id="faqs">',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: withConversion, styles, motion },
+        route,
+        content,
+      }),
+    ).not.toThrow();
+  });
+
+  it("requires the conversion process section to precede contact", () => {
+    const route = { id: "route-process-order" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const content = { process: ["Listen to the brief"] };
+    const withLateConversion = experience.replace(
+      '<section id="contact">',
+      '<section id="contact">',
+    ).replace(
+      "</section></main>",
+      '</section><section id="conversion" data-required-section="conversion">{content.process.map((step) => <p key={step}>{step}</p>)}</section></main>',
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: withLateConversion, styles, motion },
+        route,
+        content,
+      }),
+    ).toThrow(/conversion section.*before.*contact/iu);
+  });
+
   it("restores required anchors only on uniquely identifiable semantic sections", () => {
     const source = `<main>
       <section data-hero><h1>{content.hero.heading}</h1></section>
@@ -563,6 +682,51 @@ describe("production experience author", () => {
     ).toThrow(/found 2 semantic targets/iu);
   });
 
+  it("restores the exact Reference DNA CTA marker onto the designated action", () => {
+    const original = `<main data-cta-placement="after-hero-image"><section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section></main>`;
+    const repaired = `<main data-cta-placement="shortened-summary"><section data-reference-section="hero"><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section></main>`;
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-cta-marker",
+      referenceDna: {
+        ctaPlacement: { early: "after-hero-image" },
+      },
+    });
+
+    expect(restored).toContain(
+      '<a href="#contact" data-early-conversion data-cta-placement="after-hero-image">',
+    );
+    expect(restored).not.toContain('data-cta-placement="shortened-summary"');
+  });
+
+  it("restores a brand-name hero marker from its assigned reference-section identity", () => {
+    const original = `<main><section className="opening" data-reference-section="architectural-opening" data-reference-signature="architectural-opening" data-hero><h1>{content.brand.name}</h1></section><section data-reference-section="intro"><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section></main>`;
+    const repaired = original.replace(" data-hero", "");
+
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "architecture-canary",
+    });
+
+    expect(restored).toContain(
+      'data-reference-section="architectural-opening" data-reference-signature="architectural-opening" data-hero',
+    );
+  });
+
+  it("uses the unique H1 section when a reviewed hero identity is shared", () => {
+    const original = `<main><section className="opening" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section></main>`;
+    const repaired = `<main><section className="opening"><h2>Introduction</h2></section><section className="opening"><h1>{content.hero.heading}</h1><a href="#contact">{content.hero.primaryLabel}</a></section></main>`;
+
+    const restored = restoreRequiredExperienceMarkers(repaired, original, {
+      id: "route-shared-class",
+    });
+
+    expect(restored).toContain(
+      '<section className="opening" data-hero><h1>{content.hero.heading}</h1>',
+    );
+    expect(restored).toContain(
+      '<section className="opening"><h2>Introduction</h2></section>',
+    );
+  });
+
   it("deduplicates hero markers only when a unique semantic hero remains", () => {
     const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section>`;
     const duplicated = `${original}<section data-hero><h2>Decorative section</h2></section>`;
@@ -577,7 +741,7 @@ describe("production experience author", () => {
 
   it("keeps refusing duplicate hero markers when the semantic target is ambiguous", () => {
     const original = `<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1></section>`;
-    const duplicated = `${original}<section data-hero><h1>{content.hero.heading}</h1></section>`;
+    const duplicated = `${original}<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1></section>`;
 
     expect(() =>
       restoreRequiredExperienceMarkers(duplicated, original, { id: "route-03" }),
@@ -766,6 +930,14 @@ describe("production experience author", () => {
     expect(css).not.toContain("--ink:");
   });
 
+  it("namespaces declarations when comments separate CSS variables from their block or colon", () => {
+    const css = `:root { /* theme tokens */\n  --secondary /* token note */ : #ede7dd; }`;
+    const namespaced = namespaceCreativeCss(css);
+
+    expect(namespaced).toContain("--ll-creative-secondary /* token note */ : #ede7dd");
+    expect(namespaced).not.toContain("--secondary /* token note */ :");
+  });
+
   it("authors three sealed and structurally independent candidate bundles", async () => {
     const result = await authorExperienceCandidates({
       site,
@@ -812,6 +984,102 @@ describe("production experience author", () => {
         rootValue: candidate.metadata.routeId,
       });
     }
+  });
+
+  it("normalizes the Reference DNA CTA marker onto the early action during initial authorship", async () => {
+    const route = inspirationPack.routes[0];
+    const referenceDna = buildReferenceDna(route);
+    referenceDna.ctaPlacement.early =
+      "after the portrait image and centered thesis";
+    const pack = {
+      ...inspirationPack,
+      routes: inspirationPack.routes.map((item, index) =>
+        index === 0 ? { ...item, referenceDna } : item,
+      ),
+    };
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack: pack,
+      generate: async (request) => {
+        const response = safeStage(request);
+        if (request.stage !== "experience" || request.route.id !== "route-01")
+          return response;
+        return {
+          ...response,
+          content: (response.content ?? "")
+            .replace(
+              '<div data-model-experience="route-01">',
+              '<div data-model-experience="route-01" data-cta-placement="shortened-root-summary">',
+            )
+            .replace(
+              "<button data-early-conversion>{content.hero.primaryLabel}</button>",
+              '<a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a>',
+            ),
+        };
+      },
+      model: "test/model",
+    });
+    const candidate = result.candidates.find(
+      (item) => item.metadata.routeId === "route-01",
+    );
+    const source = candidate?.files["Experience.jsx"];
+
+    expect(source).toContain(
+      '<a href="#contact" data-early-conversion data-cta-placement="after-the-portrait-image-and-centered-thesis">',
+    );
+    expect(source).not.toContain(
+      'data-cta-placement="shortened-root-summary"',
+    );
+  });
+
+  it("redacts inline client images from model context but preserves sealed runtime assets", async () => {
+    const inlineImages = {
+      photoOne: `data:image/webp;base64,${"A".repeat(260_000)}`,
+      photoTwo: `data:image/webp;charset=utf-8;base64,${"B".repeat(240_000)}`,
+      photoThree: `data:image/webp;base64,${"C".repeat(220_000)}`,
+    };
+    const modelBoundShapes: Record<string, any>[] = [];
+    const result = await authorExperienceCandidates({
+      site: { ...site, assets: { ...site.assets, ...inlineImages } },
+      inspirationPack,
+      generate: async (request) => {
+        if (request.stage === "contract") modelBoundShapes.push(request.contentShape);
+        return safeStage(request);
+      },
+      model: "test/model",
+    });
+
+    expect(modelBoundShapes).toHaveLength(3);
+    for (const shape of modelBoundShapes) {
+      expect(shape.hero.image).toBe("[sealed client image asset]");
+      expect(JSON.stringify(shape)).not.toMatch(/data:image\//iu);
+    }
+    expect(result.contentManifest.values.hero).toMatchObject({
+      image: inlineImages.photoOne,
+      secondaryImage: inlineImages.photoTwo,
+      tertiaryImage: inlineImages.photoThree,
+    });
+  });
+
+  it("never preserves tails from large prompt values or embedded image data URIs", () => {
+    const secretTail = "DO-NOT-LEAK-".repeat(1_100);
+    const redacted = redactPromptValue(
+      `before data:image/png;charset=utf-8;base64,${"A".repeat(100)} after ${secretTail}`,
+    );
+
+    expect(redacted).not.toContain("data:image/");
+    expect(redacted).not.toContain("DO-NOT-LEAK");
+    expect(redactPromptValue(`prefix ${secretTail}`)).not.toContain(
+      "DO-NOT-LEAK",
+    );
+  });
+
+  it("seals percent-encoded non-base64 image data URIs in arbitrary text values", () => {
+    const redacted = redactPromptValue(
+      "Image source: data:image/svg+xml;charset=utf-8,%3Csvg%3Esecret-pixel-data%3C/svg%3E trailing private text",
+    );
+
+    expect(redacted).toBe("[sealed client image asset]");
   });
 
   it("keeps contract-repair context bounded when a model omits required fields", async () => {
@@ -1093,6 +1361,34 @@ describe("production experience author", () => {
     expect(
       result.candidates.every((item) => item.metadata.complianceRepaired),
     ).toBe(true);
+  });
+
+  it("repairs an initial Reference DNA service-marker restoration failure", async () => {
+    const repairErrors: string[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const value = safeStage(request);
+        if (request.route.id !== "route-01" || request.stage !== "experience")
+          return value;
+        if (request.validationError) {
+          repairErrors.push(request.validationError);
+          return value;
+        }
+        return {
+          content: String(value.content).replace('id="services"', ''),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(repairErrors).toHaveLength(1);
+    expect(repairErrors[0]).toMatch(/cannot bind its Reference DNA service marker/iu);
+    expect(result.candidates[0].metadata.complianceRepaired).toBe(true);
+    expect(result.candidates[0].files["Experience.jsx"]).toMatch(
+      /<section id="services" data-service-presentation="[^"]+">/u,
+    );
   });
 
   it("retries one malformed structured stage response", async () => {

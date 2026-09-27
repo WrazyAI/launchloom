@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "id": "web-accounting-goodman-jones",
+  "productionEligible": true,
+  "referenceName": "Goodman Jones accountancy advisory",
+  "familyId": "accounting-skyline-statement-panel",
+  "source": {
+    "name": "Goodman Jones accountancy advisory official website",
+    "url": "https://www.goodmanjones.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 7783
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 9799
+    },
+    "diagnostics": "Observed skyline-led service opening, firm introduction with location image, audience question accordion, service color-block grid, industry accordion. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Goodman Jones accountancy advisory official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "accounting",
+    "accountant",
+    "bookkeeping",
+    "chartered-accountant"
+  ],
+  "tags": {
+    "business": [
+      "accounting",
+      "accountant",
+      "bookkeeping",
+      "chartered-accountant"
+    ],
+    "style": [
+      "serif-financial-editorial",
+      "gold-graphite",
+      "corporate-trust"
+    ],
+    "composition": [
+      "cinematic-hero",
+      "audience-accordion",
+      "alternating-service-blocks"
+    ],
+    "conversion": [
+      "speak-to-specialist",
+      "service-routing",
+      "industry-routing"
+    ],
+    "motion": [
+      "manual-hero-slides",
+      "accordion-disclosure"
+    ],
+    "imagery": [
+      "cityscape",
+      "workplace-photo",
+      "editorial-insights"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A cinematic skyline panel carries a concise proposition and a gold specialist action before a dense, white editorial firm introduction. Centered small wordmark, low-contrast service/audience menus and a search/contact path on a narrow top bar. Confident serif section headings with readable sans paragraphs and compact uppercase taxonomy labels. The page sequence runs from skyline-led service opening to firm introduction with location image to audience question accordion toward insights collage, credential marks, dark footer. Skyline opening, practice-location image, case photography and editorial insight thumbnails supply the visual punctuation. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A cinematic skyline panel carries a concise proposition and a gold specialist action before a dense, white editorial firm introduction.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Centered small wordmark, low-contrast service/audience menus and a search/contact path on a narrow top bar.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Confident serif section headings with readable sans paragraphs and compact uppercase taxonomy labels.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "White",
+        "charcoal",
+        "graphite",
+        "warm gold and occasional sandstone service fields."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "serif-financial-editorial",
+        "gold-graphite"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Skyline opening, practice-location image, case photography and editorial insight thumbnails supply the visual punctuation.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "skyline-led service opening",
+      "firm introduction with location image",
+      "audience question accordion",
+      "service color-block grid",
+      "industry accordion",
+      "casework samples",
+      "insights collage",
+      "credential marks",
+      "dark footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Use audience questions to route the visitor to verified services, then present a compact audit/tax/advisory taxonomy and sector detail.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Offer specialist enquiry in the opening and again after relevant service evidence, without repeating it on every card.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "manual-hero-slides; accordion-disclosure",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Collapse the hero imagery behind legible text, turn service blocks and case samples into a one-column narrative, and preserve accordion labels as clear taps.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not carry over firm years, employee counts, client names, case work, registrations, credentials or original photography.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "skyline-statement-panel",
+        "selector": "[data-reference-signature=skyline-statement-panel]",
+        "description": "A new-client interpretation of the observed skyline statement panel relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "audience-question-accordion",
+        "selector": "[data-reference-signature=audience-question-accordion]",
+        "description": "A new-client interpretation of the observed audience-question accordion relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "stone-and-graphite-service-blocks",
+        "selector": "[data-reference-signature=stone-and-graphite-service-blocks]",
+        "description": "A new-client interpretation of the observed stone-and-graphite service blocks relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

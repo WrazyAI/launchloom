@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "id": "a1-uncommon-founder-atlas",
+  "productionEligible": false,
+  "archiveOnlyReason": "Curated cross-industry design mechanics. Not one of the six business-verified production references in a Local SEO Core niche.",
+  "referenceName": "The Uncommon Founder principles atlas",
+  "familyId": "a1-kinetic-founder",
+  "source": {
+    "name": "The Uncommon Founder coaching and advisory website",
+    "url": "https://www.theuncommonfounder.com/",
+    "discoverySource": "A1 Gallery MCP / curated reference research",
+    "discoveryUrl": "https://www.a1.gallery/website/the-uncommon-founder",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The LaunchLoom requester attested on 2026-09-26 that the exact The Uncommon Founder coaching and advisory website desktop/mobile captures and derived mechanics prompt may be retained internally and supplied to the pipeline model as visual reference. This is requester-attested clearance; no source-owner grant was attached or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "capture-record.json",
+      "rights/gallery-preview-provenance.md"
+    ]
+  },
+  "businessKinds": [
+    "coaching",
+    "consulting",
+    "professional-services"
+  ],
+  "tags": {
+    "business": [
+      "coaching",
+      "consulting",
+      "professional-services"
+    ],
+    "style": [
+      "dark-pixel-accent",
+      "reflective-editorial",
+      "lime-signal",
+      "founder-led"
+    ],
+    "composition": [
+      "centered-founder-promise",
+      "principles-path",
+      "essay-interlude",
+      "client-progress-proof",
+      "expertise-atlas",
+      "lime-call-close"
+    ],
+    "conversion": [
+      "introductory-call",
+      "coaching-fit",
+      "expertise-selection",
+      "newsletter-secondary"
+    ],
+    "motion": [
+      "pixel-field-drift",
+      "scroll-revealed-principles",
+      "progress-led-quote-sequence",
+      "reduced-motion-static"
+    ],
+    "imagery": [
+      "sparse-pixel-atmosphere",
+      "real-client-video-evidence",
+      "minimal-symbols",
+      "dark-editorial-text"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshotHeight": 12030
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotHeight": 9798
+    }
+  },
+  "provenance": {
+    "retrievedAt": "2026-09-26",
+    "captureMethod": "playwright-native-full-page-v1",
+    "discoveryPage": "https://www.a1.gallery/website/the-uncommon-founder",
+    "desktopCapture": {
+      "url": "https://www.theuncommonfounder.com/",
+      "finalUrl": "https://www.theuncommonfounder.com/",
+      "httpStatus": 200,
+      "title": "The Uncommon Founder · Coach and advisor",
+      "capturedAt": "2026-09-26T10:23:37.603Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": true,
+      "image": {
+        "width": 1440,
+        "height": 12030,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 12030,
+      "documentWidth": 1440,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "mobileCapture": {
+      "url": "https://www.theuncommonfounder.com/",
+      "finalUrl": "https://www.theuncommonfounder.com/",
+      "httpStatus": 200,
+      "title": "The Uncommon Founder · Coach and advisor",
+      "capturedAt": "2026-09-26T10:23:45.863Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "image": {
+        "width": 390,
+        "height": 9798,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 9798,
+      "documentWidth": 390,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "desktopScreenshotSha256": "4514308c7233b055a9a3c5f49de06b0d23ed099791abbbce381937225dc4318a",
+    "mobileScreenshotSha256": "16d7f78dab5d1e95735d45450845b2de0a817f2c4ba28f37be576cae7b024809",
+    "notes": "Screenshots are direct official-source page captures at declared desktop and mobile viewports. Custom scrolling surfaces are recorded and captured as scroll-position sequences. A1 metadata informed taxonomy and visual annotation only. Original source material is not copied into client deliverables."
+  },
+  "referenceDna": {
+    "annotatedDescription": "A founder-advisory story uses nearly black graphite, white typography, a vivid pale-lime signal, pixel-like particles, and mono micro-labels. A centered statement leads into a compact client logo rail and a framed principles system; long founder prose and differentiated client-success cards add human depth. The second half moves through a three-part partnership process, an expertise selection, a large lime conversation panel, a quieter newsletter option, and a sparse, particle-accented footer. It is deliberately specific and reflective rather than a generic professional-services card template.",
+    "heroGeometry": {
+      "mode": "centered typographic founder promise with sparse pixel field and one small action",
+      "alignment": "centered title and summary; broad negative space separates it from the next proof rail",
+      "viewport": "the audience, founder role, and conversation action are stated before the long essay"
+    },
+    "navigationGeometry": {
+      "mode": "small wordmark and compact text links with a single conversation action",
+      "placement": "thin top edge above a centered hero",
+      "mobile": "condense links into a tap-safe menu and preserve one direct call action"
+    },
+    "typography": {
+      "display": "modern geometric sans with pixel/mono micro-labels",
+      "body": "readable neutral sans",
+      "scale": "large centered promise, medium essay lines, tiny labels used as navigation rather than body text"
+    },
+    "palette": {
+      "surfaces": [
+        "graphite",
+        "near black",
+        "slightly raised charcoal"
+      ],
+      "ink": "soft white",
+      "accents": [
+        "pale acid lime",
+        "muted gray"
+      ],
+      "contrastIntent": "lime marks selected ideas and conversion; body copy remains white/gray with accessible contrast"
+    },
+    "imageTreatment": {
+      "mode": "sparse pixel particles, restrained founder/client evidence, and minimal line symbols",
+      "crop": "mostly typographic sections with a few inset video/proof cards",
+      "focalPoint": "the principle or client progress story currently being explained"
+    },
+    "sectionSequence": [
+      "compact founder navigation",
+      "centered founder promise",
+      "client logo rail",
+      "principles panel",
+      "founder essay interlude",
+      "client success distinctions",
+      "progress and testimonial evidence",
+      "partnership process",
+      "expertise choice",
+      "lime conversation CTA",
+      "newsletter secondary action",
+      "particle footer"
+    ],
+    "servicePresentation": {
+      "pattern": "expertise options as three distinct advisory roles supported by principle and process",
+      "interaction": "simple, labeled choices leading to a verified inquiry or relevant detail"
+    },
+    "ctaPlacement": {
+      "primary": "Book or request a verified introductory conversation",
+      "secondary": "Explore approach or newsletter",
+      "early": "small conversation action in the header/hero; large CTA follows the expertise explanation"
+    },
+    "motion": {
+      "primitive": "slow, sparse pixel-field drift and a scroll-led sequence that marks principles/progress",
+      "library": "CSS/native scroll reveals or a restrained GSAP sequence",
+      "reducedMotion": "freeze particle field and show all principles and client evidence in natural order"
+    },
+    "mobileRecomposition": {
+      "strategy": "single-column reflective essay with stacked proof and process",
+      "rules": [
+        "keep the centered promise concise",
+        "stack the principles and client-progress cards with clear labels",
+        "remove hover-only pixel effects",
+        "preserve generous but not empty vertical rhythm",
+        "keep the lime CTA full-width and readable",
+        "do not present client logos or testimonials without verified consent"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying founder claims, quotations, framework names, client logos, video, testimonials, or lime brand trade dress",
+      "turning the page into a dark bento dashboard",
+      "pixel noise behind long paragraphs",
+      "unverified coaching outcomes or client results",
+      "excessive blank space that hides missing proof",
+      "newsletter competing with the primary consultation CTA"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "principles-path",
+        "selector": "[data-reference-signature=principles-path]",
+        "description": "a distinctive principles or decision framework described in the client's own terms"
+      },
+      {
+        "id": "progress-proof",
+        "selector": "[data-reference-signature=progress-proof]",
+        "description": "permissioned evidence about client progress or an honest alternative process proof"
+      },
+      {
+        "id": "signal-conversation-close",
+        "selector": "[data-reference-signature=signal-conversation-close]",
+        "description": "high-signal conversation invitation after the service/expertise explanation"
+      }
+    ],
+    "acceptanceChecks": [
+      "hero identifies who the advisor helps and what first conversation means",
+      "principle and service framework come from verified client intake",
+      "all clients, results, logos, and testimonials have explicit provenance",
+      "mobile reading measure and line breaks stay comfortable",
+      "one primary conversation action remains visually dominant",
+      "claims about outcomes are not inferred from the reference"
+    ]
+  },
+  "review": {
+    "status": "requester-attested-internal-archive-only",
+    "curator": "LaunchLoom reference curation",
+    "reviewedAt": "2026-09-26",
+    "scope": "Visual mechanics archive. productionEligible=false and excluded from every current production niche."
+  }
+}

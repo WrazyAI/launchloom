@@ -5,6 +5,7 @@ import {
   planRevision,
   removeEmDashes,
 } from "./revision-engine.mjs";
+import { createCreativeRepairScopeDeclaration } from "./creative-revision-scope.mjs";
 
 const [repo, pr, configPath] = [
   process.env.CLIENT_REPO,
@@ -60,6 +61,15 @@ const clientFeedbackContext = nextClientFeedbackContext(
 );
 const creativeRenderer =
   revised.design?.experience?.renderer === "creative-candidate";
+const {
+  required: creativeSourceRepairRequired,
+  declaration: creativeRepairScope,
+  feedbackText: revisionFeedbackText,
+} = createCreativeRepairScopeDeclaration({
+  creativeRenderer,
+  feedback,
+  results: planned.results,
+});
 const creativeIgnoredArtifactTypes = new Set([
   "section",
   "section-type",
@@ -76,15 +86,8 @@ revised.revisionReport = {
   clientFeedbackContext,
   operations: planned.operations,
   results: planned.results,
-  creativeSourceRepairRequired:
-    creativeRenderer &&
-    planned.results.some(
-      (result) =>
-        result.status === "creative" ||
-        result.intents?.some((intent) =>
-          ["layout", "color", "social-proof", "brand-name"].includes(intent),
-        ),
-    ),
+  creativeSourceRepairRequired,
+  creativeRepairScope,
   creativeSourceRepairVerified: null,
   expectedArtifacts: expectedArtifacts(planned.operations, revised).filter(
     (artifact) =>
@@ -99,7 +102,7 @@ revised.revisionReport = {
 if (process.env.FEEDBACK_SUMMARY_PATH)
   await fs.writeFile(
     process.env.FEEDBACK_SUMMARY_PATH,
-    feedback.join("\n\n").slice(0, 12_000),
+    revisionFeedbackText,
     "utf8",
   );
 if (process.env.FEEDBACK_OUTCOME_PATH)

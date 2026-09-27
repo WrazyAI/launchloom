@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "id": "web-architecture-studio-peake",
+  "productionEligible": true,
+  "referenceName": "Studio Peake color-rich interior portfolio",
+  "familyId": "architecture-bottom-anchored-serif-image-title",
+  "source": {
+    "name": "Studio Peake color-rich interior portfolio official website",
+    "url": "https://www.studiopeake.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 6752
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 7770
+    },
+    "diagnostics": "Observed room photograph and oversized title, cream craft statement, three-image discipline gateway, studio portrait and story, material philosophy image band. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Studio Peake color-rich interior portfolio official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "interior-design",
+    "interior-architecture",
+    "architecture"
+  ],
+  "tags": {
+    "business": [
+      "interior-design",
+      "interior-architecture",
+      "architecture"
+    ],
+    "style": [
+      "expressive-serif",
+      "cream-terracotta-olive",
+      "interiors-journal"
+    ],
+    "composition": [
+      "full-bleed-image-opening",
+      "three-column-photo-gateway",
+      "alternating-editorial-chapters"
+    ],
+    "conversion": [
+      "portfolio-browse",
+      "project-enquiry"
+    ],
+    "motion": [
+      "gentle-image-reveal",
+      "static-reduced-motion"
+    ],
+    "imagery": [
+      "furnished-interior-photography",
+      "maker-portrait",
+      "material-closeups"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A full-width interior photograph carries a very large white serif studio title along its bottom edge; the next cream band gives a short craft statement. A small emblem on the left and compact uppercase portfolio, studio, shop, news and contact links on a cream top line. Expressive high-contrast serif display and section titles paired with small, measured body copy; typography feels like an interiors journal. The page sequence runs from room photograph and oversized title to cream craft statement to three-image discipline gateway toward news and views collage, project enquiry, terracotta footer. Immersive furnished-room photographs, three adjacent feature images, a maker portrait, material close-ups and image-led news chapters. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A full-width interior photograph carries a very large white serif studio title along its bottom edge; the next cream band gives a short craft statement.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "A small emblem on the left and compact uppercase portfolio, studio, shop, news and contact links on a cream top line.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Expressive high-contrast serif display and section titles paired with small, measured body copy; typography feels like an interiors journal.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Cream paper",
+        "charcoal ink",
+        "warm terracotta",
+        "muted olive and pale blue editorial panels drawn from furnishings."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "expressive-serif",
+        "cream-terracotta-olive"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Immersive furnished-room photographs, three adjacent feature images, a maker portrait, material close-ups and image-led news chapters.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "room photograph and oversized title",
+      "cream craft statement",
+      "three-image discipline gateway",
+      "studio portrait and story",
+      "material philosophy image band",
+      "approach split",
+      "featured room",
+      "news and views collage",
+      "project enquiry",
+      "terracotta footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Lead with photographic discipline gateways, then explain the approach through a portrait and material detail instead of a generic list.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Use a quiet contact link in the header and a project enquiry after the visual case for the studio is made.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "gentle-image-reveal; static-reduced-motion",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Turn the three-image gateway into a deliberate vertical sequence; keep display text off busy image areas and preserve the warm color alternation.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not reuse the studio's portraits, bespoke furniture, portfolio rooms, press titles or proprietary color sequence as trade dress.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "bottom-anchored-serif-image-title",
+        "selector": "[data-reference-signature=bottom-anchored-serif-image-title]",
+        "description": "A new-client interpretation of the observed bottom-anchored serif image title relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "three-photo-discipline-gateway",
+        "selector": "[data-reference-signature=three-photo-discipline-gateway]",
+        "description": "A new-client interpretation of the observed three-photo discipline gateway relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "material-image-band",
+        "selector": "[data-reference-signature=material-image-band]",
+        "description": "A new-client interpretation of the observed material image band relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

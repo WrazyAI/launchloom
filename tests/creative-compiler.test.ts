@@ -69,6 +69,28 @@ describe("creative compiler", () => {
     })))).toThrow(/not independent/iu);
   });
 
+  it("accepts one broad family when all route compositions remain independent", () => {
+    const sameFamilyRoutes = routes.map((route) => ({
+      ...route,
+      familyId: "editorial-monument",
+    }));
+
+    const contracts = assertIndependentRoutes(sameFamilyRoutes);
+
+    expect(contracts.map((route) => route.familyId)).toEqual([
+      "editorial-monument",
+      "editorial-monument",
+      "editorial-monument",
+    ]);
+    for (const field of [
+      "navigation",
+      "heroGeometry",
+      "servicePresentation",
+      "typographyCategory",
+    ] as const)
+      expect(new Set(contracts.map((route) => route[field])).size).toBe(3);
+  });
+
   it("reports pairwise distance and dimension diversity", () => {
     const candidates = routes.map((route, index) => ({
       id: `candidate-${index + 1}`,
