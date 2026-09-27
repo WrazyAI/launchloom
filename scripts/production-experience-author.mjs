@@ -1834,6 +1834,29 @@ function validateMotion(source, route) {
       `Candidate ${route.id} motion lacks a reduced-motion path.`,
     );
   if (
+    /\.(?:textContent|innerHTML|outerHTML)\s*=|\.insertAdjacentHTML\s*\(/u.test(
+      source,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} motion must not rewrite visitor-facing content or HTML.`,
+    );
+  if (
+    /\.setAttribute\s*\(\s*["'](?:href|src|action|value|name|id|role)["']/iu.test(
+      source,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} motion must not rewrite URLs, form values, or semantic identity.`,
+    );
+  for (const match of source.matchAll(
+    /\.style\.setProperty\s*\(\s*["']([^"']+)["']/gu,
+  ))
+    if (!match[1].startsWith("--ll-creative-"))
+      throw new Error(
+        `Candidate ${route.id} motion may only set isolated --ll-creative-* CSS variables.`,
+      );
+  if (
     /gsap\.set\(\s*(?:children|sections|sectionElements)\s*,\s*\{[^}]*opacity\s*:\s*0/isu.test(
       source,
     )
