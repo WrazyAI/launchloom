@@ -364,6 +364,76 @@ function scoreRecord(record, request) {
   return score + stableFraction(`${request.seed}|${record.id}`);
 }
 
+function structuralTokenSet(values) {
+  return new Set(
+    (Array.isArray(values) ? values : [values])
+      .flatMap((value) => normalizedPhrase(value).split(" "))
+      .filter((token) => token.length >= 4),
+  );
+}
+
+function tokenSetDistance(left, right) {
+  if (!left.size && !right.size) return 0;
+  let overlap = 0;
+  for (const token of left)
+    if (right.has(token)) overlap += 1;
+  const union = left.size + right.size - overlap;
+  return union ? 1 - overlap / union : 0;
+}
+
+function selectionReferenceDna(record) {
+  return record.selectionReferenceDna || record.canonicalReferenceDna || {};
+}
+
+/**
+ * Compare the actual reference mechanics used by the author, not only the
+ * registry labels. A higher score means the pair offers more structural
+ * separation before any model call is made.
+ */
+export function referenceStructuralDistance(left, right) {
+  const leftDna = selectionReferenceDna(left);
+  const rightDna = selectionReferenceDna(right);
+  const categoricalPairs = [
+    [left.familyId || left.referenceFamilyId, right.familyId || right.referenceFamilyId],
+    [leftDna.heroGeometry?.mode || left.heroGeometry, rightDna.heroGeometry?.mode || right.heroGeometry],
+    [leftDna.navigationGeometry?.mode || left.navigation, rightDna.navigationGeometry?.mode || right.navigation],
+    [leftDna.servicePresentation?.pattern || left.servicePresentation, rightDna.servicePresentation?.pattern || right.servicePresentation],
+    [leftDna.typography?.category || left.typographyCategory, rightDna.typography?.category || right.typographyCategory],
+    [leftDna.imageTreatment?.mode || left.imageStrategy, rightDna.imageTreatment?.mode || right.imageStrategy],
+    [leftDna.mobileRecomposition?.strategy || left.mobileBehavior, rightDna.mobileRecomposition?.strategy || right.mobileBehavior],
+    [leftDna.ctaPlacement?.early, rightDna.ctaPlacement?.early],
+    [leftDna.motion?.primitive || left.motionOpportunities?.[0], rightDna.motion?.primitive || right.motionOpportunities?.[0]],
+  ].filter(([a, b]) => a || b);
+  const categoricalDistance = categoricalPairs.length
+    ? categoricalPairs.filter(([a, b]) => normalizedPhrase(a) !== normalizedPhrase(b)).length /
+      categoricalPairs.length
+    : 0;
+  const sectionDistance = tokenSetDistance(
+    structuralTokenSet(leftDna.sectionSequence || left.sectionRhythm),
+    structuralTokenSet(rightDna.sectionSequence || right.sectionRhythm),
+  );
+  const signatureDistance = tokenSetDistance(
+    structuralTokenSet(
+      (leftDna.requiredSignatureElements || []).flatMap((item) => [
+        item?.id,
+        item?.description,
+      ]),
+    ),
+    structuralTokenSet(
+      (rightDna.requiredSignatureElements || []).flatMap((item) => [
+        item?.id,
+        item?.description,
+      ]),
+    ),
+  );
+  return Math.round(
+    (categoricalDistance * 0.55 +
+      sectionDistance * 0.3 +
+      signatureDistance * 0.15) *
+      100,
+  );
+}
+
 function structurallyIndependent(record, selected) {
   const candidateFamily = buildRouteContract(record).familyId;
   return (
@@ -436,6 +506,7 @@ function rankedRecords(
     .map((record) => ({
       record,
       score: scoreRecord(record, request),
+      explicit: explicitlyRequested(record, request),
     }))
     .sort(
       (left, right) =>
@@ -445,13 +516,43 @@ function rankedRecords(
 }
 
 function independentAnchors(ranked) {
-  const anchors = [];
-  for (const candidate of ranked) {
-    if (!structurallyIndependent(candidate.record, anchors)) continue;
-    anchors.push(candidate.record);
-    if (anchors.length === 3) break;
+  const candidates = [];
+  for (let first = 0; first < ranked.length; first += 1) {
+    for (let second = first + 1; second < ranked.length; second += 1) {
+      for (let third = second + 1; third < ranked.length; third += 1) {
+        const trio = [ranked[first], ranked[second], ranked[third]];
+        const anchors = trio.map((candidate) => candidate.record);
+        if (
+          !structurallyIndependent(anchors[0], []) ||
+          !structurallyIndependent(anchors[1], [anchors[0]]) ||
+          !structurallyIndependent(anchors[2], anchors.slice(0, 2))
+        )
+          continue;
+        const distances = [
+          referenceStructuralDistance(anchors[0], anchors[1]),
+          referenceStructuralDistance(anchors[0], anchors[2]),
+          referenceStructuralDistance(anchors[1], anchors[2]),
+        ];
+        candidates.push({
+          anchors,
+          explicitCount: trio.filter((candidate) => candidate.explicit).length,
+          minimumDistance: Math.min(...distances),
+          totalDistance: distances.reduce((sum, value) => sum + value, 0),
+          fitScore: trio.reduce((sum, candidate) => sum + candidate.score, 0),
+          stableKey: anchors.map((anchor) => anchor.id).sort().join("|"),
+        });
+      }
+    }
   }
-  return anchors;
+  candidates.sort(
+    (left, right) =>
+      right.explicitCount - left.explicitCount ||
+      right.minimumDistance - left.minimumDistance ||
+      right.totalDistance - left.totalDistance ||
+      right.fitScore - left.fitScore ||
+      left.stableKey.localeCompare(right.stableKey),
+  );
+  return candidates[0]?.anchors || [];
 }
 
 export function buildInspirationPack(
@@ -491,6 +592,7 @@ export function buildInspirationPack(
           industries: [...new Set([...record.industries, ...tags.business])],
           moods: [...new Set([...record.moods, ...tags.style])],
           referenceTags: tags,
+          selectionReferenceDna: dossiersById.get(record.id).referenceDna,
         };
       });
     const businessMatchedRecords = eligibleRecords.filter((record) =>
