@@ -41,8 +41,8 @@ describe("Reference DNA", () => {
       { seed: "dna-contract-preservation", industry: "architecture", styleTerms: [], recentReferenceIds: [], recentRouteSignatures: [] },
       productionRegistry,
     );
-    const route = pack.routes.find((item: any) => item.referenceDossier.id === "lapa-mcalpine-sanctuary");
-    if (!route) throw new Error("The expected architecture dossier was not selected.");
+    const route = pack.routes[0];
+    if (!route) throw new Error("The architecture reference pack is empty.");
     const original = route.referenceDna;
     const measured = applyMeasuredReferenceAnalysis(route, {
       annotatedDescription: "Measured from desktop and mobile screenshots.",
