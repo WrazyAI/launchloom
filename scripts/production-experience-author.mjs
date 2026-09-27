@@ -1740,15 +1740,22 @@ function validateExperience(source, route, content) {
   const navigations = elements.filter(
     ({ opening }) => jsxOpeningName(opening) === "nav",
   );
-  for (const target of ["services", "faqs", "contact"])
-    if (
-      !navigations.some((navigation) =>
-        hasLiteralNavigationAnchor(elements, navigation, target),
-      )
-    )
+  if (route.referenceDna?.complete) {
+    if (!navigations.length)
       throw new Error(
-        `Candidate ${route.id} navigation must expose literal <a href="#${target}"> inside a visible native <nav>.`,
+        `Candidate ${route.id} must expose a visible native <nav> while preserving its assigned reference navigation geometry.`,
       );
+  } else {
+    for (const target of ["services", "faqs", "contact"])
+      if (
+        !navigations.some((navigation) =>
+          hasLiteralNavigationAnchor(elements, navigation, target),
+        )
+      )
+        throw new Error(
+          `Candidate ${route.id} navigation must expose literal <a href="#${target}"> inside a visible native <nav>.`,
+        );
+  }
   for (const binding of requiredExperienceBindings)
     if (
       !helperSealedBindings.has(binding.token) &&
@@ -1892,7 +1899,7 @@ function authorRules() {
     "Do not hardcode business facts or marketing copy. Render all visitor-facing business content through the supplied content tokens.",
     "Use only React, @launchloom/runtime, GSAP, and GSAP ScrollTrigger in Experience.jsx. The deterministic host imports and mounts motion.js; do not import or invoke ./motion.js from Experience.jsx.",
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
-    "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
+    "Keep literal Services, FAQs, and Contact section anchors in the page. For dossier-backed routes, let the primary navigation follow the assigned reference geometry instead of forcing all three anchors into one conventional menu. Put conversion in the hero or immediately after it.",
     "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; use a compact anchor CTA for early conversion and do not fake a form or create a second lead endpoint.",
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
