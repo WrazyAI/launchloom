@@ -539,8 +539,8 @@ function independentAnchors(ranked, request, history) {
     (left, right) =>
       right.explicitCount - left.explicitCount ||
       Number(left.repeatedRecentTrio) - Number(right.repeatedRecentTrio) ||
-      left.latestTrioOverlap - right.latestTrioOverlap ||
       left.exposure - right.exposure ||
+      left.latestTrioOverlap - right.latestTrioOverlap ||
       left.patternExposure - right.patternExposure ||
       right.rankScore - left.rankScore ||
       left.stableKey.localeCompare(right.stableKey),
@@ -563,7 +563,13 @@ function selectionHistory(request, eligibleIds, industry) {
     if (launch?.businessKind && !businessKindMatches({ industries: [launch.businessKind] }, industry))
       continue;
     const ids = cleanList(launch?.referenceIds, 20);
-    if (!ids.length || !ids.every((id) => eligibleIds.has(id))) continue;
+    if (!ids.length) {
+      // A historical signature-only record has no ID evidence to identify its
+      // niche. Use it only when the launch itself names a matching business kind.
+      if (launch?.businessKind) relevantLaunches.push(launch);
+      continue;
+    }
+    if (!ids.every((id) => eligibleIds.has(id))) continue;
     relevantLaunches.push(launch);
     for (const id of ids) {
       recentReferenceIds.add(id);

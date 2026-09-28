@@ -190,6 +190,34 @@ describe("inspiration registry", () => {
     );
   });
 
+  it("balances cumulative exposure ahead of one latest-trio overlap", () => {
+    const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
+    const seed = "exposure-regression";
+    const first = buildInspirationPack({ ...baseRequest, seed, styleTerms: [] }, registry, options);
+    const firstIds = first.routes.map((route: any) => route.referenceDossier.id);
+    const second = buildInspirationPack({
+      ...baseRequest, seed, styleTerms: [],
+      recentLaunches: [{ businessKind: "home-care", referenceIds: firstIds }],
+    }, registry, options);
+    const secondIds = second.routes.map((route: any) => route.referenceDossier.id);
+    expect(firstIds.filter((id: string) => secondIds.includes(id))).toHaveLength(0);
+    const recentLaunches = [
+      ...Array.from({ length: 29 }, () => ({ businessKind: "home-care", referenceIds: firstIds })),
+      { businessKind: "home-care", referenceIds: secondIds },
+    ];
+    const next = buildInspirationPack({ ...baseRequest, seed, styleTerms: [], recentLaunches }, registry, options);
+    // This hand-checked independent trio uses one first-set reference and two
+    // second-set references, for total exposure 29 + 1 + 1 = 31.
+    const lowerExposureAlternative = [
+      "attested-angels-on-call-homecare",
+      "web-home-care-hp-homecare",
+      "web-home-care-ivy-homecare",
+    ];
+    expect(lowerExposureAlternative.every((id) => [...firstIds, ...secondIds].includes(id))).toBe(true);
+    expect(next.request.selectionHistory.repeatedRecentTrio).toBe(false);
+    expect(next.request.selectionHistory.selectedExposure).toBeLessThanOrEqual(31);
+  });
+
   it("avoids repeating the recent trio when a niche has more core references", () => {
     const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
     const initial = buildInspirationPack(baseRequest, registry, options);
