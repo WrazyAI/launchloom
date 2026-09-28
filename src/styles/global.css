@@ -793,6 +793,30 @@ button {
   font-weight: 700;
   text-underline-offset: 3px;
 }
+.creative-repair-panel .diagnostic-preview-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+}
+.creative-repair-panel .diagnostic-preview-link:hover {
+  text-decoration-thickness: 2px;
+}
+.creative-repair-panel .diagnostic-preview-link:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.creative-repair-panel .diagnostic-preview-link svg {
+  width: 0.9em;
+  height: 0.9em;
+  flex: 0 0 auto;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .creative-repair-findings {
   display: grid;
   gap: 10px;
@@ -812,6 +836,46 @@ button {
 .creative-repair-findings strong {
   text-transform: capitalize;
   font-size: 0.88rem;
+}
+.creative-repair-finding-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.finding-severity {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 23px;
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+.finding-severity--danger {
+  color: #8f2118;
+  background: #fee4e2;
+  border-color: #f2b8b2;
+}
+.finding-severity--warning {
+  color: #7a3900;
+  background: #fff0df;
+  border-color: #f4c18d;
+}
+.finding-severity--caution {
+  color: #634800;
+  background: #fff5c2;
+  border-color: #e8d46f;
+}
+.finding-severity--neutral {
+  color: #40515c;
+  background: #e8edf0;
+  border-color: #c8d3d9;
 }
 .creative-repair-findings small {
   color: var(--muted);

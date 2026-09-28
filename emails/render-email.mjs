@@ -48,9 +48,11 @@ function textBlock(label, value, tone = "default") {
   return `<tr><td style="padding:0 32px 24px" class="mobile-pad"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;background:${warning ? COLORS.warningBackground : COLORS.canvas};border:1px solid ${warning ? "#f1cfb7" : COLORS.border};border-radius:12px"><tr><td style="padding:20px 22px"><p style="margin:0 0 10px;color:${warning ? COLORS.warning : COLORS.green};font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">${escapeEmailHtml(label)}</p>${paragraphs(value)}</td></tr></table></td></tr>`;
 }
 
-function action(url, label, supportingText) {
+function action(url, label, supportingText, tone = "default") {
   if (!url) return "";
-  return `<tr><td align="left" style="padding:4px 32px 30px" class="mobile-pad"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="${COLORS.green}" style="border-radius:9px"><a href="${escapeEmailHtml(url)}" style="display:inline-block;padding:14px 22px;color:${COLORS.white};font-family:Arial,sans-serif;font-size:15px;font-weight:700;line-height:20px;text-decoration:none;border-radius:9px">${escapeEmailHtml(label)}</a></td></tr></table>${supportingText ? `<p style="margin:12px 0 0;color:${COLORS.muted};font-size:13px;line-height:1.55">${escapeEmailHtml(supportingText)}</p>` : ""}</td></tr>`;
+  const warning = tone === "warning";
+  const background = warning ? COLORS.warning : COLORS.green;
+  return `<tr><td align="left" style="padding:4px 32px 30px" class="mobile-pad"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="${background}" style="border-radius:9px"><a href="${escapeEmailHtml(url)}" style="display:inline-block;padding:14px 22px;color:${COLORS.white};font-family:Arial,sans-serif;font-size:15px;font-weight:700;line-height:20px;text-decoration:none;border-radius:9px">${escapeEmailHtml(label)}</a></td></tr></table>${supportingText ? `<p style="margin:12px 0 0;color:${warning ? COLORS.warning : COLORS.muted};font-size:13px;line-height:1.55">${escapeEmailHtml(supportingText)}</p>` : ""}</td></tr>`;
 }
 
 function labelledLink(url, label) {
@@ -113,6 +115,7 @@ export function renderLifecycleEmail(input) {
   const clientName = cleanEmailLine(input.clientName, 160) || "Your website";
   const reviewUrl = cleanEmailText(input.reviewUrl || input.previewUrl, 4_000);
   const previewUrl = cleanEmailText(input.previewUrl, 4_000);
+  const sendAnywayUrl = cleanEmailText(input.sendAnywayUrl, 4_000);
   const feedback = cleanEmailText(input.clientFeedback, 12_000);
   const outcome = cleanEmailText(input.revisionOutcome, 1_000);
   const queuedFeedback = cleanEmailText(input.queuedFeedback, 12_000);
@@ -172,6 +175,17 @@ export function renderLifecycleEmail(input) {
       "Review failed request",
       "The feedback remains preserved. Resolve it, then use the revision queue recovery workflow.",
     );
+    if (sendAnywayUrl) {
+      rows += action(
+        sendAnywayUrl,
+        "Send this version anyway (not recommended)",
+        "This opens the exact field preview. You will review a second confirmation before anything is sent to the client.",
+        "warning",
+      );
+      textSections.push(
+        `SEND THIS VERSION ANYWAY (NOT RECOMMENDED)\n${sendAnywayUrl}\nThis opens the exact field preview and requires a second confirmation before anything is sent to the client.`,
+      );
+    }
   } else if (audience === "delivery-failure") {
     rows += textBlock(
       "Next step",

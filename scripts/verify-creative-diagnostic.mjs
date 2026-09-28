@@ -73,9 +73,14 @@ try {
         diagnostic: creative?.getAttribute("data-creative-diagnostic") === "true",
         candidateId: creative?.getAttribute("data-creative-candidate") || "",
         renderer: creative?.getAttribute("data-creative-renderer") || "",
-        forms: document.querySelectorAll("form").length,
+        forms: [...document.forms].filter((form) => !form.closest("#ll-review")).length,
+        reviewForms: document.querySelectorAll("#ll-review .ll-feedback-form").length,
         activeLeadForm: document.querySelectorAll('[data-runtime="lead-form"]').length,
         reviewControls: document.querySelectorAll("#ll-review, .ll-review").length,
+        reviewControlsVisible: [...document.querySelectorAll("#ll-review, .ll-review")].some((element) => {
+          const style = getComputedStyle(element);
+          return !element.hasAttribute("hidden") && style.display !== "none" && style.visibility !== "hidden";
+        }),
         overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
         missingAlt: [...document.images].filter((image) => !image.getAttribute("alt")?.trim()).length,
         brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
@@ -87,7 +92,7 @@ try {
     if (state.canonical) failures.push(`${viewport.name}: diagnostic preview has a canonical URL`);
     if (!state.diagnostic || state.candidateId !== candidateId || state.renderer !== "creative-candidate") failures.push(`${viewport.name}: authored diagnostic renderer marker is missing`);
     if (state.forms || state.activeLeadForm) failures.push(`${viewport.name}: live lead form is present`);
-    if (state.reviewControls) failures.push(`${viewport.name}: publish/review controls are present on the diagnostic site`);
+    if (state.reviewControlsVisible) failures.push(`${viewport.name}: review controls are visible without a signed developer review token`);
     if (state.overflow) failures.push(`${viewport.name}: horizontal overflow`);
     if (state.missingAlt) failures.push(`${viewport.name}: image missing alt text`);
     if (state.brokenImages) failures.push(`${viewport.name}: broken image`);

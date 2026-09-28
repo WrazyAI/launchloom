@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
+import { FindingSeverityBadge } from "./FindingSeverityBadge";
 
 const apiBase = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || "").replace(
   /\/$/,
   "",
 );
+const reviewEmailPlaceholder = "your-email@domain.com";
 type ReviewStage = "developer" | "client";
 type ReviewClaims = {
   stage?: ReviewStage;
@@ -20,7 +22,8 @@ type RepairFinding = {
 };
 type RepairSession = {
   sessionId: string;
-  status: "available" | "dispatching" | "queued" | "running" | "completed" | "failed";
+  status:
+    "available" | "dispatching" | "queued" | "running" | "completed" | "failed";
   attemptConsumed: boolean;
   candidateId: string;
   repairAvailable: boolean;
@@ -30,6 +33,8 @@ type RepairSession = {
   resultReviewUrl: string | null;
   outcome: string | null;
   failure: string | null;
+  humanDisposition: "accepted-with-feedback" | "override-publish" | null;
+  reviewQueue?: "clear" | "revision_in_progress" | "revision_queue_halted";
 };
 
 function claimsFrom(token: string): ReviewClaims {
@@ -79,7 +84,8 @@ export default function ReviewPanel() {
     const data = (await response.json().catch(() => ({}))) as RepairSession & {
       error?: string;
     };
-    if (!response.ok) throw new Error(data.error || "Repair status is unavailable.");
+    if (!response.ok)
+      throw new Error(data.error || "Repair status is unavailable.");
     setRepair(data);
   }
 
@@ -90,7 +96,11 @@ export default function ReviewPanel() {
     void refreshCreativeRepair()
       .catch((error) => {
         if (!cancelled)
-          setState(error instanceof Error ? error.message : "Repair status is unavailable.");
+          setState(
+            error instanceof Error
+              ? error.message
+              : "Repair status is unavailable.",
+          );
       })
       .finally(() => {
         if (!cancelled) setRepairLoading(false);
@@ -101,11 +111,18 @@ export default function ReviewPanel() {
   }, [token, claims.creativeRepairSessionId]);
 
   useEffect(() => {
-    if (!repair || !["dispatching", "queued", "running"].includes(repair.status))
+    if (
+      !repair ||
+      !["dispatching", "queued", "running"].includes(repair.status)
+    )
       return undefined;
     const timer = window.setInterval(() => {
       void refreshCreativeRepair().catch((error) =>
-        setState(error instanceof Error ? error.message : "Could not refresh repair status."),
+        setState(
+          error instanceof Error
+            ? error.message
+            : "Could not refresh repair status.",
+        ),
       );
     }, 5_000);
     return () => window.clearInterval(timer);
@@ -135,11 +152,23 @@ export default function ReviewPanel() {
         status?: RepairSession["status"];
         attemptConsumed?: boolean;
       };
-      if (!response.ok) throw new Error(data.error || "The final repair could not be queued.");
-      setRepair({ ...repair, status: data.status || "queued", attemptConsumed: true, repairAvailable: false });
-      setState("Queued. The site will be checked again before a new preview is shared.");
+      if (!response.ok)
+        throw new Error(data.error || "The final repair could not be queued.");
+      setRepair({
+        ...repair,
+        status: data.status || "queued",
+        attemptConsumed: true,
+        repairAvailable: false,
+      });
+      setState(
+        "Queued. The site will be checked again before a new preview is shared.",
+      );
     } catch (error) {
-      setState(error instanceof Error ? error.message : "The final repair could not be queued.");
+      setState(
+        error instanceof Error
+          ? error.message
+          : "The final repair could not be queued.",
+      );
       void refreshCreativeRepair().catch(() => undefined);
     } finally {
       setSending(false);
@@ -155,17 +184,21 @@ export default function ReviewPanel() {
     setSending(true);
     setState("Sending your note…");
     try {
-      const response = await fetch(`${apiBase}/api/feedback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          comment,
-          email,
-          pageUrl: window.location.href,
-          submissionId: submissionId.current,
-        }),
-      });
+      const response = await fetch(
+        `${apiBase}${hasCreativeRepair ? "/api/creative-repair" : "/api/feedback"}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            ...(hasCreativeRepair ? { action: "feedback" } : {}),
+            comment,
+            email,
+            pageUrl: window.location.href,
+            submissionId: submissionId.current,
+          }),
+        },
+      );
       const data = (await response.json().catch(() => ({}))) as {
         error?: string;
         queueStatus?: "started" | "queued" | "duplicate";
@@ -174,14 +207,23 @@ export default function ReviewPanel() {
         response.ok
           ? data.queueStatus === "queued"
             ? "Queued. Your request will start after the current revision."
-            : isDeveloper
-              ? "Feedback sent. A fresh internal preview will follow."
-              : "Feedback received. We’ll review it before publishing an update."
+            : hasCreativeRepair
+              ? "Accepted as the working baseline. Your feedback is in revision; the client has not received this version."
+              : isDeveloper
+                ? "Feedback sent. A fresh internal preview will follow."
+                : "Feedback received. We’ll review it before publishing an update."
           : data.error || "We couldn’t save that note. Please try again.",
       );
       if (response.ok) {
         setComment("");
         submissionId.current = "";
+        if (hasCreativeRepair && repair)
+          setRepair({
+            ...repair,
+            humanDisposition: "accepted-with-feedback",
+            repairAvailable: false,
+            reviewQueue: "revision_in_progress",
+          });
       }
     } catch {
       setState("We couldn’t save that note. Please try again.");
@@ -240,19 +282,40 @@ export default function ReviewPanel() {
             : "Leave feedback in plain language. We’ll review it internally before any update is published."}
         </p>
         {hasCreativeRepair && (
-          <section className="creative-repair-panel" aria-labelledby="creative-repair-title">
+          <section
+            className="creative-repair-panel"
+            aria-labelledby="creative-repair-title"
+          >
             <div className="review-divider" />
-            <h2 id="creative-repair-title">One final design repair</h2>
+            <h2 id="creative-repair-title">Creative quality review</h2>
             <p>
-              This preview did not clear every quality check. The report below is private to this signed review link. A final repair will run once, then the site will be checked again. Nothing is published automatically.
+              This preview did not clear every automated visual check. Review
+              the findings, accept it as the working baseline with feedback, or
+              request its one final repair. Nothing is sent to the client
+              without a separate confirmed release.
             </p>
-            {repairLoading && <p role="status">Loading the rendered findings…</p>}
+            {repairLoading && (
+              <p role="status">Loading the rendered findings…</p>
+            )}
             {repair && (
               <>
                 {repair.previewUrl && (
                   <p>
-                    <a href={repair.previewUrl} target="_blank" rel="noreferrer">
-                      Open diagnostic-only preview
+                    <a
+                      className="diagnostic-preview-link"
+                      href={`${repair.previewUrl}${repair.previewUrl.includes("?") ? "&" : "?"}review=${encodeURIComponent(token)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open the diagnostics-only preview
+                      <svg
+                        aria-hidden="true"
+                        focusable="false"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <path d="M7 17 17 7M8 7h9v9" />
+                      </svg>
                     </a>
                     <span> (not approved for publication)</span>
                   </p>
@@ -261,35 +324,87 @@ export default function ReviewPanel() {
                   <ul className="creative-repair-findings">
                     {repair.findings.map((finding, index) => (
                       <li key={`${finding.category}-${index}`}>
-                        <strong>{finding.category.replace(/[-_]/gu, " ")} · {finding.severity}</strong>
+                        <div className="creative-repair-finding-heading">
+                          <strong>
+                            {finding.category.replace(/[-_]/gu, " ")}
+                          </strong>
+                          <FindingSeverityBadge severity={finding.severity} />
+                        </div>
                         <span>{finding.evidence}</span>
-                        {finding.recommendation && <small>{finding.recommendation}</small>}
+                        {finding.recommendation && (
+                          <small>{finding.recommendation}</small>
+                        )}
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p>No detailed rendered findings were available. The repair still uses the captured candidate report.</p>
+                  <p>
+                    No detailed rendered findings were available. The repair
+                    still uses the captured candidate report.
+                  </p>
                 )}
-                {repair.status === "available" && repair.repairAvailable && (
-                  <>
+                {isDeveloper && repair.previewUrl && (
+                  <form onSubmit={submitFeedback}>
                     <label className="field">
-                      Confirm developer review email
+                      Developer review email (used for either action)
                       <input
                         required
                         type="email"
-                        autoComplete="email"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        placeholder={invitedEmail}
+                        placeholder={reviewEmailPlaceholder}
                       />
                     </label>
-                    <button className="button" type="button" disabled={sending} onClick={startFinalRepair}>
-                      Fix the listed issues (one final attempt)
+                    <label className="field">
+                      What should change?
+                      <textarea
+                        required
+                        value={comment}
+                        onChange={(event) => setComment(event.target.value)}
+                        placeholder="For example: Keep the overall direction, but make the service choices easier to scan."
+                      />
+                    </label>
+                    <button className="button" type="submit" disabled={sending}>
+                      Accept as baseline and send feedback
                     </button>
-                  </>
+                  </form>
                 )}
-                {["dispatching", "queued", "running"].includes(repair.status) && (
-                  <p role="status">The final repair is {repair.status === "running" ? "running" : "queued"}. This page will update when the new checks finish.</p>
+                {isDeveloper &&
+                  repair.status === "available" &&
+                  repair.repairAvailable &&
+                  !repair.previewUrl && (
+                    <label className="field">
+                      Developer review email to request the final repair
+                      <input
+                        required
+                        type="email"
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder={reviewEmailPlaceholder}
+                      />
+                    </label>
+                  )}
+                {repair.status === "available" && repair.repairAvailable && (
+                  <button
+                    className="button"
+                    type="button"
+                    disabled={
+                      sending ||
+                      email.trim().toLowerCase() !== invitedEmail.toLowerCase()
+                    }
+                    onClick={startFinalRepair}
+                  >
+                    Fix the listed issues (one final attempt)
+                  </button>
+                )}
+                {["dispatching", "queued", "running"].includes(
+                  repair.status,
+                ) && (
+                  <p role="status">
+                    The final repair is{" "}
+                    {repair.status === "running" ? "running" : "queued"}. This
+                    page will update when the new checks finish.
+                  </p>
                 )}
                 {repair.status === "completed" && (
                   <div role="status">
@@ -300,7 +415,11 @@ export default function ReviewPanel() {
                     </p>
                     {repair.resultPreviewUrl && (
                       <p>
-                        <a href={repair.resultPreviewUrl} target="_blank" rel="noreferrer">
+                        <a
+                          href={repair.resultPreviewUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           {repair.outcome === "passed"
                             ? "Open the updated preview"
                             : "Open the final diagnostic-only preview"}
@@ -308,44 +427,59 @@ export default function ReviewPanel() {
                       </p>
                     )}
                     {repair.resultReviewUrl && (
-                      <p><a href={repair.resultReviewUrl}>Open the updated developer review</a></p>
+                      <p>
+                        <a href={repair.resultReviewUrl}>
+                          Open the updated developer review
+                        </a>
+                      </p>
                     )}
                   </div>
                 )}
                 {repair.status === "failed" && (
-                  <p role="status">The final repair did not complete: {repair.failure || "The pipeline stopped before it could produce a reviewed result."} No second attempt is available from this link.</p>
+                  <p role="status">
+                    The final repair did not complete:{" "}
+                    {repair.failure ||
+                      "The pipeline stopped before it could produce a reviewed result."}{" "}
+                    No second attempt is available from this link.
+                  </p>
                 )}
               </>
             )}
           </section>
         )}
         {claims.previewUrl && !hasCreativeRepair && (
-          <p><a href={claims.previewUrl} target="_blank" rel="noreferrer">Open the reviewed website preview</a></p>
+          <p>
+            <a href={claims.previewUrl} target="_blank" rel="noreferrer">
+              Open the reviewed website preview
+            </a>
+          </p>
         )}
-        {!hasCreativeRepair && <form onSubmit={submitFeedback}>
-          <label className="field">
-            {isDeveloper ? "Developer review email" : "Your review email"}
-            <input
-              required
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder={invitedEmail}
-            />
-          </label>
-          <label className="field">
-            What should change?
-            <textarea
-              required
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              placeholder="For example: Make the main headline more direct and make the phone number more prominent."
-            />
-          </label>
-          <button className="button" type="submit" disabled={sending}>
-            Send feedback
-          </button>
-        </form>}
+        {!hasCreativeRepair && (
+          <form onSubmit={submitFeedback}>
+            <label className="field">
+              {isDeveloper ? "Developer review email" : "Your review email"}
+              <input
+                required
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder={reviewEmailPlaceholder}
+              />
+            </label>
+            <label className="field">
+              What should change?
+              <textarea
+                required
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                placeholder="For example: Make the main headline more direct and make the phone number more prominent."
+              />
+            </label>
+            <button className="button" type="submit" disabled={sending}>
+              Send feedback
+            </button>
+          </form>
+        )}
         {isDeveloper && !hasCreativeRepair && (
           <>
             <div className="review-divider" />
@@ -363,7 +497,11 @@ export default function ReviewPanel() {
             </button>
           </>
         )}
-        {state && <p className="form-message success" role="status">{state}</p>}
+        {state && (
+          <p className="form-message success" role="status">
+            {state}
+          </p>
+        )}
       </div>
     </main>
   );

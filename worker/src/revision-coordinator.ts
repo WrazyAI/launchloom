@@ -24,6 +24,7 @@ export interface RevisionRequestInput {
   reviewedPage: string;
   category: string;
   feedback: string;
+  creativeRepairSessionId?: string;
 }
 
 type RevisionRow = {
@@ -62,7 +63,7 @@ export type EnqueueResult =
     }
   | {
       ok: false;
-      code: "revision_queue_full";
+      code: "revision_queue_full" | "creative_override_started";
       error: string;
     };
 
@@ -79,12 +80,7 @@ export type CompletionResult = {
 };
 
 export type CreativeRepairStatus =
-  | "available"
-  | "dispatching"
-  | "queued"
-  | "running"
-  | "completed"
-  | "failed";
+  "available" | "dispatching" | "queued" | "running" | "completed" | "failed";
 
 export type CreativeRepairFinding = {
   category: string;
@@ -92,6 +88,9 @@ export type CreativeRepairFinding = {
   evidence: string;
   recommendation?: string;
 };
+
+export type CreativeHumanDisposition =
+  "accepted-with-feedback" | "override-publish";
 
 export type CreativeRepairSessionInput = {
   sessionId: string;
@@ -137,7 +136,37 @@ export type CreativeRepairSessionView = {
   resultReviewUrl: string | null;
   outcome: string | null;
   failure: string | null;
+  humanDisposition: CreativeHumanDisposition | null;
+  overrideStatus: "dispatching" | "failed" | "published" | null;
+  overrideFailure: string | null;
 };
+
+type CreativeDecisionInput = {
+  decisionId: string;
+  sessionId: string;
+  repo: string;
+  pr: number;
+  headSha: string;
+  candidateId: string;
+  disposition: CreativeHumanDisposition;
+  reviewerEmail: string;
+  feedbackRequestId?: string;
+};
+
+type CreativeOverrideStart =
+  | { started: true; status: "dispatching" }
+  | {
+      started: false;
+      status:
+        | "missing"
+        | "stale"
+        | "ineligible"
+        | "revision_in_progress"
+        | "revision_queue_halted"
+        | "dispatching"
+        | "published";
+      approvedSha?: string;
+    };
 
 export type CreativeRepairClaim = {
   run: boolean;
@@ -148,6 +177,7 @@ export type CreativeRepairClaim = {
 const ACTIVE = "('dispatching','dispatched','running')";
 const DISPATCH_RETRY_MS = 15 * 60_000;
 const RUN_TIMEOUT_MS = 50 * 60_000;
+const CREATIVE_OVERRIDE_STALE_MS = 2 * 60_000;
 const RETENTION_MS = 30 * 24 * 60 * 60_000;
 const FAILURE_NOTICE_KEY = "pending-failure-notice";
 
@@ -303,6 +333,33 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         );
         CREATE INDEX IF NOT EXISTS creative_repair_sessions_created
           ON creative_repair_sessions(created_at);
+        CREATE TABLE IF NOT EXISTS creative_review_decisions (
+          decision_id TEXT PRIMARY KEY,
+          session_id TEXT NOT NULL,
+          repo TEXT NOT NULL,
+          pr INTEGER NOT NULL,
+          head_sha TEXT NOT NULL,
+          candidate_id TEXT NOT NULL,
+          disposition TEXT NOT NULL CHECK(disposition IN ('accepted-with-feedback','override-publish')),
+          reviewer_email TEXT NOT NULL,
+          feedback_request_id TEXT,
+          created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS creative_review_decisions_session
+          ON creative_review_decisions(session_id, created_at DESC);
+        CREATE TABLE IF NOT EXISTS creative_override_publications (
+          session_id TEXT PRIMARY KEY,
+          repo TEXT NOT NULL,
+          pr INTEGER NOT NULL,
+          head_sha TEXT NOT NULL,
+          candidate_id TEXT NOT NULL,
+          reviewer_email TEXT NOT NULL,
+          status TEXT NOT NULL CHECK(status IN ('dispatching','failed','published')),
+          approved_sha TEXT,
+          failure TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        );
       `);
     });
   }
@@ -326,6 +383,21 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     } catch {
       findings = [];
     }
+    const decision = this.ctx.storage.sql
+      .exec<{ disposition: CreativeHumanDisposition }>(
+        "SELECT disposition FROM creative_review_decisions WHERE session_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1",
+        row.session_id,
+      )
+      .toArray()[0];
+    const override = this.ctx.storage.sql
+      .exec<{
+        status: "dispatching" | "failed" | "published";
+        failure: string | null;
+      }>(
+        "SELECT status, failure FROM creative_override_publications WHERE session_id = ? LIMIT 1",
+        row.session_id,
+      )
+      .toArray()[0];
     return {
       sessionId: row.session_id,
       status: row.status,
@@ -338,10 +410,176 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       resultReviewUrl: row.result_review_url,
       outcome: row.outcome,
       failure: row.failure,
+      humanDisposition: decision?.disposition || null,
+      overrideStatus: override?.status || null,
+      overrideFailure: override?.failure || null,
     };
   }
 
-  private creativeRepairInput(row: CreativeRepairRow): CreativeRepairSessionInput {
+  async recordCreativeDisposition(input: CreativeDecisionInput): Promise<void> {
+    const row = this.creativeRepairRow(input.sessionId);
+    if (
+      !row ||
+      row.repo.toLowerCase() !== input.repo.toLowerCase() ||
+      row.pr !== input.pr ||
+      row.head_sha !== input.headSha ||
+      row.candidate_id !== input.candidateId
+    )
+      throw new Error("Creative review session does not match the decision.");
+    this.ctx.storage.sql.exec(
+      `INSERT OR IGNORE INTO creative_review_decisions (
+        decision_id, session_id, repo, pr, head_sha, candidate_id,
+        disposition, reviewer_email, feedback_request_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      input.decisionId,
+      input.sessionId,
+      input.repo,
+      input.pr,
+      input.headSha,
+      input.candidateId,
+      input.disposition,
+      input.reviewerEmail.toLowerCase(),
+      input.feedbackRequestId || null,
+      Date.now(),
+    );
+    if (input.disposition === "accepted-with-feedback")
+      this.ctx.storage.sql.exec(
+        `UPDATE creative_repair_sessions
+         SET status = 'completed', repair_available = 0,
+             outcome = 'developer-accepted-with-feedback', updated_at = ?
+         WHERE session_id = ? AND status = 'available'`,
+        Date.now(),
+        input.sessionId,
+      );
+  }
+
+  beginCreativeOverride(
+    input: Omit<
+      CreativeDecisionInput,
+      "decisionId" | "disposition" | "feedbackRequestId"
+    >,
+  ): CreativeOverrideStart {
+    const row = this.creativeRepairRow(input.sessionId);
+    if (!row) return { started: false, status: "missing" };
+    if (
+      row.repo.toLowerCase() !== input.repo.toLowerCase() ||
+      row.pr !== input.pr ||
+      row.head_sha !== input.headSha ||
+      row.candidate_id !== input.candidateId
+    )
+      return { started: false, status: "stale" };
+    if (row.outcome === "developer-accepted-with-feedback")
+      return { started: false, status: "ineligible" };
+    if (
+      !row.preview_url ||
+      ["dispatching", "queued", "running"].includes(row.status)
+    )
+      return { started: false, status: "ineligible" };
+
+    if (
+      this.ctx.storage.sql
+        .exec(
+          "SELECT request_id FROM revision_requests WHERE status = 'failed' LIMIT 1",
+        )
+        .toArray().length
+    )
+      return { started: false, status: "revision_queue_halted" };
+    if (
+      this.ctx.storage.sql
+        .exec(
+          `SELECT request_id FROM revision_requests WHERE status IN ${ACTIVE} OR status = 'queued' LIMIT 1`,
+        )
+        .toArray().length
+    )
+      return { started: false, status: "revision_in_progress" };
+
+    const existing = this.ctx.storage.sql
+      .exec<{
+        status: string;
+        approved_sha: string | null;
+        updated_at: number;
+      }>(
+        "SELECT status, approved_sha, updated_at FROM creative_override_publications WHERE session_id = ? LIMIT 1",
+        input.sessionId,
+      )
+      .toArray()[0];
+    if (existing?.status === "published")
+      return {
+        started: false,
+        status: "published",
+        approvedSha: existing.approved_sha || undefined,
+      };
+    if (
+      existing?.status === "dispatching" &&
+      Date.now() - existing.updated_at < CREATIVE_OVERRIDE_STALE_MS
+    )
+      return { started: false, status: "dispatching" };
+
+    const now = Date.now();
+    this.ctx.storage.sql.exec(
+      `INSERT INTO creative_override_publications (
+        session_id, repo, pr, head_sha, candidate_id, reviewer_email,
+        status, approved_sha, failure, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, 'dispatching', NULL, NULL, ?, ?)
+      ON CONFLICT(session_id) DO UPDATE SET
+        reviewer_email = excluded.reviewer_email,
+        status = 'dispatching', approved_sha = NULL, failure = NULL,
+        updated_at = excluded.updated_at`,
+      input.sessionId,
+      input.repo,
+      input.pr,
+      input.headSha,
+      input.candidateId,
+      input.reviewerEmail.toLowerCase(),
+      now,
+      now,
+    );
+    this.ctx.storage.sql.exec(
+      `INSERT OR IGNORE INTO creative_review_decisions (
+        decision_id, session_id, repo, pr, head_sha, candidate_id,
+        disposition, reviewer_email, feedback_request_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, 'override-publish', ?, NULL, ?)`,
+      `override-${input.sessionId}`,
+      input.sessionId,
+      input.repo,
+      input.pr,
+      input.headSha,
+      input.candidateId,
+      input.reviewerEmail.toLowerCase(),
+      now,
+    );
+    return { started: true, status: "dispatching" };
+  }
+
+  completeCreativeOverride(sessionId: string, approvedSha: string): void {
+    this.ctx.storage.sql.exec(
+      "UPDATE creative_override_publications SET status = 'published', approved_sha = ?, failure = NULL, updated_at = ? WHERE session_id = ? AND status = 'dispatching'",
+      approvedSha,
+      Date.now(),
+      sessionId,
+    );
+    this.ctx.storage.sql.exec(
+      `UPDATE creative_repair_sessions
+       SET status = 'completed', repair_available = 0,
+           outcome = 'developer-override-publish', updated_at = ?
+       WHERE session_id = ? AND status IN ('available','completed','failed')`,
+      Date.now(),
+      sessionId,
+    );
+  }
+
+  failCreativeOverride(sessionId: string, reason: string): void {
+    this.ctx.storage.sql.exec(
+      "UPDATE creative_override_publications SET status = 'failed', failure = ?, updated_at = ? WHERE session_id = ? AND status = 'dispatching'",
+      cleanError(reason),
+      Date.now(),
+      sessionId,
+    );
+  }
+
+  private creativeRepairInput(
+    row: CreativeRepairRow,
+  ): CreativeRepairSessionInput {
     let findings: CreativeRepairFinding[] = [];
     try {
       const parsed = JSON.parse(row.findings_json);
@@ -378,9 +616,24 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       return this.creativeRepairView(existing);
     }
     const now = Date.now();
+    const retentionCutoff = now - 90 * 24 * 60 * 60_000;
+    this.ctx.storage.sql.exec(
+      `DELETE FROM creative_review_decisions WHERE session_id IN (
+        SELECT session_id FROM creative_repair_sessions
+        WHERE created_at < ? AND status IN ('completed','failed')
+      )`,
+      retentionCutoff,
+    );
+    this.ctx.storage.sql.exec(
+      `DELETE FROM creative_override_publications WHERE session_id IN (
+        SELECT session_id FROM creative_repair_sessions
+        WHERE created_at < ? AND status IN ('completed','failed')
+      )`,
+      retentionCutoff,
+    );
     this.ctx.storage.sql.exec(
       "DELETE FROM creative_repair_sessions WHERE created_at < ? AND status IN ('completed','failed')",
-      now - 90 * 24 * 60 * 60_000,
+      retentionCutoff,
     );
     this.ctx.storage.sql.exec(
       `INSERT INTO creative_repair_sessions (
@@ -436,8 +689,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       return { started: false, status: "failed" };
     if (row.status !== "available" || row.attempt_consumed !== 0)
       return { started: false, status: row.status };
-    if (row.repair_available !== 1)
-      return { started: false, status: "failed" };
+    if (row.repair_available !== 1) return { started: false, status: "failed" };
     this.ctx.storage.sql.exec(
       "UPDATE creative_repair_sessions SET status = 'dispatching', attempt_consumed = 1, updated_at = ? WHERE session_id = ? AND status = 'available' AND attempt_consumed = 0",
       Date.now(),
@@ -492,15 +744,14 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       result.previewUrl || null,
       result.reviewUrl || null,
       result.outcome.slice(0, 80),
-      JSON.stringify((result.findings || JSON.parse(row.findings_json)).slice(0, 20)),
+      JSON.stringify(
+        (result.findings || JSON.parse(row.findings_json)).slice(0, 20),
+      ),
       sessionId,
     );
   }
 
-  async failCreativeRepair(
-    sessionId: string,
-    reason: string,
-  ): Promise<void> {
+  async failCreativeRepair(sessionId: string, reason: string): Promise<void> {
     this.ctx.storage.sql.exec(
       `UPDATE creative_repair_sessions
        SET status = 'failed', updated_at = ?, failure = ?
@@ -673,6 +924,34 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   async enqueue(input: RevisionRequestInput): Promise<EnqueueResult> {
+    const releasing = this.ctx.storage.sql
+      .exec<{ session_id: string }>(
+        "SELECT session_id FROM creative_override_publications WHERE repo = ? AND status = 'dispatching' AND updated_at > ? LIMIT 1",
+        input.repo,
+        Date.now() - CREATIVE_OVERRIDE_STALE_MS,
+      )
+      .toArray()[0];
+    if (releasing)
+      return {
+        ok: false,
+        code: "creative_override_started",
+        error:
+          "A developer-confirmed client release is already being processed.",
+      };
+    if (input.creativeRepairSessionId) {
+      const override = this.ctx.storage.sql
+        .exec<{ status: string }>(
+          "SELECT status FROM creative_override_publications WHERE session_id = ? LIMIT 1",
+          input.creativeRepairSessionId,
+        )
+        .toArray()[0];
+      if (override && ["dispatching", "published"].includes(override.status))
+        return {
+          ok: false,
+          code: "creative_override_started",
+          error: "This preview is already being sent to the client.",
+        };
+    }
     const duplicate = this.ctx.storage.sql
       .exec<RevisionRow>(
         `SELECT * FROM revision_requests WHERE request_id = ? OR (fingerprint = ? AND status IN ${ACTIVE}) OR (fingerprint = ? AND status = 'queued') ORDER BY created_at DESC LIMIT 1`,

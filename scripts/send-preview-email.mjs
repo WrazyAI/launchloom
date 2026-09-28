@@ -60,6 +60,7 @@ const { subject, html, text } = renderLifecycleEmail({
   clientName,
   previewUrl,
   reviewUrl,
+  sendAnywayUrl: String(args["send-anyway-url"] || ""),
   clientFeedback,
   revisionOutcome,
   queuedFeedback,

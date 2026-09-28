@@ -123,6 +123,52 @@ describe("RevisionCoordinator", () => {
     expect(dispatchCount).toBe(1);
   });
 
+  it("lets feedback proceed after a creative-release dispatch lock goes stale", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName(
+      "stale-creative-release-test",
+    );
+    const session = {
+      sessionId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      repo: "WrazyAI/example-client",
+      pr: 2,
+      siteId: "example-client",
+      headSha: "a".repeat(40),
+      candidateId: "candidate-a",
+      repairAvailable: false,
+      previewUrl: "https://creative-diagnostic.example.pages.dev",
+      findings: [],
+    };
+    await coordinator.registerCreativeRepair(session);
+    await expect(
+      coordinator.beginCreativeOverride({
+        sessionId: session.sessionId,
+        repo: session.repo,
+        pr: session.pr,
+        headSha: session.headSha,
+        candidateId: session.candidateId,
+        reviewerEmail: "developer@example.com",
+      }),
+    ).resolves.toEqual({ started: true, status: "dispatching" });
+
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      state.storage.sql.exec(
+        "UPDATE creative_override_publications SET updated_at = ? WHERE session_id = ?",
+        Date.now() - 2 * 60_000 - 1,
+        session.sessionId,
+      );
+    });
+
+    await expect(
+      coordinator.enqueue(
+        request("request-stale-release", "Update the field preview."),
+      ),
+    ).resolves.toMatchObject({
+      ok: true,
+      queueStatus: "started",
+    });
+    expect(dispatchCount).toBe(1);
+  });
+
   it("rate limits AI chat per visitor and resets the window", async () => {
     const coordinator = env.REVISION_COORDINATOR.getByName("ai-rate-test");
     for (let count = 0; count < 12; count += 1)

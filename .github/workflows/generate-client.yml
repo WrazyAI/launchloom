@@ -433,6 +433,11 @@ jobs:
             --creative-repair-session "$SESSION_ID" \
             --token-only true)
           REVIEW_LINK="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
+          if [ -n "$DIAGNOSTIC_PREVIEW_URL" ]; then
+            echo "send_anyway_url=$DIAGNOSTIC_PREVIEW_URL?review=$TOKEN" >> "$GITHUB_OUTPUT"
+          else
+            echo "send_anyway_url=" >> "$GITHUB_OUTPUT"
+          fi
           SESSION_JSON=$(jq --arg session "$SESSION_ID" \
             --arg repo "$CLIENT_REPO" \
             --argjson pr "$CLIENT_PR" \
@@ -565,13 +570,14 @@ jobs:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           REPAIR_LINK: ${{ steps.creative_repair_link.outputs.link }}
           DIAGNOSTIC_PREVIEW: ${{ steps.creative_repair_link.outputs.preview }}
+          SEND_ANYWAY_URL: ${{ steps.creative_repair_link.outputs.send_anyway_url }}
         run: |
           NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
           if [ -n "$REPAIR_LINK" ]; then
             printf 'The authored design missed one or more quality checks. Review the findings and request its single final repair here:\n%s\n' "$REPAIR_LINK" > "$RUNNER_TEMP/generation-failure-feedback.txt"
             if [ -n "$DIAGNOSTIC_PREVIEW" ]; then printf 'Diagnostic-only preview (not approved for publication): %s\n' "$DIAGNOSTIC_PREVIEW" >> "$RUNNER_TEMP/generation-failure-feedback.txt"; fi
             printf 'The original generation was not promoted. The final repair is one-shot and will be checked again before a new review link is issued.\n' > "$RUNNER_TEMP/generation-failure-outcome.txt"
-            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-https://github.com/WrazyAI/launchloom/issues/$ISSUE}" --review "$REPAIR_LINK" --kind revision --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$ISSUE-${{ github.run_id }}"
+            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-https://github.com/WrazyAI/launchloom/issues/$ISSUE}" --review "$REPAIR_LINK" --send-anyway-url "$SEND_ANYWAY_URL" --kind revision --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$ISSUE-${{ github.run_id }}"
           else
             printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$RUNNER_TEMP/generation-failure-feedback.txt"
             printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
