@@ -332,24 +332,31 @@ export async function runClientProcess({
             environment,
           );
         }
-        return await processResult(
-          sudoPath,
-          [
-            "-n",
-            "-u",
-            sandboxUser,
-            "--",
-            envPath,
-            "-i",
-            ...envArguments,
-            command,
-            ...args,
-          ],
-          {
-            cwd: path.resolve(cwd),
-            env: environment,
-          },
-        );
+        try {
+          return await processResult(
+            sudoPath,
+            [
+              "-n",
+              "-u",
+              sandboxUser,
+              "--",
+              envPath,
+              "-i",
+              ...envArguments,
+              command,
+              ...args,
+            ],
+            {
+              cwd: path.resolve(cwd),
+              env: environment,
+            },
+          );
+        } catch (error) {
+          throw new Error(
+            `Client command "${path.basename(command)}" failed: ${error.message}`,
+            { cause: error },
+          );
+        }
       } catch (error) {
         executionError = error;
         throw error;

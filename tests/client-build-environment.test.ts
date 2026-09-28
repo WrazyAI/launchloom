@@ -161,6 +161,39 @@ process.exit(result.status ?? 1);
     }
   });
 
+  it("names the client executable when an isolated CI command exits 127", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-client-command-error-"),
+    );
+    const sudoPath = path.join(root, "synthetic-sudo");
+    const fakeSudo = `#!${process.execPath}
+const args = process.argv.slice(2);
+if (args.includes("find")) process.exit(0);
+if (args.includes("process.stdout.write(String(process.getuid()))")) {
+  process.stdout.write(String(process.getuid() + 1));
+  process.exit(0);
+}
+process.exit(127);
+`;
+    await fs.writeFile(sudoPath, fakeSudo, { mode: 0o700 });
+
+    try {
+      await expect(
+        runClientProcess({
+          command: "npm",
+          args: ["run", "build"],
+          cwd: root,
+          writablePaths: [root],
+          isolationMode: "required",
+          sudoPath,
+          sourceEnvironment: { CI: "true", PATH: process.env.PATH },
+        }),
+      ).rejects.toThrow(/client command "npm" failed.*exited with 127/iu);
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
   it.skipIf(process.platform !== "linux")(
     "keeps the original client failure visible when ownership restoration also fails",
     async () => {
