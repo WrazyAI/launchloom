@@ -34,7 +34,7 @@ export function prepareLocalClientIntake(rawSubmission) {
   if (rawSubmission.intakeVersion !== "2")
     throw new Error("Local client generation requires intakeVersion 2.");
 
-  const submissionId = String(rawSubmission.submissionId || crypto.randomUUID());
+  const submissionId = String(rawSubmission.submissionId ?? "");
   const payload = createClientIntakeV2Submission(rawSubmission, {
     submissionId,
     inviteToken: LOCAL_CLIENT_INTAKE_INVITE_TOKEN,

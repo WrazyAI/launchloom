@@ -101,4 +101,12 @@ describe("local client generation input", () => {
       /intakeVersion 2/u,
     );
   });
+
+  it("rejects V2 submissions that omit the online-generated submission ID", () => {
+    const { submissionId: _submissionId, ...incompleteSubmission } = formSubmission;
+
+    expect(() => prepareLocalClientIntake(incompleteSubmission)).toThrow(
+      /valid submission reference/u,
+    );
+  });
 });
