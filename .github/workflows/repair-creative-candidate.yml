@@ -229,12 +229,12 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           test -s "$CLIENT_DIR/package-lock.json" || { echo "Generated client package lock is missing" >&2; exit 1; }
-          BUILD_ROOT=$(mktemp -d "$RUNNER_TEMP/launchloom-repair-build.XXXXXX")
+          BUILD_ROOT=$(mktemp -d "/tmp/launchloom-repair-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.XXXXXX")
           chmod 755 "$BUILD_ROOT"
           BUILD_DIR="$BUILD_ROOT/site"
           SCREENSHOTS="$BUILD_ROOT/review-screenshots"
           node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
-          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true --prefix "$BUILD_DIR"
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_LAUNCHLOOM_API_URL "$LAUNCHLOOM_API_URL" -- npm run build
           grep -I -F -q 'data-creative-host="true"' "$BUILD_DIR/dist/index.html" || { echo "Creative host marker missing from final build" >&2; exit 1; }
           grep -I -F -q "data-creative-candidate=\"$CANDIDATE\"" "$BUILD_DIR/dist/index.html" || { echo "Repaired candidate missing from final build" >&2; exit 1; }
@@ -316,12 +316,12 @@ jobs:
           LAUNCHLOOM_CLIENT_PROCESS_ISOLATION: required
           PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
-          BUILD_ROOT=$(mktemp -d "$RUNNER_TEMP/launchloom-diagnostic-build.XXXXXX")
+          BUILD_ROOT=$(mktemp -d "/tmp/launchloom-diagnostic-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.XXXXXX")
           chmod 755 "$BUILD_ROOT"
           BUILD_DIR="$BUILD_ROOT/site"
           SCREENSHOTS="$BUILD_ROOT/diagnostic-screenshots"
           node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
-          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true --prefix "$BUILD_DIR"
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_CREATIVE_DIAGNOSTIC true --env.PUBLIC_LAUNCHLOOM_API_URL "$LAUNCHLOOM_API_URL" -- npm run build
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true -- node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" --dist dist --candidate "$CANDIDATE" --screenshots "$SCREENSHOTS"
           chmod 700 "$BUILD_ROOT"

@@ -8,7 +8,7 @@ export const AUTHORING_STAGE_BUDGETS = Object.freeze({
 // Full-file repair responses normally remain well below this limit. Keep the
 // reservation under the observed OpenRouter affordability ceiling so repairs
 // are not rejected before generation when account credits are constrained.
-export const CREATIVE_REPAIR_MAX_COMPLETION_TOKENS = 28_000;
+export const CREATIVE_REPAIR_MAX_COMPLETION_TOKENS = 18_000;
 
 export function completionLimitRequestField(tokens) {
   if (!Number.isSafeInteger(tokens) || tokens < 1)

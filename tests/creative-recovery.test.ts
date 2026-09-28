@@ -125,6 +125,24 @@ describe("creative recovery diagnostics", () => {
 });
 
 describe("developer-triggered creative repair workflow", () => {
+  it("keeps isolated client build roots traversable and npm installs bound to them", () => {
+    const clientBuildWorkflows = [
+      ".github/workflows/generate-client.yml",
+      ".github/workflows/repair-creative-candidate.yml",
+      ".github/workflows/publish-site.yml",
+      ".github/workflows/process-feedback.yml",
+      ".github/workflows/process-client-feedback.yml",
+    ];
+
+    for (const workflowPath of clientBuildWorkflows) {
+      const source = readFileSync(workflowPath, "utf8");
+      expect(source, workflowPath).toContain('mktemp -d "/tmp/launchloom-');
+      expect(source, workflowPath).toContain(
+        '-- npm ci --package-lock=true --prefix "$BUILD_DIR"',
+      );
+    }
+  });
+
   it("preserves isolated diagnostic build errors before issuing the repair link", () => {
     const workflow = readFileSync(
       ".github/workflows/generate-client.yml",
@@ -149,7 +167,12 @@ describe("developer-triggered creative repair workflow", () => {
     expect(preserveIndex).toBeGreaterThan(diagnosticStart);
     expect(preserveIndex).toBeLessThan(repairLinkIndex);
     expect(workflow).toContain("steps.diagnostic_preview.outcome == 'failure'");
-    expect(workflow).toContain("npm ci --package-lock=true");
+    expect(workflow).toContain(
+      'BUILD_ROOT=$(mktemp -d "/tmp/launchloom-diagnostic-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.XXXXXX")',
+    );
+    expect(workflow).toContain(
+      'npm ci --package-lock=true --prefix "$BUILD_DIR"',
+    );
     expect(workflow).toContain(
       'cp "$REPORT" "$CLIENT_DIR/.launchloom/creative-repair/diagnostic-preview-client-command.json"',
     );
@@ -182,10 +205,10 @@ describe("developer-triggered creative repair workflow", () => {
       'node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"',
     );
     const isolatedInstallIndex = repairWorkflow.indexOf(
-      'node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true',
+      'node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true --prefix "$BUILD_DIR"',
     );
     expect(repairWorkflow).toContain(
-      'BUILD_ROOT=$(mktemp -d "$RUNNER_TEMP/launchloom-repair-build.XXXXXX")',
+      'BUILD_ROOT=$(mktemp -d "/tmp/launchloom-repair-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.XXXXXX")',
     );
     expect(repairWorkflow).toContain('BUILD_DIR="$BUILD_ROOT/site"');
     expect(buildCopyIndex).toBeGreaterThan(repairIndex);

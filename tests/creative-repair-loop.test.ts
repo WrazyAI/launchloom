@@ -71,10 +71,10 @@ describe("creative repair loop", () => {
     });
 
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    expect(body.max_completion_tokens).toBe(28000);
+    expect(body.max_completion_tokens).toBe(18000);
     expect(body).not.toHaveProperty("max_tokens");
     expect(diagnostics.join(" ")).toContain(
-      "creative_completion stage=creative-repair finish_reason=stop max_completion_tokens=28000 completion_tokens=3456 reasoning_tokens=321",
+      "creative_completion stage=creative-repair finish_reason=stop max_completion_tokens=18000 completion_tokens=3456 reasoning_tokens=321",
     );
     expect(diagnostics.join(" ")).not.toContain('"experience":"fixed"');
   });
@@ -357,8 +357,8 @@ describe("creative repair loop", () => {
           JSON.stringify({
             choices: [{ finish_reason: "length", message: { content: "{" } }],
             usage: {
-              completion_tokens: 28000,
-              completion_tokens_details: { reasoning_tokens: 27000 },
+              completion_tokens: 18000,
+              completion_tokens_details: { reasoning_tokens: 17000 },
             },
           }),
         ),
@@ -377,7 +377,7 @@ describe("creative repair loop", () => {
         screenshots: [],
       }),
     ).rejects.toThrow(
-      "Creative repair response was truncated (finish_reason=length max_completion_tokens=28000 completion_tokens=28000 reasoning_tokens=27000 content_chars=1).",
+      "Creative repair response was truncated (finish_reason=length max_completion_tokens=18000 completion_tokens=18000 reasoning_tokens=17000 content_chars=1).",
     );
   });
 
@@ -416,7 +416,7 @@ describe("creative repair loop", () => {
         screenshots: [],
       }),
     ).rejects.toThrow(
-      "Creative repair response was malformed (finish_reason=stop max_completion_tokens=28000 completion_tokens=810 reasoning_tokens=200 content_chars=8).",
+      "Creative repair response was malformed (finish_reason=stop max_completion_tokens=18000 completion_tokens=810 reasoning_tokens=200 content_chars=8).",
     );
   });
 

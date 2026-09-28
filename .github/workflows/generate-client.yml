@@ -444,12 +444,12 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           CLIENT_DIR="${{ steps.branch.outputs.dir }}"
-          BUILD_ROOT=$(mktemp -d "$RUNNER_TEMP/launchloom-diagnostic-build.XXXXXX")
+          BUILD_ROOT=$(mktemp -d "/tmp/launchloom-diagnostic-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.XXXXXX")
           chmod 755 "$BUILD_ROOT"
           BUILD_DIR="$BUILD_ROOT/site"
           SCREENSHOTS="$BUILD_ROOT/screenshots"
           node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
-          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --diagnostic-output "$LAUNCHLOOM_PRIVATE_DIR/diagnostic-preview-client-command.json" -- npm ci --package-lock=true
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --diagnostic-output "$LAUNCHLOOM_PRIVATE_DIR/diagnostic-preview-client-command.json" -- npm ci --package-lock=true --prefix "$BUILD_DIR"
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --diagnostic-output "$LAUNCHLOOM_PRIVATE_DIR/diagnostic-preview-client-command.json" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_CREATIVE_DIAGNOSTIC true --env.PUBLIC_LAUNCHLOOM_API_URL "$LAUNCHLOOM_API_URL" -- npm run build
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --diagnostic-output "$LAUNCHLOOM_PRIVATE_DIR/diagnostic-preview-client-command.json" --env.PUBLIC_REVIEW_MODE true -- node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" --dist dist --candidate "${{ steps.creative_recovery.outputs.candidate }}" --screenshots "$SCREENSHOTS"
           chmod 700 "$BUILD_ROOT"
@@ -551,12 +551,12 @@ jobs:
           jq -e '(.design.experience.renderer == "creative-candidate") and (.design.experience.candidateId != null) and (.design.experience.selectionMode == "creative-preview" or .design.experience.selectionMode == "creative-bakeoff")' src/site.config.json >/dev/null || { echo "Authored creative renderer was not selected"; exit 1; }
           CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
           jq -e --arg candidate "$CANDIDATE_ID" '.selectedCandidateId == $candidate and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "No authored creative candidate passed the preview gates"; exit 1; }
-          BUILD_ROOT=$(mktemp -d "$RUNNER_TEMP/launchloom-public-build.XXXXXX")
+          BUILD_ROOT=$(mktemp -d "/tmp/launchloom-public-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.XXXXXX")
           chmod 755 "$BUILD_ROOT"
           BUILD_DIR="$BUILD_ROOT/site"
           SCREENSHOTS="$BUILD_ROOT/initial-screenshots"
           node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
-          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true --prefix "$BUILD_DIR"
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_LAUNCHLOOM_API_URL "$LAUNCHLOOM_API_URL" -- npm run build
           grep -I -F -q 'data-creative-host="true"' "$BUILD_DIR/dist/index.html" || { echo "Creative host marker missing from fresh build"; exit 1; }
           grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" "$BUILD_DIR/dist/index.html" || { echo "Fresh build does not contain selected creative candidate $CANDIDATE_ID"; exit 1; }
