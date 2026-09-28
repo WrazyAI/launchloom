@@ -1318,6 +1318,8 @@ async function creativeRepair(request: Request, env: Env) {
       !/^[a-f0-9]{32}$/iu.test(sessionId) ||
       !claims.reviewerEmail ||
       !claims.clientEmail ||
+      !Number.isInteger(claims.feedbackIssue) ||
+      Number(claims.feedbackIssue) < 1 ||
       claims.expiresAt < Date.now() ||
       !claims.allowedOrigins?.length
     )
@@ -1672,6 +1674,8 @@ async function creativeRepair(request: Request, env: Env) {
         sessionId,
         pr: reviewedPr,
         headSha: reviewedHeadSha,
+        clientEmail: claims.clientEmail,
+        feedbackIssue: claims.feedbackIssue,
       });
       await coordinator.creativeRepairDispatched(sessionId);
     } catch (error) {

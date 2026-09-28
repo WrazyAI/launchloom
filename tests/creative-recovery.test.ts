@@ -154,7 +154,16 @@ describe("developer-triggered creative repair workflow", () => {
     expect(repairWorkflow).toContain("creative-diagnostic");
     expect(repairWorkflow).toContain("verify-creative-diagnostic.mjs");
     expect(repairWorkflow).toContain(
-      'if [ -z "$CLIENT_EMAIL" ] || [ "$FEEDBACK_ISSUE" = "0" ]; then',
+      "CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}",
+    );
+    expect(repairWorkflow).toContain(
+      "FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}",
+    );
+    expect(repairWorkflow).not.toContain(
+      "x.business.email || x.business.leadEmail",
+    );
+    expect(repairWorkflow).not.toContain(
+      'gh issue list --repo "$CLIENT_REPO" --state open --label launchloom-client-feedback',
     );
     expect(repairWorkflow).toContain("exit 1");
     expect(repairWorkflow).not.toContain("seo-research.mjs");
