@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "spicer-roofing-storm-response",
-  "productionEligible": true,
+  "productionEligible": false,
   "referenceName": "Storm-response roofing inspection",
   "familyId": "spicer-roofing-storm-response",
   "source": {
@@ -10,9 +10,6 @@
     "rights": "licensed",
     "rightsEvidence": "The downloaded HTML template is released under Creative Commons Attribution 4.0. Its retained README states the hero artwork is AI-generated placeholder art. The full license is stored beside this manifest.",
     "rightsEvidencePath": "rights/LICENSE",
-    "assetEvidencePaths": [
-      "rights/LICENSE"
-    ],
     "provenanceEvidencePaths": [
       "rights/README.md"
     ]

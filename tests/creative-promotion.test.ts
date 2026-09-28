@@ -77,6 +77,26 @@ afterEach(async () => {
 });
 
 describe("creative candidate promotion", () => {
+  it("keeps the selected manifest untouched for a source-only feedback preview", async () => {
+    const root = await makeFixture();
+    const selected = path.join(root, "src/generated-experiences/selected");
+    await fs.mkdir(selected, { recursive: true });
+    await fs.writeFile(
+      path.join(selected, "manifest.json"),
+      "original selected manifest\n",
+    );
+    await promoteCreativeCandidate({
+      siteDir: root,
+      candidateDir: "candidate-a",
+      preserveSelectedManifest: true,
+    });
+    expect(
+      await fs.readFile(path.join(selected, "manifest.json"), "utf8"),
+    ).toBe("original selected manifest\n");
+    expect(
+      await fs.readFile(path.join(selected, "Experience.jsx"), "utf8"),
+    ).toContain("LeadForm");
+  });
   it("omits validator-rejected candidates from a later bakeoff", async () => {
     const root = await makeFixture();
 

@@ -1036,6 +1036,7 @@ export async function runRenderedCreativeRepair({
           visualScore: selected.visualScore,
           distinctivenessScore: selected.distinctivenessScore,
           selectionMode: "creative-preview",
+          preserveSelectedManifest: Boolean(humanFeedback),
         });
       }
     } catch (error) {

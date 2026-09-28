@@ -211,3 +211,23 @@ report proving `creative-candidate` with no legacy fallback.
 hand-authored Kokoro fixture for renderer/runtime plumbing tests. Passing the
 renderer fixture is not evidence that Luna can reproduce the reference
 mechanics.
+
+## Scoped revision workflows
+
+Client and developer feedback revisions capture the checked-out client commit
+before applying edits. A preflight rejects dirty checkouts and symlinks at any
+possible write destination before feedback processing starts. After typed
+revision operations and any required creative repair complete, the workflow
+creates an exact-path manifest outside the client repository. It includes the
+template files selected by `revisionTemplatePaths`, deterministic migration
+destinations, `src/site.config.json`, only the guideline files actually
+written, and the three selected creative source files only when source repair
+was required.
+
+`scripts/revision-scope.mjs` compares the checkout with that base SHA and
+rejects out-of-scope staged, unstaged, untracked, deleted, renamed, or
+symlink-reached paths. Staging uses only the validated literal path list. Both
+feedback workflows repeat validation before every commit and push and again
+immediately before deploying a review preview. The manifest and creative
+repair artifacts stay outside the client repository unless a path is
+explicitly part of the bounded revision contract.

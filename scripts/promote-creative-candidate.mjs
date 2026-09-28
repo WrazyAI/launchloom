@@ -45,7 +45,7 @@ function validateAuthoredFiles(candidateId, files, candidateManifest, { preview 
 }
 
 /**
- * @param {{siteDir?: string, candidateDir?: string, configPath?: string, visualScore?: number, distinctivenessScore?: number, selectionMode?: string, preview?: boolean}} options
+ * @param {{siteDir?: string, candidateDir?: string, configPath?: string, visualScore?: number, distinctivenessScore?: number, selectionMode?: string, preview?: boolean, preserveSelectedManifest?: boolean}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function promoteCreativeCandidate({
@@ -56,6 +56,7 @@ export async function promoteCreativeCandidate({
   distinctivenessScore,
   selectionMode = "creative-bakeoff",
   preview = false,
+  preserveSelectedManifest = false,
 } = {}) {
   if (!candidateDir) throw new Error("A candidate directory is required.");
   const root = path.resolve(siteDir);
@@ -75,15 +76,18 @@ export async function promoteCreativeCandidate({
 
   const selected = path.resolve(root, "src/generated-experiences/selected");
   await fs.mkdir(selected, { recursive: true });
+  if (preserveSelectedManifest)
+    await fs.access(path.join(selected, "manifest.json"));
   await Promise.all([
     fs.writeFile(path.join(selected, "Experience.jsx"), files.experience),
     fs.copyFile(path.join(source, "styles.css"), path.join(selected, "styles.css")),
     fs.copyFile(path.join(source, "motion.js"), path.join(selected, "motion.js")),
   ]);
-  await fs.writeFile(
-    path.join(selected, "manifest.json"),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-  );
+  if (!preserveSelectedManifest)
+    await fs.writeFile(
+      path.join(selected, "manifest.json"),
+      `${JSON.stringify(manifest, null, 2)}\n`,
+    );
 
   const configFile = path.resolve(root, configPath);
   const config = await readJson(configFile);
