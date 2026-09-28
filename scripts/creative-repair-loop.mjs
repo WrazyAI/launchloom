@@ -28,16 +28,29 @@ import { redactPromptValue } from "./production-experience-author.mjs";
 import { assertAuthorPromptBudget } from "./author-prompt-budget.mjs";
 
 const REPAIR_SCHEMA = {
-  name: "launchloom_creative_repair",
+  name: "launchloom_creative_repair_edits",
   strict: true,
   schema: {
     type: "object",
     additionalProperties: false,
-    required: ["experience", "styles", "motion"],
+    required: ["edits"],
     properties: {
-      experience: { type: "string" },
-      styles: { type: "string" },
-      motion: { type: "string" },
+      edits: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["file", "find", "replace"],
+          properties: {
+            file: {
+              type: "string",
+              enum: ["experience", "styles", "motion"],
+            },
+            find: { type: "string" },
+            replace: { type: "string" },
+          },
+        },
+      },
     },
   },
 };
@@ -106,6 +119,78 @@ function isCompleteRepair(value) {
       (key) => typeof value[key] === "string",
     ),
   );
+}
+
+function isRepairEditSet(value) {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Array.isArray(value.edits),
+  );
+}
+
+const REPAIR_EDITABLE_FILES = new Set(["experience", "styles", "motion"]);
+const MAX_REPAIR_EDITS = 12;
+const MAX_REPAIR_EDIT_FRAGMENT_CHARS = 6_000;
+const MAX_REPAIR_PATCH_TEXT_CHARS = 24_000;
+
+/** Apply bounded literal edits only when each source fragment is unambiguous. */
+export function applyCreativeRepairEdits(files, edits) {
+  if (!files || typeof files !== "object" || Array.isArray(files))
+    throw new Error("Creative repair edits require candidate files.");
+  if (
+    !Array.isArray(edits) ||
+    edits.length < 1 ||
+    edits.length > MAX_REPAIR_EDITS
+  )
+    throw new Error(
+      `Creative repair edits must contain 1 to ${MAX_REPAIR_EDITS} literal replacements.`,
+    );
+
+  const repaired = { ...files };
+  let patchTextChars = 0;
+  for (const [index, edit] of edits.entries()) {
+    const label = `Creative repair edit ${index + 1}`;
+    if (
+      !edit ||
+      typeof edit !== "object" ||
+      !REPAIR_EDITABLE_FILES.has(edit.file)
+    )
+      throw new Error(`${label} targets an unsupported candidate file.`);
+    if (
+      typeof edit.find !== "string" ||
+      !edit.find.length ||
+      edit.find.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS ||
+      typeof edit.replace !== "string" ||
+      edit.replace.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS
+    )
+      throw new Error(
+        `${label} exceeds the bounded literal replacement contract.`,
+      );
+    if (edit.find === edit.replace)
+      throw new Error(`${label} does not change the candidate source.`);
+    if (/data:image\//iu.test(edit.find) || /data:image\//iu.test(edit.replace))
+      throw new Error(`${label} cannot contain inline image data.`);
+
+    patchTextChars += edit.find.length + edit.replace.length;
+    if (patchTextChars > MAX_REPAIR_PATCH_TEXT_CHARS)
+      throw new Error("Creative repair patch exceeds the bounded text budget.");
+
+    const source = repaired[edit.file];
+    if (typeof source !== "string")
+      throw new Error(`${label} targets a missing candidate file.`);
+    const start = source.indexOf(edit.find);
+    if (start < 0 || source.indexOf(edit.find, start + edit.find.length) >= 0)
+      throw new Error(
+        `${label} source fragment must match exactly once in ${edit.file}.`,
+      );
+    repaired[edit.file] =
+      source.slice(0, start) +
+      edit.replace +
+      source.slice(start + edit.find.length);
+  }
+  return repaired;
 }
 
 /**
@@ -328,6 +413,7 @@ export async function runCreativeRepairLoop({
     const cycle = repairCycles;
     const cycleFindings = mergeFindings(findings, result.findings);
     let repaired;
+    let next;
     try {
       repaired = await generate({
         stage: "repair",
@@ -338,10 +424,26 @@ export async function runCreativeRepairLoop({
         screenshots,
         files: current,
       });
-      if (!isCompleteRepair(repaired))
+      if (!isCompleteRepair(repaired) && !isRepairEditSet(repaired))
         throw new Error(
-          `Creative repair cycle ${cycle} returned incomplete files.`,
+          `Creative repair cycle ${cycle} returned neither a complete legacy file set nor bounded literal edits.`,
         );
+      next = isRepairEditSet(repaired)
+        ? applyCreativeRepairEdits(current, repaired.edits)
+        : {
+            experience: clean(
+              repaired.experience || current.experience,
+              Number.MAX_SAFE_INTEGER,
+            ),
+            styles: clean(
+              repaired.styles || current.styles,
+              Number.MAX_SAFE_INTEGER,
+            ),
+            motion: clean(
+              repaired.motion || current.motion,
+              Number.MAX_SAFE_INTEGER,
+            ),
+          };
     } catch (error) {
       if (error instanceof ReferenceEvidenceError) throw error;
       // A malformed or unavailable author response must not publish stale
@@ -363,14 +465,7 @@ export async function runCreativeRepairLoop({
       continue;
     }
     authorAttempts += 1;
-    current = {
-      experience: clean(
-        repaired.experience || current.experience,
-        Number.MAX_SAFE_INTEGER,
-      ),
-      styles: clean(repaired.styles || current.styles, Number.MAX_SAFE_INTEGER),
-      motion: clean(repaired.motion || current.motion, Number.MAX_SAFE_INTEGER),
-    };
+    current = next;
     current = applyCreativeVisualSafetyRepairs(current, cycleFindings);
     result = await evaluate(current);
     forcedRepair = false;
@@ -605,7 +700,8 @@ REQUIRED MOTION ACCESSIBILITY CONTRACT: Keep a static reduced-motion equivalent 
 ALT-TEXT CONTRACT
 Every <img> must have a usable alt attribute. Use concise descriptive alt text for informative images. Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text. Preserve the reviewed description when reusing a known informative image, even if its crop or position changes. Do not replace an informative description with generic filler such as "Decorative image".
 
-Return complete files. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`,
+REPAIR OUTPUT CONTRACT
+Return JSON with an "edits" array, not complete files. Each edit must name one of experience, styles, or motion; "find" must be the shortest exact contiguous source fragment that occurs exactly once in that file; "replace" is its minimal corrected form. Keep edits small, make no more than 12 replacements, and keep the total find-plus-replace text under 24,000 characters. Do not repeat unchanged source. If a safe repair requires rewriting a large section, return an empty edits array so the pipeline fails closed instead of inventing a broad rewrite. Preserve all required reference signatures and safety/content contracts; never remove host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, inline image data, or em dashes.`,
   });
   for (const screenshot of screenshots.slice(0, 3)) {
     const dimensions = await imageSizeLabel(screenshot);
@@ -740,14 +836,18 @@ Return complete files. Keep required reference signatures and safety/content con
           { cause },
         );
       }
+      const repairedText = isRepairEditSet(repaired)
+        ? repaired.edits.flatMap((edit) => [edit?.find, edit?.replace])
+        : [repaired?.experience, repaired?.styles, repaired?.motion];
       if (
-        ["experience", "styles", "motion"].some(
-          (key) =>
-            typeof repaired?.[key] === "string" &&
-            [
-              "[sealed inline image data omitted]",
-              "[sealed client image asset]",
-            ].some((placeholder) => repaired[key].includes(placeholder)),
+        repairedText.some(
+          (value) =>
+            typeof value === "string" &&
+            (/data:image\//iu.test(value) ||
+              [
+                "[sealed inline image data omitted]",
+                "[sealed client image asset]",
+              ].some((placeholder) => value.includes(placeholder))),
         )
       )
         throw new Error(

@@ -250,6 +250,13 @@ pass again. Production promotion remains blocked unless the bakeoff report is
 `promotionReady`; v2 screenshot diversity remains authoritative and structural
 fingerprints remain diagnostic only.
 
+Creative repair responses should be bounded literal edits to the selected
+candidate's existing source, not full-file rewrites. Every edit must identify a
+unique exact source fragment in an allowed candidate file. Ambiguous, oversized,
+or unsafe edits fail closed, and every successfully applied patch still has to
+pass the complete render, reference-fidelity, visual-quality, and promotion
+gates.
+
 When the gate applies a safe correction, rebuild once and run both deterministic
 render verification and the GLM verification pass again. An unresolved critical
 content-integrity, industry-fit, imagery, conversion, overflow, or obstruction

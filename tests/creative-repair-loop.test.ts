@@ -30,6 +30,84 @@ afterEach(async () => {
 });
 
 describe("creative repair loop", () => {
+  it("applies exact repair edits while preserving every unmodified file", async () => {
+    const files = {
+      experience:
+        '<main><h1>Old promise</h1><a href="#contact">Call</a></main>',
+      styles: ".hero{min-height:40rem}",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+    const evaluated: (typeof files)[] = [];
+
+    const result = await runCreativeRepairLoop({
+      files,
+      findings: ["The hero promise is too broad."],
+      maxCycles: 1,
+      generate: async () => ({
+        edits: [
+          {
+            file: "experience",
+            find: "<h1>Old promise</h1>",
+            replace: "<h1>Roof leak repair</h1>",
+          },
+        ],
+      }),
+      evaluate: async (candidate: typeof files) => {
+        evaluated.push(candidate);
+        return {
+          pass: candidate.experience.includes("Roof leak repair"),
+          findings: [],
+        };
+      },
+    });
+
+    expect(result.pass).toBe(true);
+    expect(result.files).toEqual({
+      ...files,
+      experience:
+        '<main><h1>Roof leak repair</h1><a href="#contact">Call</a></main>',
+    });
+    expect(result.authorAttempts).toBe(1);
+    expect(evaluated).toHaveLength(2);
+    expect(evaluated[0]).toEqual(files);
+    expect(evaluated[1].styles).toBe(files.styles);
+    expect(evaluated[1].motion).toBe(files.motion);
+  });
+
+  it("rejects an ambiguous edit and leaves the candidate source unchanged", async () => {
+    const files = {
+      experience: "<h1>Old promise</h1><h2>Old promise</h2>",
+      styles: ".hero{min-height:40rem}",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+
+    const result = await runCreativeRepairLoop({
+      files,
+      findings: ["The hero promise is too broad."],
+      maxCycles: 1,
+      generate: async () => ({
+        edits: [
+          {
+            file: "experience",
+            find: "Old promise",
+            replace: "Roof leak repair",
+          },
+        ],
+      }),
+      evaluate: async () => ({
+        pass: false,
+        findings: ["The hero promise is too broad."],
+      }),
+    });
+
+    expect(result.pass).toBe(false);
+    expect(result.files).toEqual(files);
+    expect(result.generationFailures).toBe(1);
+    expect(result.cycles[0].generationError).toContain(
+      "source fragment must match exactly once",
+    );
+  });
+
   it("uses a credit-bounded repair completion budget and reports bounded response diagnostics", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-budget-"),
@@ -77,6 +155,65 @@ describe("creative repair loop", () => {
       "creative_completion stage=creative-repair finish_reason=stop max_completion_tokens=18000 completion_tokens=3456 reasoning_tokens=321",
     );
     expect(diagnostics.join(" ")).not.toContain('"experience":"fixed"');
+  });
+
+  it("requests bounded literal edits instead of full source files", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-edit-schema-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const editResponse = {
+      edits: [
+        {
+          file: "experience",
+          find: "<h1>Old</h1>",
+          replace: "<h1>Roof leak repair</h1>",
+        },
+      ],
+    };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(editResponse) },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "openai/gpt-6-luna",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: ["The hero promise is too broad."],
+        files: {
+          experience: "<main><h1>Old</h1></main>",
+          styles: ".hero{}",
+          motion: "export function mountExperienceMotion() {}",
+        },
+        screenshots: [],
+      }),
+    ).resolves.toEqual(editResponse);
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const schema = body.response_format.json_schema;
+    expect(schema.name).toBe("launchloom_creative_repair_edits");
+    expect(schema.schema.required).toEqual(["edits"]);
+    expect(schema.schema.properties.edits.items.properties.file.enum).toEqual([
+      "experience",
+      "styles",
+      "motion",
+    ]);
   });
 
   it("retries an affordability 402 once below the provider-reported token ceiling", async () => {
@@ -404,7 +541,7 @@ describe("creative repair loop", () => {
     );
   });
 
-  it("retries one truncated full-file repair with a larger bounded completion budget", async () => {
+  it("retries one truncated repair with a larger bounded completion budget", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-truncation-retry-"),
     );

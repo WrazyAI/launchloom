@@ -5,8 +5,8 @@ export const AUTHORING_STAGE_BUDGETS = Object.freeze({
   motion: Object.freeze({ maxTokens: 24_000, timeoutMs: 5 * 60_000 }),
 });
 
-// Full-file repair responses normally remain well below this limit. If the
-// provider reports a lower credit-based ceiling, repair retries once below it.
+// Repair patches are intentionally compact. If the provider reports a lower
+// credit-based ceiling, repair retries once below that ceiling.
 export const CREATIVE_REPAIR_MAX_COMPLETION_TOKENS = 18_000;
 // xhigh reasoning can consume most of the first completion budget. A single
 // larger retry is allowed only when the provider truncates a repair response.
