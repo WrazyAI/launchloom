@@ -404,7 +404,76 @@ describe("creative repair loop", () => {
     );
   });
 
-  it("classifies a length-limited repair response instead of reporting generic invalid JSON", async () => {
+  it("retries one truncated full-file repair with a larger bounded completion budget", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-truncation-retry-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = {
+      experience: "repaired experience",
+      styles: "repaired styles",
+      motion: "repaired motion",
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [{ finish_reason: "length", message: { content: "{" } }],
+            usage: {
+              completion_tokens: 18000,
+              completion_tokens_details: { reasoning_tokens: 13200 },
+            },
+          }),
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(repaired) },
+              },
+            ],
+            usage: {
+              completion_tokens: 6000,
+              completion_tokens_details: { reasoning_tokens: 3000 },
+            },
+          }),
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const diagnostics: string[] = [];
+
+    await expect(
+      requestRepair({
+        model: "openai/gpt-6-luna",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+        logger: (line: string) => diagnostics.push(line),
+      }),
+    ).resolves.toEqual(repaired);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(
+      fetchMock.mock.calls.map(
+        (call) => JSON.parse(call[1].body as string).max_completion_tokens,
+      ),
+    ).toEqual([18000, 32000]);
+    expect(diagnostics).toContain(
+      "creative_repair_truncation_retry requested=18000 retry=32000",
+    );
+  });
+
+  it("fails closed when a bounded larger-budget retry is also truncated", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-truncation-"),
     );
@@ -424,6 +493,7 @@ describe("creative repair loop", () => {
         ),
     );
     vi.stubGlobal("fetch", fetchMock);
+    const diagnostics: string[] = [];
 
     await expect(
       requestRepair({
@@ -435,9 +505,19 @@ describe("creative repair loop", () => {
         findings: [],
         files: { experience: "old", styles: "old", motion: "old" },
         screenshots: [],
+        logger: (line: string) => diagnostics.push(line),
       }),
     ).rejects.toThrow(
-      "Creative repair response was truncated (finish_reason=length max_completion_tokens=18000 completion_tokens=18000 reasoning_tokens=17000 content_chars=1).",
+      "Creative repair response was truncated (finish_reason=length max_completion_tokens=32000 completion_tokens=18000 reasoning_tokens=17000 content_chars=1).",
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(
+      fetchMock.mock.calls.map(
+        (call) => JSON.parse(call[1].body as string).max_completion_tokens,
+      ),
+    ).toEqual([18000, 32000]);
+    expect(diagnostics).toContain(
+      "creative_repair_truncation_retry requested=18000 retry=32000",
     );
   });
 

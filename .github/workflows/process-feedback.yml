@@ -242,7 +242,9 @@ jobs:
           CLIENT_EMAIL=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/client/src/site.config.json"); console.log(x.business.email)')
           ORIGINS="${{ steps.deploy.outputs.preview }},https://${{ steps.deploy.outputs.project }}.pages.dev"
           TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.deploy.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "${{ steps.branch.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
+          echo "::add-mask::$TOKEN"
           LINK="${{ steps.deploy.outputs.preview }}?review=$TOKEN"
+          echo "::add-mask::$LINK"
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Revised developer preview' '${{ steps.deploy.outputs.preview }}' "$LINK")"
           ARGS=(--to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/client/src/site.config.json"); console.log(x.business.name)')" --preview "${{ steps.deploy.outputs.preview }}" --review "$LINK" --kind revision --audience developer --feedback-file "$LAUNCHLOOM_PRIVATE_DIR/developer-feedback.txt" --outcome-file "$LAUNCHLOOM_PRIVATE_DIR/revision-outcome.txt" --idempotency-key "developer-revision-$REVISION_REQUEST_ID")
           node scripts/send-preview-email.mjs "${ARGS[@]}"

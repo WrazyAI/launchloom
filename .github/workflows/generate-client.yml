@@ -526,7 +526,9 @@ jobs:
             --origins "$ORIGINS" \
             --creative-repair-session "$SESSION_ID" \
             --token-only true)
+          echo "::add-mask::$TOKEN"
           REVIEW_LINK="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
+          echo "::add-mask::$REVIEW_LINK"
           SESSION_JSON=$(jq --arg session "$SESSION_ID" \
             --arg repo "$CLIENT_REPO" \
             --argjson pr "$CLIENT_PR" \
@@ -651,7 +653,10 @@ jobs:
           PREVIEW="${{ steps.deploy.outputs.preview }}"
           ORIGINS="$PREVIEW,https://${{ steps.client.outputs.project }}.pages.dev"
           TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "${{ steps.client.outputs.repo }}" --pr "${{ steps.branch.outputs.pr }}" --sha "${{ steps.deploy.outputs.sha }}" --site "${{ steps.client.outputs.project }}" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "${{ steps.intake.outputs.email }}" --feedback-issue "${{ steps.client.outputs.feedback_issue }}" --origins "$ORIGINS" --token-only true)
-          echo "link=$PREVIEW?review=$TOKEN" >> "$GITHUB_OUTPUT"
+          echo "::add-mask::$TOKEN"
+          REVIEW_LINK="$PREVIEW?review=$TOKEN"
+          echo "::add-mask::$REVIEW_LINK"
+          echo "link=$REVIEW_LINK" >> "$GITHUB_OUTPUT"
       - name: Post handoff links
         env:
           CLIENT_ASSET_SUMMARY: ${{ steps.assets.outputs.summary || steps.intake.outputs.asset_summary }}

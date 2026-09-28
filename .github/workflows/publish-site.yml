@@ -104,8 +104,10 @@ jobs:
           cd "$CLIENT_DIR"
           "$GITHUB_WORKSPACE/node_modules/.bin/wrangler" pages deploy "$SAFE_DEPLOY_DIR" --project-name "$PROJECT" --commit-hash "$APPROVED_SHA" --commit-message "LaunchLoom approved deployment"
           TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage client --repo "$CLIENT_REPO" --site "$PROJECT" --email "$CLIENT_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$PRODUCTION" --token-only true)
+          echo "::add-mask::$TOKEN"
           NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"
           REVIEW_URL="$PRODUCTION?review=$TOKEN"
+          echo "::add-mask::$REVIEW_URL"
           EMAIL_ARGS=(--to "$CLIENT_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience client)
           node -e 'const fs=require("node:fs"); const x=require("./src/site.config.json"); const report=x.revisionReport || {}; const items=Array.isArray(report.clientFeedbackContext) && report.clientFeedbackContext.length ? report.clientFeedbackContext : report.stage === "client" && Array.isArray(report.feedback) ? report.feedback : []; const feedback=[...new Set(items.map(item => String(item || "").trim()).filter(Boolean))].join("\n\n"); if (feedback) fs.writeFileSync(process.env.LAUNCHLOOM_PRIVATE_DIR + "/client-approved-feedback.txt", feedback)'
           if [ -s "$LAUNCHLOOM_PRIVATE_DIR/client-approved-feedback.txt" ]; then

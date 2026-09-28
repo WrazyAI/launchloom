@@ -193,6 +193,76 @@ describe("developer-triggered creative repair workflow", () => {
     );
   });
 
+  it("masks every generated review credential before exporting or sharing it", () => {
+    const flows = [
+      {
+        workflow: ".github/workflows/generate-client.yml",
+        step: "Register one-time repair session and create signed review link",
+        linkVariable: "REVIEW_LINK",
+        useMarker: 'echo "link=$REVIEW_LINK" >> "$GITHUB_OUTPUT"',
+      },
+      {
+        workflow: ".github/workflows/generate-client.yml",
+        step: "Create secure review link",
+        linkVariable: "REVIEW_LINK",
+        useMarker: 'echo "link=$REVIEW_LINK" >> "$GITHUB_OUTPUT"',
+      },
+      {
+        workflow: ".github/workflows/repair-creative-candidate.yml",
+        step: "Return the final result to the developer",
+        linkVariable: "REVIEW_URL",
+        useMarker: 'gh pr comment "$CLIENT_PR"',
+      },
+      {
+        workflow: ".github/workflows/process-feedback.yml",
+        step: "Post and email revised review link",
+        linkVariable: "LINK",
+        useMarker: 'gh pr comment "$CLIENT_PR"',
+      },
+      {
+        workflow: ".github/workflows/publish-site.yml",
+        step: "Deploy approved site and send delivery link",
+        linkVariable: "REVIEW_URL",
+        useMarker: "EMAIL_ARGS=",
+      },
+      {
+        workflow: ".github/workflows/send-developer-review.yml",
+        step: "Mint and send the exact developer review link",
+        linkVariable: "LINK",
+        useMarker: 'gh pr comment "$CLIENT_PR"',
+      },
+      {
+        workflow: ".github/workflows/process-client-feedback.yml",
+        step: "Send the revised preview to the developer",
+        linkVariable: "LINK",
+        useMarker: 'gh pr comment "${{ steps.revision.outputs.pr }}"',
+      },
+    ];
+
+    for (const flow of flows) {
+      const workflow = readFileSync(flow.workflow, "utf8");
+      const stepStart = workflow.indexOf(`- name: ${flow.step}`);
+      const stepEnd = workflow.indexOf("\n      - name:", stepStart + 1);
+      const step = workflow.slice(stepStart, stepEnd < 0 ? undefined : stepEnd);
+      const tokenMintIndex = step.indexOf("create-review-link.mjs");
+      const tokenMaskIndex = step.indexOf('echo "::add-mask::$TOKEN"');
+      const linkAssignmentIndex = step.indexOf(`${flow.linkVariable}=`);
+      const linkMaskIndex = step.indexOf(
+        `echo "::add-mask::$${flow.linkVariable}"`,
+      );
+      const useIndex = step.indexOf(flow.useMarker);
+
+      expect(stepStart, flow.workflow).toBeGreaterThan(-1);
+      expect(tokenMintIndex, flow.workflow).toBeGreaterThanOrEqual(0);
+      expect(tokenMaskIndex, flow.workflow).toBeGreaterThan(tokenMintIndex);
+      expect(linkAssignmentIndex, flow.workflow).toBeGreaterThan(
+        tokenMaskIndex,
+      );
+      expect(linkMaskIndex, flow.workflow).toBeGreaterThan(linkAssignmentIndex);
+      expect(useIndex, flow.workflow).toBeGreaterThan(linkMaskIndex);
+    }
+  });
+
   it("provides one signed, head-bound repair without rerunning research or image generation", () => {
     const initialWorkflow = readFileSync(
       ".github/workflows/generate-client.yml",

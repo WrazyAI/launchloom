@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
+  CREATIVE_REPAIR_TRUNCATION_RETRY_TOKENS,
   authoringCompletionDiagnostics,
   completionLimitRequestField,
   formatAuthoringCompletionDiagnostics,
@@ -652,93 +653,108 @@ Return complete files. Keep required reference signatures and safety/content con
   const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
   try {
     let completionTokens = CREATIVE_REPAIR_MAX_COMPLETION_TOKENS;
-    const response = await openRouterChatCompletion({
-      title: "LaunchLoom creative repair",
-      sessionId,
-      signal: controller.signal,
-      onCreditRetry: ({ requestedTokens, affordableTokens, retryTokens }) => {
-        completionTokens = retryTokens;
-        logger(
-          `creative_repair_budget_retry requested=${requestedTokens} affordable=${affordableTokens} retry=${retryTokens}`,
-        );
-      },
-      body: {
-        model,
-        ...promptCacheRequestFields(model, promptCacheKey),
-        temperature: 0.35,
-        reasoning: {
-          effort: reasoningEffort,
-          exclude: true,
+    let truncationRetried = false;
+    while (true) {
+      let actualCompletionTokens = completionTokens;
+      let affordabilityRetried = false;
+      const response = await openRouterChatCompletion({
+        title: "LaunchLoom creative repair",
+        sessionId,
+        signal: controller.signal,
+        onCreditRetry: ({ requestedTokens, affordableTokens, retryTokens }) => {
+          actualCompletionTokens = retryTokens;
+          affordabilityRetried = true;
+          logger(
+            `creative_repair_budget_retry requested=${requestedTokens} affordable=${affordableTokens} retry=${retryTokens}`,
+          );
         },
-        response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
-        ...completionLimitRequestField(completionTokens),
-        messages,
-      },
-    });
-    const envelope = await readOpenRouterResponseEnvelope(response);
-    const payload = envelope.payload;
-    const responseBodyError = envelope.parseError;
-    const providerError = openRouterApiError(payload, response.status);
-    if (payload.usage)
-      logOpenRouterCacheUsage("creative-repair", payload.usage);
-    if (!response.ok || providerError) {
-      if (providerError) throw providerError;
-      const envelopeKeys = Object.keys(payload).sort().join(",") || "none";
-      throw new Error(
-        `OpenRouter creative repair failed (http_status=${response.status}, envelope_keys=${envelopeKeys}, body_parse_error=${responseBodyError?.message || "none"}).`,
-        { cause: responseBodyError || undefined },
-      );
-    }
-    if (responseBodyError)
-      throw new Error(
-        `OpenRouter creative repair returned an unreadable response body: ${responseBodyError.message}`,
-        { cause: responseBodyError },
-      );
-    const choices = Array.isArray(payload.choices) ? payload.choices : [];
-    const firstChoice = choices[0];
-    const responseContent = firstChoice?.message?.content || "";
-    const diagnostics = authoringCompletionDiagnostics({
-      stage: "creative-repair",
-      routeId: "repair",
-      maxTokens: completionTokens,
-      payload,
-      content: responseContent,
-    });
-    const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
-    logger(`creative_completion stage=creative-repair ${diagnosticText}`);
-    if (!responseContent) {
-      const messagePresent = Boolean(firstChoice?.message);
-      throw new Error(
-        `Creative repair response returned no model content (http_status=${response.status}, choices=${choices.length}, message_present=${messagePresent}, finish_reason=${diagnostics.finishReason}, envelope_keys=${Object.keys(payload).sort().join(",") || "none"}; ${diagnosticText}).`,
-      );
-    }
-    if (["length", "max_tokens"].includes(diagnostics.finishReason))
-      throw new Error(
-        `Creative repair response was truncated (${diagnosticText}).`,
-      );
-    let repaired;
-    try {
-      repaired = parseModelJson(responseContent);
-    } catch (cause) {
-      throw new Error(
-        `Creative repair response was malformed (${diagnosticText}).`,
-        { cause },
-      );
-    }
-    if (
-      ["experience", "styles", "motion"].some(
-        (key) =>
-          typeof repaired?.[key] === "string" &&
-          [
-            "[sealed inline image data omitted]",
-            "[sealed client image asset]",
-          ].some((placeholder) => repaired[key].includes(placeholder)),
+        body: {
+          model,
+          ...promptCacheRequestFields(model, promptCacheKey),
+          temperature: 0.35,
+          reasoning: {
+            effort: reasoningEffort,
+            exclude: true,
+          },
+          response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
+          ...completionLimitRequestField(completionTokens),
+          messages,
+        },
+      });
+      const envelope = await readOpenRouterResponseEnvelope(response);
+      const payload = envelope.payload;
+      const responseBodyError = envelope.parseError;
+      const providerError = openRouterApiError(payload, response.status);
+      if (payload.usage)
+        logOpenRouterCacheUsage("creative-repair", payload.usage);
+      if (!response.ok || providerError) {
+        if (providerError) throw providerError;
+        const envelopeKeys = Object.keys(payload).sort().join(",") || "none";
+        throw new Error(
+          `OpenRouter creative repair failed (http_status=${response.status}, envelope_keys=${envelopeKeys}, body_parse_error=${responseBodyError?.message || "none"}).`,
+          { cause: responseBodyError || undefined },
+        );
+      }
+      if (responseBodyError)
+        throw new Error(
+          `OpenRouter creative repair returned an unreadable response body: ${responseBodyError.message}`,
+          { cause: responseBodyError },
+        );
+      const choices = Array.isArray(payload.choices) ? payload.choices : [];
+      const firstChoice = choices[0];
+      const responseContent = firstChoice?.message?.content || "";
+      const diagnostics = authoringCompletionDiagnostics({
+        stage: "creative-repair",
+        routeId: "repair",
+        maxTokens: actualCompletionTokens,
+        payload,
+        content: responseContent,
+      });
+      const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
+      logger(`creative_completion stage=creative-repair ${diagnosticText}`);
+      if (["length", "max_tokens"].includes(diagnostics.finishReason)) {
+        if (!truncationRetried && !affordabilityRetried) {
+          truncationRetried = true;
+          completionTokens = CREATIVE_REPAIR_TRUNCATION_RETRY_TOKENS;
+          logger(
+            `creative_repair_truncation_retry requested=${actualCompletionTokens} retry=${completionTokens}`,
+          );
+          continue;
+        }
+        throw new Error(
+          `Creative repair response was truncated (${diagnosticText}).`,
+        );
+      }
+      if (!responseContent) {
+        const messagePresent = Boolean(firstChoice?.message);
+        throw new Error(
+          `Creative repair response returned no model content (http_status=${response.status}, choices=${choices.length}, message_present=${messagePresent}, finish_reason=${diagnostics.finishReason}, envelope_keys=${Object.keys(payload).sort().join(",") || "none"}; ${diagnosticText}).`,
+        );
+      }
+      let repaired;
+      try {
+        repaired = parseModelJson(responseContent);
+      } catch (cause) {
+        throw new Error(
+          `Creative repair response was malformed (${diagnosticText}).`,
+          { cause },
+        );
+      }
+      if (
+        ["experience", "styles", "motion"].some(
+          (key) =>
+            typeof repaired?.[key] === "string" &&
+            [
+              "[sealed inline image data omitted]",
+              "[sealed client image asset]",
+            ].some((placeholder) => repaired[key].includes(placeholder)),
+        )
       )
-    )
-      throw new Error(
-        "Creative repair response contains a redacted inline-image placeholder; use a sealed content token instead.",
-      );
-    return repaired;
+        throw new Error(
+          "Creative repair response contains a redacted inline-image placeholder; use a sealed content token instead.",
+        );
+      return repaired;
+    }
   } catch (error) {
     if (controller.signal.aborted)
       throw new Error(

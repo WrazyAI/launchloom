@@ -335,17 +335,9 @@ describe("creative candidate promotion", () => {
     };
     await fs.writeFile(secondMetadataPath, JSON.stringify(secondMetadata));
 
-    const siteRoot = path.resolve("templates/client-site");
+    const siteRoot = await makeClientSiteFixture(root);
     const configPath = path.join(siteRoot, "src/site.config.json");
-    const selectedPath = path.join(
-      siteRoot,
-      "src/generated-experiences/selected",
-    );
-    const selectedBackup = await fs.mkdtemp(
-      path.join(os.tmpdir(), "launchloom-selected-"),
-    );
     const originalConfig = await fs.readFile(configPath, "utf8");
-    await fs.cp(selectedPath, selectedBackup, { recursive: true });
 
     const fidelityEvidence: any[] = [];
     const renderedReferenceEvaluator = async (input: any) => {
@@ -468,11 +460,8 @@ describe("creative candidate promotion", () => {
       expect(blockedConfig).toEqual(JSON.parse(originalConfig));
     } finally {
       await fs.writeFile(configPath, originalConfig);
-      await fs.rm(selectedPath, { recursive: true, force: true });
-      await fs.cp(selectedBackup, selectedPath, { recursive: true });
-      await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 120_000);
+  }, 300_000);
 
   it("selects a version-two candidate for preview before diversity promotion", async () => {
     const root = await makeFixture();
@@ -519,17 +508,9 @@ describe("creative candidate promotion", () => {
           '<button data-early-conversion data-cta-placement="wrong-cta">',
         ),
     );
-    const siteRoot = path.resolve("templates/client-site");
+    const siteRoot = await makeClientSiteFixture(root);
     const configPath = path.join(siteRoot, "src/site.config.json");
-    const selectedPath = path.join(
-      siteRoot,
-      "src/generated-experiences/selected",
-    );
-    const selectedBackup = await fs.mkdtemp(
-      path.join(os.tmpdir(), "launchloom-selected-"),
-    );
     const originalConfig = await fs.readFile(configPath, "utf8");
-    await fs.cp(selectedPath, selectedBackup, { recursive: true });
     try {
       const report = await runCreativeBakeoff({
         siteDir: siteRoot,
@@ -577,9 +558,6 @@ describe("creative candidate promotion", () => {
       expect(config.design.experience.selectionMode).toBe("creative-preview");
     } finally {
       await fs.writeFile(configPath, originalConfig);
-      await fs.rm(selectedPath, { recursive: true, force: true });
-      await fs.cp(selectedBackup, selectedPath, { recursive: true });
-      await fs.rm(selectedBackup, { recursive: true, force: true });
     }
   }, 45_000);
 });

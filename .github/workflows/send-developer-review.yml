@@ -38,7 +38,9 @@ jobs:
           NAME=$(gh api "repos/$CLIENT_REPO/contents/src/site.config.json?ref=$SHA" --jq .content | base64 --decode | node -e 'let raw=""; process.stdin.on("data", (value) => raw += value).on("end", () => console.log(JSON.parse(raw).business.name))')
           ORIGINS="$PREVIEW,https://$PROJECT.pages.dev"
           TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "$SHA" --site "$PROJECT" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$ORIGINS" --token-only true)
+          echo "::add-mask::$TOKEN"
           LINK="$PREVIEW?review=$TOKEN"
+          echo "::add-mask::$LINK"
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Refreshed developer preview' "$PREVIEW" "$LINK")"
           ARGS=(--to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$PREVIEW" --review "$LINK" --kind revision --audience developer)
           if [ -n "$REVISION_FEEDBACK" ]; then printf '%s\n' "$REVISION_FEEDBACK" > "$RUNNER_TEMP/revision-feedback.txt"; ARGS+=(--feedback-file "$RUNNER_TEMP/revision-feedback.txt"); fi

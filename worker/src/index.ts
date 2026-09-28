@@ -777,7 +777,10 @@ function safeCreativeRepairFindings(value: unknown): CreativeRepairFinding[] {
     .map((raw) => {
       if (!raw || typeof raw !== "object") return null;
       const item = raw as Record<string, unknown>;
-      const severity = clean(item.severity, 20) as CreativeRepairFinding["severity"];
+      const severity = clean(
+        item.severity,
+        20,
+      ) as CreativeRepairFinding["severity"];
       const category = clean(item.category, 80);
       const evidence = clean(item.evidence, 600);
       if (!category || !evidence || !severities.has(severity)) return null;
@@ -827,7 +830,11 @@ async function creativeRepair(request: Request, env: Env) {
       throw new Error("Invalid creative repair link.");
     const reviewedHeadSha = String(claims.headSha);
     const reviewedPr = Number(claims.pr);
-    assertClaimOrigin(request, claims.allowedOrigins, clean(body.pageUrl, 4_000));
+    assertClaimOrigin(
+      request,
+      claims.allowedOrigins,
+      clean(body.pageUrl, 4_000),
+    );
     coordinator = env.REVISION_COORDINATOR.getByName(claims.repo.toLowerCase());
     const action = clean(body.action, 20);
     if (action === "status") {
@@ -871,7 +878,10 @@ async function creativeRepair(request: Request, env: Env) {
       current.head.sha !== reviewedHeadSha
     )
       return json(
-        { error: "This preview has changed. Use the latest developer review link." },
+        {
+          error:
+            "This preview has changed. Use the latest developer review link.",
+        },
         409,
         cors(request, claims.allowedOrigins),
       );
@@ -908,15 +918,19 @@ async function creativeRepair(request: Request, env: Env) {
       );
       throw error;
     }
-    return json(
-      { ok: true, status: "queued", attemptConsumed: true },
-      202,
-      { ...cors(request, claims.allowedOrigins), "Cache-Control": "no-store" },
-    );
+    return json({ ok: true, status: "queued", attemptConsumed: true }, 202, {
+      ...cors(request, claims.allowedOrigins),
+      "Cache-Control": "no-store",
+    });
   } catch (error) {
     console.error("Creative repair request failed", error);
     return json(
-      { error: error instanceof Error ? error.message : "Creative repair is unavailable." },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Creative repair is unavailable.",
+      },
       403,
       headers,
     );
@@ -985,10 +999,7 @@ async function creativeRepairCoordinator(request: Request, env: Env) {
     const action = clean(body.action, 30);
     const sessionId = clean(body.sessionId, 100);
     const repo = clean(body.repo, 240);
-    if (
-      !validClientRepository(repo) ||
-      !/^[a-f0-9]{32}$/iu.test(sessionId)
-    )
+    if (!validClientRepository(repo) || !/^[a-f0-9]{32}$/iu.test(sessionId))
       return json({ error: "Invalid creative repair session." }, 400);
     const coordinator = env.REVISION_COORDINATOR.getByName(repo.toLowerCase());
     if (action === "register") {
@@ -1044,7 +1055,10 @@ async function creativeRepairCoordinator(request: Request, env: Env) {
         pull.draft ||
         pull.head.sha !== clean(body.headSha, 40)
       ) {
-        await coordinator.failCreativeRepair(sessionId, "The review branch changed before repair started.");
+        await coordinator.failCreativeRepair(
+          sessionId,
+          "The review branch changed before repair started.",
+        );
         return json({ run: false, status: "stale" }, 409, {
           "Cache-Control": "no-store",
         });
@@ -1058,7 +1072,10 @@ async function creativeRepairCoordinator(request: Request, env: Env) {
         ? safeCreativeRepairUrl(body.previewUrl)
         : null;
       const reviewUrl = body.reviewUrl ? clean(body.reviewUrl, 4_000) : null;
-      if ((body.previewUrl && !previewUrl) || (reviewUrl && !/^https:\/\//iu.test(reviewUrl)))
+      if (
+        (body.previewUrl && !previewUrl) ||
+        (reviewUrl && !/^https:\/\//iu.test(reviewUrl))
+      )
         return json({ error: "Invalid repair result URL." }, 400);
       await coordinator.completeCreativeRepair(sessionId, {
         outcome: clean(body.outcome, 80) || "completed",
@@ -1110,7 +1127,10 @@ async function approval(request: Request, env: Env) {
       throw new Error("Invalid review link.");
     if (claims.creativeRepairSessionId)
       return json(
-        { error: "Diagnostic previews cannot be approved. Use the resulting developer review link." },
+        {
+          error:
+            "Diagnostic previews cannot be approved. Use the resulting developer review link.",
+        },
         409,
         cors(request, claims.allowedOrigins),
       );
@@ -1162,9 +1182,7 @@ async function approval(request: Request, env: Env) {
         409,
         cors(request, claims.allowedOrigins),
       );
-    let approvedSha = retryingMergedApproval
-      ? current.merge_commit_sha!
-      : "";
+    let approvedSha = retryingMergedApproval ? current.merge_commit_sha! : "";
     if (!approvedSha) {
       const mergeResponse = await github(
         env,
