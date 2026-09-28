@@ -218,6 +218,68 @@ describe("creative repair loop", () => {
     );
   });
 
+  it("classifies an empty OpenRouter repair body before JSON parsing", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-empty-body-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("", { status: 200 })),
+    );
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+      }),
+    ).rejects.toThrow(
+      /creative repair returned an unreadable response body: OpenRouter returned an empty response body/iu,
+    );
+  });
+
+  it("classifies a successful envelope with no repair content explicitly", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-missing-content-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              choices: [{ finish_reason: "stop", message: { content: "" } }],
+              usage: { completion_tokens: 0 },
+            }),
+          ),
+      ),
+    );
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+      }),
+    ).rejects.toThrow(/Creative repair response returned no content/iu);
+  });
+
   it("prefers an accessible absolute reference evidence path", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-evidence-"),
@@ -330,6 +392,88 @@ describe("creative repair loop", () => {
     expect(prompt).toContain("#f5f0e4");
     expect(prompt).toContain("Light tactile craft collage");
     expect(prompt).toContain("Do not repair toward a generic LaunchLoom house style");
+  });
+
+  it("keeps sealed client image bytes out of rendered repair prompt text", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-redaction-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(repaired) } }],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const inlineImages = {
+      image: `data:image/webp;base64,${"a".repeat(250_000)}`,
+      secondaryImage:
+        "data:image/svg+xml;charset=utf-8,%3Csvg%3E%3C/svg%3E",
+      tertiaryImage: "data:image/svg+xml,%3Csvg%3E%3C/svg%3E",
+    };
+    const contentManifest = {
+      values: { hero: { ...inlineImages } },
+      tokens: [],
+      visualBrief: {},
+    };
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [],
+      files: repaired,
+      screenshots: [],
+      contentManifest,
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const promptText = body.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text || "")
+      .join("\n");
+    expect(promptText).not.toContain("data:image/");
+    expect(
+      promptText.match(/\[sealed client image asset\]/gu),
+    ).toHaveLength(3);
+    expect(contentManifest.values.hero).toEqual(inlineImages);
+  });
+
+  it("fails rendered repair locally when model-bound text exceeds the prompt budget", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-prompt-budget-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: {
+          experience: "old",
+          styles: "x".repeat(400_001),
+          motion: "old",
+        },
+        screenshots: [],
+      }),
+    ).rejects.toThrow(/prompt unexpectedly reached/iu);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("uses the frozen creative session effort and session id for repairs", async () => {

@@ -9,15 +9,19 @@ import {
   referenceImplementationChecklist,
 } from "./creative-authoring-output.mjs";
 import { parseModelJson } from "./model-json.mjs";
+import { assertAuthorPromptContext } from "./author-prompt-budget.mjs";
+import { redactPromptValue } from "./production-experience-author.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
+  openRouterApiError,
   openRouterChatCompletion,
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCachedText,
   promptCacheRequestFields,
+  readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
 import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
@@ -468,7 +472,9 @@ export async function requestRepair({
   const contentTokens = Array.isArray(contentManifest?.tokens)
     ? contentManifest.tokens.map((item) => item.token).filter(Boolean)
     : [];
-  const contentShape = contentManifest?.values || {};
+  // Preserve the original manifest for runtime/persistence, but never serialize
+  // inline client image bytes into the model-bound repair prompt.
+  const contentShape = redactPromptValue(contentManifest?.values || {});
   const visualBrief = contentManifest?.visualBrief || {};
   const content = [
     {
@@ -577,6 +583,10 @@ Return complete files. Keep required reference signatures and safety/content con
     creativeSession?.reasoningPolicyVersion || "static-reasoning",
     stableReferenceDna,
   );
+  const systemPrompt =
+    "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.";
+  const promptBudget = assertAuthorPromptContext(systemPrompt, content);
+  logger(`creative_repair_prompt=bounded text_chars=${promptBudget.textChars}`);
   const response = await openRouterChatCompletion({
     title: "LaunchLoom creative repair",
     sessionId,
@@ -591,19 +601,31 @@ Return complete files. Keep required reference signatures and safety/content con
       response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
       ...completionLimitRequestField(CREATIVE_REPAIR_MAX_COMPLETION_TOKENS),
       messages: [
-        {
-          role: "system",
-          content:
-            "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
-        },
+        { role: "system", content: systemPrompt },
         { role: "user", content },
       ],
     },
   });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok)
+  const {
+    payload,
+    rawBody,
+    parseError: responseBodyError,
+  } = await readOpenRouterResponseEnvelope(response);
+  const providerError = openRouterApiError(payload, response.status);
+  if (!response.ok || providerError) {
+    if (providerError) throw providerError;
+    const errorContext =
+      JSON.stringify(payload) !== "{}"
+        ? JSON.stringify(payload).slice(0, 1000)
+        : rawBody || responseBodyError?.message || "empty response";
     throw new Error(
-      `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
+      `OpenRouter creative repair failed (${response.status}): ${errorContext}`,
+    );
+  }
+  if (responseBodyError)
+    throw new Error(
+      `OpenRouter creative repair returned an unreadable response body: ${responseBodyError.message}`,
+      { cause: responseBodyError },
     );
   logOpenRouterCacheUsage("creative-repair", payload.usage);
   const responseContent = payload.choices?.[0]?.message?.content || "";
@@ -616,6 +638,10 @@ Return complete files. Keep required reference signatures and safety/content con
   });
   const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
   logger(`creative_completion stage=creative-repair ${diagnosticText}`);
+  if (!responseContent)
+    throw new Error(
+      `Creative repair response returned no content (${diagnosticText}).`,
+    );
   if (["length", "max_tokens"].includes(diagnostics.finishReason))
     throw new Error(
       `Creative repair response was truncated (${diagnosticText}).`,

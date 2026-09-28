@@ -1,5 +1,6 @@
 import ts from "typescript";
 import { validateReferenceDna } from "./reference-dna.mjs";
+import { cssCustomPropertyDeclarations } from "./creative-css-tokens.mjs";
 
 const slug = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "");
 
@@ -394,9 +395,15 @@ export function validateReferenceContractCompliance({
   for (const pattern of referenceDna.prohibitedPatterns)
     if (hasProhibitedPattern(`${experienceSource}\n${renderedDom}`, pattern))
       findings.push(finding("prohibited-pattern", "critical", `Prohibited pattern detected: ${pattern}.`));
-  for (const match of stylesSource.matchAll(/--([a-z][\w-]*)\s*:/giu))
-    if (!match[1].startsWith("ll-creative-"))
-      findings.push(finding("css-token-collision", "critical", `Candidate CSS variable --${match[1]} is not isolated.`));
+  for (const token of cssCustomPropertyDeclarations(stylesSource))
+    if (!token.startsWith("--ll-creative-"))
+      findings.push(
+        finding(
+          "css-token-collision",
+          "critical",
+          `Candidate CSS variable ${token} is not isolated.`,
+        ),
+      );
   const contentPaths = [...outputContentPaths(experienceSource)];
   for (const token of ["content.hero.image", "content.services", "content.faqs"])
     if (!contentPaths.some((path) => path === token || path.startsWith(`${token}.`)))
