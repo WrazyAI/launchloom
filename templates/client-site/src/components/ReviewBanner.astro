@@ -3,16 +3,30 @@ import site from "../lib/site";
 
 const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$/, "");
 const publishReady = !site.seoResearch || site.seoResearch.publishReady;
+const { diagnosticPreview = false } = Astro.props;
 ---
 
-<aside class="ll-review" id="ll-review" hidden aria-label="LaunchLoom website review">
+<aside class:list={["ll-review", diagnosticPreview && "ll-review--diagnostic"]} id="ll-review" data-diagnostic-preview={diagnosticPreview ? "true" : undefined} hidden aria-label="LaunchLoom website review">
   <div class="ll-review__bar">
     <p class="ll-review__summary"><span aria-hidden="true">▣</span> Review this website</p>
+    <p class="ll-review__field-notice" role="status" hidden></p>
     <div class="ll-review__actions">
       <button class="ll-approve" type="button" hidden>✓ Approve &amp; send to client</button>
       <button class="ll-feedback-open" type="button">⌁ Provide feedback</button>
+      <button class="ll-send-anyway" type="button" hidden>Send to client anyway (not recommended)</button>
     </div>
   </div>
+  <dialog class="ll-override-dialog" aria-labelledby="ll-override-title">
+    <div class="ll-override-dialog__content">
+      <h2 id="ll-override-title">Send this field preview to the client?</h2>
+      <p>This version did not pass the automated visual quality checks. You are choosing to send this exact version anyway. Build, content-integrity, and SEO release checks still apply.</p>
+      <p class="ll-override-status" role="status"></p>
+      <div class="ll-modal-actions">
+        <button class="ll-override-cancel" type="button">Keep reviewing</button>
+        <button class="ll-override-confirm" type="button">Confirm and send to client</button>
+      </div>
+    </div>
+  </dialog>
   <div class="ll-review__modal" hidden role="dialog" aria-modal="true" aria-labelledby="ll-review-title">
     <div class="ll-review__dialog">
       <div class="ll-close-control">
@@ -88,6 +102,7 @@ const publishReady = !site.seoResearch || site.seoResearch.publishReady;
 
 <script is:inline define:vars={{ launchloomUrl, publishReady }}>
   const root = document.querySelector("#ll-review");
+  const diagnosticPreview = root?.getAttribute("data-diagnostic-preview") === "true";
   const token = new URLSearchParams(window.location.search).get("review");
   const claims = (() => {
     try {
@@ -95,17 +110,24 @@ const publishReady = !site.seoResearch || site.seoResearch.publishReady;
       return JSON.parse(atob(encoded.padEnd(encoded.length + ((4 - encoded.length % 4) % 4), "=")));
     } catch { return null; }
   })();
-  if (!root || !token || !launchloomUrl || !["developer", "client"].includes(claims?.stage)) {
+  const developer = claims?.stage === "developer";
+  const diagnosticReview = diagnosticPreview && developer && Boolean(claims?.creativeRepairSessionId);
+  if (!root || !token || !launchloomUrl || !["developer", "client"].includes(claims?.stage) || (diagnosticPreview && !diagnosticReview)) {
     root?.setAttribute("hidden", "");
   } else {
-    root.removeAttribute("hidden");
-    const developer = claims.stage === "developer";
+    if (!diagnosticPreview) root.removeAttribute("hidden");
     const modal = root.querySelector(".ll-review__modal");
     const open = root.querySelector(".ll-feedback-open");
     const close = root.querySelector(".ll-close");
     const closeTip = root.querySelector(".ll-close-tip");
     const cancel = root.querySelector(".ll-cancel");
     const approve = root.querySelector(".ll-approve");
+    const fieldNotice = root.querySelector(".ll-review__field-notice");
+    const sendAnyway = root.querySelector(".ll-send-anyway");
+    const overrideDialog = root.querySelector(".ll-override-dialog");
+    const overrideCancel = root.querySelector(".ll-override-cancel");
+    const overrideConfirm = root.querySelector(".ll-override-confirm");
+    const overrideStatus = root.querySelector(".ll-override-status");
     const form = root.querySelector(".ll-feedback-form");
     const status = root.querySelector(".ll-feedback-status");
     const emailInput = form.querySelector('input[name="email"]');
@@ -122,14 +144,51 @@ const publishReady = !site.seoResearch || site.seoResearch.publishReady;
       if (hasDraft) close.setAttribute("aria-describedby", "ll-close-draft-tip");
       else close.removeAttribute("aria-describedby");
     };
-    root.querySelector(".ll-review__summary").innerHTML = developer
+    root.querySelector(".ll-review__summary").innerHTML = diagnosticReview
+      ? "<span aria-hidden=\"true\">▣</span> This is still a work. This is just a field preview."
+      : developer
       ? "<span aria-hidden=\"true\">▣</span> Internal developer review. Approve before the client sees this."
       : "<span aria-hidden=\"true\">▣</span> Your website is live. Tell us what you would like changed.";
     root.querySelector(".ll-review__intro").textContent = developer
-      ? "Leave clear internal notes, or approve this exact version to publish and invite the client."
+      ? diagnosticReview
+        ? "The automated visual checks did not all pass. Send feedback for another revision, or choose to send this exact preview anyway."
+        : "Leave clear internal notes, or approve this exact version to publish and invite the client."
       : "Tap what applies, then leave a clear note. We will review it before publishing an update.";
     approve.toggleAttribute("hidden", !developer);
-    if (developer && !publishReady) {
+    if (diagnosticReview) {
+      approve.setAttribute("hidden", "");
+      fieldNotice.textContent = "No client release happens unless you confirm the not-recommended action.";
+      sendAnyway.removeAttribute("hidden");
+      if (!publishReady) {
+        sendAnyway.disabled = true;
+        sendAnyway.title = "SEO research is incomplete. Publishing remains blocked.";
+      }
+      fetch(`${launchloomUrl}/api/creative-repair`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, action: "status", pageUrl: window.location.href }) })
+        .then(async (response) => {
+          const result = await response.json();
+          if (!response.ok || !result.previewUrl || new URL(result.previewUrl).origin !== window.location.origin) return;
+          fieldNotice.hidden = false;
+          root.removeAttribute("hidden");
+          if (!publishReady) {
+            sendAnyway.disabled = true;
+            sendAnyway.title = "SEO research is incomplete. Publishing remains blocked.";
+            fieldNotice.textContent = "This preview missed the visual checks. SEO research is incomplete, so client release remains blocked.";
+          } else if (["dispatching", "queued", "running"].includes(result.status) || (result.reviewQueue && result.reviewQueue !== "clear")) {
+            open.disabled = true;
+            sendAnyway.disabled = true;
+            sendAnyway.textContent = "Revision in progress";
+            fieldNotice.textContent = "This version is accepted as the working baseline. A developer revision is in progress; the client has not received this preview.";
+          } else if (["dispatching", "published"].includes(result.overrideStatus)) {
+            sendAnyway.disabled = true;
+            sendAnyway.textContent = result.overrideStatus === "published" ? "Client release already queued" : "Client release request is processing";
+          } else if (result.overrideStatus === "failed") {
+            fieldNotice.textContent = result.overrideFailure
+              ? `The last client-release attempt failed: ${result.overrideFailure}`
+              : "The last client-release attempt failed. You can retry after reviewing this exact preview.";
+          }
+        })
+        .catch(() => root.setAttribute("hidden", ""));
+    } else if (developer && !publishReady) {
       root.querySelector(".ll-review__summary").innerHTML =
         "<span aria-hidden=\"true\">▣</span> Internal review. SEO research is incomplete, so publishing is blocked.";
       approve.disabled = true;
@@ -141,6 +200,29 @@ const publishReady = !site.seoResearch || site.seoResearch.publishReady;
       if (visible) window.dispatchEvent(new CustomEvent("launchloom:overlay-open", { detail: { id: "review" } }));
     };
     open.addEventListener("click", () => setModal(true));
+    sendAnyway.addEventListener("click", () => {
+      overrideStatus.textContent = "";
+      if (typeof overrideDialog.showModal === "function") overrideDialog.showModal();
+    });
+    overrideCancel.addEventListener("click", () => overrideDialog.close());
+    overrideConfirm.addEventListener("click", async () => {
+      overrideConfirm.disabled = true;
+      sendAnyway.disabled = true;
+      overrideStatus.textContent = "Requesting release for this exact preview…";
+      try {
+        const response = await fetch(`${launchloomUrl}/api/creative-repair`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, action: "send-anyway", email: String(claims.reviewerEmail || ""), pageUrl: window.location.href, confirmed: true }) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "The client release could not be queued.");
+        overrideStatus.textContent = "Confirmed. Client publication is queued. Production release checks will still run.";
+        overrideConfirm.textContent = "Release queued";
+        sendAnyway.textContent = "Client release queued";
+        open.disabled = true;
+      } catch (error) {
+        overrideStatus.textContent = error instanceof Error ? error.message : "The client release could not be queued.";
+        overrideConfirm.disabled = false;
+        sendAnyway.disabled = !publishReady;
+      }
+    });
     close.addEventListener("click", () => setModal(false));
     cancel.addEventListener("click", () => setModal(false));
     window.addEventListener("launchloom:overlay-open", (event) => {
@@ -168,11 +250,26 @@ const publishReady = !site.seoResearch || site.seoResearch.publishReady;
       send.disabled = true;
       status.textContent = "Sending…";
       try {
-        const response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href, submissionId: feedbackSubmissionId }) });
+        const endpoint = diagnosticReview ? "/api/creative-repair" : "/api/feedback";
+        const payload = diagnosticReview
+          ? { token, action: "feedback", email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href, submissionId: feedbackSubmissionId }
+          : { token, email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href, submissionId: feedbackSubmissionId };
+        const response = await fetch(`${launchloomUrl}${endpoint}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         const result = await response.json(); if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");
-        status.textContent = result.queueStatus === "queued"
+        status.textContent = diagnosticReview
+          ? result.queueStatus === "queued"
+            ? "Accepted as the working baseline. Your feedback is queued; the client has not received this version."
+            : "Accepted as the working baseline. A developer revision is underway; the client has not received this version."
+          : result.queueStatus === "queued"
           ? "Queued. Your request will start after the current revision."
           : developer ? "Received. A revised developer preview will be sent shortly." : "Received. We will review your request before publishing an update.";
+        if (diagnosticReview) {
+          fieldNotice.hidden = false;
+          fieldNotice.textContent = "Feedback saved as the working baseline. The client has not received this preview.";
+          open.disabled = true;
+          sendAnyway.disabled = true;
+          sendAnyway.textContent = "Revision in progress";
+        }
         feedbackSubmissionId = "";
         form.reset(); selectedCategories.clear(); root.querySelectorAll("[data-category]").forEach((button) => { button.classList.remove("is-active"); button.setAttribute("aria-pressed", "false"); }); updateDraftHint();
       } catch (error) { status.textContent = error instanceof Error ? error.message : "Feedback could not be sent."; }

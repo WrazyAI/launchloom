@@ -70,6 +70,35 @@ describe("LaunchLoom lifecycle emails", () => {
     expect(email.html).not.toContain("—");
   });
 
+  it("offers a warned, explicit send-anyway destination only for eligible previews", () => {
+    const destination = `${signedReviewUrl}&intent=send-anyway`;
+    const eligible = renderLifecycleEmail({
+      audience: "manual-attention",
+      kind: "revision-failed",
+      clientName: "North Shore Care",
+      previewUrl: "https://creative-diagnostic.example.pages.dev",
+      reviewUrl: "https://launchloom.example/review?token=diagnostic-token",
+      sendAnywayUrl: destination,
+    });
+    const ineligible = renderLifecycleEmail({
+      audience: "manual-attention",
+      kind: "generation-failed",
+      clientName: "North Shore Care",
+      previewUrl: "https://github.com/WrazyAI/example/issues/3",
+      reviewUrl: "https://github.com/WrazyAI/example/actions/runs/4",
+    });
+
+    expect(eligible.html).toContain("Send this version anyway");
+    expect(eligible.html).toContain("not recommended");
+    expect(eligible.html.replace(/&amp;/g, "&")).toContain(destination);
+    expect(eligible.text).toContain(
+      "SEND THIS VERSION ANYWAY (NOT RECOMMENDED)",
+    );
+    expect(eligible.text).toContain(destination);
+    expect(ineligible.html).not.toContain("Send this version anyway");
+    expect(ineligible.text).not.toContain("Send this version anyway");
+  });
+
   it("includes the client's own triggering request after an approved client revision", () => {
     const email = renderLifecycleEmail({
       audience: "client",

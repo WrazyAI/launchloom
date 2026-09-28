@@ -271,7 +271,7 @@ describe("human creative revision lifecycle", () => {
     expect(worker).toContain('claims.stage !== "developer"');
     expect(worker).toContain('await dispatch(env, "publish-site"');
     expect(worker).toContain("current.merge_commit_sha");
-    expect(worker).toContain("let approvedSha = retryingMergedApproval");
+    expect(worker).toContain("await mergeReviewedPr(env, claims, current)");
     expect(worker).toContain("approvedSha,");
     expect(publish).toContain("APPROVED_SHA");
     expect(publish).toContain('git checkout --detach "$APPROVED_SHA"');
