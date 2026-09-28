@@ -343,11 +343,13 @@ jobs:
           PROMOTION_READY: ${{ steps.quality.outputs.promotion_ready }}
           OVERRIDE_REVIEW_URL: ${{ steps.diagnostic_review.outputs.review_url }}
           SEND_ANYWAY_URL: ${{ steps.diagnostic_review.outputs.send_anyway_url }}
+          CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}
+          FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
         run: |
           cd "$CLIENT_DIR"
           if [ "$REPAIR_RESULT" = passed ] && [ "$PROMOTION_READY" = true ] && [ -n "$PREVIEW_URL" ]; then
-            CLIENT_EMAIL=$(node -e 'const x=require(process.argv[1]); console.log(x.business.email || x.business.leadEmail || "")' "$PWD/src/site.config.json")
-            FEEDBACK_ISSUE=$(gh issue list --repo "$CLIENT_REPO" --state open --label launchloom-client-feedback --limit 1 --json number --jq '.[0].number // 0')
+            test -n "$CLIENT_EMAIL" || { echo "The signed client review email is required to issue the repaired developer review." >&2; exit 1; }
+            [[ "$FEEDBACK_ISSUE" =~ ^[1-9][0-9]*$ ]] || { echo "The signed feedback issue is required to issue the repaired developer review." >&2; exit 1; }
             ORIGINS="$PREVIEW_URL,https://$SITE_ID.pages.dev"
             TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage developer --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "$(git rev-parse HEAD)" --site "$SITE_ID" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$ORIGINS" --preview-url "$PREVIEW_URL" --token-only true)
             REVIEW_URL="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
