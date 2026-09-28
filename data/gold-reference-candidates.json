@@ -1,0 +1,2919 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-25",
+  "admissionPolicy": {
+    "minimumCandidates": 20,
+    "requiredViewports": [
+      "1536x864",
+      "1366x768",
+      "390x844"
+    ],
+    "requiresFullPageEvidence": true,
+    "requiresSectionCrops": true,
+    "requiresMeasuredReferenceDna": true,
+    "requiresOwnedTranslation": true,
+    "requiresExternalToOwnedValidation": true,
+    "productionRule": "Only approved records with complete local evidence, reviewed mobile behavior, a reviewed asset recipe, an owned translation, and passing validation may enter inspiration selection."
+  },
+  "records": [
+    {
+      "id": "gold-desourdy-construction",
+      "name": "Désourdy construction editorial utility",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://www.constructiondesourdy.com",
+      "discoveryUrl": "https://www.a1.gallery/website/desourdy",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "home-services",
+        "construction",
+        "real-estate",
+        "professional-services"
+      ],
+      "moods": [
+        "clean",
+        "neutral",
+        "credible",
+        "crafted"
+      ],
+      "tags": [
+        "photography",
+        "video",
+        "typographic",
+        "white",
+        "local-service"
+      ],
+      "proposedFamilyId": "cinematic-stage",
+      "designHypothesis": {
+        "navigation": "quiet utility navigation over a restrained field",
+        "heroGeometry": "full-width construction statement with image-led evidence",
+        "servicePresentation": "project and capability ledger rather than equal cards",
+        "sectionRhythm": "statement-project-proof-process-contact",
+        "typographyCategory": "large neutral grotesk with compact utility labels",
+        "imageStrategy": "architectural and worksite photography with controlled wide crops",
+        "motionOpportunities": [
+          "masked-project-reveal",
+          "subtle-blend-transition"
+        ],
+        "mobileBehavior": "stack project imagery as full-width chapters and keep quote or contact action early",
+        "prohibitedPatterns": [
+          "generic-split-hero",
+          "uniform-service-cards",
+          "decorative-numbering"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "local-service",
+          "construction",
+          "professional-service"
+        ],
+        "conversionModes": [
+          "quote-request",
+          "consultation",
+          "call"
+        ],
+        "contentDensity": [
+          "medium",
+          "high"
+        ],
+        "locality": [
+          "service-area",
+          "single-location"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "medium",
+        "motionDependency": "medium",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 3
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "editorial-photography",
+            "role": "Primary hero scene",
+            "aspectRatio": "16:10",
+            "composition": "One dominant subject with intentional negative space for headline and CTA.",
+            "mobile": "Preserve the focal subject and crop toward 4:5 or 3:4 without turning it into a split hero.",
+            "optional": false
+          },
+          {
+            "id": "secondary",
+            "type": "editorial-photography",
+            "role": "Narrative support scene",
+            "aspectRatio": "4:3",
+            "composition": "A contrasting wider or tighter scene that anchors the second major chapter.",
+            "mobile": "Stack below copy and keep the subject legible at 390px.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "macro-detail",
+            "role": "Tactile proof or detail image",
+            "aspectRatio": "3:2",
+            "composition": "Close crop that communicates material, craft, place, or service evidence.",
+            "mobile": "Use a full-width crop or an inset only when the reference supports it.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "editorial-photography",
+            "role": "Closing conversion scene",
+            "aspectRatio": "16:9",
+            "composition": "Wide calm scene with enough tonal control for a final CTA.",
+            "mobile": "Prefer a shallow crop and avoid text over busy focal areas.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Strong candidate for premium trades and construction."
+    },
+    {
+      "id": "gold-humahome-guided-property",
+      "name": "HUMAHOME guided property editorial",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://humahome.com",
+      "discoveryUrl": "https://www.a1.gallery/website/humahome",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "real-estate",
+        "consulting",
+        "professional-services",
+        "travel"
+      ],
+      "moods": [
+        "warm",
+        "editorial",
+        "premium",
+        "human"
+      ],
+      "tags": [
+        "serif",
+        "sans-serif",
+        "beige",
+        "photography",
+        "big-type"
+      ],
+      "proposedFamilyId": "editorial-monument",
+      "designHypothesis": {
+        "navigation": "minimal editorial navigation with a direct contact path",
+        "heroGeometry": "large typographic promise paired with warm property photography",
+        "servicePresentation": "guided journey and portfolio chapters",
+        "sectionRhythm": "hero-property-proof-guidance-contact",
+        "typographyCategory": "editorial serif and modern sans pair",
+        "imageStrategy": "warm architectural photography with generous crop and whitespace",
+        "motionOpportunities": [
+          "slow-image-crop",
+          "chapter-reveal"
+        ],
+        "mobileBehavior": "keep typographic hierarchy large and stack portfolio chapters",
+        "prohibitedPatterns": [
+          "generic-card-wall",
+          "cold-saas-palette",
+          "dense-utility-nav"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "professional-service",
+          "real-estate",
+          "consulting"
+        ],
+        "conversionModes": [
+          "consultation",
+          "booking",
+          "contact"
+        ],
+        "contentDensity": [
+          "medium",
+          "high"
+        ],
+        "locality": [
+          "multi-location",
+          "single-location"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "high",
+        "motionDependency": "medium",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 4
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "editorial-photography",
+            "role": "Primary hero scene",
+            "aspectRatio": "16:10",
+            "composition": "One dominant subject with intentional negative space for headline and CTA.",
+            "mobile": "Preserve the focal subject and crop toward 4:5 or 3:4 without turning it into a split hero.",
+            "optional": false
+          },
+          {
+            "id": "secondary",
+            "type": "editorial-photography",
+            "role": "Narrative support scene",
+            "aspectRatio": "4:3",
+            "composition": "A contrasting wider or tighter scene that anchors the second major chapter.",
+            "mobile": "Stack below copy and keep the subject legible at 390px.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "macro-detail",
+            "role": "Tactile proof or detail image",
+            "aspectRatio": "3:2",
+            "composition": "Close crop that communicates material, craft, place, or service evidence.",
+            "mobile": "Use a full-width crop or an inset only when the reference supports it.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "editorial-photography",
+            "role": "Closing conversion scene",
+            "aspectRatio": "16:9",
+            "composition": "Wide calm scene with enough tonal control for a final CTA.",
+            "mobile": "Prefer a shallow crop and avoid text over busy focal areas.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Useful for trust-led considered purchases."
+    },
+    {
+      "id": "gold-general-dental-color-clinic",
+      "name": "General Dental warm clinical identity",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://www.generaldental.ca",
+      "discoveryUrl": "https://www.a1.gallery/website/general-dental",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "dental",
+        "healthcare",
+        "wellness",
+        "beauty"
+      ],
+      "moods": [
+        "friendly",
+        "clean",
+        "colourful",
+        "calm"
+      ],
+      "tags": [
+        "cream",
+        "dark-green",
+        "photography",
+        "health",
+        "local-business"
+      ],
+      "proposedFamilyId": "utility-diagnostic",
+      "designHypothesis": {
+        "navigation": "clear local-practice navigation with an immediate booking path",
+        "heroGeometry": "friendly clinical statement with strong brand colour and photography",
+        "servicePresentation": "plain-language treatment pathways with visual grouping",
+        "sectionRhythm": "welcome-services-proof-team-faq-contact",
+        "typographyCategory": "friendly contemporary sans with expressive display accents",
+        "imageStrategy": "real-practice photography with warm surfaces",
+        "motionOpportunities": [
+          "gentle-section-reveal",
+          "image-mask-shift"
+        ],
+        "mobileBehavior": "keep booking action visible and stack services into readable rows",
+        "prohibitedPatterns": [
+          "sterile-blue-saas",
+          "generic-bento-grid",
+          "stock-doctor-collage"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "healthcare",
+          "local-service",
+          "physical-facility"
+        ],
+        "conversionModes": [
+          "booking",
+          "call",
+          "consultation"
+        ],
+        "contentDensity": [
+          "medium",
+          "high"
+        ],
+        "locality": [
+          "single-location",
+          "multi-location"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "medium",
+        "motionDependency": "low",
+        "generatedAssetsSupported": true,
+        "peopleRequired": true,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 3
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "editorial-photography",
+            "role": "Primary hero scene",
+            "aspectRatio": "16:10",
+            "composition": "One dominant subject with intentional negative space for headline and CTA.",
+            "mobile": "Preserve the focal subject and crop toward 4:5 or 3:4 without turning it into a split hero.",
+            "optional": false
+          },
+          {
+            "id": "secondary",
+            "type": "editorial-photography",
+            "role": "Narrative support scene",
+            "aspectRatio": "4:3",
+            "composition": "A contrasting wider or tighter scene that anchors the second major chapter.",
+            "mobile": "Stack below copy and keep the subject legible at 390px.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "macro-detail",
+            "role": "Tactile proof or detail image",
+            "aspectRatio": "3:2",
+            "composition": "Close crop that communicates material, craft, place, or service evidence.",
+            "mobile": "Use a full-width crop or an inset only when the reference supports it.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "editorial-photography",
+            "role": "Closing conversion scene",
+            "aspectRatio": "16:9",
+            "composition": "Wide calm scene with enough tonal control for a final CTA.",
+            "mobile": "Prefer a shallow crop and avoid text over busy focal areas.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "High-priority local-health reference. Generated people must never be presented as staff or patients."
+    },
+    {
+      "id": "gold-bevel-light-health-system",
+      "name": "Bevel light health system",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://www.bevel.health",
+      "discoveryUrl": "https://www.a1.gallery/website/bevel",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "healthcare",
+        "wellness",
+        "technology",
+        "fitness"
+      ],
+      "moods": [
+        "light",
+        "precise",
+        "optimistic",
+        "premium"
+      ],
+      "tags": [
+        "pastel",
+        "gradients",
+        "blur",
+        "photography",
+        "scroll-animation"
+      ],
+      "proposedFamilyId": "cinematic-stage",
+      "designHypothesis": {
+        "navigation": "minimal product-like navigation with restrained calls to action",
+        "heroGeometry": "light atmospheric field with a centered health promise",
+        "servicePresentation": "progressive feature chapters mixing data-like surfaces and lifestyle imagery",
+        "sectionRhythm": "hero-proof-features-visualization-trust-cta",
+        "typographyCategory": "clean system sans with generous display scale",
+        "imageStrategy": "soft lifestyle imagery with controlled gradients",
+        "motionOpportunities": [
+          "soft-focus-transition",
+          "scroll-linked-feature-reveal"
+        ],
+        "mobileBehavior": "reduce blur layers and stack feature chapters",
+        "prohibitedPatterns": [
+          "dark-house-style",
+          "heavy-glass-card-wall",
+          "desktop-only-pinned-scenes"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "healthcare",
+          "wellness",
+          "technology-enabled-service"
+        ],
+        "conversionModes": [
+          "booking",
+          "signup",
+          "consultation"
+        ],
+        "contentDensity": [
+          "medium"
+        ],
+        "locality": [
+          "remote",
+          "single-location"
+        ],
+        "assetAvailability": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "medium",
+        "motionDependency": "medium",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 3
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 3,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "editorial-photography",
+            "role": "Restrained hero image",
+            "aspectRatio": "3:2",
+            "composition": "One carefully cropped image with generous whitespace around the composition.",
+            "mobile": "Move the image below or behind the headline without shrinking copy excessively.",
+            "optional": false
+          },
+          {
+            "id": "portrait-or-proof",
+            "type": "portrait-or-proof",
+            "role": "Named expert, place, or trust proof",
+            "aspectRatio": "4:5",
+            "composition": "Quiet, credible proof imagery without decorative excess.",
+            "mobile": "Stack with proof text and keep identity or context clear.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "editorial-detail",
+            "role": "Supporting detail",
+            "aspectRatio": "3:2",
+            "composition": "Small editorial crop to break text rhythm.",
+            "mobile": "Use one image per chapter and avoid card grids.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Premium light-mode health reference."
+    },
+    {
+      "id": "gold-future-performance-health",
+      "name": "Future performance coaching clarity",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://future.co",
+      "discoveryUrl": "https://www.a1.gallery/website/future",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "fitness",
+        "healthcare",
+        "coaching",
+        "sports"
+      ],
+      "moods": [
+        "bright",
+        "confident",
+        "clean",
+        "energetic"
+      ],
+      "tags": [
+        "health",
+        "sports",
+        "photography",
+        "bright",
+        "coaching"
+      ],
+      "proposedFamilyId": "a1-kinetic-command",
+      "designHypothesis": {
+        "navigation": "simple conversion navigation with trial emphasis",
+        "heroGeometry": "high-clarity performance promise with strong human or action imagery",
+        "servicePresentation": "goal-led program progression and coaching proof",
+        "sectionRhythm": "promise-program-proof-how-it-works-cta",
+        "typographyCategory": "bold modern sans with athletic scale shifts",
+        "imageStrategy": "bright action and coaching documentary photography",
+        "motionOpportunities": [
+          "progressive-program-reveal",
+          "subtle-velocity-type"
+        ],
+        "mobileBehavior": "preserve the large goal statement and stack program proof",
+        "prohibitedPatterns": [
+          "generic-three-card-services",
+          "tiny-cta",
+          "decorative-numbering"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "fitness",
+          "coaching",
+          "healthcare",
+          "physical-facility"
+        ],
+        "conversionModes": [
+          "trial",
+          "signup",
+          "booking"
+        ],
+        "contentDensity": [
+          "medium"
+        ],
+        "locality": [
+          "remote",
+          "single-location"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "medium",
+        "motionDependency": "low",
+        "generatedAssetsSupported": true,
+        "peopleRequired": true,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 3
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "action-photography",
+            "role": "Full-frame action hero",
+            "aspectRatio": "16:9",
+            "composition": "Clear silhouette, directional movement, and large zones for poster typography.",
+            "mobile": "Keep the subject clear in a one-screen poster crop.",
+            "optional": false
+          },
+          {
+            "id": "band-a",
+            "type": "action-photography",
+            "role": "Program or service band image",
+            "aspectRatio": "21:9",
+            "composition": "Directional crop designed for a horizontal band treatment.",
+            "mobile": "Recompose to 4:3 and stack rather than forcing horizontal scroll.",
+            "optional": false
+          },
+          {
+            "id": "band-b",
+            "type": "equipment-detail",
+            "role": "Technical detail or equipment crop",
+            "aspectRatio": "3:2",
+            "composition": "Hard-contrast detail that supports performance or service proof.",
+            "mobile": "Use as an inline proof panel with readable adjacent copy.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "action-photography",
+            "role": "Closing action or environment scene",
+            "aspectRatio": "16:9",
+            "composition": "Energy remains high but with enough negative space for conversion copy.",
+            "mobile": "Prefer a still poster and reduce motion dependency.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Bridge between sports energy and approachable health conversion."
+    },
+    {
+      "id": "gold-trust-keith-legal-clarity",
+      "name": "Trust Keith legal clarity",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://www.trustkeith.co",
+      "discoveryUrl": "https://www.a1.gallery/website/trust-keith",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "legal",
+        "consulting",
+        "professional-services"
+      ],
+      "moods": [
+        "clear",
+        "confident",
+        "minimal",
+        "approachable"
+      ],
+      "tags": [
+        "legal",
+        "white",
+        "black",
+        "clean",
+        "trust"
+      ],
+      "proposedFamilyId": "guided-conversation",
+      "designHypothesis": {
+        "navigation": "quiet professional nav with direct enquiry action",
+        "heroGeometry": "plainspoken legal promise with controlled whitespace",
+        "servicePresentation": "problem-led legal pathways and concise expertise proof",
+        "sectionRhythm": "positioning-problems-expertise-proof-contact",
+        "typographyCategory": "restrained sans with strong editorial hierarchy",
+        "imageStrategy": "minimal imagery or selective trust proof",
+        "motionOpportunities": [
+          "rule-reveal",
+          "staged-question-reveal"
+        ],
+        "mobileBehavior": "stack legal pathways into readable decision rows and surface enquiry early",
+        "prohibitedPatterns": [
+          "law-firm-stock-photo-wall",
+          "ornamental-gold-template",
+          "late-contact-only"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "professional-service",
+          "legal",
+          "consulting"
+        ],
+        "conversionModes": [
+          "consultation",
+          "contact",
+          "call"
+        ],
+        "contentDensity": [
+          "medium",
+          "high"
+        ],
+        "locality": [
+          "single-location",
+          "service-area",
+          "remote"
+        ],
+        "assetAvailability": [
+          "low",
+          "medium"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "low",
+        "motionDependency": "low",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 1
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 3,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "editorial-photography",
+            "role": "Restrained hero image",
+            "aspectRatio": "3:2",
+            "composition": "One carefully cropped image with generous whitespace around the composition.",
+            "mobile": "Move the image below or behind the headline without shrinking copy excessively.",
+            "optional": false
+          },
+          {
+            "id": "portrait-or-proof",
+            "type": "portrait-or-proof",
+            "role": "Named expert, place, or trust proof",
+            "aspectRatio": "4:5",
+            "composition": "Quiet, credible proof imagery without decorative excess.",
+            "mobile": "Stack with proof text and keep identity or context clear.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "editorial-detail",
+            "role": "Supporting detail",
+            "aspectRatio": "3:2",
+            "composition": "Small editorial crop to break text rhythm.",
+            "mobile": "Use one image per chapter and avoid card grids.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "High-value reference where copy hierarchy matters more than image volume."
+    },
+    {
+      "id": "gold-advis-law-editorial",
+      "name": "Advis Law warm editorial counsel",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://advishawaii.com",
+      "discoveryUrl": "https://www.a1.gallery/website/advis-law",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "legal",
+        "financial",
+        "consulting",
+        "professional-services"
+      ],
+      "moods": [
+        "warm",
+        "credible",
+        "editorial",
+        "calm"
+      ],
+      "tags": [
+        "legal",
+        "beige",
+        "serif",
+        "photography",
+        "professional"
+      ],
+      "proposedFamilyId": "editorial-monument",
+      "designHypothesis": {
+        "navigation": "measured professional navigation with discreet enquiry path",
+        "heroGeometry": "editorial positioning statement balanced by human or place photography",
+        "servicePresentation": "ruled expertise or practice-area ledger",
+        "sectionRhythm": "positioning-expertise-professional-proof-process-contact",
+        "typographyCategory": "humanist serif with restrained sans support",
+        "imageStrategy": "named-professional and location-aware photography",
+        "motionOpportunities": [
+          "subtle-rule-reveal",
+          "portrait-depth-shift"
+        ],
+        "mobileBehavior": "retain the serif hierarchy and stack the expertise ledger without card chrome",
+        "prohibitedPatterns": [
+          "generic-split-hero",
+          "blue-corporate-template",
+          "anonymous-stock-lawyer"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "legal",
+          "professional-service",
+          "consulting"
+        ],
+        "conversionModes": [
+          "consultation",
+          "contact",
+          "call"
+        ],
+        "contentDensity": [
+          "high"
+        ],
+        "locality": [
+          "single-location",
+          "service-area"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "medium",
+        "motionDependency": "low",
+        "generatedAssetsSupported": false,
+        "peopleRequired": true,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 2
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 3,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "editorial-photography",
+            "role": "Restrained hero image",
+            "aspectRatio": "3:2",
+            "composition": "One carefully cropped image with generous whitespace around the composition.",
+            "mobile": "Move the image below or behind the headline without shrinking copy excessively.",
+            "optional": false
+          },
+          {
+            "id": "portrait-or-proof",
+            "type": "portrait-or-proof",
+            "role": "Named expert, place, or trust proof",
+            "aspectRatio": "4:5",
+            "composition": "Quiet, credible proof imagery without decorative excess.",
+            "mobile": "Stack with proof text and keep identity or context clear.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "editorial-detail",
+            "role": "Supporting detail",
+            "aspectRatio": "3:2",
+            "composition": "Small editorial crop to break text rhythm.",
+            "mobile": "Use one image per chapter and avoid card grids.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Genuine professional photography is more important than generated substitutes."
+    },
+    {
+      "id": "gold-legora-3d-legal",
+      "name": "Legora spatial legal technology",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://legora.com",
+      "discoveryUrl": "https://www.a1.gallery/website/legora-2026",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "legal",
+        "technology",
+        "professional-services",
+        "finance"
+      ],
+      "moods": [
+        "elegant",
+        "technical",
+        "neutral",
+        "spatial"
+      ],
+      "tags": [
+        "3d",
+        "dark-green",
+        "serif",
+        "video",
+        "varied-layout"
+      ],
+      "proposedFamilyId": "spatial-object",
+      "designHypothesis": {
+        "navigation": "minimal premium navigation with product or contact pathways",
+        "heroGeometry": "spatial 3D legal field with editorial type and restrained surfaces",
+        "servicePresentation": "capability chapters anchored by spatial objects",
+        "sectionRhythm": "hero-object-capabilities-proof-cases-contact",
+        "typographyCategory": "display serif with technical mono or sans support",
+        "imageStrategy": "3D object scenes and restrained human imagery",
+        "motionOpportunities": [
+          "object-focus-transition",
+          "slow-camera-drift"
+        ],
+        "mobileBehavior": "use a static object poster and stack capability chapters",
+        "prohibitedPatterns": [
+          "generic-saas-bento",
+          "neon-cyberpunk",
+          "unrelated-3d-decoration"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "professional-service",
+          "technology-enabled-service",
+          "legal"
+        ],
+        "conversionModes": [
+          "demo",
+          "consultation",
+          "contact"
+        ],
+        "contentDensity": [
+          "medium",
+          "high"
+        ],
+        "locality": [
+          "remote",
+          "multi-location"
+        ],
+        "assetAvailability": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "high",
+        "motionDependency": "high",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": true,
+        "minimumDistinctImages": 4
+      },
+      "assetRecipe": {
+        "minimumAssets": 4,
+        "preferredAssets": 5,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero-object",
+            "type": "isolated-object-render",
+            "role": "Primary spatial object",
+            "aspectRatio": "1:1",
+            "composition": "Isolated object on a controlled field with deep focus and lighting separation.",
+            "mobile": "Prioritize the object before type and never crop away the defining silhouette.",
+            "optional": false
+          },
+          {
+            "id": "object-alt",
+            "type": "isolated-object-render",
+            "role": "Alternate object angle",
+            "aspectRatio": "4:3",
+            "composition": "Second angle or complementary object for the capability chapter.",
+            "mobile": "Use sequential reveal instead of sticky overlap.",
+            "optional": false
+          },
+          {
+            "id": "macro",
+            "type": "macro-material-detail",
+            "role": "Material or process detail",
+            "aspectRatio": "3:2",
+            "composition": "Extreme close crop with controlled depth and technical credibility.",
+            "mobile": "Use a full-width or edge-to-edge crop.",
+            "optional": false
+          },
+          {
+            "id": "environment",
+            "type": "editorial-photography",
+            "role": "Contextual environment scene",
+            "aspectRatio": "16:9",
+            "composition": "A believable environment that grounds the isolated objects.",
+            "mobile": "Keep the environment as a later chapter, not the hero.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "isolated-object-render",
+            "role": "Final object composition",
+            "aspectRatio": "16:9",
+            "composition": "Simplified visual for a high-contrast closing scene.",
+            "mobile": "A static poster fallback is required.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Stress-test for object-led premium service design."
+    },
+    {
+      "id": "gold-salad-project-fresh-retail",
+      "name": "The Salad Project fresh retail editorial",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://www.saladproject.co.uk",
+      "discoveryUrl": "https://www.a1.gallery/website/the-salad-project",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "food",
+        "hospitality",
+        "retail",
+        "restaurant"
+      ],
+      "moods": [
+        "fresh",
+        "warm",
+        "premium",
+        "bright"
+      ],
+      "tags": [
+        "cream",
+        "green",
+        "food",
+        "photography",
+        "retail"
+      ],
+      "proposedFamilyId": "market-collage",
+      "designHypothesis": {
+        "navigation": "visit or order-first navigation with simple utility",
+        "heroGeometry": "food-first editorial opening with strong product photography",
+        "servicePresentation": "menu and category progression rather than service cards",
+        "sectionRhythm": "hero-menu-story-locations-order",
+        "typographyCategory": "friendly premium display and clean sans pairing",
+        "imageStrategy": "close food photography with a warm consistent grade",
+        "motionOpportunities": [
+          "image-crop-reveal",
+          "menu-row-motion"
+        ],
+        "mobileBehavior": "put order or visit action near the top and keep menu text native",
+        "prohibitedPatterns": [
+          "clinical-white-food",
+          "tiny-product-grid",
+          "pdf-menu-dependence"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "restaurant",
+          "retail",
+          "physical-facility"
+        ],
+        "conversionModes": [
+          "order",
+          "visit",
+          "booking"
+        ],
+        "contentDensity": [
+          "medium"
+        ],
+        "locality": [
+          "single-location",
+          "multi-location"
+        ],
+        "assetAvailability": [
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "high",
+        "motionDependency": "low",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": true,
+        "minimumDistinctImages": 4
+      },
+      "assetRecipe": {
+        "minimumAssets": 4,
+        "preferredAssets": 5,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero-primary",
+            "type": "product-or-object-cutout",
+            "role": "Dominant collage anchor",
+            "aspectRatio": "4:5",
+            "composition": "Isolated subject or object with clean edges and a strong silhouette.",
+            "mobile": "Keep at least 65% of the object visible and allow controlled edge overflow.",
+            "optional": false
+          },
+          {
+            "id": "hero-secondary",
+            "type": "editorial-photography",
+            "role": "Secondary collage layer",
+            "aspectRatio": "3:2",
+            "composition": "Supporting still with a contrasting scale and crop.",
+            "mobile": "Stack with deliberate offset and do not flatten into a standard card.",
+            "optional": false
+          },
+          {
+            "id": "texture",
+            "type": "texture-or-pattern",
+            "role": "Background texture layer",
+            "aspectRatio": "1:1",
+            "composition": "Low-detail texture or graphic field that can sit behind content without readable text.",
+            "mobile": "Reduce density and contrast on mobile.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "macro-detail",
+            "role": "Small annotated detail",
+            "aspectRatio": "1:1",
+            "composition": "Tight crop suitable for a label, caption, or annotation relationship.",
+            "mobile": "Move annotations into touch-safe rows while preserving the visual linkage.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "editorial-photography",
+            "role": "Closing product or service tableau",
+            "aspectRatio": "16:9",
+            "composition": "One confident visual that resolves the collage narrative.",
+            "mobile": "Use a wide or full-bleed crop with a safe CTA zone.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Food fidelity depends on coherent imagery."
+    },
+    {
+      "id": "gold-touchy-coffee-playful",
+      "name": "Touchy Coffee playful neighborhood commerce",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://touchycoffee.com",
+      "discoveryUrl": "https://www.a1.gallery/website/touchy-coffee",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "food",
+        "hospitality",
+        "retail",
+        "community"
+      ],
+      "moods": [
+        "playful",
+        "local",
+        "tactile",
+        "colourful"
+      ],
+      "tags": [
+        "orange",
+        "yellow",
+        "shop",
+        "coffee",
+        "product-photography"
+      ],
+      "proposedFamilyId": "market-collage",
+      "designHypothesis": {
+        "navigation": "compact shop and visit utility navigation",
+        "heroGeometry": "loose product-led composition with bold colour fields",
+        "servicePresentation": "shelf, menu, and product sequence with local-store personality",
+        "sectionRhythm": "product-collage-shop-story-visit",
+        "typographyCategory": "friendly display type with direct utility sans",
+        "imageStrategy": "product stills, packaging, and tactile close crops",
+        "motionOpportunities": [
+          "collage-depth-parallax",
+          "shelf-drag"
+        ],
+        "mobileBehavior": "stack product layers while preserving intentional offsets",
+        "prohibitedPatterns": [
+          "neutral-luxury-washout",
+          "uniform-rounded-card-grid",
+          "generic-saas-nav"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "retail",
+          "restaurant",
+          "physical-facility"
+        ],
+        "conversionModes": [
+          "purchase",
+          "visit",
+          "order"
+        ],
+        "contentDensity": [
+          "low",
+          "medium"
+        ],
+        "locality": [
+          "single-location",
+          "multi-location"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "high",
+        "motionDependency": "medium",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": true,
+        "minimumDistinctImages": 4
+      },
+      "assetRecipe": {
+        "minimumAssets": 4,
+        "preferredAssets": 5,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero-primary",
+            "type": "product-or-object-cutout",
+            "role": "Dominant collage anchor",
+            "aspectRatio": "4:5",
+            "composition": "Isolated subject or object with clean edges and a strong silhouette.",
+            "mobile": "Keep at least 65% of the object visible and allow controlled edge overflow.",
+            "optional": false
+          },
+          {
+            "id": "hero-secondary",
+            "type": "editorial-photography",
+            "role": "Secondary collage layer",
+            "aspectRatio": "3:2",
+            "composition": "Supporting still with a contrasting scale and crop.",
+            "mobile": "Stack with deliberate offset and do not flatten into a standard card.",
+            "optional": false
+          },
+          {
+            "id": "texture",
+            "type": "texture-or-pattern",
+            "role": "Background texture layer",
+            "aspectRatio": "1:1",
+            "composition": "Low-detail texture or graphic field that can sit behind content without readable text.",
+            "mobile": "Reduce density and contrast on mobile.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "macro-detail",
+            "role": "Small annotated detail",
+            "aspectRatio": "1:1",
+            "composition": "Tight crop suitable for a label, caption, or annotation relationship.",
+            "mobile": "Move annotations into touch-safe rows while preserving the visual linkage.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "editorial-photography",
+            "role": "Closing product or service tableau",
+            "aspectRatio": "16:9",
+            "composition": "One confident visual that resolves the collage narrative.",
+            "mobile": "Use a wide or full-bleed crop with a safe CTA zone.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Personality-rich local retail reference."
+    },
+    {
+      "id": "gold-savor-minimal-food",
+      "name": "Savor minimal culinary editorial",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://www.savor.it",
+      "discoveryUrl": "https://www.a1.gallery/website/savor",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "food",
+        "hospitality",
+        "restaurant",
+        "retail"
+      ],
+      "moods": [
+        "minimal",
+        "warm",
+        "refined",
+        "bold"
+      ],
+      "tags": [
+        "food",
+        "minimal",
+        "editorial",
+        "orange"
+      ],
+      "proposedFamilyId": "editorial-monument",
+      "designHypothesis": {
+        "navigation": "minimal brand and booking utility",
+        "heroGeometry": "large editorial food statement with restrained image count",
+        "servicePresentation": "chapter-led offer or menu presentation",
+        "sectionRhythm": "statement-product-story-visit-cta",
+        "typographyCategory": "display-led editorial type with minimal body system",
+        "imageStrategy": "selective high-quality food or table imagery",
+        "motionOpportunities": [
+          "masked-image-reveal",
+          "slow-type-shift"
+        ],
+        "mobileBehavior": "keep statement scale strong and use one dominant image per chapter",
+        "prohibitedPatterns": [
+          "busy-food-collage",
+          "generic-menu-cards",
+          "stock-photo-wall"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "restaurant",
+          "hospitality",
+          "retail"
+        ],
+        "conversionModes": [
+          "booking",
+          "visit",
+          "order"
+        ],
+        "contentDensity": [
+          "low",
+          "medium"
+        ],
+        "locality": [
+          "single-location"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "medium",
+        "motionDependency": "low",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 3
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "editorial-photography",
+            "role": "Primary hero scene",
+            "aspectRatio": "16:10",
+            "composition": "One dominant subject with intentional negative space for headline and CTA.",
+            "mobile": "Preserve the focal subject and crop toward 4:5 or 3:4 without turning it into a split hero.",
+            "optional": false
+          },
+          {
+            "id": "secondary",
+            "type": "editorial-photography",
+            "role": "Narrative support scene",
+            "aspectRatio": "4:3",
+            "composition": "A contrasting wider or tighter scene that anchors the second major chapter.",
+            "mobile": "Stack below copy and keep the subject legible at 390px.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "macro-detail",
+            "role": "Tactile proof or detail image",
+            "aspectRatio": "3:2",
+            "composition": "Close crop that communicates material, craft, place, or service evidence.",
+            "mobile": "Use a full-width crop or an inset only when the reference supports it.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "editorial-photography",
+            "role": "Closing conversion scene",
+            "aspectRatio": "16:9",
+            "composition": "Wide calm scene with enough tonal control for a final CTA.",
+            "mobile": "Prefer a shallow crop and avoid text over busy focal areas.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Counterpoint to collage-heavy food references."
+    },
+    {
+      "id": "gold-graza-packaging-collage",
+      "name": "Graza packaging-first collage commerce",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://www.graza.co",
+      "discoveryUrl": "https://www.a1.gallery/website/graza",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "food",
+        "retail",
+        "product",
+        "hospitality"
+      ],
+      "moods": [
+        "playful",
+        "tactile",
+        "bold",
+        "friendly"
+      ],
+      "tags": [
+        "hand-drawn",
+        "typographic",
+        "packaging",
+        "commerce"
+      ],
+      "proposedFamilyId": "a1-collage-composition",
+      "designHypothesis": {
+        "navigation": "shop-first utility nav embedded in a strong brand field",
+        "heroGeometry": "packaging or object collage with oversized playful type",
+        "servicePresentation": "annotated product benefits and use-case objects",
+        "sectionRhythm": "product-collage-benefits-proof-shop",
+        "typographyCategory": "bold display mixed with friendly utility sans",
+        "imageStrategy": "isolated product packaging, ingredient detail, and graphic accents",
+        "motionOpportunities": [
+          "layered-pointer-drift",
+          "object-annotation-reveal"
+        ],
+        "mobileBehavior": "stack product objects into a touch-safe composition",
+        "prohibitedPatterns": [
+          "generic-product-grid",
+          "minimal-luxury-washout",
+          "flat-unrelated-stock"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "retail",
+          "product",
+          "food"
+        ],
+        "conversionModes": [
+          "purchase",
+          "order"
+        ],
+        "contentDensity": [
+          "medium"
+        ],
+        "locality": [
+          "remote",
+          "multi-location"
+        ],
+        "assetAvailability": [
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "high",
+        "motionDependency": "medium",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": true,
+        "minimumDistinctImages": 5
+      },
+      "assetRecipe": {
+        "minimumAssets": 4,
+        "preferredAssets": 5,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero-primary",
+            "type": "product-or-object-cutout",
+            "role": "Dominant collage anchor",
+            "aspectRatio": "4:5",
+            "composition": "Isolated subject or object with clean edges and a strong silhouette.",
+            "mobile": "Keep at least 65% of the object visible and allow controlled edge overflow.",
+            "optional": false
+          },
+          {
+            "id": "hero-secondary",
+            "type": "editorial-photography",
+            "role": "Secondary collage layer",
+            "aspectRatio": "3:2",
+            "composition": "Supporting still with a contrasting scale and crop.",
+            "mobile": "Stack with deliberate offset and do not flatten into a standard card.",
+            "optional": false
+          },
+          {
+            "id": "texture",
+            "type": "texture-or-pattern",
+            "role": "Background texture layer",
+            "aspectRatio": "1:1",
+            "composition": "Low-detail texture or graphic field that can sit behind content without readable text.",
+            "mobile": "Reduce density and contrast on mobile.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "macro-detail",
+            "role": "Small annotated detail",
+            "aspectRatio": "1:1",
+            "composition": "Tight crop suitable for a label, caption, or annotation relationship.",
+            "mobile": "Move annotations into touch-safe rows while preserving the visual linkage.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "editorial-photography",
+            "role": "Closing product or service tableau",
+            "aspectRatio": "16:9",
+            "composition": "One confident visual that resolves the collage narrative.",
+            "mobile": "Use a wide or full-bleed crop with a safe CTA zone.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Tests whether LaunchLoom can generate a coordinated visual kit."
+    },
+    {
+      "id": "gold-lando-norris-kinetic",
+      "name": "Lando Norris kinetic performance",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://landonorris.com",
+      "discoveryUrl": "https://www.a1.gallery/website/lando-norris",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "fitness",
+        "sports",
+        "automotive",
+        "performance"
+      ],
+      "moods": [
+        "kinetic",
+        "dark",
+        "energetic",
+        "premium"
+      ],
+      "tags": [
+        "sports",
+        "dark",
+        "big-type",
+        "action",
+        "performance"
+      ],
+      "proposedFamilyId": "a1-kinetic-command",
+      "designHypothesis": {
+        "navigation": "performance command navigation with compact utility behavior",
+        "heroGeometry": "full-viewport action poster with oversized condensed type",
+        "servicePresentation": "horizontal performance bands and proof moments",
+        "sectionRhythm": "impact-program-proof-recovery-cta",
+        "typographyCategory": "oversized condensed athletic sans",
+        "imageStrategy": "tight action photography and motion-led frames",
+        "motionOpportunities": [
+          "velocity-linked-type",
+          "horizontal-program-scrub"
+        ],
+        "mobileBehavior": "convert bands into stacked poster rows and use a still poster fallback",
+        "prohibitedPatterns": [
+          "soft-editorial-cards",
+          "generic-split-hero",
+          "tiny-action-imagery"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "fitness",
+          "automotive",
+          "physical-facility"
+        ],
+        "conversionModes": [
+          "trial",
+          "booking",
+          "contact",
+          "purchase"
+        ],
+        "contentDensity": [
+          "medium"
+        ],
+        "locality": [
+          "single-location",
+          "remote"
+        ],
+        "assetAvailability": [
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "high",
+        "motionDependency": "high",
+        "generatedAssetsSupported": true,
+        "peopleRequired": true,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 4
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "action-photography",
+            "role": "Full-frame action hero",
+            "aspectRatio": "16:9",
+            "composition": "Clear silhouette, directional movement, and large zones for poster typography.",
+            "mobile": "Keep the subject clear in a one-screen poster crop.",
+            "optional": false
+          },
+          {
+            "id": "band-a",
+            "type": "action-photography",
+            "role": "Program or service band image",
+            "aspectRatio": "21:9",
+            "composition": "Directional crop designed for a horizontal band treatment.",
+            "mobile": "Recompose to 4:3 and stack rather than forcing horizontal scroll.",
+            "optional": false
+          },
+          {
+            "id": "band-b",
+            "type": "equipment-detail",
+            "role": "Technical detail or equipment crop",
+            "aspectRatio": "3:2",
+            "composition": "Hard-contrast detail that supports performance or service proof.",
+            "mobile": "Use as an inline proof panel with readable adjacent copy.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "action-photography",
+            "role": "Closing action or environment scene",
+            "aspectRatio": "16:9",
+            "composition": "Energy remains high but with enough negative space for conversion copy.",
+            "mobile": "Prefer a still poster and reduce motion dependency.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Strong kinetic benchmark for local performance businesses."
+    },
+    {
+      "id": "gold-david-alaba-typographic",
+      "name": "David Alaba typographic sport identity",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://www.davidalaba.com",
+      "discoveryUrl": "https://www.a1.gallery/website/david-alaba",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "fitness",
+        "sports",
+        "automotive",
+        "creative-studio"
+      ],
+      "moods": [
+        "bold",
+        "typographic",
+        "monochrome",
+        "confident"
+      ],
+      "tags": [
+        "sports",
+        "black",
+        "white",
+        "typographic",
+        "big-type"
+      ],
+      "proposedFamilyId": "typographic-poster",
+      "designHypothesis": {
+        "navigation": "distributed minimal navigation around a typographic field",
+        "heroGeometry": "poster-scale identity statement with image and type collision",
+        "servicePresentation": "large statement rows and selected proof beats",
+        "sectionRhythm": "poster-statement-proof-gallery-contact",
+        "typographyCategory": "heavy poster sans with stark hierarchy",
+        "imageStrategy": "selective high-contrast portrait or action imagery",
+        "motionOpportunities": [
+          "scroll-linked-type",
+          "image-type-wipe"
+        ],
+        "mobileBehavior": "preserve poster hierarchy and stack proof without generic cards",
+        "prohibitedPatterns": [
+          "rounded-card-wall",
+          "soft-pastel-branding",
+          "tiny-display-type"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "fitness",
+          "personal-brand",
+          "automotive"
+        ],
+        "conversionModes": [
+          "contact",
+          "trial",
+          "purchase"
+        ],
+        "contentDensity": [
+          "low",
+          "medium"
+        ],
+        "locality": [
+          "remote",
+          "single-location"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "medium",
+        "motionDependency": "medium",
+        "generatedAssetsSupported": true,
+        "peopleRequired": true,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 2
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "action-photography",
+            "role": "Full-frame action hero",
+            "aspectRatio": "16:9",
+            "composition": "Clear silhouette, directional movement, and large zones for poster typography.",
+            "mobile": "Keep the subject clear in a one-screen poster crop.",
+            "optional": false
+          },
+          {
+            "id": "band-a",
+            "type": "action-photography",
+            "role": "Program or service band image",
+            "aspectRatio": "21:9",
+            "composition": "Directional crop designed for a horizontal band treatment.",
+            "mobile": "Recompose to 4:3 and stack rather than forcing horizontal scroll.",
+            "optional": false
+          },
+          {
+            "id": "band-b",
+            "type": "equipment-detail",
+            "role": "Technical detail or equipment crop",
+            "aspectRatio": "3:2",
+            "composition": "Hard-contrast detail that supports performance or service proof.",
+            "mobile": "Use as an inline proof panel with readable adjacent copy.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "action-photography",
+            "role": "Closing action or environment scene",
+            "aspectRatio": "16:9",
+            "composition": "Energy remains high but with enough negative space for conversion copy.",
+            "mobile": "Prefer a still poster and reduce motion dependency.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Type-led design reference that stays distinctive with limited imagery."
+    },
+    {
+      "id": "gold-google-team-usa-spatial-sport",
+      "name": "Google Cloud x Team USA spatial sports story",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://sports.withgoogle.com",
+      "discoveryUrl": "https://www.a1.gallery/category/sports",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "sports",
+        "fitness",
+        "technology",
+        "events"
+      ],
+      "moods": [
+        "bright",
+        "spatial",
+        "technical",
+        "energetic"
+      ],
+      "tags": [
+        "sports",
+        "3d",
+        "white",
+        "blue",
+        "interactive"
+      ],
+      "proposedFamilyId": "spatial-object",
+      "designHypothesis": {
+        "navigation": "lightweight campaign utility navigation",
+        "heroGeometry": "bright spatial sports field with interactive focal objects",
+        "servicePresentation": "story chapters built around data, objects, and athlete moments",
+        "sectionRhythm": "hero-object-story-data-proof-cta",
+        "typographyCategory": "clean modern sans with large campaign statements",
+        "imageStrategy": "3D objects, athlete imagery, and technical diagram moments",
+        "motionOpportunities": [
+          "object-focus-transition",
+          "scroll-linked-data-scene"
+        ],
+        "mobileBehavior": "replace complex scenes with sequential static objects",
+        "prohibitedPatterns": [
+          "generic-saas-dashboard",
+          "dark-cyberpunk",
+          "desktop-only-scroll-lock"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "fitness",
+          "event",
+          "technology-enabled-service",
+          "physical-facility"
+        ],
+        "conversionModes": [
+          "signup",
+          "trial",
+          "contact"
+        ],
+        "contentDensity": [
+          "medium"
+        ],
+        "locality": [
+          "remote",
+          "single-location"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "high",
+        "motionDependency": "high",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": true,
+        "minimumDistinctImages": 4
+      },
+      "assetRecipe": {
+        "minimumAssets": 4,
+        "preferredAssets": 5,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero-object",
+            "type": "isolated-object-render",
+            "role": "Primary spatial object",
+            "aspectRatio": "1:1",
+            "composition": "Isolated object on a controlled field with deep focus and lighting separation.",
+            "mobile": "Prioritize the object before type and never crop away the defining silhouette.",
+            "optional": false
+          },
+          {
+            "id": "object-alt",
+            "type": "isolated-object-render",
+            "role": "Alternate object angle",
+            "aspectRatio": "4:3",
+            "composition": "Second angle or complementary object for the capability chapter.",
+            "mobile": "Use sequential reveal instead of sticky overlap.",
+            "optional": false
+          },
+          {
+            "id": "macro",
+            "type": "macro-material-detail",
+            "role": "Material or process detail",
+            "aspectRatio": "3:2",
+            "composition": "Extreme close crop with controlled depth and technical credibility.",
+            "mobile": "Use a full-width or edge-to-edge crop.",
+            "optional": false
+          },
+          {
+            "id": "environment",
+            "type": "editorial-photography",
+            "role": "Contextual environment scene",
+            "aspectRatio": "16:9",
+            "composition": "A believable environment that grounds the isolated objects.",
+            "mobile": "Keep the environment as a later chapter, not the hero.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "isolated-object-render",
+            "role": "Final object composition",
+            "aspectRatio": "16:9",
+            "composition": "Simplified visual for a high-contrast closing scene.",
+            "mobile": "A static poster fallback is required.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Reference for bright spatial storytelling."
+    },
+    {
+      "id": "gold-turno-ev-object-stage",
+      "name": "Turno EV dark object stage",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://turnoev.com",
+      "discoveryUrl": "https://www.a1.gallery/website/turno",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "automotive",
+        "transport",
+        "technology",
+        "professional-services"
+      ],
+      "moods": [
+        "dark",
+        "spatial",
+        "technical",
+        "premium"
+      ],
+      "tags": [
+        "3d",
+        "transport",
+        "dark-grey",
+        "automotive",
+        "object-led"
+      ],
+      "proposedFamilyId": "spatial-object",
+      "designHypothesis": {
+        "navigation": "minimal edge navigation that keeps the vehicle or object dominant",
+        "heroGeometry": "isolated vehicle or object on a deep technical stage",
+        "servicePresentation": "specification and capability atlas tied to the central object",
+        "sectionRhythm": "object-intro-specs-benefits-proof-contact",
+        "typographyCategory": "technical sans with restrained display contrast",
+        "imageStrategy": "controlled object renders and cinematic transport details",
+        "motionOpportunities": [
+          "object-focus-transition",
+          "camera-orbit-illusion"
+        ],
+        "mobileBehavior": "prioritize object visibility and turn specs into stacked rows",
+        "prohibitedPatterns": [
+          "generic-auto-dealer-grid",
+          "unrelated-3d-decoration",
+          "hero-copy-wall"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "automotive",
+          "transport",
+          "technology-enabled-service"
+        ],
+        "conversionModes": [
+          "booking",
+          "quote-request",
+          "contact"
+        ],
+        "contentDensity": [
+          "medium",
+          "high"
+        ],
+        "locality": [
+          "single-location",
+          "service-area",
+          "remote"
+        ],
+        "assetAvailability": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "high",
+        "motionDependency": "high",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": true,
+        "minimumDistinctImages": 4
+      },
+      "assetRecipe": {
+        "minimumAssets": 4,
+        "preferredAssets": 5,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero-object",
+            "type": "isolated-object-render",
+            "role": "Primary spatial object",
+            "aspectRatio": "1:1",
+            "composition": "Isolated object on a controlled field with deep focus and lighting separation.",
+            "mobile": "Prioritize the object before type and never crop away the defining silhouette.",
+            "optional": false
+          },
+          {
+            "id": "object-alt",
+            "type": "isolated-object-render",
+            "role": "Alternate object angle",
+            "aspectRatio": "4:3",
+            "composition": "Second angle or complementary object for the capability chapter.",
+            "mobile": "Use sequential reveal instead of sticky overlap.",
+            "optional": false
+          },
+          {
+            "id": "macro",
+            "type": "macro-material-detail",
+            "role": "Material or process detail",
+            "aspectRatio": "3:2",
+            "composition": "Extreme close crop with controlled depth and technical credibility.",
+            "mobile": "Use a full-width or edge-to-edge crop.",
+            "optional": false
+          },
+          {
+            "id": "environment",
+            "type": "editorial-photography",
+            "role": "Contextual environment scene",
+            "aspectRatio": "16:9",
+            "composition": "A believable environment that grounds the isolated objects.",
+            "mobile": "Keep the environment as a later chapter, not the hero.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "isolated-object-render",
+            "role": "Final object composition",
+            "aspectRatio": "16:9",
+            "composition": "Simplified visual for a high-contrast closing scene.",
+            "mobile": "A static poster fallback is required.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Automotive reference requiring isolated technical objects rather than generic workshop stock."
+    },
+    {
+      "id": "gold-airmee-utility-transport",
+      "name": "Airmee minimal transport utility",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://www.airmee.com",
+      "discoveryUrl": "https://www.a1.gallery/website/airmee",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "transport",
+        "business",
+        "home-services",
+        "logistics"
+      ],
+      "moods": [
+        "minimal",
+        "direct",
+        "bright",
+        "confident"
+      ],
+      "tags": [
+        "big-type",
+        "photography",
+        "minimal",
+        "monospaced",
+        "yellow"
+      ],
+      "proposedFamilyId": "utility-diagnostic",
+      "designHypothesis": {
+        "navigation": "simple service utility navigation with direct conversion action",
+        "heroGeometry": "big-type service promise with strong directional media",
+        "servicePresentation": "clear operational benefits and process steps",
+        "sectionRhythm": "promise-benefits-process-proof-contact",
+        "typographyCategory": "large sans paired with mono utility labels",
+        "imageStrategy": "transport documentary imagery plus restrained motion media",
+        "motionOpportunities": [
+          "route-line-reveal",
+          "section-state-transition"
+        ],
+        "mobileBehavior": "stack process and benefits and keep action and service-area clarity early",
+        "prohibitedPatterns": [
+          "generic-bento-saas",
+          "tiny-operations-copy",
+          "late-contact-only"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "local-service",
+          "logistics",
+          "transport",
+          "professional-service"
+        ],
+        "conversionModes": [
+          "quote-request",
+          "contact",
+          "booking"
+        ],
+        "contentDensity": [
+          "medium",
+          "high"
+        ],
+        "locality": [
+          "service-area",
+          "multi-location"
+        ],
+        "assetAvailability": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "medium",
+        "motionDependency": "low",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 2
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "editorial-photography",
+            "role": "Primary hero scene",
+            "aspectRatio": "16:10",
+            "composition": "One dominant subject with intentional negative space for headline and CTA.",
+            "mobile": "Preserve the focal subject and crop toward 4:5 or 3:4 without turning it into a split hero.",
+            "optional": false
+          },
+          {
+            "id": "secondary",
+            "type": "editorial-photography",
+            "role": "Narrative support scene",
+            "aspectRatio": "4:3",
+            "composition": "A contrasting wider or tighter scene that anchors the second major chapter.",
+            "mobile": "Stack below copy and keep the subject legible at 390px.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "macro-detail",
+            "role": "Tactile proof or detail image",
+            "aspectRatio": "3:2",
+            "composition": "Close crop that communicates material, craft, place, or service evidence.",
+            "mobile": "Use a full-width crop or an inset only when the reference supports it.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "editorial-photography",
+            "role": "Closing conversion scene",
+            "aspectRatio": "16:9",
+            "composition": "Wide calm scene with enough tonal control for a final CTA.",
+            "mobile": "Prefer a shallow crop and avoid text over busy focal areas.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Operational reference for service businesses that need clarity without looking generic."
+    },
+    {
+      "id": "gold-united-carriers-dark-logistics",
+      "name": "United Carriers dark logistics poster",
+      "source": "A1 Gallery curation / live source",
+      "sourceUrl": "https://unitedcarriers.com",
+      "discoveryUrl": "https://www.a1.gallery/category/transport",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "transport",
+        "logistics",
+        "home-services",
+        "industrial"
+      ],
+      "moods": [
+        "dark",
+        "direct",
+        "industrial",
+        "typographic"
+      ],
+      "tags": [
+        "black",
+        "white",
+        "transport",
+        "typographic",
+        "industrial"
+      ],
+      "proposedFamilyId": "typographic-poster",
+      "designHypothesis": {
+        "navigation": "industrial utility nav with service and contact priority",
+        "heroGeometry": "dark typographic freight statement with sparse image support",
+        "servicePresentation": "route or service bands and operational proof",
+        "sectionRhythm": "statement-services-network-proof-contact",
+        "typographyCategory": "heavy industrial sans with compact labels",
+        "imageStrategy": "high-contrast logistics documentary imagery",
+        "motionOpportunities": [
+          "directional-type-shift",
+          "route-band-reveal"
+        ],
+        "mobileBehavior": "stack service bands and keep phone or quote action accessible",
+        "prohibitedPatterns": [
+          "soft-rounded-cards",
+          "bright-saas-gradient",
+          "tiny-contact-action"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "local-service",
+          "logistics",
+          "industrial"
+        ],
+        "conversionModes": [
+          "quote-request",
+          "call",
+          "contact"
+        ],
+        "contentDensity": [
+          "medium",
+          "high"
+        ],
+        "locality": [
+          "service-area",
+          "multi-location"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "medium",
+        "motionDependency": "low",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 3
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "action-photography",
+            "role": "Full-frame action hero",
+            "aspectRatio": "16:9",
+            "composition": "Clear silhouette, directional movement, and large zones for poster typography.",
+            "mobile": "Keep the subject clear in a one-screen poster crop.",
+            "optional": false
+          },
+          {
+            "id": "band-a",
+            "type": "action-photography",
+            "role": "Program or service band image",
+            "aspectRatio": "21:9",
+            "composition": "Directional crop designed for a horizontal band treatment.",
+            "mobile": "Recompose to 4:3 and stack rather than forcing horizontal scroll.",
+            "optional": false
+          },
+          {
+            "id": "band-b",
+            "type": "equipment-detail",
+            "role": "Technical detail or equipment crop",
+            "aspectRatio": "3:2",
+            "composition": "Hard-contrast detail that supports performance or service proof.",
+            "mobile": "Use as an inline proof panel with readable adjacent copy.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "action-photography",
+            "role": "Closing action or environment scene",
+            "aspectRatio": "16:9",
+            "composition": "Energy remains high but with enough negative space for conversion copy.",
+            "mobile": "Prefer a still poster and reduce motion dependency.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Dark industrial counterpoint to Airmee."
+    },
+    {
+      "id": "gold-versailles-consultation",
+      "name": "Versailles consultation-led wellness",
+      "source": "Direct LaunchLoom research",
+      "sourceUrl": "https://versailleshealthwellness.com/",
+      "discoveryUrl": "",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "healthcare",
+        "wellness",
+        "beauty",
+        "professional-services"
+      ],
+      "moods": [
+        "luxury",
+        "warm",
+        "consultative",
+        "trustworthy"
+      ],
+      "tags": [
+        "cream",
+        "gold",
+        "serif",
+        "consultation",
+        "local-business"
+      ],
+      "proposedFamilyId": "guided-conversation",
+      "designHypothesis": {
+        "navigation": "cream utility header with visible consultation and phone actions",
+        "heroGeometry": "dark photographic consultation hero with clear offer and dual actions",
+        "servicePresentation": "qualification-led services followed by practitioner proof",
+        "sectionRhythm": "offer-questions-services-practitioner-proof-faq-visit",
+        "typographyCategory": "display serif with neutral sans body",
+        "imageStrategy": "real practitioner, practice, treatment, and result imagery",
+        "motionOpportunities": [
+          "restrained-image-reveal",
+          "question-progression"
+        ],
+        "mobileBehavior": "keep call and consultation actions compact and stack qualification questions",
+        "prohibitedPatterns": [
+          "generic-wellness-card-grid",
+          "excessive-chat-overlays",
+          "anonymous-stock-practitioner"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "healthcare",
+          "wellness",
+          "physical-facility"
+        ],
+        "conversionModes": [
+          "consultation",
+          "booking",
+          "call"
+        ],
+        "contentDensity": [
+          "high"
+        ],
+        "locality": [
+          "single-location"
+        ],
+        "assetAvailability": [
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "high",
+        "motionDependency": "low",
+        "generatedAssetsSupported": false,
+        "peopleRequired": true,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 4
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "editorial-photography",
+            "role": "Primary hero scene",
+            "aspectRatio": "16:10",
+            "composition": "One dominant subject with intentional negative space for headline and CTA.",
+            "mobile": "Preserve the focal subject and crop toward 4:5 or 3:4 without turning it into a split hero.",
+            "optional": false
+          },
+          {
+            "id": "secondary",
+            "type": "editorial-photography",
+            "role": "Narrative support scene",
+            "aspectRatio": "4:3",
+            "composition": "A contrasting wider or tighter scene that anchors the second major chapter.",
+            "mobile": "Stack below copy and keep the subject legible at 390px.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "macro-detail",
+            "role": "Tactile proof or detail image",
+            "aspectRatio": "3:2",
+            "composition": "Close crop that communicates material, craft, place, or service evidence.",
+            "mobile": "Use a full-width crop or an inset only when the reference supports it.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "editorial-photography",
+            "role": "Closing conversion scene",
+            "aspectRatio": "16:9",
+            "composition": "Wide calm scene with enough tonal control for a final CTA.",
+            "mobile": "Prefer a shallow crop and avoid text over busy focal areas.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Existing LaunchLoom research. Supplied proof is required; generated people or results cannot stand in for real evidence."
+    },
+    {
+      "id": "gold-skylift-local-trades",
+      "name": "Skylift local trades utility",
+      "source": "Direct LaunchLoom research",
+      "sourceUrl": "https://skyliftgaragedoorservice.com/",
+      "discoveryUrl": "",
+      "rights": "reference-only",
+      "status": "candidate",
+      "industries": [
+        "home-services",
+        "construction",
+        "garage-door",
+        "local-trades"
+      ],
+      "moods": [
+        "direct",
+        "practical",
+        "bold",
+        "trustworthy"
+      ],
+      "tags": [
+        "local-trades",
+        "blue",
+        "white",
+        "phone-first",
+        "service-led"
+      ],
+      "proposedFamilyId": "utility-diagnostic",
+      "designHypothesis": {
+        "navigation": "white utility navigation with prominent call or service action",
+        "heroGeometry": "photographic repair hero with problem and service clarity",
+        "servicePresentation": "service categories, problem symptoms, process, coverage, and project proof",
+        "sectionRhythm": "problem-services-benefits-projects-proof-coverage-contact",
+        "typographyCategory": "bold readable sans",
+        "imageStrategy": "real repair or project photography with practical close crops",
+        "motionOpportunities": [
+          "service-state-reveal",
+          "gallery-shift"
+        ],
+        "mobileBehavior": "put call or request-service action early and stack service rows",
+        "prohibitedPatterns": [
+          "generic-editorial-hero",
+          "late-phone-action",
+          "repeated-location-copy"
+        ]
+      },
+      "compatibility": {
+        "businessKinds": [
+          "local-service",
+          "home-services",
+          "construction"
+        ],
+        "conversionModes": [
+          "call",
+          "quote-request",
+          "booking"
+        ],
+        "contentDensity": [
+          "medium",
+          "high"
+        ],
+        "locality": [
+          "service-area",
+          "multi-location"
+        ],
+        "assetAvailability": [
+          "medium",
+          "high"
+        ]
+      },
+      "feasibility": {
+        "assetDemand": "medium",
+        "motionDependency": "low",
+        "generatedAssetsSupported": true,
+        "peopleRequired": false,
+        "productCutoutsUseful": false,
+        "minimumDistinctImages": 3
+      },
+      "assetRecipe": {
+        "minimumAssets": 3,
+        "preferredAssets": 4,
+        "cohesionRule": "All supplied or generated assets must share one lighting, grade, and material language and feel art-directed as one set rather than unrelated stock images.",
+        "placements": [
+          {
+            "id": "hero",
+            "type": "editorial-photography",
+            "role": "Primary hero scene",
+            "aspectRatio": "16:10",
+            "composition": "One dominant subject with intentional negative space for headline and CTA.",
+            "mobile": "Preserve the focal subject and crop toward 4:5 or 3:4 without turning it into a split hero.",
+            "optional": false
+          },
+          {
+            "id": "secondary",
+            "type": "editorial-photography",
+            "role": "Narrative support scene",
+            "aspectRatio": "4:3",
+            "composition": "A contrasting wider or tighter scene that anchors the second major chapter.",
+            "mobile": "Stack below copy and keep the subject legible at 390px.",
+            "optional": false
+          },
+          {
+            "id": "detail",
+            "type": "macro-detail",
+            "role": "Tactile proof or detail image",
+            "aspectRatio": "3:2",
+            "composition": "Close crop that communicates material, craft, place, or service evidence.",
+            "mobile": "Use a full-width crop or an inset only when the reference supports it.",
+            "optional": false
+          },
+          {
+            "id": "closing",
+            "type": "editorial-photography",
+            "role": "Closing conversion scene",
+            "aspectRatio": "16:9",
+            "composition": "Wide calm scene with enough tonal control for a final CTA.",
+            "mobile": "Prefer a shallow crop and avoid text over busy focal areas.",
+            "optional": false
+          }
+        ]
+      },
+      "capture": {
+        "viewports": [
+          "1536x864",
+          "1366x768",
+          "390x844"
+        ],
+        "captureFullPage": true,
+        "captureSectionCrops": true,
+        "measureGeometry": true
+      },
+      "admission": {
+        "designReviewed": false,
+        "mobileReviewed": false,
+        "assetRecipeReviewed": false,
+        "validationPass": false,
+        "desktopScreenshotPath": "",
+        "compactScreenshotPath": "",
+        "mobileScreenshotPath": "",
+        "referenceDnaPath": ""
+      },
+      "ownedTranslationId": "",
+      "notes": "Existing LaunchLoom research and an important conversion-first trades benchmark."
+    }
+  ]
+}

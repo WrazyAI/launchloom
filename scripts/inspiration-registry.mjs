@@ -4,6 +4,7 @@ import {
   buildReferenceDna,
   validateReferenceDna,
 } from "./reference-dna.mjs";
+import { compatibilityScore } from "./gold-reference-library.mjs";
 
 const REQUIRED_FIELDS = [
   "id",
@@ -93,6 +94,22 @@ function normalizeRecord(record, index) {
         : undefined,
     sourceStyles: cleanList(record.sourceStyles, 20),
     sourceFonts: cleanList(record.sourceFonts, 12),
+    compatibility:
+      record.compatibility && typeof record.compatibility === "object"
+        ? record.compatibility
+        : undefined,
+    feasibility:
+      record.feasibility && typeof record.feasibility === "object"
+        ? record.feasibility
+        : undefined,
+    assetRecipe:
+      record.assetRecipe && typeof record.assetRecipe === "object"
+        ? record.assetRecipe
+        : undefined,
+    goldReference:
+      record.goldReference && typeof record.goldReference === "object"
+        ? record.goldReference
+        : undefined,
   };
   if (!normalized.id || !normalized.sourceUrl || !normalized.industries.length)
     throw new Error(`Inspiration record ${index + 1} is incomplete.`);
@@ -241,6 +258,7 @@ function scoreRecord(record, request) {
       })
     )
       score += 8;
+  score += compatibilityScore(record, request);
   return score + stableFraction(`${request.seed}|${record.id}`);
 }
 
@@ -276,6 +294,10 @@ function evidenceFor(record) {
     sourceFonts: record.sourceFonts?.length ? record.sourceFonts : undefined,
     notes: record.notes || undefined,
     evidenceKind: record.evidenceKind || undefined,
+    compatibility: record.compatibility,
+    feasibility: record.feasibility,
+    assetRecipe: record.assetRecipe,
+    goldReference: record.goldReference,
   };
 }
 

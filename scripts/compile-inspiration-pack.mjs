@@ -5,6 +5,11 @@ import {
   loadA1ReferenceLibrary,
   mergeInspirationRegistries,
 } from "./a1-reference-library.mjs";
+import {
+  inferReferenceCompatibility,
+  loadGoldReferenceLibrary,
+  productionGoldRegistry,
+} from "./gold-reference-library.mjs";
 
 function parseArgs(values) {
   const result = {};
@@ -66,11 +71,16 @@ const historyPath = path.resolve(
 const a1LibraryPath = path.resolve(
   args["a1-library"] || path.join(repository, "data/a1-reference-library.json"),
 );
+const goldLibraryPath = path.resolve(
+  args["gold-library"] ||
+    path.join(repository, "data/gold-reference-candidates.json"),
+);
 const outputPath = path.resolve(
   args.out || ".launchloom/inspiration-pack.json",
 );
 
-const [config, baseRegistry, history, intake, a1Library] = await Promise.all([
+const [config, baseRegistry, history, intake, a1Library, goldLibrary] =
+  await Promise.all([
   fs.readFile(configPath, "utf8").then(JSON.parse),
   fs.readFile(registryPath, "utf8").then(JSON.parse),
   fs.readFile(historyPath, "utf8").then(JSON.parse),
@@ -81,10 +91,21 @@ const [config, baseRegistry, history, intake, a1Library] = await Promise.all([
     () => loadA1ReferenceLibrary(a1LibraryPath, { repositoryRoot: repository }),
     () => null,
   ),
+  fs.access(goldLibraryPath).then(
+    async () =>
+      productionGoldRegistry(await loadGoldReferenceLibrary(goldLibraryPath), {
+        repositoryRoot: repository,
+      }),
+    () => null,
+  ),
 ]);
-const registry = a1Library
+const registryWithA1 = a1Library
   ? mergeInspirationRegistries(baseRegistry, a1Library)
   : baseRegistry;
+const registry =
+  goldLibrary?.records?.length
+    ? mergeInspirationRegistries(registryWithA1, goldLibrary)
+    : registryWithA1;
 const recent = Array.isArray(history.launches)
   ? history.launches.slice(-30)
   : [];
@@ -116,6 +137,7 @@ const pack = buildInspirationPack(
     styleTerms,
     styleText,
     referenceCalibration: a1Library?.calibration,
+    compatibility: inferReferenceCompatibility(config, intake),
     recentReferenceIds: recent.flatMap((launch) =>
       Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
     ),
@@ -139,6 +161,13 @@ pack.referenceLibrary = {
         capturedAt: a1Library.capturedAt,
         recordIds: a1Library.records.map((record) => record.id),
         calibration: a1Library.calibration,
+      }
+    : null,
+  gold: goldLibrary
+    ? {
+        updatedAt: goldLibrary.updatedAt,
+        approvedRecordIds: goldLibrary.records.map((record) => record.id),
+        excludedCount: goldLibrary.excluded.length,
       }
     : null,
 };
