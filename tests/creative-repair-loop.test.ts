@@ -48,14 +48,14 @@ describe("creative repair loop", () => {
           {
             file: "experience",
             find: "<h1>Old promise</h1>",
-            replace: "<h1>Roof leak repair</h1>",
+            replace: "<h1>Roof leak — repair</h1>",
           },
         ],
       }),
       evaluate: async (candidate: typeof files) => {
         evaluated.push(candidate);
         return {
-          pass: candidate.experience.includes("Roof leak repair"),
+          pass: candidate.experience.includes("Roof leak - repair"),
           findings: [],
         };
       },
@@ -65,7 +65,7 @@ describe("creative repair loop", () => {
     expect(result.files).toEqual({
       ...files,
       experience:
-        '<main><h1>Roof leak repair</h1><a href="#contact">Call</a></main>',
+        '<main><h1>Roof leak - repair</h1><a href="#contact">Call</a></main>',
     });
     expect(result.authorAttempts).toBe(1);
     expect(evaluated).toHaveLength(2);

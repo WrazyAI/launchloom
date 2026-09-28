@@ -2,7 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
-import { requestRepair } from "./creative-repair-loop.mjs";
+import {
+  applyCreativeRepairEdits,
+  requestRepair,
+} from "./creative-repair-loop.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import {
   restoreImageAltsFromOriginal,
@@ -171,7 +174,9 @@ async function readCandidate(candidateDir) {
   };
 }
 
-function normalizeRepair(value) {
+function normalizeRepair(value, originalFiles) {
+  if (value && typeof value === "object" && Array.isArray(value.edits))
+    return applyCreativeRepairEdits(originalFiles, value.edits);
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("Creative repair returned an invalid file bundle.");
   const normalized = {};
@@ -493,7 +498,7 @@ export async function defaultRepairCandidate({
       validationAttempt: attempt,
     });
     try {
-      const modelRepaired = normalizeRepair(repairResponse);
+      const modelRepaired = normalizeRepair(repairResponse, files);
       const repairedSections = restoreRequiredSectionIdsOnSemanticSections(
         modelRepaired.experience,
         route,

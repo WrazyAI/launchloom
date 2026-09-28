@@ -211,11 +211,6 @@ export default function Experience({ content, runtime }) {
     <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
   </main>;
 }`;
-    const invalidExperience = validExperience.replace(processSection, "");
-    const repairedExperience = validExperience.replace(
-      'className="opening-title"',
-      'className="opening-title revised"',
-    );
     const initialFiles = {
       experience: validExperience,
       styles: "main { color: #222; }",
@@ -256,10 +251,19 @@ export default function Experience({ content, runtime }) {
       requestRepairImpl: async (request: any) => {
         attempts.push({ validationError: request.validationError });
         return {
-          experience:
-            attempts.length === 1 ? invalidExperience : repairedExperience,
-          styles: initialFiles.styles,
-          motion: initialFiles.motion,
+          edits: [
+            {
+              file: "experience",
+              find:
+                attempts.length === 1
+                  ? processSection
+                  : 'className="opening-title"',
+              replace:
+                attempts.length === 1
+                  ? ""
+                  : 'className="opening-title revised"',
+            },
+          ],
         };
       },
       validateCandidateImpl: ({ files, route, content: values }: any) =>

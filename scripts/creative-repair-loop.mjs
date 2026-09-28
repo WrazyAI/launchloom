@@ -168,7 +168,8 @@ export function applyCreativeRepairEdits(files, edits) {
       throw new Error(
         `${label} exceeds the bounded literal replacement contract.`,
       );
-    if (edit.find === edit.replace)
+    const replacement = edit.replace.replace(/[—–]/gu, "-");
+    if (edit.find === replacement)
       throw new Error(`${label} does not change the candidate source.`);
     if (/data:image\//iu.test(edit.find) || /data:image\//iu.test(edit.replace))
       throw new Error(`${label} cannot contain inline image data.`);
@@ -187,7 +188,7 @@ export function applyCreativeRepairEdits(files, edits) {
       );
     repaired[edit.file] =
       source.slice(0, start) +
-      edit.replace +
+      replacement +
       source.slice(start + edit.find.length);
   }
   return repaired;
