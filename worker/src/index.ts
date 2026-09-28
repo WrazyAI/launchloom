@@ -9,6 +9,7 @@ import {
   isAffirmativeConfirmation,
   seoResearchReadiness,
 } from "./seo-readiness";
+import { createClientIntakeSubmission } from "../../src/lib/client-intake-contract.mjs";
 
 export { RevisionCoordinator } from "./revision-coordinator";
 
@@ -258,13 +259,11 @@ function assetUrl(env: Env, key: string) {
 function safeAssets(env: Env, raw: unknown) {
   if (!raw || typeof raw !== "object") return {};
   const allowed = env.ASSET_BASE_URL.replace(/\/$/, "") + "/intakes/";
-  return Object.fromEntries(
-    Object.entries(raw as Record<string, unknown>)
-      .filter(
-        ([, value]) => typeof value === "string" && value.startsWith(allowed),
-      )
-      .map(([key, value]) => [key, value]),
-  );
+  const assets: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>))
+    if (typeof value === "string" && value.startsWith(allowed))
+      assets[key] = value;
+  return assets;
 }
 
 async function sendEmail(
@@ -359,14 +358,10 @@ async function intake(request: Request, env: Env) {
         400,
         headers,
       );
-    const safeData = Object.fromEntries(
-      Object.entries(raw)
-        .filter(([key]) => key !== "turnstileToken")
-        .map(([key, value]) => [
-          key,
-          key === "assets" ? safeAssets(env, value) : clean(value),
-        ]),
-    );
+    const safeData = createClientIntakeSubmission(raw, {
+      submissionId: clean(raw.submissionId, 100),
+      assets: safeAssets(env, raw.assets),
+    });
     const marker = `<!-- launchloom-intake:${safeData.submissionId} -->`;
     const issues = await github(
       env,

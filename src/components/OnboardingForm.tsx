@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
+import { createClientIntakeSubmission } from "../lib/client-intake-contract.mjs";
 
 type Place = {
   id: string;
@@ -406,14 +407,17 @@ export default function OnboardingForm() {
           );
         assets[slot] = result.url;
       }
-      const intake = Object.fromEntries(
+      const formFields = Object.fromEntries(
         [...data.entries()].filter(([, value]) => typeof value === "string"),
       ) as Record<string, string>;
-      intake.submissionId = submissionId;
+      const payload = createClientIntakeSubmission(formFields, {
+        submissionId,
+        assets,
+      });
       const handoff = await fetch(`${apiBase}/api/intake`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...intake, assets }),
+        body: JSON.stringify(payload),
       });
       const handoffResult = (await handoff.json().catch(() => ({}))) as {
         error?: string;

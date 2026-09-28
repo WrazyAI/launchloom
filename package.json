@@ -33,6 +33,7 @@
     "generate:model-experiences": "node scripts/generate-model-experience-lab.mjs",
     "build:template-gallery": "node scripts/build-template-variant-gallery.mjs",
     "verify:onboarding-ui": "npm run build && node scripts/verify-onboarding-ui.mjs",
+    "generate:client-site": "node scripts/local-client-generation.mjs",
     "test:watch": "vitest",
     "format": "prettier --write .",
     "preflight:reasoning": "node scripts/run-reasoning-preflight.mjs"
