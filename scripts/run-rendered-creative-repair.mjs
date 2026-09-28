@@ -106,6 +106,7 @@ function isNonRepairableRenderInfrastructureFailure(failure) {
     ) ||
     /Client process isolation is unavailable/u.test(text) ||
     /Client command ".+" failed: .+ exited with 127/u.test(text) ||
+    /Client command ".+" failed: spawn .+ ENOENT/u.test(text) ||
     /Client process ownership restoration failed/u.test(text)
   );
 }

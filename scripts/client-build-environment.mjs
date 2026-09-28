@@ -178,7 +178,14 @@ async function resolveClientExecutable(command, cwd, searchPath) {
       : (searchPath || "")
           .split(path.delimiter)
           .filter(Boolean)
-          .map((directory) => path.join(directory, command));
+          .map((directory) =>
+            path.join(
+              path.isAbsolute(directory)
+                ? directory
+                : path.resolve(cwd, directory),
+              command,
+            ),
+          );
 
   for (const candidate of candidates) {
     try {
@@ -286,32 +293,32 @@ export async function runClientProcess({
   const isolatedHome = await fs.mkdtemp(
     path.join(os.tmpdir(), "launchloom-client-process-home-"),
   );
-  const environment = clientBuildEnvironment(sourceEnvironment, {
-    HOME: isolatedHome,
-    TMPDIR: isolatedHome,
-    TEMP: isolatedHome,
-    TMP: isolatedHome,
-    ...envOverrides,
-  });
-  if (isolated) {
-    const runtimeDirectory = path.dirname(process.execPath);
-    const pathEntries = new Set([
-      runtimeDirectory,
-      ...(environment.PATH || "").split(path.delimiter).filter(Boolean),
-    ]);
-    environment.PATH = [...pathEntries].join(path.delimiter);
-  }
-  const isolatedCommand = isolated
-    ? await resolveClientExecutable(command, cwd, environment.PATH)
-    : command;
-  const writableRoots = normalizeWritableRoots([
-    ...writablePaths,
-    isolatedHome,
-  ]);
-  if (isolated)
-    for (const root of writableRoots) await assertOutsideGitWorktree(root);
-
   try {
+    const environment = clientBuildEnvironment(sourceEnvironment, {
+      HOME: isolatedHome,
+      TMPDIR: isolatedHome,
+      TEMP: isolatedHome,
+      TMP: isolatedHome,
+      ...envOverrides,
+    });
+    if (isolated) {
+      const runtimeDirectory = path.dirname(process.execPath);
+      const pathEntries = new Set([
+        runtimeDirectory,
+        ...(environment.PATH || "").split(path.delimiter).filter(Boolean),
+      ]);
+      environment.PATH = [...pathEntries].join(path.delimiter);
+    }
+    const isolatedCommand = isolated
+      ? await resolveClientExecutable(command, cwd, environment.PATH)
+      : command;
+    const writableRoots = normalizeWritableRoots([
+      ...writablePaths,
+      isolatedHome,
+    ]);
+    if (isolated)
+      for (const root of writableRoots) await assertOutsideGitWorktree(root);
+
     if (!isolated)
       return await processResult(command, args, {
         cwd: path.resolve(cwd),

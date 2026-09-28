@@ -165,6 +165,94 @@ process.exit(result.status ?? 1);
     }
   });
 
+  it("resolves relative PATH entries from the client working directory", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-client-relative-path-"),
+    );
+    const binDirectory = path.join(root, "bin");
+    await fs.mkdir(binDirectory);
+    const executable = path.join(binDirectory, "client-npm");
+    await fs.writeFile(
+      executable,
+      `#!${process.execPath}\nprocess.stdout.write("1.2.3");\n`,
+      { mode: 0o700 },
+    );
+    const sudoPath = path.join(root, "synthetic-sudo");
+    const fakeSudo = `#!${process.execPath}
+const { spawnSync } = require("node:child_process");
+const args = process.argv.slice(2);
+if (args.includes("find")) process.exit(0);
+if (args.includes("process.stdout.write(String(process.getuid()))")) {
+  process.stdout.write(String(process.getuid() + 1));
+  process.exit(0);
+}
+const separator = args.indexOf("--");
+const environmentIndex = args.indexOf("-i", separator);
+const commandIndex = args.findIndex((value, index) => index > environmentIndex && !/^[A-Za-z_][A-Za-z0-9_]*=/u.test(value));
+const command = args[commandIndex];
+if (!command || !command.startsWith("/")) process.exit(89);
+const result = spawnSync(args[commandIndex], args.slice(commandIndex + 1), { stdio: "inherit" });
+process.exit(result.status ?? 1);
+`;
+    await fs.writeFile(sudoPath, fakeSudo, { mode: 0o700 });
+
+    try {
+      const result = await runClientProcess({
+        command: "client-npm",
+        cwd: root,
+        writablePaths: [root],
+        isolationMode: "required",
+        sudoPath,
+        sourceEnvironment: { CI: "true", PATH: "bin" },
+      });
+
+      expect(result.stdout).toBe("1.2.3");
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("removes its temporary home if isolated executable lookup fails", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-client-missing-executable-"),
+    );
+    const homePrefix = "launchloom-client-process-home-";
+    const before = new Set(
+      (await fs.readdir(os.tmpdir())).filter((name) =>
+        name.startsWith(homePrefix),
+      ),
+    );
+    let failure: unknown;
+
+    try {
+      await runClientProcess({
+        command: "missing-launchloom-command",
+        cwd: root,
+        writablePaths: [root],
+        isolationMode: "required",
+        sourceEnvironment: { CI: "true", PATH: "/usr/bin:/bin" },
+      });
+    } catch (error) {
+      failure = error;
+    }
+
+    const createdHomes = (await fs.readdir(os.tmpdir())).filter(
+      (name) => name.startsWith(homePrefix) && !before.has(name),
+    );
+    await Promise.all(
+      createdHomes.map((name) =>
+        fs.rm(path.join(os.tmpdir(), name), { recursive: true, force: true }),
+      ),
+    );
+    await fs.rm(root, { recursive: true, force: true });
+
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).message).toMatch(
+      /unavailable in the isolated build PATH/u,
+    );
+    expect(createdHomes).toEqual([]);
+  });
+
   it("names the client executable when an isolated CI command exits 127", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-client-command-error-"),

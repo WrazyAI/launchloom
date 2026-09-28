@@ -1849,49 +1849,56 @@ process.exit(1);
     expect(repairCalls).toBe(0);
   });
 
-  it("does not spend repair calls when the isolated client build cannot find its command", async () => {
-    const { root, candidates } = await fixture(["candidate-a", "candidate-b"]);
-    let repairCalls = 0;
-    const clientBuildFailure =
-      'Client command "npm" failed: sudo exited with 127';
+  it.each([
+    ["command exit 127", 'Client command "npm" failed: sudo exited with 127'],
+    ["sudo spawn ENOENT", 'Client command "npm" failed: spawn sudo ENOENT'],
+  ])(
+    "does not spend repair calls when the isolated build reports %s",
+    async (_failureKind, clientBuildFailure) => {
+      const { root, candidates } = await fixture([
+        "candidate-a",
+        "candidate-b",
+      ]);
+      let repairCalls = 0;
 
-    await expect(
-      runRenderedCreativeRepair({
-        siteDir: root,
-        candidatesDir: candidates,
-        outDir: path.join(root, "evidence"),
-        runBakeoffImpl: async (options: any) =>
-          writeBakeoffEvidence(
-            options,
-            report({
-              selectedCandidateId: null,
-              fallback: true,
-              promotionReady: false,
-              candidates: [
-                candidate("candidate-a", {
-                  valid: false,
-                  eligible: false,
-                  failures: [clientBuildFailure],
-                }),
-                candidate("candidate-b", {
-                  valid: false,
-                  eligible: false,
-                  failures: [clientBuildFailure],
-                }),
-              ],
-            }),
-          ),
-        runVisualGateImpl: async () => visualGate({}, "pass"),
-        repairCandidateImpl: async () => {
-          repairCalls += 1;
-        },
-      }),
-    ).rejects.toThrow(
-      /creative render infrastructure failure.*no model repairs attempted/iu,
-    );
+      await expect(
+        runRenderedCreativeRepair({
+          siteDir: root,
+          candidatesDir: candidates,
+          outDir: path.join(root, "evidence"),
+          runBakeoffImpl: async (options: any) =>
+            writeBakeoffEvidence(
+              options,
+              report({
+                selectedCandidateId: null,
+                fallback: true,
+                promotionReady: false,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: [clientBuildFailure],
+                  }),
+                  candidate("candidate-b", {
+                    valid: false,
+                    eligible: false,
+                    failures: [clientBuildFailure],
+                  }),
+                ],
+              }),
+            ),
+          runVisualGateImpl: async () => visualGate({}, "pass"),
+          repairCandidateImpl: async () => {
+            repairCalls += 1;
+          },
+        }),
+      ).rejects.toThrow(
+        /creative render infrastructure failure.*no model repairs attempted/iu,
+      );
 
-    expect(repairCalls).toBe(0);
-  });
+      expect(repairCalls).toBe(0);
+    },
+  );
 
   it("rejects a bakeoff candidate directory that escapes the candidates root", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
