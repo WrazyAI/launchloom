@@ -66,8 +66,7 @@ describe("OpenRouter cache integration", () => {
       "scripts/author-production-experiences.mjs",
       "utf8",
     );
-    expect(source).toContain("parseStatus: attempt.parseError");
-    expect(source).toContain("attempt.providerError");
+    expect(source).toContain("parseStatus: responseBodyError");
     expect(source).toContain('usageRecord.parseStatus = "missing-content"');
     expect(source).toContain('usageRecord.parseStatus = "parse-failed"');
     expect(source).toContain("parseStatusCounts");
@@ -79,18 +78,24 @@ describe("OpenRouter cache integration", () => {
       "scripts/author-production-experiences.mjs",
       "utf8",
     );
-    const pushIndex = source.indexOf("usage.push({");
-    const recordIndex = source.indexOf("const usageRecord = usage.at(-1)");
+    const pushIndex = source.indexOf("usage.push(usageRecord)");
     const httpIndex = source.indexOf('usageRecord.parseStatus = "http-error"');
     const throwIndex = source.indexOf(
       "OpenRouter ${response.status}: ${errorContext}",
     );
     expect(pushIndex).toBeGreaterThan(-1);
-    expect(recordIndex).toBeGreaterThan(pushIndex);
-    expect(httpIndex).toBeGreaterThan(recordIndex);
+    expect(httpIndex).toBeGreaterThan(pushIndex);
     expect(throwIndex).toBeGreaterThan(httpIndex);
-    expect(source).toContain("openRouterChatCompletionWithCreditRetry");
+    expect(source).toContain("readOpenRouterResponseEnvelope(response)");
     expect(source).not.toContain("screenshotPath: item.screenshotPath");
+  });
+
+  it("applies one bounded credit retry at the shared transport", () => {
+    const source = fs.readFileSync("scripts/openrouter-client.mjs", "utf8");
+    expect(source).toContain("openRouterChatCompletionWithCreditRetry");
+    expect(source).toContain('"max_completion_tokens"');
+    expect(source).toContain('"max_tokens"');
+    expect(source).toContain("AFFORDABILITY_RETRY_MARGIN = 256");
   });
 
   it("freezes adaptive reasoning instead of downgrading effort inside a session", () => {

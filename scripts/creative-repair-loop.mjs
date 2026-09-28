@@ -43,23 +43,6 @@ const REPAIR_SCHEMA = {
 
 export const CREATIVE_REPAIR_TIMEOUT_MS = 8 * 60_000;
 const INLINE_IMAGE_DATA_URI = /data:image\/[^\s"'`<>]+/giu;
-const REPAIR_AFFORDABILITY_MARGIN = 256;
-const MIN_REPAIR_RETRY_COMPLETION_TOKENS = 4_096;
-
-function affordableRepairRetryLimit(error, requestedTokens) {
-  if (!/^OpenRouter 402\b/u.test(String(error?.message || ""))) return null;
-  const match = String(error.message).match(/can only afford\s+([\d,]+)/iu);
-  if (!match) return null;
-  const affordableTokens = Number(match[1].replaceAll(",", ""));
-  if (!Number.isSafeInteger(affordableTokens) || affordableTokens < 1)
-    return null;
-  const retryTokens = Math.min(
-    requestedTokens - 1,
-    affordableTokens - REPAIR_AFFORDABILITY_MARGIN,
-  );
-  if (retryTokens < MIN_REPAIR_RETRY_COMPLETION_TOKENS) return null;
-  return { affordableTokens, retryTokens };
-}
 
 function clean(value, limit = 900) {
   return String(value || "")
@@ -669,51 +652,36 @@ Return complete files. Keep required reference signatures and safety/content con
   const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
   try {
     let completionTokens = CREATIVE_REPAIR_MAX_COMPLETION_TOKENS;
-    let response;
-    let payload;
-    let responseBodyError;
-    let providerError;
-    for (
-      let affordabilityRetry = 0;
-      affordabilityRetry <= 1;
-      affordabilityRetry += 1
-    ) {
-      response = await openRouterChatCompletion({
-        title: "LaunchLoom creative repair",
-        sessionId,
-        signal: controller.signal,
-        body: {
-          model,
-          ...promptCacheRequestFields(model, promptCacheKey),
-          temperature: 0.35,
-          reasoning: {
-            effort: reasoningEffort,
-            exclude: true,
-          },
-          response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
-          ...completionLimitRequestField(completionTokens),
-          messages,
-        },
-      });
-      const envelope = await readOpenRouterResponseEnvelope(response);
-      payload = envelope.payload;
-      responseBodyError = envelope.parseError;
-      providerError = openRouterApiError(payload, response.status);
-      if (payload.usage)
-        logOpenRouterCacheUsage("creative-repair", payload.usage);
-      if (response.ok && !providerError) break;
-
-      const retry =
-        affordabilityRetry === 0
-          ? affordableRepairRetryLimit(providerError, completionTokens)
-          : null;
-      if (retry) {
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom creative repair",
+      sessionId,
+      signal: controller.signal,
+      onCreditRetry: ({ requestedTokens, affordableTokens, retryTokens }) => {
+        completionTokens = retryTokens;
         logger(
-          `creative_repair_budget_retry requested=${completionTokens} affordable=${retry.affordableTokens} retry=${retry.retryTokens}`,
+          `creative_repair_budget_retry requested=${requestedTokens} affordable=${affordableTokens} retry=${retryTokens}`,
         );
-        completionTokens = retry.retryTokens;
-        continue;
-      }
+      },
+      body: {
+        model,
+        ...promptCacheRequestFields(model, promptCacheKey),
+        temperature: 0.35,
+        reasoning: {
+          effort: reasoningEffort,
+          exclude: true,
+        },
+        response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
+        ...completionLimitRequestField(completionTokens),
+        messages,
+      },
+    });
+    const envelope = await readOpenRouterResponseEnvelope(response);
+    const payload = envelope.payload;
+    const responseBodyError = envelope.parseError;
+    const providerError = openRouterApiError(payload, response.status);
+    if (payload.usage)
+      logOpenRouterCacheUsage("creative-repair", payload.usage);
+    if (!response.ok || providerError) {
       if (providerError) throw providerError;
       const envelopeKeys = Object.keys(payload).sort().join(",") || "none";
       throw new Error(

@@ -11,14 +11,15 @@ import { assertAuthorPromptBudget } from "./author-prompt-budget.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
+  openRouterApiError,
   openRouterChatCompletion,
-  openRouterChatCompletionWithCreditRetry,
   isOpenRouterAffordabilityError,
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCachedMessageContent,
   promptCachedText,
   promptCacheRequestFields,
+  readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
 import {
   promptImagePart,
@@ -378,7 +379,14 @@ async function requestStage(request) {
           { role: "user", content: userContent },
         ];
         assertAuthorPromptBudget(messages);
-        const completion = await openRouterChatCompletionWithCreditRetry({
+        let completionTokenLimit = stageBudget.maxTokens;
+        const response = await openRouterChatCompletion({
+          title: "LaunchLoom Production Experience Author",
+          signal: controller.signal,
+          sessionId,
+          onCreditRetry: ({ retryTokens }) => {
+            completionTokenLimit = retryTokens;
+          },
           body: {
             model,
             ...promptCacheRequestFields(model, promptCacheKey),
@@ -388,50 +396,37 @@ async function requestStage(request) {
               type: "json_schema",
               json_schema: authorStageSchema,
             },
-            ...completionLimitRequestField(stageBudget.maxTokens),
+            ...completionLimitRequestField(completionTokenLimit),
             messages,
           },
-          request: (body) =>
-            openRouterChatCompletion({
-              title: "LaunchLoom Production Experience Author",
-              signal: controller.signal,
-              sessionId,
-              body,
-            }),
         });
         const {
-          response,
           payload,
           rawBody,
           parseError: responseBodyError,
-          providerError,
-          attempts,
-        } = completion;
+        } = await readOpenRouterResponseEnvelope(response);
         if (sharedAbortController.signal.aborted)
           throw new Error(
             "Phase 2 authorship cancelled after a sibling failure.",
           );
-        for (const attempt of attempts) {
-          usage.push({
-            routeId: request.route.id,
-            stage: request.stage,
-            provider: attempt.payload.provider || null,
-            reasoningEffort: effort,
-            usage: attempt.payload.usage || null,
-            cache: logOpenRouterCacheUsage(
-              `creative-author-${request.stage}`,
-              attempt.payload.usage,
-            ),
-            sessionId,
-            parseStatus: attempt.parseError
-              ? "response-body-error"
-              : attempt.providerError
-                ? "http-error"
-                : "response-received",
-            durationMs: Date.now() - startedAt,
-          });
-        }
-        const usageRecord = usage.at(-1);
+        const usageRecord = {
+          routeId: request.route.id,
+          stage: request.stage,
+          provider: payload.provider || null,
+          reasoningEffort: effort,
+          usage: payload.usage || null,
+          cache: logOpenRouterCacheUsage(
+            `creative-author-${request.stage}`,
+            payload.usage,
+          ),
+          sessionId,
+          parseStatus: responseBodyError
+            ? "response-body-error"
+            : "response-received",
+          durationMs: Date.now() - startedAt,
+        };
+        usage.push(usageRecord);
+        const providerError = openRouterApiError(payload, response.status);
         if (!response.ok || providerError) {
           usageRecord.parseStatus = "http-error";
           if (providerError) throw providerError;
@@ -450,7 +445,7 @@ async function requestStage(request) {
         const completionDiagnostics = authoringCompletionDiagnostics({
           stage: request.stage,
           routeId: request.route.id,
-          maxTokens: stageBudget.maxTokens,
+          maxTokens: completionTokenLimit,
           payload,
           content,
         });

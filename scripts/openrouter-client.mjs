@@ -263,20 +263,31 @@ export async function openRouterChatCompletionWithCreditRetry({
   body,
   request,
   logger = console.warn,
+  onRetry,
 } = {}) {
   if (!body || typeof body !== "object")
     throw new Error("OpenRouter request body is required.");
   if (typeof request !== "function")
     throw new Error("OpenRouter request function is required.");
-  const requestedTokens = Number(body.max_completion_tokens);
-  if (!Number.isSafeInteger(requestedTokens) || requestedTokens < 1)
+  const tokenField = Object.hasOwn(body, "max_completion_tokens")
+    ? "max_completion_tokens"
+    : Object.hasOwn(body, "max_tokens")
+      ? "max_tokens"
+      : null;
+  const requestedTokens = tokenField ? Number(body[tokenField]) : null;
+  if (
+    tokenField &&
+    (!Number.isSafeInteger(requestedTokens) || requestedTokens < 1)
+  )
     throw new Error(
-      "OpenRouter completion-token retry requires a positive max_completion_tokens value.",
+      "OpenRouter token-budget retry requires a positive max_tokens or max_completion_tokens value.",
     );
 
   async function sendAttempt(requestBody) {
     const response = await request(requestBody);
-    const envelope = await readOpenRouterResponseEnvelope(response);
+    const envelope = await readOpenRouterResponseEnvelope(
+      typeof response?.clone === "function" ? response.clone() : response,
+    );
     const providerError = openRouterApiError(envelope.payload, response.status);
     return {
       response,
@@ -287,15 +298,23 @@ export async function openRouterChatCompletionWithCreditRetry({
   }
 
   const first = await sendAttempt(body);
-  const retry = affordableCompletionRetry(first.providerError, requestedTokens);
+  const retry = tokenField
+    ? affordableCompletionRetry(first.providerError, requestedTokens)
+    : null;
   if (!retry) return { ...first, attempts: [first] };
 
   logger(
     `openrouter_budget_retry requested=${requestedTokens} affordable=${retry.affordableTokens} retry=${retry.retryTokens}`,
   );
+  onRetry?.({
+    requestedTokens,
+    affordableTokens: retry.affordableTokens,
+    retryTokens: retry.retryTokens,
+    tokenField,
+  });
   const second = await sendAttempt({
     ...body,
-    max_completion_tokens: retry.retryTokens,
+    [tokenField]: retry.retryTokens,
   });
   return { ...second, attempts: [first, second] };
 }
@@ -366,6 +385,7 @@ export async function readOpenRouterResponseEnvelope(
  *   responseCache?: boolean,
  *   responseCacheTtlSeconds?: number,
  *   signal?: AbortSignal,
+ *   onCreditRetry?: (details: {requestedTokens: number, affordableTokens: number, retryTokens: number, tokenField: string}) => void,
  *   fetchImpl?: typeof fetch,
  * }} [options]
  * @returns {Promise<Response>}
@@ -378,6 +398,7 @@ export async function openRouterChatCompletion({
   responseCache = false,
   responseCacheTtlSeconds = 900,
   signal,
+  onCreditRetry,
   fetchImpl = fetch,
 } = {}) {
   if (!apiKey) throw new Error("OPENROUTER_API_KEY is required.");
@@ -410,10 +431,16 @@ export async function openRouterChatCompletion({
     ...(sessionId ? { session_id: String(sessionId).slice(0, 256) } : {}),
   };
 
-  return fetchImpl(OPENROUTER_CHAT_COMPLETIONS_URL, {
-    method: "POST",
-    ...(signal ? { signal } : {}),
-    headers,
-    body: JSON.stringify(requestBody),
+  const completion = await openRouterChatCompletionWithCreditRetry({
+    body: requestBody,
+    onRetry: onCreditRetry,
+    request: (attemptBody) =>
+      fetchImpl(OPENROUTER_CHAT_COMPLETIONS_URL, {
+        method: "POST",
+        ...(signal ? { signal } : {}),
+        headers,
+        body: JSON.stringify(attemptBody),
+      }),
   });
+  return completion.response;
 }

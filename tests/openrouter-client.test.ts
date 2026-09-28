@@ -65,6 +65,52 @@ describe("OpenRouter cache-aware client", () => {
     );
   });
 
+  it("applies the affordability retry to max_tokens callers through the shared client", async () => {
+    const requests: Array<Record<string, unknown>> = [];
+    const fetchImpl = vi.fn(async (_url, options) => {
+      const body = JSON.parse(options.body as string);
+      requests.push(body);
+      if (requests.length === 1) {
+        return new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "You requested up to 9000 tokens, but can only afford 8909.",
+            },
+          }),
+          { status: 402 },
+        );
+      }
+      return new Response(
+        JSON.stringify({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: { content: '{"familyId":"measured"}' },
+            },
+          ],
+        }),
+      );
+    });
+
+    const response = await openRouterChatCompletion({
+      apiKey: "test-key",
+      body: {
+        model: "openai/gpt-6-luna",
+        max_tokens: 9_000,
+        messages: [{ role: "user", content: "Analyze this reference." }],
+      },
+      fetchImpl: fetchImpl as any,
+    });
+
+    expect(response.status).toBe(200);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(requests.map((body) => body.max_tokens)).toEqual([9_000, 8_653]);
+    expect(requests.every((body) => !("max_completion_tokens" in body))).toBe(
+      true,
+    );
+  });
+
   it("does not retry non-affordability errors or a second 402", async () => {
     const noBudgetDetail = vi.fn(
       async () =>
