@@ -16,6 +16,27 @@ function dependencySignature(manifest) {
   });
 }
 
+async function inspectLockfile(filePath) {
+  try {
+    const lockfile = JSON.parse(await fs.readFile(filePath, "utf8"));
+    return {
+      exists: true,
+      usable:
+        Number.isInteger(lockfile.lockfileVersion) &&
+        lockfile.lockfileVersion >= 1,
+      version: Number.isInteger(lockfile.lockfileVersion)
+        ? lockfile.lockfileVersion
+        : null,
+    };
+  } catch (error) {
+    if (error?.code === "ENOENT")
+      return { exists: false, usable: false, version: null };
+    if (error instanceof SyntaxError)
+      return { exists: true, usable: false, version: null };
+    throw error;
+  }
+}
+
 const options = Object.fromEntries(
   process.argv
     .slice(2)
@@ -47,14 +68,23 @@ await copyClientBuildInput(sourceRoot, targetRoot);
 
 const targetLockPath = path.join(targetRoot, "package-lock.json");
 const targetShrinkwrapPath = path.join(targetRoot, "npm-shrinkwrap.json");
-const lockExists = await Promise.any([
-  fs.access(targetLockPath),
-  fs.access(targetShrinkwrapPath),
-]).then(
-  () => true,
-  () => false,
-);
-if (!lockExists) {
+const [targetLock, targetShrinkwrap] = await Promise.all([
+  inspectLockfile(targetLockPath),
+  inspectLockfile(targetShrinkwrapPath),
+]);
+
+// npm gives npm-shrinkwrap.json precedence over package-lock.json. An invalid
+// shrinkwrap must not hide a valid package lock in the isolated build copy.
+if (targetShrinkwrap.exists && !targetShrinkwrap.usable)
+  await fs.rm(targetShrinkwrapPath, { force: true });
+
+let selectedLockfile = targetShrinkwrap.usable
+  ? { path: targetShrinkwrapPath, version: targetShrinkwrap.version }
+  : targetLock.usable
+    ? { path: targetLockPath, version: targetLock.version }
+    : null;
+
+if (!selectedLockfile) {
   const repositoryRoot = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     "..",
@@ -70,11 +100,24 @@ if (!lockExists) {
     dependencySignature(targetManifest) !== dependencySignature(trustedManifest)
   )
     throw new Error(
-      "Client build copy has no lockfile and cannot use the trusted template lockfile because the dependency manifest differs.",
+      "Client build copy has no usable lockfile and cannot use the trusted template lockfile because the dependency manifest differs.",
     );
+  await fs.rm(targetLockPath, { force: true });
+  await fs.rm(targetShrinkwrapPath, { force: true });
   await fs.copyFile(
     path.join(trustedClientRoot, "package-lock.json"),
     targetLockPath,
     fs.constants.COPYFILE_EXCL,
   );
+  selectedLockfile = {
+    path: targetLockPath,
+    version: (await inspectLockfile(targetLockPath)).version,
+  };
 }
+
+if (!selectedLockfile?.version || selectedLockfile.version < 1)
+  throw new Error("Client build copy has no usable npm lockfile.");
+
+process.stdout.write(
+  `client_build_lockfile source=${selectedLockfile.path.endsWith("npm-shrinkwrap.json") ? "client-shrinkwrap" : selectedLockfile.path === targetLockPath && targetLock.usable ? "client-package-lock" : "trusted-template"} version=${selectedLockfile.version}\n`,
+);

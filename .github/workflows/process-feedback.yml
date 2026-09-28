@@ -168,7 +168,7 @@ jobs:
           echo "screenshots_dir=$PRESERVED_SCREENSHOTS" >> "$GITHUB_OUTPUT"
           trap 'if [ -d "$SCREENSHOTS" ]; then cp -R "$SCREENSHOTS/." "$PRESERVED_SCREENSHOTS/" || true; fi' EXIT
           node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
-          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_LAUNCHLOOM_API_URL https://api.launchloom.wrazyos.com -- npm run build
           node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config "$BUILD_DIR/src/site.config.json" --html "$BUILD_DIR/dist/index.html"
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true -- node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$SCREENSHOTS"

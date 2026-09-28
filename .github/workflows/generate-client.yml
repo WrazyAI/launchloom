@@ -449,7 +449,7 @@ jobs:
           BUILD_DIR="$BUILD_ROOT/site"
           SCREENSHOTS="$BUILD_ROOT/screenshots"
           node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
-          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --diagnostic-output "$LAUNCHLOOM_PRIVATE_DIR/diagnostic-preview-client-command.json" -- npm ci
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --diagnostic-output "$LAUNCHLOOM_PRIVATE_DIR/diagnostic-preview-client-command.json" -- npm ci --package-lock=true
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --diagnostic-output "$LAUNCHLOOM_PRIVATE_DIR/diagnostic-preview-client-command.json" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_CREATIVE_DIAGNOSTIC true --env.PUBLIC_LAUNCHLOOM_API_URL "$LAUNCHLOOM_API_URL" -- npm run build
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --diagnostic-output "$LAUNCHLOOM_PRIVATE_DIR/diagnostic-preview-client-command.json" --env.PUBLIC_REVIEW_MODE true -- node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" --dist dist --candidate "${{ steps.creative_recovery.outputs.candidate }}" --screenshots "$SCREENSHOTS"
           chmod 700 "$BUILD_ROOT"
@@ -556,7 +556,7 @@ jobs:
           BUILD_DIR="$BUILD_ROOT/site"
           SCREENSHOTS="$BUILD_ROOT/initial-screenshots"
           node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
-          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_LAUNCHLOOM_API_URL "$LAUNCHLOOM_API_URL" -- npm run build
           grep -I -F -q 'data-creative-host="true"' "$BUILD_DIR/dist/index.html" || { echo "Creative host marker missing from fresh build"; exit 1; }
           grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" "$BUILD_DIR/dist/index.html" || { echo "Fresh build does not contain selected creative candidate $CANDIDATE_ID"; exit 1; }

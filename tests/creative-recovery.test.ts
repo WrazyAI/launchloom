@@ -149,6 +149,7 @@ describe("developer-triggered creative repair workflow", () => {
     expect(preserveIndex).toBeGreaterThan(diagnosticStart);
     expect(preserveIndex).toBeLessThan(repairLinkIndex);
     expect(workflow).toContain("steps.diagnostic_preview.outcome == 'failure'");
+    expect(workflow).toContain("npm ci --package-lock=true");
     expect(workflow).toContain(
       'cp "$REPORT" "$CLIENT_DIR/.launchloom/creative-repair/diagnostic-preview-client-command.json"',
     );
@@ -181,7 +182,7 @@ describe("developer-triggered creative repair workflow", () => {
       'node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"',
     );
     const isolatedInstallIndex = repairWorkflow.indexOf(
-      'node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci',
+      'node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true',
     );
     expect(repairWorkflow).toContain(
       'BUILD_ROOT=$(mktemp -d "$RUNNER_TEMP/launchloom-repair-build.XXXXXX")',

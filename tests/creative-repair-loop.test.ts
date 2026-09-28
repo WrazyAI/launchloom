@@ -30,7 +30,7 @@ afterEach(async () => {
 });
 
 describe("creative repair loop", () => {
-  it("uses a generous repair completion budget and reports bounded response diagnostics", async () => {
+  it("uses a credit-bounded repair completion budget and reports bounded response diagnostics", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-budget-"),
     );
@@ -71,10 +71,10 @@ describe("creative repair loop", () => {
     });
 
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    expect(body.max_completion_tokens).toBe(48000);
+    expect(body.max_completion_tokens).toBe(28000);
     expect(body).not.toHaveProperty("max_tokens");
     expect(diagnostics.join(" ")).toContain(
-      "creative_completion stage=creative-repair finish_reason=stop max_completion_tokens=48000 completion_tokens=3456 reasoning_tokens=321",
+      "creative_completion stage=creative-repair finish_reason=stop max_completion_tokens=28000 completion_tokens=3456 reasoning_tokens=321",
     );
     expect(diagnostics.join(" ")).not.toContain('"experience":"fixed"');
   });
@@ -182,50 +182,55 @@ describe("creative repair loop", () => {
   it.each([
     "[sealed inline image data omitted]",
     "[sealed client image asset]",
-  ])("rejects repair responses that copy a sealed image placeholder (%s)", async (placeholder) => {
-    const root = await fs.mkdtemp(
-      path.join(os.tmpdir(), "launchloom-repair-placeholder-rejection-"),
-    );
-    roots.push(root);
-    const desktop = path.join(root, "desktop.png");
-    await fs.writeFile(desktop, "desktop-evidence");
-    const responseFiles = {
-      experience: `<img src="${placeholder}" alt="HVAC unit" />`,
-      styles: "fixed styles",
-      motion: "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
-    };
-    const fetchMock = vi.fn(
-      async (_url: string, _options: RequestInit) =>
-        new Response(
-          JSON.stringify({
-            choices: [
-              {
-                finish_reason: "stop",
-                message: { content: JSON.stringify(responseFiles) },
-              },
-            ],
-          }),
-        ),
-    );
-    vi.stubGlobal("fetch", fetchMock);
+  ])(
+    "rejects repair responses that copy a sealed image placeholder (%s)",
+    async (placeholder) => {
+      const root = await fs.mkdtemp(
+        path.join(os.tmpdir(), "launchloom-repair-placeholder-rejection-"),
+      );
+      roots.push(root);
+      const desktop = path.join(root, "desktop.png");
+      await fs.writeFile(desktop, "desktop-evidence");
+      const responseFiles = {
+        experience: `<img src="${placeholder}" alt="HVAC unit" />`,
+        styles: "fixed styles",
+        motion:
+          "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
+      };
+      const fetchMock = vi.fn(
+        async (_url: string, _options: RequestInit) =>
+          new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  finish_reason: "stop",
+                  message: { content: JSON.stringify(responseFiles) },
+                },
+              ],
+            }),
+          ),
+      );
+      vi.stubGlobal("fetch", fetchMock);
 
-    await expect(
-      requestRepair({
-        model: "test/model",
-        referenceDna: {
-          sectionSequence: repairSectionSequence,
-          evidence: { desktopScreenshot: { path: desktop } },
-        },
-        findings: [],
-        files: {
-          experience: '<img src="data:image/png;base64,SOURCE_IMAGE_SECRET" alt="HVAC unit" />',
-          styles: "old styles",
-          motion: "old motion",
-        },
-        screenshots: [],
-      }),
-    ).rejects.toThrow(/redacted inline-image placeholder/iu);
-  });
+      await expect(
+        requestRepair({
+          model: "test/model",
+          referenceDna: {
+            sectionSequence: repairSectionSequence,
+            evidence: { desktopScreenshot: { path: desktop } },
+          },
+          findings: [],
+          files: {
+            experience:
+              '<img src="data:image/png;base64,SOURCE_IMAGE_SECRET" alt="HVAC unit" />',
+            styles: "old styles",
+            motion: "old motion",
+          },
+          screenshots: [],
+        }),
+      ).rejects.toThrow(/redacted inline-image placeholder/iu);
+    },
+  );
 
   it("reports an actionable error when the repair provider exceeds its timeout", async () => {
     const root = await fs.mkdtemp(
@@ -352,8 +357,8 @@ describe("creative repair loop", () => {
           JSON.stringify({
             choices: [{ finish_reason: "length", message: { content: "{" } }],
             usage: {
-              completion_tokens: 48000,
-              completion_tokens_details: { reasoning_tokens: 47000 },
+              completion_tokens: 28000,
+              completion_tokens_details: { reasoning_tokens: 27000 },
             },
           }),
         ),
@@ -372,7 +377,7 @@ describe("creative repair loop", () => {
         screenshots: [],
       }),
     ).rejects.toThrow(
-      "Creative repair response was truncated (finish_reason=length max_completion_tokens=48000 completion_tokens=48000 reasoning_tokens=47000 content_chars=1).",
+      "Creative repair response was truncated (finish_reason=length max_completion_tokens=28000 completion_tokens=28000 reasoning_tokens=27000 content_chars=1).",
     );
   });
 
@@ -411,7 +416,7 @@ describe("creative repair loop", () => {
         screenshots: [],
       }),
     ).rejects.toThrow(
-      "Creative repair response was malformed (finish_reason=stop max_completion_tokens=48000 completion_tokens=810 reasoning_tokens=200 content_chars=8).",
+      "Creative repair response was malformed (finish_reason=stop max_completion_tokens=28000 completion_tokens=810 reasoning_tokens=200 content_chars=8).",
     );
   });
 
@@ -424,7 +429,9 @@ describe("creative repair loop", () => {
     await fs.writeFile(desktop, "desktop-evidence");
     const fetchMock = vi.fn(
       async (_url: string, _options: RequestInit) =>
-        new Response(JSON.stringify({ choices: [], usage: { prompt_tokens: 18 } })),
+        new Response(
+          JSON.stringify({ choices: [], usage: { prompt_tokens: 18 } }),
+        ),
     );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -439,7 +446,9 @@ describe("creative repair loop", () => {
         files: { experience: "old", styles: "old", motion: "old" },
         screenshots: [],
       }),
-    ).rejects.toThrow(/Creative repair response returned no model content.*choices=0/iu);
+    ).rejects.toThrow(
+      /Creative repair response returned no model content.*choices=0/iu,
+    );
   });
 
   it("surfaces provider errors returned inside an HTTP 200 envelope", async () => {
@@ -497,7 +506,9 @@ describe("creative repair loop", () => {
         files: { experience: "old", styles: "old", motion: "old" },
         screenshots: [],
       }),
-    ).rejects.toThrow(/OpenRouter creative repair returned an unreadable response body/iu);
+    ).rejects.toThrow(
+      /OpenRouter creative repair returned an unreadable response body/iu,
+    );
   });
 
   it("prefers an accessible absolute reference evidence path", async () => {
@@ -781,7 +792,9 @@ describe("creative repair loop", () => {
         screenshots: [],
         creativeRepairScope: { sectionIds: [] },
       }),
-    ).rejects.toThrow("Creative repair scope must include at least one section ID.");
+    ).rejects.toThrow(
+      "Creative repair scope must include at least one section ID.",
+    );
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

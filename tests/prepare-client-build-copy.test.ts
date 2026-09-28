@@ -73,4 +73,82 @@ describe("prepare client build copy", () => {
       await fs.rm(root, { recursive: true, force: true });
     }
   });
+
+  it("replaces an unusable copied lockfile only for the matching template manifest", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-client-invalid-lock-"),
+    );
+    const source = path.join(root, "source");
+    const target = path.join(root, "build");
+    const trustedManifest = JSON.parse(
+      await fs.readFile(path.join(templateRoot, "package.json"), "utf8"),
+    );
+    await fs.mkdir(source, { recursive: true });
+    await fs.writeFile(
+      path.join(source, "package.json"),
+      `${JSON.stringify(trustedManifest, null, 2)}\n`,
+    );
+    await fs.writeFile(
+      path.join(source, "package-lock.json"),
+      '{"lockfileVersion":0}\n',
+    );
+
+    try {
+      const result = copyClient(source, target);
+
+      expect(result.status).toBe(0);
+      const copiedLock = JSON.parse(
+        await fs.readFile(path.join(target, "package-lock.json"), "utf8"),
+      );
+      const trustedLock = JSON.parse(
+        await fs.readFile(path.join(templateRoot, "package-lock.json"), "utf8"),
+      );
+      expect(copiedLock).toEqual(trustedLock);
+      expect(result.stdout).toContain(
+        `client_build_lockfile source=trusted-template version=${trustedLock.lockfileVersion}`,
+      );
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("removes an unusable shrinkwrap that would shadow a valid client lockfile", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-client-invalid-shrinkwrap-"),
+    );
+    const source = path.join(root, "source");
+    const target = path.join(root, "build");
+    const trustedManifest = JSON.parse(
+      await fs.readFile(path.join(templateRoot, "package.json"), "utf8"),
+    );
+    await fs.mkdir(source, { recursive: true });
+    await fs.writeFile(
+      path.join(source, "package.json"),
+      `${JSON.stringify(trustedManifest, null, 2)}\n`,
+    );
+    await fs.copyFile(
+      path.join(templateRoot, "package-lock.json"),
+      path.join(source, "package-lock.json"),
+    );
+    await fs.writeFile(
+      path.join(source, "npm-shrinkwrap.json"),
+      '{"lockfileVersion":0}\n',
+    );
+
+    try {
+      const result = copyClient(source, target);
+
+      expect(result.status).toBe(0);
+      expect(result.stdout).toContain("source=client-package-lock version=3");
+      await expect(
+        fs.access(path.join(target, "npm-shrinkwrap.json")),
+      ).rejects.toThrow();
+      const copiedLock = JSON.parse(
+        await fs.readFile(path.join(target, "package-lock.json"), "utf8"),
+      );
+      expect(copiedLock.lockfileVersion).toBeGreaterThanOrEqual(1);
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
 });
