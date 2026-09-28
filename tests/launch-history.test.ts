@@ -129,6 +129,22 @@ describe("launch history", () => {
     expect(record.layoutFingerprint).toBe("");
   });
 
+  it("persists the selected dossier IDs and business kind for later selection", () => {
+    const record = launchRecordFrom({
+      config: { business: { name: "Northside Care" }, businessKind: "home-care", design: {} },
+      inspiration: { routes: [
+        { referenceDossier: { id: "care-a" } },
+        { referenceDossier: { id: "care-b" } },
+        { referenceDossier: { id: "care-c" } },
+      ] },
+      stage: "attempt",
+      recordKey: "123",
+      launchedAt: "2026-09-28T00:00:00.000Z",
+    });
+    expect(record.businessKind).toBe("home-care");
+    expect(record.referenceIds).toEqual(["care-a", "care-b", "care-c"]);
+  });
+
   it("counts a duplicated creative/reference family only once per launch", () => {
     expect(
       recentCreativeFamilyIds({

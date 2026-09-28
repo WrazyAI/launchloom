@@ -361,7 +361,7 @@ function scoreRecord(record, request) {
       })
     )
       score += 8;
-  return score + stableFraction(`${request.seed}|${record.id}`);
+  return score;
 }
 
 function structuralTokenSet(values) {
@@ -476,33 +476,8 @@ function evidenceFor(record) {
   };
 }
 
-function rankedRecords(
-  registry,
-  request,
-  recentReferenceIds,
-  recentFamilyIds,
-  recentRouteSignatures,
-  mode,
-) {
+function rankedRecords(registry, request) {
   return registry.records
-    .filter((record) => {
-      const explicit = explicitlyRequested(record, request);
-      const familyId = cleanText(
-        record.familyId || buildRouteContract(record).familyId,
-        80,
-      ).toLowerCase();
-      return (
-        (!mode.excludeReferences ||
-          !recentReferenceIds.has(record.id.toLowerCase()) ||
-          explicit) &&
-        (!mode.excludeFamilies ||
-          !recentFamilyIds.has(familyId) ||
-          explicit) &&
-        (!mode.excludeRouteSignatures ||
-          !recentRouteSignatures.has(signatureFor(record)) ||
-          explicit)
-      );
-    })
     .map((record) => ({
       record,
       score: scoreRecord(record, request),
@@ -515,7 +490,7 @@ function rankedRecords(
     );
 }
 
-function independentAnchors(ranked) {
+function independentAnchors(ranked, request, history) {
   const candidates = [];
   for (let first = 0; first < ranked.length; first += 1) {
     for (let second = first + 1; second < ranked.length; second += 1) {
@@ -544,15 +519,63 @@ function independentAnchors(ranked) {
       }
     }
   }
+  const latestTrio = history.recentTrios.at(-1) || new Set();
+  for (const candidate of candidates) {
+    const ids = candidate.anchors.map((anchor) => anchor.id.toLowerCase());
+    candidate.repeatedRecentTrio = history.recentTrios.some((trio) =>
+      ids.every((id) => trio.has(id)));
+    candidate.latestTrioOverlap = ids.filter((id) => latestTrio.has(id)).length;
+    candidate.exposure = ids.reduce((sum, id) => sum + (history.exposure.get(id) || 0), 0);
+    candidate.patternExposure = candidate.anchors.reduce((sum, anchor) =>
+      sum + Number(history.recentFamilyIds.has(buildRouteContract(anchor).familyId.toLowerCase())) +
+        Number(history.recentRouteSignatures.has(signatureFor(anchor))), 0);
+    candidate.rankScore =
+      candidate.minimumDistance * 0.8 +
+      candidate.totalDistance * 0.15 +
+      candidate.fitScore +
+      stableFraction(`${request.seed}|${candidate.stableKey}`) * 90;
+  }
   candidates.sort(
     (left, right) =>
       right.explicitCount - left.explicitCount ||
-      right.minimumDistance - left.minimumDistance ||
-      right.totalDistance - left.totalDistance ||
-      right.fitScore - left.fitScore ||
+      Number(left.repeatedRecentTrio) - Number(right.repeatedRecentTrio) ||
+      left.latestTrioOverlap - right.latestTrioOverlap ||
+      left.exposure - right.exposure ||
+      left.patternExposure - right.patternExposure ||
+      right.rankScore - left.rankScore ||
       left.stableKey.localeCompare(right.stableKey),
   );
-  return candidates[0]?.anchors || [];
+  return { chosen: candidates[0], validTrioCount: candidates.length };
+}
+
+function selectionHistory(request, eligibleIds, industry) {
+  const recentReferenceIds = new Set(
+    (Array.isArray(request.recentLaunches) ? [] : cleanList(request.recentReferenceIds, 200))
+      .filter((id) => eligibleIds.has(id)),
+  );
+  const recentTrios = [];
+  const exposure = new Map();
+  const relevantLaunches = [];
+  const launches = Array.isArray(request.recentLaunches)
+    ? request.recentLaunches.slice(-30)
+    : [];
+  for (const launch of launches) {
+    if (launch?.businessKind && !businessKindMatches({ industries: [launch.businessKind] }, industry))
+      continue;
+    const ids = cleanList(launch?.referenceIds, 20);
+    if (!ids.length || !ids.every((id) => eligibleIds.has(id))) continue;
+    relevantLaunches.push(launch);
+    for (const id of ids) {
+      recentReferenceIds.add(id);
+      exposure.set(id, (exposure.get(id) || 0) + 1);
+    }
+    if (ids.length === 3) recentTrios.push(new Set(ids));
+  }
+  for (const id of recentReferenceIds)
+    if (!exposure.has(id)) exposure.set(id, 1);
+  if (!recentTrios.length && recentReferenceIds.size === 3)
+    recentTrios.push(new Set(recentReferenceIds));
+  return { recentReferenceIds, recentTrios, exposure, relevantLaunches };
 }
 
 export function buildInspirationPack(
@@ -604,65 +627,43 @@ export function buildInspirationPack(
       );
     registry = { ...registry, records: businessMatchedRecords };
   }
-  const recentReferenceIds = new Set(
-    cleanList(request.recentReferenceIds, 200),
-  );
+  const history = selectionHistory(request, new Set(registry.records.map((record) => record.id.toLowerCase())), industry);
+  const recentReferenceIds = history.recentReferenceIds;
+  const eligibleFamilyIds = new Set(registry.records.flatMap((record) => [
+    record.familyId,
+    record.referenceFamilyId,
+    buildRouteContract(record).familyId,
+  ].filter(Boolean).map((value) => value.toLowerCase())));
+  const eligibleSignatures = new Set(registry.records.map(signatureFor));
+  const recentFamilyInput = Array.isArray(request.recentLaunches)
+    ? history.relevantLaunches.flatMap((launch) => [
+        ...(Array.isArray(launch.routeFamilyIds) ? launch.routeFamilyIds : []),
+        launch.creativeFamilyId,
+        launch.referenceFamilyId,
+      ])
+    : request.recentFamilyIds;
+  const recentSignatureInput = Array.isArray(request.recentLaunches)
+    ? history.relevantLaunches.flatMap((launch) =>
+        Array.isArray(launch.routeSignatures) ? launch.routeSignatures : [])
+    : request.recentRouteSignatures;
   const recentFamilyIds = new Set(
-    cleanList(request.recentFamilyIds, 200),
+    cleanList(recentFamilyInput, 200).filter((id) => eligibleFamilyIds.has(id)),
   );
   const recentRouteSignatures = new Set(
-    (Array.isArray(request.recentRouteSignatures)
-      ? request.recentRouteSignatures
+    (Array.isArray(recentSignatureInput)
+      ? recentSignatureInput
       : []
-    ).map((value) => cleanText(value, 600)),
+    ).map((value) => cleanText(value, 600)).filter((value) => eligibleSignatures.has(value)),
   );
-  const selectionModes = [
-    {
-      id: "fresh",
-      excludeReferences: true,
-      excludeFamilies: true,
-      excludeRouteSignatures: true,
-    },
-    {
-      id: "route-signatures-relaxed",
-      excludeReferences: true,
-      excludeFamilies: true,
-      excludeRouteSignatures: false,
-    },
-    {
-      id: "families-relaxed",
-      excludeReferences: true,
-      excludeFamilies: false,
-      excludeRouteSignatures: false,
-    },
-    {
-      id: "history-relaxed",
-      excludeReferences: false,
-      excludeFamilies: false,
-      excludeRouteSignatures: false,
-    },
-  ];
-  let selection;
-  for (const mode of selectionModes) {
-    const ranked = rankedRecords(
-      registry,
-      { ...request, seed, industry },
-      recentReferenceIds,
-      recentFamilyIds,
-      recentRouteSignatures,
-      mode,
-    );
-    const anchors = independentAnchors(ranked);
-    if (anchors.length === 3) {
-      selection = { mode, ranked, anchors };
-      break;
-    }
-  }
-  if (!selection)
+  history.recentFamilyIds = recentFamilyIds;
+  history.recentRouteSignatures = recentRouteSignatures;
+  const ranked = rankedRecords(registry, { ...request, seed, industry });
+  const selection = independentAnchors(ranked, { ...request, seed, industry }, history);
+  if (!selection.chosen)
     throw new Error(
-      "The inspiration registry cannot supply three structurally independent creative routes, even after relaxing recent-history exclusions.",
+      `The inspiration registry cannot supply three structurally independent creative routes for '${industry}'.`,
     );
-  const { anchors, ranked } = selection;
+  const anchors = selection.chosen.anchors;
 
   const routes = anchors.map((anchor, index) => {
     // One route gets one authoritative visual capsule. Supporting references
@@ -741,7 +742,25 @@ export function buildInspirationPack(
     recentReferenceIds: [...recentReferenceIds].sort(),
     recentFamilyIds: [...recentFamilyIds].sort(),
     recentRouteSignatures: [...recentRouteSignatures].sort(),
-    freshnessFallback: selection.mode.id,
+    recentReferenceSets: history.recentTrios.map((trio) => [...trio].sort()),
+    selectedReferenceIds: anchors.map((anchor) => anchor.id),
+    selectionHistory: {
+      recentTrioCount: history.recentTrios.length,
+      repeatedRecentTrio: selection.chosen.repeatedRecentTrio,
+      latestTrioOverlap: selection.chosen.latestTrioOverlap,
+      selectedExposure: selection.chosen.exposure,
+      selectedPatternExposure: selection.chosen.patternExposure,
+      validTrioCount: selection.validTrioCount,
+      minimumStructuralDistance: selection.chosen.minimumDistance,
+      rationale: history.recentTrios.length
+        ? `${selection.chosen.repeatedRecentTrio ? "Repeated" : "Avoided"} a recent trio; latest trio overlap ${selection.chosen.latestTrioOverlap} of 3; selected exposure ${selection.chosen.exposure} across ${selection.validTrioCount} structurally independent trios. Explicit reference intent ranks first, followed by history, prompt fit, and seeded rotation.`
+        : `No recent matching trio; selected across ${selection.validTrioCount} structurally independent trios using prompt fit and seeded rotation.`,
+    },
+    freshnessFallback: anchors.every((anchor) => recentReferenceIds.has(anchor.id.toLowerCase()))
+      ? "history-relaxed"
+      : anchors.some((anchor) => recentReferenceIds.has(anchor.id.toLowerCase()))
+        ? "history-balanced"
+        : "fresh",
   };
   return {
     version: 2,

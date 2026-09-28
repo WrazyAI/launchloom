@@ -95,6 +95,7 @@ const pack = buildInspirationPack(
     industry,
     styleTerms,
     styleText,
+    recentLaunches: recent,
     recentReferenceIds: recent.flatMap((launch) =>
       Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
     ),

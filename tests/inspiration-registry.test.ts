@@ -113,6 +113,83 @@ describe("inspiration registry", () => {
     ).toBe(3);
   });
 
+  it("varies the eligible trio across bounded seeds in every core niche", () => {
+    const core = JSON.parse(fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"));
+    const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
+    for (const niche of core.niches) {
+      const sets = new Set<string>();
+      for (const index of [1, 2, 3, 4, 5, 6]) {
+        const request = { ...baseRequest, industry: niche.businessKind, styleTerms: [], seed: `rotation-${index}` };
+        const first = buildInspirationPack(request, registry, options);
+        const second = buildInspirationPack(request, registry, options);
+        expect(first.routes.map((route: any) => route.referenceDossier.id), niche.id).toEqual(
+          second.routes.map((route: any) => route.referenceDossier.id),
+        );
+        const ids = first.routes.map((route: any) => route.referenceDossier.id);
+        expect(ids).toHaveLength(3);
+        expect(new Set(ids).size, niche.id).toBe(3);
+        expect(ids.every((id: string) => niche.referenceIds.includes(id)), niche.id).toBe(true);
+        for (const field of ["navigation", "heroGeometry", "servicePresentation", "typographyCategory", "familyId"])
+          expect(new Set(first.routes.map((route: any) => route[field])).size, `${niche.id}:${field}`).toBe(3);
+        sets.add(ids.sort().join("|"));
+      }
+      expect(sets.size, niche.id).toBeGreaterThanOrEqual(2);
+    }
+  }, 120_000);
+
+  it("uses persisted recent trios to avoid an exact repeat and report the choice", () => {
+    const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
+    const first = buildInspirationPack({ ...baseRequest, styleTerms: [], seed: "repeat-risk" }, registry, options);
+    const firstIds = first.routes.map((route: any) => route.referenceDossier.id);
+    const next = buildInspirationPack({
+      ...baseRequest,
+      styleTerms: [],
+      seed: "repeat-risk",
+      recentLaunches: [{ businessKind: "home-care", referenceIds: firstIds, routeSignatures: first.routes.map((route: any) => route.signature) }],
+    }, registry, options);
+    const nextIds = next.routes.map((route: any) => route.referenceDossier.id);
+    expect(buildInspirationPack({
+      ...baseRequest,
+      styleTerms: [],
+      seed: "repeat-risk",
+      recentLaunches: [{ businessKind: "home-care", referenceIds: firstIds, routeSignatures: first.routes.map((route: any) => route.signature) }],
+    }, registry, options)).toEqual(next);
+    expect(nextIds.sort()).not.toEqual([...firstIds].sort());
+    expect(next.request.selectedReferenceIds).toEqual(next.routes.map((route: any) => route.referenceDossier.id));
+    expect(next.request.selectionHistory).toMatchObject({ recentTrioCount: 1, repeatedRecentTrio: false });
+    expect(next.request.selectionHistory.rationale).toMatch(/recent trio/iu);
+  });
+
+  it("ignores a mixed-niche history entry instead of treating its matching IDs as a trio", () => {
+    const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
+    const initial = buildInspirationPack({ ...baseRequest, styleTerms: [], seed: "mixed-history" }, registry, options);
+    const ids = initial.routes.map((route: any) => route.referenceDossier.id);
+    const next = buildInspirationPack({
+      ...baseRequest,
+      styleTerms: [],
+      seed: "mixed-history",
+      recentReferenceIds: ids,
+      recentLaunches: [{ businessKind: "dental", referenceIds: [...ids, "web-dental-gartside-street"] }],
+    }, registry, options);
+    expect(next.request.recentReferenceSets).toEqual([]);
+    expect(next.request.recentReferenceIds).toEqual([]);
+    expect(next.routes.map((route: any) => route.referenceDossier.id)).toEqual(ids);
+  });
+
+  it("rotates away from a legacy recent trio recorded only by route signatures", () => {
+    const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
+    const initial = buildInspirationPack({ ...baseRequest, styleTerms: [], seed: "legacy-patterns" }, registry, options);
+    const next = buildInspirationPack({
+      ...baseRequest,
+      styleTerms: [],
+      seed: "legacy-patterns",
+      recentRouteSignatures: initial.routes.map((route: any) => route.signature),
+    }, registry, options);
+    expect(next.routes.map((route: any) => route.referenceDossier.id).sort()).not.toEqual(
+      initial.routes.map((route: any) => route.referenceDossier.id).sort(),
+    );
+  });
+
   it("avoids repeating the recent trio when a niche has more core references", () => {
     const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
     const initial = buildInspirationPack(baseRequest, registry, options);
