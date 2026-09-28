@@ -278,25 +278,38 @@ async function sendEmail(
     tag: string;
   },
 ) {
-  if (!env.RESEND_API_KEY || !env.LAUNCHLOOM_FROM_EMAIL) return;
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: env.LAUNCHLOOM_FROM_EMAIL,
-      to: [input.to],
-      reply_to: input.replyTo,
-      subject: input.subject,
-      html: input.html,
-      text: input.text,
-      tags: [{ name: "launchloom_kind", value: input.tag }],
-    }),
-  });
+  if (!env.RESEND_API_KEY || !env.LAUNCHLOOM_FROM_EMAIL)
+    throw new LeadEmailDeliveryError();
+  let response: Response;
+  try {
+    response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: env.LAUNCHLOOM_FROM_EMAIL,
+        to: [input.to],
+        reply_to: input.replyTo,
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+        tags: [{ name: "launchloom_kind", value: input.tag }],
+      }),
+    });
+  } catch {
+    throw new LeadEmailDeliveryError();
+  }
   if (!response.ok)
-    throw new Error(`Email delivery failed: ${response.status}`);
+    throw new LeadEmailDeliveryError(response.status);
+}
+
+class LeadEmailDeliveryError extends Error {
+  constructor(readonly providerStatus?: number) {
+    super("Lead email delivery failed.");
+    this.name = "LeadEmailDeliveryError";
+  }
 }
 
 async function currentReviewPr(env: Env, claims: ReviewClaims) {
@@ -1525,7 +1538,9 @@ async function approval(request: Request, env: Env) {
 }
 
 async function lead(request: Request, env: Env) {
-  const headers = cors(request, platformOrigins(env));
+  let allowedOrigins = platformOrigins(env);
+  let project = "";
+  const headers = cors(request, allowedOrigins);
   if (request.method === "OPTIONS")
     return new Response(null, { status: 204, headers });
   if (request.method !== "POST")
@@ -1536,6 +1551,10 @@ async function lead(request: Request, env: Env) {
       String(body.token || ""),
       env.LEAD_SIGNING_SECRET,
     );
+    allowedOrigins = Array.isArray(claims.allowedOrigins)
+      ? claims.allowedOrigins
+      : [];
+    project = clean(claims.project, 100);
     if (!claims.project || !claims.recipient || !claims.allowedOrigins?.length)
       throw new Error("Invalid lead form.");
     assertClaimOrigin(
@@ -1573,6 +1592,23 @@ async function lead(request: Request, env: Env) {
     });
     return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
   } catch (error) {
+    if (error instanceof LeadEmailDeliveryError) {
+      console.error(
+        JSON.stringify({
+          event: "lead.email_delivery_failed",
+          project,
+          providerStatus: error.providerStatus,
+        }),
+      );
+      return json(
+        {
+          error:
+            "We could not send your request right now. Please call the business directly.",
+        },
+        503,
+        cors(request, allowedOrigins),
+      );
+    }
     console.error("Lead failed", error);
     return json(
       {
@@ -1582,7 +1618,7 @@ async function lead(request: Request, env: Env) {
             : "We couldn’t send your request.",
       },
       403,
-      headers,
+      cors(request, allowedOrigins),
     );
   }
 }
