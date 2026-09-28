@@ -758,10 +758,18 @@ export function findUnsafeJsxBehavior(source, scopedIds = null) {
       inspectGlobalReference(node, root.id);
       const opening = openingElement(node);
       if (opening) {
+        if (opening.tagName.getText(file).toLowerCase() === "form")
+          issues.add(
+            `${root.id}:native form bypasses the shared LaunchLoom LeadForm endpoint`,
+          );
         for (const attribute of opening.attributes.properties) {
           if (ts.isJsxAttribute(attribute)) {
             const name = attribute.name.getText(file);
-            if (isExecutableJsxProp(name))
+            if (["action", "formaction"].includes(name.toLowerCase()))
+              issues.add(
+                `${root.id}:unapproved form submission endpoint prop ${name}`,
+              );
+            else if (isExecutableJsxProp(name))
               issues.add(`${root.id}:executable JSX prop ${name}`);
           } else if (ts.isJsxSpreadAttribute(attribute)) {
             if (!ts.isObjectLiteralExpression(attribute.expression)) {
@@ -778,7 +786,11 @@ export function findUnsafeJsxBehavior(source, scopedIds = null) {
                 issues.add(`${root.id}:computed JSX prop spread`);
                 continue;
               }
-              if (isExecutableJsxProp(name))
+              if (["action", "formaction"].includes(name.toLowerCase()))
+                issues.add(
+                  `${root.id}:unapproved form submission endpoint prop ${name}`,
+                );
+              else if (isExecutableJsxProp(name))
                 issues.add(`${root.id}:executable JSX prop spread ${name}`);
             }
           }

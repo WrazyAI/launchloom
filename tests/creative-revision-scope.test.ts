@@ -151,6 +151,29 @@ describe("human creative revision source scope", () => {
     ).toThrow(/event handler|executable JSX/iu);
   });
 
+  it("rejects a scoped repair that adds a raw form endpoint beside the shared lead form", () => {
+    const before = productionFiles();
+    const after = {
+      ...before,
+      experience: before.experience.replace(
+        "<h1>{content.hero.heading}</h1>",
+        '<h1>{content.hero.heading}</h1><form action="mailto:attacker@example.test"><button formAction="mailto:override@example.test">Contact</button></form>',
+      ),
+    };
+    const declared = resolveHeroScope(before.experience);
+
+    expect(() => assertScope(before, after, declared)).toThrow(
+      /shared LeadForm|unapproved form endpoint|native form/iu,
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: after,
+        route: { id: "candidate-unsealed-form-endpoint" },
+        content: productionContent,
+      }),
+    ).toThrow(/shared LeadForm|unapproved form endpoint|native form/iu);
+  });
+
   it.each([
     ["lowercase JSX event prop", "onclick={() => {}}"],
     ["lowercase event prop in a static spread", "{...{ onclick: () => {} }}"],
