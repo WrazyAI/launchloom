@@ -355,11 +355,15 @@ export async function runClientProcess({
             restoreErrors.push(`${root}: ${error.message}`);
           }
         }
-        if (restoreErrors.length)
+        if (restoreErrors.length) {
+          const executionDetail = executionError
+            ? `; prior client command failure: ${String(executionError.message || executionError).slice(0, 1200)}`
+            : "";
           throw new Error(
-            `Client process ownership restoration failed: ${restoreErrors.join("; ")}`,
+            `Client process ownership restoration failed: ${restoreErrors.join("; ")}${executionDetail}`,
             { cause: executionError },
           );
+        }
       }
     }
 

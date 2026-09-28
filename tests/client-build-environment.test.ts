@@ -125,6 +125,63 @@ describe("client build environment", () => {
     ).rejects.toThrow(/client process isolation.*unavailable/iu);
   });
 
+  it.skipIf(process.platform !== "linux")(
+    "keeps the original client failure visible when ownership restoration also fails",
+    async () => {
+      const root = await fs.mkdtemp(
+        path.join(os.tmpdir(), "launchloom-client-restore-error-"),
+      );
+      const sudoPath = path.join(root, "synthetic-sudo");
+      const fakeSudo = `#!/usr/bin/env node
+const { spawnSync } = require("node:child_process");
+const args = process.argv.slice(2);
+if (args.includes("find")) {
+  const owner = args[args.indexOf("-h") + 1];
+  if (owner === String(process.getuid()) + ":" + String(process.getgid())) {
+    process.stderr.write("synthetic ownership restoration failure");
+    process.exit(1);
+  }
+  process.exit(0);
+}
+if (args.includes("process.stdout.write(String(process.getuid()))")) {
+  process.stdout.write(String(process.getuid() + 1));
+  process.exit(0);
+}
+const separator = args.indexOf("--");
+const result = spawnSync(args[separator + 1], args.slice(separator + 2), { stdio: "inherit" });
+process.exit(result.status ?? 1);
+`;
+      await fs.writeFile(sudoPath, fakeSudo, { mode: 0o700 });
+
+      try {
+        let failure: unknown;
+        try {
+          await runClientProcess({
+            command: process.execPath,
+            args: ["-e", "process.exitCode = 9"],
+            cwd: root,
+            writablePaths: [root],
+            isolationMode: "required",
+            sudoPath,
+            sourceEnvironment: { CI: "true", PATH: process.env.PATH },
+          });
+        } catch (error) {
+          failure = error;
+        }
+
+        expect(failure).toBeInstanceOf(Error);
+        expect((failure as Error).message).toContain(
+          "Client process ownership restoration failed",
+        );
+        expect((failure as Error).message).toContain(
+          "synthetic-sudo exited with 9",
+        );
+      } finally {
+        await fs.rm(root, { recursive: true, force: true });
+      }
+    },
+  );
+
   it("does not forward client stdout or stderr into the workflow log", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-client-output-test-"),
