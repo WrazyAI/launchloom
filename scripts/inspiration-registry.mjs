@@ -780,6 +780,8 @@ export function buildInspirationPack(
       minimumStructuralDistance: selection.chosen.minimumDistance,
       rationale: history.recentTrios.length
         ? `${selection.chosen.repeatedRecentTrio ? "Repeated" : "Avoided"} a recent trio; latest trio overlap ${selection.chosen.latestTrioOverlap} of 3; selected exposure ${selection.chosen.exposure} across ${selection.validTrioCount} structurally independent trios. Explicit reference intent ranks first, followed by history, prompt fit, and seeded rotation.`
+        : recentReferenceIds.size
+          ? `${recentReferenceIds.size} recent reference IDs influenced exposure ranking across ${selection.validTrioCount} structurally independent trios; ${recentRouteSignatures.size} matched route signatures and ${recentFamilyIds.size} matched families were also considered. Explicit reference intent ranks first, followed by prompt fit and seeded rotation.`
         : recentRouteSignatures.size || recentFamilyIds.size
           ? `${recentRouteSignatures.size} matched route signatures and ${recentFamilyIds.size} matched families influenced history ranking across ${selection.validTrioCount} structurally independent trios. Explicit reference intent ranks first, followed by prompt fit and seeded rotation.`
           : `No recent matching trio or pattern; selected across ${selection.validTrioCount} structurally independent trios using prompt fit and seeded rotation.`,

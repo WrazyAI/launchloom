@@ -190,6 +190,25 @@ describe("inspiration registry", () => {
     );
   });
 
+  it("explains when a partial recent ID changes exposure ranking", () => {
+    const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
+    const seed = "partial-history-rationale";
+    const initial = buildInspirationPack({ ...baseRequest, seed, styleTerms: [] }, registry, options);
+    const recentId = initial.routes[0].referenceDossier?.id;
+    if (!recentId) throw new Error("The initial route is missing its dossier ID.");
+    const next = buildInspirationPack({
+      ...baseRequest,
+      seed,
+      styleTerms: [],
+      recentLaunches: [{ businessKind: "home-care", referenceIds: [recentId] }],
+    }, registry, options);
+    expect(next.request.recentReferenceIds).toEqual([recentId]);
+    expect(next.request.recentReferenceSets).toEqual([]);
+    expect(next.routes.map((route: any) => route.referenceDossier.id)).not.toContain(recentId);
+    expect(next.request.selectionHistory.rationale).toMatch(/recent reference.*exposure/iu);
+    expect(next.request.selectionHistory.rationale).not.toMatch(/No recent matching trio or pattern/iu);
+  });
+
   it("balances cumulative exposure ahead of one latest-trio overlap", () => {
     const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
     const seed = "exposure-regression";

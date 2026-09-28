@@ -102,9 +102,9 @@ describe("inspiration compilation history", () => {
     });
     const next = JSON.parse(fs.readFileSync(outputPath, "utf8"));
     expect(next.request.recentReferenceSets).toEqual([homeRecord.referenceIds, laterHomeRecord.referenceIds]);
-    expect(next.request.recentFamilyIds).not.toEqual(expect.arrayContaining(
-      dentalRecord.routeFamilyIds.filter((id: string) => /dental|clinic/iu.test(id)),
-    ));
+    expect(next.request.recentFamilyIds).toEqual(
+      [...new Set([...homeRecord.routeFamilyIds, ...laterHomeRecord.routeFamilyIds])].sort(),
+    );
     expect(next.request.recentRouteSignatures).not.toEqual(expect.arrayContaining(dentalRecord.routeSignatures));
     expect(next.request.selectionHistory.repeatedRecentTrio).toBe(false);
     expect(next.referenceLibrary.recordIds).not.toEqual(homeRecord.referenceIds);
