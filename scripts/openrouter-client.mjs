@@ -229,6 +229,7 @@ export function openRouterApiError(payload, httpStatus = 0) {
 
 const AFFORDABILITY_RETRY_MARGIN = 512;
 const MIN_AFFORDABILITY_RETRY_TOKENS = 4_096;
+const INFLIGHT_CREDIT_RETRY_WAIT_MS = 2_000;
 
 export function isOpenRouterAffordabilityError(error) {
   return (
@@ -252,18 +253,27 @@ function affordableCompletionRetry(error, requestedTokens) {
   return { affordableTokens, retryTokens };
 }
 
+function isOpenRouterInFlightCreditError(error) {
+  return (
+    /^OpenRouter 402\b/iu.test(String(error?.message || "")) &&
+    /in-flight requests settle/iu.test(String(error?.message || ""))
+  );
+}
+
 /**
- * Make one bounded completion-token retry when OpenRouter explicitly reports
- * an affordable ceiling. Other provider errors are returned unchanged so the
- * caller remains responsible for its normal fail-closed diagnostics.
+ * Retry one explicit affordability ceiling and one temporary in-flight credit
+ * reservation. All other provider errors return unchanged for fail-closed
+ * caller diagnostics.
  *
- * @param {{ body: Record<string, any>, request: (body: Record<string, any>) => Promise<Response>, logger?: (line: string) => void }} options
+ * @param {{ body: Record<string, any>, request: (body: Record<string, any>) => Promise<Response>, logger?: (line: string) => void, onRetry?: (details: {requestedTokens: number, affordableTokens: number, retryTokens: number, tokenField: string}) => void, wait?: (milliseconds: number) => Promise<void> }} options
  */
 export async function openRouterChatCompletionWithCreditRetry({
   body,
   request,
   logger = console.warn,
   onRetry,
+  wait = (milliseconds) =>
+    new Promise((resolve) => setTimeout(resolve, milliseconds)),
 } = {}) {
   if (!body || typeof body !== "object")
     throw new Error("OpenRouter request body is required.");
@@ -297,26 +307,55 @@ export async function openRouterChatCompletionWithCreditRetry({
     };
   }
 
-  const first = await sendAttempt(body);
-  const retry = tokenField
-    ? affordableCompletionRetry(first.providerError, requestedTokens)
-    : null;
-  if (!retry) return { ...first, attempts: [first] };
+  const attempts = [];
+  let current = await sendAttempt(body);
+  attempts.push(current);
+  let budgetRetried = false;
+  let inFlightRetried = false;
 
-  logger(
-    `openrouter_budget_retry requested=${requestedTokens} affordable=${retry.affordableTokens} retry=${retry.retryTokens}`,
-  );
-  onRetry?.({
-    requestedTokens,
-    affordableTokens: retry.affordableTokens,
-    retryTokens: retry.retryTokens,
-    tokenField,
-  });
-  const second = await sendAttempt({
-    ...body,
-    [tokenField]: retry.retryTokens,
-  });
-  return { ...second, attempts: [first, second] };
+  while (true) {
+    const currentTokenLimit = tokenField
+      ? Number(current.requestBody[tokenField])
+      : null;
+    const retry =
+      tokenField && !budgetRetried
+        ? affordableCompletionRetry(current.providerError, currentTokenLimit)
+        : null;
+    if (retry) {
+      logger(
+        `openrouter_budget_retry requested=${currentTokenLimit} affordable=${retry.affordableTokens} retry=${retry.retryTokens}`,
+      );
+      onRetry?.({
+        requestedTokens: currentTokenLimit,
+        affordableTokens: retry.affordableTokens,
+        retryTokens: retry.retryTokens,
+        tokenField,
+      });
+      budgetRetried = true;
+      current = await sendAttempt({
+        ...current.requestBody,
+        [tokenField]: retry.retryTokens,
+      });
+      attempts.push(current);
+      continue;
+    }
+
+    if (
+      !inFlightRetried &&
+      isOpenRouterInFlightCreditError(current.providerError)
+    ) {
+      logger(
+        `openrouter_inflight_credit_retry wait_ms=${INFLIGHT_CREDIT_RETRY_WAIT_MS}`,
+      );
+      inFlightRetried = true;
+      await wait(INFLIGHT_CREDIT_RETRY_WAIT_MS);
+      current = await sendAttempt(current.requestBody);
+      attempts.push(current);
+      continue;
+    }
+
+    return { ...current, attempts };
+  }
 }
 
 /**

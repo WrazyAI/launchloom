@@ -111,6 +111,41 @@ describe("OpenRouter cache-aware client", () => {
     );
   });
 
+  it("waits once for an in-flight credit reservation and retries the same budget", async () => {
+    const requests: Array<Record<string, unknown>> = [];
+    const request = vi.fn(async (body: Record<string, unknown>) => {
+      requests.push(body);
+      if (requests.length === 1) {
+        return new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.",
+            },
+          }),
+          { status: 402 },
+        );
+      }
+      return new Response(JSON.stringify({ choices: [] }));
+    });
+    const wait = vi.fn(async (_milliseconds: number) => {});
+
+    const result = await openRouterChatCompletionWithCreditRetry({
+      body: { model: "openai/gpt-6-luna", max_tokens: 4_677 },
+      request,
+      wait,
+    });
+
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(requests).toEqual([
+      { model: "openai/gpt-6-luna", max_tokens: 4_677 },
+      { model: "openai/gpt-6-luna", max_tokens: 4_677 },
+    ]);
+    expect(wait).toHaveBeenCalledTimes(1);
+    expect(wait).toHaveBeenCalledWith(2_000);
+    expect(result.providerError).toBeNull();
+  });
+
   it("does not retry non-affordability errors or a second 402", async () => {
     const noBudgetDetail = vi.fn(
       async () =>

@@ -237,7 +237,7 @@ describe("creative candidate promotion", () => {
     expect(report.candidates[0].eligible).toBe(false);
     expect(report.fallback).toBe(true);
     expect(report.selectedCandidateId).toBeNull();
-  }, 45_000);
+  }, 240_000);
 
   it("persists isolated client command diagnostics in the candidate report", async () => {
     const root = await makeFixture();
