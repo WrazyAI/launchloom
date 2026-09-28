@@ -14,7 +14,6 @@ jobs:
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
-      LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       # The signed-link and mail scripts live in the private LaunchLoom control
       # repository, not in the generated client repository cloned below.
@@ -24,8 +23,10 @@ jobs:
       - name: Prepare private production workspace
         run: |
           umask 077
+          LAUNCHLOOM_PRIVATE_DIR="$RUNNER_TEMP/launchloom-private-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           mkdir -p "$LAUNCHLOOM_PRIVATE_DIR"
           chmod 700 "$LAUNCHLOOM_PRIVATE_DIR"
+          echo "LAUNCHLOOM_PRIVATE_DIR=$LAUNCHLOOM_PRIVATE_DIR" >> "$GITHUB_ENV"
           test "$(stat -c '%a' "$LAUNCHLOOM_PRIVATE_DIR")" = 700
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
@@ -58,7 +59,7 @@ jobs:
           unset GIT_AUTH
           REMOTE_URL=$(git -C "$CLIENT_DIR" remote get-url origin)
           [[ "$REMOTE_URL" == "https://github.com/$CLIENT_REPO.git" && "$REMOTE_URL" != *'@'* ]] || { echo "Client origin contains persisted credentials or an unexpected host." >&2; exit 1; }
-          bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" fetch origin "$APPROVED_SHA"
+          (cd "$CLIENT_DIR" && bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" fetch origin "$APPROVED_SHA")
           git -C "$CLIENT_DIR" checkout --detach "$APPROVED_SHA"
           test "$(git -C "$CLIENT_DIR" rev-parse HEAD)" = "$APPROVED_SHA" || { echo "Approved commit checkout mismatch"; exit 1; }
           PROJECT=$(node -e "console.log(require('$CLIENT_DIR/.launchloom-deployment.json').project)")

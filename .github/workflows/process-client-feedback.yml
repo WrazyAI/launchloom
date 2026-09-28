@@ -24,7 +24,6 @@ jobs:
       FEEDBACK_COMMENT_ID: ${{ github.event.client_payload.feedbackComment }}
       CLIENT_REPO: ${{ github.event.client_payload.repo }}
       FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
-      LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -32,8 +31,10 @@ jobs:
       - name: Prepare private revision workspace
         run: |
           umask 077
+          LAUNCHLOOM_PRIVATE_DIR="$RUNNER_TEMP/launchloom-private-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           mkdir -p "$LAUNCHLOOM_PRIVATE_DIR"
           chmod 700 "$LAUNCHLOOM_PRIVATE_DIR"
+          echo "LAUNCHLOOM_PRIVATE_DIR=$LAUNCHLOOM_PRIVATE_DIR" >> "$GITHUB_ENV"
           test "$(stat -c '%a' "$LAUNCHLOOM_PRIVATE_DIR")" = 700
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
@@ -107,6 +108,7 @@ jobs:
         id: apply_feedback
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
         run: CLIENT_PR="${{ steps.revision.outputs.pr }}" CLIENT_CONFIG_PATH="$LAUNCHLOOM_PRIVATE_DIR/client/src/site.config.json" FEEDBACK_ISSUE="$FEEDBACK_ISSUE" FEEDBACK_STAGE=client FEEDBACK_SUMMARY_PATH="$LAUNCHLOOM_PRIVATE_DIR/client-feedback.txt" FEEDBACK_OUTCOME_PATH="$LAUNCHLOOM_PRIVATE_DIR/revision-outcome.txt" node scripts/apply-feedback.mjs
       - name: Flag feedback that needs manual attention
         if: steps.claim.outputs.run == 'true' && failure() && steps.apply_feedback.outcome == 'failure'
@@ -121,7 +123,7 @@ jobs:
           GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
-          NAME=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')
+          NAME=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/client/src/site.config.json"); console.log(x.business.name)')
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/$CLIENT_REPO/pull/${{ steps.revision.outputs.pr }}" --review "https://github.com/$CLIENT_REPO/pull/${{ steps.revision.outputs.pr }}" --kind revision-failed --audience manual-attention --feedback-file "$LAUNCHLOOM_PRIVATE_DIR/client-feedback.txt" --outcome-file "$LAUNCHLOOM_PRIVATE_DIR/revision-outcome.txt" --idempotency-key "revision-failed-$REVISION_REQUEST_ID"
       - name: Configure live site integrations
         if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
@@ -149,6 +151,7 @@ jobs:
         id: creative_revision
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
         run: |
           CLIENT_DIR="$LAUNCHLOOM_PRIVATE_DIR/client"
           node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$CLIENT_DIR" --report "$LAUNCHLOOM_PRIVATE_DIR/revision-template-sync.json"

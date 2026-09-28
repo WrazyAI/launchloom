@@ -196,7 +196,7 @@ export function selectAuthorReferenceScreenshots(
  * opening geometry. Full-page overviews stay low-detail; first-viewport crops
  * use high detail and the source dossier's recorded browser dimensions.
  *
- * @param {{ desktop?: { path?: string, viewport?: { width?: number, height?: number } }, mobile?: { path?: string, viewport?: { width?: number, height?: number } } }} reference
+ * @param {{ desktop?: { path?: string, absolutePath?: string, viewport?: { width?: number, height?: number } }, mobile?: { path?: string, absolutePath?: string, viewport?: { width?: number, height?: number } } }} reference
  * @param {{ retry?: boolean }} [options]
  * @returns {Promise<Array<{ path: string, detail: "low" | "high", purpose: string, crop?: { left: number, top: number, width: number, height: number } }>>}
  */
@@ -204,7 +204,8 @@ export async function selectAuthorReferenceEvidence(
   reference,
   { retry = false } = {},
 ) {
-  const desktopPath = reference?.desktop?.path;
+  const desktopPath =
+    reference?.desktop?.absolutePath || reference?.desktop?.path;
   if (!desktopPath) return [];
 
   const cropFor = async (capture) => {
@@ -216,7 +217,9 @@ export async function selectAuthorReferenceEvidence(
       viewport.height <= 0
     )
       return null;
-    const dimensions = await promptImageDimensions(capture.path);
+    const dimensions = await promptImageDimensions(
+      capture.absolutePath || capture.path,
+    );
     return {
       left: 0,
       top: 0,
@@ -241,10 +244,11 @@ export async function selectAuthorReferenceEvidence(
     ...(desktopCrop ? { crop: desktopCrop } : {}),
   });
 
-  if (!retry && reference?.mobile?.path) {
+  const mobilePath = reference?.mobile?.absolutePath || reference?.mobile?.path;
+  if (!retry && mobilePath) {
     const mobileCrop = await cropFor(reference.mobile);
     evidence.push({
-      path: reference.mobile.path,
+      path: mobilePath,
       detail: mobileCrop ? "high" : "low",
       purpose: "mobile opening viewport",
       ...(mobileCrop ? { crop: mobileCrop } : {}),

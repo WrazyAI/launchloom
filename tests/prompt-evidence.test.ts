@@ -73,7 +73,10 @@ describe("prompt evidence", () => {
     const directory = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-oriented-viewport-crop-"),
     );
-    const source = path.join(directory, "portrait-with-landscape-orientation.jpg");
+    const source = path.join(
+      directory,
+      "portrait-with-landscape-orientation.jpg",
+    );
     const input = await sharp({
       create: {
         width: 800,
@@ -114,7 +117,9 @@ describe("prompt evidence", () => {
         channels: 3,
         background: { r: 30, g: 40, b: 50 },
       },
-    }).png().toFile(desktop);
+    })
+      .png()
+      .toFile(desktop);
     await sharp({
       create: {
         width: 390,
@@ -122,14 +127,18 @@ describe("prompt evidence", () => {
         channels: 3,
         background: { r: 60, g: 70, b: 80 },
       },
-    }).png().toFile(mobile);
+    })
+      .png()
+      .toFile(mobile);
 
     const evidence = await selectAuthorReferenceEvidence({
       desktop: { path: desktop, viewport: { width: 1440, height: 900 } },
       mobile: { path: mobile, viewport: { width: 390, height: 844 } },
     });
 
-    expect(evidence.map(({ purpose, detail }) => ({ purpose, detail }))).toEqual([
+    expect(
+      evidence.map(({ purpose, detail }) => ({ purpose, detail })),
+    ).toEqual([
       { purpose: "full-page overview", detail: "low" },
       { purpose: "desktop opening viewport", detail: "high" },
       { purpose: "mobile opening viewport", detail: "high" },
@@ -146,6 +155,53 @@ describe("prompt evidence", () => {
       width: 390,
       height: 844,
     });
+  });
+
+  it("uses repository-rooted Reference DNA screenshot paths outside the checkout cwd", async () => {
+    const directory = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-author-reference-absolute-path-"),
+    );
+    const desktop = path.join(directory, "reference-desktop.png");
+    const mobile = path.join(directory, "reference-mobile.png");
+    await sharp({
+      create: {
+        width: 1440,
+        height: 1800,
+        channels: 3,
+        background: { r: 30, g: 40, b: 50 },
+      },
+    })
+      .png()
+      .toFile(desktop);
+    await sharp({
+      create: {
+        width: 390,
+        height: 1600,
+        channels: 3,
+        background: { r: 60, g: 70, b: 80 },
+      },
+    })
+      .png()
+      .toFile(mobile);
+
+    const evidence = await selectAuthorReferenceEvidence({
+      desktop: {
+        path: "data/reference-library/reference-desktop.png",
+        absolutePath: desktop,
+        viewport: { width: 1440, height: 900 },
+      },
+      mobile: {
+        path: "data/reference-library/reference-mobile.png",
+        absolutePath: mobile,
+        viewport: { width: 390, height: 844 },
+      },
+    });
+
+    expect(evidence.map(({ path: imagePath }) => imagePath)).toEqual([
+      desktop,
+      desktop,
+      mobile,
+    ]);
   });
 
   it("adds route context when screenshot-dimension preparation fails", async () => {

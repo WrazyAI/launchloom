@@ -47,7 +47,6 @@ jobs:
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
-      LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}
       REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
       REUSABLE_CANDIDATE_REPO: ${{ inputs.candidate_repository || '' }}
     steps:
@@ -61,8 +60,10 @@ jobs:
       - name: Prepare private generation workspace
         run: |
           umask 077
+          LAUNCHLOOM_PRIVATE_DIR="$RUNNER_TEMP/launchloom-private-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           mkdir -p "$LAUNCHLOOM_PRIVATE_DIR"
           chmod 700 "$LAUNCHLOOM_PRIVATE_DIR"
+          echo "LAUNCHLOOM_PRIVATE_DIR=$LAUNCHLOOM_PRIVATE_DIR" >> "$GITHUB_ENV"
           test "$(stat -c '%a' "$LAUNCHLOOM_PRIVATE_DIR")" = 700
       - run: npm ci
       - name: Install rendered acceptance browser

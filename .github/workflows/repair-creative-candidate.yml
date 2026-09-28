@@ -20,7 +20,6 @@ jobs:
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
-      LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -28,8 +27,10 @@ jobs:
       - name: Prepare private repair workspace
         run: |
           umask 077
+          LAUNCHLOOM_PRIVATE_DIR="$RUNNER_TEMP/launchloom-private-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           mkdir -p "$LAUNCHLOOM_PRIVATE_DIR"
           chmod 700 "$LAUNCHLOOM_PRIVATE_DIR"
+          echo "LAUNCHLOOM_PRIVATE_DIR=$LAUNCHLOOM_PRIVATE_DIR" >> "$GITHUB_ENV"
           test "$(stat -c '%a' "$LAUNCHLOOM_PRIVATE_DIR")" = 700
       - name: Atomically claim the one allowed repair
         id: claim

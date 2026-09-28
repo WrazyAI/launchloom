@@ -23,7 +23,6 @@ jobs:
       FEEDBACK_COMMENT_ID: ${{ github.event.client_payload.feedbackComment }}
       CLIENT_REPO: ${{ github.event.client_payload.repo }}
       CLIENT_PR: ${{ github.event.client_payload.pr }}
-      LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -31,8 +30,10 @@ jobs:
       - name: Prepare private revision workspace
         run: |
           umask 077
+          LAUNCHLOOM_PRIVATE_DIR="$RUNNER_TEMP/launchloom-private-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           mkdir -p "$LAUNCHLOOM_PRIVATE_DIR"
           chmod 700 "$LAUNCHLOOM_PRIVATE_DIR"
+          echo "LAUNCHLOOM_PRIVATE_DIR=$LAUNCHLOOM_PRIVATE_DIR" >> "$GITHUB_ENV"
           test "$(stat -c '%a' "$LAUNCHLOOM_PRIVATE_DIR")" = 700
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
@@ -85,7 +86,7 @@ jobs:
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
-          NAME=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')
+          NAME=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/client/src/site.config.json"); console.log(x.business.name)')
           node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/$CLIENT_REPO/pull/$CLIENT_PR" --review "https://github.com/$CLIENT_REPO/pull/$CLIENT_PR" --kind revision-failed --audience manual-attention --feedback-file "$LAUNCHLOOM_PRIVATE_DIR/developer-feedback.txt" --outcome-file "$LAUNCHLOOM_PRIVATE_DIR/revision-outcome.txt" --idempotency-key "revision-failed-$REVISION_REQUEST_ID"
       - name: Configure live site integrations
         if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
@@ -113,6 +114,7 @@ jobs:
         id: creative_revision
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
         run: |
           CLIENT_DIR="$LAUNCHLOOM_PRIVATE_DIR/client"
           node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$CLIENT_DIR"

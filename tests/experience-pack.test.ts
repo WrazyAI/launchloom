@@ -142,7 +142,10 @@ describe("experience-pack compiler", () => {
       "TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}",
     );
     expect(workflow).toContain(
-      "LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}",
+      'LAUNCHLOOM_PRIVATE_DIR="$RUNNER_TEMP/launchloom-private-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"',
+    );
+    expect(workflow).toContain(
+      'echo "LAUNCHLOOM_PRIVATE_DIR=$LAUNCHLOOM_PRIVATE_DIR" >> "$GITHUB_ENV"',
     );
     expect(workflow).toContain(
       "--out $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json",

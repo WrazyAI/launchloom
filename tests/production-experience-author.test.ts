@@ -947,19 +947,22 @@ describe("production experience author", () => {
     const motion = String(
       safeStage({ ...request, stage: "motion" }).content || "",
     );
-    const withSeparateContactComponent = experience.replace(
-      "export default function Experience({ content, runtime }) {",
-      `function ContactBand({ content, runtime }) {
+    const withSeparateContactComponent = experience
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        `function ContactBand({ content, runtime }) {
   return <section id="contact"><LeadForm content={content} runtime={runtime} /></section>;
 }
 export default function Experience({ content, runtime }) {`,
-    ).replace(
-      '<section id="faqs">',
-      '<section data-required-section="conversion">{content.process.map((step) => <p key={step}>{step}</p>)}</section><section id="faqs">',
-    ).replace(
-      '<section id="contact"><LeadForm content={content} runtime={runtime} /><a href={content.brand.phone}>{content.brand.phone}</a></section>',
-      "<ContactBand content={content} runtime={runtime} />",
-    );
+      )
+      .replace(
+        '<section id="faqs">',
+        '<section data-required-section="conversion">{content.process.map((step) => <p key={step}>{step}</p>)}</section><section id="faqs">',
+      )
+      .replace(
+        '<section id="contact"><LeadForm content={content} runtime={runtime} /><a href={content.brand.phone}>{content.brand.phone}</a></section>',
+        "<ContactBand content={content} runtime={runtime} />",
+      );
 
     expect(() =>
       validateProductionCandidateFiles({
@@ -2020,7 +2023,10 @@ export default function Experience({ content, runtime }) {`,
       workflow.indexOf("name: Generate or reuse contextual imagery"),
     ).toBeLessThan(authorIndex);
     expect(workflow).toContain(
-      "LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}",
+      'LAUNCHLOOM_PRIVATE_DIR="$RUNNER_TEMP/launchloom-private-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"',
+    );
+    expect(workflow).toContain(
+      'echo "LAUNCHLOOM_PRIVATE_DIR=$LAUNCHLOOM_PRIVATE_DIR" >> "$GITHUB_ENV"',
     );
     expect(workflow).toContain(
       "cp $LAUNCHLOOM_PRIVATE_DIR/seo-research.json .launchloom/seo-research.json",

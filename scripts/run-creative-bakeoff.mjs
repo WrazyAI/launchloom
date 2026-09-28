@@ -24,6 +24,141 @@ import {
 
 export { heroViewportFitFailure };
 
+const REQUIRED_RENDER_VIEWPORTS = [
+  { name: "desktop", width: 1536, height: 864 },
+  { name: "compact", width: 1366, height: 768 },
+  { name: "mobile", width: 390, height: 844 },
+];
+
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function validRatioBounds(value) {
+  if (value === null) return true;
+  return (
+    isRecord(value) &&
+    [
+      "leftRatio",
+      "topRatio",
+      "widthRatio",
+      "heightRatio",
+      "areaRatio",
+      "centerOffsetRatio",
+      "bottomRatio",
+    ].every((key) => Number.isFinite(value[key]))
+  );
+}
+
+/**
+ * Validate the untrusted render-worker report before its fields enter scoring.
+ * @param {unknown} report
+ * @param {{candidateId: string, requireRenderedDom?: boolean}} options
+ * @returns {Record<string, any>}
+ */
+export function validateCreativeRenderReport(
+  report,
+  { candidateId, requireRenderedDom = false } = {},
+) {
+  const invalid = () =>
+    new Error("Client render worker returned incomplete evidence.");
+  if (
+    !isRecord(report) ||
+    report.version !== 1 ||
+    report.candidateId !== candidateId ||
+    !Array.isArray(report.viewports) ||
+    report.viewports.length !== REQUIRED_RENDER_VIEWPORTS.length
+  )
+    throw invalid();
+
+  for (const expected of REQUIRED_RENDER_VIEWPORTS) {
+    const matches = report.viewports.filter(
+      (entry) => isRecord(entry) && entry.name === expected.name,
+    );
+    if (matches.length !== 1) throw invalid();
+    const entry = matches[0];
+    if (entry.width !== expected.width || entry.height !== expected.height)
+      throw invalid();
+    if (
+      !isRecord(entry.evidence) ||
+      entry.evidence.viewportWidth !== expected.width ||
+      entry.evidence.viewportHeight !== expected.height
+    )
+      throw invalid();
+
+    const evidence = entry.evidence;
+    const numericFields = [
+      "h1Count",
+      "missingFragments",
+      "missingNavTargets",
+      "missingAlt",
+      "unnamedControls",
+      "heroBottom",
+      "viewportHeight",
+      "viewportWidth",
+      "brokenImages",
+      "emDashes",
+    ];
+    const booleanFields = [
+      "hasHero",
+      "hasEarlyConversion",
+      "hasServices",
+      "hasFaqs",
+      "hasContact",
+      "hasLeadForm",
+      "overflow",
+    ];
+    const stringArrayFields = [
+      "navTargets",
+      "referenceSignatures",
+      "referenceSections",
+    ];
+    const stringFields = [
+      "heroGeometry",
+      "navigationGeometry",
+      "servicePresentation",
+      "ctaPlacement",
+      "mobileRecomposition",
+      "motionPrimitive",
+      "creativeRenderer",
+    ];
+    if (
+      numericFields.some((key) => !Number.isFinite(evidence[key])) ||
+      booleanFields.some((key) => typeof evidence[key] !== "boolean") ||
+      stringArrayFields.some(
+        (key) =>
+          !Array.isArray(evidence[key]) ||
+          !evidence[key].every((value) => typeof value === "string"),
+      ) ||
+      stringFields.some((key) => typeof evidence[key] !== "string") ||
+      !["headline", "openingImage", "navigation", "earlyConversion"].every(
+        (key) => validRatioBounds(evidence[key]),
+      )
+    )
+      throw invalid();
+
+    if (
+      !Array.isArray(entry.browserErrors) ||
+      !entry.browserErrors.every((value) => typeof value === "string") ||
+      !Array.isArray(entry.fullPageCaptureErrors) ||
+      !entry.fullPageCaptureErrors.every((value) => typeof value === "string")
+    )
+      throw invalid();
+    if (
+      requireRenderedDom &&
+      (typeof entry.renderedDom !== "string" || entry.renderedDom.length === 0)
+    )
+      throw invalid();
+    if (
+      !requireRenderedDom &&
+      entry.renderedDom !== null &&
+      typeof entry.renderedDom !== "string"
+    )
+      throw invalid();
+  }
+  return report;
+}
+
 function argsFrom(argv) {
   return Object.fromEntries(
     argv
@@ -539,18 +674,13 @@ export async function runCreativeBakeoff({
             throw new Error(
               "Client render worker returned an invalid report file.",
             );
-          renderReport = JSON.parse(
-            await fs.readFile(renderReportPath, "utf8"),
+          renderReport = validateCreativeRenderReport(
+            JSON.parse(await fs.readFile(renderReportPath, "utf8")),
+            {
+              candidateId: candidate.manifest.candidateId,
+              requireRenderedDom: candidate.manifest.version >= 2,
+            },
           );
-          if (
-            renderReport?.version !== 1 ||
-            renderReport.candidateId !== candidate.manifest.candidateId ||
-            !Array.isArray(renderReport.viewports) ||
-            renderReport.viewports.length !== 3
-          )
-            throw new Error(
-              "Client render worker returned incomplete evidence.",
-            );
           for (const entry of await fs.readdir(clientWorkerEvidence)) {
             if (!/^candidate-[a-z0-9]+-[a-z]+(?:-viewport)?\.png$/u.test(entry))
               throw new Error(

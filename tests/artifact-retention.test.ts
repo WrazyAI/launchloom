@@ -41,7 +41,10 @@ describe("GitHub Actions artifact retention", () => {
       expect(upload).toContain("continue-on-error: true");
       expect(upload).toContain("retention-days: 3");
       expect(workflow).toContain(
-        "LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}",
+        'LAUNCHLOOM_PRIVATE_DIR="$RUNNER_TEMP/launchloom-private-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"',
+      );
+      expect(workflow).toContain(
+        'echo "LAUNCHLOOM_PRIVATE_DIR=$LAUNCHLOOM_PRIVATE_DIR" >> "$GITHUB_ENV"',
       );
       expect(upload).toContain(`path: ${expectedScreenshotPath}`);
       if (name === "process-feedback.yml")
