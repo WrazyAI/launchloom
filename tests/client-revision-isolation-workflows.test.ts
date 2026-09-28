@@ -218,7 +218,7 @@ describe("client build and revision workflow isolation", () => {
       const lines = source.split("\n");
       for (const line of lines) {
         if (
-          /npm run build|verify-rendered-revision\.mjs|verify-creative-diagnostic\.mjs/u.test(
+          /npm run build|\bnode\s+[^\n]*verify-rendered-revision\.mjs|\bnode\s+[^\n]*verify-creative-diagnostic\.mjs/u.test(
             line,
           )
         )

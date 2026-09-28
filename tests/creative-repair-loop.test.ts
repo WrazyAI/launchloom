@@ -79,6 +79,66 @@ describe("creative repair loop", () => {
     expect(diagnostics.join(" ")).not.toContain('"experience":"fixed"');
   });
 
+  it("retries an affordability 402 once below the provider-reported token ceiling", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-affordability-retry-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "This request requires more credits, or fewer max_tokens. You requested up to 18000 tokens, but can only afford 16641.",
+            },
+          }),
+          { status: 402 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(repaired) },
+              },
+            ],
+          }),
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const diagnostics: string[] = [];
+
+    await expect(
+      requestRepair({
+        model: "openai/gpt-6-luna",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+        logger: (line: string) => diagnostics.push(line),
+      }),
+    ).resolves.toEqual(repaired);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const firstBody = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const retryBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
+    expect(firstBody.max_completion_tokens).toBe(18_000);
+    expect(retryBody.max_completion_tokens).toBe(16_385);
+    expect(diagnostics).toContain(
+      "creative_repair_budget_retry requested=18000 affordable=16641 retry=16385",
+    );
+  });
+
   it("bounds the OpenRouter repair transport with an abort signal", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-timeout-signal-"),
