@@ -1491,6 +1491,18 @@ async function creativeRepair(request: Request, env: Env) {
           409,
           cors(request, claims.allowedOrigins),
         );
+      if (
+        new URL(clean(body.pageUrl, 4_000)).origin !==
+        safeCreativeRepairUrl(status.previewUrl)
+      )
+        return json(
+          {
+            error:
+              "Open the exact diagnostic preview from this review link before sending it to the client.",
+          },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
       if (body.confirmed !== true)
         return json(
           {

@@ -158,6 +158,15 @@ describe("developer-triggered creative repair", () => {
     const token = await signedToken({
       creativeRepairSessionId: overrideSessionId,
     });
+    expect(
+      (
+        await userRequest(token, "send-anyway", "developer@example.com", {
+          confirmed: true,
+        })
+      ).status,
+    ).toBe(409);
+    expect(mergeAttempts).toBe(0);
+
     const base = {
       origin: previewOrigin,
       pageUrl: `${previewOrigin}/?review=${token}`,
