@@ -285,15 +285,13 @@ jobs:
           SITE_ID: ${{ steps.input.outputs.site_id }}
           CANDIDATE: ${{ steps.input.outputs.candidate }}
           DIAGNOSTIC_URL: ${{ steps.diagnostic_preview.outputs.url }}
+          CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}
+          FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
         run: |
           cd "$CLIENT_DIR"
           HEAD_SHA=$(git rev-parse HEAD)
-          CLIENT_EMAIL=$(node -e 'const x=require(process.argv[1]); console.log(x.business.email || x.business.leadEmail || "")' "$PWD/src/site.config.json")
-          FEEDBACK_ISSUE=$(gh issue list --repo "$CLIENT_REPO" --state open --label launchloom-client-feedback --limit 1 --json number --jq '.[0].number // 0')
-          if [ -z "$CLIENT_EMAIL" ] || [ "$FEEDBACK_ISSUE" = "0" ]; then
-            echo "A client email and feedback issue are required to register the diagnostic preview." >&2
-            exit 1
-          fi
+          test -n "$CLIENT_EMAIL" || { echo "The signed client review email is required to register the diagnostic preview." >&2; exit 1; }
+          [[ "$FEEDBACK_ISSUE" =~ ^[1-9][0-9]*$ ]] || { echo "The signed feedback issue is required to register the diagnostic preview." >&2; exit 1; }
           OVERRIDE_SESSION_ID=$(printf '%s' "$CLIENT_REPO:$CLIENT_PR:$HEAD_SHA:$CANDIDATE:diagnostic-review" | sha256sum | cut -c1-32)
           TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" \
             --stage developer \

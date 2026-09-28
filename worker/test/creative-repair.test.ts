@@ -435,7 +435,14 @@ describe("developer-triggered creative repair", () => {
     expect(dispatchCount).toBe(1);
     expect(dispatches[0]).toMatchObject({
       event_type: "repair-creative-candidate",
-      client_payload: { repo, sessionId, pr: 7, headSha: reviewedSha },
+      client_payload: {
+        repo,
+        sessionId,
+        pr: 7,
+        headSha: reviewedSha,
+        clientEmail: "client@example.com",
+        feedbackIssue: 8,
+      },
     });
     const claim = () =>
       SELF.fetch(`${api}/api/internal/creative-repairs`, {
