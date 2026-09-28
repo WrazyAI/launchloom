@@ -45,9 +45,8 @@ describe("model JSON response parsing", () => {
 
   it("generates a site when OpenRouter fences both generation responses", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-key");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
+    const fetchMock = vi.fn(
+      async (_input: RequestInfo | URL, _options?: RequestInit) =>
         Response.json({
           choices: [
             {
@@ -57,8 +56,8 @@ describe("model JSON response parsing", () => {
             },
           ],
         }),
-      ),
     );
+    vi.stubGlobal("fetch", fetchMock);
 
     await expect(
       generateSiteConfigWithModel(
@@ -74,5 +73,11 @@ describe("model JSON response parsing", () => {
       business: { name: "Mike Seeders Plumbing Inc" },
       preset: "home-services",
     });
+
+    const requestBodies = fetchMock.mock.calls.map(([, options]) =>
+      JSON.parse(options?.body as string),
+    );
+    expect(requestBodies.length).toBeGreaterThan(0);
+    expect(requestBodies.every((body) => body.max_tokens === 8_000)).toBe(true);
   });
 });

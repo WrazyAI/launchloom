@@ -35,6 +35,7 @@ function recentFingerprintsForSelection() {
 }
 
 const MODEL = "z-ai/glm-5.3-flash";
+const SITE_COPY_MAX_COMPLETION_TOKENS = 8_000;
 
 const SHARED_CREATIVE_DIRECTION =
   "Build a specific local-business decision journey. Near the opening, make clear who the business helps, what it provides, where it operates when location matters, and the next action. The hero headline must be a memorable 4-10 word promise, not a list of services. The hero body must be one useful sentence under 28 words. Service-card descriptions must be one distinct sentence under 22 words. Give each section a distinct job; do not repeat one claim across the hero, proof, services, and About copy. Use one primary action and one useful secondary action. Prefer client assets. Mention no person in a stock image as an employee, customer, patient, or client. Treat an area served as coverage, not a physical office. Do not use em dashes.";
@@ -1608,6 +1609,7 @@ async function askModel(intake, effort, model = MODEL) {
       model,
       ...promptCacheRequestFields(model, promptCacheKey),
       reasoning_effort: effort,
+      max_tokens: SITE_COPY_MAX_COMPLETION_TOKENS,
       temperature: 0.3,
       response_format: { type: "json_object" },
       messages: [
@@ -1655,6 +1657,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
       model,
       ...promptCacheRequestFields(model, promptCacheKey),
       reasoning_effort: "medium",
+      max_tokens: SITE_COPY_MAX_COMPLETION_TOKENS,
       temperature: 0.2,
       response_format: { type: "json_object" },
       messages: [
