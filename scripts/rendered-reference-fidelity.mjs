@@ -56,7 +56,7 @@ const auditSchema = {
           "mobileRecomposition",
           "interactionEvidence",
           "paletteAdherence",
-          "artDirection"
+          "artDirection",
         ],
         properties: {
           heroGeometry: { type: "integer", minimum: 0, maximum: 100 },
@@ -69,8 +69,8 @@ const auditSchema = {
           mobileRecomposition: { type: "integer", minimum: 0, maximum: 100 },
           interactionEvidence: { type: "integer", minimum: 0, maximum: 100 },
           paletteAdherence: { type: "integer", minimum: 0, maximum: 100 },
-          artDirection: { type: "integer", minimum: 0, maximum: 100 }
-        }
+          artDirection: { type: "integer", minimum: 0, maximum: 100 },
+        },
       },
       findings: {
         type: "array",
@@ -95,18 +95,21 @@ const auditSchema = {
                 "interaction-evidence",
                 "palette-adherence",
                 "client-art-direction",
-                "generic-grammar"
-              ]
+                "generic-grammar",
+              ],
             },
-            viewport: { type: "string", enum: ["desktop", "compact", "mobile", "all"] },
+            viewport: {
+              type: "string",
+              enum: ["desktop", "compact", "mobile", "all"],
+            },
             evidence: { type: "string", maxLength: 360 },
-            repair: { type: "string", maxLength: 420 }
-          }
-        }
+            repair: { type: "string", maxLength: 420 },
+          },
+        },
       },
-      summary: { type: "string", maxLength: 700 }
-    }
-  }
+      summary: { type: "string", maxLength: 700 },
+    },
+  },
 };
 
 const diversitySchema = {
@@ -115,7 +118,12 @@ const diversitySchema = {
   schema: {
     type: "object",
     additionalProperties: false,
-    required: ["overallDistinctiveness", "pairs", "genericFallbackDetected", "summary"],
+    required: [
+      "overallDistinctiveness",
+      "pairs",
+      "genericFallbackDetected",
+      "summary",
+    ],
     properties: {
       overallDistinctiveness: { type: "integer", minimum: 0, maximum: 100 },
       genericFallbackDetected: { type: "boolean" },
@@ -131,13 +139,13 @@ const diversitySchema = {
             left: { type: "string" },
             right: { type: "string" },
             distance: { type: "integer", minimum: 0, maximum: 100 },
-            reason: { type: "string", maxLength: 320 }
-          }
-        }
+            reason: { type: "string", maxLength: 320 },
+          },
+        },
       },
-      summary: { type: "string", maxLength: 500 }
-    }
-  }
+      summary: { type: "string", maxLength: 500 },
+    },
+  },
 };
 
 function parseChoice(payload, label) {
@@ -147,9 +155,13 @@ function parseChoice(payload, label) {
   if (["length", "max_tokens"].includes(choice?.finish_reason))
     throw new Error(`${label} was truncated.`);
   try {
-    return JSON.parse(content.replace(/^```(?:json)?\s*/iu, "").replace(/\s*```$/u, ""));
+    return JSON.parse(
+      content.replace(/^```(?:json)?\s*/iu, "").replace(/\s*```$/u, ""),
+    );
   } catch (error) {
-    throw new Error(`${label} returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `${label} returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -175,10 +187,13 @@ async function requestJson({
   label,
   sessionId,
   promptCacheKey,
+  maxTokens = 7000,
   fetchImpl = fetch,
 }) {
   if (!process.env.OPENROUTER_API_KEY)
-    throw new Error("OPENROUTER_API_KEY is required for rendered reference evaluation.");
+    throw new Error(
+      "OPENROUTER_API_KEY is required for rendered reference evaluation.",
+    );
   const maxAttempts = 3;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const controller = new AbortController();
@@ -196,16 +211,16 @@ async function requestJson({
           ...promptCacheRequestFields(model, promptCacheKey),
           temperature: 0,
           reasoning: { effort: "medium", exclude: true },
-          max_tokens: 7000,
+          max_tokens: maxTokens,
           response_format: { type: "json_schema", json_schema: schema },
           messages: [
             {
               role: "system",
               content:
-                "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. Return JSON only."
+                "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. Return JSON only.",
             },
-            { role: "user", content }
-          ]
+            { role: "user", content },
+          ],
         },
       });
       const responseCache = logOpenRouterResponseCacheUsage(label, response);
@@ -223,10 +238,14 @@ async function requestJson({
           provider: payload.provider || null,
         };
       }
-      const retryable = response.status === 408 || response.status === 429 ||
+      const retryable =
+        response.status === 408 ||
+        response.status === 429 ||
         (response.status >= 500 && response.status < 600);
       if (!retryable || attempt === maxAttempts - 1)
-        throw new Error(`${label} failed (${response.status}): ${payload?.error?.message || "unknown error"}`);
+        throw new Error(
+          `${label} failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
+        );
     } finally {
       clearTimeout(timeout);
     }
@@ -235,7 +254,9 @@ async function requestJson({
 }
 
 async function resolveEvidencePath(record) {
-  for (const candidate of [record?.path, record?.absolutePath].filter(Boolean)) {
+  for (const candidate of [record?.path, record?.absolutePath].filter(
+    Boolean,
+  )) {
     const resolved = path.resolve(candidate);
     try {
       await fs.access(resolved);
@@ -249,7 +270,9 @@ async function resolveEvidencePath(record) {
 
 function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
   const scores = audit?.scores || {};
-  const major = (audit?.findings || []).filter((item) => item.severity === "critical" || item.severity === "major");
+  const major = (audit?.findings || []).filter(
+    (item) => item.severity === "critical" || item.severity === "major",
+  );
   const required = [
     ["heroGeometry", thresholds.heroGeometry],
     ["typography", thresholds.typography],
@@ -261,7 +284,7 @@ function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
     ["mobileRecomposition", thresholds.mobileRecomposition],
     ["interactionEvidence", thresholds.interactionEvidence],
     ["paletteAdherence", thresholds.paletteAdherence],
-    ["artDirection", thresholds.artDirection]
+    ["artDirection", thresholds.artDirection],
   ];
   return (
     audit?.verdict === "pass" &&
@@ -281,7 +304,7 @@ export async function evaluateRenderedReferenceFidelity({
   candidateScreenshots,
   renderedGeometry = {},
   model = RENDERED_REFERENCE_MODEL,
-  fetchImpl = fetch
+  fetchImpl = fetch,
 } = {}) {
   validateReferenceDna(referenceDna, { requireEvidence: true });
   const desktopReference = await resolveEvidencePath(
@@ -294,8 +317,14 @@ export async function evaluateRenderedReferenceFidelity({
   const candidateCompact = candidateScreenshots?.compact;
   const candidateMobile = candidateScreenshots?.mobile;
   const candidateOverview = candidateScreenshots?.fullDesktop;
-  for (const [label, file] of [["desktop reference", desktopReference], ["candidate desktop", candidateDesktop], ["candidate compact", candidateCompact], ["candidate mobile", candidateMobile]])
-    if (!file) throw new Error(`Rendered reference evaluation is missing ${label}.`);
+  for (const [label, file] of [
+    ["desktop reference", desktopReference],
+    ["candidate desktop", candidateDesktop],
+    ["candidate compact", candidateCompact],
+    ["candidate mobile", candidateMobile],
+  ])
+    if (!file)
+      throw new Error(`Rendered reference evaluation is missing ${label}.`);
   const stableReferenceDna = cacheableReferenceDna(referenceDna);
   const [referenceSize, overviewSize] = await Promise.all([
     imageSize(desktopReference),
@@ -306,19 +335,28 @@ ${JSON.stringify(stableReferenceDna, null, 2)}
 
 EVIDENCE COORDINATES
 The desktop reference is a ${referenceSize} capture. It may cover multiple page sections; its capture height is not the browser viewport height. Do not convert fractions of its full image height into CSS vh, or infer candidate hero size from a scaled full-page overview.
-The candidate desktop, compact, and mobile images below are actual first-viewport captures. Browser-measured geometry: ${JSON.stringify(renderedGeometry)}. Use those measurements for viewport fit and hero occupancy, then inspect the viewport pixels for composition quality.
-${candidateOverview ? `The candidate desktop page overview is ${overviewSize}. Use it only for section order and spatial rhythm; long-page scaling is not evidence of small typography or a shallow hero.` : ""}
 Compare corresponding design mechanics and visual language rather than total page length. A client site must include real services, FAQs, and contact sections even when the reference capture ends earlier. Do not penalize their existence; judge how they are composed and paced. If no mobile reference exists, judge mobile recomposition against Reference DNA and the candidate mobile viewport without inventing a reference mobile layout.
 Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding. A technically clean but visually generic page must not pass.`;
   const content = [
     { type: "text", text: reusableReferencePrefix },
     { type: "text", text: `Reference desktop capture (${referenceSize}):` },
     await imagePart(desktopReference),
-    ...(mobileReference ? [{ type: "text", text: "Reference mobile:" }, await imagePart(mobileReference)] : []),
+    ...(mobileReference
+      ? [
+          { type: "text", text: "Reference mobile:" },
+          await imagePart(mobileReference),
+        ]
+      : []),
     promptCachedText(
       model,
       "End assigned reference evidence. Candidate render evidence follows.",
     ),
+    {
+      type: "text",
+      text: `CANDIDATE GEOMETRY
+The candidate desktop, compact, and mobile images below are actual first-viewport captures. Browser-measured geometry: ${JSON.stringify(renderedGeometry)}. Use those measurements for viewport fit and hero occupancy, then inspect the viewport pixels for composition quality.
+${candidateOverview ? `The candidate desktop page overview is ${overviewSize}. Use it only for section order and spatial rhythm; long-page scaling is not evidence of small typography or a shallow hero.` : ""}`,
+    },
     {
       type: "text",
       text: `CLIENT VISUAL BRIEF
@@ -327,11 +365,22 @@ Treat this as binding client art direction layered onto the reference mechanics.
     },
     { type: "text", text: "Candidate desktop first viewport 1536x864:" },
     await imagePart(candidateDesktop),
-    { type: "text", text: "Candidate compact desktop first viewport 1366x768:" },
+    {
+      type: "text",
+      text: "Candidate compact desktop first viewport 1366x768:",
+    },
     await imagePart(candidateCompact),
     { type: "text", text: "Candidate mobile first viewport 390x844:" },
     await imagePart(candidateMobile),
-    ...(candidateOverview ? [{ type: "text", text: `Candidate desktop page overview (${overviewSize}):` }, await imagePart(candidateOverview)] : []),
+    ...(candidateOverview
+      ? [
+          {
+            type: "text",
+            text: `Candidate desktop page overview (${overviewSize}):`,
+          },
+          await imagePart(candidateOverview),
+        ]
+      : []),
   ];
   const sessionId = openRouterSessionId(
     "rendered-reference",
@@ -358,7 +407,7 @@ Treat this as binding client art direction layered onto the reference mechanics.
     model,
     pass: scorePass(result.audit),
     score: Number(result.audit.overallScore || 0),
-    ...result
+    ...result,
   };
 }
 
@@ -369,15 +418,27 @@ Treat this as binding client art direction layered onto the reference mechanics.
 export async function evaluateRenderedDiversity({
   candidates,
   model = RENDERED_REFERENCE_MODEL,
-  fetchImpl = fetch
+  fetchImpl = fetch,
 } = {}) {
   if (!Array.isArray(candidates) || candidates.length < 2)
-    return { version: 1, model, pass: true, score: 100, audit: { overallDistinctiveness: 100, genericFallbackDetected: false, pairs: [], summary: "Single candidate." } };
-  const content = [{
-    type: "text",
-    text:
-      "Compare these candidate screenshots to each other, not to their business copy. Judge visual grammar: hero geometry, typography, image choreography, navigation, service presentation, section rhythm, spatial composition, and mobile recomposition. Different colors or words do not count as meaningful visual distance. Flag generic fallback grammar when candidates converge on familiar split heroes, card walls, repeated centered editorial sections, or near-identical page skeletons."
-  }];
+    return {
+      version: 1,
+      model,
+      pass: true,
+      score: 100,
+      audit: {
+        overallDistinctiveness: 100,
+        genericFallbackDetected: false,
+        pairs: [],
+        summary: "Single candidate.",
+      },
+    };
+  const content = [
+    {
+      type: "text",
+      text: "Compare these candidate screenshots to each other, not to their business copy. Judge visual grammar: hero geometry, typography, image choreography, navigation, service presentation, section rhythm, spatial composition, and mobile recomposition. Different colors or words do not count as meaningful visual distance. Flag generic fallback grammar when candidates converge on familiar split heroes, card walls, repeated centered editorial sections, or near-identical page skeletons.",
+    },
+  ];
   for (const candidate of candidates) {
     content.push({ type: "text", text: `${candidate.candidateId} desktop:` });
     content.push(await imagePart(candidate.desktop));
@@ -394,19 +455,28 @@ export async function evaluateRenderedDiversity({
       model,
       candidates.map((candidate) => candidate.candidateId).sort(),
     ),
+    // Comparing three responsive candidate families can consume substantially
+    // more hidden visual-reasoning tokens than a single-reference fidelity score.
+    maxTokens: 12_000,
     fetchImpl,
   });
-  const minimumPair = result.audit.pairs.length ? Math.min(...result.audit.pairs.map((pair) => Number(pair.distance || 0))) : 100;
-  const score = Math.min(Number(result.audit.overallDistinctiveness || 0), minimumPair);
+  const minimumPair = result.audit.pairs.length
+    ? Math.min(...result.audit.pairs.map((pair) => Number(pair.distance || 0)))
+    : 100;
+  const score = Math.min(
+    Number(result.audit.overallDistinctiveness || 0),
+    minimumPair,
+  );
   return {
     version: 1,
     model,
     pass:
       !result.audit.genericFallbackDetected &&
-      Number(result.audit.overallDistinctiveness || 0) >= RENDERED_REFERENCE_THRESHOLDS.pairwiseDistinctiveness &&
+      Number(result.audit.overallDistinctiveness || 0) >=
+        RENDERED_REFERENCE_THRESHOLDS.pairwiseDistinctiveness &&
       minimumPair >= RENDERED_REFERENCE_THRESHOLDS.pairwiseDistinctiveness,
     score,
     minimumPairDistance: minimumPair,
-    ...result
+    ...result,
   };
 }
