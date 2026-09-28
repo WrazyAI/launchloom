@@ -1041,6 +1041,11 @@
   color: #efece4;
 }
 
+.inner-experience-cinematic-narrative .inner-hero p,
+.inner-experience-cinematic-narrative .inner-hero .breadcrumb {
+  color: #d4d0c7;
+}
+
 .inner-experience-cinematic-narrative .inner-hero h1,
 .inner-experience-cinematic-narrative .section-heading h2 {
   font-family: Georgia, serif;
@@ -1067,6 +1072,15 @@
 
 .inner-experience-bold-utility .inner-hero {
   background: color-mix(in srgb, var(--brand-surface) 9%, #f7f4ec);
+  color: var(--ink);
+}
+
+.inner-experience-bold-utility .inner-hero p {
+  color: var(--muted);
+}
+
+.inner-experience-bold-utility .inner-hero .breadcrumb {
+  color: var(--muted);
 }
 
 .inner-experience-bold-utility .inner-hero-grid img {
@@ -1081,6 +1095,11 @@
   border-top: 5px solid var(--brand-surface);
   background: #0b1b17;
   color: #fff;
+}
+
+.inner-experience-kinetic-poster .inner-hero p,
+.inner-experience-kinetic-poster .inner-hero .breadcrumb {
+  color: #d4dfdc;
 }
 
 .inner-experience-kinetic-poster .inner-hero h1,

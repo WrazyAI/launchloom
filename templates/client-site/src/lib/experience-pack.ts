@@ -788,7 +788,7 @@ function contentFor(site: SiteConfig): ExperienceContent {
     faqs: (site.conversion?.faqs || []).slice(0, 8),
     locations: site.locations,
     coverageHeading: site.industry === "home-services"
-      ? "Service in nearby communities."
+      ? (site.business.serviceAreas.length > 1 ? "Service in nearby communities." : "Service area.")
       : site.industry === "wellness"
         ? "Areas the practice serves."
         : site.industry === "hospitality"

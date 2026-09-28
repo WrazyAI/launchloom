@@ -1,5 +1,38 @@
 import { describe, expect, it } from "vitest";
-import { normalizeClientIntake } from "../src/lib/client-intake-v2";
+import {
+  CLIENT_INTAKE_V2_FORM_FIELDS,
+  createClientIntakeV2Submission,
+  normalizeClientIntake,
+} from "../src/lib/client-intake-v2.mjs";
+
+const onlineFormStringFields = [
+  "submissionId",
+  "inviteToken",
+  "placeId",
+  "googleMapsUrl",
+  "gmbSkipped",
+  "bot-field",
+  "businessName",
+  "contactName",
+  "email",
+  "phone",
+  "address",
+  "website",
+  "domain",
+  "services",
+  "industry",
+  "serviceAreas",
+  "serviceRadius",
+  "differentiators",
+  "primaryCta",
+  "brandNotes",
+  "brandColorPicker",
+  "brandColor",
+  "leadEmail",
+  "confirmRights",
+  "confirmSeoResearch",
+  "confirmAccuracy",
+];
 
 const required = {
   submissionId: "submission-1234567890",
@@ -11,6 +44,55 @@ const required = {
 };
 
 describe("ClientIntakeV2 normalization", () => {
+  it("serializes the full online form field set for the local generator", () => {
+    expect([...CLIENT_INTAKE_V2_FORM_FIELDS].sort()).toEqual(
+      [...onlineFormStringFields].sort(),
+    );
+
+    const formFields = Object.fromEntries(
+      onlineFormStringFields.map((field) => [field, ""]),
+    );
+    Object.assign(formFields, {
+      businessName: "Rainline Plumbing",
+      contactName: "Casey Morgan",
+      email: "casey@example.test",
+      phone: "(541) 555-0142",
+      address: "123 Example Street, Eugene, OR 97401",
+      services: "Drain cleaning\nWater heater repair",
+      industry: "home-services",
+      serviceAreas: "Eugene, OR",
+      serviceRadius: "20",
+      primaryCta: "Request a plumbing visit",
+      confirmAccuracy: "yes",
+      brandColor: "#235d57",
+      unexpectedAgentField: "must not be submitted",
+    });
+    const payload = createClientIntakeV2Submission(formFields, {
+      submissionId: "submission-rainline-plumbing-local-2026",
+      inviteToken: "local-fixture-only",
+      assets: { photoOne: "./assets/rainline-hero.svg" },
+    });
+
+    expect(Object.keys(payload).sort()).toEqual(
+      [...onlineFormStringFields, "intakeVersion", "assets"].sort(),
+    );
+    expect(payload).toMatchObject({
+      intakeVersion: "2",
+      submissionId: "submission-rainline-plumbing-local-2026",
+      inviteToken: "local-fixture-only",
+      services: "Drain cleaning\nWater heater repair",
+      brandColor: "#235d57",
+      assets: { photoOne: "./assets/rainline-hero.svg" },
+    });
+    expect(payload).not.toHaveProperty("unexpectedAgentField");
+    expect(normalizeClientIntake(payload)).toMatchObject({
+      services: ["Drain cleaning", "Water heater repair"],
+      primaryCity: "Eugene, OR",
+      serviceRadius: 20,
+      confirmedServices: ["Drain cleaning", "Water heater repair"],
+    });
+  });
+
   it("normalizes v2 services, city, radius, and single confirmation", () => {
     expect(
       normalizeClientIntake({

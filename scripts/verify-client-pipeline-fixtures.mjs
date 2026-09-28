@@ -10,6 +10,11 @@ import { researchSiteContext, renderSeoMapMarkdown } from "./seo-research.mjs";
 import { generateSiteConfigWithModel } from "./generate-site-config.mjs";
 import { checkSeoRelease } from "./seo-release-gate.mjs";
 import { OPENROUTER_CHAT_COMPLETIONS_URL } from "./openrouter-client.mjs";
+import {
+  createClientIntakeV2Submission,
+  normalizeClientIntake,
+} from "../src/lib/client-intake-v2.mjs";
+import { prepareLocalClientIntake } from "./local-client-generation.mjs";
 
 const repository = path.resolve(new URL("..", import.meta.url).pathname);
 const templateRoot = path.join(repository, "templates/client-site");
@@ -119,6 +124,54 @@ function researchProvider() {
   };
 }
 
+function unavailableResearchProvider() {
+  return {
+    async googleSearchVolume() { return { cost: 0, keywords: [] }; },
+    async searchIntent() { return { cost: 0, keywords: [] }; },
+    async bulkKeywordDifficulty() { return { cost: 0, keywords: [] }; },
+    async organicSerp({ keyword }) { return { cost: 0, query: keyword, results: [], questions: [] }; },
+    async relatedKeywords() { return { cost: 0, keywords: [] }; },
+    async rankedKeywords() { return { cost: 0, keywords: [] }; },
+  };
+}
+
+function onlineFormSubmission(fixture) {
+  const brandColor = fixture.brandColor || "#245a46";
+  return createClientIntakeV2Submission(
+    {
+      "bot-field": "",
+      businessName: fixture.businessName,
+      contactName: "Test Owner",
+      email: `preview-${fixture.key}@example.test`,
+      phone: "(555) 555-0100",
+      address: fixture.address,
+      website: "",
+      domain: "",
+      services: fixture.services.join("\n"),
+      industry: fixture.industry,
+      serviceAreas: fixture.primaryCity,
+      serviceRadius: fixture.radius,
+      differentiators: Array.isArray(fixture.differentiators)
+        ? fixture.differentiators.join("; ")
+        : String(fixture.differentiators || ""),
+      primaryCta: fixture.primaryCta,
+      brandNotes: "Use clear, practical language.",
+      brandColorPicker: brandColor,
+      brandColor,
+      leadEmail: `leads-${fixture.key}@example.test`,
+      gmbSkipped: "yes",
+      confirmRights: "yes",
+      confirmSeoResearch: "yes",
+      confirmAccuracy: "yes",
+    },
+    {
+      submissionId: `fixture-${fixture.key}`,
+      inviteToken: "local-fixture-only",
+      assets: {},
+    },
+  );
+}
+
 function candidateFor(fixture, brief) {
   const services = brief.services.map((name) => ({
     name,
@@ -209,23 +262,63 @@ async function verifyRenderedSite({ fixture, config, dist, outputDir, origin, br
       const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height }, deviceScaleFactor: 1 });
       const errors = [];
       page.on("pageerror", (error) => errors.push(error.message));
-      await page.goto(pageUrl(origin, route), { waitUntil: "domcontentloaded" });
-      const state = await page.evaluate(() => ({
-        overflow: document.documentElement.scrollWidth - innerWidth,
-        headingCount: document.querySelectorAll("h1").length,
-        formCount: document.querySelectorAll("form").length,
-        emailCount: document.querySelectorAll('input[type="email"]').length,
-        navigationCount: document.querySelectorAll("header nav a").length,
-        imageCount: document.querySelectorAll("main img").length,
-        text: document.body.innerText,
-      }));
+      const reviewUrl = new URL(pageUrl(origin, route));
+      reviewUrl.searchParams.set("review", "local-fixture");
+      await page.goto(reviewUrl.href, { waitUntil: "domcontentloaded" });
+      await page.evaluate(async () => {
+        await Promise.all([...document.images].map(async (image) => {
+          image.loading = "eager";
+          try { await image.decode(); } catch { /* a missing optional image is checked below */ }
+        }));
+      });
+      const state = await page.evaluate(() => {
+        const channels = (color) => {
+          const srgb = color.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/u);
+          if (srgb) return srgb.slice(1, 4).map((value) => Number(value) * 255);
+          const rgb = color.match(/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/u);
+          return rgb ? rgb.slice(1, 4).map(Number) : [];
+        };
+        const luminance = (color) => {
+          const values = channels(color).map((value) => {
+            const channel = value / 255;
+            return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+          });
+          return values[0] * 0.2126 + values[1] * 0.7152 + values[2] * 0.0722;
+        };
+        const contrast = (foreground, background) => {
+          const a = luminance(foreground);
+          const b = luminance(background);
+          return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+        };
+        const hero = document.querySelector(".inner-hero");
+        const heading = hero?.querySelector("h1");
+        const paragraph = hero?.querySelector("p");
+        const background = hero ? getComputedStyle(hero).backgroundColor : "";
+        return {
+          overflow: document.documentElement.scrollWidth - innerWidth,
+          headingCount: document.querySelectorAll("h1").length,
+          formCount: document.querySelectorAll("form").length,
+          emailCount: document.querySelectorAll('input[type="email"]').length,
+          navigationCount: document.querySelectorAll("header nav a").length,
+          imageCount: document.querySelectorAll("main img").length,
+          heroHeadingContrast: heading ? contrast(getComputedStyle(heading).color, background) : null,
+          heroBodyContrast: paragraph ? contrast(getComputedStyle(paragraph).color, background) : null,
+          text: document.body.innerText,
+        };
+      });
       if (state.overflow > 1) throw new Error(`${fixture.key} ${viewport.name} ${route} overflows by ${state.overflow}px.`);
       if (state.headingCount !== 1) throw new Error(`${fixture.key} ${route} renders ${state.headingCount} H1 headings.`);
       if (state.formCount < 1 || state.emailCount < 1) throw new Error(`${fixture.key} ${route} has no usable lead form.`);
       if (state.imageCount < 1) throw new Error(`${fixture.key} ${route} has no contextual image visible in the main content.`);
+      if (route.startsWith("/services/") && state.heroHeadingContrast !== null && state.heroHeadingContrast < 3)
+        throw new Error(`${fixture.key} ${viewport.name} service hero heading contrast is ${state.heroHeadingContrast.toFixed(2)}:1; expected at least 3:1.`);
+      if (route.startsWith("/services/") && state.heroBodyContrast !== null && state.heroBodyContrast < 4.5)
+        throw new Error(`${fixture.key} ${viewport.name} service hero copy contrast is ${state.heroBodyContrast.toFixed(2)}:1; expected at least 4.5:1.`);
+      if (!config.business.offer && state.text.includes("Start with what matters most today."))
+        throw new Error(`${fixture.key} ${route} displays offer-like copy when the intake has no offer.`);
       if (/lorem ipsum|sample business|your business name|guaranteed results|award-winning|24\/7 service/iu.test(state.text))
         throw new Error(`${fixture.key} ${route} contains placeholder copy or an unsupported proof claim.`);
-      if (route === "/" && (!state.text.includes(fixture.primaryCity) || !state.text.includes(fixture.coverage[1])))
+      if (route === "/" && (!state.text.includes(fixture.primaryCity) || (fixture.coverage[1] && !state.text.includes(fixture.coverage[1]))))
         throw new Error(`${fixture.key} homepage coverage section is missing the primary or nearby community.`);
       if (errors.length) throw new Error(`${fixture.key} browser error: ${errors.join("; ")}`);
       if (["desktop", "mobile"].includes(viewport.name)) {
@@ -250,6 +343,7 @@ function fixtureVisual(fixture, placement) {
     : fixture.industry === "professional-services"
       ? ["#172c3b", "#dfbd86", "#e7edf0"]
       : ["#173d37", "#d5e2d4", "#f0e8db"];
+  if (/^#[0-9a-f]{6}$/iu.test(fixture.brandColor || "")) colors[1] = fixture.brandColor;
   const motifs = {
     "urgent-plumbing": `<path d="M710 0v235h150v190H600v185h250v210" fill="none" stroke="${colors[1]}" stroke-width="34" stroke-linejoin="round"/><circle cx="605" cy="610" r="84" fill="${colors[2]}" opacity=".82"/><path d="M605 534c-48 69-56 90-56 116a56 56 0 0 0 112 0c0-26-9-47-56-116Z" fill="${colors[1]}"/>`,
     painting: `<path d="M600 160h190v230H600z" rx="24" fill="${colors[1]}"/><path d="M685 390h52v255h-52z" fill="${colors[2]}"/><path d="M350 670 560 310l56 32-210 360Z" fill="${colors[1]}"/><path d="M350 670h120l-70 76Z" fill="${colors[2]}"/>`,
@@ -258,7 +352,8 @@ function fixtureVisual(fixture, placement) {
     "care-wellness": `<path d="M665 700c-74-170-30-360 112-485 55 174 25 352-112 485Z" fill="${colors[1]}"/><path d="M700 675c-180-72-270-226-256-412 158 88 249 233 256 412Z" fill="${colors[2]}"/><path d="M704 740V340" stroke="${colors[0]}" stroke-width="22" stroke-linecap="round"/>`,
   };
   const accent = placement === "secondary" ? colors[2] : colors[1];
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" role="img" aria-label="Local business visual test fixture"><defs><linearGradient id="surface" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${colors[0]}"/><stop offset="1" stop-color="${colors[0]}" stop-opacity=".78"/></linearGradient><radialGradient id="glow"><stop stop-color="${accent}" stop-opacity=".24"/><stop offset="1" stop-color="${accent}" stop-opacity="0"/></radialGradient></defs><rect width="1200" height="780" fill="url(#surface)"/><circle cx="830" cy="365" r="420" fill="url(#glow)"/><circle cx="190" cy="665" r="200" fill="${colors[2]}" opacity=".08"/>${motifs[fixture.key]}<path d="M80 700h420" stroke="${colors[2]}" stroke-opacity=".3" stroke-width="2"/></svg>`;
+  const motif = motifs[fixture.visualKey || fixture.key] || motifs["urgent-plumbing"];
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" role="img" aria-label="Local illustrative service artwork"><defs><linearGradient id="surface" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${colors[0]}"/><stop offset="1" stop-color="${colors[0]}" stop-opacity=".78"/></linearGradient><radialGradient id="glow"><stop stop-color="${accent}" stop-opacity=".24"/><stop offset="1" stop-color="${accent}" stop-opacity="0"/></radialGradient></defs><rect width="1200" height="780" fill="url(#surface)"/><circle cx="830" cy="365" r="420" fill="url(#glow)"/><circle cx="190" cy="665" r="200" fill="${colors[2]}" opacity=".08"/>${motif}<path d="M80 700h420" stroke="${colors[2]}" stroke-opacity=".3" stroke-width="2"/></svg>`;
 }
 
 async function materializeFixtureImages(config, fixture, publicAssetDir) {
@@ -274,10 +369,22 @@ async function materializeFixtureImages(config, fixture, publicAssetDir) {
 }
 
 async function main() {
+  const intakeArgument = process.argv.indexOf("--intake");
+  const intakeValue = intakeArgument >= 0 ? process.argv[intakeArgument + 1] : "";
+  if (intakeArgument >= 0 && !intakeValue)
+    throw new Error("Pass a JSON file path after --intake.");
+  const intakePath = intakeValue ? path.resolve(intakeValue) : "";
+  const localExample = intakePath
+    ? prepareLocalClientIntake(JSON.parse(await fs.readFile(intakePath, "utf8")))
+    : null;
+  const localFormRun = Boolean(localExample);
+  const selectedFixtures = localExample ? [localExample.fixture] : fixtures;
   const outputArgument = process.argv.indexOf("--out");
   const outputDir = path.resolve(outputArgument >= 0
     ? process.argv[outputArgument + 1] || path.join(os.tmpdir(), `launchloom-client-pipeline-${Date.now()}`)
-    : path.join(os.tmpdir(), `launchloom-client-pipeline-${Date.now()}`));
+    : localExample
+      ? path.join(repository, "artifacts", "local-client-generations", localExample.fixture.key)
+      : path.join(os.tmpdir(), `launchloom-client-pipeline-${Date.now()}`));
   await fs.mkdir(outputDir, { recursive: true });
   const originalConfig = await fs.readFile(siteConfigPath);
   const originalFetch = globalThis.fetch;
@@ -321,44 +428,39 @@ async function main() {
     const address = await new Promise((resolve) => server.listen(0, "127.0.0.1", () => resolve(server.address())));
     const origin = `http://127.0.0.1:${address.port}`;
 
-    for (const fixture of fixtures) {
+    for (const fixture of selectedFixtures) {
       activeFixture = fixture;
-      const intake = {
-        intakeVersion: "2",
-        submissionId: `fixture-${fixture.key}`,
-        businessName: fixture.businessName,
-        contactName: "Test Owner",
-        email: `preview-${fixture.key}@example.test`,
-        leadEmail: `leads-${fixture.key}@example.test`,
-        phone: "(555) 555-0100",
-        address: fixture.address,
-        website: `https://${fixture.key}.example`,
-        domain: "",
-        industry: fixture.industry,
-        services: fixture.services,
-        confirmedServices: fixture.services,
-        primaryCity: fixture.primaryCity,
-        serviceRadius: fixture.radius,
-        serviceAreas: fixture.primaryCity,
-        differentiators: fixture.differentiators,
-        primaryCta: fixture.primaryCta,
-        brandNotes: "Use a clear, considerate tone.",
-        brandColor: "#245a46",
-      };
+      const formPayload = localExample?.payload || onlineFormSubmission(fixture);
+      const intake = localExample?.intake || normalizeClientIntake(formPayload);
+      const fixtureDir = path.join(outputDir, fixture.key);
+      await fs.mkdir(fixtureDir, { recursive: true });
+      await fs.writeFile(path.join(fixtureDir, "form-intake-v2.json"), `${JSON.stringify(formPayload, null, 2)}\n`);
       const enrichment = {
         version: 1,
         primaryCity: fixture.primaryCity,
-        serviceRadiusMiles: Number(fixture.radius),
+        serviceRadius: localFormRun ? localExample.fixture.serviceRadius : Number(fixture.radius),
+        serviceRadiusMiles: localFormRun ? localExample.fixture.serviceRadiusMiles : Number(fixture.radius),
         coverageAreas: fixture.coverage,
-        coverageEvidence: { source: "google_geocoding_fixture", lookups: 16, nearbyCommunities: fixture.coverage.length - 1 },
-        warnings: [],
+        coverageEvidence: localFormRun
+          ? { source: "local_primary_city_only", lookups: 0, nearbyCommunities: 0 }
+          : { source: "google_geocoding_fixture", lookups: 16, nearbyCommunities: fixture.coverage.length - 1 },
+        warnings: localFormRun
+          ? ["Offline example has no geocoder; only the client-confirmed primary city is included."]
+          : [],
       };
       const research = await researchSiteContext({
         ...intake,
         coverageAreas: fixture.coverage,
         coverageEvidence: enrichment.coverageEvidence,
-      }, { dataForSeo: researchProvider(), maxTasks: 16, maxUsd: 0.25 });
-      if (!research.publishReady) throw new Error(`${fixture.key} fixture research did not satisfy the publish readiness contract: ${research.warnings.join(" ")}`);
+      }, {
+        dataForSeo: localFormRun ? unavailableResearchProvider() : researchProvider(),
+        maxTasks: localFormRun ? 2 : 16,
+        maxUsd: localFormRun ? 0.1 : 0.25,
+      });
+      if (localFormRun && research.publishReady)
+        throw new Error("Offline local generation must remain blocked from publication.");
+      if (!localFormRun && !research.publishReady)
+        throw new Error(`${fixture.key} fixture research did not satisfy the publish readiness contract: ${research.warnings.join(" ")}`);
       const brief = compileCanonicalSiteBrief({ intake, enrichment, research });
       activeFixture.brief = brief;
       const config = await generateSiteConfigWithModel(brief);
@@ -367,11 +469,12 @@ async function main() {
       if (config.locations.length) throw new Error(`${fixture.key} generation created location pages without separate evidence.`);
       if (!config.design?.experience?.packId || !config.design?.experience?.variantId)
         throw new Error(`${fixture.key} generation did not select a reviewed experience pack and variant.`);
-      if (config.seoResearch?.publishReady !== true) throw new Error(`${fixture.key} generation lost SEO publication readiness.`);
+      if (localFormRun && config.seoResearch?.publishReady === true)
+        throw new Error(`${fixture.key} local preview must retain its incomplete research gate.`);
+      if (!localFormRun && config.seoResearch?.publishReady !== true)
+        throw new Error(`${fixture.key} generation lost SEO publication readiness.`);
 
       const renderConfig = await materializeFixtureImages(config, fixture, publicAssetDir);
-      const fixtureDir = path.join(outputDir, fixture.key);
-      await fs.mkdir(fixtureDir, { recursive: true });
       await fs.writeFile(path.join(fixtureDir, "business-enrichment.json"), `${JSON.stringify(enrichment, null, 2)}\n`);
       await fs.writeFile(path.join(fixtureDir, "seo-research.json"), `${JSON.stringify(research, null, 2)}\n`);
       await fs.writeFile(path.join(fixtureDir, "seo-map.md"), renderSeoMapMarkdown(research));
@@ -391,22 +494,25 @@ async function main() {
 
       await fs.writeFile(siteConfigPath, `${JSON.stringify(renderConfig, null, 2)}\n`);
       const siteOrigin = `https://${fixture.key}.fixture.pages.dev`;
-      execFileSync("npm", ["run", "build"], {
-        cwd: templateRoot,
-        stdio: "pipe",
-        env: { ...process.env, PUBLIC_SITE_URL: siteOrigin, PUBLIC_REVIEW_MODE: "false", PUBLIC_LAUNCHLOOM_API_URL: "https://api.launchloom.example" },
-      });
-      const productionDist = path.join(fixtureDir, "production-dist");
-      await fs.cp(path.join(templateRoot, "dist"), productionDist, { recursive: true });
-      const productionErrors = await checkSeoRelease({ mode: "production", config: renderConfig, dist: productionDist, origin: siteOrigin });
-      if (productionErrors.length) throw new Error(`${fixture.key} production gate: ${productionErrors.join(" ")}`);
-      execFileSync("npm", ["run", "build"], {
+      let productionDist = null;
+      if (!localFormRun) {
+        productionDist = path.join(fixtureDir, "production-dist");
+        await fs.rm(productionDist, { recursive: true, force: true });
+        execFileSync("npm", ["run", "build", "--", "--outDir", productionDist], {
+          cwd: templateRoot,
+          stdio: "pipe",
+          env: { ...process.env, PUBLIC_SITE_URL: siteOrigin, PUBLIC_REVIEW_MODE: "false", PUBLIC_LAUNCHLOOM_API_URL: "https://api.launchloom.example" },
+        });
+        const productionErrors = await checkSeoRelease({ mode: "production", config: renderConfig, dist: productionDist, origin: siteOrigin });
+        if (productionErrors.length) throw new Error(`${fixture.key} production gate: ${productionErrors.join(" ")}`);
+      }
+      const reviewDist = path.join(fixtureDir, "review-dist");
+      await fs.rm(reviewDist, { recursive: true, force: true });
+      execFileSync("npm", ["run", "build", "--", "--outDir", reviewDist], {
         cwd: templateRoot,
         stdio: "pipe",
         env: { ...process.env, PUBLIC_SITE_URL: siteOrigin, PUBLIC_REVIEW_MODE: "true", PUBLIC_LAUNCHLOOM_API_URL: "https://api.launchloom.example" },
       });
-      const reviewDist = path.join(fixtureDir, "review-dist");
-      await fs.cp(path.join(templateRoot, "dist"), reviewDist, { recursive: true });
       const reviewErrors = await checkSeoRelease({ mode: "review", config: renderConfig, dist: reviewDist });
       if (reviewErrors.length) throw new Error(`${fixture.key} review gate: ${reviewErrors.join(" ")}`);
       execFileSync(process.execPath, [
@@ -422,6 +528,7 @@ async function main() {
 
     // The empty initial blog remains absent. This single test article exercises
     // the future publishing route without generating filler during intake.
+    if (!localFormRun) {
     const blogFixture = fixtures[3];
     activeFixture = blogFixture;
     const blogIntake = {
@@ -440,10 +547,10 @@ async function main() {
     blogConfig.blogArticles = [{ slug: "organizing-business-records", title: "Organizing business records before a tax appointment", description: "A short checklist of records a business owner may want to gather before discussing tax preparation.", publishedAt: "2026-09-25", body: "Start with the records you already use to understand income and expenses. A preparer can confirm which documents apply to your circumstances.\n\nKeep questions about timing, filing status, and missing records together so the first conversation can focus on your situation." }];
     const renderBlogConfig = await materializeFixtureImages(blogConfig, blogFixture, publicAssetDir);
     await fs.writeFile(siteConfigPath, `${JSON.stringify(renderBlogConfig, null, 2)}\n`);
-    execFileSync("npm", ["run", "build"], { cwd: templateRoot, stdio: "pipe", env: { ...process.env, PUBLIC_SITE_URL: "https://professional-blog.fixture.pages.dev", PUBLIC_REVIEW_MODE: "true", PUBLIC_LAUNCHLOOM_API_URL: "https://api.launchloom.example" } });
     const blogDist = path.join(outputDir, "future-blog-route/dist");
     await fs.mkdir(path.dirname(blogDist), { recursive: true });
-    await fs.cp(path.join(templateRoot, "dist"), blogDist, { recursive: true });
+    await fs.rm(blogDist, { recursive: true, force: true });
+    execFileSync("npm", ["run", "build", "--", "--outDir", blogDist], { cwd: templateRoot, stdio: "pipe", env: { ...process.env, PUBLIC_SITE_URL: "https://professional-blog.fixture.pages.dev", PUBLIC_REVIEW_MODE: "true", PUBLIC_LAUNCHLOOM_API_URL: "https://api.launchloom.example" } });
     for (const route of ["blog", "blog/organizing-business-records"]) {
       const file = path.join(blogDist, route, "index.html");
       await fs.access(file);
@@ -451,11 +558,15 @@ async function main() {
       if (!html.includes(blogConfig.blogArticles[0].title)) throw new Error(`Future blog route ${route} is missing its article title.`);
     }
     summary.push({ key: "future-blog-route", articleCount: blogConfig.blogArticles.length, routes: ["/blog/", "/blog/organizing-business-records/"] });
+    }
     await fs.writeFile(path.join(outputDir, "summary.json"), `${JSON.stringify({
-      mode: "offline-fixture-providers",
-      metricEvidence: "synthetic DataForSEO-shaped fixtures only; not production research",
+      mode: localFormRun ? "offline-form-intake-v2" : "offline-fixture-providers",
+      metricEvidence: localFormRun
+        ? "DataForSEO metrics unavailable; values remain null and publication remains blocked."
+        : "synthetic DataForSEO-shaped fixtures only; not production research",
       copyGeneration: "mocked OpenRouter response through the site-config generation boundary",
-      visualAssets: "temporary deterministic SVG test fixtures; not production client imagery",
+      visualAssets: "locally generated illustrative SVG artwork; not evidence of completed work or client staff",
+      formPayloadFields: localExample ? Object.keys(localExample.payload).sort() : undefined,
       mockModelCalls,
       cases: summary,
     }, null, 2)}\n`);

@@ -12,7 +12,10 @@ import {
   seoResearchReadiness,
 } from "./seo-readiness";
 import { OnboardingInvites } from "./onboarding-invites";
-import { normalizeClientIntake } from "../../src/lib/client-intake-v2";
+import {
+  CLIENT_INTAKE_V2_ISSUE_FIELDS,
+  normalizeClientIntake,
+} from "../../src/lib/client-intake-v2.mjs";
 
 export { RevisionCoordinator } from "./revision-coordinator";
 export { OnboardingInvites } from "./onboarding-invites";
@@ -573,14 +576,7 @@ async function intake(request: Request, env: Env) {
     }
     if (invite.clientEmail && invite.clientEmail.toLowerCase() !== normalized.email.toLowerCase())
       return json({ error: "Use the email address that received this invitation." }, 403, headers);
-    const allowedIntakeFields = new Set([
-      "intakeVersion", "version", "legacy", "submissionId", "businessName", "contactName",
-      "email", "phone", "address", "website", "domain", "desiredDomain", "industry",
-      "services", "confirmedServices", "serviceAreas", "primaryCity", "serviceRadius",
-      "coverageAreas", "differentiators", "primaryCta", "brandNotes", "brandColor",
-      "primaryColor", "leadEmail", "assets", "placeId", "googleMapsUrl", "gmbSkipped",
-      "confirmAccuracy", "confirmRights", "confirmSeoResearch", "confirmation",
-    ]);
+    const allowedIntakeFields = new Set(CLIENT_INTAKE_V2_ISSUE_FIELDS);
     const safeData = Object.fromEntries(
       Object.entries(normalized)
         .filter(([key]) => allowedIntakeFields.has(key))

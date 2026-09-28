@@ -55,9 +55,15 @@ describe("experience-pack compiler", () => {
     local.industry = "home-services";
     local.preset = "home-services";
     local.businessKind = "home-services";
+    local.business.serviceAreas = ["Asheville", "Black Mountain"];
     local.design = { ...local.design!, recipe: "local-trades", sections: [] };
     const care = site("Harbor Glow Wellness", "bold-utility");
     care.industry = "wellness";
+    const oneCity = site("Rainline Plumbing", "bold-utility");
+    oneCity.industry = "home-services";
+    oneCity.preset = "home-services";
+    oneCity.businessKind = "home-services";
+    oneCity.design = { ...oneCity.design!, recipe: "local-trades", sections: [] };
     const bakery = site("Lumière Artisan Bakery & Café", "cinematic-narrative");
     bakery.industry = "hospitality";
     bakery.services = [{
@@ -67,6 +73,7 @@ describe("experience-pack compiler", () => {
     }];
 
     expect(compileExperiencePack(local, "local-trades").content.coverageHeading).toBe("Service in nearby communities.");
+    expect(compileExperiencePack(oneCity, "local-trades").content.coverageHeading).toBe("Service area.");
     expect(compileExperiencePack(care, "care-editorial").content.coverageHeading).toBe("Areas the practice serves.");
     expect(compileExperiencePack(site("Oak & Ledger", "bold-utility"), "general-editorial").content.coverageHeading)
       .toBe("Support across the local area.");

@@ -1,30 +1,122 @@
-export type ServiceRadius = 10 | 20 | 30 | 50 | "50+";
+/** @typedef {10 | 20 | 30 | 50 | "50+"} ServiceRadius */
 
-export type NormalizedClientIntake = Record<string, unknown> & {
-  version: 2;
-  legacy: boolean;
-  submissionId: string;
-  businessName: string;
-  contactName: string;
-  email: string;
-  phone: string;
-  address: string;
-  services: string[];
-  confirmedServices: string[];
-  primaryCity: string;
-  serviceRadius: ServiceRadius | null;
-  coverageAreas: string[];
-  confirmation: { businessFactsAndAssetRights: true };
-};
+/**
+ * String controls serialized by the current three-step online intake form.
+ * File controls are uploaded separately and represented by `assets` URLs.
+ */
+export const CLIENT_INTAKE_V2_FORM_FIELDS = Object.freeze([
+  "submissionId",
+  "inviteToken",
+  "placeId",
+  "googleMapsUrl",
+  "gmbSkipped",
+  "bot-field",
+  "businessName",
+  "contactName",
+  "email",
+  "phone",
+  "address",
+  "website",
+  "domain",
+  "services",
+  "industry",
+  "serviceAreas",
+  "serviceRadius",
+  "differentiators",
+  "primaryCta",
+  "brandNotes",
+  "brandColorPicker",
+  "brandColor",
+  "leadEmail",
+  "confirmRights",
+  "confirmSeoResearch",
+  "confirmAccuracy",
+]);
 
-function clean(value: unknown, max = 1000) {
+export const CLIENT_INTAKE_V2_FILE_FIELDS = Object.freeze([
+  "logo",
+  "photoOne",
+  "photoTwo",
+  "photoThree",
+  "teamPhoto",
+]);
+
+/** Complete JSON request shape after form files have been uploaded. */
+export const CLIENT_INTAKE_V2_SUBMISSION_FIELDS = Object.freeze([
+  ...CLIENT_INTAKE_V2_FORM_FIELDS,
+  "intakeVersion",
+  "assets",
+]);
+
+/** Business-truth fields allowed into the internal intake issue. */
+export const CLIENT_INTAKE_V2_ISSUE_FIELDS = Object.freeze([
+  "intakeVersion",
+  "version",
+  "legacy",
+  "submissionId",
+  "businessName",
+  "contactName",
+  "email",
+  "phone",
+  "address",
+  "website",
+  "domain",
+  "desiredDomain",
+  "industry",
+  "services",
+  "confirmedServices",
+  "serviceAreas",
+  "primaryCity",
+  "serviceRadius",
+  "coverageAreas",
+  "differentiators",
+  "primaryCta",
+  "brandNotes",
+  "brandColor",
+  "primaryColor",
+  "leadEmail",
+  "assets",
+  "placeId",
+  "googleMapsUrl",
+  "gmbSkipped",
+  "confirmAccuracy",
+  "confirmRights",
+  "confirmSeoResearch",
+  "confirmation",
+]);
+
+function clean(value, max = 1000) {
   if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") return "";
   return String(value ?? "").replace(/\u0000/gu, "").trim().slice(0, max);
 }
 
-function list(value: unknown, limit = 20, splitCommas = false) {
+/**
+ * Builds the same post-upload JSON payload sent by OnboardingForm. Callers
+ * provide the form's string fields plus the invitation metadata and upload URLs.
+ * @param {Record<string, unknown>} formFields
+ * @param {{ submissionId: string, inviteToken: string, assets?: Record<string, string> }} metadata
+ */
+export function createClientIntakeV2Submission(formFields, metadata) {
+  const fields = Object.fromEntries(
+    CLIENT_INTAKE_V2_FORM_FIELDS.map((name) => [
+      name,
+      typeof formFields[name] === "string" ? formFields[name] : "",
+    ]),
+  );
+  return {
+    ...fields,
+    submissionId: clean(metadata.submissionId, 100),
+    intakeVersion: "2",
+    inviteToken: clean(metadata.inviteToken, 20_000),
+    assets: metadata.assets && typeof metadata.assets === "object"
+      ? { ...metadata.assets }
+      : {},
+  };
+}
+
+function list(value, limit = 20, splitCommas = false) {
   const source = Array.isArray(value) ? value : [value];
-  const result: string[] = [];
+  const result = [];
   for (const item of source) {
     const delimiter = splitCommas && !Array.isArray(value) ? /\r?\n|,/u : /\r?\n/u;
     for (const entry of clean(item, 400).split(delimiter)) {
@@ -36,11 +128,12 @@ function list(value: unknown, limit = 20, splitCommas = false) {
   return result.slice(0, limit);
 }
 
-function affirmative(value: unknown) {
+function affirmative(value) {
   return value === true || ["yes", "on", "true"].includes(clean(value, 10).toLowerCase());
 }
 
-export function normalizeClientIntake(raw: Record<string, unknown>): NormalizedClientIntake {
+/** @param {Record<string, unknown>} raw */
+export function normalizeClientIntake(raw) {
   const legacy = clean(raw.intakeVersion, 10) !== "2";
   const submissionId = clean(raw.submissionId, 100);
   const businessName = clean(raw.businessName, 120);
@@ -61,20 +154,20 @@ export function normalizeClientIntake(raw: Record<string, unknown>): NormalizedC
     throw new Error("Choose up to five core services.");
 
   let primaryCity = "";
-  let serviceRadius: ServiceRadius | null = null;
-  let coverageAreas: string[];
+  let serviceRadius = null;
+  let coverageAreas;
   if (legacy) {
     coverageAreas = list(raw.coverageAreas || raw.serviceAreas, 20);
     primaryCity = clean(raw.primaryCity, 160) || coverageAreas[0] || "";
     const legacyRadius = clean(raw.serviceRadius, 4);
     if (["10", "20", "30", "50"].includes(legacyRadius))
-      serviceRadius = Number(legacyRadius) as ServiceRadius;
+      serviceRadius = Number(legacyRadius);
     else if (legacyRadius === "50+") serviceRadius = "50+";
   } else {
     primaryCity = clean(raw.primaryCity || raw.serviceAreas, 160);
     const radius = clean(raw.serviceRadius, 4);
     if (["10", "20", "30", "50"].includes(radius))
-      serviceRadius = Number(radius) as ServiceRadius;
+      serviceRadius = Number(radius);
     else if (radius === "50+") serviceRadius = "50+";
     if (!primaryCity || serviceRadius === null)
       throw new Error("Provide a main service city and a supported travel radius.");
@@ -94,7 +187,7 @@ export function normalizeClientIntake(raw: Record<string, unknown>): NormalizedC
   const leadEmail = clean(raw.leadEmail, 240).toLowerCase();
   if (leadEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(leadEmail))
     throw new Error("Enter a valid lead notification email.");
-  const normalizedHex = (value: unknown) => {
+  const normalizedHex = (value) => {
     const color = clean(value, 1000);
     return /^#[0-9a-f]{6}$/iu.test(color) ? color : "";
   };
