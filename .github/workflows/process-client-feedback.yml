@@ -200,6 +200,9 @@ jobs:
           chmod 755 "$BUILD_ROOT"
           BUILD_DIR="$BUILD_ROOT/site"
           SCREENSHOTS="$BUILD_ROOT/revision-screenshots"
+          PRESERVED_SCREENSHOTS="$LAUNCHLOOM_PRIVATE_DIR/revision-screenshots"
+          mkdir -p "$PRESERVED_SCREENSHOTS"
+          trap 'if [ -d "$SCREENSHOTS" ]; then cp -R "$SCREENSHOTS/." "$PRESERVED_SCREENSHOTS/" || true; fi' EXIT
           node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$LAUNCHLOOM_PRIVATE_DIR/client" --target "$BUILD_DIR"
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_LAUNCHLOOM_API_URL https://api.launchloom.wrazyos.com -- npm run build
@@ -221,7 +224,6 @@ jobs:
           # the UTF-8 byte sequence by coincidence and is not page copy.
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" "$BUILD_DIR/dist"; then echo "Generated page contains an em dash"; exit 1; fi
           SAFE_DEPLOY_DIR=$(node "$GITHUB_WORKSPACE/scripts/prepare-safe-static-output.mjs" --source "$BUILD_DIR/dist" --parent "$RUNNER_TEMP")
-          cp -R "$SCREENSHOTS" "$LAUNCHLOOM_PRIVATE_DIR/revision-screenshots"
           BRANCH_SAFE=$(echo "${{ steps.revision.outputs.branch }}" | tr '/' '-')
           echo "build_dir=$BUILD_DIR" >> "$GITHUB_OUTPUT"
           echo "safe_deploy_dir=$SAFE_DEPLOY_DIR" >> "$GITHUB_OUTPUT"

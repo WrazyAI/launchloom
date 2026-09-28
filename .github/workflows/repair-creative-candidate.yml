@@ -242,8 +242,8 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true -- node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$SCREENSHOTS"
           chmod 700 "$BUILD_ROOT"
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config "$BUILD_DIR/src/site.config.json" --dist "$BUILD_DIR/dist"
-          jq -e --arg candidate "$CANDIDATE" '.status == "passed" and .visualGatePass == true and .humanRevisionPass == true and .selectedCandidateId == $candidate' .launchloom/creative-repair/final-attempt/summary.json >/dev/null
-          FINAL_GATE=.launchloom/creative-repair/final-attempt/final/visual-gate.json
+          jq -e --arg candidate "$CANDIDATE" '.status == "passed" and .visualGatePass == true and .humanRevisionPass == true and .selectedCandidateId == $candidate' "$CLIENT_DIR/.launchloom/creative-repair/final-attempt/summary.json" >/dev/null
+          FINAL_GATE="$CLIENT_DIR/.launchloom/creative-repair/final-attempt/final/visual-gate.json"
           jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_GATE" >/dev/null
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" "$BUILD_DIR/dist"; then echo "Generated page contains an em dash" >&2; exit 1; fi
           SAFE_DEPLOY_DIR=$(node "$GITHUB_WORKSPACE/scripts/prepare-safe-static-output.mjs" --source "$BUILD_DIR/dist" --parent "$RUNNER_TEMP")

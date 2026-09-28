@@ -139,6 +139,39 @@ describe("client build and revision workflow isolation", () => {
     );
   });
 
+  it("preserves client revision screenshots when a later verification gate fails", () => {
+    const clientFeedback = readFileSync(
+      ".github/workflows/process-client-feedback.yml",
+      "utf8",
+    );
+    const build = workflowStep(
+      clientFeedback,
+      "Build and verify developer preview",
+    );
+    expect(build).toContain(
+      'PRESERVED_SCREENSHOTS="$LAUNCHLOOM_PRIVATE_DIR/revision-screenshots"',
+    );
+    expect(build).toContain("trap ");
+    expect(build).toContain('cp -R "$SCREENSHOTS/." "$PRESERVED_SCREENSHOTS/"');
+  });
+
+  it("reads repaired-candidate reports from the client clone", () => {
+    const repair = readFileSync(
+      ".github/workflows/repair-creative-candidate.yml",
+      "utf8",
+    );
+    const build = workflowStep(
+      repair,
+      "Build and release-check the repaired developer preview",
+    );
+    expect(build).toContain(
+      '"$CLIENT_DIR/.launchloom/creative-repair/final-attempt/summary.json"',
+    );
+    expect(build).toContain(
+      'FINAL_GATE="$CLIENT_DIR/.launchloom/creative-repair/final-attempt/final/visual-gate.json"',
+    );
+  });
+
   it("routes every client npm build and browser verifier through the isolation runner", () => {
     for (const workflowPath of workflowPaths) {
       const source = readFileSync(workflowPath, "utf8");
