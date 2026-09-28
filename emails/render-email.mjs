@@ -216,6 +216,25 @@ export function renderLifecycleEmail(input) {
   };
 }
 
+export function renderIntakeReceivedEmail(input) {
+  const businessName = cleanEmailLine(input.businessName, 160) || "Your business";
+  const title = "Your intake has been received";
+  const intro = `We’ve received the intake for ${businessName}, and processing is starting. LaunchLoom is reviewing the business details and beginning the research for the website project.`;
+  const text = `INTAKE RECEIVED\n\n${title}\n\n${intro}\n\nSent by LaunchLoom for this website project.`;
+
+  return {
+    subject: `Intake received: ${businessName}`,
+    html: shell({
+      preheader: `Your intake for ${businessName} has been received and processing is starting.`,
+      eyebrow: "Intake received",
+      title,
+      intro,
+      rows: "",
+    }),
+    text,
+  };
+}
+
 export function renderLeadEmail(input) {
   const name = cleanEmailLine(input.name, 160);
   const phone = cleanEmailLine(input.phone, 80);

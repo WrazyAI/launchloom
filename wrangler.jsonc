@@ -5,6 +5,12 @@
   "compatibility_date": "2026-09-08",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "access": {
+    "dev": {
+      "aud": "launchloom-local-onboarding-admin",
+      "identity": { "email": "admin@example.test" },
+    },
+  },
   "routes": [
     { "pattern": "api.launchloom.wrazyos.com", "custom_domain": true },
   ],
@@ -15,12 +21,20 @@
         "name": "REVISION_COORDINATOR",
         "class_name": "RevisionCoordinator",
       },
+      {
+        "name": "ONBOARDING_INVITES",
+        "class_name": "OnboardingInvites",
+      },
     ],
   },
   "migrations": [
     {
       "tag": "v1-revision-coordinator",
       "new_sqlite_classes": ["RevisionCoordinator"],
+    },
+    {
+      "tag": "v2-onboarding-invites",
+      "new_sqlite_classes": ["OnboardingInvites"],
     },
   ],
   "observability": {
@@ -29,6 +43,6 @@
   },
   "vars": {
     "ASSET_BASE_URL": "https://assets.launchloom.wrazyos.com",
-    "PLATFORM_ORIGINS": "https://launchloom-bhl.pages.dev,https://launchloom.wrazyos.com",
+    "PLATFORM_ORIGINS": "https://api.launchloom.wrazyos.com,https://launchloom-bhl.pages.dev,https://launchloom.wrazyos.com",
   },
 }

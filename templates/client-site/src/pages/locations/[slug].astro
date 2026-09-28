@@ -10,8 +10,7 @@ import "../../styles/experience-packs.css";
 
 export function getStaticPaths() {
   if (site.industry !== "home-services") return [];
-  const locations: Location[] = site.locations.length ? site.locations : site.business.serviceAreas.map((name) => ({ name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") }));
-  return locations.map((location) => ({ params: { slug: location.slug }, props: { location } }));
+  return site.locations.map((location) => ({ params: { slug: location.slug }, props: { location } }));
 }
 const { location } = Astro.props as { location: Location };
 const otherAreas = site.locations.filter((area) => area.slug !== location.slug).slice(0, 6);

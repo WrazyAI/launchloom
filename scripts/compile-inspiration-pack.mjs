@@ -43,6 +43,13 @@ function intakeFromMarkdown(value) {
   }
 }
 
+async function intakeFromFile(file) {
+  const value = await fs.readFile(file, "utf8");
+  return path.extname(file).toLowerCase() === ".json"
+    ? JSON.parse(value)
+    : intakeFromMarkdown(value);
+}
+
 const args = parseArgs(process.argv.slice(2));
 const repository = path.resolve(import.meta.dirname, "..");
 const configPath = path.resolve(args.config || "src/site.config.json");
@@ -61,7 +68,7 @@ const [config, baseRegistry, history, intake] = await Promise.all([
   fs.readFile(registryPath, "utf8").then(JSON.parse),
   fs.readFile(historyPath, "utf8").then(JSON.parse),
   args.intake
-    ? fs.readFile(path.resolve(args.intake), "utf8").then(intakeFromMarkdown)
+    ? intakeFromFile(path.resolve(args.intake))
     : {},
 ]);
 const registry = baseRegistry;

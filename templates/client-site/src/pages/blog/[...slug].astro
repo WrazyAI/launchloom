@@ -1,0 +1,45 @@
+---
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import site, { type BlogArticle } from "../../lib/site";
+
+export function getStaticPaths() {
+  const articles = site.blogArticles || [];
+  if (!articles.length) return [];
+  return [
+    { params: { slug: undefined }, props: { article: null } },
+    ...articles.map((article) => ({ params: { slug: article.slug }, props: { article } })),
+  ];
+}
+const { article } = Astro.props as { article: BlogArticle | null };
+const articles = site.blogArticles || [];
+const title = article?.title || `Guides | ${site.business.name}`;
+const description = article?.description || `Practical information from ${site.business.name}.`;
+const paragraphs = article?.body.split(/\n\s*\n/u).map((paragraph) => paragraph.trim()).filter(Boolean) || [];
+---
+
+<SiteLayout title={title} description={description}>
+  <Header />
+  <main class="inner-page blog-page">
+    <section class="inner-hero"><div class="wrap inner-hero-grid"><div>
+      <a class="breadcrumb" href="/">Home</a>
+      <span class="kicker">{article ? "Guide" : "Articles and guides"}</span>
+      <h1>{article?.title || "Useful answers for your next step."}</h1>
+      <p>{article?.description || `Clear, practical information from ${site.business.name}.`}</p>
+    </div>{!article && site.images.secondary && <img src={site.images.secondary} alt={`${site.business.name} service context`} fetchpriority="high" />}</div></section>
+    {article ? (
+      <article class="section wrap blog-article">
+        <time datetime={article.publishedAt}>{article.publishedAt}</time>
+        {paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+      </article>
+    ) : (
+      <section class="section wrap">
+        <div class="service-grid">
+          {articles.map((item) => <a class="service-card" href={`/blog/${item.slug}/`}><h2>{item.title}</h2><p>{item.description}</p><b>Read the guide <i aria-hidden="true">↗</i></b></a>)}
+        </div>
+      </section>
+    )}
+  </main>
+  <Footer />
+</SiteLayout>

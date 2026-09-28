@@ -23,6 +23,10 @@ jobs:
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_FEEDBACK_EMAIL: ${{ secrets.LAUNCHLOOM_FEEDBACK_EMAIL }}
       REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
+      ONBOARDING_INVITE_SIGNING_SECRET: ${{ secrets.ONBOARDING_INVITE_SIGNING_SECRET }}
+      ONBOARDING_ORIGIN: ${{ vars.ONBOARDING_ORIGIN }}
+      ONBOARDING_ADMIN_EMAILS: ${{ vars.ONBOARDING_ADMIN_EMAILS }}
+      ONBOARDING_ACCESS_AUD: ${{ vars.ONBOARDING_ACCESS_AUD }}
       PUBLIC_LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
     steps:
       - uses: actions/checkout@v5
@@ -33,17 +37,21 @@ jobs:
       - run: npm ci
       - name: Verify required Cloudflare and application secrets
         run: |
-          for key in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET OPENROUTER_API_KEY GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL REVISION_COORDINATOR_SECRET; do
+          for key in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET OPENROUTER_API_KEY GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL REVISION_COORDINATOR_SECRET ONBOARDING_INVITE_SIGNING_SECRET ONBOARDING_ORIGIN ONBOARDING_ADMIN_EMAILS ONBOARDING_ACCESS_AUD; do
             test -n "${!key}" || { echo "Missing required secret or variable: $key"; exit 1; }
           done
       - name: Configure Worker secrets
         run: |
-          for key in GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET OPENROUTER_API_KEY GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL REVISION_COORDINATOR_SECRET; do
+          for key in GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET OPENROUTER_API_KEY GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL REVISION_COORDINATOR_SECRET ONBOARDING_INVITE_SIGNING_SECRET; do
             printf '%s' "${!key}" | npx wrangler secret put "$key"
           done
-      - name: Deploy the LaunchLoom API Worker
-        run: npx wrangler deploy
       - name: Build platform
         run: npm run build
+      - name: Prepare invite-only onboarding Pages bundle
+        run: npm run build:onboarding-pages -- "$RUNNER_TEMP/launchloom-onboarding"
+      - name: Deploy invite-only onboarding Pages project
+        run: npx wrangler pages deploy "$RUNNER_TEMP/launchloom-onboarding" --project-name launchloom-onboarding --branch main --commit-hash "$GITHUB_SHA" --commit-message "LaunchLoom onboarding $GITHUB_SHA"
       - name: Direct-upload platform files to Cloudflare Pages
         run: npx wrangler pages deploy dist --project-name launchloom --commit-hash "$GITHUB_SHA" --commit-message "LaunchLoom platform $GITHUB_SHA"
+      - name: Deploy the LaunchLoom API Worker
+        run: npx wrangler deploy --var "ONBOARDING_ORIGIN:$ONBOARDING_ORIGIN" "ONBOARDING_ADMIN_EMAILS:$ONBOARDING_ADMIN_EMAILS" "ONBOARDING_ACCESS_AUD:$ONBOARDING_ACCESS_AUD"

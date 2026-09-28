@@ -45,6 +45,62 @@ const textWords = (html) =>
     .trim()
     .split(/\s+/u).filter(Boolean).length;
 
+function v2ResearchComplete(config) {
+  const research = config.seoResearch;
+  if (!research) return true;
+  const schemaVersion = research.version === undefined ? 1 : Number(research.version);
+  if (schemaVersion === 1) return true;
+  if (schemaVersion !== 2) return false;
+  const completeness = research.completeness || {};
+  const services = Array.isArray(config.services) ? config.services : [];
+  const pageMap = Array.isArray(research.pageMap) ? research.pageMap : [];
+  const serviceMetrics = Array.isArray(completeness.serviceMetrics) ? completeness.serviceMetrics : [];
+  const costs = research.cost || {};
+  if (
+    completeness.keywordOverview !== true ||
+    completeness.searchIntent !== true ||
+    completeness.keywordDifficulty !== true ||
+    completeness.serviceSerps !== services.length ||
+    completeness.serviceSerpsRequired !== services.length ||
+    !Array.isArray(research.competitors) || research.competitors.length < 3 ||
+    serviceMetrics.some((item) => item?.complete !== true) ||
+    costs.overBudget === true ||
+    costs.complete !== true ||
+    Number(costs.unreportedTasks) !== 0 ||
+    !Number.isFinite(Number(costs.usd)) ||
+    !Number.isFinite(Number(costs.limitUsd)) ||
+    Number(costs.usd) > Number(costs.limitUsd) ||
+    !services.length
+  ) return false;
+  const requiredCorePages = new Set(["home", "services-hub", "about", "contact"]);
+  for (const page of pageMap) requiredCorePages.delete(String(page.pageType || ""));
+  if (requiredCorePages.size) return false;
+  const measuredByName = new Map(serviceMetrics.map((item) => [String(item.service || "").toLowerCase(), item]));
+  const servicePages = pageMap.filter((page) => page.pageType === "service");
+  if (servicePages.length !== services.length) return false;
+  const pageByService = new Map(servicePages.map((page) => [String(page.service || "").toLowerCase(), page]));
+  for (const service of services) {
+    const key = String(service.name || "").toLowerCase();
+    const evidence = measuredByName.get(key);
+    const primary = pageByService.get(key)?.primaryKeyword;
+    const sources = primary?.metricSources || {};
+    if (
+      evidence?.complete !== true || !primary ||
+      primary.keyword !== evidence.primaryKeyword || primary.provenance !== "dataforseo" ||
+      typeof primary.volume !== "number" || !Number.isFinite(primary.volume) ||
+      typeof primary.kd !== "number" || !Number.isFinite(primary.kd) ||
+      typeof primary.cpc !== "number" || !Number.isFinite(primary.cpc) ||
+      typeof primary.competition !== "number" || !Number.isFinite(primary.competition) ||
+      typeof primary.intent !== "string" || !primary.intent.trim() ||
+      !["volume", "kd", "cpc", "competition", "intent"].every((key) => String(sources[key] || "").startsWith("dataforseo_"))
+    ) return false;
+  }
+  const configLocations = Array.isArray(config.locations) ? config.locations : [];
+  const locationPages = pageMap.filter((page) => page.pageType === "location");
+  const mappedLocations = new Set(locationPages.map((page) => String(page.slug || "").toLowerCase()));
+  return configLocations.length === mappedLocations.size && configLocations.every((location) => mappedLocations.has(`/locations/${String(location.slug || "").toLowerCase()}/`));
+}
+
 export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
   const failures = [];
   if (!["review", "production"].includes(mode))
@@ -55,16 +111,20 @@ export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
   // New intakes always carry at least a baseline dossier. Absence denotes an
   // approved pre-research legacy site, retained by the worker readiness policy.
   if (mode === "production" && config.seoResearch &&
-      (config.seoResearch.mode !== "researched" || config.seoResearch.publishReady !== true))
+      (config.seoResearch.mode !== "researched" || config.seoResearch.publishReady !== true || !v2ResearchComplete(config)))
     failures.push("SEO research is incomplete; production publishing is blocked.");
 
   const routes = [
     "/",
+    "/services/",
     ...(config.services || []).map((service) => `/services/${service.slug}/`),
+    "/about/",
+    "/contact/",
     ...(config.industry === "home-services"
-      ? (config.locations?.length ? config.locations : (config.business?.serviceAreas || []).map((name) => ({
-          slug: name.toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/(^-|-$)/gu, ""),
-        }))).map((location) => `/locations/${location.slug}/`)
+      ? (config.locations || []).map((location) => `/locations/${location.slug}/`)
+      : []),
+    ...(config.blogArticles?.length
+      ? ["/blog/", ...config.blogArticles.map((article) => `/blog/${article.slug}/`)]
       : []),
   ];
   const expected = originUrl ? routes.map((route) => new URL(route, originUrl).href) : [];

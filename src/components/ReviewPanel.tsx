@@ -46,12 +46,15 @@ export default function ReviewPanel() {
   const [token, setToken] = useState("");
   const [claims, setClaims] = useState<ReviewClaims>({});
   const [comment, setComment] = useState("");
+  const [category, setCategory] = useState("text");
+  const [replacementAsset, setReplacementAsset] = useState<File | null>(null);
   const [email, setEmail] = useState("");
   const [state, setState] = useState("");
   const [sending, setSending] = useState(false);
   const [repair, setRepair] = useState<RepairSession | null>(null);
   const [repairLoading, setRepairLoading] = useState(false);
   const submissionId = useRef("");
+  const replacementAssetInput = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const value =
@@ -64,6 +67,11 @@ export default function ReviewPanel() {
   const isClient = claims.stage === "client";
   const hasCreativeRepair = Boolean(claims.creativeRepairSessionId);
   const invitedEmail = claims.reviewerEmail || "the invited reviewer";
+
+  function clearReplacementAsset() {
+    setReplacementAsset(null);
+    if (replacementAssetInput.current) replacementAssetInput.current.value = "";
+  }
 
   async function refreshCreativeRepair() {
     if (!token || !claims.creativeRepairSessionId) return;
@@ -155,16 +163,22 @@ export default function ReviewPanel() {
     setSending(true);
     setState("Sending your note…");
     try {
+      const feedback = {
+        token,
+        comment,
+        category: isClient ? category : "developer",
+        email,
+        pageUrl: window.location.href,
+        submissionId: submissionId.current,
+      };
+      const form = new FormData();
+      Object.entries(feedback).forEach(([key, value]) => form.set(key, value));
+      if (isClient && replacementAsset) form.set("replacementAsset", replacementAsset);
+      const multipart = isClient && Boolean(replacementAsset);
       const response = await fetch(`${apiBase}/api/feedback`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          comment,
-          email,
-          pageUrl: window.location.href,
-          submissionId: submissionId.current,
-        }),
+        ...(multipart ? {} : { headers: { "Content-Type": "application/json" } }),
+        body: multipart ? form : JSON.stringify(feedback),
       });
       const data = (await response.json().catch(() => ({}))) as {
         error?: string;
@@ -181,6 +195,7 @@ export default function ReviewPanel() {
       );
       if (response.ok) {
         setComment("");
+        clearReplacementAsset();
         submissionId.current = "";
       }
     } catch {
@@ -237,7 +252,7 @@ export default function ReviewPanel() {
         <p>
           {isDeveloper
             ? "Approve this exact preview to publish it and invite the client. Or leave feedback for another internal revision."
-            : "Leave feedback in plain language. We’ll review it internally before any update is published."}
+            : "Request a small correction such as a logo, photo, colour, contact detail, or wording change. Larger redesign requests are reviewed separately."}
         </p>
         {hasCreativeRepair && (
           <section className="creative-repair-panel" aria-labelledby="creative-repair-title">
@@ -333,13 +348,58 @@ export default function ReviewPanel() {
               placeholder={invitedEmail}
             />
           </label>
+          {isClient && (
+            <label className="field">
+              What kind of change is this?
+              <select
+                value={category}
+                onChange={(event) => {
+                  setCategory(event.target.value);
+                  clearReplacementAsset();
+                }}
+              >
+                <option value="logo">Logo</option>
+                <option value="photos">Business photos</option>
+                <option value="style">Font or styling</option>
+                <option value="color">Colour</option>
+                <option value="text">Text or factual correction</option>
+                <option value="contact">Contact details</option>
+                <option value="other-small">Other small change</option>
+              </select>
+            </label>
+          )}
+          {isClient && ["logo", "photos"].includes(category) && (
+            <label className="field">
+              Replacement image
+              <input
+                ref={replacementAssetInput}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                required
+                onChange={(event) => setReplacementAsset(event.currentTarget.files?.[0] || null)}
+              />
+              <small>PNG, JPEG, or WebP under 8 MB. The image will be sent with your feedback.</small>
+            </label>
+          )}
           <label className="field">
-            What should change?
+            {isDeveloper ? "What should change?" : "Describe the small change"}
             <textarea
               required
               value={comment}
               onChange={(event) => setComment(event.target.value)}
-              placeholder="For example: Make the main headline more direct and make the phone number more prominent."
+              placeholder={
+                isDeveloper
+                  ? "For example: Make the main headline more direct and make the phone number more prominent."
+                  : category === "text"
+                    ? 'Quote the exact text and replacement, for example: Replace text "Same day service" with "Prompt scheduling".'
+                    : category === "contact"
+                      ? "Name one field and its new value, for example: Phone: (555) 555-0144."
+                      : category === "color"
+                        ? "Tell us the brand colour code if you know it, for example: Use #205d51."
+                        : category === "style"
+                          ? "Describe a small font or spacing change you would like."
+                          : "Describe the small change. Requests that change the page layout are reviewed separately."
+              }
             />
           </label>
           <button className="button" type="submit" disabled={sending}>

@@ -5,7 +5,7 @@
   "description": "The onboarding flow must not leave the Business step when required factual fields are empty.",
   "priority": "p1",
   "planSteps": [
-    { "type": "action", "description": "Navigate to /onboard/ and choose Enter details manually" },
+    { "type": "action", "description": "Open a valid unused test invitation link to /onboard/ and choose Enter details manually" },
     { "type": "action", "description": "Leave the required Business fields empty and activate Continue" },
     { "type": "assertion", "description": "The form remains on step 1 Business and the first missing required business field is reported invalid" }
   ]
