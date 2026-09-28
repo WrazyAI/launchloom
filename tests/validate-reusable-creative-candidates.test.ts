@@ -137,6 +137,61 @@ describe("reusable creative candidate validation", () => {
     ];
     await writeJson(partialRunPath, partialRun);
 
+    const routeMismatchCandidatesPath = path.join(
+      root,
+      "route-mismatch-candidates",
+    );
+    const routeMismatchRunPath = path.join(
+      routeMismatchCandidatesPath,
+      "creative-run.json",
+    );
+    await fs.cp(partialCandidatesPath, routeMismatchCandidatesPath, {
+      recursive: true,
+    });
+    const routeMismatchRun = JSON.parse(
+      await fs.readFile(routeMismatchRunPath, "utf8"),
+    );
+    routeMismatchRun.candidates[1].routeId = routes[1].id;
+    await writeJson(routeMismatchRunPath, routeMismatchRun);
+    await expect(
+      validateAndCopyReusableCandidates({
+        configPath,
+        inspirationPath,
+        candidatesPath: routeMismatchCandidatesPath,
+        outputPath: path.join(root, "route-mismatch-output"),
+        sessionPath,
+        model: "openai/gpt-6-luna",
+      }),
+    ).rejects.toThrow(/candidate-c run route binding does not match/u);
+
+    const conflictingCandidatesPath = path.join(root, "conflicting-candidates");
+    const conflictingRunPath = path.join(
+      conflictingCandidatesPath,
+      "creative-run.json",
+    );
+    await fs.cp(partialCandidatesPath, conflictingCandidatesPath, {
+      recursive: true,
+    });
+    const conflictingRun = JSON.parse(
+      await fs.readFile(conflictingRunPath, "utf8"),
+    );
+    conflictingRun.failures.push({
+      candidateId: "candidate-a",
+      routeId: routes[0].id,
+      error: "synthetic conflicting status",
+    });
+    await writeJson(conflictingRunPath, conflictingRun);
+    await expect(
+      validateAndCopyReusableCandidates({
+        configPath,
+        inspirationPath,
+        candidatesPath: conflictingCandidatesPath,
+        outputPath: path.join(root, "conflicting-output"),
+        sessionPath,
+        model: "openai/gpt-6-luna",
+      }),
+    ).rejects.toThrow(/candidate-a is listed as both authored and failed/u);
+
     await expect(
       validateAndCopyReusableCandidates({
         configPath,

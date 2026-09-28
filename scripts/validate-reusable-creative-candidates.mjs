@@ -154,6 +154,14 @@ export async function validateAndCopyReusableCandidates({
       new Set(authoredCandidateNames).size === authoredCandidateNames.length,
     "Reusable candidate run must list at least one unique authored candidate from the three-route pack.",
   );
+  const routeMismatch = authoredCandidates.find((candidate) => {
+    const index = candidateNames.indexOf(candidate?.candidateId);
+    return candidate?.routeId !== inspiration.routes[index]?.id;
+  });
+  assert(
+    !routeMismatch,
+    `${routeMismatch?.candidateId || "Reusable candidate"} run route binding does not match its Reference DNA route.`,
+  );
   const authorFailures = Array.isArray(sourceRun.failures)
     ? sourceRun.failures
     : [];
@@ -165,6 +173,13 @@ export async function validateAndCopyReusableCandidates({
   assert(
     !unknownFailure,
     "Reusable candidate run contains an authoring failure for an unknown candidate.",
+  );
+  const overlappingStatus = authoredCandidateNames.find((name) =>
+    authorFailures.some((failure) => failure.candidateId === name),
+  );
+  assert(
+    !overlappingStatus,
+    `${overlappingStatus || "A reusable candidate"} is listed as both authored and failed.`,
   );
   const actualCandidateDirectories = entries
     .filter((item) => candidateNames.includes(item.name) && item.isDirectory())
