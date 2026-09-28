@@ -10,6 +10,35 @@ const registry = JSON.parse(fs.readFileSync(path.resolve("data/inspiration-regis
 const roots: string[] = [];
 
 describe("inspiration compilation history", () => {
+  it("scopes no-kind legacy signatures to eligible references through the compiler", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "inspiration-no-kind-history-"));
+    roots.push(root);
+    const seed = "no-kind-legacy-compiler";
+    const config = { business: { name: "Northside Care" }, businessKind: "home-care", design: {} };
+    const original = buildInspirationPack({ seed, industry: "home-care", styleTerms: [] }, registry);
+    const dental = buildInspirationPack({ seed, industry: "dental", styleTerms: [] }, registry);
+    const ownSignatures = original.routes.map((route: any) => route.signature).sort();
+    const otherSignatures = dental.routes.map((route: any) => route.signature);
+    const configPath = path.join(root, "config.json");
+    const historyPath = path.join(root, "history.json");
+    const outputPath = path.join(root, "pack.json");
+    fs.writeFileSync(configPath, JSON.stringify(config));
+    fs.writeFileSync(historyPath, JSON.stringify({ version: 1, launches: [
+      { id: "older-home-care", referenceIds: [], routeSignatures: ownSignatures },
+      { id: "other-dental", referenceIds: [], routeSignatures: otherSignatures },
+    ] }));
+
+    execFileSync("node", ["scripts/compile-inspiration-pack.mjs", "--config", configPath, "--history", historyPath, "--out", outputPath], {
+      cwd: path.resolve("."),
+      env: { ...process.env, LAUNCHLOOM_INTAKE_ID: seed },
+    });
+    const next = JSON.parse(fs.readFileSync(outputPath, "utf8"));
+    expect(next.request.recentRouteSignatures).toEqual(ownSignatures);
+    expect(next.request.recentRouteSignatures).not.toEqual(expect.arrayContaining(otherSignatures));
+    expect(next.request.recentReferenceSets).toEqual([]);
+    expect(next.referenceLibrary.recordIds.sort()).not.toEqual(original.routes.map((route: any) => route.referenceDossier.id).sort());
+  }, 30_000);
+
   it("uses matching-niche signature-only legacy history through the compiler", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "inspiration-legacy-history-"));
     roots.push(root);

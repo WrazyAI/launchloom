@@ -548,7 +548,7 @@ function independentAnchors(ranked, request, history) {
   return { chosen: candidates[0], validTrioCount: candidates.length };
 }
 
-function selectionHistory(request, eligibleIds, industry) {
+function selectionHistory(request, eligibleIds, eligibleSignatures, industry) {
   const recentReferenceIds = new Set(
     (Array.isArray(request.recentLaunches) ? [] : cleanList(request.recentReferenceIds, 200))
       .filter((id) => eligibleIds.has(id)),
@@ -564,9 +564,14 @@ function selectionHistory(request, eligibleIds, industry) {
       continue;
     const ids = cleanList(launch?.referenceIds, 20);
     if (!ids.length) {
-      // A historical signature-only record has no ID evidence to identify its
-      // niche. Use it only when the launch itself names a matching business kind.
-      if (launch?.businessKind) relevantLaunches.push(launch);
+      // Older launches may lack both IDs and business kind. In that case an
+      // exact eligible route signature is the only safe niche evidence.
+      const matchingSignatures = (Array.isArray(launch?.routeSignatures)
+        ? launch.routeSignatures
+        : []).map((value) => cleanText(value, 600))
+        .filter((signature) => eligibleSignatures.has(signature));
+      if (launch?.businessKind || matchingSignatures.length)
+        relevantLaunches.push({ ...launch, routeSignatures: matchingSignatures });
       continue;
     }
     if (!ids.every((id) => eligibleIds.has(id))) continue;
@@ -633,14 +638,19 @@ export function buildInspirationPack(
       );
     registry = { ...registry, records: businessMatchedRecords };
   }
-  const history = selectionHistory(request, new Set(registry.records.map((record) => record.id.toLowerCase())), industry);
+  const eligibleSignatures = new Set(registry.records.map(signatureFor));
+  const history = selectionHistory(
+    request,
+    new Set(registry.records.map((record) => record.id.toLowerCase())),
+    eligibleSignatures,
+    industry,
+  );
   const recentReferenceIds = history.recentReferenceIds;
   const eligibleFamilyIds = new Set(registry.records.flatMap((record) => [
     record.familyId,
     record.referenceFamilyId,
     buildRouteContract(record).familyId,
   ].filter(Boolean).map((value) => value.toLowerCase())));
-  const eligibleSignatures = new Set(registry.records.map(signatureFor));
   const recentFamilyInput = Array.isArray(request.recentLaunches)
     ? history.relevantLaunches.flatMap((launch) => [
         ...(Array.isArray(launch.routeFamilyIds) ? launch.routeFamilyIds : []),
