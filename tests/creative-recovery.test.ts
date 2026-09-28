@@ -164,6 +164,18 @@ describe("developer-triggered creative repair workflow", () => {
     );
 
     expect(diagnosticStep.match(/--diagnostic-output /gu)).toHaveLength(3);
+    expect(diagnosticStep).toContain(
+      'VERIFY_ROOT=$(mktemp -d "/tmp/launchloom-diagnostic-verifier-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.XXXXXX")',
+    );
+    expect(diagnosticStep).toContain(
+      'node "$VERIFY_ROOT/scripts/verify-creative-diagnostic.mjs"',
+    );
+    expect(diagnosticStep).toContain(
+      'cp -R "$GITHUB_WORKSPACE/node_modules/playwright" "$GITHUB_WORKSPACE/node_modules/playwright-core" "$VERIFY_ROOT/node_modules/"',
+    );
+    expect(diagnosticStep).not.toContain(
+      'node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs"',
+    );
     expect(preserveIndex).toBeGreaterThan(diagnosticStart);
     expect(preserveIndex).toBeLessThan(repairLinkIndex);
     expect(workflow).toContain("steps.diagnostic_preview.outcome == 'failure'");

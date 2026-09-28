@@ -323,7 +323,13 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci --package-lock=true --prefix "$BUILD_DIR"
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_CREATIVE_DIAGNOSTIC true --env.PUBLIC_LAUNCHLOOM_API_URL "$LAUNCHLOOM_API_URL" -- npm run build
-          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true -- node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" --dist dist --candidate "$CANDIDATE" --screenshots "$SCREENSHOTS"
+          VERIFY_ROOT=$(mktemp -d "/tmp/launchloom-diagnostic-verifier-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.XXXXXX")
+          chmod 755 "$VERIFY_ROOT"
+          mkdir -p "$VERIFY_ROOT/scripts" "$VERIFY_ROOT/node_modules"
+          cp "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" "$GITHUB_WORKSPACE/scripts/creative-viewport-policy.mjs" "$VERIFY_ROOT/scripts/"
+          cp -R "$GITHUB_WORKSPACE/node_modules/playwright" "$GITHUB_WORKSPACE/node_modules/playwright-core" "$VERIFY_ROOT/node_modules/"
+          chmod -R a+rX "$VERIFY_ROOT"
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true -- node "$VERIFY_ROOT/scripts/verify-creative-diagnostic.mjs" --dist dist --candidate "$CANDIDATE" --screenshots "$SCREENSHOTS"
           chmod 700 "$BUILD_ROOT"
           SAFE_DEPLOY_DIR=$(node "$GITHUB_WORKSPACE/scripts/prepare-safe-static-output.mjs" --source "$BUILD_DIR/dist" --parent "$RUNNER_TEMP")
           mkdir -p "$CLIENT_DIR/.launchloom/creative-repair/final-attempt/diagnostic-screenshots"
