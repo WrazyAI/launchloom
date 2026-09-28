@@ -140,6 +140,12 @@ There is no new-intake escape hatch for the legacy renderer. The deterministic
 experience-pack renderer and its bakeoff remain only as migration support for
 already-created client repositories and historical tests.
 
+For a manual internal canary, `workflow_dispatch` also accepts
+`preview_only=true`. That mode skips the neutral production-branch certificate
+bootstrap and still runs the normal authoring, SEO, visual, and promotion gates.
+Only the review or diagnostic preview branches may receive generated site
+content in this mode.
+
 Authoring failures stop before rendering and deployment with the provider
 error attached to the run. The workflow never turns an empty candidate set into
 a legacy preview.

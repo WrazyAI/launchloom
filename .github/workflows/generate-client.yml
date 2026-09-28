@@ -18,6 +18,11 @@ on:
         description: Existing private LaunchLoom client repository (required when reusing candidates)
         required: false
         type: string
+      preview_only:
+        description: Internal canary mode that skips the neutral production-branch bootstrap deploy
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -60,6 +65,7 @@ jobs:
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
       REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
       REUSABLE_CANDIDATE_REPO: ${{ inputs.candidate_repository || '' }}
+      PREVIEW_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.preview_only || false }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -230,11 +236,12 @@ jobs:
             echo "Cloudflare project lookup failed with HTTP $PROJECT_STATUS"
             exit 1
           fi
-          # Pages issues preview-subdomain certificates only after a first
-          # production deployment. This neutral, noindex placeholder is not a
-          # client website and lets the following developer preview open
-          # immediately without publishing client content.
+          # Normal intake uses a neutral, noindex placeholder to initialize
+          # Pages preview certificates. Preview-only canaries must not write
+          # to the production branch.
+          if [ "$PREVIEW_ONLY" != "true" ]; then
           npx wrangler pages deploy "$GITHUB_WORKSPACE/templates/preview-placeholder" --project-name "$PROJECT" --commit-hash "$GITHUB_SHA" --commit-message "Prepare LaunchLoom preview certificate"
+          fi
           gh label create launchloom-client-feedback --repo "$CLIENT_REPO" --color 1d76db --description "LaunchLoom client feedback inbox" --force
           INBOX=$(gh issue list --repo "$CLIENT_REPO" --state open --label launchloom-client-feedback --limit 1 --json url --jq '.[0].url // ""')
           if [ -z "$INBOX" ]; then
