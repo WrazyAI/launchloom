@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   publish:
@@ -28,11 +29,24 @@ jobs:
       - name: Build and direct-upload approved client site
         env:
           CLIENT_REPO: ${{ github.event.client_payload.repo }}
+          CLIENT_PR: ${{ github.event.client_payload.pr }}
           CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}
           FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
           APPROVED_SHA: ${{ github.event.client_payload.approvedSha }}
+          DEVELOPER_OVERRIDE: ${{ github.event.client_payload.developerOverride.disposition == 'override-publish' }}
+          OVERRIDE_SESSION_ID: ${{ github.event.client_payload.developerOverride.sessionId }}
+          OVERRIDE_REVIEWED_SHA: ${{ github.event.client_payload.developerOverride.reviewedHeadSha }}
+          OVERRIDE_CANDIDATE_ID: ${{ github.event.client_payload.developerOverride.candidateId }}
         run: |
           test -n "$CLIENT_REPO" && test -n "$CLIENT_EMAIL" && test -n "$FEEDBACK_ISSUE" && test -n "$APPROVED_SHA"
+          if [ "$DEVELOPER_OVERRIDE" = "true" ]; then
+            node "$GITHUB_WORKSPACE/scripts/validate-creative-release-override.mjs" \
+              --pr "$CLIENT_PR" \
+              --approved-sha "$APPROVED_SHA" \
+              --session "$OVERRIDE_SESSION_ID" \
+              --reviewed-sha "$OVERRIDE_REVIEWED_SHA" \
+              --candidate "$OVERRIDE_CANDIDATE_ID"
+          fi
           git clone "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"
           cd "$RUNNER_TEMP/client"
           git fetch origin "$APPROVED_SHA"
@@ -43,11 +57,19 @@ jobs:
           npm ci
           PUBLIC_SITE_URL="$PRODUCTION" PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
           node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode production --config src/site.config.json --dist dist --origin "$PRODUCTION"
+          if [ "$DEVELOPER_OVERRIDE" = "true" ]; then
+            MARKER="<!-- launchloom-human-gate-override:$OVERRIDE_SESSION_ID -->"
+            if ! gh api "repos/$CLIENT_REPO/issues/$CLIENT_PR/comments?per_page=100" --paginate --jq '.[].body' | grep -Fq "$MARKER"; then
+              gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nReviewed preview commit: %s\nCreative candidate: %s\nClient release commit: %s\n\nThe developer explicitly authorized sending this version despite its recorded automated visual-quality findings. Build, content-integrity, and production SEO checks must pass before any deployment.' "$MARKER" '## Developer visual-gate override' "$OVERRIDE_REVIEWED_SHA" "$OVERRIDE_CANDIDATE_ID" "$APPROVED_SHA")"
+            fi
+          fi
           npx wrangler pages deploy dist --project-name "$PROJECT" --commit-hash "$APPROVED_SHA" --commit-message "LaunchLoom approved deployment"
           TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage client --repo "$CLIENT_REPO" --site "$PROJECT" --email "$CLIENT_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$PRODUCTION" --token-only true)
           NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"
           REVIEW_URL="$PRODUCTION?review=$TOKEN"
           EMAIL_ARGS=(--to "$CLIENT_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience client)
+          EMAIL_KEY=$(printf '%s' "$APPROVED_SHA:$CLIENT_EMAIL" | sha256sum | cut -c1-24)
+          EMAIL_ARGS+=(--idempotency-key "published-$EMAIL_KEY")
           node -e 'const fs=require("node:fs"); const x=require("./src/site.config.json"); const report=x.revisionReport || {}; const items=Array.isArray(report.clientFeedbackContext) && report.clientFeedbackContext.length ? report.clientFeedbackContext : report.stage === "client" && Array.isArray(report.feedback) ? report.feedback : []; const feedback=[...new Set(items.map(item => String(item || "").trim()).filter(Boolean))].join("\n\n"); if (feedback) fs.writeFileSync(process.env.RUNNER_TEMP + "/client-approved-feedback.txt", feedback)'
           if [ -s "$RUNNER_TEMP/client-approved-feedback.txt" ]; then
             EMAIL_ARGS+=(--feedback-file "$RUNNER_TEMP/client-approved-feedback.txt")

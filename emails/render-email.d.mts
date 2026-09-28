@@ -4,6 +4,7 @@ export type LifecycleEmailInput = {
   clientName: string;
   previewUrl: string;
   reviewUrl?: string;
+  sendAnywayUrl?: string;
   clientFeedback?: string;
   revisionOutcome?: string;
   queuedFeedback?: string;
