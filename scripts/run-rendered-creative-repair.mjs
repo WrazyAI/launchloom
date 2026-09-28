@@ -98,6 +98,18 @@ function candidateNeedsRepair(candidate) {
   );
 }
 
+function isNonRepairableRenderInfrastructureFailure(failure) {
+  const text = String(failure || "");
+  return (
+    /Client executable ".+" is unavailable in the isolated build PATH\./u.test(
+      text,
+    ) ||
+    /Client process isolation is unavailable/u.test(text) ||
+    /Client command ".+" failed: .+ exited with 127/u.test(text) ||
+    /Client process ownership restoration failed/u.test(text)
+  );
+}
+
 function diversityRepairTargets(report) {
   if (report?.visualDiversity?.pass !== false) return [];
   const findingsByCandidate = new Map();
@@ -750,10 +762,7 @@ export async function runRenderedCreativeRepair({
             .replace(/\s+/gu, " ")
             .trim();
         const scopedRequest = normalizeRequest(preparedScope.requestText);
-        if (
-          !scopedRequest ||
-          scopedRequest !== normalizeRequest(humanFeedback)
-        )
+        if (!scopedRequest || scopedRequest !== normalizeRequest(humanFeedback))
           throw new Error(
             `Human creative repair scope for ${candidateId} does not match the current feedback because its request text is missing or stale. Route it to manual attention.`,
           );
@@ -864,6 +873,13 @@ export async function runRenderedCreativeRepair({
         { cause: error },
       );
     }
+    const infrastructureFailure = (report.candidates || [])
+      .flatMap((candidate) => candidate.failures || [])
+      .find(isNonRepairableRenderInfrastructureFailure);
+    if (infrastructureFailure)
+      throw new Error(
+        `Creative render infrastructure failure; no model repairs attempted: ${infrastructureFailure}`,
+      );
     const record = {
       round,
       selectedCandidateId: report.selectedCandidateId,

@@ -1,4 +1,5 @@
 import { execFileSync, spawn } from "node:child_process";
+import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -169,6 +170,30 @@ function normalizeWritableRoots(writablePaths = []) {
   return roots;
 }
 
+async function resolveClientExecutable(command, cwd, searchPath) {
+  const candidates = path.isAbsolute(command)
+    ? [command]
+    : command.includes(path.sep)
+      ? [path.resolve(cwd, command)]
+      : (searchPath || "")
+          .split(path.delimiter)
+          .filter(Boolean)
+          .map((directory) => path.join(directory, command));
+
+  for (const candidate of candidates) {
+    try {
+      await fs.access(candidate, fsConstants.X_OK);
+      return path.resolve(candidate);
+    } catch {
+      // Keep searching the trusted runner PATH before dropping privileges.
+    }
+  }
+
+  throw new Error(
+    `Client executable "${path.basename(command)}" is unavailable in the isolated build PATH.`,
+  );
+}
+
 async function assertOutsideGitWorktree(root) {
   let current = path.resolve(root);
   while (true) {
@@ -276,6 +301,9 @@ export async function runClientProcess({
     ]);
     environment.PATH = [...pathEntries].join(path.delimiter);
   }
+  const isolatedCommand = isolated
+    ? await resolveClientExecutable(command, cwd, environment.PATH)
+    : command;
   const writableRoots = normalizeWritableRoots([
     ...writablePaths,
     isolatedHome,
@@ -343,7 +371,7 @@ export async function runClientProcess({
               envPath,
               "-i",
               ...envArguments,
-              command,
+              isolatedCommand,
               ...args,
             ],
             {
@@ -417,7 +445,7 @@ export async function runClientProcess({
         envPath,
         "-i",
         ...envArguments,
-        command,
+        isolatedCommand,
         ...args,
       ],
       { cwd: path.resolve(cwd), env: environment },

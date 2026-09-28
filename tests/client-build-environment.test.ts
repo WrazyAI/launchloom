@@ -139,7 +139,11 @@ if (args.includes("process.stdout.write(String(process.getuid()))")) {
   process.exit(0);
 }
 const separator = args.indexOf("--");
-const result = spawnSync(args[separator + 1], args.slice(separator + 2), { stdio: "inherit" });
+const environmentIndex = args.indexOf("-i", separator);
+const commandIndex = args.findIndex((value, index) => index > environmentIndex && !/^[A-Za-z_][A-Za-z0-9_]*=/u.test(value));
+const command = args[commandIndex];
+if (!command || !command.startsWith("/")) process.exit(89);
+const result = spawnSync(args[commandIndex], args.slice(commandIndex + 1), { stdio: "inherit" });
 process.exit(result.status ?? 1);
 `;
     await fs.writeFile(sudoPath, fakeSudo, { mode: 0o700 });
