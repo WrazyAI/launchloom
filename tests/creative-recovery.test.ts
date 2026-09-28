@@ -110,6 +110,18 @@ describe("creative recovery diagnostics", () => {
       ])?.candidateId,
     ).toBe("candidate-a");
   });
+
+  it("prefers a safe diagnostic candidate over a higher-scoring candidate with viewport overflow", () => {
+    const unsafeCandidate = candidate("candidate-a", 92);
+    unsafeCandidate.viewports[1].heroBottom = 800;
+    const safeCandidate = candidate("candidate-c", 68);
+
+    expect(candidateDiagnosticSafety(unsafeCandidate).safe).toBe(false);
+    expect(candidateDiagnosticSafety(safeCandidate).safe).toBe(true);
+    expect(
+      chooseRecoveryCandidate([unsafeCandidate, safeCandidate])?.candidateId,
+    ).toBe("candidate-c");
+  });
 });
 
 describe("developer-triggered creative repair workflow", () => {

@@ -6,10 +6,10 @@ const requiredViewports = [
   ["mobile", 390, 844],
 ];
 
-/** Select the best complete rendered candidate without changing gate results. */
+/** Prefer the best preview-safe candidate; retain the best unsafe one for repair. */
 export function chooseRecoveryCandidate(candidates) {
   if (!Array.isArray(candidates)) return null;
-  return [...candidates]
+  const ranked = [...candidates]
     .filter(
       (candidate) =>
         candidate &&
@@ -20,7 +20,12 @@ export function chooseRecoveryCandidate(candidates) {
       (left, right) =>
         (Number(right.score) || 0) - (Number(left.score) || 0) ||
         left.candidateId.localeCompare(right.candidateId),
-    )[0] || null;
+    );
+  return (
+    ranked.find((candidate) => candidateDiagnosticSafety(candidate).safe) ||
+    ranked[0] ||
+    null
+  );
 }
 
 /**
@@ -102,10 +107,15 @@ export function summarizeCreativeRepairFindings(candidate, visualGate = null) {
     });
   };
 
-  for (const finding of candidate?.renderedReferenceFidelity?.audit?.findings || [])
+  for (const finding of candidate?.renderedReferenceFidelity?.audit?.findings ||
+    [])
     add(finding);
-  for (const finding of candidate?.referenceFidelity?.renderedVisualFindings || [])
-    add({ category: "reference-fidelity", message: finding.message || finding.code });
+  for (const finding of candidate?.referenceFidelity?.renderedVisualFindings ||
+    [])
+    add({
+      category: "reference-fidelity",
+      message: finding.message || finding.code,
+    });
   for (const finding of visualGate?.audit?.findings || []) add(finding);
 
   const score = Number(candidate?.renderedReferenceFidelity?.score);
@@ -117,14 +127,16 @@ export function summarizeCreativeRepairFindings(candidate, visualGate = null) {
       category: "reference-fidelity",
       severity: "major",
       evidence: `Rendered reference fidelity scored ${Math.round(score)} and did not meet the required threshold.`,
-      recommendation: "Preserve the assigned reference composition and revise the rendered geometry, hierarchy, and section rhythm.",
+      recommendation:
+        "Preserve the assigned reference composition and revise the rendered geometry, hierarchy, and section rhythm.",
     });
   for (const failure of candidate?.failures || []) {
     const text = String(failure).toLowerCase();
     if (text.includes("reference") || text.includes("signature"))
       add({
         category: "reference-fidelity",
-        evidence: "The rendered design did not satisfy all assigned reference-contract checks.",
+        evidence:
+          "The rendered design did not satisfy all assigned reference-contract checks.",
       });
     else if (text.includes("visual") || text.includes("generic"))
       add({
@@ -136,7 +148,8 @@ export function summarizeCreativeRepairFindings(candidate, visualGate = null) {
     add({
       category: "visual-quality",
       severity: "major",
-      evidence: "The candidate was rendered, but it did not pass the full preview-quality gate.",
+      evidence:
+        "The candidate was rendered, but it did not pass the full preview-quality gate.",
     });
   return findings.slice(0, 20).map(({ key: _key, ...finding }) => finding);
 }
