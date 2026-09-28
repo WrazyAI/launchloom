@@ -54,14 +54,14 @@ describe("OpenRouter cache-aware client", () => {
 
     expect(send).toHaveBeenCalledTimes(2);
     expect(requests.map((body) => body.max_completion_tokens)).toEqual([
-      24_000, 9_022,
+      24_000, 8_766,
     ]);
     expect(result.attempts).toHaveLength(2);
     expect(result.payload.choices[0].message.content).toBe(
       '{"stage":"contract"}',
     );
     expect(diagnostics).toContain(
-      "openrouter_budget_retry requested=24000 affordable=9278 retry=9022",
+      "openrouter_budget_retry requested=24000 affordable=9278 retry=8766",
     );
   });
 
@@ -105,7 +105,7 @@ describe("OpenRouter cache-aware client", () => {
 
     expect(response.status).toBe(200);
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(requests.map((body) => body.max_tokens)).toEqual([9_000, 8_653]);
+    expect(requests.map((body) => body.max_tokens)).toEqual([9_000, 8_397]);
     expect(requests.every((body) => !("max_completion_tokens" in body))).toBe(
       true,
     );

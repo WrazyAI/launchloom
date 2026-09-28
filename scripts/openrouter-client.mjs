@@ -227,7 +227,7 @@ export function openRouterApiError(payload, httpStatus = 0) {
   return new Error(`OpenRouter${code ? ` ${code}` : ""}: ${normalizedMessage}`);
 }
 
-const AFFORDABILITY_RETRY_MARGIN = 256;
+const AFFORDABILITY_RETRY_MARGIN = 512;
 const MIN_AFFORDABILITY_RETRY_TOKENS = 4_096;
 
 export function isOpenRouterAffordabilityError(error) {

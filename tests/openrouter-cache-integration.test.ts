@@ -95,7 +95,7 @@ describe("OpenRouter cache integration", () => {
     expect(source).toContain("openRouterChatCompletionWithCreditRetry");
     expect(source).toContain('"max_completion_tokens"');
     expect(source).toContain('"max_tokens"');
-    expect(source).toContain("AFFORDABILITY_RETRY_MARGIN = 256");
+    expect(source).toContain("AFFORDABILITY_RETRY_MARGIN = 512");
   });
 
   it("freezes adaptive reasoning instead of downgrading effort inside a session", () => {

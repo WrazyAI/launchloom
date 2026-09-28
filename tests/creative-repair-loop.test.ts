@@ -133,9 +133,9 @@ describe("creative repair loop", () => {
     const firstBody = JSON.parse(fetchMock.mock.calls[0][1].body as string);
     const retryBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
     expect(firstBody.max_completion_tokens).toBe(18_000);
-    expect(retryBody.max_completion_tokens).toBe(16_385);
+    expect(retryBody.max_completion_tokens).toBe(16_129);
     expect(diagnostics).toContain(
-      "creative_repair_budget_retry requested=18000 affordable=16641 retry=16385",
+      "creative_repair_budget_retry requested=18000 affordable=16641 retry=16129",
     );
   });
 
