@@ -137,7 +137,60 @@ export async function validateAndCopyReusableCandidates({
       `Reusable candidate source is missing regular file ${file}.`,
     );
   }
-  for (const candidateName of candidateNames) {
+  const sourceRun = await readJson(
+    path.join(candidatesPath, "creative-run.json"),
+  );
+  const authoredCandidates = Array.isArray(sourceRun.candidates)
+    ? sourceRun.candidates
+    : [];
+  const authoredCandidateNames = authoredCandidates.map(
+    (candidate) => candidate?.candidateId,
+  );
+  assert(
+    authoredCandidateNames.length > 0 &&
+      authoredCandidateNames.every(
+        (name) => typeof name === "string" && candidateNames.includes(name),
+      ) &&
+      new Set(authoredCandidateNames).size === authoredCandidateNames.length,
+    "Reusable candidate run must list at least one unique authored candidate from the three-route pack.",
+  );
+  const authorFailures = Array.isArray(sourceRun.failures)
+    ? sourceRun.failures
+    : [];
+  const unknownFailure = authorFailures.find(
+    (failure) =>
+      typeof failure?.candidateId !== "string" ||
+      !candidateNames.includes(failure.candidateId),
+  );
+  assert(
+    !unknownFailure,
+    "Reusable candidate run contains an authoring failure for an unknown candidate.",
+  );
+  const actualCandidateDirectories = entries
+    .filter((item) => candidateNames.includes(item.name) && item.isDirectory())
+    .map((item) => item.name)
+    .sort();
+  assert(
+    same(actualCandidateDirectories, [...authoredCandidateNames].sort()),
+    "Reusable candidate directories must match the successfully authored candidate set.",
+  );
+  const missingCandidates = candidateNames.filter(
+    (name) => !authoredCandidateNames.includes(name),
+  );
+  assert(
+    missingCandidates.every((name) =>
+      authorFailures.some(
+        (failure) =>
+          failure.candidateId === name &&
+          failure.routeId ===
+            inspiration.routes[candidateNames.indexOf(name)]?.id &&
+          typeof failure.error === "string" &&
+          failure.error.trim(),
+      ),
+    ),
+    "Every omitted candidate must have an explicit authoring failure in the saved run.",
+  );
+  for (const candidateName of authoredCandidateNames) {
     const entry = entries.find((item) => item.name === candidateName);
     assert(
       entry?.isDirectory(),
@@ -161,10 +214,6 @@ export async function validateAndCopyReusableCandidates({
       `${candidateName} must contain exactly the six validated candidate files.`,
     );
   }
-  assert(
-    same(candidateNames, ["candidate-a", "candidate-b", "candidate-c"]),
-    "Reusable candidate set must contain exactly candidate-a, candidate-b, and candidate-c.",
-  );
 
   const source = path.resolve(candidatesPath);
   const destination = path.resolve(outputPath);
@@ -195,7 +244,7 @@ export async function validateAndCopyReusableCandidates({
   try {
     for (const name of copiedRootFiles)
       await fs.copyFile(path.join(source, name), path.join(staging, name));
-    for (const candidateName of candidateNames) {
+    for (const candidateName of authoredCandidateNames) {
       const stagedCandidate = path.join(staging, candidateName);
       await fs.mkdir(stagedCandidate);
       for (const file of candidateFiles)
@@ -233,7 +282,8 @@ export async function validateAndCopyReusableCandidates({
       "Reusable root content manifest does not match the supplied configuration.",
     );
 
-    for (const [index, candidateName] of candidateNames.entries()) {
+    for (const candidateName of authoredCandidateNames) {
+      const index = candidateNames.indexOf(candidateName);
       const candidatePath = path.join(staging, candidateName);
       const [metadata, contentManifest, contract, experience, styles, motion] =
         await Promise.all([
@@ -303,8 +353,11 @@ export async function validateAndCopyReusableCandidates({
     await fs.rename(staging, destination);
     return {
       validated: true,
-      count: candidateNames.length,
-      routes: inspiration.routes.map((route) => route.id),
+      count: authoredCandidateNames.length,
+      routes: authoredCandidateNames.map(
+        (candidateName) =>
+          inspiration.routes[candidateNames.indexOf(candidateName)].id,
+      ),
       sessionId: creativeSession.sessionId,
     };
   } catch (error) {

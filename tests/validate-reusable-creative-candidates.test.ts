@@ -21,7 +21,7 @@ async function writeJson(file: string, value: unknown) {
 }
 
 describe("reusable creative candidate validation", () => {
-  it("rejects stale sealed content before copying any candidate files", async () => {
+  it("accepts explicitly rejected siblings but rejects stale sealed content", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-reusable-candidates-"),
     );
@@ -55,6 +55,10 @@ describe("reusable creative candidate validation", () => {
       creativeSession,
       contentManifestDigest: buildCreativeContentManifest(config, routes[0])
         .digest,
+      candidates: ["candidate-a", "candidate-b", "candidate-c"].map(
+        (candidateId, index) => ({ candidateId, routeId: routes[index].id }),
+      ),
+      failures: [],
     });
     await writeJson(
       path.join(candidatesPath, "content-manifest.json"),
@@ -108,6 +112,42 @@ describe("reusable creative candidate validation", () => {
       }),
     ).rejects.toThrow(/content tokens do not match/u);
     await expect(fs.access(outputPath)).rejects.toThrow();
+
+    const partialCandidatesPath = path.join(root, "partial-candidates");
+    const partialOutputPath = path.join(root, "partial-output");
+    await fs.cp(candidatesPath, partialCandidatesPath, { recursive: true });
+    await fs.rm(path.join(partialCandidatesPath, "candidate-b"), {
+      recursive: true,
+    });
+    const partialRunPath = path.join(
+      partialCandidatesPath,
+      "creative-run.json",
+    );
+    const partialRun = JSON.parse(await fs.readFile(partialRunPath, "utf8"));
+    partialRun.candidates = [
+      { candidateId: "candidate-a", routeId: routes[0].id },
+      { candidateId: "candidate-c", routeId: routes[2].id },
+    ];
+    partialRun.failures = [
+      {
+        candidateId: "candidate-b",
+        routeId: routes[1].id,
+        error: "synthetic candidate authoring rejection",
+      },
+    ];
+    await writeJson(partialRunPath, partialRun);
+
+    await expect(
+      validateAndCopyReusableCandidates({
+        configPath,
+        inspirationPath,
+        candidatesPath: partialCandidatesPath,
+        outputPath: partialOutputPath,
+        sessionPath,
+        model: "openai/gpt-6-luna",
+      }),
+    ).rejects.toThrow(/content tokens do not match/u);
+    await expect(fs.access(partialOutputPath)).rejects.toThrow();
 
     for (const [index, name] of [
       "candidate-a",
