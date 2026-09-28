@@ -125,6 +125,42 @@ describe("client build environment", () => {
     ).rejects.toThrow(/client process isolation.*unavailable/iu);
   });
 
+  it("keeps npm and its Node interpreter reachable inside a minimal CI PATH", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-client-runtime-path-"),
+    );
+    const sudoPath = path.join(root, "synthetic-sudo");
+    const fakeSudo = `#!${process.execPath}
+const { spawnSync } = require("node:child_process");
+const args = process.argv.slice(2);
+if (args.includes("find")) process.exit(0);
+if (args.includes("process.stdout.write(String(process.getuid()))")) {
+  process.stdout.write(String(process.getuid() + 1));
+  process.exit(0);
+}
+const separator = args.indexOf("--");
+const result = spawnSync(args[separator + 1], args.slice(separator + 2), { stdio: "inherit" });
+process.exit(result.status ?? 1);
+`;
+    await fs.writeFile(sudoPath, fakeSudo, { mode: 0o700 });
+
+    try {
+      const result = await runClientProcess({
+        command: "npm",
+        args: ["--version"],
+        cwd: root,
+        writablePaths: [root],
+        isolationMode: "required",
+        sudoPath,
+        sourceEnvironment: { CI: "true", PATH: "/usr/bin" },
+      });
+
+      expect(result.stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/u);
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
   it.skipIf(process.platform !== "linux")(
     "keeps the original client failure visible when ownership restoration also fails",
     async () => {

@@ -268,6 +268,14 @@ export async function runClientProcess({
     TMP: isolatedHome,
     ...envOverrides,
   });
+  if (isolated) {
+    const runtimeDirectory = path.dirname(process.execPath);
+    const pathEntries = new Set([
+      runtimeDirectory,
+      ...(environment.PATH || "").split(path.delimiter).filter(Boolean),
+    ]);
+    environment.PATH = [...pathEntries].join(path.delimiter);
+  }
   const writableRoots = normalizeWritableRoots([
     ...writablePaths,
     isolatedHome,
