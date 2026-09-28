@@ -22,7 +22,7 @@ import {
 } from "./openrouter-client.mjs";
 import {
   promptImagePart,
-  selectAuthorReferenceScreenshots,
+  selectAuthorEvidenceForRoute,
 } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import {
@@ -241,6 +241,7 @@ PREVIOUS JSX
 ${request.previousSource}
 ` : ""}
 EXPERIENCE STAGE
+Image asset use: Do not reuse the same sealed image token or image URL in multiple visible image regions unless Reference DNA explicitly requires a shared-image mosaic. If only content.hero.image is available, use it once in the most important image region and design remaining sections without repeating the same photo.
 Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". Place the single designated early conversion at the route-specific location in route.referenceDna.ctaPlacement.early and the primary action at route.referenceDna.ctaPlacement.primary. Use a compact anchor or button linking to #contact, not the full four-field form; follow the assigned DNA even when this means navigation or after the opening image/thesis rather than the hero. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the one designated early action at its assigned route location, and sections with ids services, faqs, and contact. When content.process has one or more steps, render every supplied step in exactly one designed <section data-required-section="conversion"> before the contact section, using content.process rather than hardcoded text; omit that section only when content.process is empty. Keep this section visually native to the route's assigned family, not a generic card wall. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
 
 Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" to each major section so the compiler can verify the assigned rhythm. Do not invent values: use the slugs from Reference DNA.`;
@@ -294,19 +295,24 @@ async function requestStage(request) {
     const userContent = [
       { type: "text", text: routePromptPrefix(request) },
     ];
-    const evidencePaths = selectAuthorReferenceScreenshots(
-      {
-        desktop: request.route.referenceDna?.evidence?.desktopScreenshot?.path,
-        mobile: request.route.referenceDna?.evidence?.mobileScreenshot?.path,
-      },
+    const referenceEvidence = await selectAuthorEvidenceForRoute(
+      request.route,
       { retry: Boolean(request.validationError) },
     );
-    for (const screenshotPath of evidencePaths) {
-      if (userContent.length >= 3) break;
+    for (const evidence of referenceEvidence) {
       try {
-        userContent.push(await promptImagePart(path.resolve(screenshotPath)));
+        userContent.push({
+          type: "text",
+          text: `Assigned reference ${evidence.purpose}${evidence.crop ? ` (${evidence.crop.width}x${evidence.crop.height} source pixels)` : ""}:`,
+        });
+        userContent.push(
+          await promptImagePart(path.resolve(evidence.path), {
+            detail: evidence.detail,
+            crop: evidence.crop,
+          }),
+        );
       } catch (error) {
-        throw new Error(`Reference evidence could not be loaded for ${request.route.id}: ${screenshotPath}`, { cause: error });
+        throw new Error(`Reference evidence could not be loaded for ${request.route.id}: ${evidence.path}`, { cause: error });
       }
     }
     userContent.push(

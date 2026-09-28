@@ -5,7 +5,10 @@ import os from "node:os";
 import path from "node:path";
 import sharp from "sharp";
 import { afterEach, describe, expect, it } from "vitest";
-import { promptImageDimensions, promptImagePart } from "../scripts/prompt-evidence.mjs";
+import {
+  promptImageDimensions,
+  promptImagePart,
+} from "../scripts/prompt-evidence.mjs";
 import {
   loadReferenceDossier,
   referenceDossierPromptBlock,
@@ -23,31 +26,89 @@ function png(width: number, height: number) {
 }
 
 function createDossier(overrides: Record<string, unknown> = {}) {
-  const repositoryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "launchloom-dossier-"));
+  const repositoryRoot = fs.mkdtempSync(
+    path.join(os.tmpdir(), "launchloom-dossier-"),
+  );
   temporaryRoots.push(repositoryRoot);
   const directory = path.join(repositoryRoot, "dossiers", "sample-reference");
   fs.mkdirSync(path.join(directory, "screenshots"), { recursive: true });
-  fs.writeFileSync(path.join(directory, "screenshots", "desktop.png"), png(1440, 3200));
-  fs.writeFileSync(path.join(directory, "screenshots", "mobile.png"), png(390, 3600));
+  fs.writeFileSync(
+    path.join(directory, "screenshots", "desktop.png"),
+    png(1440, 3200),
+  );
+  fs.writeFileSync(
+    path.join(directory, "screenshots", "mobile.png"),
+    png(390, 3600),
+  );
   fs.writeFileSync(
     path.join(directory, "design-prompt.md"),
     `# Reference implementation brief\n\n## Visual hierarchy\n\nA focused opening with a distinct typographic scale, clear conversion action, considered image crop, and generous negative space. Keep the promise concise and make the primary action visible without scrolling.\n\n## Page sequence\n\nOpening, evidence-led service presentation, concise questions, and an unmistakable contact close. Each chapter should have a separate visual rhythm and avoid repeating the same card grammar.\n\n## Responsive translation\n\nAt mobile width, preserve the opening hierarchy, make the imagery intentional rather than merely stacked, keep all navigation and calls to action touch-safe, and remove any effect that causes horizontal overflow.\n\n## Signature elements\n\nUse the reference's unique image composition and direct service index as visible signatures.\n\n## Prohibited patterns\n\nDo not turn the page into a generic split hero, rounded-card wall, repeated accordion, or late-only contact funnel.\n`,
   );
   const referenceDna = {
-    annotatedDescription: "The reference opens with an oversized centered promise, one compact action, and a quiet image composition. The following chapters alternate a highly scannable service index with proof and a direct contact close.",
-    heroGeometry: { mode: "centered-poster", alignment: "centered", viewport: "opening fits one screen" },
-    navigationGeometry: { mode: "quiet-inline", placement: "top edge", mobile: "compact menu" },
-    typography: { display: "editorial serif", body: "neutral sans", scale: "large and restrained" },
-    palette: { surfaces: ["warm white"], ink: "deep green", accents: ["copper"], contrastIntent: "clear contrast" },
-    imageTreatment: { mode: "documentary scene", crop: "subject-safe", focalPoint: "subject" },
+    annotatedDescription:
+      "The reference opens with an oversized centered promise, one compact action, and a quiet image composition. The following chapters alternate a highly scannable service index with proof and a direct contact close.",
+    heroGeometry: {
+      mode: "centered-poster",
+      alignment: "centered",
+      viewport: "opening fits one screen",
+    },
+    navigationGeometry: {
+      mode: "quiet-inline",
+      placement: "top edge",
+      mobile: "compact menu",
+    },
+    typography: {
+      display: "editorial serif",
+      body: "neutral sans",
+      scale: "large and restrained",
+    },
+    palette: {
+      surfaces: ["warm white"],
+      ink: "deep green",
+      accents: ["copper"],
+      contrastIntent: "clear contrast",
+    },
+    imageTreatment: {
+      mode: "documentary scene",
+      crop: "subject-safe",
+      focalPoint: "subject",
+    },
     sectionSequence: ["hero", "services", "faq", "contact"],
-    servicePresentation: { pattern: "ruled service index", interaction: "row focus" },
-    ctaPlacement: { primary: "in hero", secondary: "contact close", early: "inside opening" },
-    motion: { primitive: "image reveal", library: "native css", reducedMotion: "show static image" },
-    mobileRecomposition: { strategy: "stacked editorial chapters", rules: ["preserve image hierarchy", "avoid horizontal overflow"] },
-    prohibitedPatterns: ["generic-split-hero", "generic-card-wall", "repeated-accordion"],
-    requiredSignatureElements: [{ id: "service-index", selector: "[data-reference-signature=service-index]", description: "open service index" }],
-    acceptanceChecks: ["opening promise and action are visible", "services are easy to scan", "mobile retains the image treatment"],
+    servicePresentation: {
+      pattern: "ruled service index",
+      interaction: "row focus",
+    },
+    ctaPlacement: {
+      primary: "in hero",
+      secondary: "contact close",
+      early: "inside opening",
+    },
+    motion: {
+      primitive: "image reveal",
+      library: "native css",
+      reducedMotion: "show static image",
+    },
+    mobileRecomposition: {
+      strategy: "stacked editorial chapters",
+      rules: ["preserve image hierarchy", "avoid horizontal overflow"],
+    },
+    prohibitedPatterns: [
+      "generic-split-hero",
+      "generic-card-wall",
+      "repeated-accordion",
+    ],
+    requiredSignatureElements: [
+      {
+        id: "service-index",
+        selector: "[data-reference-signature=service-index]",
+        description: "open service index",
+      },
+    ],
+    acceptanceChecks: [
+      "opening promise and action are visible",
+      "services are easy to scan",
+      "mobile retains the image treatment",
+    ],
   };
   const manifest = {
     schemaVersion: 1,
@@ -59,7 +120,8 @@ function createDossier(overrides: Record<string, unknown> = {}) {
       name: "LaunchLoom owned prototype",
       url: "https://example.test/original-study",
       rights: "owned",
-      rightsEvidence: "Created and captured by LaunchLoom for internal design research.",
+      rightsEvidence:
+        "Created and captured by LaunchLoom for internal design research.",
     },
     businessKinds: ["local-service"],
     evidence: {
@@ -78,21 +140,47 @@ function createDossier(overrides: Record<string, unknown> = {}) {
     review: { status: "reviewed", reviewer: "LaunchLoom design QA" },
     ...overrides,
   };
-  fs.writeFileSync(path.join(directory, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
-  return { repositoryRoot, dossierPath: "dossiers/sample-reference", directory, manifest };
+  fs.writeFileSync(
+    path.join(directory, "manifest.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  return {
+    repositoryRoot,
+    dossierPath: "dossiers/sample-reference",
+    directory,
+    manifest,
+  };
 }
 
 afterEach(() => {
-  for (const root of temporaryRoots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
+  for (const root of temporaryRoots.splice(0))
+    fs.rmSync(root, { recursive: true, force: true });
 });
 
 describe("reference dossiers", () => {
   it("keeps the 31 curated archive dossiers complete, unique, and outside the production core", () => {
     const root = path.resolve(".");
-    const archive = JSON.parse(fs.readFileSync(path.join(root, "data/reference-library/archive-index.json"), "utf8"));
-    const core = JSON.parse(fs.readFileSync(path.join(root, "data/reference-library/core-collection.json"), "utf8"));
-    const registry = JSON.parse(fs.readFileSync(path.join(root, "data/inspiration-registry.json"), "utf8"));
-    const coreIds = new Set(core.niches.flatMap((niche: any) => niche.referenceIds));
+    const archive = JSON.parse(
+      fs.readFileSync(
+        path.join(root, "data/reference-library/archive-index.json"),
+        "utf8",
+      ),
+    );
+    const core = JSON.parse(
+      fs.readFileSync(
+        path.join(root, "data/reference-library/core-collection.json"),
+        "utf8",
+      ),
+    );
+    const registry = JSON.parse(
+      fs.readFileSync(
+        path.join(root, "data/inspiration-registry.json"),
+        "utf8",
+      ),
+    );
+    const coreIds = new Set(
+      core.niches.flatMap((niche: any) => niche.referenceIds),
+    );
     const archiveIds = archive.entries.map((entry: any) => entry.id);
 
     expect(archive.entries).toHaveLength(31);
@@ -101,7 +189,9 @@ describe("reference dossiers", () => {
     for (const entry of archive.entries) {
       const record = registry.records.find((item: any) => item.id === entry.id);
       expect(record, entry.id).toBeTruthy();
-      const dossier = loadReferenceDossier(record.dossierPath, { repositoryRoot: root });
+      const dossier = loadReferenceDossier(record.dossierPath, {
+        repositoryRoot: root,
+      });
       expect(dossier.productionEligible, entry.id).toBe(false);
       expect(dossier.evidence.desktop.fullPage, entry.id).toBe(true);
       expect(dossier.evidence.mobile.fullPage, entry.id).toBe(true);
@@ -111,65 +201,141 @@ describe("reference dossiers", () => {
 
   it("explains every archive exclusion with dossier evidence and a truthful rights basis", () => {
     const root = path.resolve(".");
-    const archive = JSON.parse(fs.readFileSync(path.join(root, "data/reference-library/archive-index.json"), "utf8"));
+    const archive = JSON.parse(
+      fs.readFileSync(
+        path.join(root, "data/reference-library/archive-index.json"),
+        "utf8",
+      ),
+    );
     const allowedReasons = new Set([
-      "cross-industry-study", "historical-owned-study", "outside-core-subject",
-      "digital-coaching-not-local-gym", "fictional-template-facts",
-      "template-not-real-business", "niche-fit-review-required",
+      "cross-industry-study",
+      "historical-owned-study",
+      "outside-core-subject",
+      "digital-coaching-not-local-gym",
+      "fictional-template-facts",
+      "template-not-real-business",
+      "niche-fit-review-required",
       "excluded-from-real-business-core",
     ]);
-    const allowedFits = new Set(["outside-core-niche", "core-adjacent", "core-subject"]);
-    const allowedSources = new Set(["direct-site", "licensed-template", "owned-study"]);
+    const allowedFits = new Set([
+      "outside-core-niche",
+      "core-adjacent",
+      "core-subject",
+    ]);
+    const allowedSources = new Set([
+      "direct-site",
+      "licensed-template",
+      "owned-study",
+    ]);
 
     for (const entry of archive.entries) {
-      const manifest = JSON.parse(fs.readFileSync(path.join(root, entry.dossierPath, "manifest.json"), "utf8"));
+      const manifest = JSON.parse(
+        fs.readFileSync(
+          path.join(root, entry.dossierPath, "manifest.json"),
+          "utf8",
+        ),
+      );
       expect(entry.productionEligible, entry.id).toBe(false);
-      expect(entry.productionEligible, entry.id).toBe(manifest.productionEligible);
+      expect(entry.productionEligible, entry.id).toBe(
+        manifest.productionEligible,
+      );
       expect(allowedFits.has(entry.coreNicheFit), entry.id).toBe(true);
       expect(allowedSources.has(entry.sourceKind), entry.id).toBe(true);
       expect(entry.exclusion.summary.length, entry.id).toBeGreaterThan(20);
       expect(entry.exclusion.codes.length, entry.id).toBeGreaterThan(0);
-      expect(entry.exclusion.codes.every((code: string) => allowedReasons.has(code)), entry.id).toBe(true);
+      expect(
+        entry.exclusion.codes.every((code: string) => allowedReasons.has(code)),
+        entry.id,
+      ).toBe(true);
       expect(entry.exclusion.evidence.length, entry.id).toBeGreaterThan(0);
       for (const evidence of entry.exclusion.evidence) {
         expect(evidence.path, entry.id).toBe("manifest.json");
-        const value = evidence.field.split(".").reduce((item: any, key: string) => item?.[key], manifest);
+        const value = evidence.field
+          .split(".")
+          .reduce((item: any, key: string) => item?.[key], manifest);
         expect(value, `${entry.id} ${evidence.field}`).toBeTruthy();
       }
-      expect(entry.rightsBasis.evidencePath, entry.id).toBe(manifest.source.rightsEvidencePath);
-      expect(fs.existsSync(path.join(root, entry.dossierPath, entry.rightsBasis.evidencePath)), entry.id).toBe(true);
+      expect(entry.rightsBasis.evidencePath, entry.id).toBe(
+        manifest.source.rightsEvidencePath,
+      );
+      expect(
+        fs.existsSync(
+          path.join(root, entry.dossierPath, entry.rightsBasis.evidencePath),
+        ),
+        entry.id,
+      ).toBe(true);
       if (entry.rights === "permission-cleared") {
         expect(entry.rightsBasis.kind, entry.id).toBe("requester-attestation");
-        expect(entry.rightsBasis.sourceOwnerGrantAttached, entry.id).toBe(false);
+        expect(entry.rightsBasis.sourceOwnerGrantAttached, entry.id).toBe(
+          false,
+        );
         expect(entry.rightsBasis.independentlyVerified, entry.id).toBe(false);
       } else {
-        expect(entry.rightsBasis.kind, entry.id).toBe(entry.rights === "licensed" ? "local-license" : "registry-recorded-owned");
+        expect(entry.rightsBasis.kind, entry.id).toBe(
+          entry.rights === "licensed"
+            ? "local-license"
+            : "registry-recorded-owned",
+        );
       }
     }
 
-    const byId = Object.fromEntries(archive.entries.map((entry: any) => [entry.id, entry]));
-    expect(byId["attested-future-fitness"].exclusion.codes).toContain("digital-coaching-not-local-gym");
-    expect(byId["colorlib-marigold-event-venue"].exclusion.codes).toContain("template-not-real-business");
-    expect(byId["spicer-roofing-storm-response"].exclusion.codes).toContain("excluded-from-real-business-core");
-    expect(byId["spicer-med-spa-treatment-menu"].exclusion.codes).toContain("template-not-real-business");
+    const byId = Object.fromEntries(
+      archive.entries.map((entry: any) => [entry.id, entry]),
+    );
+    expect(byId["attested-future-fitness"].exclusion.codes).toContain(
+      "digital-coaching-not-local-gym",
+    );
+    expect(byId["colorlib-marigold-event-venue"].exclusion.codes).toContain(
+      "template-not-real-business",
+    );
+    expect(byId["spicer-roofing-storm-response"].exclusion.codes).toContain(
+      "excluded-from-real-business-core",
+    );
+    expect(byId["spicer-med-spa-treatment-menu"].exclusion.codes).toContain(
+      "template-not-real-business",
+    );
   });
 
   it("keeps supplemental and retired screenshot pointers inside the canonical library", () => {
     const root = path.resolve(".");
-    const a1 = JSON.parse(fs.readFileSync(path.join(root, "data/a1-reference-library.json"), "utf8"));
-    const registry = JSON.parse(fs.readFileSync(path.join(root, "data/inspiration-registry.json"), "utf8"));
-    const archive = JSON.parse(fs.readFileSync(path.join(root, "data/reference-library/archive-index.json"), "utf8"));
+    const a1 = JSON.parse(
+      fs.readFileSync(
+        path.join(root, "data/a1-reference-library.json"),
+        "utf8",
+      ),
+    );
+    const registry = JSON.parse(
+      fs.readFileSync(
+        path.join(root, "data/inspiration-registry.json"),
+        "utf8",
+      ),
+    );
+    const archive = JSON.parse(
+      fs.readFileSync(
+        path.join(root, "data/reference-library/archive-index.json"),
+        "utf8",
+      ),
+    );
 
     for (const record of a1.records) {
       if (!record.screenshotPath) continue;
-      expect(record.screenshotPath, record.id).toMatch(/^data\/reference-library\/dossiers\//u);
-      expect(fs.existsSync(path.join(root, record.screenshotPath)), record.id).toBe(true);
+      expect(record.screenshotPath, record.id).toMatch(
+        /^data\/reference-library\/dossiers\//u,
+      );
+      expect(
+        fs.existsSync(path.join(root, record.screenshotPath)),
+        record.id,
+      ).toBe(true);
     }
     for (const record of registry.retiredRecords || [])
-      expect(record.screenshotPath, record.id).toMatch(/^data\/reference-library\/dossiers\//u);
+      expect(record.screenshotPath, record.id).toMatch(
+        /^data\/reference-library\/dossiers\//u,
+      );
     for (const record of archive.entries) {
       const sourceUrl = new URL(record.sourceUrl);
-      expect(sourceUrl.pathname, record.id).not.toContain("/data/inspiration-evidence/");
+      expect(sourceUrl.pathname, record.id).not.toContain(
+        "/data/inspiration-evidence/",
+      );
     }
   });
 
@@ -184,16 +350,32 @@ describe("reference dossiers", () => {
     ];
     for (const id of ids) {
       const dossierPath = `data/reference-library/dossiers/${id}`;
-      const manifest = JSON.parse(fs.readFileSync(path.join(dossierPath, "manifest.json"), "utf8"));
-      const dossier = loadReferenceDossier(dossierPath, { repositoryRoot: path.resolve(".") });
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(dossierPath, "manifest.json"), "utf8"),
+      );
+      const dossier = loadReferenceDossier(dossierPath, {
+        repositoryRoot: path.resolve("."),
+      });
       expect(dossier.productionEligible, id).toBe(false);
       expect(dossier.source.rights, id).toBe("permission-cleared");
       expect(dossier.source.rightsEvidence, id).toMatch(/requester-attested/iu);
       for (const kind of ["desktop", "mobile"] as const) {
-        const screenshotPath = path.join(dossierPath, manifest.evidence[kind].path);
-        const actualHash = crypto.createHash("sha256").update(fs.readFileSync(screenshotPath)).digest("hex");
-        expect(manifest.provenance[`${kind}ScreenshotSha256`], `${id} ${kind}`).toBe(actualHash);
-        expect(dossier.evidenceDigests[kind], `${id} ${kind} loader digest`).toBe(actualHash);
+        const screenshotPath = path.join(
+          dossierPath,
+          manifest.evidence[kind].path,
+        );
+        const actualHash = crypto
+          .createHash("sha256")
+          .update(fs.readFileSync(screenshotPath))
+          .digest("hex");
+        expect(
+          manifest.provenance[`${kind}ScreenshotSha256`],
+          `${id} ${kind}`,
+        ).toBe(actualHash);
+        expect(
+          dossier.evidenceDigests[kind],
+          `${id} ${kind} loader digest`,
+        ).toBe(actualHash);
       }
     }
   });
@@ -226,12 +408,26 @@ describe("reference dossiers", () => {
 
   it("validates full-page WebP desktop and mobile captures without changing their dimensions", async () => {
     const fixture = createDossier();
-    const desktopPath = path.join(fixture.directory, "screenshots", "desktop.webp");
-    const mobilePath = path.join(fixture.directory, "screenshots", "mobile.webp");
-    await sharp({ create: { width: 1440, height: 2400, channels: 3, background: "#eee" } })
-      .webp({ quality: 91 }).toFile(desktopPath);
-    await sharp({ create: { width: 390, height: 2800, channels: 3, background: "#eee" } })
-      .webp({ lossless: true }).toFile(mobilePath);
+    const desktopPath = path.join(
+      fixture.directory,
+      "screenshots",
+      "desktop.webp",
+    );
+    const mobilePath = path.join(
+      fixture.directory,
+      "screenshots",
+      "mobile.webp",
+    );
+    await sharp({
+      create: { width: 1440, height: 2400, channels: 3, background: "#eee" },
+    })
+      .webp({ quality: 91 })
+      .toFile(desktopPath);
+    await sharp({
+      create: { width: 390, height: 2800, channels: 3, background: "#eee" },
+    })
+      .webp({ lossless: true })
+      .toFile(mobilePath);
     const manifestPath = path.join(fixture.directory, "manifest.json");
     const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
     manifest.evidence.desktop.path = "screenshots/desktop.webp";
@@ -242,25 +438,53 @@ describe("reference dossiers", () => {
       repositoryRoot: fixture.repositoryRoot,
     });
 
-    expect(dossier.evidence.desktop).toMatchObject({ width: 1440, height: 2400, fullPage: true });
-    expect(dossier.evidence.mobile).toMatchObject({ width: 390, height: 2800, fullPage: true });
+    expect(dossier.evidence.desktop).toMatchObject({
+      width: 1440,
+      height: 2400,
+      fullPage: true,
+    });
+    expect(dossier.evidence.mobile).toMatchObject({
+      width: 390,
+      height: 2800,
+      fullPage: true,
+    });
   });
 
   it("fails closed when either required viewport capture is missing or not full-page", () => {
     const missingMobile = createDossier({
       evidence: {
-        desktop: { path: "screenshots/desktop.png", capture: "full-page", viewport: { width: 1440, height: 1000 } },
+        desktop: {
+          path: "screenshots/desktop.png",
+          capture: "full-page",
+          viewport: { width: 1440, height: 1000 },
+        },
       },
     });
-    expect(() => loadReferenceDossier(missingMobile.dossierPath, { repositoryRoot: missingMobile.repositoryRoot })).toThrow(/mobile full-page/iu);
+    expect(() =>
+      loadReferenceDossier(missingMobile.dossierPath, {
+        repositoryRoot: missingMobile.repositoryRoot,
+      }),
+    ).toThrow(/mobile full-page/iu);
 
     const viewportOnly = createDossier({
       evidence: {
-        desktop: { path: "screenshots/desktop.png", capture: "viewport", viewport: { width: 1440, height: 1000 } },
-        mobile: { path: "screenshots/mobile.png", capture: "full-page", viewport: { width: 390, height: 844 } },
+        desktop: {
+          path: "screenshots/desktop.png",
+          capture: "viewport",
+          viewport: { width: 1440, height: 1000 },
+        },
+        mobile: {
+          path: "screenshots/mobile.png",
+          capture: "full-page",
+          viewport: { width: 390, height: 844 },
+        },
       },
     });
-    expect(() => loadReferenceDossier(viewportOnly.dossierPath, { repositoryRoot: viewportOnly.repositoryRoot })).toThrow(/desktop capture must be full-page/iu);
+    expect(() =>
+      loadReferenceDossier(viewportOnly.dossierPath, {
+        repositoryRoot: viewportOnly.repositoryRoot,
+      }),
+    ).toThrow(/desktop capture must be full-page/iu);
   });
 
   it("rejects references without owned, licensed, or explicit permission-cleared rights", () => {
@@ -272,7 +496,11 @@ describe("reference dossiers", () => {
         rightsEvidence: "Gallery listing inspected for visual research only.",
       },
     });
-    expect(() => loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot })).toThrow(/not cleared for persistent storage/iu);
+    expect(() =>
+      loadReferenceDossier(fixture.dossierPath, {
+        repositoryRoot: fixture.repositoryRoot,
+      }),
+    ).toThrow(/not cleared for persistent storage/iu);
   });
 
   it("requires a local clearance record for licensed or permission-cleared dossiers", () => {
@@ -281,10 +509,15 @@ describe("reference dossiers", () => {
         name: "Licensed design evidence",
         url: "https://example.test/license",
         rights: "permission-cleared",
-        rightsEvidence: "Written permission received to retain this exact paired reference capture.",
+        rightsEvidence:
+          "Written permission received to retain this exact paired reference capture.",
       },
     });
-    expect(() => loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot })).toThrow(/local rights evidence path/iu);
+    expect(() =>
+      loadReferenceDossier(fixture.dossierPath, {
+        repositoryRoot: fixture.repositoryRoot,
+      }),
+    ).toThrow(/local rights evidence path/iu);
   });
 
   it("accepts screenshot-only production references with explicit permission but no bundled source assets", () => {
@@ -294,7 +527,8 @@ describe("reference dossiers", () => {
         name: "Permission-cleared local business",
         url: "https://example.test/business",
         rights: "permission-cleared",
-        rightsEvidence: "Requester permission covers retaining and model-referencing these screenshots.",
+        rightsEvidence:
+          "Requester permission covers retaining and model-referencing these screenshots.",
         rightsEvidencePath: "rights/requester-attestation.md",
         provenanceEvidencePaths: ["rights/capture-record.md"],
       },
@@ -321,20 +555,38 @@ describe("reference dossiers", () => {
       repositoryRoot: fixture.repositoryRoot,
     });
 
-    expect(dossier.source.rightsEvidencePath).toBe("rights/requester-attestation.md");
+    expect(dossier.source.rightsEvidencePath).toBe(
+      "rights/requester-attestation.md",
+    );
     expect(dossier.source.assetEvidencePaths).toBeUndefined();
-    expect(dossier.source.provenanceEvidencePaths).toEqual(["rights/capture-record.md"]);
-    expect(dossier.evidenceDigests.provenanceEvidence).toHaveProperty("rights/capture-record.md");
+    expect(dossier.source.provenanceEvidencePaths).toEqual([
+      "rights/capture-record.md",
+    ]);
+    expect(dossier.evidenceDigests.provenanceEvidence).toHaveProperty(
+      "rights/capture-record.md",
+    );
   });
 
   it("rejects screenshot paths that escape the dossier folder", () => {
     const fixture = createDossier({
       evidence: {
-        desktop: { path: "../../outside.png", capture: "full-page", viewport: { width: 1440, height: 1000 } },
-        mobile: { path: "screenshots/mobile.png", capture: "full-page", viewport: { width: 390, height: 844 } },
+        desktop: {
+          path: "../../outside.png",
+          capture: "full-page",
+          viewport: { width: 1440, height: 1000 },
+        },
+        mobile: {
+          path: "screenshots/mobile.png",
+          capture: "full-page",
+          viewport: { width: 390, height: 844 },
+        },
       },
     });
-    expect(() => loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot })).toThrow(/must stay inside its dossier/iu);
+    expect(() =>
+      loadReferenceDossier(fixture.dossierPath, {
+        repositoryRoot: fixture.repositoryRoot,
+      }),
+    ).toThrow(/must stay inside its dossier/iu);
   });
 
   it("rejects screenshot symlinks and fingerprints screenshot bytes", () => {
@@ -344,13 +596,21 @@ describe("reference dossiers", () => {
     fs.writeFileSync(external, png(1440, 3200));
     fs.unlinkSync(desktop);
     fs.symlinkSync(external, desktop);
-    expect(() => loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot })).toThrow(/screenshot is missing/iu);
+    expect(() =>
+      loadReferenceDossier(fixture.dossierPath, {
+        repositoryRoot: fixture.repositoryRoot,
+      }),
+    ).toThrow(/screenshot is missing/iu);
 
     fs.unlinkSync(desktop);
     fs.copyFileSync(external, desktop);
-    const first = loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot });
+    const first = loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    });
     fs.writeFileSync(desktop, png(1440, 3201));
-    const second = loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot });
+    const second = loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    });
     expect(second.digest).not.toBe(first.digest);
   });
 
@@ -369,12 +629,16 @@ describe("reference dossiers", () => {
 
   it("builds a bounded authoring context that keeps dossier mechanics authoritative", () => {
     const fixture = createDossier();
-    const dossier = loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot });
+    const dossier = loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    });
     const context = referenceDossierPromptBlock(dossier);
     expect(context).toContain("Do not average it with other references");
     expect(context).toContain("## Signature elements");
     expect(context).toContain("do not copy brand identity");
-    expect(() => referenceDossierPromptBlock(dossier, { maximumCharacters: 12 })).toThrow(/character budget/iu);
+    expect(() =>
+      referenceDossierPromptBlock(dossier, { maximumCharacters: 12 }),
+    ).toThrow(/character budget/iu);
   });
 
   it("can load and bound the real full-page desktop and mobile captures for model context", async () => {
@@ -382,8 +646,10 @@ describe("reference dossiers", () => {
       "data/reference-library/dossiers/direct-ethos-greek-bistro",
       { repositoryRoot: path.resolve(".") },
     );
-    const desktopPath = dossier.referenceDna.evidence.desktopScreenshot.absolutePath;
-    const mobilePath = dossier.referenceDna.evidence.mobileScreenshot.absolutePath;
+    const desktopPath =
+      dossier.referenceDna.evidence.desktopScreenshot.absolutePath;
+    const mobilePath =
+      dossier.referenceDna.evidence.mobileScreenshot.absolutePath;
     const [desktopDimensions, mobileDimensions] = await Promise.all([
       promptImageDimensions(desktopPath),
       promptImageDimensions(mobilePath),
@@ -394,14 +660,19 @@ describe("reference dossiers", () => {
     for (const filePath of [desktopPath, mobilePath]) {
       const part = await promptImagePart(filePath);
       const dataUrl = part.image_url.url;
-      const imageBytes = Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64");
+      const imageBytes = Buffer.from(
+        dataUrl.slice(dataUrl.indexOf(",") + 1),
+        "base64",
+      );
       expect(dataUrl).toMatch(/^data:image\/jpeg;base64,/u);
       expect(imageBytes.length).toBeLessThanOrEqual(900_000);
     }
   });
 
   it("does not leave a partial dossier behind when the seed helper validation fails", () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "launchloom-seed-cleanup-"));
+    const root = fs.mkdtempSync(
+      path.join(os.tmpdir(), "launchloom-seed-cleanup-"),
+    );
     temporaryRoots.push(root);
     const scriptsDirectory = path.join(root, "scripts");
     const sourceScriptsDirectory = path.resolve("scripts");
@@ -411,13 +682,22 @@ describe("reference dossiers", () => {
       "reference-dna.mjs",
       "reference-dossier.mjs",
     ])
-      fs.copyFileSync(path.join(sourceScriptsDirectory, file), path.join(scriptsDirectory, file));
+      fs.copyFileSync(
+        path.join(sourceScriptsDirectory, file),
+        path.join(scriptsDirectory, file),
+      );
 
-    const sourceRegistry = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8"));
-    const record = sourceRegistry.records.find((item: any) => item.id === "care-image-mosaic");
-    if (!record) throw new Error("The owned care-image-mosaic record is missing.");
+    const sourceRegistry = JSON.parse(
+      fs.readFileSync("data/inspiration-registry.json", "utf8"),
+    );
+    const record = sourceRegistry.records.find(
+      (item: any) => item.id === "care-image-mosaic",
+    );
+    if (!record)
+      throw new Error("The owned care-image-mosaic record is missing.");
     record.screenshotPath = "data/inspiration-evidence/seed-source/desktop.png";
-    record.mobileScreenshotPath = "data/inspiration-evidence/seed-source/mobile.png";
+    record.mobileScreenshotPath =
+      "data/inspiration-evidence/seed-source/mobile.png";
     const registryDirectory = path.join(root, "data");
     fs.mkdirSync(registryDirectory, { recursive: true });
     fs.writeFileSync(
@@ -428,32 +708,61 @@ describe("reference dossiers", () => {
     for (const [index, relative] of captureFiles.entries()) {
       const capturePath = path.join(root, relative);
       fs.mkdirSync(path.dirname(capturePath), { recursive: true });
-      fs.writeFileSync(capturePath, index === 0 ? png(1440, 500) : png(390, 500));
+      fs.writeFileSync(
+        capturePath,
+        index === 0 ? png(1440, 500) : png(390, 500),
+      );
     }
 
     expect(() =>
-      execFileSync(process.execPath, [path.join(scriptsDirectory, "materialize-owned-reference-dossiers.mjs"), "--write"], {
-        cwd: root,
-        encoding: "utf8",
-        stdio: "pipe",
-      }),
+      execFileSync(
+        process.execPath,
+        [
+          path.join(
+            scriptsDirectory,
+            "materialize-owned-reference-dossiers.mjs",
+          ),
+          "--write",
+        ],
+        {
+          cwd: root,
+          encoding: "utf8",
+          stdio: "pipe",
+        },
+      ),
     ).toThrow();
-    expect(fs.existsSync(path.join(root, "data/reference-library/dossiers", record.id))).toBe(false);
+    expect(
+      fs.existsSync(
+        path.join(root, "data/reference-library/dossiers", record.id),
+      ),
+    ).toBe(false);
 
     for (const [index, relative] of captureFiles.entries()) {
       const capturePath = path.join(root, relative);
-      fs.writeFileSync(capturePath, index === 0 ? png(1440, 1200) : png(390, 1200));
+      fs.writeFileSync(
+        capturePath,
+        index === 0 ? png(1440, 1200) : png(390, 1200),
+      );
     }
     const result = execFileSync(
       process.execPath,
-      [path.join(scriptsDirectory, "materialize-owned-reference-dossiers.mjs"), "--write"],
+      [
+        path.join(scriptsDirectory, "materialize-owned-reference-dossiers.mjs"),
+        "--write",
+      ],
       { cwd: root, encoding: "utf8", stdio: "pipe" },
     );
     expect(result).toContain("reference_dossier_seed=complete records=1");
-    expect(
-      loadReferenceDossier(`data/reference-library/dossiers/${record.id}`, {
-        repositoryRoot: root,
-      }).id,
-    ).toBe(record.id);
+    const seededDossier = loadReferenceDossier(
+      `data/reference-library/dossiers/${record.id}`,
+      { repositoryRoot: root },
+    );
+    expect(seededDossier.id).toBe(record.id);
+    expect(seededDossier.designPrompt).toContain(
+      "allow the opening image to continue below the first viewport",
+    );
+    expect(seededDossier.designPrompt).toContain(
+      "keep visible text and controls unclipped",
+    );
   });
 });

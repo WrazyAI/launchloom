@@ -141,12 +141,26 @@ describe("experience-pack compiler", () => {
     expect(workflow).toContain(
       "TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}",
     );
-    expect(workflow).toContain("--session /tmp/reasoning-preflight.json");
+    expect(workflow).toContain(
+      "LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}",
+    );
+    expect(workflow).toContain(
+      "--out $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json",
+    );
+    expect(workflow).toContain(
+      "SESSION_ARGS=(--session $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json)",
+    );
     expect(workflow).toContain(
       '--session "$PWD/.launchloom/reasoning-preflight.json"',
     );
     expect(workflow).toContain(
-      "cp /tmp/reasoning-preflight.json .launchloom/reasoning-preflight.json",
+      "cp $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json .launchloom/reasoning-preflight.json",
+    );
+    expect(workflow).toContain(
+      '(.reasoningEffort == "xhigh" or .reasoningEffort == "max")',
+    );
+    expect(workflow).toContain(
+      '(.recommendedEffort == "xhigh" or .recommendedEffort == "max")',
     );
     expect(workflow).toContain(
       'echo "reasoning_fallback=$FALLBACK_USED" >> "$GITHUB_OUTPUT"',

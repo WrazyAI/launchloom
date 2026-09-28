@@ -219,17 +219,14 @@ function attributeValue(attribute) {
 function sectionMarker(node, file) {
   const opening = openingElement(node);
   if (!opening) return null;
+  const tag = opening.tagName.getText(file);
+  if (tag.toLowerCase() !== "section") return null;
   const attributes = attributeEntries(opening).filter(
     (item) => item.name.getText(file) === "data-reference-section",
   );
   if (!attributes.length) return null;
   if (attributes.length !== 1)
     throw scopeError("a section has duplicate data-reference-section markers.");
-  const tag = opening.tagName.getText(file);
-  if (tag.toLowerCase() !== "section")
-    throw scopeError(
-      `data-reference-section="${attributes[0].getText(file)}" must be on a semantic section element.`,
-    );
   const value = attributeValue(attributes[0]).trim();
   if (!value || !/^[\p{L}\p{N}][\p{L}\p{N}_-]*$/u.test(value))
     throw scopeError("section markers must have a static, non-empty value.");
@@ -847,7 +844,12 @@ function hasPositiveUnsupportedClaim(value) {
   return false;
 }
 
-/** Return positive, statically composed claim text, optionally within sections. */
+/**
+ * Return positive, statically composed claim text, optionally within sections.
+ * @param {string} source
+ * @param {string[] | null} [scopedIds]
+ * @returns {string[]}
+ */
 export function findUnsupportedClaimCopy(source, scopedIds = null) {
   const scoped = Array.isArray(scopedIds) ? new Set(scopedIds) : null;
   const roots = scoped
@@ -892,11 +894,13 @@ export function findUnsupportedClaimCopy(source, scopedIds = null) {
           )
             continue;
           const initializer = attribute.initializer;
-          const value = ts.isStringLiteral(initializer)
-            ? initializer.text
-            : ts.isJsxExpression(initializer)
-              ? staticExpressionText(initializer.expression)
-              : "";
+          const value = !initializer
+            ? ""
+            : ts.isStringLiteral(initializer)
+              ? initializer.text
+              : ts.isJsxExpression(initializer)
+                ? staticExpressionText(initializer.expression)
+                : "";
           if (value && hasPositiveUnsupportedClaim(value)) claims.add(value);
         }
       }

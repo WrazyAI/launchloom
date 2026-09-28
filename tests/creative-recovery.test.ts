@@ -41,7 +41,9 @@ function candidate(candidateId: string, score: number) {
     directory: candidateId,
     score,
     viewports: [viewport("desktop"), viewport("compact"), viewport("mobile")],
-    failures: ["rendered-reference: the composition diverges from its assigned reference"],
+    failures: [
+      "rendered-reference: the composition diverges from its assigned reference",
+    ],
   };
 }
 
@@ -56,7 +58,8 @@ describe("creative recovery diagnostics", () => {
     item.manifest = {
       referenceDna: {
         heroGeometry: {
-          viewport: "The portrait image starts near 0.79 and continues below the fold.",
+          viewport:
+            "The portrait image starts near 0.79 and continues below the fold.",
         },
       },
     };
@@ -65,16 +68,31 @@ describe("creative recovery diagnostics", () => {
     item.viewports[1].heroBottom = 1321;
     item.viewports[1].openingImage = { bottomRatio: 1.72 };
 
-    expect(candidateDiagnosticSafety(item)).toEqual({ safe: true, reasons: [] });
+    expect(candidateDiagnosticSafety(item)).toEqual({
+      safe: true,
+      reasons: [],
+    });
   });
 
   it.each([
     ["desktop overflow", (item: any) => (item.viewports[0].overflow = true)],
-    ["missing mobile capture", (item: any) => (item.viewports = item.viewports.slice(0, 2))],
-    ["unlabeled control", (item: any) => (item.viewports[2].unnamedControls = 1)],
+    [
+      "missing mobile capture",
+      (item: any) => (item.viewports = item.viewports.slice(0, 2)),
+    ],
+    [
+      "unlabeled control",
+      (item: any) => (item.viewports[2].unnamedControls = 1),
+    ],
     ["broken image", (item: any) => (item.viewports[0].brokenImages = 1)],
-    ["missing navigation", (item: any) => (item.viewports[1].missingNavTargets = 1)],
-    ["desktop hero does not fit", (item: any) => (item.viewports[0].heroBottom = 900)],
+    [
+      "missing navigation",
+      (item: any) => (item.viewports[1].missingNavTargets = 1),
+    ],
+    [
+      "desktop hero does not fit",
+      (item: any) => (item.viewports[0].heroBottom = 900),
+    ],
   ])("withholds a diagnostic candidate for %s", (_name, damage) => {
     const item = candidate("candidate-a", 64);
     damage(item);
@@ -112,18 +130,54 @@ describe("developer-triggered creative repair workflow", () => {
     expect(repairWorkflow).toContain("--max-cycles 1");
     expect(repairWorkflow).toContain("--feedback-file");
     expect(repairWorkflow).toContain("--session");
-    expect(repairWorkflow).toContain('npm ci --prefix "$CLIENT_DIR"');
-    expect(repairWorkflow.indexOf("Install rendered client dependencies")).toBeLessThan(
-      repairWorkflow.indexOf("Run exactly one rendered repair against captured findings"),
+    const repairIndex = repairWorkflow.indexOf(
+      "Run exactly one rendered repair against captured findings",
     );
+    const buildCopyIndex = repairWorkflow.indexOf(
+      'node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"',
+    );
+    const isolatedInstallIndex = repairWorkflow.indexOf(
+      'node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci',
+    );
+    expect(repairWorkflow).toContain(
+      'BUILD_ROOT=$(mktemp -d "$RUNNER_TEMP/launchloom-repair-build.XXXXXX")',
+    );
+    expect(repairWorkflow).toContain('BUILD_DIR="$BUILD_ROOT/site"');
+    expect(buildCopyIndex).toBeGreaterThan(repairIndex);
+    expect(isolatedInstallIndex).toBeGreaterThan(buildCopyIndex);
+    expect(repairWorkflow).not.toContain('npm ci --prefix "$CLIENT_DIR"');
     expect(repairWorkflow).toContain("round-02/creative-bakeoff.json");
     expect(repairWorkflow).toContain(".promotionReady == true");
-    expect(repairWorkflow).toContain("steps.verified_preview.outcome == 'failure'");
+    expect(repairWorkflow).toContain(
+      "steps.verified_preview.outcome == 'failure'",
+    );
     expect(repairWorkflow).toContain("creative-diagnostic");
     expect(repairWorkflow).toContain("verify-creative-diagnostic.mjs");
     expect(repairWorkflow).not.toContain("seo-research.mjs");
     expect(repairWorkflow).not.toContain("generate-contextual-assets.mjs");
     expect(repairWorkflow).not.toContain("author:experiences");
     expect(repairWorkflow).not.toContain("--max-cycles 2");
+  });
+
+  it("requires reused candidate packs to satisfy the current reference contract", () => {
+    const workflow = readFileSync(
+      ".github/workflows/generate-client.yml",
+      "utf8",
+    );
+    const reuseStart = workflow.indexOf(
+      'if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then',
+    );
+    const freshBranch = workflow.indexOf("          else\n", reuseStart);
+    const reusedBranch = workflow.slice(reuseStart, freshBranch);
+
+    expect(reuseStart).toBeGreaterThan(-1);
+    expect(freshBranch).toBeGreaterThan(reuseStart);
+    expect(reusedBranch).toContain('jq -e "$REFERENCE_PACK_VALIDATION"');
+    expect(reusedBranch).toContain(
+      "Regenerate this intake before reusing its candidates",
+    );
+    expect(workflow).toContain(
+      "Reference DNA or permission-cleared dossier evidence is incomplete",
+    );
   });
 });

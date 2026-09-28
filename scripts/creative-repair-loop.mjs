@@ -13,11 +13,13 @@ import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
+  openRouterApiError,
   openRouterChatCompletion,
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCachedText,
   promptCacheRequestFields,
+  readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
 import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
@@ -39,11 +41,28 @@ const REPAIR_SCHEMA = {
   },
 };
 
+export const CREATIVE_REPAIR_TIMEOUT_MS = 8 * 60_000;
+const INLINE_IMAGE_DATA_URI = /data:image\/[^\s"'`<>]+/giu;
+
 function clean(value, limit = 900) {
   return String(value || "")
     .replace(/[—–]/gu, "-")
     .trim()
     .slice(0, limit);
+}
+
+function redactInlineImageDataUris(value) {
+  if (typeof value === "string")
+    return value.replace(INLINE_IMAGE_DATA_URI, "[sealed inline image data omitted]");
+  if (Array.isArray(value)) return value.map(redactInlineImageDataUris);
+  if (value && typeof value === "object")
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [
+        key,
+        redactInlineImageDataUris(item),
+      ]),
+    );
+  return value;
 }
 
 function findingText(finding) {
@@ -416,6 +435,7 @@ export async function resolveReferenceEvidencePath(record) {
  *   creativeRepairScope?: Record<string, any> | null,
  *   validationError?: string,
  *   validationAttempt?: number,
+ *   timeoutMs?: number,
  *   logger?: (message: string) => void,
  * }} [options]
  * @returns {Promise<Record<string, any>>}
@@ -431,8 +451,18 @@ export async function requestRepair({
   creativeRepairScope = null,
   validationError = "",
   validationAttempt = 1,
+  timeoutMs = CREATIVE_REPAIR_TIMEOUT_MS,
   logger = console.log,
 }) {
+  if (
+    creativeRepairScope &&
+    (!Array.isArray(creativeRepairScope.sectionIds) ||
+      creativeRepairScope.sectionIds.length === 0)
+  )
+    throw new Error(
+      "Creative repair scope must include at least one section ID.",
+    );
+
   const humanReview = (findings || []).some(
     (finding) =>
       finding &&
@@ -516,7 +546,7 @@ Use these helpers instead of inventing network calls or duplicating platform beh
       const dimensions = await imageSizeLabel(resolved);
       content.push({
         type: "text",
-        text: `Assigned reference evidence (${dimensions}). Its capture height may span multiple page sections and is not a browser viewport height. Reference DNA section-height fractions must not be used directly as CSS vh. The desktop header and complete hero must fit within 1536x864.`,
+        text: `Assigned reference evidence (${dimensions}). Its capture height may span multiple page sections and is not a browser viewport height. Reference DNA section-height fractions must not be used directly as CSS vh. At 1536x864, preserve the assigned opening composition and use heroGeometry.viewport to match the image start, crop, overlap, and continuation; allow the opening image to continue below the first viewport when the assigned Reference DNA calls for it. Do not shrink the image frame solely to fit it above the fold. Keep visible text and controls unclipped and usable.`,
       });
       content.push(await imagePart(resolved));
     } catch (cause) {
@@ -529,7 +559,7 @@ Use these helpers instead of inventing network calls or duplicating platform beh
 
   const structuralChecklist = referenceImplementationChecklist(referenceDna);
   const validationCorrection = validationError
-    ? `\n\nSOURCE VALIDATION CORRECTION (attempt ${validationAttempt}/2)\nThe previous complete repair response failed this deterministic source validation:\n${clean(validationError, 1200)}\nReturn complete corrected files that fix this exact validation error. Preserve all other required sections, sealed content bindings, and the assigned visual repair.\n`
+    ? `\n\nSOURCE VALIDATION CORRECTION (attempt ${validationAttempt}/2)\nThe previous complete repair response failed this deterministic source validation:\n${clean(redactInlineImageDataUris(validationError), 1200)}\nReturn complete corrected files that fix this exact validation error. Preserve all other required sections, sealed content bindings, and the assigned visual repair.\n`
     : "";
 
   content.push(
@@ -543,23 +573,27 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     text: `${repairInstruction}${sourceScopeInstruction}
 
 FINDINGS
-${JSON.stringify(findings, null, 2)}
+${JSON.stringify(redactInlineImageDataUris(findings), null, 2)}
 ${validationCorrection}
 
 CURRENT EXPERIENCE.JSX
-${files.experience}
+${redactInlineImageDataUris(files.experience)}
 
 CURRENT STYLES.CSS
-${files.styles}
+${redactInlineImageDataUris(files.styles)}
 
 CURRENT MOTION.JS
-${files.motion}
+${redactInlineImageDataUris(files.motion)}
 
 REQUIRED STRUCTURAL CHECKLIST
 ${structuralChecklist}
 Keep each required ID and section marker on its semantically matching visible section, in the exact specified DOM order, while making the requested repair. Do not remove or rename them.
 
 REQUIRED EARLY-CONVERSION CTA: preserve exactly one contact-bound primary CTA anchor using href="#contact", the data-early-conversion marker, and the sealed {content.hero.primaryLabel} binding together on the same anchor. Never replace its label with literal copy, remove its marker, or omit the CTA. Prefer changing its CSS placement before changing its semantic element.
+
+REQUIRED CONVERSION/PROCESS CONTRACT: If the supplied sealed content includes one or more content.process steps, preserve every step in exactly one <section data-required-section="conversion"> before id="contact". Bind the steps from content.process, do not hardcode or omit them, and omit the section only when the sealed process array is empty.
+
+REQUIRED MOTION ACCESSIBILITY CONTRACT: Keep a static reduced-motion equivalent in motion.js using runtime?.reducedMotion or matchMedia("(prefers-reduced-motion: reduce)"). Preserve the cleanup path and never remove the reduced-motion check.
 
 ALT-TEXT CONTRACT
 Every <img> must have a usable alt attribute. Use concise descriptive alt text for informative images. Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text. Preserve the reviewed description when reusing a known informative image, even if its crop or position changes. Do not replace an informative description with generic filler such as "Decorative image".
@@ -607,49 +641,99 @@ Return complete files. Keep required reference signatures and safety/content con
     { role: "user", content },
   ];
   assertAuthorPromptBudget(messages);
-  const response = await openRouterChatCompletion({
-    title: "LaunchLoom creative repair",
-    sessionId,
-    body: {
-      model,
-      ...promptCacheRequestFields(model, promptCacheKey),
-      temperature: 0.35,
-      reasoning: {
-        effort: reasoningEffort,
-        exclude: true,
-      },
-      response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
-      ...completionLimitRequestField(CREATIVE_REPAIR_MAX_COMPLETION_TOKENS),
-      messages,
-    },
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok)
-    throw new Error(
-      `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
-    );
-  logOpenRouterCacheUsage("creative-repair", payload.usage);
-  const responseContent = payload.choices?.[0]?.message?.content || "";
-  const diagnostics = authoringCompletionDiagnostics({
-    stage: "creative-repair",
-    routeId: "repair",
-    maxTokens: CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
-    payload,
-    content: responseContent,
-  });
-  const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
-  logger(`creative_completion stage=creative-repair ${diagnosticText}`);
-  if (["length", "max_tokens"].includes(diagnostics.finishReason))
-    throw new Error(
-      `Creative repair response was truncated (${diagnosticText}).`,
-    );
+  const controller = new AbortController();
+  const requestTimeoutMs = Math.max(1, Math.trunc(Number(timeoutMs) || 0));
+  const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
   try {
-    return parseModelJson(responseContent);
-  } catch (cause) {
-    throw new Error(
-      `Creative repair response was malformed (${diagnosticText}).`,
-      { cause },
-    );
+    const response = await openRouterChatCompletion({
+      title: "LaunchLoom creative repair",
+      sessionId,
+      signal: controller.signal,
+      body: {
+        model,
+        ...promptCacheRequestFields(model, promptCacheKey),
+        temperature: 0.35,
+        reasoning: {
+          effort: reasoningEffort,
+          exclude: true,
+        },
+        response_format: { type: "json_schema", json_schema: REPAIR_SCHEMA },
+        ...completionLimitRequestField(CREATIVE_REPAIR_MAX_COMPLETION_TOKENS),
+        messages,
+      },
+    });
+    const { payload, parseError: responseBodyError } =
+      await readOpenRouterResponseEnvelope(response);
+    const providerError = openRouterApiError(payload, response.status);
+    if (payload.usage)
+      logOpenRouterCacheUsage("creative-repair", payload.usage);
+    if (!response.ok || providerError) {
+      if (providerError) throw providerError;
+      const envelopeKeys = Object.keys(payload).sort().join(",") || "none";
+      throw new Error(
+        `OpenRouter creative repair failed (http_status=${response.status}, envelope_keys=${envelopeKeys}, body_parse_error=${responseBodyError?.message || "none"}).`,
+        { cause: responseBodyError || undefined },
+      );
+    }
+    if (responseBodyError)
+      throw new Error(
+        `OpenRouter creative repair returned an unreadable response body: ${responseBodyError.message}`,
+        { cause: responseBodyError },
+      );
+    const choices = Array.isArray(payload.choices) ? payload.choices : [];
+    const firstChoice = choices[0];
+    const responseContent = firstChoice?.message?.content || "";
+    const diagnostics = authoringCompletionDiagnostics({
+      stage: "creative-repair",
+      routeId: "repair",
+      maxTokens: CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
+      payload,
+      content: responseContent,
+    });
+    const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
+    logger(`creative_completion stage=creative-repair ${diagnosticText}`);
+    if (!responseContent) {
+      const messagePresent = Boolean(firstChoice?.message);
+      throw new Error(
+        `Creative repair response returned no model content (http_status=${response.status}, choices=${choices.length}, message_present=${messagePresent}, finish_reason=${diagnostics.finishReason}, envelope_keys=${Object.keys(payload).sort().join(",") || "none"}; ${diagnosticText}).`,
+      );
+    }
+    if (["length", "max_tokens"].includes(diagnostics.finishReason))
+      throw new Error(
+        `Creative repair response was truncated (${diagnosticText}).`,
+      );
+    let repaired;
+    try {
+      repaired = parseModelJson(responseContent);
+    } catch (cause) {
+      throw new Error(
+        `Creative repair response was malformed (${diagnosticText}).`,
+        { cause },
+      );
+    }
+    if (
+      ["experience", "styles", "motion"].some(
+        (key) =>
+          typeof repaired?.[key] === "string" &&
+          [
+            "[sealed inline image data omitted]",
+            "[sealed client image asset]",
+          ].some((placeholder) => repaired[key].includes(placeholder)),
+      )
+    )
+      throw new Error(
+        "Creative repair response contains a redacted inline-image placeholder; use a sealed content token instead.",
+      );
+    return repaired;
+  } catch (error) {
+    if (controller.signal.aborted)
+      throw new Error(
+        `OpenRouter creative repair timed out after ${requestTimeoutMs}ms.`,
+        { cause: error },
+      );
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

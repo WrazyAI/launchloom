@@ -164,5 +164,24 @@ if (kinds.has("set_social_proof")) {
   const source = await fs.readFile(homepage, "utf8");
   const revised = ensureLegacySocialProofMarkup(source);
   if (revised !== source) await fs.writeFile(homepage, revised, "utf8");
+  files.add("pages/index.astro");
+}
+// The compatibility migration below can touch this file even when no
+// operation-specific template file is otherwise needed.
+files.add("layouts/SiteLayout.astro");
+if (args.report) {
+  const reportPath = path.resolve(args.report);
+  await fs.mkdir(path.dirname(reportPath), { recursive: true });
+  await fs.writeFile(
+    reportPath,
+    `${JSON.stringify(
+      {
+        version: 1,
+        files: [...files].map((relative) => `src/${relative}`).sort(),
+      },
+      null,
+      2,
+    )}\n`,
+  );
 }
 console.log(`revision_template_files=${[...files].join(",") || "none"}`);

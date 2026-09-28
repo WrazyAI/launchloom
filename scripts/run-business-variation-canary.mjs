@@ -4,6 +4,7 @@ import os from "node:os";
 import crypto from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { pathToFileURL } from "node:url";
 import { generateContextualAssets } from "./generate-contextual-assets.mjs";
 import {
   loadA1ReferenceLibrary,
@@ -12,6 +13,9 @@ import {
 import {
   buildBusinessVariationConfig,
   buildBusinessVariationPack,
+  businessVariationPreviewEnvironment,
+  prepareBusinessVariationPack,
+  runBusinessVariationSeoReview,
 } from "./business-variation-canary.mjs";
 import { createReasoningPreflight } from "./reasoning-preflight-lib.mjs";
 import { runRenderedCreativeRepair } from "./run-rendered-creative-repair.mjs";
@@ -22,13 +26,15 @@ const DEFAULT_MODEL = "openai/gpt-6-luna";
 
 function cliArgs(argv) {
   return Object.fromEntries(
-    argv.slice(2).reduce(
-      (pairs, value, index, all) =>
-        index % 2 === 0
-          ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
-          : pairs,
-      [],
-    ),
+    argv
+      .slice(2)
+      .reduce(
+        (pairs, value, index, all) =>
+          index % 2 === 0
+            ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
+            : pairs,
+        [],
+      ),
   );
 }
 
@@ -47,11 +53,24 @@ async function readFalKey(args) {
     .replace(/^['"]|['"]$/gu, "")
     .trim();
   if (key.length < 12 || /\s/u.test(key))
-    throw new Error("The first line of the supplied FAL key file is not a usable key.");
+    throw new Error(
+      "The first line of the supplied FAL key file is not a usable key.",
+    );
   return key;
 }
 
-async function copyClientSite(source, destination) {
+export async function copyClientSite(source, destination) {
+  const sourceNodeModules = path.join(source, "node_modules");
+  let dependencyStat;
+  try {
+    dependencyStat = await fs.stat(sourceNodeModules);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  if (!dependencyStat?.isDirectory())
+    throw new Error(
+      `Client-site dependencies are missing at ${sourceNodeModules}; install dependencies before creating a preview.`,
+    );
   await fs.cp(source, destination, {
     recursive: true,
     filter: (entry) => {
@@ -62,7 +81,7 @@ async function copyClientSite(source, destination) {
     },
   });
   await fs.symlink(
-    path.join(source, "node_modules"),
+    sourceNodeModules,
     path.join(destination, "node_modules"),
     "dir",
   );
@@ -84,33 +103,79 @@ async function writeJson(filePath, value) {
   await fs.writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
-async function stageReusableAssets(sourceDirectory, targetDirectory, manifestPath) {
+export async function stageReusableAssets(
+  sourceDirectory,
+  targetDirectory,
+  manifestPath,
+) {
   if (!sourceDirectory) return 0;
   const sourceRoot = path.resolve(sourceDirectory);
   const sourceManifestPath = path.join(sourceRoot, "generated-assets.json");
-  const sourcePublic = path.join(sourceRoot, "public/images/generated");
   const manifest = JSON.parse(await fs.readFile(sourceManifestPath, "utf8"));
   if (manifest.provider !== "fal.ai" || !Array.isArray(manifest.placements))
-    throw new Error("Reusable variation assets need a FAL-generated asset manifest.");
+    throw new Error(
+      "Reusable variation assets need a FAL-generated asset manifest.",
+    );
+  const sourcePublicCandidates = [
+    path.join(sourceRoot, "site/public/images/generated"),
+    path.join(sourceRoot, "public/images/generated"),
+  ];
+  let sourcePublic = "";
+  for (const candidate of sourcePublicCandidates) {
+    try {
+      const candidateStat = await fs.lstat(candidate);
+      if (candidateStat.isDirectory() && !candidateStat.isSymbolicLink()) {
+        sourcePublic = candidate;
+        break;
+      }
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
+  if (!sourcePublic)
+    throw new Error("Reusable variation output has no generated image directory.");
   await fs.mkdir(targetDirectory, { recursive: true });
   for (const placement of manifest.placements) {
     if (!placement.path?.startsWith("/images/generated/"))
-      throw new Error("Reusable FAL asset manifest contains an unsafe asset path.");
+      throw new Error(
+        "Reusable FAL asset manifest contains an unsafe asset path.",
+      );
     const fileName = path.basename(placement.path);
     const sourcePath = path.join(sourcePublic, fileName);
     const targetPath = path.join(targetDirectory, fileName);
     const sourceStat = await fs.lstat(sourcePath);
     if (!sourceStat.isFile() || sourceStat.isSymbolicLink())
-      throw new Error(`Reusable FAL image is missing or not a regular file: ${fileName}.`);
+      throw new Error(
+        `Reusable FAL image is missing or not a regular file: ${fileName}.`,
+      );
     await fs.copyFile(sourcePath, targetPath);
   }
   await writeJson(manifestPath, manifest);
   return manifest.placements.length;
 }
 
+export function requireSelectedCandidate(repairResult) {
+  const selectedCandidateId = repairResult?.selectedCandidateId;
+  if (!selectedCandidateId)
+    throw new Error(
+      "Rendered creative repair did not select a candidate; the variation preview cannot pass.",
+    );
+  const selectedCandidate = repairResult.bakeoff?.candidates?.find(
+    (candidate) => candidate.candidateId === selectedCandidateId,
+  );
+  if (!selectedCandidate)
+    throw new Error(
+      `Rendered creative repair selected candidate ${selectedCandidateId}, but that candidate is missing from the bakeoff report.`,
+    );
+  return selectedCandidate;
+}
+
 async function readRegistry(root) {
   const base = JSON.parse(
-    await fs.readFile(path.join(root, "data/inspiration-registry.json"), "utf8"),
+    await fs.readFile(
+      path.join(root, "data/inspiration-registry.json"),
+      "utf8",
+    ),
   );
   const a1Path = path.join(root, "data/a1-reference-library.json");
   try {
@@ -125,6 +190,18 @@ async function readRegistry(root) {
   }
 }
 
+/**
+ * Match a module URL to a CLI entrypoint without assuming unescaped POSIX
+ * `file://` paths. A missing argv entry is an import, not direct execution.
+ * @param {string} moduleUrl
+ * @param {string | undefined} [entryPath]
+ * @returns {boolean}
+ */
+export function isDirectExecution(moduleUrl, entryPath = process.argv[1]) {
+  if (typeof entryPath !== "string" || !entryPath.trim()) return false;
+  return moduleUrl === pathToFileURL(path.resolve(entryPath)).href;
+}
+
 export async function runBusinessVariationCanary({
   repositoryRoot = process.cwd(),
   scenarioId = DEFAULT_SCENARIO,
@@ -137,11 +214,17 @@ export async function runBusinessVariationCanary({
   const root = path.resolve(repositoryRoot);
   const key = falKey || process.env.FAL_KEY;
   if (!process.env.OPENROUTER_API_KEY)
-    throw new Error("OPENROUTER_API_KEY is required for model-authored variation canaries.");
+    throw new Error(
+      "OPENROUTER_API_KEY is required for model-authored variation canaries.",
+    );
   if (!key && !reuseAssetsFrom)
-    throw new Error("FAL_KEY is required to produce niche-matched canary imagery.");
+    throw new Error(
+      "FAL_KEY is required to produce niche-matched canary imagery.",
+    );
   if (!outputPath)
-    throw new Error("A new outputPath is required; canary artifacts are never overwritten.");
+    throw new Error(
+      "A new outputPath is required; canary artifacts are never overwritten.",
+    );
 
   const output = path.resolve(outputPath);
   await fs.mkdir(path.dirname(output), { recursive: true });
@@ -151,7 +234,7 @@ export async function runBusinessVariationCanary({
   await copyClientSite(templateSite, siteDir);
 
   const registry = await readRegistry(root);
-  const { scenario, pack } = buildBusinessVariationPack(
+  const { scenario, pack: compiledPack } = buildBusinessVariationPack(
     root,
     registry,
     scenarioId,
@@ -176,8 +259,9 @@ export async function runBusinessVariationCanary({
     businessKind: scenario.industry,
     seed,
     model,
-    authoringEffort: model === "openai/gpt-6-luna" ? "xhigh" : "provider-default",
-    references: pack.routes.map((route) => ({
+    authoringEffort:
+      model === "openai/gpt-6-luna" ? "xhigh" : "provider-default",
+    references: compiledPack.routes.map((route) => ({
       id: route.referenceIds[0],
       name: route.referenceDossier.referenceName,
       familyId: route.referenceFamilyId,
@@ -186,10 +270,30 @@ export async function runBusinessVariationCanary({
     promotionEnabled: false,
     deployment: "not-deployed",
   };
-  await writeJson(inspirationPath, pack);
   await writeJson(path.join(output, "base-scenario.json"), config);
 
+  const previewHome = await fs.mkdtemp(
+    path.join(os.tmpdir(), "launchloom-variation-build-home-"),
+  );
+  const previewEnvironment = businessVariationPreviewEnvironment(process.env, {
+    HOME: previewHome,
+    TMPDIR: previewHome,
+    TEMP: previewHome,
+    TMP: previewHome,
+  });
   try {
+    const pack = await prepareBusinessVariationPack(compiledPack);
+    report.referenceDnaAnalyzed = pack.referenceDnaAnalyzed;
+    report.referenceDnaAnalyzerModel = pack.referenceDnaAnalyzerModel;
+    report.referenceMeasurements = pack.routes.map((route) => ({
+      routeId: route.id,
+      referenceId: route.referenceIds[0],
+      analyzedFromEvidence: route.referenceDna.analyzedFromEvidence,
+      desktop: route.referenceDna.evidence.captureDimensions.desktop,
+      mobile: route.referenceDna.evidence.captureDimensions.mobile,
+    }));
+    await writeJson(inspirationPath, pack);
+
     const reusedAssetCount = await stageReusableAssets(
       reuseAssetsFrom,
       assetDir,
@@ -216,7 +320,7 @@ export async function runBusinessVariationCanary({
       [...expectedRouteIds].some((id) => !generatedHeroRouteIds.has(id))
     )
       throw new Error(
-        `FAL did not create one route-directed hero image for each selected HVAC reference (generated ${assetResult.manifest.placements.length} image(s)). See generated-assets.json for provider diagnostics.`,
+        `FAL did not create one route-directed hero image for each selected ${scenarioId} reference (generated ${assetResult.manifest.placements.length} image(s)). See generated-assets.json for provider diagnostics.`,
       );
     report.generatedImages = assetResult.manifest.placements.map((entry) => ({
       routeId: entry.routeId,
@@ -231,6 +335,18 @@ export async function runBusinessVariationCanary({
     await writeJson(configPath, renderedConfig);
     await fs.copyFile(configPath, path.join(siteDir, "src/site.config.json"));
 
+    await execFileAsync("npm", ["run", "build"], {
+      cwd: siteDir,
+      env: previewEnvironment,
+      maxBuffer: 8 * 1024 * 1024,
+    });
+    report.seoReviewGate = await runBusinessVariationSeoReview({
+      repositoryRoot: root,
+      siteDir,
+      execFileImpl: execFileAsync,
+    });
+    await writeJson(reportPath, report);
+
     const creativeSession = await createReasoningPreflight({
       inspirationPack: pack,
       mode: "shadow",
@@ -240,7 +356,10 @@ export async function runBusinessVariationCanary({
     });
     await writeJson(reasoningPath, creativeSession);
 
-    const authored = path.join(root, "scripts/author-production-experiences.mjs");
+    const authored = path.join(
+      root,
+      "scripts/author-production-experiences.mjs",
+    );
     await execFileAsync(
       process.execPath,
       [
@@ -266,19 +385,24 @@ export async function runBusinessVariationCanary({
       },
     );
     const creativeRunPath = path.join(candidatesDir, "creative-run.json");
-    const creativeRun = await fs.readFile(creativeRunPath, "utf8").then(JSON.parse);
-    report.authoredCandidates = (creativeRun.candidates || []).map((candidate) => ({
-      candidateId: candidate.candidateId,
-      routeId: candidate.routeId,
-      referenceFamilyId: candidate.referenceFamilyId,
-      rendererFamilyId: candidate.familyId,
-      referenceScore: candidate.creativeManifest?.referenceFidelity?.score ?? null,
-    }));
+    const creativeRun = await fs
+      .readFile(creativeRunPath, "utf8")
+      .then(JSON.parse);
+    report.authoredCandidates = (creativeRun.candidates || []).map(
+      (candidate) => ({
+        candidateId: candidate.candidateId,
+        routeId: candidate.routeId,
+        referenceFamilyId: candidate.referenceFamilyId,
+        rendererFamilyId: candidate.familyId,
+        referenceScore:
+          candidate.creativeManifest?.referenceFidelity?.score ?? null,
+      }),
+    );
     report.authoringFailures = creativeRun.failures || [];
     await writeJson(reportPath, report);
     if (!report.authoredCandidates.length)
       throw new Error(
-        `No HVAC candidates survived authorship. ${report.authoringFailures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
+        `No ${scenarioId} candidates survived authorship. ${report.authoringFailures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
       );
 
     const repairResult = await runRenderedCreativeRepair({
@@ -291,19 +415,34 @@ export async function runBusinessVariationCanary({
       requireDiversity: false,
       visualGateScript: path.join(root, "scripts/visual-quality-gate.mjs"),
     });
-    const selectedCandidate = repairResult.bakeoff.candidates.find(
-      (candidate) => candidate.candidateId === repairResult.selectedCandidateId,
-    );
+    const selectedCandidate = requireSelectedCandidate(repairResult);
+    await execFileAsync("npm", ["run", "build"], {
+      cwd: siteDir,
+      env: previewEnvironment,
+      maxBuffer: 8 * 1024 * 1024,
+    });
+    report.finalSeoReviewGate = await runBusinessVariationSeoReview({
+      repositoryRoot: root,
+      siteDir,
+      execFileImpl: execFileAsync,
+    });
     const selectedConfig = JSON.parse(
       await fs.readFile(path.join(siteDir, "src/site.config.json"), "utf8"),
     );
-    const homepage = await fs.readFile(path.join(siteDir, "dist/index.html"), "utf8");
+    const homepage = await fs.readFile(
+      path.join(siteDir, "dist/index.html"),
+      "utf8",
+    );
     const creativeHost = /data-creative-host/u.test(homepage);
     const creativeCandidate = /data-creative-candidate/u.test(homepage);
     if (selectedConfig.design?.experience?.renderer !== "creative-candidate")
-      throw new Error("Variation preview did not select the creative-candidate renderer.");
+      throw new Error(
+        "Variation preview did not select the creative-candidate renderer.",
+      );
     if (!creativeHost || !creativeCandidate)
-      throw new Error("Variation preview HTML is missing creative host/candidate markers.");
+      throw new Error(
+        "Variation preview HTML is missing creative host/candidate markers.",
+      );
 
     Object.assign(report, {
       status: repairResult.status,
@@ -314,13 +453,26 @@ export async function runBusinessVariationCanary({
       creativeHost,
       creativeCandidate,
       legacyRendererUsed: false,
-      renderedReferenceFidelity: selectedCandidate?.renderedReferenceFidelity || null,
+      renderedReferenceFidelity:
+        selectedCandidate?.renderedReferenceFidelity || null,
       visualGate: repairResult.visualGate,
       visualDiversity: repairResult.bakeoff.visualDiversity,
       screenshots: {
-        desktop: path.join(repairOut, "final/screenshots", `${repairResult.selectedCandidateId}-desktop.png`),
-        compact: path.join(repairOut, "final/screenshots", `${repairResult.selectedCandidateId}-compact.png`),
-        mobile: path.join(repairOut, "final/screenshots", `${repairResult.selectedCandidateId}-mobile.png`),
+        desktop: path.join(
+          repairOut,
+          "final/screenshots",
+          `${repairResult.selectedCandidateId}-desktop.png`,
+        ),
+        compact: path.join(
+          repairOut,
+          "final/screenshots",
+          `${repairResult.selectedCandidateId}-compact.png`,
+        ),
+        mobile: path.join(
+          repairOut,
+          "final/screenshots",
+          `${repairResult.selectedCandidateId}-mobile.png`,
+        ),
       },
       previewHtml: path.join(siteDir, "dist/index.html"),
     });
@@ -348,6 +500,8 @@ export async function runBusinessVariationCanary({
     report.error = error instanceof Error ? error.message : String(error);
     await writeJson(reportPath, report);
     throw error;
+  } finally {
+    await fs.rm(previewHome, { recursive: true, force: true });
   }
 }
 
@@ -358,7 +512,9 @@ async function main() {
   const report = await runBusinessVariationCanary({
     repositoryRoot: root,
     scenarioId: args.scenario || DEFAULT_SCENARIO,
-    seed: args.seed || `variation-${new Date().toISOString().replace(/[^0-9]/gu, "")}`,
+    seed:
+      args.seed ||
+      `variation-${new Date().toISOString().replace(/[^0-9]/gu, "")}`,
     outputPath: out,
     falKey: args["reuse-assets-from"] ? "" : await readFalKey(args),
     reuseAssetsFrom: args["reuse-assets-from"] || "",
@@ -367,7 +523,7 @@ async function main() {
   if (report.status !== "passed") process.exitCode = 1;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isDirectExecution(import.meta.url)) {
   try {
     await main();
   } catch (error) {

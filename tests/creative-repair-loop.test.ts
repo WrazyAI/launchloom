@@ -79,6 +79,191 @@ describe("creative repair loop", () => {
     expect(diagnostics.join(" ")).not.toContain('"experience":"fixed"');
   });
 
+  it("bounds the OpenRouter repair transport with an abort signal", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-timeout-signal-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: {
+                  content: JSON.stringify({
+                    experience: "fixed",
+                    styles: "fixed",
+                    motion: "fixed",
+                  }),
+                },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [],
+      files: { experience: "old", styles: "old", motion: "old" },
+      screenshots: [],
+      timeoutMs: 10,
+    });
+
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("redacts inline image data from repair source and findings while preserving surrounding text", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-inline-image-redaction-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(repaired) },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        "Before data:image/png;base64,FINDING_IMAGE_SECRET after the inline image.",
+      ],
+      files: {
+        experience:
+          'const before = "keep-source-context"; const image = "data:image/png;base64,SOURCE_IMAGE_SECRET"; const after = "keep-tail-context";',
+        styles: "old styles",
+        motion: "old motion",
+      },
+      screenshots: [],
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: { type: string; text?: string }) => part.type === "text")
+      .map((part: { text?: string }) => part.text || "")
+      .join("\n");
+    expect(prompt).not.toContain("SOURCE_IMAGE_SECRET");
+    expect(prompt).not.toContain("FINDING_IMAGE_SECRET");
+    expect(prompt).not.toContain("data:image/png;base64");
+    expect(prompt).toContain("keep-source-context");
+    expect(prompt).toContain("keep-tail-context");
+    expect(prompt).toContain("Before [sealed inline image data omitted] after");
+  });
+
+  it.each([
+    "[sealed inline image data omitted]",
+    "[sealed client image asset]",
+  ])("rejects repair responses that copy a sealed image placeholder (%s)", async (placeholder) => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-placeholder-rejection-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const responseFiles = {
+      experience: `<img src="${placeholder}" alt="HVAC unit" />`,
+      styles: "fixed styles",
+      motion: "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
+    };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(responseFiles) },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: {
+          experience: '<img src="data:image/png;base64,SOURCE_IMAGE_SECRET" alt="HVAC unit" />',
+          styles: "old styles",
+          motion: "old motion",
+        },
+        screenshots: [],
+      }),
+    ).rejects.toThrow(/redacted inline-image placeholder/iu);
+  });
+
+  it("reports an actionable error when the repair provider exceeds its timeout", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-timeout-expired-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn(
+      async (_url: string, options: RequestInit) =>
+        await new Promise<Response>((_resolve, reject) => {
+          const signal = options.signal;
+          if (!(signal instanceof AbortSignal)) {
+            reject(new Error("request had no abort signal"));
+            return;
+          }
+          signal.addEventListener(
+            "abort",
+            () => reject(new DOMException("aborted", "AbortError")),
+            { once: true },
+          );
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+        timeoutMs: 20,
+      }),
+    ).rejects.toThrow("OpenRouter creative repair timed out after 20ms");
+    expect(fetchMock.mock.calls[0][1].signal?.aborted).toBe(true);
+  });
+
   it("keeps required section IDs and reference marker order explicit during repairs", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-reference-checklist-"),
@@ -126,6 +311,12 @@ describe("creative repair loop", () => {
     );
     expect(prompt).toContain(
       'REQUIRED EARLY-CONVERSION CTA: preserve exactly one contact-bound primary CTA anchor using href="#contact", the data-early-conversion marker, and the sealed {content.hero.primaryLabel} binding together on the same anchor. Never replace its label with literal copy, remove its marker, or omit the CTA. Prefer changing its CSS placement before changing its semantic element.',
+    );
+    expect(prompt).toContain(
+      'REQUIRED CONVERSION/PROCESS CONTRACT: If the supplied sealed content includes one or more content.process steps, preserve every step in exactly one <section data-required-section="conversion"> before id="contact". Bind the steps from content.process, do not hardcode or omit them, and omit the section only when the sealed process array is empty.',
+    );
+    expect(prompt).toContain(
+      'REQUIRED MOTION ACCESSIBILITY CONTRACT: Keep a static reduced-motion equivalent in motion.js using runtime?.reducedMotion or matchMedia("(prefers-reduced-motion: reduce)"). Preserve the cleanup path and never remove the reduced-motion check.',
     );
     expect(prompt).toContain('data-reference-section="hero"');
     expect(prompt).toContain('data-reference-section="services"');
@@ -219,6 +410,91 @@ describe("creative repair loop", () => {
     ).rejects.toThrow(
       "Creative repair response was malformed (finish_reason=stop max_completion_tokens=48000 completion_tokens=810 reasoning_tokens=200 content_chars=8).",
     );
+  });
+
+  it("distinguishes an empty successful response envelope from malformed repair JSON", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-empty-envelope-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(JSON.stringify({ choices: [], usage: { prompt_tokens: 18 } })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+      }),
+    ).rejects.toThrow(/Creative repair response returned no model content.*choices=0/iu);
+  });
+
+  it("surfaces provider errors returned inside an HTTP 200 envelope", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-provider-error-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            error: { code: 503, message: "upstream provider overloaded" },
+            usage: { prompt_tokens: 18 },
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+      }),
+    ).rejects.toThrow(/OpenRouter 503: upstream provider overloaded/iu);
+  });
+
+  it("classifies an unreadable repair response body", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-invalid-envelope-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) => new Response("not json"),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+      }),
+    ).rejects.toThrow(/OpenRouter creative repair returned an unreadable response body/iu);
   });
 
   it("prefers an accessible absolute reference evidence path", async () => {
@@ -478,6 +754,32 @@ describe("creative repair loop", () => {
     expect(prompt).toContain(
       "Preserve its composition and sealed content bindings.",
     );
+  });
+
+  it("rejects a provided human repair scope without section IDs before provider transport", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-empty-scope-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [],
+        files: { experience: "old", styles: "old", motion: "old" },
+        screenshots: [],
+        creativeRepairScope: { sectionIds: [] },
+      }),
+    ).rejects.toThrow("Creative repair scope must include at least one section ID.");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it.each([

@@ -27,13 +27,8 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
-      GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}
       REASONING_PREFLIGHT_MODE: ${{ vars.REASONING_PREFLIGHT_MODE || 'shadow' }}
       REASONING_PREFLIGHT_MODEL: ${{ vars.REASONING_PREFLIGHT_MODEL || 'jev-1.13.0' }}
-      FAL_KEY: ${{ secrets.FAL_KEY }}
       FAL_IMAGE_MODEL: ${{ vars.FAL_IMAGE_MODEL || 'fal-ai/minimax/image-01' }}
       FAL_IMAGE_MAX_IMAGES: ${{ vars.FAL_IMAGE_MAX_IMAGES || '3' }}
       FAL_IMAGE_MAX_REQUESTS: ${{ vars.FAL_IMAGE_MAX_REQUESTS || '6' }}
@@ -49,45 +44,69 @@ jobs:
       CREATIVE_EXPERIENCE_MODE: ${{ vars.CREATIVE_EXPERIENCE_MODE == 'promote' && 'promote' || 'preview' }}
       SEO_RESEARCH_MAX_TASKS: ${{ vars.SEO_RESEARCH_MAX_TASKS || '2' }}
       SEO_RESEARCH_MAX_USD: ${{ vars.SEO_RESEARCH_MAX_USD || '0.10' }}
-      REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
-      REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
-      LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+      LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}
       REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
       REUSABLE_CANDIDATE_REPO: ${{ inputs.candidate_repository || '' }}
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
+      - name: Prepare private generation workspace
+        run: |
+          umask 077
+          mkdir -p "$LAUNCHLOOM_PRIVATE_DIR"
+          chmod 700 "$LAUNCHLOOM_PRIVATE_DIR"
+          test "$(stat -c '%a' "$LAUNCHLOOM_PRIVATE_DIR")" = 700
       - run: npm ci
       - name: Install rendered acceptance browser
-        run: npx playwright install --with-deps chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+        run: |
+          mkdir -p "$PLAYWRIGHT_BROWSERS_PATH"
+          chmod 755 "$PLAYWRIGHT_BROWSERS_PATH"
+          npx playwright install --with-deps chromium
+          chmod -R a+rX "$PLAYWRIGHT_BROWSERS_PATH"
       - name: Verify required secrets
+        env:
+          GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+          LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
+          LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
         run: |
           for key in GITHUB_ORG_TOKEN OPENROUTER_API_KEY REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_DEVELOPER_EMAIL; do test -n "${!key}" || { echo "Missing: $key"; exit 1; }; done
       - name: Read and generate from intake
         id: intake
         env:
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+          GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY || secrets.JEV_API_KEY }}
           DATAFORSEO_LOGIN: ${{ secrets.DATAFORSEO_LOGIN }}
           DATAFORSEO_PASSWORD: ${{ secrets.DATAFORSEO_PASSWORD }}
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
           LAUNCHLOOM_GENERATION_ID: ${{ github.run_id }}-attempt-${{ github.run_attempt }}
         run: |
-          gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
+          gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > $LAUNCHLOOM_PRIVATE_DIR/intake.md
+          REFERENCE_PACK_VALIDATION='(.referenceDnaAnalyzed == true and .referenceDossiersRequired == true and .referenceLibrary.policy == "permission-cleared-only" and .referenceLibrary.selectedDossierCount == 3 and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null) and (.referenceDossier.path | type == "string") and (.referenceDossier.digest | type == "string") and (.referenceDossier.designPrompt | type == "string" and length > 900) and (.referenceDna.evidence.desktopScreenshot.available == true) and (.referenceDna.evidence.mobileScreenshot.available == true) and (.referenceDna.evidence.desktopScreenshot.fullPage == true) and (.referenceDna.evidence.mobileScreenshot.fullPage == true) and (.referenceDna.rights as $rights | ["owned", "licensed", "permission-cleared"] | index($rights) != null)))'
           if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
             case "$REUSABLE_CANDIDATE_REPO" in
               "WrazyAI/launchloom-$ISSUE-"*) ;;
               *) echo "Candidate repository must be the existing WrazyAI/launchloom-$ISSUE-* repo for this intake"; exit 1 ;;
             esac
-            CANDIDATE_SOURCE="$RUNNER_TEMP/launchloom-candidate-source"
+            CANDIDATE_SOURCE="$LAUNCHLOOM_PRIVATE_DIR/launchloom-candidate-source"
             gh repo clone "$REUSABLE_CANDIDATE_REPO" "$CANDIDATE_SOURCE" -- --branch review/initial --depth 1
             for file in \
               src/site.config.json \
@@ -97,42 +116,48 @@ jobs:
               .launchloom/generated-experiences/creative-run.json; do
               test -f "$CANDIDATE_SOURCE/$file" || { echo "Reusable candidate repository is missing $file"; exit 1; }
             done
-            cp "$CANDIDATE_SOURCE/src/site.config.json" /tmp/site.config.json
-            cp "$CANDIDATE_SOURCE/.launchloom/seo-research.json" /tmp/seo-research.json
-            cp "$CANDIDATE_SOURCE/.launchloom/inspiration-pack.json" /tmp/inspiration-pack.json
-            cp "$CANDIDATE_SOURCE/.launchloom/reasoning-preflight.json" /tmp/reasoning-preflight.json
-            mkdir -p "$RUNNER_TEMP/reusable-authored-candidates"
-            cp -R "$CANDIDATE_SOURCE/.launchloom/generated-experiences/." "$RUNNER_TEMP/reusable-authored-candidates/"
+            cp "$CANDIDATE_SOURCE/src/site.config.json" $LAUNCHLOOM_PRIVATE_DIR/site.config.json
+            cp "$CANDIDATE_SOURCE/.launchloom/seo-research.json" $LAUNCHLOOM_PRIVATE_DIR/seo-research.json
+            cp "$CANDIDATE_SOURCE/.launchloom/inspiration-pack.json" $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json
+            cp "$CANDIDATE_SOURCE/.launchloom/reasoning-preflight.json" $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json
+            mkdir -p "$LAUNCHLOOM_PRIVATE_DIR/reusable-authored-candidates"
+            cp -R "$CANDIDATE_SOURCE/.launchloom/generated-experiences/." "$LAUNCHLOOM_PRIVATE_DIR/reusable-authored-candidates/"
+            if ! jq -e "$REFERENCE_PACK_VALIDATION" $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json >/dev/null; then
+              echo "The saved candidate pack predates or fails the current permission-cleared Reference DNA contract. Regenerate this intake before reusing its candidates." >&2
+              exit 1
+            fi
             echo "Reusable private candidate artifacts loaded; fresh authoring and SEO/config model calls are skipped."
           else
-            node scripts/seo-research.mjs --source /tmp/intake.md --out /tmp/seo-research.json
-            node scripts/generate-site-config.mjs --source /tmp/intake.md --research /tmp/seo-research.json --out /tmp/site.config.json
-            node scripts/compile-inspiration-pack.mjs --config /tmp/site.config.json --intake /tmp/intake.md --out /tmp/inspiration-pack.json
-            node scripts/analyze-reference-dna.mjs --inspiration /tmp/inspiration-pack.json --out /tmp/inspiration-pack.json
-            rm -f /tmp/reasoning-preflight.json
+            node scripts/seo-research.mjs --source $LAUNCHLOOM_PRIVATE_DIR/intake.md --out $LAUNCHLOOM_PRIVATE_DIR/seo-research.json
+            node scripts/generate-site-config.mjs --source $LAUNCHLOOM_PRIVATE_DIR/intake.md --research $LAUNCHLOOM_PRIVATE_DIR/seo-research.json --out $LAUNCHLOOM_PRIVATE_DIR/site.config.json
+            node scripts/compile-inspiration-pack.mjs --config $LAUNCHLOOM_PRIVATE_DIR/site.config.json --intake $LAUNCHLOOM_PRIVATE_DIR/intake.md --out $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json
+            node scripts/analyze-reference-dna.mjs --inspiration $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json --out $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json
+            rm -f $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json
             if [ "$CREATIVE_EXPERIENCE_MODEL" = "openai/gpt-6-luna" ]; then
               node scripts/run-reasoning-preflight.mjs \
-                --inspiration /tmp/inspiration-pack.json \
-                --out /tmp/reasoning-preflight.json \
+                --inspiration $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json \
+                --out $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json \
                 --mode "$REASONING_PREFLIGHT_MODE" \
                 --model "$REASONING_PREFLIGHT_MODEL" \
                 --creative-model "$CREATIVE_EXPERIENCE_MODEL" \
                 --session-key "$LAUNCHLOOM_INTAKE_ID"
-              jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
-              FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' /tmp/reasoning-preflight.json)
+              jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
+              FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json)
               if [ "$FALLBACK_USED" = "true" ]; then
-                FALLBACK_CODE=$(jq -r '.selector.error.code // "selector-error"' /tmp/reasoning-preflight.json)
+                FALLBACK_CODE=$(jq -r '.selector.error.code // "selector-error"' $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json)
                 echo "::warning title=Reasoning preflight fallback::TypeSafe/Jev selector fallback is active ($FALLBACK_CODE). This creative session is frozen at max reasoning for quality safety."
               fi
             fi
           fi
-          jq -e '.referenceDnaAnalyzed == true and .referenceDossiersRequired == true and .referenceLibrary.policy == "permission-cleared-only" and .referenceLibrary.selectedDossierCount == 3 and (.routes | length == 3) and all(.routes[]; .referenceDna.analyzedFromEvidence == true and (.referenceDna.measurements != null) and (.referenceDossier.path | type == "string") and (.referenceDossier.digest | type == "string") and (.referenceDossier.designPrompt | type == "string" and length > 900) and (.referenceDna.evidence.desktopScreenshot.available == true) and (.referenceDna.evidence.mobileScreenshot.available == true) and (.referenceDna.evidence.desktopScreenshot.fullPage == true) and (.referenceDna.evidence.mobileScreenshot.fullPage == true) and (.referenceDna.rights as $rights | ["owned", "licensed", "permission-cleared"] | index($rights) != null))' /tmp/inspiration-pack.json >/dev/null || { echo "Reference DNA or permission-cleared dossier evidence is incomplete"; exit 1; }
-          if [ -f /tmp/reasoning-preflight.json ]; then
-            jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' /tmp/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
-            echo "reasoning_mode=$(jq -r '.mode' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
-            echo "reasoning_effort=$(jq -r '.reasoningEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
-            echo "reasoning_recommended=$(jq -r '.recommendedEffort' /tmp/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
-            FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' /tmp/reasoning-preflight.json)
+          if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
+            jq -e "$REFERENCE_PACK_VALIDATION" $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json >/dev/null || { echo "Reference DNA or permission-cleared dossier evidence is incomplete"; exit 1; }
+          fi
+          if [ -f $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json ]; then
+            jq -e '(.creativeModel == "openai/gpt-6-luna") and (.reasoningEffort == "xhigh" or .reasoningEffort == "max") and (.recommendedEffort == "xhigh" or .recommendedEffort == "max") and (.sessionId | startswith("launchloom:creative:"))' $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json >/dev/null || { echo "Reasoning preflight did not produce a valid frozen session"; exit 1; }
+            echo "reasoning_mode=$(jq -r '.mode' $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            echo "reasoning_effort=$(jq -r '.reasoningEffort' $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            echo "reasoning_recommended=$(jq -r '.recommendedEffort' $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json)" >> "$GITHUB_OUTPUT"
+            FALLBACK_USED=$(jq -r '.selector.fallbackUsed // false' $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json)
             echo "reasoning_fallback=$FALLBACK_USED" >> "$GITHUB_OUTPUT"
           else
             echo "reasoning_mode=static" >> "$GITHUB_OUTPUT"
@@ -140,21 +165,25 @@ jobs:
             echo "reasoning_recommended=static" >> "$GITHUB_OUTPUT"
             echo "reasoning_fallback=false" >> "$GITHUB_OUTPUT"
           fi
-          SLUG=$(node -e 'const x=require("/tmp/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
+          SLUG=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/site.config.json"); console.log(String(x.business?.name || "client-site").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,45) || "client-site")')
           echo "issue=$ISSUE" >> "$GITHUB_OUTPUT"
           echo "slug=$SLUG" >> "$GITHUB_OUTPUT"
-          echo "business_name=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.name)')" >> "$GITHUB_OUTPUT"
-          echo "email=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.email)')" >> "$GITHUB_OUTPUT"
-          echo "lead_email=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.leadEmail)')" >> "$GITHUB_OUTPUT"
-          echo "assets=$(node -e 'const x=require("/tmp/site.config.json"); console.log(JSON.stringify(x.assets || {}))')" >> "$GITHUB_OUTPUT"
-          echo "layout=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.layout || "editorial-authority")')" >> "$GITHUB_OUTPUT"
-          echo "asset_summary=$(node -e 'const x=require("/tmp/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " → " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')" >> "$GITHUB_OUTPUT"
-          echo "research_mode=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')" >> "$GITHUB_OUTPUT"
-          echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
-          echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "No externally validated queries")')" >> "$GITHUB_OUTPUT"
-          node -e 'const x=require("/tmp/seo-research.json"); const state=x.mode === "researched" ? "Research complete. Production approval is available." : "Research is incomplete. This preview can be reviewed, but production approval is blocked until research succeeds."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}\nValidated queries: ${(x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "None"}\nRecorded research cost: $${Number(x.cost?.usd || 0).toFixed(5)}`)'
+          echo "business_name=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/site.config.json"); console.log(x.business.name)')" >> "$GITHUB_OUTPUT"
+          echo "email=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/site.config.json"); console.log(x.business.email)')" >> "$GITHUB_OUTPUT"
+          echo "lead_email=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/site.config.json"); console.log(x.business.leadEmail)')" >> "$GITHUB_OUTPUT"
+          echo "assets=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/site.config.json"); console.log(JSON.stringify(x.assets || {}))')" >> "$GITHUB_OUTPUT"
+          echo "layout=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/site.config.json"); console.log(x.conversion?.layout || "editorial-authority")')" >> "$GITHUB_OUTPUT"
+          echo "asset_summary=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/site.config.json"); console.log((x.assetReport?.used || []).map(a => a.asset + " → " + a.placement).join(", ") || "No supplied image used; approved contextual fallback or brand art selected.")')" >> "$GITHUB_OUTPUT"
+          echo "research_mode=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/seo-research.json"); console.log(x.mode)')" >> "$GITHUB_OUTPUT"
+          echo "research_cost=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
+          echo "research_queries=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "No externally validated queries")')" >> "$GITHUB_OUTPUT"
+          node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/seo-research.json"); const state=x.mode === "researched" ? "Research complete. Production approval is available." : "Research is incomplete. This preview can be reviewed, but production approval is blocked until research succeeds."; require("node:fs").writeFileSync(process.env.LAUNCHLOOM_PRIVATE_DIR + "/seo-research-email.txt", `${state}\nMode: ${x.mode}\nValidated queries: ${(x.validatedQueries || []).map(item => item.query).slice(0, 6).join(", ") || "None"}\nRecorded research cost: $${Number(x.cost?.usd || 0).toFixed(5)}`)'
       - name: Create private repository and Cloudflare Pages project
         id: client
+        env:
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           PROJECT="launchloom-${{ steps.intake.outputs.issue }}-${{ steps.intake.outputs.slug }}"
           # Keep preview hostnames within the length proven to receive a
@@ -175,7 +204,8 @@ jobs:
           # production deployment. This neutral, noindex placeholder is not a
           # client website and lets the following developer preview open
           # immediately without publishing client content.
-          npx wrangler pages deploy "$GITHUB_WORKSPACE/templates/preview-placeholder" --project-name "$PROJECT" --commit-hash "$GITHUB_SHA" --commit-message "Prepare LaunchLoom preview certificate"
+          SAFE_DEPLOY_DIR=$(node "$GITHUB_WORKSPACE/scripts/prepare-safe-static-output.mjs" --source "$GITHUB_WORKSPACE/templates/preview-placeholder" --parent "$RUNNER_TEMP")
+          npx wrangler pages deploy "$SAFE_DEPLOY_DIR" --project-name "$PROJECT" --commit-hash "$GITHUB_SHA" --commit-message "Prepare LaunchLoom preview certificate"
           gh label create launchloom-client-feedback --repo "$CLIENT_REPO" --color 1d76db --description "LaunchLoom client feedback inbox" --force
           INBOX=$(gh issue list --repo "$CLIENT_REPO" --state open --label launchloom-client-feedback --limit 1 --json url --jq '.[0].url // ""')
           if [ -z "$INBOX" ]; then
@@ -186,28 +216,42 @@ jobs:
           echo "feedback_issue=${INBOX##*/}" >> "$GITHUB_OUTPUT"
       - name: Build private review branch
         id: branch
+        env:
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+          LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
+          REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
         run: |
           PROJECT="${{ steps.client.outputs.project }}"
           CLIENT_REPO="${{ steps.client.outputs.repo }}"
-          CLIENT_DIR="$RUNNER_TEMP/$PROJECT"
+          CLIENT_DIR="$LAUNCHLOOM_PRIVATE_DIR/$PROJECT"
           PREVIEW="https://review-initial.$PROJECT.pages.dev"
           PRODUCTION="https://$PROJECT.pages.dev"
           ORIGINS="$PREVIEW,$PRODUCTION"
           LEAD_TOKEN=$(node scripts/create-lead-token.mjs --project "$PROJECT" --recipient "${{ steps.intake.outputs.lead_email }}" --origins "$ORIGINS")
-          PLACE_ID=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.placeId || "")')
+          PLACE_ID=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/site.config.json"); console.log(x.business.placeId || "")')
           REVIEW_ARGS=()
           if [ -n "$PLACE_ID" ]; then
             REVIEWS_TOKEN=$(node scripts/create-google-reviews-token.mjs --project "$PROJECT" --placeId "$PLACE_ID" --origins "$ORIGINS")
             REVIEW_ARGS=(--reviewsToken "$REVIEWS_TOKEN")
           fi
           CHAT_ARGS=()
-          CHAT_ENABLED=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.conversion?.aiChat?.enabled ? "true" : "false")')
+          CHAT_ENABLED=$(node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/site.config.json"); console.log(x.conversion?.aiChat?.enabled ? "true" : "false")')
           if [ "$CHAT_ENABLED" = true ]; then
-            CHAT_TOKEN=$(node scripts/create-ai-chat-token.mjs --project "$PROJECT" --file /tmp/site.config.json --origins "$ORIGINS")
+            CHAT_TOKEN=$(node scripts/create-ai-chat-token.mjs --project "$PROJECT" --file "$LAUNCHLOOM_PRIVATE_DIR/site.config.json" --origins "$ORIGINS")
             CHAT_ARGS=(--chatToken "$CHAT_TOKEN")
           fi
-          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
-          REMOTE="https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git"
+          node scripts/enrich-site-config.mjs --file "$LAUNCHLOOM_PRIVATE_DIR/site.config.json" --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
+          REMOTE="https://github.com/$CLIENT_REPO.git"
+          git_push_with_retry() {
+            local attempt
+            local git_auth
+            git_auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+            for attempt in 1 2 3 4 5; do
+              if GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.https://github.com/.extraheader GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $git_auth" git push "$@"; then unset git_auth; return 0; fi
+              if [ "$attempt" -eq 5 ]; then unset git_auth; return 1; fi
+              sleep $((attempt * 2))
+            done
+          }
           # A newly-created private repository can be available through the
           # REST API several seconds before GitHub's Smart HTTP endpoint. Use
           # the already-authorized REST API for branch discovery so an empty
@@ -228,14 +272,6 @@ jobs:
           fi
           node scripts/sync-client-guidelines.mjs "$CLIENT_DIR"
           cd "$CLIENT_DIR"
-          git_push_with_retry() {
-            local attempt
-            for attempt in 1 2 3 4 5; do
-              if git push "$@"; then return 0; fi
-              if [ "$attempt" -eq 5 ]; then return 1; fi
-              sleep $((attempt * 2))
-            done
-          }
           rm -f netlify.toml
           printf '{"provider":"cloudflare-pages","project":"%s"}\n' "$PROJECT" > .launchloom-deployment.json
           if [ ! -d .git ]; then
@@ -252,10 +288,12 @@ jobs:
             git config user.email "automation@launchloom.app"
             git remote set-url origin "$REMOTE"
           fi
-          cp /tmp/site.config.json src/site.config.json
+          REMOTE_URL=$(git remote get-url origin 2>/dev/null || printf '%s' "$REMOTE")
+          [[ "$REMOTE_URL" == https://github.com/* && "$REMOTE_URL" != *'@'* ]] || { echo "Client origin contains persisted credentials or an unexpected host." >&2; exit 1; }
+          cp $LAUNCHLOOM_PRIVATE_DIR/site.config.json src/site.config.json
           mkdir -p .launchloom
-          cp /tmp/seo-research.json .launchloom/seo-research.json
-          cp /tmp/inspiration-pack.json .launchloom/inspiration-pack.json
+          cp $LAUNCHLOOM_PRIVATE_DIR/seo-research.json .launchloom/seo-research.json
+          cp $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json .launchloom/inspiration-pack.json
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
           git_push_with_retry --set-upstream origin review/initial
@@ -268,76 +306,86 @@ jobs:
       - name: Generate or reuse contextual imagery
         id: assets
         timeout-minutes: 12
+        env:
+          FAL_KEY: ${{ secrets.FAL_KEY }}
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           mkdir -p public/images/generated
           node "$GITHUB_WORKSPACE/scripts/generate-contextual-assets.mjs" \
-            --config /tmp/site.config.json \
-            --inspiration /tmp/inspiration-pack.json \
+            --config $LAUNCHLOOM_PRIVATE_DIR/site.config.json \
+            --inspiration $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json \
             --output "$PWD/public/images/generated" \
             --manifest "$PWD/.launchloom/generated-assets.json"
-          cp /tmp/site.config.json src/site.config.json
+          cp $LAUNCHLOOM_PRIVATE_DIR/site.config.json src/site.config.json
           git add src/site.config.json public/images/generated .launchloom/generated-assets.json
           if ! git diff --cached --quiet; then
             git commit -m "Add contextual image assets"
-            git push origin review/initial
+            bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" push origin review/initial
           fi
-          node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
+          node -e 'const x=require(process.env.LAUNCHLOOM_PRIVATE_DIR + "/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
       - name: Author independent experience candidates
         # Luna authors three independent candidates in separate stages. Keep
         # the runner timeout above the author's internal fail-closed budget
         # so Actions cannot terminate a valid creative run early.
         timeout-minutes: 55
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           SESSION_ARGS=()
-          if [ -f /tmp/reasoning-preflight.json ]; then
-            SESSION_ARGS=(--session /tmp/reasoning-preflight.json)
+          if [ -f $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json ]; then
+            SESSION_ARGS=(--session $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json)
           fi
           if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
             test -n "$REUSABLE_CANDIDATE_REPO" || { echo "Candidate repository is required when reuse is enabled"; exit 1; }
-            test -f /tmp/reasoning-preflight.json || { echo "Reusable candidates require their original frozen reasoning session"; exit 1; }
+            test -f $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json || { echo "Reusable candidates require their original frozen reasoning session"; exit 1; }
             node scripts/validate-reusable-creative-candidates.mjs \
-              --config /tmp/site.config.json \
-              --inspiration /tmp/inspiration-pack.json \
-              --candidates "$RUNNER_TEMP/reusable-authored-candidates" \
-              --out /tmp/generated-experiences \
-              --session /tmp/reasoning-preflight.json \
+              --config $LAUNCHLOOM_PRIVATE_DIR/site.config.json \
+              --inspiration $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json \
+              --candidates "$LAUNCHLOOM_PRIVATE_DIR/reusable-authored-candidates" \
+              --out $LAUNCHLOOM_PRIVATE_DIR/generated-experiences \
+              --session $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json \
               --model "$CREATIVE_EXPERIENCE_MODEL"
           else
             npm run author:experiences -- \
-              --config /tmp/site.config.json \
-              --inspiration /tmp/inspiration-pack.json \
-              --out /tmp/generated-experiences \
+              --config $LAUNCHLOOM_PRIVATE_DIR/site.config.json \
+              --inspiration $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json \
+              --out $LAUNCHLOOM_PRIVATE_DIR/generated-experiences \
               "${SESSION_ARGS[@]}" \
               --failure-mode throw
           fi
       - name: Commit authored experience evidence
+        env:
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           mkdir -p .launchloom
           rm -rf .launchloom/generated-experiences
-          cp -R /tmp/generated-experiences .launchloom/generated-experiences
+          cp -R $LAUNCHLOOM_PRIVATE_DIR/generated-experiences .launchloom/generated-experiences
           git add .launchloom/generated-experiences
-          if [ -f /tmp/reasoning-preflight.json ]; then
-            cp /tmp/reasoning-preflight.json .launchloom/reasoning-preflight.json
+          if [ -f $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json ]; then
+            cp $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json .launchloom/reasoning-preflight.json
             git add .launchloom/reasoning-preflight.json
           fi
           if ! git diff --cached --quiet; then
             git commit -m "Record authored experience candidates"
-            git push origin review/initial
+            bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" push origin review/initial
           fi
       - name: Render and repair creative candidates in the production shell
         id: creative_render
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
         run: |
           cd "${{ steps.branch.outputs.dir }}"
-          npm ci
           SESSION_ARGS=()
           if [ -f "$PWD/.launchloom/reasoning-preflight.json" ]; then
             SESSION_ARGS=(--session "$PWD/.launchloom/reasoning-preflight.json")
           fi
           node "$GITHUB_WORKSPACE/scripts/run-rendered-creative-repair.mjs" \
             --site-dir "$PWD" \
-            --candidates /tmp/generated-experiences \
+            --candidates $LAUNCHLOOM_PRIVATE_DIR/generated-experiences \
             --out .launchloom/creative-repair \
             --mode "$CREATIVE_EXPERIENCE_MODE" \
             "${SESSION_ARGS[@]}" \
@@ -345,16 +393,18 @@ jobs:
             --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
           cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
           rm -rf .launchloom/generated-experiences
-          cp -R /tmp/generated-experiences .launchloom/generated-experiences
+          cp -R $LAUNCHLOOM_PRIVATE_DIR/generated-experiences .launchloom/generated-experiences
           git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Render and repair creative experience candidates"
-            git push origin review/initial
+            bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" push origin review/initial
           fi
       - name: Prepare private creative-recovery report
         id: creative_recovery
         if: failure() && steps.creative_render.outcome == 'failure' && steps.branch.outputs.dir != ''
         continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           git config user.name "LaunchLoom"
@@ -362,12 +412,12 @@ jobs:
           # Keep source, screenshots, and findings in the client's private repo.
           # They must not be uploaded as artifacts from this public repository.
           mkdir -p .launchloom/generated-experiences
-          cp -R /tmp/generated-experiences/. .launchloom/generated-experiences/
+          cp -R $LAUNCHLOOM_PRIVATE_DIR/generated-experiences/. .launchloom/generated-experiences/
           git add .launchloom/generated-experiences
           if [ -d .launchloom/creative-repair ]; then git add .launchloom/creative-repair; fi
           if ! git diff --cached --quiet; then
             git commit -m "Preserve failed creative review evidence"
-            git push origin review/initial
+            bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" push origin review/initial
           fi
           RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-recovery.mjs" \
             --site-dir "$PWD" \
@@ -379,26 +429,40 @@ jobs:
           git add .launchloom/creative-recovery.json src/site.config.json src/generated-experiences/selected
           if ! git diff --cached --quiet; then
             git commit -m "Prepare private creative recovery review"
-            git push origin review/initial
+            bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" push origin review/initial
           fi
       - name: Build and deploy noindex diagnostic preview
         id: diagnostic_preview
         if: always() && steps.creative_recovery.outputs.repair_available == 'true' && steps.creative_recovery.outputs.diagnostic_eligible == 'true'
         continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          LAUNCHLOOM_CLIENT_PROCESS_ISOLATION: required
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
         run: |
-          cd "${{ steps.branch.outputs.dir }}"
-          PUBLIC_REVIEW_MODE=true PUBLIC_CREATIVE_DIAGNOSTIC=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
-          node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" \
-            --dist dist \
-            --candidate "${{ steps.creative_recovery.outputs.candidate }}" \
-            --screenshots .launchloom/creative-repair/diagnostic/screenshots
+          CLIENT_DIR="${{ steps.branch.outputs.dir }}"
+          BUILD_ROOT=$(mktemp -d "$RUNNER_TEMP/launchloom-diagnostic-build.XXXXXX")
+          chmod 755 "$BUILD_ROOT"
+          BUILD_DIR="$BUILD_ROOT/site"
+          SCREENSHOTS="$BUILD_ROOT/screenshots"
+          node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_CREATIVE_DIAGNOSTIC true --env.PUBLIC_LAUNCHLOOM_API_URL "$LAUNCHLOOM_API_URL" -- npm run build
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true -- node "$GITHUB_WORKSPACE/scripts/verify-creative-diagnostic.mjs" --dist dist --candidate "${{ steps.creative_recovery.outputs.candidate }}" --screenshots "$SCREENSHOTS"
+          chmod 700 "$BUILD_ROOT"
+          SAFE_DEPLOY_DIR=$(node "$GITHUB_WORKSPACE/scripts/prepare-safe-static-output.mjs" --source "$BUILD_DIR/dist" --parent "$RUNNER_TEMP")
+          mkdir -p "$CLIENT_DIR/.launchloom/creative-repair/diagnostic/screenshots"
+          cp -R "$SCREENSHOTS/." "$CLIENT_DIR/.launchloom/creative-repair/diagnostic/screenshots/"
+          cd "$CLIENT_DIR"
           git add .launchloom/creative-repair/diagnostic
           if ! git diff --cached --quiet; then
             git commit -m "Record noindex diagnostic preview checks"
-            git push origin review/initial
+            bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" push origin review/initial
           fi
           PROJECT="${{ steps.client.outputs.project }}"
-          npx wrangler pages deploy dist --project-name "$PROJECT" --branch creative-diagnostic --commit-hash "$(git rev-parse HEAD)" --commit-message "Private diagnostic design preview"
+          "$GITHUB_WORKSPACE/node_modules/.bin/wrangler" pages deploy "$SAFE_DEPLOY_DIR" --project-name "$PROJECT" --branch creative-diagnostic --commit-hash "$(git rev-parse HEAD)" --commit-message "Private diagnostic design preview"
           PREVIEW="https://creative-diagnostic.$PROJECT.pages.dev"
           node "$GITHUB_WORKSPACE/scripts/wait-for-pages-preview.mjs" --url "$PREVIEW"
           echo "preview=$PREVIEW" >> "$GITHUB_OUTPUT"
@@ -412,6 +476,9 @@ jobs:
           CLIENT_EMAIL: ${{ steps.intake.outputs.email }}
           FEEDBACK_ISSUE: ${{ steps.client.outputs.feedback_issue }}
           DIAGNOSTIC_PREVIEW_URL: ${{ steps.diagnostic_preview.outputs.preview }}
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+          REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
+          REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
         run: |
           test -n "$REVISION_COORDINATOR_SECRET" || { echo "Missing recovery coordinator credential" >&2; exit 1; }
           CLIENT_DIR="${{ steps.branch.outputs.dir }}"
@@ -447,61 +514,85 @@ jobs:
             -X POST "$LAUNCHLOOM_API_URL/api/internal/creative-repairs" \
             -H "Authorization: Bearer $REVISION_COORDINATOR_SECRET" \
             -H "Content-Type: application/json" \
-            --data "$SESSION_JSON" > "$RUNNER_TEMP/creative-repair-registration.json"
-          jq -e '.status == "available" and .repairAvailable == true' "$RUNNER_TEMP/creative-repair-registration.json" >/dev/null
+            --data "$SESSION_JSON" > "$LAUNCHLOOM_PRIVATE_DIR/creative-repair-registration.json"
+          jq -e '.status == "available" and .repairAvailable == true' "$LAUNCHLOOM_PRIVATE_DIR/creative-repair-registration.json" >/dev/null
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-creative-recovery -->' '## Creative preview needs another pass' 'The authored candidate did not clear all quality checks. Review the rendered findings and request the single final repair here:' "$REVIEW_LINK")"
           echo "link=$REVIEW_LINK" >> "$GITHUB_OUTPUT"
           echo "preview=$DIAGNOSTIC_PREVIEW_URL" >> "$GITHUB_OUTPUT"
-      - name: Build and direct-upload public preview
-        id: deploy
+      - name: Build and verify public preview
+        id: verified_build
+        env:
+          LAUNCHLOOM_CLIENT_PROCESS_ISOLATION: required
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
         run: |
-          cd "${{ steps.branch.outputs.dir }}"
-          npm ci
+          CLIENT_DIR="${{ steps.branch.outputs.dir }}"
+          cd "$CLIENT_DIR"
           test -f .launchloom/creative-bakeoff.json || { echo "Creative promotion report missing"; exit 1; }
           jq -e '(.design.experience.renderer == "creative-candidate") and (.design.experience.candidateId != null) and (.design.experience.selectionMode == "creative-preview" or .design.experience.selectionMode == "creative-bakeoff")' src/site.config.json >/dev/null || { echo "Authored creative renderer was not selected"; exit 1; }
           CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
           jq -e --arg candidate "$CANDIDATE_ID" '.selectedCandidateId == $candidate and .fallback == false' .launchloom/creative-bakeoff.json >/dev/null || { echo "No authored creative candidate passed the preview gates"; exit 1; }
-          # Service and location detail routes intentionally retain their
-          # deterministic SEO renderer. The homepage itself must be the authored
-          # candidate after the fresh production build below.
-          git add src/site.config.json
-          if ! git diff --cached --quiet; then
-            git commit -m "Select reviewed experience candidate"
-            git push origin review/initial
-          fi
-          PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
-          grep -I -F -q 'data-creative-host="true"' dist/index.html || { echo "Creative host marker missing from fresh build"; exit 1; }
-          grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" dist/index.html || { echo "Fresh build does not contain selected creative candidate $CANDIDATE_ID"; exit 1; }
-          if grep -I -E -q 'data-experience-pack|legacy-design-family' dist/index.html; then echo "Legacy renderer marker found in creative preview"; exit 1; fi
-          PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
-          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
-          CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
+          BUILD_ROOT=$(mktemp -d "$RUNNER_TEMP/launchloom-public-build.XXXXXX")
+          chmod 755 "$BUILD_ROOT"
+          BUILD_DIR="$BUILD_ROOT/site"
+          SCREENSHOTS="$BUILD_ROOT/initial-screenshots"
+          node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_LAUNCHLOOM_API_URL "$LAUNCHLOOM_API_URL" -- npm run build
+          grep -I -F -q 'data-creative-host="true"' "$BUILD_DIR/dist/index.html" || { echo "Creative host marker missing from fresh build"; exit 1; }
+          grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" "$BUILD_DIR/dist/index.html" || { echo "Fresh build does not contain selected creative candidate $CANDIDATE_ID"; exit 1; }
+          if grep -I -E -q 'data-experience-pack|legacy-design-family' "$BUILD_DIR/dist/index.html"; then echo "Legacy renderer marker found in creative preview"; exit 1; fi
+          node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true -- node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$SCREENSHOTS"
+          chmod 700 "$BUILD_ROOT"
+          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config "$BUILD_DIR/src/site.config.json" --dist "$BUILD_DIR/dist"
           FINAL_REPAIR_GATE=.launchloom/creative-repair/final/visual-gate.json
           jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_REPAIR_GATE" >/dev/null || { echo "Rendered creative repair did not finish with a passing visual gate"; exit 1; }
           REPAIR_SCREENSHOTS=.launchloom/creative-repair/final/screenshots
           for VIEWPORT in desktop compact mobile; do
             if [ -f "$REPAIR_SCREENSHOTS/${CANDIDATE_ID}-${VIEWPORT}.png" ]; then
-              cp "$REPAIR_SCREENSHOTS/${CANDIDATE_ID}-${VIEWPORT}.png" "$RUNNER_TEMP/initial-screenshots/${VIEWPORT}.png"
+              cp "$REPAIR_SCREENSHOTS/${CANDIDATE_ID}-${VIEWPORT}.png" "$SCREENSHOTS/${VIEWPORT}.png"
             fi
           done
-          rm -rf .launchloom/generated-experiences
-          cp -R /tmp/generated-experiences .launchloom/generated-experiences
+          if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" "$BUILD_DIR/dist"; then echo "Generated page contains an em dash" >&2; exit 1; fi
+          SAFE_DEPLOY_DIR=$(node "$GITHUB_WORKSPACE/scripts/prepare-safe-static-output.mjs" --source "$BUILD_DIR/dist" --parent "$RUNNER_TEMP")
+          cp -R "$SCREENSHOTS" "$LAUNCHLOOM_PRIVATE_DIR/initial-screenshots"
+          rm -rf "$CLIENT_DIR/.launchloom/generated-experiences"
+          cp -R $LAUNCHLOOM_PRIVATE_DIR/generated-experiences .launchloom/generated-experiences
+          echo "build_dir=$BUILD_DIR" >> "$GITHUB_OUTPUT"
+          echo "safe_deploy_dir=$SAFE_DEPLOY_DIR" >> "$GITHUB_OUTPUT"
+          echo "screenshots_dir=$LAUNCHLOOM_PRIVATE_DIR/initial-screenshots" >> "$GITHUB_OUTPUT"
+          echo "candidate=$CANDIDATE_ID" >> "$GITHUB_OUTPUT"
+      - name: Publish verified client preview sources
+        id: publish_preview
+        if: steps.verified_build.outputs.build_dir != ''
+        env:
+          CLIENT_DIR: ${{ steps.branch.outputs.dir }}
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+        run: |
+          cd "$CLIENT_DIR"
           git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
-            git commit -m "Record repaired creative candidate"
-            git push origin review/initial
+            git commit -m "Record verified creative preview"
+            bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" push origin review/initial
           fi
-          # Scan rendered text assets only. Binary generated imagery can contain
-          # the UTF-8 byte sequence by coincidence and is not page copy.
-          if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
-          npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "Initial LaunchLoom preview"
-          echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Deploy verified public preview
+        id: deploy
+        if: steps.publish_preview.outputs.sha != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SAFE_DEPLOY_DIR: ${{ steps.verified_build.outputs.safe_deploy_dir }}
+        run: |
+          "$GITHUB_WORKSPACE/node_modules/.bin/wrangler" pages deploy "$SAFE_DEPLOY_DIR" --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "${{ steps.publish_preview.outputs.sha }}" --commit-message "Initial LaunchLoom preview"
+          echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
+          echo "sha=${{ steps.publish_preview.outputs.sha }}" >> "$GITHUB_OUTPUT"
       # Recording previews keeps rotation useful during internal testing. A
       # failure here must not block generation, preview deployment, or handoff.
       - name: Record launch signature for rotation
         if: github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main'
         continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
         run: |
           git config user.name "LaunchLoom"
           git config user.email "automation@launchloom.app"
@@ -515,10 +606,12 @@ jobs:
           fi
           git add data/recent-launch-signatures.json
           git commit -m "Record preview launch signature [skip ci]"
-          git fetch origin main
+          bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" fetch origin main
           git rebase origin/main
-          git push origin HEAD:main
+          bash "$GITHUB_WORKSPACE/scripts/git-with-token.sh" push origin HEAD:main
       - name: Track pending developer delivery
+        env:
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
         run: |
           gh label create launchloom-delivery-pending --repo "${{ steps.client.outputs.repo }}" --color e4e669 --force
           gh pr edit "${{ steps.branch.outputs.pr }}" --repo "${{ steps.client.outputs.repo }}" --add-label launchloom-delivery-pending
@@ -526,6 +619,8 @@ jobs:
         run: node scripts/wait-for-pages-preview.mjs --url "${{ steps.deploy.outputs.preview }}"
       - name: Create secure review link
         id: review
+        env:
+          REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
         run: |
           PREVIEW="${{ steps.deploy.outputs.preview }}"
           ORIGINS="$PREVIEW,https://${{ steps.client.outputs.project }}.pages.dev"
@@ -544,6 +639,7 @@ jobs:
           RESEARCH_MODE: ${{ steps.intake.outputs.research_mode }}
           RESEARCH_QUERIES: ${{ steps.intake.outputs.research_queries }}
           REVIEW_PR: ${{ steps.branch.outputs.pr }}
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
         run: |
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nLayout: %s\nClient assets used: %s\nSEO research mode: %s\nValidated queries: %s\nRecorded research cost: $%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Initial developer preview' "$LAYOUT" "$CLIENT_ASSET_SUMMARY" "$RESEARCH_MODE" "$RESEARCH_QUERIES" "$RESEARCH_COST" "$PREVIEW_URL" "$DEVELOPER_REVIEW_LINK")"
           gh issue comment "$INTAKE_ISSUE" --repo WrazyAI/launchloom --body "$(printf '%s\n\n%s\n\nRepository: %s\nCloudflare Pages project: %s\nDeveloper preview: %s' '<!-- launchloom-developer-review-ready -->' '## Awaiting developer approval' "$CLIENT_REPO" "$CLIENT_PROJECT" "$PREVIEW_URL")"
@@ -556,8 +652,10 @@ jobs:
           DEVELOPER_REVIEW_LINK: ${{ steps.review.outputs.link }}
           PREVIEW_URL: ${{ steps.deploy.outputs.preview }}
           REVIEW_PR: ${{ steps.branch.outputs.pr }}
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file /tmp/seo-research-email.txt --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
+          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$BUSINESS_NAME" --preview "$PREVIEW_URL" --review "$DEVELOPER_REVIEW_LINK" --kind initial --audience developer --outcome-file $LAUNCHLOOM_PRIVATE_DIR/seo-research-email.txt --idempotency-key "initial-$CLIENT_PROJECT-$DEPLOY_SHA"
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-initial-email:$DEPLOY_SHA -->"
           gh pr edit "$REVIEW_PR" --repo "$CLIENT_REPO" --remove-label launchloom-delivery-pending
       - name: Notify developer when generation stops
@@ -566,15 +664,17 @@ jobs:
           ISSUE: ${{ github.event.client_payload.issue || inputs.issue }}
           REPAIR_LINK: ${{ steps.creative_repair_link.outputs.link }}
           DIAGNOSTIC_PREVIEW: ${{ steps.creative_repair_link.outputs.preview }}
+          GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         run: |
           NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
           if [ -n "$REPAIR_LINK" ]; then
-            printf 'The authored design missed one or more quality checks. Review the findings and request its single final repair here:\n%s\n' "$REPAIR_LINK" > "$RUNNER_TEMP/generation-failure-feedback.txt"
-            if [ -n "$DIAGNOSTIC_PREVIEW" ]; then printf 'Diagnostic-only preview (not approved for publication): %s\n' "$DIAGNOSTIC_PREVIEW" >> "$RUNNER_TEMP/generation-failure-feedback.txt"; fi
-            printf 'The original generation was not promoted. The final repair is one-shot and will be checked again before a new review link is issued.\n' > "$RUNNER_TEMP/generation-failure-outcome.txt"
-            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-https://github.com/WrazyAI/launchloom/issues/$ISSUE}" --review "$REPAIR_LINK" --kind revision --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$ISSUE-${{ github.run_id }}"
+            printf 'The authored design missed one or more quality checks. Review the findings and request its single final repair here:\n%s\n' "$REPAIR_LINK" > "$LAUNCHLOOM_PRIVATE_DIR/generation-failure-feedback.txt"
+            if [ -n "$DIAGNOSTIC_PREVIEW" ]; then printf 'Diagnostic-only preview (not approved for publication): %s\n' "$DIAGNOSTIC_PREVIEW" >> "$LAUNCHLOOM_PRIVATE_DIR/generation-failure-feedback.txt"; fi
+            printf 'The original generation was not promoted. The final repair is one-shot and will be checked again before a new review link is issued.\n' > "$LAUNCHLOOM_PRIVATE_DIR/generation-failure-outcome.txt"
+            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-https://github.com/WrazyAI/launchloom/issues/$ISSUE}" --review "$REPAIR_LINK" --kind revision --audience manual-attention --feedback-file "$LAUNCHLOOM_PRIVATE_DIR/generation-failure-feedback.txt" --outcome-file "$LAUNCHLOOM_PRIVATE_DIR/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$ISSUE-${{ github.run_id }}"
           else
-            printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$RUNNER_TEMP/generation-failure-feedback.txt"
-            printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
-            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/WrazyAI/launchloom/issues/$ISSUE" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$ISSUE-${{ github.run_id }}"
+            printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$LAUNCHLOOM_PRIVATE_DIR/generation-failure-feedback.txt"
+            printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$LAUNCHLOOM_PRIVATE_DIR/generation-failure-outcome.txt"
+            node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/WrazyAI/launchloom/issues/$ISSUE" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$LAUNCHLOOM_PRIVATE_DIR/generation-failure-feedback.txt" --outcome-file "$LAUNCHLOOM_PRIVATE_DIR/generation-failure-outcome.txt" --idempotency-key "generation-failed-$ISSUE-${{ github.run_id }}"
           fi

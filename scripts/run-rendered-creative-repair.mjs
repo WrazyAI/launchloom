@@ -6,6 +6,7 @@ import { requestRepair } from "./creative-repair-loop.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import {
   restoreImageAltsFromOriginal,
+  restoreReferenceServicePresentationMarker,
   restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
   validateProductionCandidateFiles,
@@ -476,21 +477,19 @@ export async function defaultRepairCandidate({
     });
     try {
       const modelRepaired = normalizeRepair(repairResponse);
+      const repairedSections = restoreRequiredSectionIdsOnSemanticSections(
+        modelRepaired.experience,
+        route,
+      );
+      const repairedServicePresentation =
+        restoreReferenceServicePresentationMarker(repairedSections, route);
       const repaired = {
         ...modelRepaired,
         experience: restoreImageAltsFromOriginal(
           restoreRequiredExperienceMarkers(
-            restoreRequiredSectionIdsOnSemanticSections(
-              modelRepaired.experience,
-              {
-                id:
-                  metadata.routeId || metadata.candidateId || "rendered-repair",
-              },
-            ),
+            repairedServicePresentation,
             files.experience,
-            {
-              id: metadata.routeId || metadata.candidateId || "rendered-repair",
-            },
+            route,
           ),
           files.experience,
           content,
@@ -750,13 +749,13 @@ export async function runRenderedCreativeRepair({
           String(value || "")
             .replace(/\s+/gu, " ")
             .trim();
+        const scopedRequest = normalizeRequest(preparedScope.requestText);
         if (
-          preparedScope.requestText &&
-          normalizeRequest(preparedScope.requestText) !==
-            normalizeRequest(humanFeedback)
+          !scopedRequest ||
+          scopedRequest !== normalizeRequest(humanFeedback)
         )
           throw new Error(
-            `Human creative repair scope for ${candidateId} does not match the current feedback. Route it to manual attention.`,
+            `Human creative repair scope for ${candidateId} does not match the current feedback because its request text is missing or stale. Route it to manual attention.`,
           );
         creativeRepairScope = structuredClone(preparedScope);
         creativeScopeByCandidate.set(candidateId, creativeRepairScope);

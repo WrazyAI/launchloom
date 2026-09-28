@@ -460,6 +460,24 @@ function collectJsxElements(source) {
   return { file, elements };
 }
 
+function enclosingFunction(node) {
+  let current = node;
+  while (current) {
+    if (
+      ts.isFunctionDeclaration(current) ||
+      ts.isFunctionExpression(current) ||
+      ts.isArrowFunction(current) ||
+      ts.isMethodDeclaration(current) ||
+      ts.isGetAccessorDeclaration(current) ||
+      ts.isSetAccessorDeclaration(current) ||
+      ts.isConstructorDeclaration(current)
+    )
+      return current;
+    current = current.parent;
+  }
+  return undefined;
+}
+
 const contentBoundRuntimeHelpers = new Set([
   "ContactLinks",
   "FAQList",
@@ -543,6 +561,34 @@ function bindingPatternNames(name) {
   return [];
 }
 
+function resolveStaticContentPath(expression, aliases, file) {
+  let current = expression;
+  while (
+    ts.isParenthesizedExpression(current) ||
+    ts.isAsExpression(current) ||
+    ts.isTypeAssertionExpression(current) ||
+    ts.isNonNullExpression(current)
+  )
+    current = ts.isParenthesizedExpression(current)
+      ? current.expression
+      : current.expression;
+  if (ts.isIdentifier(current))
+    return aliases.get(current.text) || current.text;
+  if (ts.isPropertyAccessExpression(current)) {
+    const base = resolveStaticContentPath(current.expression, aliases, file);
+    return base ? `${base}.${current.name.text}` : null;
+  }
+  if (
+    ts.isElementAccessExpression(current) &&
+    current.argumentExpression &&
+    ts.isStringLiteralLike(current.argumentExpression)
+  ) {
+    const base = resolveStaticContentPath(current.expression, aliases, file);
+    return base ? `${base}.${current.argumentExpression.text}` : null;
+  }
+  return null;
+}
+
 function expressionReferencesContentBinding(
   expression,
   binding,
@@ -553,19 +599,7 @@ function expressionReferencesContentBinding(
   const normalizedBinding = binding.replace(/\s+/gu, "").replace(/\?\./gu, ".");
   const visit = (node) => {
     if (found) return;
-    if (ts.isPropertyAccessExpression(node)) {
-      const path = node
-        .getText(file)
-        .replace(/\s+/gu, "")
-        .replace(/\?\./gu, ".");
-      if (path === normalizedBinding) {
-        found = true;
-        return;
-      }
-      visit(node.expression);
-      return;
-    }
-    if (ts.isIdentifier(node) && aliases.has(node.text)) {
+    if (resolveStaticContentPath(node, aliases, file) === normalizedBinding) {
       found = true;
       return;
     }
@@ -576,11 +610,11 @@ function expressionReferencesContentBinding(
 }
 
 /**
- * Resolve simple, unambiguous local values derived from a sealed content
- * token. Some authored headings are split into words before being rendered
- * inside their h1, so checking only the JSX expression misses that binding.
+ * Resolve unambiguous local values and destructured properties back to their
+ * sealed content-token paths. This keeps source checks effective after simple
+ * author-chosen aliases without conflating shadowed declarations.
  */
-function localContentBindingAliases(file, binding) {
+function localContentBindingAliases(file) {
   const declarations = [];
   const nameCounts = new Map();
   const recordNames = (name) => {
@@ -590,11 +624,8 @@ function localContentBindingAliases(file, binding) {
   const collect = (node) => {
     if (ts.isVariableDeclaration(node)) {
       recordNames(node.name);
-      if (ts.isIdentifier(node.name) && node.initializer)
-        declarations.push({
-          name: node.name.text,
-          initializer: node.initializer,
-        });
+      if (node.initializer)
+        declarations.push({ name: node.name, initializer: node.initializer });
     } else if (ts.isParameter(node)) recordNames(node.name);
     else if (
       (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
@@ -605,31 +636,88 @@ function localContentBindingAliases(file, binding) {
   };
   collect(file);
 
-  const aliases = new Set();
+  const aliases = new Map();
+  const collectDestructuredPaths = (pattern, basePath, paths) => {
+    if (!ts.isObjectBindingPattern(pattern)) return;
+    for (const element of pattern.elements) {
+      if (element.dotDotDotToken) continue;
+      const property = element.propertyName || element.name;
+      const propertyName =
+        ts.isIdentifier(property) || ts.isStringLiteralLike(property)
+          ? property.text
+          : null;
+      if (!propertyName) continue;
+      const propertyPath = `${basePath}.${propertyName}`;
+      if (ts.isIdentifier(element.name))
+        paths.push({ name: element.name.text, path: propertyPath });
+      else if (ts.isObjectBindingPattern(element.name))
+        collectDestructuredPaths(element.name, propertyPath, paths);
+    }
+  };
   let changed = true;
   while (changed) {
     changed = false;
     for (const declaration of declarations) {
-      if (
-        nameCounts.get(declaration.name) === 1 &&
-        !aliases.has(declaration.name) &&
-        expressionReferencesContentBinding(
+      if (ts.isIdentifier(declaration.name)) {
+        const name = declaration.name.text;
+        const path = resolveStaticContentPath(
           declaration.initializer,
-          binding,
           aliases,
           file,
+        );
+        if (
+          nameCounts.get(name) === 1 &&
+          !aliases.has(name) &&
+          typeof path === "string" &&
+          (path === "content" || path.startsWith("content."))
+        ) {
+          aliases.set(name, path);
+          changed = true;
+        }
+      } else if (ts.isObjectBindingPattern(declaration.name)) {
+        const basePath = resolveStaticContentPath(
+          declaration.initializer,
+          aliases,
+          file,
+        );
+        if (
+          typeof basePath !== "string" ||
+          (basePath !== "content" && !basePath.startsWith("content."))
         )
-      ) {
-        aliases.add(declaration.name);
-        changed = true;
+          continue;
+        const paths = [];
+        collectDestructuredPaths(declaration.name, basePath, paths);
+        for (const { name, path } of paths) {
+          if (nameCounts.get(name) === 1 && !aliases.has(name)) {
+            aliases.set(name, path);
+            changed = true;
+          }
+        }
       }
     }
   }
   return aliases;
 }
 
+function jsxOpeningAttributesContainBinding(opening, binding, file) {
+  if (!opening?.attributes?.properties) return false;
+  return opening.attributes.properties.some(
+    (attribute) =>
+      ts.isJsxAttribute(attribute) &&
+      attribute.initializer &&
+      ts.isJsxExpression(attribute.initializer) &&
+      attribute.initializer.expression &&
+      expressionReferencesContentBinding(
+        attribute.initializer.expression,
+        binding,
+        localContentBindingAliases(file),
+        file,
+      ),
+  );
+}
+
 function jsxChildrenContainBinding(children, binding, file) {
-  const aliases = localContentBindingAliases(file, binding);
+  const aliases = localContentBindingAliases(file);
   const visit = (items) => {
     for (const child of items || []) {
       if (
@@ -642,11 +730,20 @@ function jsxChildrenContainBinding(children, binding, file) {
         )
       )
         return true;
-      if (
-        (ts.isJsxElement(child) || ts.isJsxFragment(child)) &&
-        visit(child.children)
-      )
-        return true;
+      if (ts.isJsxElement(child)) {
+        if (
+          jsxOpeningAttributesContainBinding(
+            child.openingElement,
+            binding,
+            file,
+          ) ||
+          visit(child.children)
+        )
+          return true;
+      } else if (ts.isJsxSelfClosingElement(child)) {
+        if (jsxOpeningAttributesContainBinding(child, binding, file))
+          return true;
+      } else if (ts.isJsxFragment(child) && visit(child.children)) return true;
     }
     return false;
   };
@@ -930,7 +1027,11 @@ export function restoreReferenceServicePresentationMarker(
   const attributeText = `data-service-presentation="${markerValue}"`;
   if (markerAttribute)
     return `${source.slice(0, markerAttribute.getStart(file))}${attributeText}${source.slice(markerAttribute.end)}`;
-  const insertionPoint = jsxAttributeInsertionPoint(source, target.opening, file);
+  const insertionPoint = jsxAttributeInsertionPoint(
+    source,
+    target.opening,
+    file,
+  );
   if (insertionPoint < 0)
     throw new Error(
       `Candidate ${route.id} has an invalid services section opening tag.`,
@@ -1135,12 +1236,13 @@ export function restoreRequiredExperienceMarkers(
             original.file,
           ).trim();
           if (!originalIdentity) continue;
-          const matchingIdentity = repaired.elements.filter((element) =>
-            jsxOpeningName(element.opening) === "section" &&
-            jsxAttributeValue(
-              jsxAttribute(element.opening, attributeName),
-              repaired.file,
-            ).trim() === originalIdentity,
+          const matchingIdentity = repaired.elements.filter(
+            (element) =>
+              jsxOpeningName(element.opening) === "section" &&
+              jsxAttributeValue(
+                jsxAttribute(element.opening, attributeName),
+                repaired.file,
+              ).trim() === originalIdentity,
           );
           if (matchingIdentity.length === 1) return matchingIdentity;
         }
@@ -1269,9 +1371,11 @@ export function restoreReferenceCtaPlacementMarker(source, route) {
     const tag = jsxOpeningName(opening).toLowerCase();
     if (!ts.isJsxElement(node) || !["a", "button"].includes(tag)) return false;
     if (!jsxAttribute(opening, "data-early-conversion")) return false;
-    return tag === "button" ||
+    return (
+      tag === "button" ||
       jsxAttributeValue(jsxAttribute(opening, "href"), file).trim() ===
-        "#contact";
+        "#contact"
+    );
   });
   if (targets.length !== 1)
     throw new Error(
@@ -1283,10 +1387,7 @@ export function restoreReferenceCtaPlacementMarker(source, route) {
     target.opening,
     "data-early-conversion",
   );
-  const targetMarker = jsxAttribute(
-    target.opening,
-    "data-cta-placement",
-  );
+  const targetMarker = jsxAttribute(target.opening, "data-cta-placement");
   const edits = [];
   for (const element of elements) {
     if (element === target) continue;
@@ -1487,9 +1588,9 @@ function hasPotentiallyHiddenJsxAttribute(opening) {
       const initializer = attribute.initializer;
       hidden = Boolean(
         !initializer ||
-          !ts.isJsxExpression(initializer) ||
-          !initializer.expression ||
-          !isBooleanLiteral(initializer.expression, false),
+        !ts.isJsxExpression(initializer) ||
+        !initializer.expression ||
+        !isBooleanLiteral(initializer.expression, false),
       );
       continue;
     }
@@ -1524,10 +1625,7 @@ function styleObjectDisplayNone(expression) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "display") continue;
     } else if (
@@ -1562,10 +1660,7 @@ function staticSpreadDisplayNone(attribute) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "style") continue;
     } else if (
@@ -1597,10 +1692,7 @@ function staticSpreadHiddenValue(attribute) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "hidden") continue;
     } else if (
@@ -1776,6 +1868,7 @@ function validateExperience(source, route, content) {
   for (const [pattern, label] of forbidden)
     if (pattern.test(source))
       throw new Error(`Candidate ${route.id} contains forbidden ${label}.`);
+  validateSparseHeroImageUse(source, route, content);
   assertRequiredSectionAnchors(source, route);
   assertRequiredConversionSection(source, route, content);
   if (
@@ -1867,6 +1960,355 @@ function validateExperience(source, route, content) {
     );
 }
 
+export function validateSparseHeroImageUse(source, route, content) {
+  const heroImage = content?.hero?.image;
+  if (
+    typeof heroImage !== "string" ||
+    !heroImage.trim() ||
+    String(content?.hero?.secondaryImage || "").trim() ||
+    String(content?.hero?.tertiaryImage || "").trim()
+  )
+    return;
+
+  const referenceDna = route?.referenceDna || {};
+  const requiredSignatures = [
+    ...(Array.isArray(referenceDna.requiredSignatureElements)
+      ? referenceDna.requiredSignatureElements
+      : []),
+    ...(Array.isArray(referenceDna.requiredSignatures)
+      ? referenceDna.requiredSignatures
+      : []),
+  ]
+    .map((signature) =>
+      typeof signature === "string"
+        ? signature
+        : signature && typeof signature === "object"
+          ? [signature.id, signature.selector, signature.description]
+              .filter(Boolean)
+              .join(" ")
+          : "",
+    )
+    .filter(Boolean);
+  const imageIntent = [
+    referenceDna.familyId,
+    referenceDna.imageTreatment?.mode,
+    referenceDna.imageTreatment?.crop,
+    ...requiredSignatures,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (/shared[\s-]+image|mosaic/iu.test(imageIntent)) return;
+
+  const { file, elements } = collectJsxElements(source);
+  const aliases = localContentBindingAliases(file);
+  const conditionRegistry = new Map();
+  const imageUses = [];
+  for (const { opening } of elements) {
+    if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
+    if (
+      jsxSourceExpressions(opening, file).some((expression) =>
+        expressionReferencesContentBinding(
+          expression,
+          "content.hero.image",
+          aliases,
+          file,
+        ),
+      )
+    )
+      imageUses.push(conditionalBranchPath(opening, conditionRegistry));
+  }
+  if (maximumConcurrentImageUses(imageUses) > 1)
+    throw new Error(
+      `Candidate ${route.id} repeats its only sealed hero image across multiple image regions; use it once or author a distinct non-image composition for the remaining sections.`,
+    );
+}
+
+function staticPropertyName(name) {
+  if (
+    ts.isIdentifier(name) ||
+    ts.isStringLiteralLike(name) ||
+    ts.isNumericLiteral(name)
+  )
+    return name.text;
+  return null;
+}
+
+function staticObjectPropertyInitializers(
+  expression,
+  propertyName,
+  file,
+  visited = new Set(),
+) {
+  let current = expression;
+  while (
+    ts.isParenthesizedExpression(current) ||
+    ts.isAsExpression(current) ||
+    ts.isSatisfiesExpression(current)
+  )
+    current = current.expression;
+  if (ts.isObjectLiteralExpression(current)) {
+    const values = [];
+    for (const property of current.properties) {
+      if (ts.isPropertyAssignment(property)) {
+        if (staticPropertyName(property.name) === propertyName)
+          values.push(property.initializer);
+      } else if (
+        ts.isShorthandPropertyAssignment(property) &&
+        property.name.text === propertyName
+      )
+        values.push(property.name);
+      else if (ts.isSpreadAssignment(property))
+        values.push(
+          ...staticObjectPropertyInitializers(
+            property.expression,
+            propertyName,
+            file,
+            visited,
+          ),
+        );
+    }
+    return values;
+  }
+  if (!ts.isIdentifier(current) || visited.has(current.text)) return [];
+  visited.add(current.text);
+  const declarations = [];
+  const collect = (node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === current.text
+    )
+      declarations.push(node);
+    ts.forEachChild(node, collect);
+  };
+  collect(file);
+  if (
+    declarations.length !== 1 ||
+    !declarations[0].initializer ||
+    !ts.isVariableDeclarationList(declarations[0].parent) ||
+    !(declarations[0].parent.flags & ts.NodeFlags.Const)
+  )
+    return [];
+  return staticObjectPropertyInitializers(
+    declarations[0].initializer,
+    propertyName,
+    file,
+    visited,
+  );
+}
+
+function jsxSourceExpressions(opening, file) {
+  const expressions = [];
+  for (const attribute of jsxAttributes(opening)) {
+    if (
+      ts.isJsxAttribute(attribute) &&
+      attribute.name.getText(file) === "src"
+    ) {
+      const initializer = attribute.initializer;
+      if (
+        initializer &&
+        ts.isJsxExpression(initializer) &&
+        initializer.expression
+      )
+        expressions.push(initializer.expression);
+    } else if (ts.isJsxSpreadAttribute(attribute))
+      expressions.push(
+        ...staticObjectPropertyInitializers(attribute.expression, "src", file),
+      );
+  }
+  return expressions;
+}
+
+function nodeContainsNode(container, node) {
+  return node.pos >= container.pos && node.end <= container.end;
+}
+
+function lexicalConditionScope(node) {
+  for (let current = node.parent; current; current = current.parent) {
+    if (
+      ts.isFunctionLike(current) ||
+      ts.isBlock(current) ||
+      ts.isCatchClause(current) ||
+      ts.isForStatement(current) ||
+      ts.isForInStatement(current) ||
+      ts.isForOfStatement(current) ||
+      ts.isSourceFile(current)
+    )
+      return current;
+  }
+  return node.getSourceFile();
+}
+
+function canonicalBooleanCondition(expression, conditionRegistry) {
+  let current = expression;
+  let inverted = false;
+  while (
+    ts.isParenthesizedExpression(current) ||
+    (ts.isPrefixUnaryExpression(current) &&
+      current.operator === ts.SyntaxKind.ExclamationToken)
+  ) {
+    if (ts.isPrefixUnaryExpression(current)) inverted = !inverted;
+    current = ts.isPrefixUnaryExpression(current)
+      ? current.operand
+      : current.expression;
+  }
+  if (!ts.isIdentifier(current)) return null;
+  const scope = lexicalConditionScope(current);
+  let names = conditionRegistry.get(scope);
+  if (!names) {
+    names = new Map();
+    conditionRegistry.set(scope, names);
+  }
+  let key = names.get(current.text);
+  if (!key) {
+    key = { scope, name: current.text };
+    names.set(current.text, key);
+  }
+  return {
+    key,
+    inverted,
+  };
+}
+
+function conditionalBranchPath(node, conditionRegistry) {
+  const conditions = new Map();
+  let impossible = false;
+  let repeated = false;
+  const record = (expression, branch, fallbackKey, forceFallback = false) => {
+    const condition = forceFallback
+      ? null
+      : canonicalBooleanCondition(expression, conditionRegistry);
+    const key = condition?.key || fallbackKey;
+    if (!key) return;
+    const normalizedBranch = condition?.inverted
+      ? branch === "true"
+        ? "false"
+        : "true"
+      : branch;
+    const current = conditions.get(key);
+    if (current && current !== normalizedBranch) impossible = true;
+    else conditions.set(key, normalizedBranch);
+  };
+  for (let ancestor = node.parent; ancestor; ancestor = ancestor.parent) {
+    if (ts.isConditionalExpression(ancestor)) {
+      if (nodeContainsNode(ancestor.whenTrue, node))
+        record(ancestor.condition, "true", ancestor);
+      else if (nodeContainsNode(ancestor.whenFalse, node))
+        record(ancestor.condition, "false", ancestor);
+    } else if (ts.isIfStatement(ancestor)) {
+      if (nodeContainsNode(ancestor.thenStatement, node))
+        record(ancestor.expression, "true", ancestor, true);
+      else if (
+        ancestor.elseStatement &&
+        nodeContainsNode(ancestor.elseStatement, node)
+      )
+        record(ancestor.expression, "false", ancestor, true);
+    } else if (ts.isBinaryExpression(ancestor)) {
+      if (
+        nodeContainsNode(ancestor.right, node) &&
+        ancestor.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
+      )
+        record(ancestor.left, "true", ancestor);
+      else if (
+        nodeContainsNode(ancestor.right, node) &&
+        ancestor.operatorToken.kind === ts.SyntaxKind.BarBarToken
+      )
+        record(ancestor.left, "false", ancestor);
+    } else if (
+      ts.isCallExpression(ancestor) &&
+      ts.isPropertyAccessExpression(ancestor.expression) &&
+      ancestor.expression.name.text === "map" &&
+      ancestor.arguments.some((argument) => nodeContainsNode(argument, node))
+    ) {
+      repeated = true;
+    }
+  }
+  addTerminalIfFallthroughConditions(node, record);
+  return { conditions, impossible, repeated };
+}
+
+function statementAlwaysExits(statement) {
+  if (ts.isReturnStatement(statement) || ts.isThrowStatement(statement))
+    return true;
+  if (ts.isBlock(statement)) {
+    const last = statement.statements.at(-1);
+    return Boolean(last && statementAlwaysExits(last));
+  }
+  if (ts.isIfStatement(statement))
+    return Boolean(
+      statement.elseStatement &&
+      statementAlwaysExits(statement.thenStatement) &&
+      statementAlwaysExits(statement.elseStatement),
+    );
+  return false;
+}
+
+function addTerminalIfFallthroughConditions(node, record) {
+  let block = node.parent;
+  while (block && !ts.isBlock(block)) block = block.parent;
+  if (!block) return;
+  let containingStatement = node;
+  while (containingStatement.parent && containingStatement.parent !== block)
+    containingStatement = containingStatement.parent;
+  if (containingStatement.parent !== block) return;
+  const statementIndex = block.statements.indexOf(containingStatement);
+  if (statementIndex < 1) return;
+
+  for (const previous of block.statements.slice(0, statementIndex)) {
+    if (!ts.isIfStatement(previous)) continue;
+    const thenExits = statementAlwaysExits(previous.thenStatement);
+    const elseExits = Boolean(
+      previous.elseStatement && statementAlwaysExits(previous.elseStatement),
+    );
+    if (thenExits === elseExits) continue;
+    record(previous.expression, thenExits ? "false" : "true", previous, true);
+  }
+}
+
+function maximumConcurrentImageUses(imageUses) {
+  const possibleImageUses = imageUses.filter((path) => !path.impossible);
+  if (possibleImageUses.some((path) => path.repeated)) return 2;
+  if (possibleImageUses.length < 2) return possibleImageUses.length;
+  const conditions = [
+    ...new Set(
+      possibleImageUses.flatMap((path) => [...path.conditions.keys()]),
+    ),
+  ];
+  // Fail closed for unusually complex authored conditions instead of
+  // spending unbounded time enumerating every possible render state.
+  if (conditions.length > 16) return possibleImageUses.length;
+
+  const assignments = new Map();
+  let maximum = 0;
+  const countForAssignment = () => {
+    let count = 0;
+    for (const path of possibleImageUses) {
+      if (
+        [...path.conditions].every(
+          ([condition, branch]) => assignments.get(condition) === branch,
+        )
+      )
+        count += 1;
+    }
+    maximum = Math.max(maximum, count);
+  };
+  const enumerate = (index) => {
+    if (maximum === possibleImageUses.length) return;
+    if (index === conditions.length) {
+      countForAssignment();
+      return;
+    }
+    const condition = conditions[index];
+    assignments.set(condition, "true");
+    enumerate(index + 1);
+    assignments.set(condition, "false");
+    enumerate(index + 1);
+    assignments.delete(condition);
+  };
+  enumerate(0);
+  return maximum;
+}
+
 function assertRequiredConversionSection(source, route, content) {
   const processSteps = Array.isArray(content?.process)
     ? content.process.filter(
@@ -1886,11 +2328,16 @@ function assertRequiredConversionSection(source, route, content) {
   );
   if (
     conversionSections.length !== 1 ||
-    !jsxChildrenContainBinding(
-      conversionSections[0]?.node?.children,
+    (!jsxOpeningAttributesContainBinding(
+      conversionSections[0]?.opening,
       "content.process",
       file,
-    )
+    ) &&
+      !jsxChildrenContainBinding(
+        conversionSections[0]?.node?.children,
+        "content.process",
+        file,
+      ))
   )
     throw new Error(
       `Candidate ${route.id} must render exactly one marked conversion section bound to content.process when process steps are supplied.`,
@@ -1901,10 +2348,15 @@ function assertRequiredConversionSection(source, route, content) {
       jsxOpeningName(element.opening) === "section" &&
       idAttributeValue(element, file).value === "contact",
   );
+  const conversionFunction = enclosingFunction(conversionSections[0]?.node);
+  const contactFunction = enclosingFunction(contactSection?.node);
+  const canCompareSourceOrder =
+    conversionFunction && conversionFunction === contactFunction;
   if (
     !contactSection ||
-    conversionSections[0].node.getStart(file) >=
-      contactSection.node.getStart(file)
+    (canCompareSourceOrder &&
+      conversionSections[0].node.getStart(file) >=
+        contactSection.node.getStart(file))
   )
     throw new Error(
       `Candidate ${route.id} must place its conversion section before the contact section.`,
@@ -1938,8 +2390,8 @@ function validateStyles(source, route) {
 export function namespaceCreativeCss(source) {
   const commentFree = source.replace(/\/\*[\s\S]*?\*\//gu, " ");
   const declared = new Set(
-    [...commentFree.matchAll(/(--[A-Za-z][\w-]*)\s*:/gu)].map((match) =>
-      match[1],
+    [...commentFree.matchAll(/(--[A-Za-z][\w-]*)\s*:/gu)].map(
+      (match) => match[1],
     ),
   );
   if (!declared.size) return source;
@@ -2046,7 +2498,10 @@ export function authorRules(route = {}) {
   const heroViewport = conciseReferenceText(
     referenceDna.heroGeometry?.viewport,
   );
-  const primaryCta = conciseReferenceText(referenceDna.ctaPlacement?.primary, 280);
+  const primaryCta = conciseReferenceText(
+    referenceDna.ctaPlacement?.primary,
+    280,
+  );
   const earlyCta = conciseReferenceText(referenceDna.ctaPlacement?.early, 280);
   return [
     "Do not hardcode business facts or marketing copy. Render all visitor-facing business content through the supplied content tokens.",

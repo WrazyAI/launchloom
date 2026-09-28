@@ -9,9 +9,9 @@ const roots: string[] = [];
 
 afterEach(async () => {
   await Promise.all(
-    roots.splice(0).map((root) =>
-      fs.rm(root, { recursive: true, force: true }),
-    ),
+    roots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
   );
 });
 
@@ -25,10 +25,7 @@ describe("human creative revision lifecycle", () => {
       root,
       ".launchloom/generated-experiences/original-candidate",
     );
-    const selectedDir = path.join(
-      root,
-      "src/generated-experiences/selected",
-    );
+    const selectedDir = path.join(root, "src/generated-experiences/selected");
     const outDir = path.join(root, "prepared");
     await fs.mkdir(evidenceDir, { recursive: true });
     await fs.mkdir(selectedDir, { recursive: true });
@@ -109,11 +106,7 @@ describe("human creative revision lifecycle", () => {
       <section id="contact" data-reference-section="contact"></section>
     </main>; }`;
     for (const [name, original, selected] of [
-      [
-        "Experience.jsx",
-        "original experience",
-        selectedExperience,
-      ],
+      ["Experience.jsx", "original experience", selectedExperience],
       ["styles.css", "original styles", "current selected styles"],
       ["motion.js", "original motion", "current selected motion"],
     ] as const) {
@@ -155,23 +148,13 @@ describe("human creative revision lifecycle", () => {
       ),
     );
     const refreshedMetadata = JSON.parse(
-      await fs.readFile(
-        path.join(outDir, "candidate-a/metadata.json"),
-        "utf8",
-      ),
+      await fs.readFile(path.join(outDir, "candidate-a/metadata.json"), "utf8"),
     );
     const refreshedContract = JSON.parse(
-      await fs.readFile(
-        path.join(outDir, "candidate-a/contract.json"),
-        "utf8",
-      ),
+      await fs.readFile(path.join(outDir, "candidate-a/contract.json"), "utf8"),
     );
-    expect(refreshedManifest.values.hero.heading).toBe(
-      "Revised hero heading",
-    );
-    expect(refreshedManifest.values.services[0].name).toBe(
-      "Current service",
-    );
+    expect(refreshedManifest.values.hero.heading).toBe("Revised hero heading");
+    expect(refreshedManifest.values.services[0].name).toBe("Current service");
     expect(refreshedManifest.digest).not.toBe("old-digest");
     expect(refreshedMetadata.contentManifestDigest).toBe(
       refreshedManifest.digest,
@@ -276,10 +259,10 @@ describe("human creative revision lifecycle", () => {
     }
 
     expect(developer).toContain(
-      '--feedback-file "$RUNNER_TEMP/developer-feedback.txt"',
+      '--feedback-file "$LAUNCHLOOM_PRIVATE_DIR/developer-feedback.txt"',
     );
     expect(client).toContain(
-      '--feedback-file "$RUNNER_TEMP/client-feedback.txt"',
+      '--feedback-file "$LAUNCHLOOM_PRIVATE_DIR/client-feedback.txt"',
     );
     expect(client).toContain('--to "$LAUNCHLOOM_DEVELOPER_EMAIL"');
     expect(client).not.toContain('--to "$CLIENT_EMAIL"');
@@ -292,11 +275,15 @@ describe("human creative revision lifecycle", () => {
     expect(worker).toContain("let approvedSha = retryingMergedApproval");
     expect(worker).toContain("approvedSha,");
     expect(publish).toContain("APPROVED_SHA");
-    expect(publish).toContain('git checkout --detach "$APPROVED_SHA"');
+    expect(publish).toContain(
+      'git -C "$CLIENT_DIR" checkout --detach "$APPROVED_SHA"',
+    );
     expect(publish).toContain('--commit-hash "$APPROVED_SHA"');
     expect(publish).toContain('--to "$CLIENT_EMAIL"');
     expect(publish).toContain("client-approved-feedback.txt");
-    expect(publish).toContain('--feedback-file "$RUNNER_TEMP/client-approved-feedback.txt"');
+    expect(publish).toContain(
+      '--feedback-file "$LAUNCHLOOM_PRIVATE_DIR/client-approved-feedback.txt"',
+    );
   });
 
   it("does not complete a revision queue item until the developer email is delivered", () => {
@@ -318,12 +305,8 @@ describe("human creative revision lifecycle", () => {
       );
       expect(emailIndex).toBeGreaterThan(-1);
       expect(completeIndex).toBeGreaterThan(emailIndex);
-      expect(workflow).toContain(
-        "steps.review_delivery.outcome == 'success'",
-      );
-      expect(workflow).toContain(
-        "steps.review_delivery.outcome != 'success'",
-      );
+      expect(workflow).toContain("steps.review_delivery.outcome == 'success'");
+      expect(workflow).toContain("steps.review_delivery.outcome != 'success'");
     }
   });
 
@@ -333,12 +316,76 @@ describe("human creative revision lifecycle", () => {
       "utf8",
     );
     expect(workflow).toContain("Client-feedback developer preview");
-    expect(workflow).toContain('--audience developer');
+    expect(workflow).toContain("--audience developer");
     expect(workflow).toContain(
-      '--feedback-file "$RUNNER_TEMP/client-feedback.txt"',
+      '--feedback-file "$LAUNCHLOOM_PRIVATE_DIR/client-feedback.txt"',
+    );
+    expect(workflow).toContain("Nothing was sent back to the client.");
+  });
+
+  it("keeps client-controlled builds credential-free and delays publication until gates pass", () => {
+    const workflow = readFileSync(
+      ".github/workflows/process-client-feedback.yml",
+      "utf8",
+    );
+
+    expect(workflow).toContain("persist-credentials: false");
+    expect(workflow).not.toMatch(
+      /\n    env:\n(?:      [A-Z0-9_]+: \$\{\{ secrets\.[^\n]+\}\}\n)+/u,
+    );
+    expect(workflow).not.toMatch(/https:\/\/x-access-token:[^@]+@github\.com/u);
+    expect(workflow).toContain("--base origin/main");
+    expect(workflow).not.toContain("git clone --no-checkout");
+    expect(workflow).not.toContain(
+      'git -C "$LAUNCHLOOM_PRIVATE_DIR/client" switch "$BRANCH"',
     );
     expect(workflow).toContain(
-      "Nothing was sent back to the client.",
+      'gh pr list --repo "$CLIENT_REPO" --state open --head "$BRANCH"',
+    );
+
+    const buildIndex = workflow.indexOf("npm run build");
+    const visualGateIndex = workflow.indexOf(
+      '--mode plan --config "$LAUNCHLOOM_PRIVATE_DIR/client/src/site.config.json"',
+    );
+    const pushIndex = workflow.indexOf(
+      'git push origin "${{ steps.revision.outputs.branch }}"',
+    );
+    const deployIndex = workflow.indexOf('pages deploy "$SAFE_DEPLOY_DIR"');
+    expect(buildIndex).toBeGreaterThan(-1);
+    expect(visualGateIndex).toBeGreaterThan(buildIndex);
+    expect(pushIndex).toBeGreaterThan(visualGateIndex);
+    expect(deployIndex).toBeGreaterThan(pushIndex);
+
+    const buildStart = workflow.indexOf(
+      "- name: Build and verify developer preview",
+    );
+    const commitStart = workflow.indexOf(
+      "- name: Commit and push verified revision",
+    );
+    const buildSection = workflow.slice(buildStart, commitStart);
+    const commitSection = workflow.slice(commitStart, deployIndex);
+    expect(buildStart).toBeGreaterThan(-1);
+    expect(commitStart).toBeGreaterThan(-1);
+    expect(buildSection).toContain("OPENROUTER_API_KEY: ${{ secrets.");
+    expect(buildSection).not.toContain("CLOUDFLARE_API_TOKEN: ${{ secrets.");
+    expect(buildSection).not.toContain("RESEND_API_KEY: ${{ secrets.");
+    expect(
+      buildSection.match(
+        /run-isolated-client-command\.mjs[^\n]*npm run build/gu,
+      ),
+    ).toHaveLength(2);
+    expect(buildSection).toContain("prepare-client-build-copy.mjs");
+    expect(
+      buildSection.match(
+        /run-isolated-client-command\.mjs[^\n]*verify-rendered-revision\.mjs/gu,
+      ),
+    ).toHaveLength(2);
+    expect(commitSection).toContain("git diff --quiet origin/main...HEAD");
+    expect(commitSection).toContain(
+      "No verified revision changes are available to publish.",
+    );
+    expect(workflow).toContain(
+      "printf 'Client feedback is awaiting internal developer approval.\\n\\n%s' \"$MARKER\"",
     );
   });
 });

@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { findUnsafeJsxBehavior } from "../scripts/creative-revision-scope.mjs";
+import {
+  findUnsafeJsxBehavior,
+  findUnsupportedClaimCopy,
+} from "../scripts/creative-revision-scope.mjs";
 import * as repairModule from "../scripts/run-rendered-creative-repair.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
 
@@ -107,6 +110,24 @@ function assertScope(
 }
 
 describe("human creative revision source scope", () => {
+  it("handles bare visitor-copy attributes as empty text without throwing", () => {
+    expect(
+      findUnsupportedClaimCopy(
+        '<main><section data-reference-section="hero"><button aria-label /></section></main>',
+        ["hero"],
+      ),
+    ).toEqual([]);
+  });
+
+  it("does not treat a data-reference-section marker on a non-section node as a revision target", () => {
+    const source = experience.replace(
+      '<section data-reference-section="hero" data-hero>',
+      '<section data-reference-section="hero" data-hero><div data-reference-section="nested-note">Note</div>',
+    );
+
+    expect(resolveHeroScope(source).sectionIds).toEqual(["hero"]);
+  });
+
   it("rejects JSX event handlers that can mutate the page outside the approved section", () => {
     const before = productionFiles();
     const after = {

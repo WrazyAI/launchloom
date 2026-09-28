@@ -65,10 +65,14 @@ const [config, baseRegistry, history, intake, a1Library] = await Promise.all([
 const registry = a1Library
   ? mergeInspirationRegistries(baseRegistry, a1Library)
   : baseRegistry;
-const normalizedIndustry = String(config.businessKind || config.industry || "").toLowerCase();
-const industry = ["", "all", "general", "other"].includes(normalizedIndustry)
-  ? intake.industry || config.businessKind || config.preset || "all"
-  : normalizedIndustry;
+const genericBusinessKinds = new Set(["", "all", "general", "other"]);
+const industry = [config.businessKind, intake.industry, config.industry]
+  .map((value) => String(value || "").trim().toLowerCase())
+  .find((value) => !genericBusinessKinds.has(value));
+if (!industry)
+  throw new Error(
+    "Inspiration compilation requires a specific business kind from intake.industry, config.businessKind, or config.industry.",
+  );
 const selectionContext = referenceSelectionContext(history, industry);
 const styleTerms = [
   ...words(intake.stylePreference),

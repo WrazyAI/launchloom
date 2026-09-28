@@ -415,6 +415,65 @@ describe("contextual image generation", () => {
       .toBe(3);
   });
 
+  it("bounds service context without truncating reference treatment or placement guidance", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-bounded-subject-"));
+    const prompts: string[] = [];
+    const site = fixture();
+    site.services = Array.from({ length: 24 }, (_, index) => ({
+      name: `System ${index + 1} ${"diagnostic equipment maintenance ".repeat(5)}`,
+    }));
+    const focal = "Keep the main subject in a central crop-safe zone with uncluttered surroundings.";
+
+    await generate({
+      site,
+      inspiration: {
+        routes: [
+          {
+            id: "hvac-route",
+            familyId: "test-image-family",
+            referenceDna: {
+              familyId: "test-image-family",
+              imageTreatment: {
+                mode: "close equipment documentation",
+                crop: "wide, label-free crop",
+                focalPoint: "one useful tool and a clean HVAC detail",
+              },
+              palette: { contrastIntent: "high clarity, low glare" },
+            },
+          },
+        ],
+      },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          prompts.push(options.input.prompt);
+          return { data: { images: [{ url: "https://fal.example/bounded.jpg" }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    const subjectLabel = "Business context for subject selection only: ";
+    const subjectStart = prompts[0].indexOf(subjectLabel) + subjectLabel.length;
+    const subjectEnd = prompts[0].indexOf(". Never render", subjectStart);
+    expect(subjectStart).toBeGreaterThan(subjectLabel.length - 1);
+    expect(subjectEnd).toBeGreaterThan(subjectStart);
+    expect(prompts[0].slice(subjectStart, subjectEnd).length).toBeLessThanOrEqual(200);
+    expect(prompts[0]).toContain(
+      "Reference image treatment: close equipment documentation; wide, label-free crop; high clarity, low glare.",
+    );
+    expect(prompts[0]).toContain(focal);
+    expect(prompts[0].indexOf(focal)).toBeLessThan(
+      prompts[0].indexOf("Business context for subject selection only:"),
+    );
+    expect(prompts[0].indexOf(focal)).toBeLessThan(
+      prompts[0].indexOf("Reference image treatment:"),
+    );
+  });
+
   it("keeps human subjects excluded when auto-repair reference notes mention faces", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-auto-repair-") );
     const prompts: string[] = [];
@@ -475,7 +534,7 @@ describe("contextual image generation", () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-painting-"));
     const prompts: string[] = [];
     const examples = [
-      ["web-painting-av", "close-up of freshly painted siding and trim"],
+      ["web-painting-av", "wide landscape view of a recognizable finished home exterior"],
       ["web-painting-concept-pro", "dark painted exterior detail"],
       ["web-painting-house-doctor", "paint-preparation surface study"],
     ];
@@ -523,6 +582,7 @@ describe("contextual image generation", () => {
     expect(
       prompts.every((prompt, index) => prompt.includes(examples[index][1])),
     ).toBe(true);
+    expect(prompts[0]).not.toContain("close-up of freshly painted siding");
     expect(prompts.join(" ")).not.toContain("keep text clear of faces");
     expect(prompts.every((prompt) => /no people, faces, hands, body parts/iu.test(prompt))).toBe(true);
   });

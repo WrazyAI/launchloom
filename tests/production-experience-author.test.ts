@@ -11,6 +11,7 @@ import {
   restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
   validateProductionCandidateFiles,
+  validateSparseHeroImageUse,
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
@@ -136,7 +137,8 @@ describe("production experience author", () => {
       servicePresentation: "vertical-serif-project-and-service-index",
       referenceDna: {
         servicePresentation: {
-          pattern: "A narrow centered vertical serif index with generous space between entries",
+          pattern:
+            "A narrow centered vertical serif index with generous space between entries",
         },
       },
     });
@@ -144,25 +146,54 @@ describe("production experience author", () => {
     expect(restored).toContain(
       'data-service-presentation="a-narrow-centered-vertical-serif-index-with-generous-space-between-entries"',
     );
-    expect(restored).not.toContain('data-service-presentation="vertical-serif-project-and-service-index"');
+    expect(restored).not.toContain(
+      'data-service-presentation="vertical-serif-project-and-service-index"',
+    );
   });
 
   it("preserves visible CTA affordance and reference rhythm with sparse verified content", () => {
-    const source = readFileSync("scripts/author-production-experiences.mjs", "utf8");
+    const source = readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
 
     expect(source).toContain("never be styled as microcopy");
     expect(source).toContain("label of at least 14px");
     expect(source).toContain("44px minimum interactive block");
-    expect(source).toContain("do not compress the matching section or shrink its typography");
-    expect(source).toContain("Do not add invented filler to match the reference item count");
+    expect(source).toContain(
+      "do not compress the matching section or shrink its typography",
+    );
+    expect(source).toContain(
+      "Do not add invented filler to match the reference item count",
+    );
   });
 
   it("instructs authors to render the sealed process section when steps exist", () => {
-    const source = readFileSync("scripts/author-production-experiences.mjs", "utf8");
+    const source = readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
 
     expect(source).toContain("content.process");
     expect(source).toContain('data-required-section="conversion"');
     expect(source).toContain("before the contact section");
+  });
+
+  it("does not repeat sparse image assets as generic section filler", () => {
+    const source = readFileSync(
+      "scripts/author-production-experiences.mjs",
+      "utf8",
+    );
+
+    expect(source).toContain(
+      "Do not reuse the same sealed image token or image URL in multiple visible image regions",
+    );
+    expect(source).toContain(
+      "unless Reference DNA explicitly requires a shared-image mosaic",
+    );
+    expect(source).toContain(
+      "If only content.hero.image is available, use it once",
+    );
   });
 
   it("requires readable foreground and background contrast throughout the page", () => {
@@ -232,6 +263,266 @@ describe("production experience author", () => {
       ).toThrow(/must have a usable alt attribute/iu);
   });
 
+  it("rejects repeating the only available hero image across multiple sections", () => {
+    const route = { id: "route-single-image" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const repeatedImage = experience
+      .replace(
+        "<section data-hero>",
+        '<section data-hero><img src={content.hero.image} alt="Residential home" />',
+      )
+      .replace(
+        "</main>",
+        '<section><img src={content.hero.image} alt="Residential home" /></section></main>',
+      );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: repeatedImage, styles, motion },
+        route,
+        content: {
+          hero: {
+            image: "/images/generated/hero.webp",
+            secondaryImage: "",
+            tertiaryImage: "",
+          },
+        },
+      }),
+    ).toThrow(
+      /repeats its only sealed hero image across multiple image regions/iu,
+    );
+  });
+
+  it("honors Reference DNA signature elements that require a shared-image mosaic", () => {
+    const route = {
+      id: "route-reference-mosaic",
+      referenceDna: {
+        familyId: "editorial-monument",
+        imageTreatment: { mode: "single image composition" },
+        requiredSignatureElements: [
+          {
+            id: "shared-image-mosaic",
+            selector: "[data-reference-signature=shared-image-mosaic]",
+            description: "a shared-image mosaic assembled from image windows",
+          },
+        ],
+      },
+    };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `<section><img src={content.hero.image} alt="Window one" /><img src={content.hero.image} alt="Window two" /></section>`;
+
+    expect(() =>
+      validateSparseHeroImageUse(source, route, content),
+    ).not.toThrow();
+  });
+
+  it("allows mutually exclusive hero-image branches within the one-image budget", () => {
+    const route = { id: "route-conditional-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `<section>{isMobile ? <img src={content.hero.image} alt="Mobile crop" /> : <img src={content.hero.image} alt="Desktop crop" />}</section>`;
+
+    expect(() =>
+      validateSparseHeroImageUse(source, route, content),
+    ).not.toThrow();
+  });
+
+  it("allows mutually exclusive if/else hero-image branches within the one-image budget", () => {
+    const route = { id: "route-if-else-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `function ResponsiveImage({ isMobile }) { if (isMobile) { return <img src={content.hero.image} alt="Mobile crop" />; } else { return <img src={content.hero.image} alt="Desktop crop" />; } }`;
+
+    expect(() =>
+      validateSparseHeroImageUse(source, route, content),
+    ).not.toThrow();
+  });
+
+  it("allows complementary short-circuit hero-image branches within the one-image budget", () => {
+    const route = { id: "route-short-circuit-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `<section>{isMobile && <img src={content.hero.image} alt="Mobile crop" />}{isMobile || <img src={content.hero.image} alt="Desktop crop" />}</section>`;
+
+    expect(() =>
+      validateSparseHeroImageUse(source, route, content),
+    ).not.toThrow();
+  });
+
+  it("recognizes negated predicates as the opposite short-circuit image branch", () => {
+    const route = { id: "route-negated-short-circuit-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `<section>{isMobile && <img src={content.hero.image} alt="Mobile crop" />}{!isMobile && <img src={content.hero.image} alt="Desktop crop" />}</section>`;
+
+    expect(() =>
+      validateSparseHeroImageUse(source, route, content),
+    ).not.toThrow();
+  });
+
+  it("does not treat same-named short-circuit conditions in different scopes as exclusive", () => {
+    const route = { id: "route-shadowed-condition-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `function ResponsiveImage() { const mobile = ((isMobile) => isMobile && <img src={content.hero.image} alt="Mobile crop" />)(true); const desktop = ((isMobile) => isMobile || <img src={content.hero.image} alt="Desktop crop" />)(false); return <section>{mobile}{desktop}</section>; }`;
+
+    expect(() => validateSparseHeroImageUse(source, route, content)).toThrow(
+      /repeats its only sealed hero image across multiple image regions/iu,
+    );
+  });
+
+  it("counts destructured hero-image aliases when preventing repeated image use", () => {
+    const route = { id: "route-destructured-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `const { image } = content.hero; <section><img src={image} alt="Hero" /><img src={image} alt="Second region" /></section>`;
+
+    expect(() => validateSparseHeroImageUse(source, route, content)).toThrow(
+      /repeats its only sealed hero image across multiple image regions/iu,
+    );
+  });
+
+  it("resolves destructured hero-image aliases through an object alias", () => {
+    const route = { id: "route-chained-destructured-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `const hero = content.hero; const { image: photo } = hero; <section><img src={photo} alt="Hero" /><img src={photo} alt="Second region" /></section>`;
+
+    expect(() => validateSparseHeroImageUse(source, route, content)).toThrow(
+      /repeats its only sealed hero image across multiple image regions/iu,
+    );
+  });
+
+  it("resolves nested destructured hero-image aliases from the content root", () => {
+    const route = { id: "route-content-root-image-alias" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `const { hero } = content; const { image: photo } = hero; <section><img src={photo} alt="Hero" /><img src={photo} alt="Second region" /></section>`;
+
+    expect(() => validateSparseHeroImageUse(source, route, content)).toThrow(
+      /repeats its only sealed hero image across multiple image regions/iu,
+    );
+  });
+
+  it("ignores a boolean src attribute without an initializer", () => {
+    const route = { id: "route-empty-src-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `<section><img src alt="Unbound image" /><img src={content.hero.image} alt="Hero" /></section>`;
+
+    expect(() =>
+      validateSparseHeroImageUse(source, route, content),
+    ).not.toThrow();
+  });
+
+  it("counts a hero image inside a repeated map render as multiple visible uses", () => {
+    const route = { id: "route-mapped-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `function Gallery() { return <section>{["one", "two"].map((item) => <img src={content.hero.image} alt={item} />)}</section>; }`;
+
+    expect(() => validateSparseHeroImageUse(source, route, content)).toThrow(
+      /repeats its only sealed hero image across multiple image regions/iu,
+    );
+  });
+
+  it("treats code after a terminal if return as the opposite render branch", () => {
+    const route = { id: "route-terminal-if-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `function ResponsiveImage({ isMobile }) { if (isMobile) return <img src={content.hero.image} alt="Mobile crop" />; return <img src={content.hero.image} alt="Desktop crop" />; }`;
+
+    expect(() =>
+      validateSparseHeroImageUse(source, route, content),
+    ).not.toThrow();
+  });
+
+  it("counts statically known spread src attributes when preventing repeated image use", () => {
+    const route = { id: "route-spread-src-image" };
+    const content = {
+      hero: {
+        image: "/images/generated/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+    };
+    const source = `<section><img {...{ src: content.hero.image }} alt="Hero" /><img {...{ src: content.hero.image }} alt="Second region" /></section>`;
+
+    expect(() => validateSparseHeroImageUse(source, route, content)).toThrow(
+      /repeats its only sealed hero image across multiple image regions/iu,
+    );
+  });
+
   it("requires FAQ navigation anchors inside nav even when an unrelated FAQ link remains", () => {
     const route = { id: "route-02" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
@@ -239,10 +530,7 @@ describe("production experience author", () => {
       safeStage({ ...request, stage: "experience" }).content || "",
     )
       .replace('href="#faqs"', "onClick={() => {}}")
-      .replace(
-        "<main>",
-        '<main><a href="#faqs">An unrelated FAQ link</a>',
-      );
+      .replace("<main>", '<main><a href="#faqs">An unrelated FAQ link</a>');
     const styles = String(
       safeStage({ ...request, stage: "styles" }).content || "",
     );
@@ -591,6 +879,33 @@ describe("production experience author", () => {
     ).not.toThrow();
   });
 
+  it("recognizes sealed process bindings passed through JSX descendant attributes", () => {
+    const route = { id: "route-process-prop" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const processStepProps = `<section data-required-section="conversion"><div data-process-steps={content.process}><ProcessTimeline steps={content.process} /></div></section>`;
+    const withConversion = experience.replace(
+      '<section id="faqs">',
+      `${processStepProps}<section id="faqs">`,
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: withConversion, styles, motion },
+        route,
+        content: { process: ["Listen", "Plan"] },
+      }),
+    ).not.toThrow();
+  });
+
   it("requires the conversion process section to precede contact", () => {
     const route = { id: "route-process-order" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
@@ -604,13 +919,12 @@ describe("production experience author", () => {
       safeStage({ ...request, stage: "motion" }).content || "",
     );
     const content = { process: ["Listen to the brief"] };
-    const withLateConversion = experience.replace(
-      '<section id="contact">',
-      '<section id="contact">',
-    ).replace(
-      "</section></main>",
-      '</section><section id="conversion" data-required-section="conversion">{content.process.map((step) => <p key={step}>{step}</p>)}</section></main>',
-    );
+    const withLateConversion = experience
+      .replace('<section id="contact">', '<section id="contact">')
+      .replace(
+        "</section></main>",
+        '</section><section id="conversion" data-required-section="conversion">{content.process.map((step) => <p key={step}>{step}</p>)}</section></main>',
+      );
 
     expect(() =>
       validateProductionCandidateFiles({
@@ -619,6 +933,45 @@ describe("production experience author", () => {
         content,
       }),
     ).toThrow(/conversion section.*before.*contact/iu);
+  });
+
+  it("does not compare source offsets across separate section components", () => {
+    const route = { id: "route-process-component-order" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const withSeparateContactComponent = experience.replace(
+      "export default function Experience({ content, runtime }) {",
+      `function ContactBand({ content, runtime }) {
+  return <section id="contact"><LeadForm content={content} runtime={runtime} /></section>;
+}
+export default function Experience({ content, runtime }) {`,
+    ).replace(
+      '<section id="faqs">',
+      '<section data-required-section="conversion">{content.process.map((step) => <p key={step}>{step}</p>)}</section><section id="faqs">',
+    ).replace(
+      '<section id="contact"><LeadForm content={content} runtime={runtime} /><a href={content.brand.phone}>{content.brand.phone}</a></section>',
+      "<ContactBand content={content} runtime={runtime} />",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience: withSeparateContactComponent,
+          styles,
+          motion,
+        },
+        route,
+        content: { process: ["Listen", "Plan"] },
+      }),
+    ).not.toThrow();
   });
 
   it("restores required anchors only on uniquely identifiable semantic sections", () => {
@@ -736,7 +1089,9 @@ describe("production experience author", () => {
     });
 
     expect(restored.match(/\bdata-hero\b/gu)).toHaveLength(1);
-    expect(restored).toContain('<section data-reference-section="hero" data-hero>');
+    expect(restored).toContain(
+      '<section data-reference-section="hero" data-hero>',
+    );
   });
 
   it("keeps refusing duplicate hero markers when the semantic target is ambiguous", () => {
@@ -744,7 +1099,9 @@ describe("production experience author", () => {
     const duplicated = `${original}<section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1></section>`;
 
     expect(() =>
-      restoreRequiredExperienceMarkers(duplicated, original, { id: "route-03" }),
+      restoreRequiredExperienceMarkers(duplicated, original, {
+        id: "route-03",
+      }),
     ).toThrow(/found 2 semantic targets/iu);
   });
 
@@ -934,7 +1291,9 @@ describe("production experience author", () => {
     const css = `:root { /* theme tokens */\n  --secondary /* token note */ : #ede7dd; }`;
     const namespaced = namespaceCreativeCss(css);
 
-    expect(namespaced).toContain("--ll-creative-secondary /* token note */ : #ede7dd");
+    expect(namespaced).toContain(
+      "--ll-creative-secondary /* token note */ : #ede7dd",
+    );
     expect(namespaced).not.toContain("--secondary /* token note */ :");
   });
 
@@ -1027,9 +1386,7 @@ describe("production experience author", () => {
     expect(source).toContain(
       '<a href="#contact" data-early-conversion data-cta-placement="after-the-portrait-image-and-centered-thesis">',
     );
-    expect(source).not.toContain(
-      'data-cta-placement="shortened-root-summary"',
-    );
+    expect(source).not.toContain('data-cta-placement="shortened-root-summary"');
   });
 
   it("redacts inline client images from model context but preserves sealed runtime assets", async () => {
@@ -1043,7 +1400,8 @@ describe("production experience author", () => {
       site: { ...site, assets: { ...site.assets, ...inlineImages } },
       inspirationPack,
       generate: async (request) => {
-        if (request.stage === "contract") modelBoundShapes.push(request.contentShape);
+        if (request.stage === "contract")
+          modelBoundShapes.push(request.contentShape);
         return safeStage(request);
       },
       model: "test/model",
@@ -1377,14 +1735,16 @@ describe("production experience author", () => {
           return value;
         }
         return {
-          content: String(value.content).replace('id="services"', ''),
+          content: String(value.content).replace('id="services"', ""),
         };
       },
     });
 
     expect(result.candidates).toHaveLength(3);
     expect(repairErrors).toHaveLength(1);
-    expect(repairErrors[0]).toMatch(/cannot bind its Reference DNA service marker/iu);
+    expect(repairErrors[0]).toMatch(
+      /cannot bind its Reference DNA service marker/iu,
+    );
     expect(result.candidates[0].metadata.complianceRepaired).toBe(true);
     expect(result.candidates[0].files["Experience.jsx"]).toMatch(
       /<section id="services" data-service-presentation="[^"]+">/u,
@@ -1660,16 +2020,26 @@ describe("production experience author", () => {
       workflow.indexOf("name: Generate or reuse contextual imagery"),
     ).toBeLessThan(authorIndex);
     expect(workflow).toContain(
-      "cp /tmp/seo-research.json .launchloom/seo-research.json",
+      "LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}",
     );
     expect(workflow).toContain(
-      "cp /tmp/inspiration-pack.json .launchloom/inspiration-pack.json",
+      "cp $LAUNCHLOOM_PRIVATE_DIR/seo-research.json .launchloom/seo-research.json",
     );
     expect(workflow).toContain(
-      "cp -R /tmp/generated-experiences .launchloom/generated-experiences",
+      "cp $LAUNCHLOOM_PRIVATE_DIR/inspiration-pack.json .launchloom/inspiration-pack.json",
     );
-    expect(workflow).toContain("name: Prepare private creative-recovery report");
-    expect(workflow).toContain("name: Register one-time repair session and create signed review link");
+    expect(workflow).toContain(
+      "cp -R $LAUNCHLOOM_PRIVATE_DIR/generated-experiences .launchloom/generated-experiences",
+    );
+    expect(workflow).toContain(
+      "cp $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json .launchloom/reasoning-preflight.json",
+    );
+    expect(workflow).toContain(
+      "name: Prepare private creative-recovery report",
+    );
+    expect(workflow).toContain(
+      "name: Register one-time repair session and create signed review link",
+    );
     expect(workflow).not.toContain("uses: actions/upload-artifact@v4");
     expect(workflow).not.toContain("name: Preserve SEO research evidence");
     expect(workflow).not.toContain("name: Preserve inspiration evidence");
@@ -1684,13 +2054,13 @@ describe("production experience author", () => {
     expect(workflow).not.toContain("name: Upload experience bakeoff evidence");
     expect(workflow).not.toContain("name: Upload creative bakeoff evidence");
     expect(workflow).toContain(
-      "SESSION_ARGS=(--session /tmp/reasoning-preflight.json)",
+      "SESSION_ARGS=(--session $LAUNCHLOOM_PRIVATE_DIR/reasoning-preflight.json)",
     );
     expect(workflow).toContain("--failure-mode throw");
     expect(workflow).not.toContain("--failure-mode record");
     expect(
       workflow.match(
-        /PUBLIC_REVIEW_MODE=true node "\$GITHUB_WORKSPACE\/scripts\/verify-rendered-revision\.mjs"/g,
+        /run-isolated-client-command\.mjs" --cwd "\$BUILD_DIR" --writable "\$BUILD_ROOT" --env\.PUBLIC_REVIEW_MODE true -- node "\$GITHUB_WORKSPACE\/scripts\/verify-rendered-revision\.mjs"/g,
       ),
     ).toHaveLength(1);
   });

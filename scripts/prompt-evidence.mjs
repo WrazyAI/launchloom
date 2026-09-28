@@ -25,10 +25,18 @@ export async function promptImageDimensions(filePath) {
   const input = await fs.readFile(cacheKey(filePath));
   if (!looksLikeImage(input))
     throw new Error(`Prompt evidence is not an image: ${filePath}`);
-  const { width, height } = await sharp(input).metadata();
+  const { width, height } = orientedDimensions(await sharp(input).metadata());
   if (!width || !height)
     throw new Error(`Prompt evidence has no dimensions: ${filePath}`);
   return { width, height };
+}
+
+function orientedDimensions(metadata) {
+  const width = metadata.width || 0;
+  const height = metadata.height || 0;
+  return [5, 6, 7, 8].includes(metadata.orientation)
+    ? { width: height, height: width }
+    : { width, height };
 }
 
 function looksLikeImage(input) {
@@ -94,7 +102,7 @@ async function preparePromptImage(filePath, { crop } = {}) {
   }
   let cropRegion = null;
   if (crop) {
-    const metadata = await sharp(input).metadata();
+    const metadata = orientedDimensions(await sharp(input).metadata());
     const validCrop =
       Number.isInteger(crop.left) &&
       Number.isInteger(crop.top) &&
@@ -181,6 +189,95 @@ export function selectAuthorReferenceScreenshots(
 ) {
   const paths = [reference?.desktop, ...(retry ? [] : [reference?.mobile])];
   return [...new Set(paths.filter(Boolean))].slice(0, 2);
+}
+
+/**
+ * Prepare reference evidence so authors see both page rhythm and legible
+ * opening geometry. Full-page overviews stay low-detail; first-viewport crops
+ * use high detail and the source dossier's recorded browser dimensions.
+ *
+ * @param {{ desktop?: { path?: string, viewport?: { width?: number, height?: number } }, mobile?: { path?: string, viewport?: { width?: number, height?: number } } }} reference
+ * @param {{ retry?: boolean }} [options]
+ * @returns {Promise<Array<{ path: string, detail: "low" | "high", purpose: string, crop?: { left: number, top: number, width: number, height: number } }>>}
+ */
+export async function selectAuthorReferenceEvidence(
+  reference,
+  { retry = false } = {},
+) {
+  const desktopPath = reference?.desktop?.path;
+  if (!desktopPath) return [];
+
+  const cropFor = async (capture) => {
+    const viewport = capture?.viewport;
+    if (
+      !Number.isInteger(viewport?.width) ||
+      !Number.isInteger(viewport?.height) ||
+      viewport.width <= 0 ||
+      viewport.height <= 0
+    )
+      return null;
+    const dimensions = await promptImageDimensions(capture.path);
+    return {
+      left: 0,
+      top: 0,
+      width: Math.min(viewport.width, dimensions.width),
+      height: Math.min(viewport.height, dimensions.height),
+    };
+  };
+
+  const evidence = [];
+  if (!retry)
+    evidence.push({
+      path: desktopPath,
+      detail: "low",
+      purpose: "full-page overview",
+    });
+
+  const desktopCrop = await cropFor(reference.desktop);
+  evidence.push({
+    path: desktopPath,
+    detail: desktopCrop ? "high" : "low",
+    purpose: "desktop opening viewport",
+    ...(desktopCrop ? { crop: desktopCrop } : {}),
+  });
+
+  if (!retry && reference?.mobile?.path) {
+    const mobileCrop = await cropFor(reference.mobile);
+    evidence.push({
+      path: reference.mobile.path,
+      detail: mobileCrop ? "high" : "low",
+      purpose: "mobile opening viewport",
+      ...(mobileCrop ? { crop: mobileCrop } : {}),
+    });
+  }
+
+  return evidence;
+}
+
+/**
+ * Prepare authoring evidence for one route and retain its identity in errors.
+ * @param {{ id?: string, referenceDna?: { evidence?: { desktopScreenshot?: { path?: string, viewport?: { width?: number, height?: number } }, mobileScreenshot?: { path?: string, viewport?: { width?: number, height?: number } } } }} route
+ * @param {{ retry?: boolean }} [options]
+ */
+export async function selectAuthorEvidenceForRoute(
+  route,
+  { retry = false } = {},
+) {
+  try {
+    return await selectAuthorReferenceEvidence(
+      {
+        desktop: route?.referenceDna?.evidence?.desktopScreenshot,
+        mobile: route?.referenceDna?.evidence?.mobileScreenshot,
+      },
+      { retry },
+    );
+  } catch (cause) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new Error(
+      `Reference screenshot preparation failed for ${route?.id || "route"}: ${detail}`,
+      { cause },
+    );
+  }
 }
 
 /**

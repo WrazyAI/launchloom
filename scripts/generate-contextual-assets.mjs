@@ -119,7 +119,7 @@ function promptFor(site, route, placement) {
     "web-auto-repair-michael-auto-family": "an unbranded engine component and diagnostic tool arranged as a dark technical still life",
     "web-auto-repair-reliance-autos-family": "a small green automotive sensor and unbranded metal parts arranged as a clean still life",
     "web-auto-repair-urban-autocare-family": "an unbranded wheel hub and mechanical parts arranged on a graphite workshop surface",
-    "web-painting-av": "close-up of freshly painted siding and trim at a house corner, framed only on the architectural surface",
+    "web-painting-av": "wide, recognizable residential facade with freshly painted siding and trim, framed to show the home rather than an isolated surface",
     "web-painting-concept-pro": "a dark painted exterior detail on an empty, unbranded home with no visible people",
     "web-painting-house-doctor": "a paint-preparation surface study showing a primed wall and a fresh paint edge, without people",
     "web-painting-mfl": "a coastal home exterior with carefully painted trim and no people or addresses",
@@ -248,9 +248,9 @@ function promptFor(site, route, placement) {
       tertiary: "Photograph one unbranded automotive component against a dark workshop surface, without people.",
     },
     "web-painting-av": {
-      medium: "crop-tight architectural paint-finish photography",
-      hero: "Photograph a close-up of freshly painted siding and trim at a house corner, framed only on the architectural surface; no people, tools, house numbers, signage, or logos.",
-      secondary: "Photograph a close painted trim detail in soft evening light without people or addresses.",
+      medium: "wide contextual residential exterior photography",
+      hero: "Photograph a wide landscape view of a recognizable finished home exterior with freshly painted siding and trim, including the full facade and surrounding context. Avoid an extreme close-up; no people, tools, house numbers, signage, or logos.",
+      secondary: "Photograph a distinct painted room or exterior project view that preserves the recognizable home context without people or addresses.",
       tertiary: "Photograph a restrained paint-and-wood surface detail with no labels or people.",
     },
     "web-painting-concept-pro": {
@@ -290,9 +290,9 @@ function promptFor(site, route, placement) {
       hero: "Create one distinctive standalone image whose subject and crop fit the assigned image treatment.",
       secondary: "Create one supporting image subject that fits the assigned image treatment.",
       tertiary: "Create one tactile image detail that fits the assigned image treatment.",
-    };
+  };
   const subject = services.length
-    ? services.join(", ")
+    ? safePromptPart(services.join(", "), 200)
     : safePromptPart(site.businessKind || site.industry || "local service", 100) || "local service";
   const routeImageTreatment = [
     safePromptPart(dna.imageTreatment?.mode, 200),
@@ -318,9 +318,9 @@ function promptFor(site, route, placement) {
     "Hard exclusions: no words, letters, pseudo-text, numbers, logos, watermarks, signage, labels, screens, menus, cards, buttons, forms, device frames, certificates, or branded products. No people, faces, hands, body parts, human reflections or silhouettes. Do not imply an actual employee or customer.",
     `Image medium: ${familyBrief.medium}.`,
     `Image subject: ${placementBrief}.`,
+    `Use believable materials, realistic details, and a clean crop suitable for ${placement.id} placement. ${placement.focal}`,
     `Business context for subject selection only: ${subject}. Never render the supplied business or service names.`,
     `Reference image treatment: ${imageDirection}.`,
-    `Use believable materials, realistic details, and a clean crop suitable for ${placement.id} placement. ${placement.focal}`,
   ]
     .filter(Boolean)
     .join(" ");

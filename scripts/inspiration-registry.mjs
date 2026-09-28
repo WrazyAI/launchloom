@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildRouteContract, familyForRoute } from "./creative-compiler.mjs";
 import {
   buildReferenceDna,
@@ -10,6 +11,11 @@ import {
   assertReferenceDossierMatchesRecord,
   loadReferenceDossier,
 } from "./reference-dossier.mjs";
+
+const DEFAULT_REPOSITORY_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 
 const REQUIRED_FIELDS = [
   "id",
@@ -365,15 +371,24 @@ function chooseCombination(combinations, request) {
       key: referenceSetKey(items.map((item) => item.record.id)),
     }));
   const minimumExposure = Math.min(...scored.map((item) => item.exposureScore));
-  const exposureBalanced = scored.filter((item) => item.exposureScore === minimumExposure);
-  // Style orders equally exposed options; the weighted ring gives varied
-  // renderer trios more turns while retaining every feasible combination.
-  exposureBalanced.sort(
+  const exposureBalanced = scored.filter(
+    (item) => item.exposureScore === minimumExposure,
+  );
+  const multiFamilyAtMinimumExposure = exposureBalanced.filter(
+    (item) => item.rendererFamilyCount >= 2,
+  );
+  const varietyQualified = multiFamilyAtMinimumExposure.length
+    ? multiFamilyAtMinimumExposure
+    : exposureBalanced;
+  // Preserve exposure balance as the hard fairness constraint. Among equally
+  // exposed trios, avoid a single renderer family whenever a multi-family
+  // option exists; the weighted ring favors trios with still more variety.
+  varietyQualified.sort(
     (left, right) =>
       right.styleScore - left.styleScore ||
       left.key.localeCompare(right.key),
   );
-  const ring = diversityWeightedRing(exposureBalanced);
+  const ring = diversityWeightedRing(varietyQualified);
   return ring[
     Number(rotationOrdinal(request) % BigInt(ring.length))
   ];
@@ -430,7 +445,7 @@ function rankedRecords(registry, request, recentReferenceIds, recentRouteSignatu
 export function buildInspirationPack(
   request,
   rawRegistry,
-  { repositoryRoot = process.cwd(), requireDossiers = false } = {},
+  { repositoryRoot = DEFAULT_REPOSITORY_ROOT, requireDossiers = false } = {},
 ) {
   let registry = normalizeRegistry(rawRegistry);
   const seed = cleanText(request?.seed, 180);
@@ -567,7 +582,7 @@ export function buildInspirationPack(
     };
     const dossier = dossiersById.get(anchor.id);
     const referenceDna = validateReferenceDna(
-      dossier?.referenceDna || buildReferenceDna(route),
+      dossier?.referenceDna || buildReferenceDna(route, { repositoryRoot }),
       {
       requireEvidence: true,
       },

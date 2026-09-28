@@ -17,9 +17,15 @@ describe("GitHub Actions artifact retention", () => {
   });
 
   it("uploads revision evidence only after failures and expires it quickly", () => {
-    for (const name of [
-      "process-feedback.yml",
-      "process-client-feedback.yml",
+    for (const [name, expectedScreenshotPath] of [
+      [
+        "process-feedback.yml",
+        "${{ steps.build_preview.outputs.screenshots_dir }}",
+      ],
+      [
+        "process-client-feedback.yml",
+        "${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}/revision-screenshots",
+      ],
     ]) {
       const workflow = readWorkflow(name);
       const uploads =
@@ -34,7 +40,14 @@ describe("GitHub Actions artifact retention", () => {
       expect(upload).toContain("if: failure()");
       expect(upload).toContain("continue-on-error: true");
       expect(upload).toContain("retention-days: 3");
-      expect(upload).toContain("${{ runner.temp }}/revision-screenshots");
+      expect(workflow).toContain(
+        "LAUNCHLOOM_PRIVATE_DIR: ${{ runner.temp }}/launchloom-private-${{ github.run_id }}-${{ github.run_attempt }}",
+      );
+      expect(upload).toContain(`path: ${expectedScreenshotPath}`);
+      if (name === "process-feedback.yml")
+        expect(workflow).toContain(
+          'echo "screenshots_dir=$LAUNCHLOOM_PRIVATE_DIR/revision-screenshots" >> "$GITHUB_OUTPUT"',
+        );
       expect(upload).not.toContain(".launchloom/human-revision");
     }
   });

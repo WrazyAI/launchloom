@@ -256,9 +256,8 @@ function matchesWritingSystem(value, clientSource) {
   if (family === "Japanese") {
     const allowed = new Set(["Latin", "Han", "Hiragana", "Katakana"]);
     return (
-      ["Han", "Hiragana", "Katakana"].some((system) =>
-        candidate.has(system),
-      ) && [...candidate].every((system) => allowed.has(system))
+      ["Han", "Hiragana", "Katakana"].some((system) => candidate.has(system)) &&
+      [...candidate].every((system) => allowed.has(system))
     );
   }
   if (family === "Korean") {
@@ -514,14 +513,13 @@ function industryFor(intake) {
 }
 
 function businessKindFor(intake, industry) {
-  const facts = [
-    intake.businessName,
-    intake.services,
-    intake.differentiators,
-    intake.brandNotes,
-  ]
+  const nameAndServiceFacts = [intake.businessName, intake.services]
     .join(" ")
     .toLowerCase();
+  const detailedFacts = [intake.differentiators, intake.brandNotes]
+    .join(" ")
+    .toLowerCase();
+  const facts = [nameAndServiceFacts, detailedFacts].join(" ").toLowerCase();
   if (vehicleSalesFor(intake)) return "other";
   if (
     /home care|home health|caregiver|senior care|elder care|personal care|respite/.test(
@@ -541,21 +539,53 @@ function businessKindFor(intake, industry) {
     )
   )
     return "fitness";
-  if (/\b(?:dent(?:al|ist|istry)|orthodont(?:ist|ics?)|oral health|teeth whitening)\b/.test(facts))
+  if (
+    /\b(?:dent(?:al|ist|istry)|orthodont(?:ist|ics?)|oral health|teeth whitening)\b/.test(
+      facts,
+    )
+  )
     return "dental";
-  if (/\b(?:law|law firm|lawyers?|attorneys?|legal|litigation|solicitors?|probate|estate planning|divorce)\b/.test(facts))
+  if (
+    /\b(?:law firms?|lawyers?|attorneys?|legal services?|legal counsel|legal advice|litigation|solicitors?|probate|estate planning|divorce|family law|criminal defense|personal injury|immigration law)\b/u.test(
+      facts,
+    )
+  )
     return "legal-services";
-  if (/\b(?:accountants?|accounting|accountancy|bookkeepers?|bookkeeping|payroll|vat returns?|tax returns?|tax advisors?|tax advisers?|tax preparation|tax planning|tax advice|chartered accountants?)\b/.test(facts))
+  if (
+    /\b(?:accountants?|accounting|accountancy|bookkeepers?|bookkeeping|payroll|vat returns?|tax returns?|tax advisors?|tax advisers?|tax preparation|tax planning|tax advice|chartered accountants?)\b/.test(
+      facts,
+    )
+  )
     return "accounting";
-  if (/\b(?:architect(?:ure)?|architectural design|interior design|interior designer)\b/.test(facts))
+  if (
+    /\b(?:architect(?:ure)?|architectural design|interior design|interior designer)\b/.test(
+      facts,
+    )
+  )
     return "architecture";
-  if (/\b(?:hotel|inn|resort|lodging|guesthouse|bed and breakfast|boutique accommodation|overnight stays?)\b/.test(facts))
+  if (
+    /\b(?:hotel|inn|resort|lodging|guesthouse|bed and breakfast|boutique accommodation|overnight stays?)\b/.test(
+      facts,
+    )
+  )
     return "hospitality";
-  if (/\b(?:restaurant|cafe|café|bistro|pizzeria|dining room|catering|food menu|food and drink|food truck|coffee shop|table reservations?)\b/.test(facts))
+  if (
+    /\b(?:restaurant|cafe|café|bistro|pizzeria|dining room|catering|food menu|food and drink|food truck|coffee shop|table reservations?)\b/.test(
+      facts,
+    )
+  )
     return "restaurant";
-  if (/\b(?:event venue|wedding venue|conference venue|event space|private events?)\b/.test(facts))
+  if (
+    /\b(?:event venue|wedding venue|conference venue|event space|private events?)\b/.test(
+      facts,
+    )
+  )
     return "event-venue";
-  if (/\b(?:beauty|salon|hair|barber|med.?spa|medical spa|aesthetic clinic|cosmetic treatment|grooming studio)\b/.test(facts))
+  if (
+    /\b(?:beauty|salon|hair|barber|med.?spa|medical spa|aesthetic clinic|cosmetic treatment|grooming studio)\b/.test(
+      facts,
+    )
+  )
     return "beauty";
   return industry;
 }
@@ -683,7 +713,9 @@ function designFor(kind, industry, intake = {}) {
     seed,
     requested: requestedPack,
     recentFingerprints: recentFingerprintsForSelection(),
-    hasImage: Boolean(intake.heroImage || intake.photoOne || intake.photoTwo || intake.logo),
+    hasImage: Boolean(
+      intake.heroImage || intake.photoOne || intake.photoTwo || intake.logo,
+    ),
     avoidPackIds,
   });
   const typography = requestedTypography(intake, selected.typography);
@@ -1368,15 +1400,15 @@ export function normalise(candidate, intake) {
   );
   const copy = Object.fromEntries(
     Object.entries(defaultSiteCopy).map(([key, fallbackValue]) => [
-        key,
-        safeGeneratedText(
-          suppliedCopy[key] || fallbackValue,
-          fallbackValue,
-          clientSource,
-          180,
-          clientLanguageFallback,
-        ),
-      ]),
+      key,
+      safeGeneratedText(
+        suppliedCopy[key] || fallbackValue,
+        fallbackValue,
+        clientSource,
+        180,
+        clientLanguageFallback,
+      ),
+    ]),
   );
   copy.heroHeading = conciseHeadline(
     suppliedCopy.heroHeading || copy.heroHeading || business.tagline,
@@ -1472,11 +1504,12 @@ export function normalise(candidate, intake) {
     ...featureConfig,
   };
   const seoResearch = seoResearchForConfig(intake.seoResearch);
-  const selectedLocations = seoResearch?.mode === "researched"
-    ? seoResearch.pageDecisions
-        .filter((decision) => decision?.type === "location")
-        .map((decision) => slugify(String(decision.title || "")))
-    : [];
+  const selectedLocations =
+    seoResearch?.mode === "researched"
+      ? seoResearch.pageDecisions
+          .filter((decision) => decision?.type === "location")
+          .map((decision) => slugify(String(decision.title || "")))
+      : [];
   const researchedLocations = selectedLocations.length
     ? new Set(selectedLocations)
     : null;
@@ -1560,10 +1593,7 @@ async function askModel(intake, effort, model = MODEL) {
     email: intake.email || intake.business?.email || "",
     phone: intake.phone || intake.business?.phone || "",
     domain:
-      intake.desiredDomain ||
-      intake.domain ||
-      intake.business?.domain ||
-      "",
+      intake.desiredDomain || intake.domain || intake.business?.domain || "",
   };
   const sessionId = openRouterSessionId("site-copy", model, identity);
   const promptCacheKey = openRouterPromptCacheKey(
@@ -1610,10 +1640,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
     email: intake.email || intake.business?.email || "",
     phone: intake.phone || intake.business?.phone || "",
     domain:
-      intake.desiredDomain ||
-      intake.domain ||
-      intake.business?.domain ||
-      "",
+      intake.desiredDomain || intake.domain || intake.business?.domain || "",
   };
   const sessionId = openRouterSessionId("site-copy", model, identity);
   const promptCacheKey = openRouterPromptCacheKey(

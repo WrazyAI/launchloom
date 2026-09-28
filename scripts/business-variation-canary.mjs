@@ -1,7 +1,109 @@
 import fs from "node:fs";
 import path from "node:path";
+import { clientBuildEnvironment } from "./client-build-environment.mjs";
+import { enrichInspirationPack } from "./analyze-reference-dna.mjs";
 import { buildInspirationPack } from "./inspiration-registry.mjs";
 import { loadReferenceDossier } from "./reference-dossier.mjs";
+import { validateReferenceDna } from "./reference-dna.mjs";
+
+export async function prepareBusinessVariationPack(
+  pack,
+  { analyze = enrichInspirationPack } = {},
+) {
+  const analyzedPack = await analyze(pack);
+  if (
+    analyzedPack?.referenceDnaAnalyzed !== true ||
+    !String(analyzedPack.referenceDnaAnalyzerModel || "").trim() ||
+    !Array.isArray(analyzedPack.routes) ||
+    analyzedPack.routes.length !== 3
+  )
+    throw new Error(
+      "Business variation authoring requires screenshot-analyzed Reference DNA for all three routes.",
+    );
+
+  for (const route of analyzedPack.routes) {
+    const dna = route.referenceDna;
+    if (
+      dna?.analyzedFromEvidence !== true ||
+      !dna.measurements ||
+      typeof dna.measurements !== "object" ||
+      Array.isArray(dna.measurements)
+    )
+      throw new Error(
+        `Reference DNA analysis is incomplete for ${route.id || "a selected route"}.`,
+      );
+
+    for (const viewport of ["desktopScreenshot", "mobileScreenshot"]) {
+      const capture = dna.evidence?.[viewport];
+      if (!capture?.available || !capture.fullPage)
+        throw new Error(
+          `Reference DNA analysis is incomplete for ${route.id}: required full-page ${viewport.replace("Screenshot", "")} evidence is unavailable.`,
+        );
+    }
+    if (
+      !dna.evidence?.captureDimensions?.desktop ||
+      !dna.evidence?.captureDimensions?.mobile
+    )
+      throw new Error(
+        `Reference DNA analysis is incomplete for ${route.id}: screenshot dimensions are missing.`,
+      );
+    validateReferenceDna(dna, { requireEvidence: true });
+  }
+
+  return analyzedPack;
+}
+
+/**
+ * Verify the locally built, noindex client preview with the production SEO
+ * content and structured-data checks before creative output can be reported.
+ * @param {{repositoryRoot: string, siteDir: string, execFileImpl: (file: string, args: string[], options: any) => Promise<any>}} options
+ * @returns {Promise<{status: "passed", mode: "review", configPath: string, distPath: string}>}
+ */
+export async function runBusinessVariationSeoReview({
+  repositoryRoot,
+  siteDir,
+  execFileImpl,
+} = {}) {
+  if (!repositoryRoot || !siteDir || typeof execFileImpl !== "function")
+    throw new Error(
+      "Business variation SEO review needs repositoryRoot, siteDir, and execFileImpl.",
+    );
+  const root = path.resolve(repositoryRoot);
+  const site = path.resolve(siteDir);
+  const configPath = path.join(site, "src/site.config.json");
+  const distPath = path.join(site, "dist");
+  await execFileImpl(
+    process.execPath,
+    [
+      path.join(root, "scripts/seo-release-gate.mjs"),
+      "--mode",
+      "review",
+      "--config",
+      configPath,
+      "--dist",
+      distPath,
+    ],
+    { cwd: site, maxBuffer: 8 * 1024 * 1024 },
+  );
+  return { status: "passed", mode: "review", configPath, distPath };
+}
+
+/**
+ * Return a credential-free build environment that marks canary previews
+ * noindex. HOME must be explicitly supplied as a fresh temporary directory.
+ * @param {Record<string, string | undefined>} [environment]
+ * @param {Record<string, string | undefined>} [overrides]
+ * @returns {Record<string, string | undefined>}
+ */
+export function businessVariationPreviewEnvironment(
+  environment = process.env,
+  overrides = {},
+) {
+  return {
+    ...clientBuildEnvironment(environment, overrides),
+    PUBLIC_REVIEW_MODE: "true",
+  };
+}
 
 export const BUSINESS_VARIATION_SCENARIOS = Object.freeze({
   hvac: Object.freeze({
@@ -312,6 +414,111 @@ export const BUSINESS_VARIATION_SCENARIOS = Object.freeze({
         "What should I share to start a painting estimate?",
         "How does surface preparation affect a painting project?",
         "Do you serve Atlanta, Decatur, and Marietta?",
+      ],
+    },
+  }),
+  roofing: Object.freeze({
+    industry: "roofing",
+    nicheId: "roofing-contractors",
+    styleTerms: [
+      "weather-first diagnosis",
+      "roofline field notes",
+      "repair-versus-replacement clarity",
+    ],
+    business: {
+      name: "Rainmark Roofworks",
+      tagline: "Start with what the roof is telling you.",
+      description:
+        "A hypothetical residential roofing contractor serving Tacoma and nearby Pierce County communities.",
+      phone: "(253) 555-0186",
+      email: "hello@rainmark-roof.example",
+      address: "",
+      serviceAreas: ["Tacoma", "Federal Way", "Puyallup"],
+      hours: "By appointment",
+      primaryCta: "Request a roof assessment",
+      offer: "",
+      domain: "rainmark-roof.example",
+      leadEmail: "hello@rainmark-roof.example",
+    },
+    services: [
+      {
+        name: "Roof leak assessment and repair",
+        slug: "roof-leak-repair",
+        description:
+          "Describe where water appears and what changed so the first conversation can focus on the visible symptom.",
+      },
+      {
+        name: "Roof replacement planning",
+        slug: "roof-replacement-planning",
+        description:
+          "Review the roof's condition, materials, and project questions before discussing replacement scope.",
+      },
+      {
+        name: "Storm damage inspection",
+        slug: "storm-damage-inspection",
+        description:
+          "Share the area and type of visible damage so the assessment can focus on the affected roof sections.",
+      },
+    ],
+    differentiators: [
+      "Start with visible symptoms rather than a guessed repair",
+      "Discuss condition and material before repair or replacement scope",
+      "Confirm service availability across Tacoma and nearby communities",
+    ],
+    style: {
+      tone: "measured, practical, and weather-aware",
+      visualDirection:
+        "roofline field-report visual language with contour diagrams, restrained weather-color accents, material close-ups, and a diagnostic index; avoid generic contractor split-hero and invented storm-damage proof",
+    },
+    copy: {
+      heroKicker: "Roof repair and planning in Tacoma and Pierce County",
+      heroHeading: "Find the roof problem before choosing a fix.",
+      heroBody:
+        "Describe the leak, visible damage, or roof age. Start with a focused assessment conversation before deciding what work makes sense.",
+      servicesHeading: "Choose what needs a closer look",
+      contactHeading: "Describe the roof condition",
+    },
+    conversion: {
+      faqs: [
+        {
+          question: "What should I share about a roof leak?",
+          answer:
+            "Share where water appears, when you first noticed it, and any visible changes. You do not need to identify the cause before reaching out.",
+        },
+        {
+          question: "How do I compare repair and replacement?",
+          answer:
+            "The appropriate scope depends on the roof's observed condition, materials, and affected area. Discuss the assessment findings before choosing a direction.",
+        },
+        {
+          question: "Which nearby areas do you serve?",
+          answer:
+            "The hypothetical service area includes Tacoma, Federal Way, and Puyallup. Contact Rainmark to confirm a specific address.",
+        },
+      ],
+      process: [
+        "Describe the visible roof issue",
+        "Review assessment findings and material",
+        "Discuss the repair or replacement scope",
+      ],
+      quickAnswers: { enabled: false },
+    },
+    seoResearch: {
+      evidenceStatus: "hypothetical-canary-input-not-verified-research",
+      targetKeywords: [
+        "roof repair Tacoma",
+        "roof replacement Tacoma",
+        "storm damage roof inspection Pierce County",
+      ],
+      copyVocabulary: [
+        "roof condition",
+        "visible leak symptoms",
+        "repair or replacement scope",
+      ],
+      customerQuestions: [
+        "What should I share when asking about a roof leak?",
+        "How do I compare roof repair and replacement?",
+        "Do you serve Tacoma, Federal Way, and Puyallup?",
       ],
     },
   }),

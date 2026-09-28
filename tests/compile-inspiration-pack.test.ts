@@ -72,6 +72,31 @@ describe("production inspiration pack compiler", () => {
     expect(selected.has("colorlib-ironworks-strength-club")).toBe(false);
   }, 30_000);
 
+  it("skips broad configured kinds and selects another explicit business kind", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "launchloom-kind-fallback-"));
+    temporaryRoots.push(root);
+    const configPath = path.join(root, "site.config.json");
+    const historyPath = path.join(root, "recent-launch-signatures.json");
+    const outputPath = path.join(root, "inspiration-pack.json");
+    fs.writeFileSync(configPath, JSON.stringify({
+      businessKind: "all",
+      industry: "fitness",
+      preset: "editorial",
+      business: { name: "Pulse Strength Studio" },
+    }));
+    fs.writeFileSync(historyPath, JSON.stringify({ version: 1, launches: [] }));
+
+    execFileSync(process.execPath, [
+      path.resolve("scripts/compile-inspiration-pack.mjs"),
+      "--config", configPath,
+      "--history", historyPath,
+      "--out", outputPath,
+    ], { cwd: process.cwd(), encoding: "utf8" });
+
+    const pack = JSON.parse(fs.readFileSync(outputPath, "utf8"));
+    expect(pack.request.industry).toBe("fitness");
+  }, 30_000);
+
   it("uses a workflow-attempt ID as the variation seed while keeping the intake ID separate", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "launchloom-generation-seed-"));
     temporaryRoots.push(root);

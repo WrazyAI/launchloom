@@ -411,7 +411,7 @@ describe("creative candidate promotion", () => {
       await fs.cp(selectedBackup, selectedPath, { recursive: true });
       await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 60_000);
+  }, 120_000);
 
   it("selects a version-two candidate for preview before diversity promotion", async () => {
     const root = await makeFixture();

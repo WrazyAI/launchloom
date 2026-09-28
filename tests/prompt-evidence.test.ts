@@ -5,6 +5,8 @@ import path from "node:path";
 import sharp from "sharp";
 import {
   promptImagePart,
+  selectAuthorEvidenceForRoute,
+  selectAuthorReferenceEvidence,
   selectAuthorReferenceScreenshots,
   selectRepairScreenshots,
 } from "../scripts/prompt-evidence.mjs";
@@ -65,6 +67,103 @@ describe("prompt evidence", () => {
       width: 1200,
       height: 675,
     });
+  });
+
+  it("validates crop bounds against EXIF-oriented display dimensions", async () => {
+    const directory = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-oriented-viewport-crop-"),
+    );
+    const source = path.join(directory, "portrait-with-landscape-orientation.jpg");
+    const input = await sharp({
+      create: {
+        width: 800,
+        height: 1200,
+        channels: 3,
+        background: { r: 42, g: 64, b: 80 },
+      },
+    })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .toBuffer();
+    await fs.writeFile(source, input);
+
+    const part = await promptImagePart(source, {
+      detail: "high",
+      crop: { left: 0, top: 0, width: 1200, height: 800 },
+    } as any);
+    const metadata = await sharp(
+      Buffer.from(part.image_url.url.split(",")[1], "base64"),
+    ).metadata();
+
+    expect({ width: metadata.width, height: metadata.height }).toEqual({
+      width: 1200,
+      height: 800,
+    });
+  });
+
+  it("gives authors a page overview plus high-detail desktop and mobile opening crops", async () => {
+    const directory = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-author-reference-evidence-"),
+    );
+    const desktop = path.join(directory, "reference-desktop.png");
+    const mobile = path.join(directory, "reference-mobile.png");
+    await sharp({
+      create: {
+        width: 1440,
+        height: 5200,
+        channels: 3,
+        background: { r: 30, g: 40, b: 50 },
+      },
+    }).png().toFile(desktop);
+    await sharp({
+      create: {
+        width: 390,
+        height: 8400,
+        channels: 3,
+        background: { r: 60, g: 70, b: 80 },
+      },
+    }).png().toFile(mobile);
+
+    const evidence = await selectAuthorReferenceEvidence({
+      desktop: { path: desktop, viewport: { width: 1440, height: 900 } },
+      mobile: { path: mobile, viewport: { width: 390, height: 844 } },
+    });
+
+    expect(evidence.map(({ purpose, detail }) => ({ purpose, detail }))).toEqual([
+      { purpose: "full-page overview", detail: "low" },
+      { purpose: "desktop opening viewport", detail: "high" },
+      { purpose: "mobile opening viewport", detail: "high" },
+    ]);
+    expect(evidence[1].crop).toEqual({
+      left: 0,
+      top: 0,
+      width: 1440,
+      height: 900,
+    });
+    expect(evidence[2].crop).toEqual({
+      left: 0,
+      top: 0,
+      width: 390,
+      height: 844,
+    });
+  });
+
+  it("adds route context when screenshot-dimension preparation fails", async () => {
+    const error = await selectAuthorEvidenceForRoute({
+      id: "route-broken-reference",
+      referenceDna: {
+        evidence: {
+          desktopScreenshot: {
+            path: "/tmp/launchloom-missing-reference.png",
+            viewport: { width: 1440, height: 900 },
+          },
+        },
+      },
+    }).catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error.message).toContain("route-broken-reference");
+    expect(error.cause).toBeInstanceOf(Error);
   });
 
   it("transcodes A1 AVIF reference screenshots into actual JPEG evidence", async () => {

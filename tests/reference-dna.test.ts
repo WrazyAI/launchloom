@@ -2,12 +2,25 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
-import { buildReferenceDna, normalizeSectionSequence, validateReferenceDna } from "../scripts/reference-dna.mjs";
+import {
+  buildReferenceDna,
+  normalizeSectionSequence,
+  REFERENCE_FAMILIES,
+  validateReferenceDna,
+} from "../scripts/reference-dna.mjs";
 
-const registry = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8"));
-const core = JSON.parse(fs.readFileSync("data/reference-library/core-collection.json", "utf8"));
-const coreIds = new Set(core.niches.flatMap((niche: any) => niche.referenceIds));
-const coreRecords = registry.records.filter((record: any) => coreIds.has(record.id));
+const registry = JSON.parse(
+  fs.readFileSync("data/inspiration-registry.json", "utf8"),
+);
+const core = JSON.parse(
+  fs.readFileSync("data/reference-library/core-collection.json", "utf8"),
+);
+const coreIds = new Set(
+  core.niches.flatMap((niche: any) => niche.referenceIds),
+);
+const coreRecords = registry.records.filter((record: any) =>
+  coreIds.has(record.id),
+);
 
 describe("Reference DNA", () => {
   it("keeps registry evidence in tracked repository paths", () => {
@@ -17,18 +30,25 @@ describe("Reference DNA", () => {
       expect(fs.existsSync(path.resolve(record.screenshotPath))).toBe(true);
       if (record.mobileScreenshotPath) {
         expect(record.mobileScreenshotPath).not.toMatch(/^artifacts\//u);
-        expect(fs.existsSync(path.resolve(record.mobileScreenshotPath))).toBe(true);
+        expect(fs.existsSync(path.resolve(record.mobileScreenshotPath))).toBe(
+          true,
+        );
       }
     }
   });
 
   it("binds each active screenshot to its explicit reference family rather than Kokoro fallback DNA", () => {
-    const desktopPaths = coreRecords.map((record: any) => record.screenshotPath);
+    const desktopPaths = coreRecords.map(
+      (record: any) => record.screenshotPath,
+    );
     expect(new Set(desktopPaths).size).toBe(desktopPaths.length);
 
     for (const record of coreRecords) {
       const referenceFamilyId = record.referenceFamilyId || record.familyId;
-      expect(referenceFamilyId, `${record.id} must declare its reference family`).toBeTruthy();
+      expect(
+        referenceFamilyId,
+        `${record.id} must declare its reference family`,
+      ).toBeTruthy();
       const dna = buildReferenceDna({
         ...record,
         referenceFamilyId,
@@ -37,17 +57,23 @@ describe("Reference DNA", () => {
       });
 
       expect(dna.familyId, record.id).toBe(referenceFamilyId);
-      expect(dna.evidence.desktopScreenshot.path, record.id).toBe(record.screenshotPath);
+      expect(dna.evidence.desktopScreenshot.path, record.id).toBe(
+        record.screenshotPath,
+      );
       expect(dna.evidence.desktopScreenshot.available, record.id).toBe(true);
       if (record.id !== "kokoro-spatial-editorial")
-        expect(dna.referenceName, record.id).not.toBe("Kokoro-style editorial architecture");
+        expect(dna.referenceName, record.id).not.toBe(
+          "Kokoro-style editorial architecture",
+        );
       expect(validateReferenceDna(dna)).toBe(dna);
     }
   });
 
   it("keeps unsupported screenshot claims retired and outside the active pool", () => {
     const activeIds = new Set(coreRecords.map((record: any) => record.id));
-    const retired = new Map(registry.retiredRecords.map((record: any) => [record.id, record]));
+    const retired = new Map(
+      registry.retiredRecords.map((record: any) => [record.id, record]),
+    );
 
     for (const id of ["neo-museum-object-stage", "prompt-fashion-archive"]) {
       expect(activeIds.has(id)).toBe(false);
@@ -58,10 +84,20 @@ describe("Reference DNA", () => {
   });
 
   it("compiles complete evidence-backed contracts for routes", () => {
-    const pack = buildInspirationPack({ seed: "dna-test", industry: "dental", styleTerms: [], recentReferenceIds: [], recentRouteSignatures: [] }, registry, {
-      repositoryRoot: path.resolve("."),
-      requireDossiers: true,
-    });
+    const pack = buildInspirationPack(
+      {
+        seed: "dna-test",
+        industry: "dental",
+        styleTerms: [],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      registry,
+      {
+        repositoryRoot: path.resolve("."),
+        requireDossiers: true,
+      },
+    );
     const dna = pack.routes[0].referenceDna;
     expect(dna.familyId).toBeTruthy();
     expect(dna.evidence.desktopScreenshot.available).toBe(true);
@@ -79,36 +115,56 @@ describe("Reference DNA", () => {
       heroGeometry: "typographic-monument",
     });
     expect(dna.complete).toBe(false);
-    expect(() => validateReferenceDna(dna, { requireEvidence: true })).toThrow(/desktop reference screenshot/iu);
+    expect(() => validateReferenceDna(dna, { requireEvidence: true })).toThrow(
+      /desktop reference screenshot/iu,
+    );
   });
 
   it("does not allow an incomplete registry to compile a creative pack", () => {
-    const records = registry.records.slice(0, 3).map((record: any) => ({ ...record, screenshotPath: "", mobileScreenshotPath: "" }));
-    expect(() => buildInspirationPack({ seed: "missing-pack", industry: "all", styleTerms: [], recentReferenceIds: [], recentRouteSignatures: [] }, { version: 1, records })).toThrow(/(?:specific business kind|eligible dossier|Reference DNA|three structurally independent)/iu);
+    const records = registry.records
+      .slice(0, 3)
+      .map((record: any) => ({
+        ...record,
+        screenshotPath: "",
+        mobileScreenshotPath: "",
+      }));
+    expect(() =>
+      buildInspirationPack(
+        {
+          seed: "missing-pack",
+          industry: "all",
+          styleTerms: [],
+          recentReferenceIds: [],
+          recentRouteSignatures: [],
+        },
+        { version: 1, records },
+      ),
+    ).toThrow(
+      /(?:specific business kind|eligible dossier|Reference DNA|three structurally independent)/iu,
+    );
   });
 
   it("normalizes analyzer prose into enforceable family section IDs", () => {
-    expect(normalizeSectionSequence([
-      "hero monument with oversized serif title",
-      "wide horizontal image collage / triptych",
-      "full-width article ledger rows",
-      "full-bleed cinematic architectural image",
-    ], "kokoro-editorial-architecture")).toEqual([
-      "hero",
-      "image-mosaic",
-      "magazine-archive",
-      "closing-scene",
-    ]);
+    expect(
+      normalizeSectionSequence(
+        [
+          "hero monument with oversized serif title",
+          "wide horizontal image collage / triptych",
+          "full-width article ledger rows",
+          "full-bleed cinematic architectural image",
+        ],
+        "kokoro-editorial-architecture",
+      ),
+    ).toEqual(["hero", "image-mosaic", "magazine-archive", "closing-scene"]);
   });
 
   it("preserves section IDs and route geometry for a newly curated reference family", () => {
-    expect(normalizeSectionSequence([
-      "hero",
-      "practice-statement",
-      "project-index",
-      "services",
-      "contact",
-    ], "newly-curated-family")).toEqual([
+    expect(
+      normalizeSectionSequence(
+        ["hero", "practice-statement", "project-index", "services", "contact"],
+        "newly-curated-family",
+      ),
+    ).toEqual([
       "hero",
       "practice-statement",
       "project-index",
@@ -141,17 +197,124 @@ describe("Reference DNA", () => {
     expect(dna.referenceName).not.toBe("Kokoro-style editorial architecture");
   });
 
+  it("keeps distinct custom section IDs that contain known family IDs", () => {
+    expect(
+      normalizeSectionSequence(
+        ["hero", "hero-mosaic", "process-ledger", "services"],
+        "newly-curated-family",
+      ),
+    ).toEqual(["hero", "hero-mosaic", "process-ledger", "services"]);
+  });
+
+  it("uses a complete baseline when an unregistered observation has fewer than three sections", () => {
+    expect(
+      normalizeSectionSequence(["hero", "process"], "unregistered-family"),
+    ).toEqual(["hero", "services", "faq", "contact"]);
+  });
+
+  it("prefers a directly observed singular motion opportunity over legacy arrays", () => {
+    const route = registry.records[0];
+    const dna = buildReferenceDna({
+      ...route,
+      referenceFamilyId: "unregistered-motion-family",
+      motionOpportunity: "Specific caption-linked reveal",
+      motionOpportunities: ["Legacy generic fade"],
+    });
+
+    expect(dna.motion.primitive).toBe("Specific caption-linked reveal");
+  });
+
+  it("consolidates A1 defaults while retaining their signature and section requirements", () => {
+    const source = fs.readFileSync("scripts/reference-dna.mjs", "utf8");
+    const familyIds = [
+      "a1-collage-composition",
+      "a1-kinetic-command",
+      "a1-object-stage",
+      "a1-kinetic-founder",
+      "a1-cinematic-3d",
+    ];
+    for (const familyId of familyIds)
+      expect(
+        source.match(new RegExp(`^\\s+"${familyId}":`, "gmu")) || [],
+      ).toHaveLength(1);
+
+    const preservedContractParts = {
+      "a1-collage-composition": {
+        sections: ["feature-atlas", "annotation-rail", "conversion-band"],
+        signatures: ["collage-field", "object-annotations", "conversion-band"],
+      },
+      "a1-kinetic-command": {
+        sections: ["program-bands", "impact-statements", "conversion-band"],
+        signatures: ["kinetic-command", "program-bands", "impact-statements"],
+      },
+      "a1-object-stage": {
+        sections: [
+          "object-caption",
+          "capability-atlas",
+          "project-stack",
+          "conversion-band",
+        ],
+        signatures: [
+          "object-stage",
+          "object-caption",
+          "project-stack",
+          "object-gallery",
+        ],
+      },
+      "a1-kinetic-founder": {
+        sections: [
+          "goal-atlas",
+          "progress-proof",
+          "testimonials",
+          "conversion-band",
+        ],
+        signatures: [
+          "founder-field",
+          "goal-atlas",
+          "progress-proof",
+          "pixel-founder-statement",
+        ],
+      },
+      "a1-cinematic-3d": {
+        sections: ["featured-work", "process", "proof", "conversion-band"],
+        signatures: [
+          "cinematic-studio",
+          "featured-work",
+          "closing-inquiry",
+          "featured-work-rail",
+        ],
+      },
+    };
+    for (const [familyId, expected] of Object.entries(preservedContractParts)) {
+      const family =
+        REFERENCE_FAMILIES[familyId as keyof typeof REFERENCE_FAMILIES];
+      const signatureIds = family.requiredSignatureElements.map(
+        (item: any) => item.id,
+      );
+      expect(family.sectionSequence).toEqual(
+        expect.arrayContaining(expected.sections),
+      );
+      expect(signatureIds).toEqual(expect.arrayContaining(expected.signatures));
+    }
+  });
+
   it("keeps restaurant reference selection inside the curated business-matched core", () => {
-    const pack = buildInspirationPack({
-      seed: "neighborhood-collage-test",
-      industry: "restaurant",
-      styleTerms: ["neighborhood", "collage", "market", "shelf"],
-      recentReferenceIds: [],
-      recentRouteSignatures: [],
-    }, registry, { repositoryRoot: path.resolve("."), requireDossiers: true });
+    const pack = buildInspirationPack(
+      {
+        seed: "neighborhood-collage-test",
+        industry: "restaurant",
+        styleTerms: ["neighborhood", "collage", "market", "shelf"],
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      registry,
+      { repositoryRoot: path.resolve("."), requireDossiers: true },
+    );
     const route = pack.routes[0];
     if (!route.referenceDossier)
-      throw new Error("The selected restaurant route has no canonical dossier.");
+      throw new Error(
+        "The selected restaurant route has no canonical dossier.",
+      );
     expect([
       "colorlib-tavola-restaurant",
       "direct-amrit-palace-restaurant",

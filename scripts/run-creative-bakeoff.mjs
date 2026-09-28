@@ -1,8 +1,8 @@
-import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { fileURLToPath } from "node:url";
 import {
   CREATIVE_PROMOTION_THRESHOLDS,
   diversityReport,
@@ -17,6 +17,10 @@ import {
   evaluateRenderedReferenceFidelity,
 } from "./rendered-reference-fidelity.mjs";
 import { heroViewportFitFailure } from "./creative-viewport-policy.mjs";
+import {
+  copyClientBuildInput,
+  runClientProcess,
+} from "./client-build-environment.mjs";
 
 export { heroViewportFitFailure };
 
@@ -32,39 +36,6 @@ function argsFrom(argv) {
         [],
       ),
   );
-}
-
-function run(command, commandArgs, cwd) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, commandArgs, {
-      cwd,
-      stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, PUBLIC_REVIEW_MODE: "true" },
-    });
-    const tails = { stdout: "", stderr: "" };
-    const appendTail = (key, chunk) => {
-      const text = chunk.toString();
-      process[key].write(text);
-      tails[key] = `${tails[key]}${text}`.slice(-6000);
-    };
-    child.stdout?.on("data", (chunk) => appendTail("stdout", chunk));
-    child.stderr?.on("data", (chunk) => appendTail("stderr", chunk));
-    child.on("error", reject);
-    child.on("exit", (code) =>
-      code === 0
-        ? resolve()
-        : reject(
-            new Error(
-              `${command} exited with ${code}\n${[
-                tails.stdout && `stdout:\n${tails.stdout}`,
-                tails.stderr && `stderr:\n${tails.stderr}`,
-              ]
-                .filter(Boolean)
-                .join("\n")}`,
-            ),
-          ),
-    );
-  });
 }
 
 const contentTypes = {
@@ -154,7 +125,7 @@ export async function prepareFullPageCapture(
   await page.waitForTimeout(Math.min(settleMs, 250));
 }
 
-async function startServer(root) {
+export async function startServer(root) {
   const server = http.createServer(async (request, response) => {
     try {
       const pathname = decodeURIComponent(
@@ -182,7 +153,7 @@ async function startServer(root) {
   return { server, origin: `http://127.0.0.1:${address.port}` };
 }
 
-async function inspect(page) {
+export async function inspect(page) {
   return page.evaluate(() => {
     const root = document.querySelector("[data-creative-candidate]");
     const hero = root?.querySelector("[data-hero]");
@@ -440,7 +411,6 @@ export async function runCreativeBakeoff({
   await fs
     .cp(selectedDir, selectedBackup, { recursive: true, force: true })
     .catch(() => {});
-  const browser = await chromium.launch({ headless: true });
   const results = [];
   await fs.mkdir(evidenceDir, { recursive: true });
 
@@ -506,107 +476,163 @@ export async function runCreativeBakeoff({
           // publication is enforced by the final promotion call below.
           preview: true,
         });
-        await run("npm", ["run", "build"], root);
-        const { server, origin } = await startServer(path.join(root, "dist"));
+        const clientWorkerRoot = await fs.mkdtemp(
+          path.join(os.tmpdir(), "launchloom-client-render-"),
+        );
+        const clientWorkerSite = path.join(clientWorkerRoot, "site");
+        const clientWorkerEvidence = path.join(clientWorkerRoot, "evidence");
+        const renderReportPath = path.join(
+          clientWorkerRoot,
+          "render-report.json",
+        );
+        let renderReport;
         try {
-          for (const viewport of [
-            { name: "desktop", width: 1536, height: 864 },
-            { name: "compact", width: 1366, height: 768 },
-            { name: "mobile", width: 390, height: 844 },
-          ]) {
-            const page = await browser.newPage({ viewport });
-            const browserErrors = [];
-            page.on("pageerror", (error) => browserErrors.push(error.message));
-            await page.goto(origin, { waitUntil: "networkidle" });
-            const evidence = await inspect(page);
-            const failures = [
-              ...hardFailures(
-                evidence,
-                viewport,
-                candidate.manifest.referenceDna,
+          await fs.mkdir(clientWorkerSite, { recursive: true });
+          await fs.mkdir(clientWorkerEvidence, { recursive: true });
+          await copyClientBuildInput(root, clientWorkerSite);
+          const trustedNodeModules = path.resolve(
+            path.dirname(fileURLToPath(import.meta.url)),
+            "../node_modules",
+          );
+          await fs.access(trustedNodeModules);
+          await fs.symlink(
+            trustedNodeModules,
+            path.join(clientWorkerSite, "node_modules"),
+            "dir",
+          );
+          const safeWorkerEnv = {
+            PUBLIC_REVIEW_MODE: "true",
+            PLAYWRIGHT_BROWSERS_PATH:
+              process.env.PLAYWRIGHT_BROWSERS_PATH ||
+              path.join(os.homedir(), ".cache", "ms-playwright"),
+          };
+          await runClientProcess({
+            command: "npm",
+            args: ["run", "build"],
+            cwd: clientWorkerSite,
+            writablePaths: [clientWorkerRoot],
+            envOverrides: safeWorkerEnv,
+          });
+          await runClientProcess({
+            command: process.execPath,
+            args: [
+              fileURLToPath(
+                new URL("./render-client-candidate.mjs", import.meta.url),
               ),
-              browserErrors.length > 0 && "browser error",
-            ].filter(Boolean);
-            candidateResult.failures.push(
-              ...failures.map((failure) => `${viewport.name}: ${failure}`),
+              "--site-dir",
+              clientWorkerSite,
+              "--candidate-id",
+              candidate.manifest.candidateId,
+              "--evidence",
+              clientWorkerEvidence,
+              "--report",
+              renderReportPath,
+              "--capture-viewport",
+              String(candidate.manifest.version >= 2),
+            ],
+            cwd: clientWorkerSite,
+            writablePaths: [clientWorkerRoot],
+            envOverrides: safeWorkerEnv,
+          });
+          const reportStat = await fs.lstat(renderReportPath);
+          if (!reportStat.isFile() || reportStat.size > 4 * 1024 * 1024)
+            throw new Error(
+              "Client render worker returned an invalid report file.",
             );
-            candidateResult.viewports.push({
-              ...viewport,
-              ...evidence,
-              browserErrors,
-            });
-            if (candidate.manifest.version >= 2) {
-              const renderedFidelity = validateReferenceCandidate({
-                referenceDna: candidate.manifest.referenceDna,
-                experienceSource,
-                stylesSource,
-                motionSource,
-                renderedDom: await page
-                  .locator("[data-creative-host]")
-                  .evaluate((element) => element.outerHTML),
-              });
-              const viewportVisualFindings =
-                renderedFidelity.visualFindings.map((item) => ({
-                  ...item,
-                  viewport: viewport.name,
-                }));
-              candidateResult.referenceFidelity = {
-                ...candidateResult.referenceFidelity,
-                rendered: renderedFidelity,
-                renderedByViewport: {
-                  ...(candidateResult.referenceFidelity.renderedByViewport ||
-                    {}),
-                  [viewport.name]: renderedFidelity,
-                },
-                renderedVisualFindings: [
-                  ...(candidateResult.referenceFidelity
-                    .renderedVisualFindings || []),
-                  ...viewportVisualFindings,
-                ],
-                pass:
-                  candidateResult.referenceFidelity.pass &&
-                  renderedFidelity.pass,
-              };
-              if (!renderedFidelity.pass)
-                candidateResult.failures.push(
-                  ...renderedFidelity.hardFindings.map(
-                    (item) => `${viewport.name}: ${item.message}`,
-                  ),
-                );
-            }
-            // The reference judge needs the actual first viewport for hero
-            // geometry. Keep a separate full-page capture for section rhythm,
-            // lower content, and the final visual-quality gate.
-            if (candidate.manifest.version >= 2)
-              await page.screenshot({
-                path: path.join(
-                  evidenceDir,
-                  `${candidate.manifest.candidateId}-${viewport.name}-viewport.png`,
-                ),
-              });
-            const browserErrorsBeforeCapture = browserErrors.length;
-            await prepareFullPageCapture(page, {
-              viewportHeight: viewport.height,
-            });
-            await page.screenshot({
-              path: path.join(
-                evidenceDir,
-                `${candidate.manifest.candidateId}-${viewport.name}.png`,
-              ),
-              fullPage: true,
-            });
-            candidateResult.failures.push(
-              ...fullPageCaptureErrors(
-                browserErrors,
-                browserErrorsBeforeCapture,
-                viewport.name,
-              ),
+          renderReport = JSON.parse(
+            await fs.readFile(renderReportPath, "utf8"),
+          );
+          if (
+            renderReport?.version !== 1 ||
+            renderReport.candidateId !== candidate.manifest.candidateId ||
+            !Array.isArray(renderReport.viewports) ||
+            renderReport.viewports.length !== 3
+          )
+            throw new Error(
+              "Client render worker returned incomplete evidence.",
             );
-            await page.close();
+          for (const entry of await fs.readdir(clientWorkerEvidence)) {
+            if (!/^candidate-[a-z0-9]+-[a-z]+(?:-viewport)?\.png$/u.test(entry))
+              throw new Error(
+                "Client render worker returned an unsafe artifact name.",
+              );
+            const artifactStat = await fs.lstat(
+              path.join(clientWorkerEvidence, entry),
+            );
+            if (!artifactStat.isFile() || artifactStat.size > 50 * 1024 * 1024)
+              throw new Error(
+                "Client render worker returned an invalid screenshot file.",
+              );
+            await fs.copyFile(
+              path.join(clientWorkerEvidence, entry),
+              path.join(evidenceDir, entry),
+            );
           }
         } finally {
-          await new Promise((resolve, reject) =>
-            server.close((error) => (error ? reject(error) : resolve())),
+          await fs.rm(clientWorkerRoot, { recursive: true, force: true });
+        }
+        for (const renderedViewport of renderReport.viewports) {
+          const viewport = {
+            name: renderedViewport.name,
+            width: renderedViewport.width,
+            height: renderedViewport.height,
+          };
+          const evidence = renderedViewport.evidence;
+          const browserErrors = renderedViewport.browserErrors || [];
+          const failures = [
+            ...hardFailures(
+              evidence,
+              viewport,
+              candidate.manifest.referenceDna,
+            ),
+            browserErrors.length > 0 && "browser error",
+          ].filter(Boolean);
+          candidateResult.failures.push(
+            ...failures.map((failure) => `${viewport.name}: ${failure}`),
+          );
+          candidateResult.viewports.push({
+            ...viewport,
+            ...evidence,
+            browserErrors,
+          });
+          if (candidate.manifest.version >= 2) {
+            const renderedFidelity = validateReferenceCandidate({
+              referenceDna: candidate.manifest.referenceDna,
+              experienceSource,
+              stylesSource,
+              motionSource,
+              renderedDom: renderedViewport.renderedDom,
+            });
+            const viewportVisualFindings = renderedFidelity.visualFindings.map(
+              (item) => ({
+                ...item,
+                viewport: viewport.name,
+              }),
+            );
+            candidateResult.referenceFidelity = {
+              ...candidateResult.referenceFidelity,
+              rendered: renderedFidelity,
+              renderedByViewport: {
+                ...(candidateResult.referenceFidelity.renderedByViewport || {}),
+                [viewport.name]: renderedFidelity,
+              },
+              renderedVisualFindings: [
+                ...(candidateResult.referenceFidelity.renderedVisualFindings ||
+                  []),
+                ...viewportVisualFindings,
+              ],
+              pass:
+                candidateResult.referenceFidelity.pass && renderedFidelity.pass,
+            };
+            if (!renderedFidelity.pass)
+              candidateResult.failures.push(
+                ...renderedFidelity.hardFindings.map(
+                  (item) => `${viewport.name}: ${item.message}`,
+                ),
+              );
+          }
+          candidateResult.failures.push(
+            ...(renderedViewport.fullPageCaptureErrors || []),
           );
         }
         if (candidate.manifest.version >= 2) {
@@ -823,7 +849,6 @@ export async function runCreativeBakeoff({
       results.push(candidateResult);
     }
   } finally {
-    await browser.close();
     await fs.writeFile(originalConfigPath, originalConfig);
     await fs.rm(selectedDir, { recursive: true, force: true });
     const backupEntries = await fs.readdir(selectedBackup).catch(() => []);

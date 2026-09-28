@@ -62,6 +62,31 @@ describe("archive screenshot materialization", () => {
     ).toThrow(/approved-source.*requested URL/iu);
   });
 
+  it.each([undefined, "200", 200.5])(
+    "rejects a missing or non-integer HTTP status %j",
+    (httpStatus) => {
+      expect(() =>
+        captureEvidence(
+          { id: "approved-source", sourceUrl: "https://approved.example/design/" },
+          {
+            sourceUrl: "https://approved.example/design/",
+            captures: {
+              desktop: {
+                httpStatus,
+                fullPage: true,
+                url: "https://approved.example/design/",
+                finalUrl: "https://approved.example/design/",
+                viewport: { width: 1440, height: 900 },
+                image: { width: 1440, height: 5000 },
+              },
+            },
+          },
+          "desktop",
+        ),
+      ).toThrow(/approved-source.*successful full-page desktop capture/iu);
+    },
+  );
+
   it("accepts same-origin final URLs while retaining the existing source URL check", () => {
     expect(
       captureEvidence(

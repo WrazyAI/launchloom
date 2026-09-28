@@ -8,19 +8,22 @@ import {
 
 describe("site configuration", () => {
   it("does not classify pet care as human wellness imagery", () => {
-    const config = normalise({
-      copy: {
-        aboutBody:
-          "Busy salons mean barking,陌生 hands, and long waits for many dogs.",
+    const config = normalise(
+      {
+        copy: {
+          aboutBody:
+            "Busy salons mean barking,陌生 hands, and long waits for many dogs.",
+        },
       },
-    }, {
-      preset: "home-services",
-      industry: "pet-services",
-      businessName: "Moss and Mane Mobile Grooming",
-      services: "Mobile dog grooming\nBath and coat care\nPaw care",
-      differentiators: "One dog at a time with an individual care plan.",
-      serviceAreas: "Portland, Oregon",
-    });
+      {
+        preset: "home-services",
+        industry: "pet-services",
+        businessName: "Moss and Mane Mobile Grooming",
+        services: "Mobile dog grooming\nBath and coat care\nPaw care",
+        differentiators: "One dog at a time with an individual care plan.",
+        serviceAreas: "Portland, Oregon",
+      },
+    );
 
     expect(config.industry).toBe("other");
     expect(config.images.hero).toBeUndefined();
@@ -64,7 +67,9 @@ describe("site configuration", () => {
     );
 
     expect(config.copy.aboutBody).not.toContain("Friendly support");
-    expect(config.copy.aboutBody).toMatch(/[\p{Script=Han}\p{Script=Hiragana}]/u);
+    expect(config.copy.aboutBody).toMatch(
+      /[\p{Script=Han}\p{Script=Hiragana}]/u,
+    );
   });
 
   it("rejects an unapproved writing system for an English-language brief", () => {
@@ -83,13 +88,16 @@ describe("site configuration", () => {
   });
 
   it("does not mistake carpet cleaning for a pet business", () => {
-    const config = normalise({}, {
-      preset: "home-services",
-      industry: "home-services",
-      businessName: "Clearway Carpet Cleaning",
-      services: "Carpet cleaning\nUpholstery cleaning",
-      serviceAreas: "Portland, Oregon",
-    });
+    const config = normalise(
+      {},
+      {
+        preset: "home-services",
+        industry: "home-services",
+        businessName: "Clearway Carpet Cleaning",
+        services: "Carpet cleaning\nUpholstery cleaning",
+        serviceAreas: "Portland, Oregon",
+      },
+    );
 
     expect(config.industry).toBe("home-services");
   });
@@ -133,8 +141,9 @@ describe("site configuration", () => {
     expect(config.seoResearch.validatedQueries[0].query).toBe(
       "drain cleaning tacoma",
     );
-    expect(config.locations.map((location: { name: string }) => location.name))
-      .toEqual(["Tacoma"]);
+    expect(
+      config.locations.map((location: { name: string }) => location.name),
+    ).toEqual(["Tacoma"]);
   });
 
   it("creates only location routes selected by grounded research", () => {
@@ -165,29 +174,43 @@ describe("site configuration", () => {
   });
 
   it("preserves submitted service areas when research is only a baseline", () => {
-    const config = normalise({}, {
-      businessName: "Harbor Plumbing",
-      services: "Drain cleaning",
-      serviceAreas: "Tacoma, WA\nLakewood, WA",
-      industry: "home-services",
-      seoResearch: { mode: "baseline", pageDecisions: [] },
-    });
-    expect(config.business.serviceAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
-    expect(config.locations.map((location: { name: string }) => location.name))
-      .toEqual(["Tacoma, WA", "Lakewood, WA"]);
+    const config = normalise(
+      {},
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning",
+        serviceAreas: "Tacoma, WA\nLakewood, WA",
+        industry: "home-services",
+        seoResearch: { mode: "baseline", pageDecisions: [] },
+      },
+    );
+    expect(config.business.serviceAreas).toEqual([
+      "Tacoma, WA",
+      "Lakewood, WA",
+    ]);
+    expect(
+      config.locations.map((location: { name: string }) => location.name),
+    ).toEqual(["Tacoma, WA", "Lakewood, WA"]);
   });
 
   it("preserves submitted service areas when research selected no location pages", () => {
-    const config = normalise({}, {
-      businessName: "Harbor Plumbing",
-      services: "Drain cleaning",
-      serviceAreas: "Tacoma, WA\nLakewood, WA",
-      industry: "home-services",
-      seoResearch: { mode: "researched", pageDecisions: [] },
-    });
-    expect(config.business.serviceAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
-    expect(config.locations.map((location: { name: string }) => location.name))
-      .toEqual(["Tacoma, WA", "Lakewood, WA"]);
+    const config = normalise(
+      {},
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning",
+        serviceAreas: "Tacoma, WA\nLakewood, WA",
+        industry: "home-services",
+        seoResearch: { mode: "researched", pageDecisions: [] },
+      },
+    );
+    expect(config.business.serviceAreas).toEqual([
+      "Tacoma, WA",
+      "Lakewood, WA",
+    ]);
+    expect(
+      config.locations.map((location: { name: string }) => location.name),
+    ).toEqual(["Tacoma, WA", "Lakewood, WA"]);
   });
 
   it("does not invent an argument value when an optional flag is absent", () => {
@@ -411,17 +434,89 @@ describe("site configuration", () => {
 
   it.each([
     ["Northside Dental", "Family dentistry and crowns", "wellness", "dental"],
-    ["Maple Accounting", "Bookkeeping, payroll, and VAT", "professional-services", "accounting"],
-    ["Mason Tax Advisors", "Tax preparation and tax planning", "professional-services", "accounting"],
-    ["Smith Family Law", "Family law and civil litigation", "professional-services", "legal-services"],
-    ["Northline Architects", "Residential architecture and interiors", "professional-services", "architecture"],
-    ["Cedar Table Bistro", "Dinner reservations and catering", "hospitality", "restaurant"],
-    ["Harbor House Inn", "Rooms, overnight stays, and reservations", "hospitality", "hospitality"],
+    [
+      "Maple Accounting",
+      "Bookkeeping, payroll, and VAT",
+      "professional-services",
+      "accounting",
+    ],
+    [
+      "Mason Tax Advisors",
+      "Tax preparation and tax planning",
+      "professional-services",
+      "accounting",
+    ],
+    [
+      "Smith Family Law",
+      "Family law and civil litigation",
+      "professional-services",
+      "legal-services",
+    ],
+    [
+      "Northline Architects",
+      "Residential architecture and interiors",
+      "professional-services",
+      "architecture",
+    ],
+    [
+      "Cedar Table Bistro",
+      "Dinner reservations and catering",
+      "hospitality",
+      "restaurant",
+    ],
+    [
+      "Harbor House Inn",
+      "Rooms, overnight stays, and reservations",
+      "hospitality",
+      "hospitality",
+    ],
     ["Juniper Hair Studio", "Hair coloring and cuts", "wellness", "beauty"],
-    ["Maple Wedding Venue", "Wedding venue hire and private events", "hospitality", "event-venue"],
-  ])("infers the specific reference business kind for %s", (businessName, services, industry, expectedKind) => {
-    const config = normalise({}, { businessName, services, industry });
-    expect(config.businessKind).toBe(expectedKind);
+    [
+      "Maple Wedding Venue",
+      "Wedding venue hire and private events",
+      "hospitality",
+      "event-venue",
+    ],
+  ])(
+    "infers the specific reference business kind for %s",
+    (businessName, services, industry, expectedKind) => {
+      const config = normalise({}, { businessName, services, industry });
+      expect(config.businessKind).toBe(expectedKind);
+    },
+  );
+
+  it.each([
+    ["differentiators", "A legal standard of care in every project."],
+    ["brandNotes", "Use law as a metaphor for precision."],
+  ])("does not infer a law practice from %s alone", (field, value) => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Northstar Strategy Consulting",
+        services: "Business strategy and operations consulting",
+        industry: "professional-services",
+        [field]: value,
+      },
+    );
+
+    expect(config.businessKind).toBe("professional-services");
+  });
+
+  it.each([
+    ["businessName", "Legal Heat and Cooling"],
+    ["services", "Heating and cooling repairs subject to local legal code"],
+  ])("does not classify an HVAC business as legal services from generic %s wording", (field, value) => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Northstar Heating and Cooling",
+        services: "Air conditioning repair",
+        industry: "home-services",
+        [field]: value,
+      },
+    );
+
+    expect(config.businessKind).toBe("hvac");
   });
 
   it.each([

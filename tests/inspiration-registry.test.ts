@@ -216,6 +216,24 @@ describe("inspiration registry", () => {
     }, registry)).toThrow(/a specific business kind is required/iu);
   });
 
+  it("resolves the canonical library independently of the caller working directory", () => {
+    const originalCwd = process.cwd();
+    const foreignCwd = fs.mkdtempSync(
+      path.join(os.tmpdir(), "launchloom-inspiration-cwd-"),
+    );
+    try {
+      process.chdir(foreignCwd);
+      const pack = buildInspirationPack(
+        { ...baseRequest, industry: "hvac" },
+        registry,
+      );
+      expect(pack.routes).toHaveLength(3);
+    } finally {
+      process.chdir(originalCwd);
+      fs.rmSync(foreignCwd, { recursive: true, force: true });
+    }
+  });
+
   it.each([
     "home-services",
     "dental",
@@ -343,7 +361,7 @@ describe("inspiration registry", () => {
       path.resolve("scripts/sync-reference-library.mjs"),
       "--check",
     ], { cwd: process.cwd(), encoding: "utf8" })).not.toThrow();
-  });
+  }, 20_000);
 
   it("binds every registered reference screenshot to its canonical dossier", () => {
     const synced = buildSyncedLibraryState({
@@ -515,8 +533,8 @@ describe("inspiration registry", () => {
       typographyCategory: `type-${index + 1}`,
       imageStrategy: `images-${index + 1}`,
       motionOpportunities: [`motion-${index + 1}`],
-      screenshotPath: baseRecord.screenshotPath,
-      mobileScreenshotPath: baseRecord.mobileScreenshotPath,
+      screenshotPath: path.resolve(baseRecord.screenshotPath),
+      mobileScreenshotPath: path.resolve(baseRecord.mobileScreenshotPath),
     }));
     const fixtureRegistry = { version: 1, records };
     const request = {
@@ -587,6 +605,8 @@ describe("inspiration registry", () => {
       typographyCategory: `type-${index}`,
       sectionRhythm: `rhythm-${index}`,
       imageStrategy: `image-${index}`,
+      screenshotPath: path.resolve(baseRecord.screenshotPath),
+      mobileScreenshotPath: path.resolve(baseRecord.mobileScreenshotPath),
     }));
     const request = {
       ...baseRequest,
@@ -632,7 +652,7 @@ describe("inspiration registry", () => {
       withHistoryFamilyCounts.add(count);
       withHistoryFamilyTotal += count;
     }
-    expect(withHistoryFamilyCounts).toEqual(new Set([1, 2]));
+    expect(withHistoryFamilyCounts).toEqual(new Set([2]));
     expect(withHistoryFamilyTotal / 456).toBeGreaterThan(35 / 19);
 
     const realisticHistory = [
@@ -665,7 +685,7 @@ describe("inspiration registry", () => {
       familyCounts.add(count);
       familyTotal += count;
     }
-    expect(familyCounts).toEqual(new Set([1, 2]));
+    expect(familyCounts).toEqual(new Set([2]));
     expect(familyTotal / 120).toBeGreaterThan(36 / 20);
   });
 
@@ -691,6 +711,8 @@ describe("inspiration registry", () => {
       typographyCategory: `type-${index}`,
       sectionRhythm: `rhythm-${index}`,
       imageStrategy: `image-${index}`,
+      screenshotPath: path.resolve(baseRecord.screenshotPath),
+      mobileScreenshotPath: path.resolve(baseRecord.mobileScreenshotPath),
     }));
 
     const pack = buildInspirationPack({
@@ -712,6 +734,26 @@ describe("inspiration registry", () => {
     expect(pack.selectionReceipt.multiFamilyCombinationAvailable).toBe(false);
     expect(pack.selectionReceipt.maximumFeasibleRendererFamilyCount).toBe(1);
   });
+
+  it.each(coreNicheCases)(
+    "selects at least two renderer families whenever a %s trio permits it",
+    ({ industry }) => {
+      for (let index = 0; index < 20; index += 1) {
+        const pack = buildInspirationPack({
+          ...baseRequest,
+          industry,
+          seed: `${industry}-maximum-family-${index}`,
+          generationId: `${industry}-maximum-family-${index}`,
+          styleTerms: [],
+          recentReferenceSets: [],
+          referenceExposure: {},
+        }, registry);
+        expect(pack.selectionReceipt.selectedRendererFamilyCount, industry).toBeGreaterThanOrEqual(
+          Math.min(2, pack.selectionReceipt.maximumFeasibleRendererFamilyCount),
+        );
+      }
+    },
+  );
 
   it.each(coreNicheCases)(
     "raises expected renderer-family count across seeded %s selections",

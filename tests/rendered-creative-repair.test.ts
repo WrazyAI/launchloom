@@ -67,6 +67,13 @@ async function fixture(candidateIds = ["candidate-a", "candidate-b"]) {
   return { root, candidates };
 }
 
+async function setHumanScopeRequest(candidateDir: string, requestText: string) {
+  const metadataPath = path.join(candidateDir, "metadata.json");
+  const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+  metadata.creativeRepairScope.requestText = requestText;
+  await fs.writeFile(metadataPath, JSON.stringify(metadata));
+}
+
 async function bindCandidateSession(
   candidatesDir: string,
   creativeSession: Record<string, any>,
@@ -228,7 +235,11 @@ export default function Experience({ content, runtime }) {
       JSON.stringify({
         candidateId: "candidate-a",
         routeId: "route-01",
-        referenceDna: { familyId: "test-family" },
+        referenceDna: {
+          familyId: "test-family",
+          servicePresentation: { pattern: "Quiet vertical service index" },
+          ctaPlacement: { early: "Before services begin" },
+        },
       }),
     );
     await fs.writeFile(
@@ -266,6 +277,12 @@ export default function Experience({ content, runtime }) {
     );
     expect(result.experience).toContain(processSection);
     expect(result.experience).toContain('className="opening-title revised"');
+    expect(result.experience).toContain(
+      'data-service-presentation="quiet-vertical-service-index"',
+    );
+    expect(result.experience).toContain(
+      'data-cta-placement="before-services-begin"',
+    );
   });
 
   it("keeps preview available when one candidate repair violates its sealed-content contract", async () => {
@@ -617,6 +634,10 @@ export default function Experience({ content, runtime }) {
 
   it("does not isolate a rejected repair when applying human feedback", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
+    await setHumanScopeRequest(
+      path.join(candidates, "candidate-a"),
+      "Keep the supplied hero image visible.",
+    );
     const rejection = new Error(
       "Creative repair output rejected by source validation: Required sealed token content.hero.image does not flow into output.",
     );
@@ -699,6 +720,37 @@ export default function Experience({ content, runtime }) {
     expect(repairScopes).toEqual([declaredScope, declaredScope]);
   });
 
+  it("rejects human repair scopes without the matching request text", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const repairCandidateImpl = vi.fn(async () => undefined);
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        mode: "preview",
+        maxCycles: 1,
+        requestedFindings: ["Revise the hero section."],
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(
+            options,
+            report({ candidates: [candidate("candidate-a")] }),
+          ),
+        repairCandidateImpl,
+        runVisualGateImpl: async (options: any) => visualGate(options, "pass"),
+        runHumanGateImpl: async () => ({
+          audit: { verdict: "pass", findings: [] },
+        }),
+        promoteImpl: async () => ({ candidateId: "candidate-a" }),
+      }),
+    ).rejects.toThrow(
+      /scope for candidate-a does not match the current feedback/iu,
+    );
+
+    expect(repairCandidateImpl).not.toHaveBeenCalled();
+  });
+
   it("restores split-heading hero markers and reviewed image alt text in the full repair flow", async () => {
     process.env.OPENROUTER_API_KEY = "test-openrouter-key";
     const { root, candidates } = await fixture(["candidate-a"]);
@@ -760,6 +812,7 @@ export default function Experience({ content, runtime }) {
     const repairedExperience = initialExperience
       .replace(" data-hero", "")
       .replace(" data-early-conversion", "")
+      .replace(' data-service-presentation="magazine-archive-ledger"', "")
       .replace(
         '<section data-reference-section="image-chapter"></section>',
         '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.image} alt="" /><img src={content.hero.tertiaryImage || content.hero.image} alt="" /><img src={content.hero.secondaryImage} alt="" aria-hidden="true" /></section></section>',
@@ -866,7 +919,7 @@ export default function Experience({ content, runtime }) {
       '<a className="nav-cta" href="#contact">{content.hero.primaryLabel}</a>',
     );
     expect(repaired).toContain(
-      '<a className="hero-cta" href="#contact" data-early-conversion>{content.hero.primaryLabel}</a>',
+      '<a className="hero-cta" href="#contact" data-early-conversion data-cta-placement="after-opening-scene">{content.hero.primaryLabel}</a>',
     );
     expect(repaired).toMatch(
       /<section(?=[^>]*data-reference-section="hero")(?=[^>]*\bdata-hero(?:\s|>))[^>]*><h1>\{headlineWords\.join\(" "\)\}/u,
@@ -877,6 +930,20 @@ export default function Experience({ content, runtime }) {
     expect(
       repaired.match(/alt="Still-life image for the studio"/gu),
     ).toHaveLength(4);
+    const expectedServicePresentation = referenceDna.servicePresentation.pattern
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gu, "-")
+      .replace(/^-|-$/gu, "");
+    const expectedEarlyPlacement = referenceDna.ctaPlacement.early
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gu, "-")
+      .replace(/^-|-$/gu, "");
+    expect(repaired).toContain(
+      `data-service-presentation="${expectedServicePresentation}"`,
+    );
+    expect(repaired).toContain(
+      `data-cta-placement="${expectedEarlyPlacement}"`,
+    );
     expect(repaired).toContain(
       'src={content.hero.secondaryImage} alt="" aria-hidden="true"',
     );
@@ -1273,6 +1340,10 @@ export default function Experience({ content, runtime }) {
 
   it("forces explicit human feedback through the selected creative source before acceptance", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
+    await setHumanScopeRequest(
+      path.join(candidates, "candidate-a"),
+      "Make the hero feel more cinematic and asymmetrical.",
+    );
     let bakeoffCalls = 0;
     const repairs: any[] = [];
     let humanGateCalls = 0;
@@ -1342,6 +1413,10 @@ export default function Experience({ content, runtime }) {
 
   it("reruns Luna when the rendered human request gate still sees a mismatch", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
+    await setHumanScopeRequest(
+      path.join(candidates, "candidate-a"),
+      "Move the CTA below the gallery and make it understated.",
+    );
     let humanGateCalls = 0;
     let repairCalls = 0;
     let bakeoffCalls = 0;
@@ -1432,6 +1507,88 @@ export default function Experience({ content, runtime }) {
 
     expect(repairCalls).toBe(2);
     expect(bakeoffCalls).toBe(3);
+  });
+
+  it("rerenders and rejudges cycle-two repairs before no-selection exhaustion", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const evidence = path.join(root, "evidence");
+    const candidateDir = path.join(candidates, "candidate-a");
+    const observedSources: string[] = [];
+    let bakeoffCalls = 0;
+    let repairCalls = 0;
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: evidence,
+        maxCycles: 2,
+        runBakeoffImpl: async (options: any) => {
+          bakeoffCalls += 1;
+          observedSources.push(
+            (
+              await fs.readFile(
+                path.join(candidateDir, "Experience.jsx"),
+                "utf8",
+              )
+            ).trim(),
+          );
+          return writeBakeoffEvidence(
+            options,
+            report({
+              selectedCandidateId: null,
+              promotionReady: false,
+              candidates: [
+                candidate("candidate-a", {
+                  valid: false,
+                  eligible: false,
+                  referenceFidelity: { pass: false, score: 40 },
+                  renderedReferenceFidelity: {
+                    pass: false,
+                    audit: { findings: [] },
+                  },
+                  failures: ["Rendered candidate needs repair."],
+                }),
+              ],
+            }),
+          );
+        },
+        repairCandidateImpl: async ({ candidateDir, cycle }: any) => {
+          repairCalls += 1;
+          await writeCandidate(candidateDir, {
+            experience: `export default () => "repaired-cycle-${cycle}";`,
+            styles: "body{}",
+            motion:
+              "export function mountExperienceMotion(){ return () => {}; }",
+          });
+        },
+      }),
+    ).rejects.toThrow(
+      /No authored creative candidate passed and the 2-cycle repair budget is exhausted/iu,
+    );
+
+    expect(repairCalls).toBe(2);
+    expect(bakeoffCalls).toBe(3);
+    expect(observedSources).toEqual([
+      "export default () => null;",
+      'export default () => "repaired-cycle-1";',
+      'export default () => "repaired-cycle-2";',
+    ]);
+    const finalRound = path.join(evidence, "round-02");
+    expect(
+      JSON.parse(
+        await fs.readFile(
+          path.join(finalRound, "creative-bakeoff.json"),
+          "utf8",
+        ),
+      ).selectedCandidateId,
+    ).toBeNull();
+    for (const viewport of ["desktop", "compact", "mobile"])
+      await expect(
+        fs.access(
+          path.join(finalRound, "screenshots", `candidate-a-${viewport}.png`),
+        ),
+      ).resolves.toBeUndefined();
   });
 
   it("rejects a passing visual-gate report when the process exits nonzero", async () => {
@@ -1723,13 +1880,9 @@ process.exit(1);
     expect(workflow).toContain("scripts/run-rendered-creative-repair.mjs");
     expect(workflow).not.toContain("for REPAIR_ROUND in 1 2");
     expect(workflow).not.toContain("for VISUAL_REPAIR_ROUND in 1 2");
-    const buildIndex = workflow.indexOf(
-      'PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build',
-    );
-    const hostGuardIndex = workflow.indexOf('data-creative-host="true"');
-    const candidateGuardIndex = workflow.indexOf(
-      'data-creative-candidate=\\\"$CANDIDATE_ID\\\"',
-    );
+    const buildIndex = workflow.indexOf("-- npm run build");
+    const hostGuardIndex = workflow.indexOf("data-creative-host=");
+    const candidateGuardIndex = workflow.indexOf("data-creative-candidate=");
     expect(buildIndex).toBeGreaterThan(-1);
     expect(hostGuardIndex).toBeGreaterThan(buildIndex);
     expect(candidateGuardIndex).toBeGreaterThan(buildIndex);

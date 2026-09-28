@@ -303,7 +303,13 @@ function normalizedPageUrl(value) {
 
 export function captureEvidence(entry, captureRecord, kind) {
   const capture = captureRecord.captures[kind];
-  if (!capture || capture.httpStatus < 200 || capture.httpStatus >= 400 || !capture.fullPage)
+  if (
+    !capture ||
+    !Number.isInteger(capture.httpStatus) ||
+    capture.httpStatus < 200 ||
+    capture.httpStatus >= 400 ||
+    !capture.fullPage
+  )
     throw new Error(`Archive reference '${entry.id}' has no successful full-page ${kind} capture.`);
   let expectedOrigin = "";
   let finalOrigin = "";
