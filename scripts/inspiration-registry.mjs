@@ -571,7 +571,17 @@ function selectionHistory(request, eligibleIds, eligibleSignatures, industry) {
         : []).map((value) => cleanText(value, 600))
         .filter((signature) => eligibleSignatures.has(signature));
       if (launch?.businessKind || matchingSignatures.length)
-        relevantLaunches.push({ ...launch, routeSignatures: matchingSignatures });
+        relevantLaunches.push({
+          ...launch,
+          routeSignatures: matchingSignatures,
+          // A kind-less record can mix niches. Its global family IDs cannot
+          // be assigned to the matched signatures without route-level links.
+          ...(!launch?.businessKind ? {
+            routeFamilyIds: [],
+            creativeFamilyId: "",
+            referenceFamilyId: "",
+          } : {}),
+        });
       continue;
     }
     if (!ids.every((id) => eligibleIds.has(id))) continue;
@@ -770,7 +780,9 @@ export function buildInspirationPack(
       minimumStructuralDistance: selection.chosen.minimumDistance,
       rationale: history.recentTrios.length
         ? `${selection.chosen.repeatedRecentTrio ? "Repeated" : "Avoided"} a recent trio; latest trio overlap ${selection.chosen.latestTrioOverlap} of 3; selected exposure ${selection.chosen.exposure} across ${selection.validTrioCount} structurally independent trios. Explicit reference intent ranks first, followed by history, prompt fit, and seeded rotation.`
-        : `No recent matching trio; selected across ${selection.validTrioCount} structurally independent trios using prompt fit and seeded rotation.`,
+        : recentRouteSignatures.size || recentFamilyIds.size
+          ? `${recentRouteSignatures.size} matched route signatures and ${recentFamilyIds.size} matched families influenced history ranking across ${selection.validTrioCount} structurally independent trios. Explicit reference intent ranks first, followed by prompt fit and seeded rotation.`
+          : `No recent matching trio or pattern; selected across ${selection.validTrioCount} structurally independent trios using prompt fit and seeded rotation.`,
     },
     freshnessFallback: anchors.every((anchor) => recentReferenceIds.has(anchor.id.toLowerCase()))
       ? "history-relaxed"

@@ -10,7 +10,7 @@ const registry = JSON.parse(fs.readFileSync(path.resolve("data/inspiration-regis
 const roots: string[] = [];
 
 describe("inspiration compilation history", () => {
-  it("scopes no-kind legacy signatures to eligible references through the compiler", () => {
+  it("scopes mixed no-kind legacy signatures without leaking global families", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "inspiration-no-kind-history-"));
     roots.push(root);
     const seed = "no-kind-legacy-compiler";
@@ -24,8 +24,14 @@ describe("inspiration compilation history", () => {
     const outputPath = path.join(root, "pack.json");
     fs.writeFileSync(configPath, JSON.stringify(config));
     fs.writeFileSync(historyPath, JSON.stringify({ version: 1, launches: [
-      { id: "older-home-care", referenceIds: [], routeSignatures: ownSignatures },
-      { id: "other-dental", referenceIds: [], routeSignatures: otherSignatures },
+      {
+        id: "mixed-legacy",
+        referenceIds: [],
+        routeSignatures: [...ownSignatures, ...otherSignatures],
+        routeFamilyIds: ["guided-conversation", "cinematic-stage"],
+        creativeFamilyId: "guided-conversation",
+      },
+      { id: "other-dental", referenceIds: [], routeSignatures: otherSignatures, routeFamilyIds: ["guided-conversation"] },
     ] }));
 
     execFileSync("node", ["scripts/compile-inspiration-pack.mjs", "--config", configPath, "--history", historyPath, "--out", outputPath], {
@@ -35,7 +41,9 @@ describe("inspiration compilation history", () => {
     const next = JSON.parse(fs.readFileSync(outputPath, "utf8"));
     expect(next.request.recentRouteSignatures).toEqual(ownSignatures);
     expect(next.request.recentRouteSignatures).not.toEqual(expect.arrayContaining(otherSignatures));
+    expect(next.request.recentFamilyIds).toEqual([]);
     expect(next.request.recentReferenceSets).toEqual([]);
+    expect(next.request.selectionHistory.rationale).toMatch(/matched route signatures.*influenced/iu);
     expect(next.referenceLibrary.recordIds.sort()).not.toEqual(original.routes.map((route: any) => route.referenceDossier.id).sort());
   }, 30_000);
 
