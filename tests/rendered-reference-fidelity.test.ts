@@ -487,6 +487,84 @@ describe("rendered reference fidelity", () => {
     );
   });
 
+  it("keeps candidate geometry and overview measurements after the reusable reference prefix", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const root = path.dirname(files.referenceDesktop);
+    const overviewA = path.join(root, "candidate-overview-a.png");
+    const overviewB = path.join(root, "candidate-overview-b.png");
+    const writeOverview = (file: string, height: number) =>
+      sharp({
+        create: {
+          width: 1536,
+          height,
+          channels: 3,
+          background: { r: 30, g: 40, b: 50 },
+        },
+      })
+        .png()
+        .toFile(file);
+    await Promise.all([
+      writeOverview(overviewA, 2400),
+      writeOverview(overviewB, 3000),
+    ]);
+    const requests: any[] = [];
+    const run = (
+      fullDesktop: string,
+      renderedGeometry: Record<string, unknown>,
+    ) =>
+      evaluateRenderedReferenceFidelity({
+        referenceDna: dna(files),
+        candidateScreenshots: {
+          desktop: files.candidateDesktop,
+          compact: files.candidateCompact,
+          mobile: files.candidateMobile,
+          fullDesktop,
+        },
+        renderedGeometry,
+        fetchImpl: async (_url, options) => {
+          requests.push(JSON.parse(String(options?.body || "{}")));
+          return response({
+            verdict: "pass",
+            overallScore: 89,
+            scores: passingScores,
+            findings: [],
+            summary: "Pass.",
+          });
+        },
+      });
+
+    await run(overviewA, { desktop: { heroBottom: 480, viewportHeight: 864 } });
+    await run(overviewB, { desktop: { heroBottom: 520, viewportHeight: 864 } });
+
+    const reusablePrefix = (request: any) => {
+      const content = request.messages[1].content;
+      const breakpoint = content.findIndex(
+        (part: any) => part.prompt_cache_breakpoint?.mode === "explicit",
+      );
+      expect(breakpoint).toBeGreaterThanOrEqual(0);
+      return content.slice(0, breakpoint + 1);
+    };
+    expect(requests).toHaveLength(2);
+    expect(reusablePrefix(requests[0])).toEqual(reusablePrefix(requests[1]));
+
+    const afterBreakpoint = (request: any) => {
+      const content = request.messages[1].content;
+      const breakpoint = content.findIndex(
+        (part: any) => part.prompt_cache_breakpoint?.mode === "explicit",
+      );
+      return content
+        .slice(breakpoint + 1)
+        .filter((part: any) => part.type === "text")
+        .map((part: any) => part.text)
+        .join("\n");
+    };
+    expect(afterBreakpoint(requests[0])).toContain('"heroBottom":480');
+    expect(afterBreakpoint(requests[0])).toContain("1536x2400");
+    expect(afterBreakpoint(requests[1])).toContain('"heroBottom":520');
+    expect(afterBreakpoint(requests[1])).toContain("1536x3000");
+  });
+
   it("sends like-for-like high-detail viewport crops and low-detail page overviews", async () => {
     process.env.OPENROUTER_API_KEY = "test";
     const root = await fs.mkdtemp(
