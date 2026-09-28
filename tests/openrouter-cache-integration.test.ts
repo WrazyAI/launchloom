@@ -98,6 +98,13 @@ describe("OpenRouter cache integration", () => {
     expect(source).toContain("AFFORDABILITY_RETRY_MARGIN = 512");
   });
 
+  it("bounds evidence-derived Reference DNA output without relaxing validation", () => {
+    const source = fs.readFileSync("scripts/analyze-reference-dna.mjs", "utf8");
+    expect(source).toContain("max_tokens: 6_000");
+    expect(source).toContain("parseChoice(payload)");
+    expect(source).toContain("if (!response.ok)");
+  });
+
   it("freezes adaptive reasoning instead of downgrading effort inside a session", () => {
     const author = fs.readFileSync(
       "scripts/author-production-experiences.mjs",
@@ -170,7 +177,7 @@ describe("OpenRouter cache integration", () => {
 
   it("keeps static Reference DNA analysis reusable across runs for 24 hours", () => {
     const source = fs.readFileSync("scripts/analyze-reference-dna.mjs", "utf8");
-    expect(source).toContain('openRouterSessionId(\n    "reference-dna"');
+    expect(source).toMatch(/openRouterSessionId\(\s*"reference-dna"/u);
     expect(source).toContain("responseCacheTtlSeconds: 86_400");
     expect(source).not.toContain("pack.selectionKey ||");
     expect(source).not.toMatch(

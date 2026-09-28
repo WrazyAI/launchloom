@@ -12,7 +12,8 @@ import {
 } from "./openrouter-client.mjs";
 import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 
-const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-6-luna";
+const model =
+  process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-6-luna";
 
 const schema = {
   name: "launchloom_reference_dna_analysis",
@@ -35,7 +36,7 @@ const schema = {
       "prohibitedPatterns",
       "requiredSignatureElements",
       "acceptanceChecks",
-      "measurements"
+      "measurements",
     ],
     properties: {
       annotatedDescription: { type: "string", maxLength: 1400 },
@@ -46,8 +47,8 @@ const schema = {
         properties: {
           mode: { type: "string" },
           alignment: { type: "string" },
-          viewport: { type: "string" }
-        }
+          viewport: { type: "string" },
+        },
       },
       navigationGeometry: {
         type: "object",
@@ -56,8 +57,8 @@ const schema = {
         properties: {
           mode: { type: "string" },
           placement: { type: "string" },
-          mobile: { type: "string" }
-        }
+          mobile: { type: "string" },
+        },
       },
       typography: {
         type: "object",
@@ -66,8 +67,8 @@ const schema = {
         properties: {
           display: { type: "string" },
           body: { type: "string" },
-          scale: { type: "string" }
-        }
+          scale: { type: "string" },
+        },
       },
       palette: {
         type: "object",
@@ -77,8 +78,8 @@ const schema = {
           surfaces: { type: "array", maxItems: 6, items: { type: "string" } },
           ink: { type: "string" },
           accents: { type: "array", maxItems: 5, items: { type: "string" } },
-          contrastIntent: { type: "string" }
-        }
+          contrastIntent: { type: "string" },
+        },
       },
       imageTreatment: {
         type: "object",
@@ -87,18 +88,23 @@ const schema = {
         properties: {
           mode: { type: "string" },
           crop: { type: "string" },
-          focalPoint: { type: "string" }
-        }
+          focalPoint: { type: "string" },
+        },
       },
-      sectionSequence: { type: "array", minItems: 4, maxItems: 16, items: { type: "string" } },
+      sectionSequence: {
+        type: "array",
+        minItems: 4,
+        maxItems: 16,
+        items: { type: "string" },
+      },
       servicePresentation: {
         type: "object",
         additionalProperties: false,
         required: ["pattern", "interaction"],
         properties: {
           pattern: { type: "string" },
-          interaction: { type: "string" }
-        }
+          interaction: { type: "string" },
+        },
       },
       ctaPlacement: {
         type: "object",
@@ -107,8 +113,8 @@ const schema = {
         properties: {
           primary: { type: "string" },
           secondary: { type: "string" },
-          early: { type: "string" }
-        }
+          early: { type: "string" },
+        },
       },
       motion: {
         type: "object",
@@ -117,8 +123,8 @@ const schema = {
         properties: {
           primitive: { type: "string" },
           library: { type: "string" },
-          reducedMotion: { type: "string" }
-        }
+          reducedMotion: { type: "string" },
+        },
       },
       mobileRecomposition: {
         type: "object",
@@ -126,10 +132,20 @@ const schema = {
         required: ["strategy", "rules"],
         properties: {
           strategy: { type: "string" },
-          rules: { type: "array", minItems: 2, maxItems: 8, items: { type: "string" } }
-        }
+          rules: {
+            type: "array",
+            minItems: 2,
+            maxItems: 8,
+            items: { type: "string" },
+          },
+        },
       },
-      prohibitedPatterns: { type: "array", minItems: 3, maxItems: 12, items: { type: "string" } },
+      prohibitedPatterns: {
+        type: "array",
+        minItems: 3,
+        maxItems: 12,
+        items: { type: "string" },
+      },
       requiredSignatureElements: {
         type: "array",
         minItems: 2,
@@ -141,11 +157,16 @@ const schema = {
           properties: {
             id: { type: "string" },
             selector: { type: "string" },
-            description: { type: "string" }
-          }
-        }
+            description: { type: "string" },
+          },
+        },
       },
-      acceptanceChecks: { type: "array", minItems: 4, maxItems: 12, items: { type: "string" } },
+      acceptanceChecks: {
+        type: "array",
+        minItems: 4,
+        maxItems: 12,
+        items: { type: "string" },
+      },
       measurements: {
         type: "object",
         additionalProperties: false,
@@ -161,7 +182,7 @@ const schema = {
           "imageAspectRatios",
           "overlapRelationships",
           "surfaceTransitions",
-          "mobile"
+          "mobile",
         ],
         properties: {
           headlineWidthRatio: { type: "number", minimum: 0, maximum: 1 },
@@ -171,39 +192,75 @@ const schema = {
           navTopRatio: { type: "number", minimum: 0, maximum: 1 },
           navSideInsetRatio: { type: "number", minimum: 0, maximum: 0.5 },
           ctaTopRatio: { type: "number", minimum: 0, maximum: 4 },
-          dominantSectionHeightRatios: { type: "array", minItems: 3, maxItems: 12, items: { type: "number", minimum: 0.1, maximum: 4 } },
-          imageAspectRatios: { type: "array", minItems: 1, maxItems: 8, items: { type: "number", minimum: 0.2, maximum: 5 } },
-          overlapRelationships: { type: "array", maxItems: 8, items: { type: "string" } },
-          surfaceTransitions: { type: "array", maxItems: 10, items: { type: "string" } },
+          dominantSectionHeightRatios: {
+            type: "array",
+            minItems: 3,
+            maxItems: 12,
+            items: { type: "number", minimum: 0.1, maximum: 4 },
+          },
+          imageAspectRatios: {
+            type: "array",
+            minItems: 1,
+            maxItems: 8,
+            items: { type: "number", minimum: 0.2, maximum: 5 },
+          },
+          overlapRelationships: {
+            type: "array",
+            maxItems: 8,
+            items: { type: "string" },
+          },
+          surfaceTransitions: {
+            type: "array",
+            maxItems: 10,
+            items: { type: "string" },
+          },
           mobile: {
             type: "object",
             additionalProperties: false,
-            required: ["headlineWidthRatio", "imageOccupancyRatio", "ctaTopRatio", "contentInsetRatio"],
+            required: [
+              "headlineWidthRatio",
+              "imageOccupancyRatio",
+              "ctaTopRatio",
+              "contentInsetRatio",
+            ],
             properties: {
               headlineWidthRatio: { type: "number", minimum: 0, maximum: 1 },
               imageOccupancyRatio: { type: "number", minimum: 0, maximum: 1 },
               ctaTopRatio: { type: "number", minimum: 0, maximum: 4 },
-              contentInsetRatio: { type: "number", minimum: 0, maximum: 0.5 }
-            }
-          }
-        }
-      }
-    }
-  }
+              contentInsetRatio: { type: "number", minimum: 0, maximum: 0.5 },
+            },
+          },
+        },
+      },
+    },
+  },
 };
 
 function argsFrom(argv) {
-  return Object.fromEntries(argv.slice(2).reduce((pairs, value, index, all) =>
-    index % 2 === 0 ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]] : pairs, []));
+  return Object.fromEntries(
+    argv
+      .slice(2)
+      .reduce(
+        (pairs, value, index, all) =>
+          index % 2 === 0
+            ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
+            : pairs,
+        [],
+      ),
+  );
 }
 
 function parseChoice(payload) {
   const raw = String(payload?.choices?.[0]?.message?.content || "").trim();
   if (!raw) throw new Error("Reference analyzer returned no content.");
   try {
-    return JSON.parse(raw.replace(/^```(?:json)?\s*/iu, "").replace(/\s*```$/u, ""));
+    return JSON.parse(
+      raw.replace(/^```(?:json)?\s*/iu, "").replace(/\s*```$/u, ""),
+    );
   } catch (error) {
-    throw new Error(`Reference analyzer returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Reference analyzer returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
@@ -214,8 +271,11 @@ export function referenceAnalyzerViewportGuidance() {
 async function analyzeRoute(route, fetchImpl = fetch) {
   const dna = route.referenceDna || {};
   const desktop = dna.evidence?.desktopScreenshot?.path;
-  const mobile = dna.evidence?.mobileScreenshot?.available ? dna.evidence.mobileScreenshot.path : "";
-  if (!desktop) throw new Error(`Reference route ${route.id} has no desktop screenshot.`);
+  const mobile = dna.evidence?.mobileScreenshot?.available
+    ? dna.evidence.mobileScreenshot.path
+    : "";
+  if (!desktop)
+    throw new Error(`Reference route ${route.id} has no desktop screenshot.`);
   const captureDimensions = {
     desktop: await promptImageDimensions(desktop),
     mobile: mobile ? await promptImageDimensions(mobile) : null,
@@ -226,17 +286,21 @@ async function analyzeRoute(route, fetchImpl = fetch) {
       text: `Analyze this design reference as implementation mechanics, not as brand identity. Produce measured Reference DNA for an independent implementation. Existing route hints are context only and may be corrected by the pixels.
 
 ROUTE HINTS
-${JSON.stringify({
-  familyId: dna.familyId,
-  referenceName: dna.referenceName,
-  heroGeometry: route.heroGeometry,
-  navigation: route.navigation,
-  servicePresentation: route.servicePresentation,
-  sectionRhythm: route.sectionRhythm,
-  typographyCategory: route.typographyCategory,
-  imageStrategy: route.imageStrategy,
-  motionOpportunity: route.motionOpportunity
-}, null, 2)}
+${JSON.stringify(
+  {
+    familyId: dna.familyId,
+    referenceName: dna.referenceName,
+    heroGeometry: route.heroGeometry,
+    navigation: route.navigation,
+    servicePresentation: route.servicePresentation,
+    sectionRhythm: route.sectionRhythm,
+    typographyCategory: route.typographyCategory,
+    imageStrategy: route.imageStrategy,
+    motionOpportunity: route.motionOpportunity,
+  },
+  null,
+  2,
+)}
 
 CURATED REFERENCE DOSSIER
 ${referenceDossierPromptBlock(route.referenceDossier) || "No dossier was attached. Do not infer missing evidence from prose."}
@@ -254,20 +318,21 @@ Rules:
 - infer only motion that is visually supported by the screenshots or the route's documented motion opportunity
 - required signatures must be design mechanics that can be independently implemented
 - prohibited patterns should name generic fallbacks that would visibly break this reference family
-- do not copy branding, copy, proprietary fonts, logos, or trade dress`
+- do not copy branding, copy, proprietary fonts, logos, or trade dress`,
     },
     { type: "text", text: "Desktop reference:" },
     await promptImagePart(desktop),
-    ...(mobile ? [{ type: "text", text: "Mobile reference:" }, await promptImagePart(mobile)] : [])
+    ...(mobile
+      ? [
+          { type: "text", text: "Mobile reference:" },
+          await promptImagePart(mobile),
+        ]
+      : []),
   ];
-  const sessionId = openRouterSessionId(
-    "reference-dna",
-    model,
-    {
-      familyId: dna.familyId || route.familyId || "",
-      referenceName: dna.referenceName || route.label || "",
-    },
-  );
+  const sessionId = openRouterSessionId("reference-dna", model, {
+    familyId: dna.familyId || route.familyId || "",
+    referenceName: dna.referenceName || route.label || "",
+  });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 180_000);
   try {
@@ -282,15 +347,16 @@ Rules:
         model,
         temperature: 0,
         reasoning: { effort: "medium", exclude: true },
-        max_tokens: 9000,
+        max_tokens: 6_000,
         response_format: { type: "json_schema", json_schema: schema },
         messages: [
           {
             role: "system",
-            content: "Return JSON only. You are a senior visual systems designer extracting measurable, transferable design mechanics from screenshots."
+            content:
+              "Return JSON only. You are a senior visual systems designer extracting measurable, transferable design mechanics from screenshots.",
           },
-          { role: "user", content }
-        ]
+          { role: "user", content },
+        ],
       },
     });
     logOpenRouterResponseCacheUsage("reference-dna", response);
@@ -299,7 +365,9 @@ Rules:
       return {};
     });
     if (!response.ok)
-      throw new Error(`Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`);
+      throw new Error(
+        `Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`,
+      );
     logOpenRouterCacheUsage("reference-dna", payload.usage);
     return { ...parseChoice(payload), captureDimensions };
   } finally {
@@ -316,7 +384,9 @@ export async function enrichInspirationPack(
     allowArchiveReferenceIds,
   });
   if (!process.env.OPENROUTER_API_KEY)
-    throw new Error("OPENROUTER_API_KEY is required to derive Reference DNA from screenshots.");
+    throw new Error(
+      "OPENROUTER_API_KEY is required to derive Reference DNA from screenshots.",
+    );
   if (!Array.isArray(pack?.routes) || !pack.routes.length)
     throw new Error("Reference DNA analysis requires inspiration routes.");
   const routes = [];
@@ -335,11 +405,16 @@ export async function enrichInspirationPack(
         },
         analyzedFromEvidence: true,
         analyzerModel: model,
-        analyzedAt: new Date().toISOString()
-      }
+        analyzedAt: new Date().toISOString(),
+      },
     });
   }
-  return { ...pack, referenceDnaAnalyzed: true, referenceDnaAnalyzerModel: model, routes };
+  return {
+    ...pack,
+    referenceDnaAnalyzed: true,
+    referenceDnaAnalyzerModel: model,
+    routes,
+  };
 }
 
 async function main() {
@@ -350,7 +425,9 @@ async function main() {
   const pack = JSON.parse(await fs.readFile(input, "utf8"));
   const enriched = await enrichInspirationPack(pack);
   await fs.writeFile(output, `${JSON.stringify(enriched, null, 2)}\n`);
-  console.log(JSON.stringify({ routes: enriched.routes.length, model, output }));
+  console.log(
+    JSON.stringify({ routes: enriched.routes.length, model, output }),
+  );
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) await main();
