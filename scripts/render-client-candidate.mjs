@@ -2,10 +2,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
 import {
+  fullPageCaptureErrors,
   inspect,
   prepareFullPageCapture,
   startServer,
-} from "./run-creative-bakeoff.mjs";
+} from "./client-render-harness.mjs";
 
 const VIEWPORTS = [
   { name: "desktop", width: 1536, height: 864 },
@@ -83,17 +84,17 @@ async function main() {
           path: path.join(evidenceDir, `${candidateId}-${viewport.name}.png`),
           fullPage: true,
         });
-        const fullPageCaptureErrors = browserErrors
-          .slice(browserErrorsBeforeCapture)
-          .map(
-            () => `${viewport.name}: browser error during full-page capture`,
-          );
+        const pageCaptureErrors = fullPageCaptureErrors(
+          browserErrors,
+          browserErrorsBeforeCapture,
+          viewport.name,
+        );
         viewports.push({
           ...viewport,
           evidence,
           renderedDom,
           browserErrors,
-          fullPageCaptureErrors,
+          fullPageCaptureErrors: pageCaptureErrors,
         });
       } finally {
         await page.close();
