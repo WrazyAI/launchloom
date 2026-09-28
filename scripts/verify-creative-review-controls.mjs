@@ -93,7 +93,7 @@ const actions = [];
 const browser = await chromium.launch({ headless: true });
 const failures = [];
 
-async function mockCreativeReview(page) {
+async function mockCreativeReview(page, statusOverrides = {}) {
   await page.route("**/api/creative-repair", async (route) => {
     const body = route.request().postDataJSON();
     actions.push(body);
@@ -110,6 +110,7 @@ async function mockCreativeReview(page) {
           humanDisposition: null,
           reviewQueue: "clear",
           findings: [],
+          ...statusOverrides,
         }),
       });
       return;
@@ -178,7 +179,7 @@ try {
     );
   if (
     !(await banner.locator(".ll-review__summary").innerText()).includes(
-      "This is still a work. This is just a field preview.",
+      "This is still a work in progress. This is a field preview only.",
     )
   )
     failures.push(
@@ -202,6 +203,91 @@ try {
   if (actions.some((item) => item.action === "send-anyway"))
     failures.push("Submitting feedback unexpectedly started a client release.");
   await feedbackPage.close();
+
+  const acceptedPage = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+  });
+  await mockCreativeReview(acceptedPage, {
+    humanDisposition: "accepted-with-feedback",
+    reviewQueue: "clear",
+  });
+  await acceptedPage.goto(
+    `${origin}/?review=${encodeURIComponent(fakeToken)}`,
+    { waitUntil: "domcontentloaded" },
+  );
+  await acceptedPage.locator("#ll-review").waitFor({ state: "visible" });
+  const acceptedRelease = acceptedPage.getByRole("button", {
+    name: "Accepted as baseline",
+  });
+  if (!(await acceptedRelease.isDisabled()))
+    failures.push(
+      "An accepted diagnostic baseline still allows the send-anyway action.",
+    );
+  if (
+    !(await acceptedPage.locator(".ll-field-preview-note").innerText()).includes(
+      "accepted as the working baseline",
+    )
+  )
+    failures.push(
+      "Accepted diagnostic feedback is not reflected in the field-preview state.",
+    );
+  await acceptedPage.close();
+
+  const runningPage = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+  });
+  await mockCreativeReview(runningPage, {
+    status: "running",
+    humanDisposition: null,
+    reviewQueue: "clear",
+  });
+  await runningPage.goto(
+    `${origin}/?review=${encodeURIComponent(fakeToken)}`,
+    { waitUntil: "domcontentloaded" },
+  );
+  await runningPage.locator("#ll-review").waitFor({ state: "visible" });
+  if (
+    !(await runningPage.locator(".ll-field-preview-note").innerText()).includes(
+      "final design repair is running",
+    )
+  )
+    failures.push(
+      "A running final repair is mislabeled as an accepted baseline or developer revision.",
+    );
+  if (
+    !(await runningPage.getByRole("button", {
+      name: "Final repair in progress",
+    }).isDisabled())
+  )
+    failures.push(
+      "The send-anyway action remains enabled while the final repair is running.",
+    );
+  await runningPage.close();
+
+  const queuedRevisionPage = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+  });
+  await mockCreativeReview(queuedRevisionPage, {
+    status: "available",
+    humanDisposition: null,
+    reviewQueue: "revision_in_progress",
+  });
+  await queuedRevisionPage.goto(
+    `${origin}/?review=${encodeURIComponent(fakeToken)}`,
+    { waitUntil: "domcontentloaded" },
+  );
+  await queuedRevisionPage.locator("#ll-review").waitFor({ state: "visible" });
+  const revisionNotice = await queuedRevisionPage
+    .locator(".ll-field-preview-note")
+    .innerText();
+  if (
+    !revisionNotice.includes("A developer revision is in progress") ||
+    revisionNotice.includes("accepted as the working baseline")
+  )
+    failures.push(
+      "A repository revision queue is incorrectly described as baseline acceptance.",
+    );
+  await queuedRevisionPage.close();
 
   const overridePage = await browser.newPage({
     viewport: { width: 390, height: 844 },

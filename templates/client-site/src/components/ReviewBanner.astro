@@ -145,7 +145,7 @@ const { diagnosticPreview = false } = Astro.props;
       else close.removeAttribute("aria-describedby");
     };
     root.querySelector(".ll-review__summary").innerHTML = diagnosticReview
-      ? "<span aria-hidden=\"true\">▣</span> This is still a work. This is just a field preview."
+      ? "<span aria-hidden=\"true\">▣</span> This is still a work in progress. This is a field preview only."
       : developer
       ? "<span aria-hidden=\"true\">▣</span> Internal developer review. Approve before the client sees this."
       : "<span aria-hidden=\"true\">▣</span> Your website is live. Tell us what you would like changed.";
@@ -173,11 +173,21 @@ const { diagnosticPreview = false } = Astro.props;
             sendAnyway.disabled = true;
             sendAnyway.title = "SEO research is incomplete. Publishing remains blocked.";
             fieldNotice.textContent = "This preview missed the visual checks. SEO research is incomplete, so client release remains blocked.";
-          } else if (["dispatching", "queued", "running"].includes(result.status) || (result.reviewQueue && result.reviewQueue !== "clear")) {
+          } else if (result.humanDisposition === "accepted-with-feedback") {
+            sendAnyway.disabled = true;
+            sendAnyway.textContent = "Accepted as baseline";
+            fieldNotice.textContent = "This version is accepted as the working baseline. The client has not received this preview.";
+            if (result.reviewQueue && result.reviewQueue !== "clear") open.disabled = true;
+          } else if (["dispatching", "queued", "running"].includes(result.status)) {
+            open.disabled = true;
+            sendAnyway.disabled = true;
+            sendAnyway.textContent = "Final repair in progress";
+            fieldNotice.textContent = "The final design repair is running. The client has not received this preview.";
+          } else if (result.reviewQueue && result.reviewQueue !== "clear") {
             open.disabled = true;
             sendAnyway.disabled = true;
             sendAnyway.textContent = "Revision in progress";
-            fieldNotice.textContent = "This version is accepted as the working baseline. A developer revision is in progress; the client has not received this preview.";
+            fieldNotice.textContent = "A developer revision is in progress. The client has not received this preview.";
           } else if (["dispatching", "published"].includes(result.overrideStatus)) {
             sendAnyway.disabled = true;
             sendAnyway.textContent = result.overrideStatus === "published" ? "Client release already queued" : "Client release request is processing";
