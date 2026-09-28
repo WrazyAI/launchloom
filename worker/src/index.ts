@@ -535,6 +535,49 @@ async function siteConfigAtReviewHead(env: Env, claims: ReviewClaims) {
   return JSON.parse(jsonText) as Record<string, unknown>;
 }
 
+async function mergeReviewedPr(
+  env: Env,
+  claims: ReviewClaims,
+  current: Awaited<ReturnType<typeof currentReviewPr>>,
+) {
+  const exactReviewedHead = current.head.sha === claims.headSha;
+  const retryingMergedApproval =
+    exactReviewedHead &&
+    current.state === "closed" &&
+    current.merged === true &&
+    Boolean(current.merge_commit_sha);
+  if (
+    !exactReviewedHead ||
+    current.draft ||
+    (!retryingMergedApproval && current.state !== "open")
+  )
+    throw new Error("This preview has changed. Ask for a fresh approval link.");
+
+  if (retryingMergedApproval) return current.merge_commit_sha!;
+  const mergeResponse = await github(
+    env,
+    `/repos/${claims.repo}/pulls/${claims.pr!}/merge`,
+    {
+      method: "PUT",
+      body: JSON.stringify({
+        sha: claims.headSha!,
+        merge_method: "squash",
+        commit_title: "LaunchLoom approved site",
+      }),
+    },
+  );
+  const mergeResult = (await mergeResponse.json()) as {
+    merged?: boolean;
+    sha?: string;
+    message?: string;
+  };
+  if (!mergeResult.merged || !mergeResult.sha)
+    throw new Error(
+      `GitHub did not return an approved merge commit: ${clean(mergeResult.message, 200) || "unknown merge result"}`,
+    );
+  return mergeResult.sha;
+}
+
 async function intake(request: Request, env: Env) {
   const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
   const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
@@ -1228,7 +1271,10 @@ function safeCreativeRepairFindings(value: unknown): CreativeRepairFinding[] {
     .map((raw) => {
       if (!raw || typeof raw !== "object") return null;
       const item = raw as Record<string, unknown>;
-      const severity = clean(item.severity, 20) as CreativeRepairFinding["severity"];
+      const severity = clean(
+        item.severity,
+        20,
+      ) as CreativeRepairFinding["severity"];
       const category = clean(item.category, 80);
       const evidence = clean(item.evidence, 600);
       if (!category || !evidence || !severities.has(severity)) return null;
@@ -1278,7 +1324,11 @@ async function creativeRepair(request: Request, env: Env) {
       throw new Error("Invalid creative repair link.");
     const reviewedHeadSha = String(claims.headSha);
     const reviewedPr = Number(claims.pr);
-    assertClaimOrigin(request, claims.allowedOrigins, clean(body.pageUrl, 4_000));
+    assertClaimOrigin(
+      request,
+      claims.allowedOrigins,
+      clean(body.pageUrl, 4_000),
+    );
     coordinator = env.REVISION_COORDINATOR.getByName(claims.repo.toLowerCase());
     const action = clean(body.action, 20);
     if (action === "status") {
@@ -1294,12 +1344,17 @@ async function creativeRepair(request: Request, env: Env) {
           404,
           cors(request, claims.allowedOrigins),
         );
-      return json(status, 200, {
-        ...cors(request, claims.allowedOrigins),
-        "Cache-Control": "no-store",
-      });
+      const queue = await coordinator.approvalState();
+      return json(
+        { ...status, reviewQueue: queue.allowed ? "clear" : queue.code },
+        200,
+        {
+          ...cors(request, claims.allowedOrigins),
+          "Cache-Control": "no-store",
+        },
+      );
     }
-    if (action !== "retry")
+    if (!["retry", "feedback", "send-anyway"].includes(action))
       return json(
         { error: "Unsupported creative repair action." },
         400,
@@ -1315,6 +1370,256 @@ async function creativeRepair(request: Request, env: Env) {
         cors(request, claims.allowedOrigins),
       );
 
+    const status = await coordinator.getCreativeRepair(
+      sessionId,
+      claims.repo,
+      reviewedPr,
+      reviewedHeadSha,
+    );
+    if (!status)
+      return json(
+        { error: "This creative repair session is unavailable." },
+        404,
+        cors(request, claims.allowedOrigins),
+      );
+
+    if (action === "feedback") {
+      if (!safeCreativeRepairUrl(status.previewUrl))
+        return json(
+          { error: "This session has no safe diagnostic preview to review." },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+      if (["dispatching", "queued", "running"].includes(status.status))
+        return json(
+          {
+            error:
+              "The final design repair is still running. Wait for its updated developer preview before sending more feedback.",
+          },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+      const note = clean(body.comment, 5_000);
+      if (!note)
+        return json(
+          { error: "Please enter feedback first." },
+          400,
+          cors(request, claims.allowedOrigins),
+        );
+      const current = await currentReviewPr(env, claims);
+      if (
+        current.state !== "open" ||
+        current.draft ||
+        current.head.sha !== reviewedHeadSha
+      )
+        return json(
+          {
+            error:
+              "This preview has changed. Use the latest developer review link.",
+          },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+      const suppliedId = clean(body.submissionId, 100);
+      const requestId = /^[a-z0-9-]{12,100}$/i.test(suppliedId)
+        ? suppliedId
+        : crypto.randomUUID();
+      const reviewedPage =
+        new URL(clean(body.pageUrl, 4_000)).origin +
+        new URL(clean(body.pageUrl, 4_000)).pathname;
+      const category = clean(body.category, 80);
+      const fingerprint = await digest(
+        suppliedId
+          ? `creative-feedback:${requestId}`
+          : [claims.repo, reviewedHeadSha, note, category, reviewedPage].join(
+              "\n",
+            ),
+      );
+      const queued = await coordinator.enqueue({
+        requestId,
+        fingerprint,
+        stage: "developer",
+        repo: claims.repo,
+        pr: reviewedPr,
+        feedbackIssue: claims.feedbackIssue,
+        siteId: claims.siteId,
+        clientEmail: claims.clientEmail,
+        reviewedPage: clean(reviewedPage, 1_000),
+        category,
+        feedback: note,
+        creativeRepairSessionId: sessionId,
+      } satisfies RevisionRequestInput);
+      if (!queued.ok)
+        return json(
+          { error: queued.error, code: queued.code },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+      await coordinator.recordCreativeDisposition({
+        decisionId: `feedback:${sessionId}:${requestId}`,
+        sessionId,
+        repo: claims.repo,
+        pr: reviewedPr,
+        headSha: reviewedHeadSha,
+        candidateId: status.candidateId,
+        disposition: "accepted-with-feedback",
+        reviewerEmail: claims.reviewerEmail,
+        feedbackRequestId: queued.requestId,
+      });
+      return json(
+        {
+          ok: true,
+          disposition: "accepted-with-feedback",
+          requestId: queued.requestId,
+          queueStatus: queued.queueStatus,
+          clientPublished: false,
+        },
+        queued.queueStatus === "duplicate" ? 200 : 202,
+        {
+          ...cors(request, claims.allowedOrigins),
+          "Cache-Control": "no-store",
+        },
+      );
+    }
+
+    if (action === "send-anyway") {
+      if (!safeCreativeRepairUrl(status.previewUrl))
+        return json(
+          { error: "This session has no safe diagnostic preview to review." },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+      if (body.confirmed !== true)
+        return json(
+          {
+            error:
+              "Confirm the not-recommended client release before continuing.",
+          },
+          400,
+          cors(request, claims.allowedOrigins),
+        );
+      const releaseQueue = await coordinator.approvalState();
+      if (!releaseQueue.allowed)
+        return json(
+          {
+            error:
+              releaseQueue.code === "revision_queue_halted"
+                ? "Resolve the failed revision queue before sending this preview to the client."
+                : "A developer revision is already in progress.",
+          },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+      const current = await currentReviewPr(env, claims);
+      const exactHead = current.head.sha === reviewedHeadSha;
+      const retryingMerged =
+        exactHead &&
+        current.state === "closed" &&
+        current.merged === true &&
+        Boolean(current.merge_commit_sha);
+      if (
+        !exactHead ||
+        current.draft ||
+        (!retryingMerged && current.state !== "open")
+      )
+        return json(
+          {
+            error:
+              "This preview has changed. Use the latest developer review link.",
+          },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+      const research = seoResearchReadiness(
+        await siteConfigAtReviewHead(env, claims),
+      );
+      if (!research.allowed)
+        return json(
+          { error: research.error, code: research.code },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+      const begun = await coordinator.beginCreativeOverride({
+        sessionId,
+        repo: claims.repo,
+        pr: reviewedPr,
+        headSha: reviewedHeadSha,
+        candidateId: status.candidateId,
+        reviewerEmail: claims.reviewerEmail,
+      });
+      if (!begun.started) {
+        if (begun.status === "published")
+          return json(
+            {
+              ok: true,
+              status: "publication-queued",
+              alreadyQueued: true,
+              approvedSha: begun.approvedSha,
+            },
+            200,
+            {
+              ...cors(request, claims.allowedOrigins),
+              "Cache-Control": "no-store",
+            },
+          );
+        return json(
+          {
+            error:
+              begun.status === "revision_in_progress"
+                ? "Finish the active revision before sending this preview to the client."
+                : begun.status === "revision_queue_halted"
+                  ? "Resolve the failed revision queue before sending this preview to the client."
+                  : begun.status === "dispatching"
+                    ? "The client-release request is already being processed."
+                    : "This diagnostic preview is stale or cannot be released.",
+            status: begun.status,
+          },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+      }
+      try {
+        const approvedSha = await mergeReviewedPr(env, claims, current);
+        await dispatch(env, "publish-site", {
+          repo: claims.repo,
+          pr: reviewedPr,
+          siteId: claims.siteId,
+          clientEmail: claims.clientEmail,
+          feedbackIssue: claims.feedbackIssue,
+          approvedSha,
+          developerOverride: {
+            sessionId,
+            reviewedHeadSha,
+            candidateId: status.candidateId,
+            reviewerEmail: claims.reviewerEmail,
+            disposition: "override-publish",
+          },
+        });
+        await coordinator.completeCreativeOverride(sessionId, approvedSha);
+        return json(
+          {
+            ok: true,
+            status: "publication-queued",
+            disposition: "override-publish",
+            approvedSha,
+          },
+          202,
+          {
+            ...cors(request, claims.allowedOrigins),
+            "Cache-Control": "no-store",
+          },
+        );
+      } catch (error) {
+        await coordinator.failCreativeOverride(
+          sessionId,
+          error instanceof Error
+            ? error.message
+            : "Client release could not be queued.",
+        );
+        throw error;
+      }
+    }
+
     const current = await currentReviewPr(env, claims);
     if (
       current.state !== "open" ||
@@ -1322,10 +1627,27 @@ async function creativeRepair(request: Request, env: Env) {
       current.head.sha !== reviewedHeadSha
     )
       return json(
-        { error: "This preview has changed. Use the latest developer review link." },
+        {
+          error:
+            "This preview has changed. Use the latest developer review link.",
+        },
         409,
         cors(request, claims.allowedOrigins),
       );
+    if (action === "retry") {
+      const queue = await coordinator.approvalState();
+      if (!queue.allowed)
+        return json(
+          {
+            error:
+              queue.code === "revision_queue_halted"
+                ? "Resolve the failed revision queue before starting a design repair."
+                : "A developer revision is already in progress.",
+          },
+          409,
+          cors(request, claims.allowedOrigins),
+        );
+    }
     const attempt = await coordinator.beginCreativeRepair(
       sessionId,
       claims.repo,
@@ -1359,15 +1681,19 @@ async function creativeRepair(request: Request, env: Env) {
       );
       throw error;
     }
-    return json(
-      { ok: true, status: "queued", attemptConsumed: true },
-      202,
-      { ...cors(request, claims.allowedOrigins), "Cache-Control": "no-store" },
-    );
+    return json({ ok: true, status: "queued", attemptConsumed: true }, 202, {
+      ...cors(request, claims.allowedOrigins),
+      "Cache-Control": "no-store",
+    });
   } catch (error) {
     console.error("Creative repair request failed", error);
     return json(
-      { error: error instanceof Error ? error.message : "Creative repair is unavailable." },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Creative repair is unavailable.",
+      },
       403,
       headers,
     );
@@ -1436,10 +1762,7 @@ async function creativeRepairCoordinator(request: Request, env: Env) {
     const action = clean(body.action, 30);
     const sessionId = clean(body.sessionId, 100);
     const repo = clean(body.repo, 240);
-    if (
-      !validClientRepository(repo) ||
-      !/^[a-f0-9]{32}$/iu.test(sessionId)
-    )
+    if (!validClientRepository(repo) || !/^[a-f0-9]{32}$/iu.test(sessionId))
       return json({ error: "Invalid creative repair session." }, 400);
     const coordinator = env.REVISION_COORDINATOR.getByName(repo.toLowerCase());
     if (action === "register") {
@@ -1495,7 +1818,10 @@ async function creativeRepairCoordinator(request: Request, env: Env) {
         pull.draft ||
         pull.head.sha !== clean(body.headSha, 40)
       ) {
-        await coordinator.failCreativeRepair(sessionId, "The review branch changed before repair started.");
+        await coordinator.failCreativeRepair(
+          sessionId,
+          "The review branch changed before repair started.",
+        );
         return json({ run: false, status: "stale" }, 409, {
           "Cache-Control": "no-store",
         });
@@ -1509,7 +1835,10 @@ async function creativeRepairCoordinator(request: Request, env: Env) {
         ? safeCreativeRepairUrl(body.previewUrl)
         : null;
       const reviewUrl = body.reviewUrl ? clean(body.reviewUrl, 4_000) : null;
-      if ((body.previewUrl && !previewUrl) || (reviewUrl && !/^https:\/\//iu.test(reviewUrl)))
+      if (
+        (body.previewUrl && !previewUrl) ||
+        (reviewUrl && !/^https:\/\//iu.test(reviewUrl))
+      )
         return json({ error: "Invalid repair result URL." }, 400);
       await coordinator.completeCreativeRepair(sessionId, {
         outcome: clean(body.outcome, 80) || "completed",
@@ -1561,7 +1890,10 @@ async function approval(request: Request, env: Env) {
       throw new Error("Invalid review link.");
     if (claims.creativeRepairSessionId)
       return json(
-        { error: "Diagnostic previews cannot be approved. Use the resulting developer review link." },
+        {
+          error:
+            "Diagnostic previews cannot be approved. Use the resulting developer review link.",
+        },
         409,
         cors(request, claims.allowedOrigins),
       );
@@ -1613,35 +1945,10 @@ async function approval(request: Request, env: Env) {
         409,
         cors(request, claims.allowedOrigins),
       );
-    let approvedSha = retryingMergedApproval
-      ? current.merge_commit_sha!
-      : "";
-    if (!approvedSha) {
-      const mergeResponse = await github(
-        env,
-        `/repos/${claims.repo}/pulls/${claims.pr!}/merge`,
-        {
-          method: "PUT",
-          body: JSON.stringify({
-            sha: claims.headSha!,
-            merge_method: "squash",
-            commit_title: "LaunchLoom approved site",
-          }),
-        },
-      );
-      const mergeResult = (await mergeResponse.json()) as {
-        merged?: boolean;
-        sha?: string;
-        message?: string;
-      };
-      if (!mergeResult.merged || !mergeResult.sha)
-        throw new Error(
-          `GitHub did not return an approved merge commit: ${clean(mergeResult.message, 200) || "unknown merge result"}`,
-        );
-      approvedSha = mergeResult.sha;
-    }
+    const approvedSha = await mergeReviewedPr(env, claims, current);
     await dispatch(env, "publish-site", {
       repo: claims.repo,
+      pr: claims.pr,
       siteId: claims.siteId,
       clientEmail: claims.clientEmail,
       feedbackIssue: claims.feedbackIssue,
