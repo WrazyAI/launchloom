@@ -55,6 +55,10 @@ function unique(values) {
 function candidateFindings(candidate) {
   return unique([
     ...(candidate?.failures || []),
+    ...(candidate?.commandDiagnostics || []).map((item) => {
+      const output = [item.stderr, item.stdout].filter(Boolean).join("\n");
+      return `Untrusted client ${item.stage || "process"} diagnostic (${item.command || "unknown command"}, exit ${item.exitCode ?? "unknown"}): ${output || "(no command output captured)"}`;
+    }),
     ...(candidate?.renderedReferenceFidelity?.audit?.findings || []).map(
       (item) =>
         `${item.severity || "major"} ${item.category || "reference"} ${item.viewport || "all"}: ${item.evidence || item.repair || "Rendered reference mismatch."}`,

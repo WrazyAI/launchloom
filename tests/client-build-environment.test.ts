@@ -451,6 +451,57 @@ process.exit(result.status ?? 1);
     }
   });
 
+  it("preserves bounded redacted failure output as private structured diagnostics", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-client-diagnostic-test-"),
+    );
+    const stderrMarker = "synthetic-build-diagnostic-marker";
+    const privateCredential = "ghp_0123456789abcdefghijklmnopqrstuvwxyzABCD";
+
+    try {
+      let failure: unknown;
+      try {
+        await runClientProcess({
+          command: process.execPath,
+          args: [
+            "-e",
+            `process.stderr.write(${JSON.stringify(`${stderrMarker}\nAuthorization: Bearer ${privateCredential}`)}); process.exit(9);`,
+          ],
+          cwd: root,
+          isolationMode: "trusted-local",
+        });
+      } catch (error) {
+        failure = error;
+      }
+
+      expect(failure).toBeInstanceOf(Error);
+      expect((failure as Error).message).toMatch(/exited with 9/u);
+      expect((failure as Error).message).not.toContain(stderrMarker);
+      expect((failure as Error).message).not.toContain(privateCredential);
+      const diagnostic = (
+        failure as Error & {
+          clientProcessDiagnostic?: {
+            command: string;
+            exitCode: number | null;
+            stderr: string;
+          };
+        }
+      ).clientProcessDiagnostic;
+      expect(diagnostic).toMatchObject({
+        command: path.basename(process.execPath),
+        exitCode: 9,
+      });
+      expect(diagnostic?.stderr).toContain(stderrMarker);
+      expect(diagnostic?.stderr).not.toContain(privateCredential);
+      expect(diagnostic?.stderr).toContain("[REDACTED]");
+      expect(Object.keys(failure as Error)).not.toContain(
+        "clientProcessDiagnostic",
+      );
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("refuses to make any Git checkout tree writable to client code", async () => {
     await expect(
       runClientProcess({

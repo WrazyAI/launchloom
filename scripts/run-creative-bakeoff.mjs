@@ -238,7 +238,7 @@ function hardFailures(evidence, viewport, referenceDna = null) {
 }
 
 /**
- * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean}} options
+ * @param {{siteDir?: string, candidatesDir?: string, reportPath?: string, screenshotsDir?: string, promote?: boolean, preview?: boolean, deferPromotion?: boolean, excludedCandidateIds?: string[], renderedReferenceEvaluator?: (input: any) => Promise<any>, renderedDiversityEvaluator?: (input: any) => Promise<any>, requireDiversity?: boolean, runClientProcessImpl?: typeof runClientProcess}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function runCreativeBakeoff({
@@ -253,6 +253,7 @@ export async function runCreativeBakeoff({
   renderedReferenceEvaluator = evaluateRenderedReferenceFidelity,
   renderedDiversityEvaluator = evaluateRenderedDiversity,
   requireDiversity = true,
+  runClientProcessImpl = runClientProcess,
 } = {}) {
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
@@ -340,8 +341,10 @@ export async function runCreativeBakeoff({
         valid: true,
         score: 0,
         failures: [],
+        commandDiagnostics: [],
         viewports: [],
       };
+      let candidateCommandStage = "candidate-validation";
       try {
         const experienceSource = await fs.readFile(
           path.join(candidateRoot, candidate.directory, "Experience.jsx"),
@@ -415,14 +418,16 @@ export async function runCreativeBakeoff({
               process.env.PLAYWRIGHT_BROWSERS_PATH ||
               path.join(os.homedir(), ".cache", "ms-playwright"),
           };
-          await runClientProcess({
+          candidateCommandStage = "client-build";
+          await runClientProcessImpl({
             command: "npm",
             args: ["run", "build"],
             cwd: clientWorkerSite,
             writablePaths: [clientWorkerRoot],
             envOverrides: safeWorkerEnv,
           });
-          await runClientProcess({
+          candidateCommandStage = "browser-render";
+          await runClientProcessImpl({
             command: process.execPath,
             args: [
               rendererRuntime.scriptPath,
@@ -603,6 +608,12 @@ export async function runCreativeBakeoff({
         candidateResult.failures.push(
           error instanceof Error ? error.message : String(error),
         );
+        const diagnostic = error?.clientProcessDiagnostic;
+        if (diagnostic)
+          candidateResult.commandDiagnostics.push({
+            stage: candidateCommandStage,
+            ...diagnostic,
+          });
       }
       candidateResult.failures = [...new Set(candidateResult.failures)];
       candidateResult.valid = candidateResult.failures.length === 0;

@@ -223,6 +223,50 @@ describe("creative candidate promotion", () => {
     expect(report.selectedCandidateId).toBeNull();
   }, 45_000);
 
+  it("persists isolated client command diagnostics in the candidate report", async () => {
+    const root = await makeFixture();
+    const failure = new Error(
+      'Client command "npm" failed: sudo exited with 1',
+    );
+    Object.defineProperty(failure, "clientProcessDiagnostic", {
+      value: {
+        command: "npm",
+        exitCode: 1,
+        signal: null,
+        stdout: "",
+        stderr: "Astro error: missing export from the candidate component.",
+      },
+      enumerable: false,
+    });
+
+    const report = await runCreativeBakeoff({
+      siteDir: path.resolve("templates/client-site"),
+      candidatesDir: root,
+      reportPath: path.join(root, "failed-render-report.json"),
+      screenshotsDir: path.join(root, "failed-render-screenshots"),
+      preview: true,
+      runClientProcessImpl: async () => {
+        throw failure;
+      },
+    });
+
+    expect(report.candidates[0].commandDiagnostics).toEqual([
+      {
+        stage: "client-build",
+        command: "npm",
+        exitCode: 1,
+        signal: null,
+        stdout: "",
+        stderr: "Astro error: missing export from the candidate component.",
+      },
+    ]);
+    expect(
+      JSON.parse(
+        await fs.readFile(path.join(root, "failed-render-report.json"), "utf8"),
+      ).candidates[0].commandDiagnostics[0].stderr,
+    ).toContain("missing export");
+  }, 45_000);
+
   it("uses rendered diversity as the sole v2 production diversity authority", async () => {
     const root = await makeFixture();
     const experiencePath = path.join(root, "candidate-a/Experience.jsx");

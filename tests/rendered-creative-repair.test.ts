@@ -1900,6 +1900,64 @@ process.exit(1);
     },
   );
 
+  it("passes private isolated-build diagnostics to candidate repair as untrusted evidence", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    let repairFindings: string[] = [];
+
+    await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                fallback: true,
+                promotionReady: false,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: [
+                      'Client command "npm" failed: sudo exited with 1',
+                    ],
+                    commandDiagnostics: [
+                      {
+                        stage: "build",
+                        command: "npm run build",
+                        exitCode: 1,
+                        stderr:
+                          "Astro error: missing export from the candidate component.",
+                      },
+                    ],
+                  }),
+                ],
+              })
+            : report(),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ findings }: any) => {
+        repairFindings = findings;
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(bakeoffCalls).toBe(2);
+    expect(repairFindings.join("\n")).toContain(
+      "Untrusted client build diagnostic",
+    );
+    expect(repairFindings.join("\n")).toContain(
+      "missing export from the candidate component",
+    );
+  });
+
   it("rejects a bakeoff candidate directory that escapes the candidates root", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
 

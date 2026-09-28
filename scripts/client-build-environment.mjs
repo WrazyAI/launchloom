@@ -202,6 +202,42 @@ function execTrusted(command, args, { env, encoding = "utf8" } = {}) {
   }
 }
 
+function sanitizeClientProcessOutput(value) {
+  return String(value || "")
+    .replace(/\u001b\[[0-?]*[ -/]*[@-~]/gu, "")
+    .replace(/\u0000/gu, "")
+    .replace(
+      /\b(?:sk-[A-Za-z0-9_-]{16,}|gh[pousr]_[A-Za-z0-9_]{20,})\b/gu,
+      "[REDACTED]",
+    )
+    .replace(/(authorization\s*:\s*bearer\s+)[^\s,;]+/giu, "$1[REDACTED]")
+    .replace(
+      /((?:api[_-]?key|secret|token|password)\s*[:=]\s*)[^\s,;]+/giu,
+      "$1[REDACTED]",
+    )
+    .replace(
+      /data:[^,\s;]+;base64,[A-Za-z0-9+/=_-]+/giu,
+      "[sealed inline image data omitted]",
+    )
+    .slice(-2400);
+}
+
+function attachClientProcessDiagnostic(error, diagnostic) {
+  Object.defineProperty(error, "clientProcessDiagnostic", {
+    value: Object.freeze({
+      command: path.basename(diagnostic.command),
+      exitCode: Number.isInteger(diagnostic.exitCode)
+        ? diagnostic.exitCode
+        : null,
+      signal: diagnostic.signal || null,
+      stdout: sanitizeClientProcessOutput(diagnostic.stdout),
+      stderr: sanitizeClientProcessOutput(diagnostic.stderr),
+    }),
+    enumerable: false,
+  });
+  return error;
+}
+
 function processResult(command, args, { cwd, env } = {}) {
   return new Promise((resolve, reject) => {
     const previousUmask = process.umask(0o077);
@@ -224,10 +260,33 @@ function processResult(command, args, { cwd, env } = {}) {
     };
     child.stdout?.on("data", (chunk) => collect("stdout", chunk));
     child.stderr?.on("data", (chunk) => collect("stderr", chunk));
-    child.on("error", (cause) => reject(cause));
-    child.on("close", (code) => {
+    child.on("error", (cause) => {
+      const error = new Error(`${command} failed to start: ${cause.message}`, {
+        cause,
+      });
+      reject(
+        attachClientProcessDiagnostic(error, {
+          command,
+          exitCode: null,
+          stdout,
+          stderr,
+        }),
+      );
+    });
+    child.on("close", (code, signal) => {
       if (code === 0) resolve({ code, stdout, stderr });
-      else reject(new Error(`${command} exited with ${code ?? 1}`));
+      else {
+        const error = new Error(`${command} exited with ${code ?? 1}`);
+        reject(
+          attachClientProcessDiagnostic(error, {
+            command,
+            exitCode: code,
+            signal,
+            stdout,
+            stderr,
+          }),
+        );
+      }
     });
   });
 }
@@ -462,10 +521,20 @@ export async function runClientProcess({
             },
           );
         } catch (error) {
-          throw new Error(
+          const wrappedError = new Error(
             `Client command "${path.basename(command)}" failed: ${error.message}`,
             { cause: error },
           );
+          const diagnostic = error.clientProcessDiagnostic;
+          if (diagnostic)
+            Object.defineProperty(wrappedError, "clientProcessDiagnostic", {
+              value: Object.freeze({
+                ...diagnostic,
+                command: path.basename(command),
+              }),
+              enumerable: false,
+            });
+          throw wrappedError;
         }
       } catch (error) {
         executionError = error;
