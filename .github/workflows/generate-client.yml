@@ -68,7 +68,7 @@ jobs:
       - run: npm ci
       - name: Install rendered acceptance browser
         env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           mkdir -p "$PLAYWRIGHT_BROWSERS_PATH"
           chmod 755 "$PLAYWRIGHT_BROWSERS_PATH"
@@ -377,7 +377,7 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           SESSION_ARGS=()
@@ -441,7 +441,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           LAUNCHLOOM_CLIENT_PROCESS_ISOLATION: required
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           CLIENT_DIR="${{ steps.branch.outputs.dir }}"
           BUILD_ROOT=$(mktemp -d "$RUNNER_TEMP/launchloom-diagnostic-build.XXXXXX")
@@ -524,7 +524,7 @@ jobs:
         id: verified_build
         env:
           LAUNCHLOOM_CLIENT_PROCESS_ISOLATION: required
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           CLIENT_DIR="${{ steps.branch.outputs.dir }}"
           cd "$CLIENT_DIR"

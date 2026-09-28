@@ -47,7 +47,7 @@ jobs:
       - name: Install revision verifier
         if: steps.claim.outputs.run == 'true'
         env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           npm ci
           mkdir -p "$PLAYWRIGHT_BROWSERS_PATH"
@@ -151,7 +151,7 @@ jobs:
         id: creative_revision
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           CLIENT_DIR="$LAUNCHLOOM_PRIVATE_DIR/client"
           node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$CLIENT_DIR" --report "$LAUNCHLOOM_PRIVATE_DIR/revision-template-sync.json"
@@ -187,7 +187,7 @@ jobs:
         id: build_preview
         env:
           LAUNCHLOOM_CLIENT_PROCESS_ISOLATION: required
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           cd "$LAUNCHLOOM_PRIVATE_DIR/client"

@@ -113,7 +113,7 @@ describe("client build and revision workflow isolation", () => {
         "Refine authored creative candidate from client feedback",
       ),
     ).toContain(
-      "PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers",
+      "PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}",
     );
 
     const developerFeedback = readFileSync(
@@ -126,8 +126,29 @@ describe("client build and revision workflow isolation", () => {
         "Refine authored creative candidate from developer feedback",
       ),
     ).toContain(
-      "PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers",
+      "PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}",
     );
+  });
+
+  it("uses a run-scoped Chromium path traversable by the isolated renderer", () => {
+    const expectedPath =
+      "/tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}";
+    for (const workflowPath of workflowPaths) {
+      const source = readFileSync(workflowPath, "utf8");
+      const configuredPaths = [
+        ...source.matchAll(/^\s+PLAYWRIGHT_BROWSERS_PATH: (.+)$/gmu),
+      ].map((match) => match[1]);
+      expect(configuredPaths.length, workflowPath).toBeGreaterThan(0);
+      expect(configuredPaths, workflowPath).toEqual(
+        configuredPaths.map(() => expectedPath),
+      );
+      expect(source, workflowPath).toContain(
+        'chmod -R a+rX "$PLAYWRIGHT_BROWSERS_PATH"',
+      );
+      expect(source, workflowPath).not.toContain(
+        "${{ runner.temp }}/playwright-browsers",
+      );
+    }
   });
 
   it("fetches approved client commits from the client repository", () => {

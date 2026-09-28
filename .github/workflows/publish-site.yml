@@ -32,7 +32,7 @@ jobs:
         with: { node-version: 22 }
       - name: Install trusted tools and rendered browser
         env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           npm ci
           mkdir -p "$PLAYWRIGHT_BROWSERS_PATH"
@@ -48,7 +48,7 @@ jobs:
           APPROVED_SHA: ${{ github.event.client_payload.approvedSha }}
           GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
           LAUNCHLOOM_CLIENT_PROCESS_ISOLATION: required
-          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/playwright-browsers
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/launchloom-playwright-browsers-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
           test -n "$CLIENT_REPO" && test -n "$CLIENT_EMAIL" && test -n "$FEEDBACK_ISSUE" && test -n "$APPROVED_SHA"
           [[ "$CLIENT_REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo "Client repository identifier is invalid." >&2; exit 1; }
