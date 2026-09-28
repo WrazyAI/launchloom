@@ -163,6 +163,10 @@ jobs:
           chmod 755 "$BUILD_ROOT"
           BUILD_DIR="$BUILD_ROOT/site"
           SCREENSHOTS="$BUILD_ROOT/revision-screenshots"
+          PRESERVED_SCREENSHOTS="$LAUNCHLOOM_PRIVATE_DIR/revision-screenshots"
+          mkdir -p "$PRESERVED_SCREENSHOTS"
+          echo "screenshots_dir=$PRESERVED_SCREENSHOTS" >> "$GITHUB_OUTPUT"
+          trap 'if [ -d "$SCREENSHOTS" ]; then cp -R "$SCREENSHOTS/." "$PRESERVED_SCREENSHOTS/" || true; fi' EXIT
           node "$GITHUB_WORKSPACE/scripts/prepare-client-build-copy.mjs" --source "$CLIENT_DIR" --target "$BUILD_DIR"
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" -- npm ci
           node "$GITHUB_WORKSPACE/scripts/run-isolated-client-command.mjs" --cwd "$BUILD_DIR" --writable "$BUILD_ROOT" --env.PUBLIC_REVIEW_MODE true --env.PUBLIC_LAUNCHLOOM_API_URL https://api.launchloom.wrazyos.com -- npm run build
@@ -182,10 +186,8 @@ jobs:
           fi
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" "$BUILD_DIR/dist"; then echo "Generated page contains an em dash" >&2; exit 1; fi
           SAFE_DEPLOY_DIR=$(node "$GITHUB_WORKSPACE/scripts/prepare-safe-static-output.mjs" --source "$BUILD_DIR/dist" --parent "$RUNNER_TEMP")
-          cp -R "$SCREENSHOTS" "$LAUNCHLOOM_PRIVATE_DIR/revision-screenshots"
           echo "build_dir=$BUILD_DIR" >> "$GITHUB_OUTPUT"
           echo "safe_deploy_dir=$SAFE_DEPLOY_DIR" >> "$GITHUB_OUTPUT"
-          echo "screenshots_dir=$LAUNCHLOOM_PRIVATE_DIR/revision-screenshots" >> "$GITHUB_OUTPUT"
           echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
           BRANCH_SAFE=$(echo "${{ steps.branch.outputs.name }}" | tr '/' '-')
           echo "preview=https://$BRANCH_SAFE.$PROJECT.pages.dev" >> "$GITHUB_OUTPUT"
@@ -199,12 +201,19 @@ jobs:
           cd "$CLIENT_DIR"
           node "$GITHUB_WORKSPACE/scripts/assert-revision-change-scope.mjs" --client "$CLIENT_DIR" --template-report "$LAUNCHLOOM_PRIVATE_DIR/revision-template-sync.json" --base origin/main
           git add -A -- src public AGENTS.md docs/site-generation-guidelines.md
-          if git diff --cached --quiet; then echo "No verified revision changes are available to publish." >&2; exit 1; fi
-          git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
-          git commit -m "Apply verified developer feedback"
-          GIT_AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
-          GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.https://github.com/.extraheader GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $GIT_AUTH" git push origin "${{ steps.branch.outputs.name }}"
-          unset GIT_AUTH
+          if git diff --cached --quiet; then
+            if git diff --quiet origin/main...HEAD; then
+              echo "No verified revision changes are available to publish." >&2
+              exit 1
+            fi
+            echo "Reusing the request branch revision after rebuilding it and passing every current verification gate."
+          else
+            git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
+            git commit -m "Apply verified developer feedback"
+            GIT_AUTH=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+            GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=http.https://github.com/.extraheader GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $GIT_AUTH" git push origin "${{ steps.branch.outputs.name }}"
+            unset GIT_AUTH
+          fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Deploy verified developer preview
         if: steps.publish_revision.outputs.sha != ''

@@ -155,6 +155,25 @@ describe("client build and revision workflow isolation", () => {
     expect(build).toContain('cp -R "$SCREENSHOTS/." "$PRESERVED_SCREENSHOTS/"');
   });
 
+  it("publishes a private screenshot artifact path before developer gates can fail", () => {
+    const developerFeedback = readFileSync(
+      ".github/workflows/process-feedback.yml",
+      "utf8",
+    );
+    const build = workflowStep(
+      developerFeedback,
+      "Build and verify revised preview",
+    );
+    expect(build).toContain(
+      'PRESERVED_SCREENSHOTS="$LAUNCHLOOM_PRIVATE_DIR/revision-screenshots"',
+    );
+    expect(build).toContain("trap ");
+    expect(build).toContain('cp -R "$SCREENSHOTS/." "$PRESERVED_SCREENSHOTS/"');
+    expect(build).toContain(
+      'echo "screenshots_dir=$PRESERVED_SCREENSHOTS" >> "$GITHUB_OUTPUT"',
+    );
+  });
+
   it("reads repaired-candidate reports from the client clone", () => {
     const repair = readFileSync(
       ".github/workflows/repair-creative-candidate.yml",

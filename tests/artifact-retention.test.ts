@@ -49,7 +49,7 @@ describe("GitHub Actions artifact retention", () => {
       expect(upload).toContain(`path: ${expectedScreenshotPath}`);
       if (name === "process-feedback.yml")
         expect(workflow).toContain(
-          'echo "screenshots_dir=$LAUNCHLOOM_PRIVATE_DIR/revision-screenshots" >> "$GITHUB_OUTPUT"',
+          'echo "screenshots_dir=$PRESERVED_SCREENSHOTS" >> "$GITHUB_OUTPUT"',
         );
       expect(upload).not.toContain(".launchloom/human-revision");
     }

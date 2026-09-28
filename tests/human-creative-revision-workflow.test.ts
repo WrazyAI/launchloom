@@ -384,8 +384,33 @@ describe("human creative revision lifecycle", () => {
     expect(commitSection).toContain(
       "No verified revision changes are available to publish.",
     );
+    expect(commitSection).toContain("if git diff --cached --quiet; then");
+    expect(commitSection).toContain(
+      "Reusing the request branch revision after rebuilding it and passing every current verification gate.",
+    );
     expect(workflow).toContain(
       "printf 'Client feedback is awaiting internal developer approval.\\n\\n%s' \"$MARKER\"",
     );
+  });
+
+  it("reuses only an already-published developer revision when retrying deployment", () => {
+    const workflow = readFileSync(
+      ".github/workflows/process-feedback.yml",
+      "utf8",
+    );
+    const start = workflow.indexOf("- name: Commit and push verified revision");
+    const next = workflow.indexOf("\n      - name:", start + 1);
+    const publishStep = workflow.slice(start, next < 0 ? undefined : next);
+
+    expect(start).toBeGreaterThan(-1);
+    expect(publishStep).toContain("if git diff --cached --quiet; then");
+    expect(publishStep).toContain("git diff --quiet origin/main...HEAD");
+    expect(publishStep).toContain(
+      "No verified revision changes are available to publish.",
+    );
+    expect(publishStep).toContain(
+      "Reusing the request branch revision after rebuilding it and passing every current verification gate.",
+    );
+    expect(publishStep).toContain('echo "sha=$(git rev-parse HEAD)"');
   });
 });
