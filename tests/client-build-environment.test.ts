@@ -502,6 +502,59 @@ process.exit(result.status ?? 1);
     }
   });
 
+  it("writes isolated CLI failures to a private diagnostic receipt without echoing output", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-isolated-command-diagnostic-test-"),
+    );
+    const receiptPath = path.join(root, "client-command-diagnostic.json");
+    const outputMarker = "synthetic-diagnostic-build-failure";
+    const privateCredential = "ghp_0123456789abcdefghijklmnopqrstuvwxyzABCD";
+    const commandSource = `process.stderr.write(${JSON.stringify(`${outputMarker}\n${privateCredential}`)}); process.exit(9);`;
+
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [
+          path.resolve("scripts/run-isolated-client-command.mjs"),
+          "--cwd",
+          root,
+          "--writable",
+          root,
+          "--diagnostic-output",
+          receiptPath,
+          "--",
+          process.execPath,
+          "-e",
+          commandSource,
+        ],
+        {
+          cwd: root,
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            CI: "false",
+            LAUNCHLOOM_CLIENT_PROCESS_ISOLATION: "trusted-local",
+          },
+        },
+      );
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).not.toContain(outputMarker);
+      expect(result.stderr).not.toContain(privateCredential);
+      const receipt = JSON.parse(await fs.readFile(receiptPath, "utf8"));
+      expect(receipt).toMatchObject({
+        version: 1,
+        command: {
+          command: path.basename(process.execPath),
+          exitCode: 9,
+          stderr: `${outputMarker}\n[REDACTED]`,
+        },
+      });
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("refuses to make any Git checkout tree writable to client code", async () => {
     await expect(
       runClientProcess({

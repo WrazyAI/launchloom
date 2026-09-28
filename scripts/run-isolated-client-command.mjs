@@ -1,3 +1,5 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import { runClientProcess } from "./client-build-environment.mjs";
 
 const separator = process.argv.indexOf("--");
@@ -20,16 +22,31 @@ for (let index = 0; index < rawOptions.length; index += 1) {
   if (key === "writable") options.writable.push(value);
   else if (key.startsWith("env.")) options.env[key.slice(4)] = value;
   else if (key === "cwd") options.cwd = value;
+  else if (key === "diagnostic-output") options.diagnosticOutput = value;
   else throw new Error(`Unknown client-command option: ${key}`);
 }
 
 const [command, ...args] = process.argv.slice(separator + 1);
 if (!options.cwd || !command || !options.writable.length)
   throw new Error("Client command requires --cwd, --writable, and a command.");
-await runClientProcess({
-  command,
-  args,
-  cwd: options.cwd,
-  writablePaths: options.writable,
-  envOverrides: options.env,
-});
+try {
+  await runClientProcess({
+    command,
+    args,
+    cwd: options.cwd,
+    writablePaths: options.writable,
+    envOverrides: options.env,
+  });
+} catch (error) {
+  const diagnostic = error?.clientProcessDiagnostic;
+  if (options.diagnosticOutput && diagnostic) {
+    const receiptPath = path.resolve(options.diagnosticOutput);
+    await fs.mkdir(path.dirname(receiptPath), { recursive: true, mode: 0o700 });
+    await fs.writeFile(
+      receiptPath,
+      `${JSON.stringify({ version: 1, command: diagnostic }, null, 2)}\n`,
+      { flag: "wx", mode: 0o600 },
+    );
+  }
+  throw error;
+}

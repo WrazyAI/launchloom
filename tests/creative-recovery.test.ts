@@ -113,6 +113,38 @@ describe("creative recovery diagnostics", () => {
 });
 
 describe("developer-triggered creative repair workflow", () => {
+  it("preserves isolated diagnostic build errors before issuing the repair link", () => {
+    const workflow = readFileSync(
+      ".github/workflows/generate-client.yml",
+      "utf8",
+    );
+    const diagnosticStart = workflow.indexOf(
+      "- name: Build and deploy noindex diagnostic preview",
+    );
+    const diagnosticEnd = workflow.indexOf(
+      "\n      - name:",
+      diagnosticStart + 1,
+    );
+    const diagnosticStep = workflow.slice(diagnosticStart, diagnosticEnd);
+    const preserveIndex = workflow.indexOf(
+      "- name: Preserve private diagnostic preview build failure",
+    );
+    const repairLinkIndex = workflow.indexOf(
+      "- name: Register one-time repair session and create signed review link",
+    );
+
+    expect(diagnosticStep.match(/--diagnostic-output /gu)).toHaveLength(3);
+    expect(preserveIndex).toBeGreaterThan(diagnosticStart);
+    expect(preserveIndex).toBeLessThan(repairLinkIndex);
+    expect(workflow).toContain("steps.diagnostic_preview.outcome == 'failure'");
+    expect(workflow).toContain(
+      'cp "$REPORT" "$CLIENT_DIR/.launchloom/creative-repair/diagnostic-preview-client-command.json"',
+    );
+    expect(workflow).toContain(
+      "jq -r '.command.stderr // \"No stderr was captured.\"'",
+    );
+  });
+
   it("provides one signed, head-bound repair without rerunning research or image generation", () => {
     const initialWorkflow = readFileSync(
       ".github/workflows/generate-client.yml",
