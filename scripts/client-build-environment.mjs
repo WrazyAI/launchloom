@@ -1,4 +1,5 @@
 import { execFileSync, spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { constants as fsConstants } from "node:fs";
 import fs from "node:fs/promises";
 import os from "node:os";
@@ -92,6 +93,80 @@ export async function copyClientBuildInput(sourceRoot, targetRoot) {
       return !stat.isSymbolicLink();
     },
   });
+}
+
+export async function copyTrustedBuildDependencies(sourceRoot, targetRoot) {
+  const source = path.resolve(sourceRoot);
+  const target = path.resolve(targetRoot);
+  const sourceStat = await fs.lstat(source);
+  if (sourceStat.isSymbolicLink() || !sourceStat.isDirectory())
+    throw new Error("Trusted build dependencies must be a regular directory.");
+  const realSource = await fs.realpath(source);
+  const targetRelativeToSource = path.relative(source, target);
+  if (
+    targetRelativeToSource === "" ||
+    (targetRelativeToSource !== ".." &&
+      !targetRelativeToSource.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(targetRelativeToSource))
+  )
+    throw new Error(
+      "Isolated build dependencies must be copied outside their trusted source directory.",
+    );
+  await fs.access(target).then(
+    () => {
+      throw new Error(
+        "Isolated build dependency destination already exists; refusing to overwrite it.",
+      );
+    },
+    (error) => {
+      if (error.code !== "ENOENT") throw error;
+    },
+  );
+
+  const staging = `${target}.stage-${process.pid}-${randomBytes(4).toString("hex")}`;
+  const symlinks = [];
+  await fs.mkdir(path.dirname(target), { recursive: true });
+  await fs.mkdir(path.dirname(staging), { recursive: true });
+  try {
+    await fs.cp(source, staging, {
+      recursive: true,
+      filter: async (sourcePath) => {
+        const stat = await fs.lstat(sourcePath);
+        if (!stat.isSymbolicLink()) return true;
+        const realTarget = await fs.realpath(sourcePath);
+        const relative = path.relative(realSource, realTarget);
+        const insideTrustedRoot =
+          relative === "" ||
+          (relative !== ".." &&
+            !relative.startsWith(`..${path.sep}`) &&
+            !path.isAbsolute(relative));
+        if (!insideTrustedRoot)
+          throw new Error(
+            "Trusted build dependencies contain a symlink outside the trusted dependency root.",
+          );
+        symlinks.push({
+          relativeLink: path.relative(source, sourcePath),
+          relativeTarget: path.relative(realSource, realTarget),
+          targetIsDirectory: (await fs.stat(realTarget)).isDirectory(),
+        });
+        return false;
+      },
+    });
+    for (const symlink of symlinks) {
+      const copiedLink = path.join(staging, symlink.relativeLink);
+      const copiedTarget = path.join(staging, symlink.relativeTarget);
+      await fs.mkdir(path.dirname(copiedLink), { recursive: true });
+      await fs.symlink(
+        path.relative(path.dirname(copiedLink), copiedTarget),
+        copiedLink,
+        symlink.targetIsDirectory ? "dir" : "file",
+      );
+    }
+    await fs.rename(staging, target);
+  } catch (error) {
+    await fs.rm(staging, { recursive: true, force: true }).catch(() => {});
+    throw error;
+  }
 }
 
 export function clientProcessIsolationRequired({

@@ -6,6 +6,7 @@ import path from "node:path";
 import {
   clientBuildEnvironment,
   copyClientBuildInput,
+  copyTrustedBuildDependencies,
   clientProcessIsolationRequired,
   runClientProcess,
 } from "../scripts/client-build-environment.mjs";
@@ -82,6 +83,49 @@ describe("client build environment", () => {
       expect(await fs.readFile(path.join(source, ".git/config"), "utf8")).toBe(
         "git config",
       );
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("copies trusted dependencies into the isolated build tree and rejects escaping links", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-trusted-dependencies-"),
+    );
+    const source = path.join(root, "trusted-node-modules");
+    const target = path.join(root, "worker", "node_modules");
+    const packageCli = path.join(source, "sample-package", "cli.js");
+    const executableLink = path.join(source, ".bin", "sample-cli");
+    const outside = path.join(root, "outside.js");
+
+    await fs.mkdir(path.dirname(packageCli), { recursive: true });
+    await fs.mkdir(path.dirname(executableLink), { recursive: true });
+    await fs.writeFile(packageCli, "process.exit(0);", { mode: 0o755 });
+    await fs.symlink("../sample-package/cli.js", executableLink);
+    await fs.writeFile(outside, "must not escape");
+    await fs.symlink(outside, path.join(source, "outside-link"));
+
+    try {
+      await expect(
+        copyTrustedBuildDependencies(source, target),
+      ).rejects.toThrow(/symlink outside the trusted dependency root/u);
+
+      await fs.rm(path.join(source, "outside-link"));
+      await copyTrustedBuildDependencies(source, target);
+
+      const copiedLink = path.join(target, ".bin", "sample-cli");
+      const copiedStat = await fs.lstat(copiedLink);
+      expect(copiedStat.isSymbolicLink()).toBe(true);
+      expect(await fs.readlink(copiedLink)).toBe("../sample-package/cli.js");
+      expect(await fs.realpath(copiedLink)).toBe(
+        await fs.realpath(path.join(target, "sample-package", "cli.js")),
+      );
+      expect(
+        await fs.readFile(
+          path.join(target, "sample-package", "cli.js"),
+          "utf8",
+        ),
+      ).toBe("process.exit(0);");
     } finally {
       await fs.rm(root, { recursive: true, force: true });
     }

@@ -19,6 +19,7 @@ import {
 import { heroViewportFitFailure } from "./creative-viewport-policy.mjs";
 import {
   copyClientBuildInput,
+  copyTrustedBuildDependencies,
   runClientProcess,
 } from "./client-build-environment.mjs";
 
@@ -630,10 +631,9 @@ export async function runCreativeBakeoff({
             "../node_modules",
           );
           await fs.access(trustedNodeModules);
-          await fs.symlink(
+          await copyTrustedBuildDependencies(
             trustedNodeModules,
             path.join(clientWorkerSite, "node_modules"),
-            "dir",
           );
           const safeWorkerEnv = {
             PUBLIC_REVIEW_MODE: "true",
