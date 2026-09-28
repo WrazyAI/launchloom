@@ -68,6 +68,21 @@ export default function Experience({ content, runtime }) {
   return root;
 }
 
+async function makeClientSiteFixture(root: string) {
+  const source = path.resolve("templates/client-site");
+  const siteDir = path.join(root, "client-site");
+  await fs.cp(source, siteDir, {
+    recursive: true,
+    filter: (entry) =>
+      !entry
+        .split(path.sep)
+        .some((segment) =>
+          ["node_modules", ".astro", "dist"].includes(segment),
+        ),
+  });
+  return siteDir;
+}
+
 afterEach(async () => {
   await Promise.all(
     tempRoots
@@ -211,8 +226,9 @@ describe("creative candidate promotion", () => {
 
   it("renders a candidate in the real Astro shell before reporting diversity fallback", async () => {
     const root = await makeFixture();
+    const siteDir = await makeClientSiteFixture(root);
     const report = await runCreativeBakeoff({
-      siteDir: path.resolve("templates/client-site"),
+      siteDir,
       candidatesDir: root,
       reportPath: path.join(root, "report.json"),
       screenshotsDir: path.join(root, "screenshots"),
@@ -225,6 +241,7 @@ describe("creative candidate promotion", () => {
 
   it("persists isolated client command diagnostics in the candidate report", async () => {
     const root = await makeFixture();
+    const siteDir = await makeClientSiteFixture(root);
     const failure = new Error(
       'Client command "npm" failed: sudo exited with 1',
     );
@@ -240,7 +257,7 @@ describe("creative candidate promotion", () => {
     });
 
     const report = await runCreativeBakeoff({
-      siteDir: path.resolve("templates/client-site"),
+      siteDir,
       candidatesDir: root,
       reportPath: path.join(root, "failed-render-report.json"),
       screenshotsDir: path.join(root, "failed-render-screenshots"),

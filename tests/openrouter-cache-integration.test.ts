@@ -6,13 +6,11 @@ const scriptsDir = path.resolve("scripts");
 const openRouterUrl = "https://openrouter.ai/api/v1/chat/completions";
 
 function scriptFiles(directory: string): string[] {
-  return fs
-    .readdirSync(directory, { withFileTypes: true })
-    .flatMap((entry) => {
-      const file = path.join(directory, entry.name);
-      if (entry.isDirectory()) return scriptFiles(file);
-      return entry.isFile() && file.endsWith(".mjs") ? [file] : [];
-    });
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) return scriptFiles(file);
+    return entry.isFile() && file.endsWith(".mjs") ? [file] : [];
+  });
 }
 
 describe("OpenRouter cache integration", () => {
@@ -68,7 +66,8 @@ describe("OpenRouter cache integration", () => {
       "scripts/author-production-experiences.mjs",
       "utf8",
     );
-    expect(source).toContain("parseStatus: responseBodyError");
+    expect(source).toContain("parseStatus: attempt.parseError");
+    expect(source).toContain("attempt.providerError");
     expect(source).toContain('usageRecord.parseStatus = "missing-content"');
     expect(source).toContain('usageRecord.parseStatus = "parse-failed"');
     expect(source).toContain("parseStatusCounts");
@@ -80,13 +79,17 @@ describe("OpenRouter cache integration", () => {
       "scripts/author-production-experiences.mjs",
       "utf8",
     );
-    const pushIndex = source.indexOf("usage.push(usageRecord)");
+    const pushIndex = source.indexOf("usage.push({");
+    const recordIndex = source.indexOf("const usageRecord = usage.at(-1)");
     const httpIndex = source.indexOf('usageRecord.parseStatus = "http-error"');
-    const throwIndex = source.indexOf('OpenRouter ${response.status}: ${errorContext}');
+    const throwIndex = source.indexOf(
+      "OpenRouter ${response.status}: ${errorContext}",
+    );
     expect(pushIndex).toBeGreaterThan(-1);
-    expect(httpIndex).toBeGreaterThan(pushIndex);
+    expect(recordIndex).toBeGreaterThan(pushIndex);
+    expect(httpIndex).toBeGreaterThan(recordIndex);
     expect(throwIndex).toBeGreaterThan(httpIndex);
-    expect(source).toContain("readOpenRouterResponseEnvelope(response)");
+    expect(source).toContain("openRouterChatCompletionWithCreditRetry");
     expect(source).not.toContain("screenshotPath: item.screenshotPath");
   });
 
@@ -95,13 +98,8 @@ describe("OpenRouter cache integration", () => {
       "scripts/author-production-experiences.mjs",
       "utf8",
     );
-    const repair = fs.readFileSync(
-      "scripts/creative-repair-loop.mjs",
-      "utf8",
-    );
-    expect(author).toContain(
-      "const requestedEfforts = creativeSession",
-    );
+    const repair = fs.readFileSync("scripts/creative-repair-loop.mjs", "utf8");
+    expect(author).toContain("const requestedEfforts = creativeSession");
     expect(author).toContain("? [reasoningEffort]");
     expect(author).toContain("creativeSession?.sessionId");
     expect(author).toContain(
@@ -123,9 +121,7 @@ describe("OpenRouter cache integration", () => {
       "scripts/creative-repair-loop.mjs",
     ]) {
       const source = fs.readFileSync(file, "utf8");
-      expect(source, file).toMatch(
-        /promptCached(?:MessageContent|Text)/u,
-      );
+      expect(source, file).toMatch(/promptCached(?:MessageContent|Text)/u);
       expect(source, file).toContain("promptCacheRequestFields");
     }
   });
@@ -168,17 +164,16 @@ describe("OpenRouter cache integration", () => {
   });
 
   it("keeps static Reference DNA analysis reusable across runs for 24 hours", () => {
-    const source = fs.readFileSync(
-      "scripts/analyze-reference-dna.mjs",
-      "utf8",
-    );
+    const source = fs.readFileSync("scripts/analyze-reference-dna.mjs", "utf8");
     expect(source).toContain('openRouterSessionId(\n    "reference-dna"');
     expect(source).toContain("responseCacheTtlSeconds: 86_400");
     expect(source).not.toContain("pack.selectionKey ||");
     expect(source).not.toMatch(
       /openRouterSessionId\([\s\S]{0,300}\brouteId\s*:/u,
     );
-    expect(source).not.toMatch(/sessionId[\s\S]{0,300}\bdesktop,\s*\n\s*mobile,/u);
+    expect(source).not.toMatch(
+      /sessionId[\s\S]{0,300}\bdesktop,\s*\n\s*mobile,/u,
+    );
   });
 
   it("limits exact response caching to deterministic control and judge lanes", () => {

@@ -7,6 +7,7 @@ import {
   openRouterApiError,
   openRouterResponseCacheMetrics,
   openRouterChatCompletion,
+  openRouterChatCompletionWithCreditRetry,
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCacheRequestFields,
@@ -17,6 +18,91 @@ import {
 } from "../scripts/openrouter-client.mjs";
 
 describe("OpenRouter cache-aware client", () => {
+  it("retries one 402 affordability response below the reported token ceiling", async () => {
+    const requests: Array<Record<string, unknown>> = [];
+    const send = vi.fn(async (body: Record<string, unknown>) => {
+      requests.push(body);
+      if (requests.length === 1) {
+        return new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "This request requires more credits, or fewer max_tokens. You requested up to 24000 tokens, but can only afford 9278.",
+            },
+          }),
+          { status: 402 },
+        );
+      }
+      return new Response(
+        JSON.stringify({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: { content: '{"stage":"contract"}' },
+            },
+          ],
+        }),
+      );
+    });
+    const diagnostics: string[] = [];
+
+    const result = await openRouterChatCompletionWithCreditRetry({
+      body: { model: "openai/gpt-6-luna", max_completion_tokens: 24_000 },
+      request: send,
+      logger: (line: string) => diagnostics.push(line),
+    });
+
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(requests.map((body) => body.max_completion_tokens)).toEqual([
+      24_000, 9_022,
+    ]);
+    expect(result.attempts).toHaveLength(2);
+    expect(result.payload.choices[0].message.content).toBe(
+      '{"stage":"contract"}',
+    );
+    expect(diagnostics).toContain(
+      "openrouter_budget_retry requested=24000 affordable=9278 retry=9022",
+    );
+  });
+
+  it("does not retry non-affordability errors or a second 402", async () => {
+    const noBudgetDetail = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ error: { message: "credits exhausted" } }),
+          {
+            status: 402,
+          },
+        ),
+    );
+    const first = await openRouterChatCompletionWithCreditRetry({
+      body: { model: "openai/gpt-6-luna", max_completion_tokens: 24_000 },
+      request: noBudgetDetail,
+    });
+    expect(noBudgetDetail).toHaveBeenCalledTimes(1);
+    expect(first.providerError?.message).toContain("credits exhausted");
+
+    const stillUnaffordable = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "You requested up to 24000 tokens, but can only afford 9278.",
+            },
+          }),
+          { status: 402 },
+        ),
+    );
+    const second = await openRouterChatCompletionWithCreditRetry({
+      body: { model: "openai/gpt-6-luna", max_completion_tokens: 24_000 },
+      request: stillUnaffordable,
+    });
+    expect(stillUnaffordable).toHaveBeenCalledTimes(2);
+    expect(second.providerError?.message).toContain("can only afford 9278");
+    expect(second.attempts).toHaveLength(2);
+  });
+
   it("surfaces a nested provider error even when the HTTP envelope is successful", () => {
     const error = openRouterApiError(
       {
@@ -46,7 +132,9 @@ describe("OpenRouter cache-aware client", () => {
     ).toMatchObject({
       message: "OpenRouter 429: Upstream provider request limit reached.",
     });
-    expect(openRouterApiError({ choices: { error: "malformed" } }, 200)).toBeNull();
+    expect(
+      openRouterApiError({ choices: { error: "malformed" } }, 200),
+    ).toBeNull();
     expect(openRouterApiError({ choices: [] }, 200)).toBeNull();
   });
 
@@ -57,13 +145,15 @@ describe("OpenRouter cache-aware client", () => {
       evidence: {
         desktopScreenshot: {
           path: "artifacts/reference/desktop.png",
-          absolutePath: "/home/example/launchloom/artifacts/reference/desktop.png",
+          absolutePath:
+            "/home/example/launchloom/artifacts/reference/desktop.png",
           available: true,
           source: "reference-only",
         },
         mobileScreenshot: {
           path: "artifacts/reference/mobile.png",
-          absolutePath: "/home/example/launchloom/artifacts/reference/mobile.png",
+          absolutePath:
+            "/home/example/launchloom/artifacts/reference/mobile.png",
           available: true,
         },
         annotatedDescription: "Editorial image chapters.",
@@ -122,9 +212,7 @@ describe("OpenRouter cache-aware client", () => {
   });
 
   it("enables explicit prompt caching only for OpenAI GPT-5.6 and newer", () => {
-    expect(supportsExplicitOpenAiPromptCaching("openai/gpt-6-luna")).toBe(
-      true,
-    );
+    expect(supportsExplicitOpenAiPromptCaching("openai/gpt-6-luna")).toBe(true);
     expect(supportsExplicitOpenAiPromptCaching("openai/gpt-5.7")).toBe(true);
     expect(supportsExplicitOpenAiPromptCaching("openai/gpt-5.5")).toBe(false);
     expect(supportsExplicitOpenAiPromptCaching("z-ai/glm-5.3-flash")).toBe(
@@ -146,10 +234,7 @@ describe("OpenRouter cache-aware client", () => {
     });
 
     expect(
-      promptCachedMessageContent(
-        "openai/gpt-6-luna",
-        "stable instructions",
-      ),
+      promptCachedMessageContent("openai/gpt-6-luna", "stable instructions"),
     ).toEqual([
       {
         type: "text",
@@ -158,30 +243,22 @@ describe("OpenRouter cache-aware client", () => {
       },
     ]);
     expect(
-      promptCachedMessageContent(
-        "z-ai/glm-5.3-flash",
-        "stable instructions",
-      ),
+      promptCachedMessageContent("z-ai/glm-5.3-flash", "stable instructions"),
     ).toBe("stable instructions");
 
     expect(
-      promptCacheRequestFields(
-        "openai/gpt-6-luna",
-        "ll:creative-author:test",
-      ),
+      promptCacheRequestFields("openai/gpt-6-luna", "ll:creative-author:test"),
     ).toEqual({
       prompt_cache_key: "ll:creative-author:test",
       prompt_cache_options: { mode: "explicit", ttl: "30m" },
     });
     expect(
-      promptCacheRequestFields(
-        "openai/gpt-6-luna",
-        "x".repeat(100),
-      ).prompt_cache_key,
+      promptCacheRequestFields("openai/gpt-6-luna", "x".repeat(100))
+        .prompt_cache_key,
     ).toHaveLength(64);
-    expect(
-      promptCacheRequestFields("z-ai/glm-5.3-flash", "ignored"),
-    ).toEqual({});
+    expect(promptCacheRequestFields("z-ai/glm-5.3-flash", "ignored")).toEqual(
+      {},
+    );
   });
 
   it("adds sticky session routing and opt-in response-cache headers", async () => {
@@ -231,7 +308,7 @@ describe("OpenRouter cache-aware client", () => {
   });
 
   it("treats null and other non-object JSON envelopes as malformed safely", async () => {
-    for (const body of ["null", "[]", "\"plain-string\""]) {
+    for (const body of ["null", "[]", '"plain-string"']) {
       const result = await readOpenRouterResponseEnvelope(
         new Response(body, {
           status: 200,

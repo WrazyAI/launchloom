@@ -54,8 +54,7 @@ export function openRouterPromptCacheKey(scope, ...identity) {
  * object by the caller.
  */
 export function cacheableReferenceDna(referenceDna) {
-  if (!referenceDna || typeof referenceDna !== "object")
-    return referenceDna;
+  if (!referenceDna || typeof referenceDna !== "object") return referenceDna;
   const {
     analyzedAt: _analyzedAt,
     generatedAt: _generatedAt,
@@ -132,9 +131,7 @@ export function openRouterCacheMetrics(usage) {
   const source = usage || {};
   const details =
     source.prompt_tokens_details || source.input_tokens_details || {};
-  const promptTokens = Number(
-    source.prompt_tokens ?? source.input_tokens ?? 0,
-  );
+  const promptTokens = Number(source.prompt_tokens ?? source.input_tokens ?? 0);
   const cachedTokens = Number(details.cached_tokens || 0);
   const cacheWriteTokens = Number(details.cache_write_tokens || 0);
   const cacheHitRate =
@@ -219,8 +216,7 @@ export function openRouterApiError(payload, httpStatus = 0) {
   const choiceError = Array.isArray(payload?.choices)
     ? payload.choices.find((choice) => choice?.error)?.error
     : null;
-  const providerError =
-    payload?.error || choiceError;
+  const providerError = payload?.error || choiceError;
   if (!providerError) return null;
   const message =
     typeof providerError === "string"
@@ -228,9 +224,80 @@ export function openRouterApiError(payload, httpStatus = 0) {
       : String(providerError.message || "Provider returned an error.");
   const code = Number(providerError.code) || Number(httpStatus) || 0;
   const normalizedMessage = message.replace(/\s+/gu, " ").slice(0, 500);
-  return new Error(
-    `OpenRouter${code ? ` ${code}` : ""}: ${normalizedMessage}`,
+  return new Error(`OpenRouter${code ? ` ${code}` : ""}: ${normalizedMessage}`);
+}
+
+const AFFORDABILITY_RETRY_MARGIN = 256;
+const MIN_AFFORDABILITY_RETRY_TOKENS = 4_096;
+
+export function isOpenRouterAffordabilityError(error) {
+  return (
+    /^OpenRouter 402\b/iu.test(String(error?.message || "")) &&
+    /can only afford\s+[\d,]+/iu.test(String(error?.message || ""))
   );
+}
+
+function affordableCompletionRetry(error, requestedTokens) {
+  if (!isOpenRouterAffordabilityError(error)) return null;
+  const match = String(error.message).match(/can only afford\s+([\d,]+)/iu);
+  if (!match) return null;
+  const affordableTokens = Number(match[1].replaceAll(",", ""));
+  if (!Number.isSafeInteger(affordableTokens) || affordableTokens < 1)
+    return null;
+  const retryTokens = Math.min(
+    requestedTokens - 1,
+    affordableTokens - AFFORDABILITY_RETRY_MARGIN,
+  );
+  if (retryTokens < MIN_AFFORDABILITY_RETRY_TOKENS) return null;
+  return { affordableTokens, retryTokens };
+}
+
+/**
+ * Make one bounded completion-token retry when OpenRouter explicitly reports
+ * an affordable ceiling. Other provider errors are returned unchanged so the
+ * caller remains responsible for its normal fail-closed diagnostics.
+ *
+ * @param {{ body: Record<string, any>, request: (body: Record<string, any>) => Promise<Response>, logger?: (line: string) => void }} options
+ */
+export async function openRouterChatCompletionWithCreditRetry({
+  body,
+  request,
+  logger = console.warn,
+} = {}) {
+  if (!body || typeof body !== "object")
+    throw new Error("OpenRouter request body is required.");
+  if (typeof request !== "function")
+    throw new Error("OpenRouter request function is required.");
+  const requestedTokens = Number(body.max_completion_tokens);
+  if (!Number.isSafeInteger(requestedTokens) || requestedTokens < 1)
+    throw new Error(
+      "OpenRouter completion-token retry requires a positive max_completion_tokens value.",
+    );
+
+  async function sendAttempt(requestBody) {
+    const response = await request(requestBody);
+    const envelope = await readOpenRouterResponseEnvelope(response);
+    const providerError = openRouterApiError(envelope.payload, response.status);
+    return {
+      response,
+      requestBody,
+      ...envelope,
+      providerError,
+    };
+  }
+
+  const first = await sendAttempt(body);
+  const retry = affordableCompletionRetry(first.providerError, requestedTokens);
+  if (!retry) return { ...first, attempts: [first] };
+
+  logger(
+    `openrouter_budget_retry requested=${requestedTokens} affordable=${retry.affordableTokens} retry=${retry.retryTokens}`,
+  );
+  const second = await sendAttempt({
+    ...body,
+    max_completion_tokens: retry.retryTokens,
+  });
+  return { ...second, attempts: [first, second] };
 }
 
 /**
@@ -273,7 +340,10 @@ export async function readOpenRouterResponseEnvelope(
 
   return {
     payload:
-      !parseError && decoded && typeof decoded === "object" && !Array.isArray(decoded)
+      !parseError &&
+      decoded &&
+      typeof decoded === "object" &&
+      !Array.isArray(decoded)
         ? decoded
         : {},
     rawBody: String(rawBody || "").slice(0, Math.max(0, maxRawBodyChars)),

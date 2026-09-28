@@ -11,14 +11,14 @@ import { assertAuthorPromptBudget } from "./author-prompt-budget.mjs";
 import {
   cacheableReferenceDna,
   logOpenRouterCacheUsage,
-  openRouterApiError,
   openRouterChatCompletion,
+  openRouterChatCompletionWithCreditRetry,
+  isOpenRouterAffordabilityError,
   openRouterPromptCacheKey,
   openRouterSessionId,
   promptCachedMessageContent,
   promptCachedText,
   promptCacheRequestFields,
-  readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
 import {
   promptImagePart,
@@ -53,9 +53,10 @@ const outputPath = path.resolve(
 );
 const requestedModel = args.model || process.env.CREATIVE_EXPERIENCE_MODEL;
 const sessionPath = args.session ? path.resolve(args.session) : "";
-const canaryArchiveReferenceIds = args["canary-kokoro-acceptance"] === "true"
-  ? ["kokoro-spatial-editorial"]
-  : [];
+const canaryArchiveReferenceIds =
+  args["canary-kokoro-acceptance"] === "true"
+    ? ["kokoro-spatial-editorial"]
+    : [];
 const sessionConfig = sessionPath
   ? JSON.parse(await fs.readFile(sessionPath, "utf8"))
   : null;
@@ -171,7 +172,9 @@ function routePromptPrefix(request) {
       prohibitedPatterns: request.route.prohibitedPatterns,
       signature: request.route.signature,
       referenceDna: cacheableReferenceDna(request.route.referenceDna),
-      referenceDossier: referenceDossierPromptBlock(request.route.referenceDossier),
+      referenceDossier: referenceDossierPromptBlock(
+        request.route.referenceDossier,
+      ),
       evidence: (request.route.evidence || []).map((item) => ({
         name: item.name,
         source: item.source,
@@ -200,7 +203,7 @@ data-motion-primitive="${markerSlug(dna.motion?.primitive)}"
 Do not substitute the primary or secondary CTA placement for the early CTA marker. The early conversion element must use the exact data-cta-placement value above.`
     : "";
 
-return `ROUTE
+  return `ROUTE
 ${route}
 
 SEALED CONTENT SHAPE
@@ -233,13 +236,17 @@ Return a precise implementation contract and a rationale under 220 words. The co
     return `DESIGN CONTRACT
 ${request.designContract}
 
-${request.validationError ? `COMPLIANCE REPAIR
+${
+  request.validationError
+    ? `COMPLIANCE REPAIR
 The previous JSX failed: ${request.validationError}
 Repair that exact violation without reducing the composition or changing the design contract.
 
 PREVIOUS JSX
 ${request.previousSource}
-` : ""}
+`
+    : ""
+}
 EXPERIENCE STAGE
 Image asset use: Do not reuse the same sealed image token or image URL in multiple visible image regions unless Reference DNA explicitly requires a shared-image mosaic. If only content.hero.image is available, use it once in the most important image region and design remaining sections without repeating the same photo.
 Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". Place the single designated early conversion at the route-specific location in route.referenceDna.ctaPlacement.early and the primary action at route.referenceDna.ctaPlacement.primary. Use a compact anchor or button linking to #contact, not the full four-field form; follow the assigned DNA even when this means navigation or after the opening image/thesis rather than the hero. Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-early-conversion on the one designated early action at its assigned route location, and sections with ids services, faqs, and contact. When content.process has one or more steps, render every supplied step in exactly one designed <section data-required-section="conversion"> before the contact section, using content.process rather than hardcoded text; omit that section only when content.process is empty. Keep this section visually native to the route's assigned family, not a generic card wall. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
@@ -292,9 +299,7 @@ async function requestStage(request) {
     Math.min(stageLimitMs, remainingMs),
   );
   try {
-    const userContent = [
-      { type: "text", text: routePromptPrefix(request) },
-    ];
+    const userContent = [{ type: "text", text: routePromptPrefix(request) }];
     const referenceEvidence = await selectAuthorEvidenceForRoute(
       request.route,
       { retry: Boolean(request.validationError) },
@@ -312,7 +317,10 @@ async function requestStage(request) {
           }),
         );
       } catch (error) {
-        throw new Error(`Reference evidence could not be loaded for ${request.route.id}: ${evidence.path}`, { cause: error });
+        throw new Error(
+          `Reference evidence could not be loaded for ${request.route.id}: ${evidence.path}`,
+          { cause: error },
+        );
       }
     }
     userContent.push(
@@ -370,46 +378,60 @@ async function requestStage(request) {
           { role: "user", content: userContent },
         ];
         assertAuthorPromptBudget(messages);
-        const response = await openRouterChatCompletion({
-          title: "LaunchLoom Production Experience Author",
-          signal: controller.signal,
-          sessionId,
+        const completion = await openRouterChatCompletionWithCreditRetry({
           body: {
-              model,
-              ...promptCacheRequestFields(model, promptCacheKey),
-              temperature: request.stage === "contract" ? 0.76 : 0.62,
-              reasoning: { effort, exclude: true },
-              response_format: {
-                type: "json_schema",
-                json_schema: authorStageSchema,
-              },
-              ...completionLimitRequestField(stageBudget.maxTokens),
-              messages,
+            model,
+            ...promptCacheRequestFields(model, promptCacheKey),
+            temperature: request.stage === "contract" ? 0.76 : 0.62,
+            reasoning: { effort, exclude: true },
+            response_format: {
+              type: "json_schema",
+              json_schema: authorStageSchema,
             },
+            ...completionLimitRequestField(stageBudget.maxTokens),
+            messages,
+          },
+          request: (body) =>
+            openRouterChatCompletion({
+              title: "LaunchLoom Production Experience Author",
+              signal: controller.signal,
+              sessionId,
+              body,
+            }),
         });
         const {
+          response,
           payload,
           rawBody,
           parseError: responseBodyError,
-        } = await readOpenRouterResponseEnvelope(response);
+          providerError,
+          attempts,
+        } = completion;
         if (sharedAbortController.signal.aborted)
-          throw new Error("Phase 2 authorship cancelled after a sibling failure.");
-        const usageRecord = {
-          routeId: request.route.id,
-          stage: request.stage,
-          provider: payload.provider || null,
-          reasoningEffort: effort,
-          usage: payload.usage || null,
-          cache: logOpenRouterCacheUsage(
-            `creative-author-${request.stage}`,
-            payload.usage,
-          ),
-          sessionId,
-          parseStatus: responseBodyError ? "response-body-error" : "response-received",
-          durationMs: Date.now() - startedAt,
-        };
-        usage.push(usageRecord);
-        const providerError = openRouterApiError(payload, response.status);
+          throw new Error(
+            "Phase 2 authorship cancelled after a sibling failure.",
+          );
+        for (const attempt of attempts) {
+          usage.push({
+            routeId: request.route.id,
+            stage: request.stage,
+            provider: attempt.payload.provider || null,
+            reasoningEffort: effort,
+            usage: attempt.payload.usage || null,
+            cache: logOpenRouterCacheUsage(
+              `creative-author-${request.stage}`,
+              attempt.payload.usage,
+            ),
+            sessionId,
+            parseStatus: attempt.parseError
+              ? "response-body-error"
+              : attempt.providerError
+                ? "http-error"
+                : "response-received",
+            durationMs: Date.now() - startedAt,
+          });
+        }
+        const usageRecord = usage.at(-1);
         if (!response.ok || providerError) {
           usageRecord.parseStatus = "http-error";
           if (providerError) throw providerError;
@@ -417,9 +439,7 @@ async function requestStage(request) {
             JSON.stringify(payload) !== "{}"
               ? JSON.stringify(payload).slice(0, 1000)
               : rawBody || responseBodyError?.message || "empty response";
-          throw new Error(
-            `OpenRouter ${response.status}: ${errorContext}`,
-          );
+          throw new Error(`OpenRouter ${response.status}: ${errorContext}`);
         }
         if (responseBodyError) {
           throw new Error("OpenRouter returned an unreadable response body.", {
@@ -461,6 +481,7 @@ async function requestStage(request) {
         return parsed;
       } catch (error) {
         lastError = error;
+        if (isOpenRouterAffordabilityError(error)) throw error;
         if (controller.signal.aborted || effort === requestedEfforts.at(-1))
           throw error;
         console.warn(
@@ -506,8 +527,7 @@ function aggregateCacheUsage(records) {
     parseFailureCount: records.length - (parseStatusCounts.parsed || 0),
     parseStatusCounts,
     cost: Math.round(total.cost * 1_000_000) / 1_000_000,
-    cacheDiscount:
-      Math.round(total.cacheDiscount * 1_000_000) / 1_000_000,
+    cacheDiscount: Math.round(total.cacheDiscount * 1_000_000) / 1_000_000,
     cacheHitPercent:
       total.promptTokens > 0
         ? Math.round((total.cachedTokens / total.promptTokens) * 1000) / 10
