@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   buildInspirationPack,
+  normalizedHeroArchetype,
   referenceStructuralDistance,
 } from "../scripts/inspiration-registry.mjs";
 import { assertReferenceDossierPack, loadReferenceDossier } from "../scripts/reference-dossier.mjs";
@@ -23,6 +24,28 @@ const baseRequest = {
 const temporaryRoots: string[] = [];
 
 describe("inspiration registry", () => {
+  it("normalizes semantically similar hero prose into the same composition archetype", () => {
+    const technicianOverlay = {
+      heroGeometry:
+        "A dark technician photograph supports a left-aligned repair promise and two contact actions.",
+      referenceTags: { composition: ["photo-statement-hero"] },
+    };
+    const mountainOverlay = {
+      heroGeometry:
+        "A mountain image frames a large white repair promise with call and request actions.",
+      referenceTags: { composition: ["photo-statement-hero"] },
+    };
+    const formSplit = {
+      heroGeometry:
+        "A wide calculator photograph shares the first viewport with a compact consultation form at right.",
+      referenceTags: { composition: ["split-hero-form"] },
+    };
+
+    expect(normalizedHeroArchetype(technicianOverlay)).toBe("image-overlay");
+    expect(normalizedHeroArchetype(mountainOverlay)).toBe("image-overlay");
+    expect(normalizedHeroArchetype(formSplit)).toBe("split-form");
+  });
+
   it("scores genuinely different reference mechanics farther apart", () => {
     const shared = {
       familyId: "family-a",
@@ -133,9 +156,37 @@ describe("inspiration registry", () => {
           expect(new Set(first.routes.map((route: any) => route[field])).size, `${niche.id}:${field}`).toBe(3);
         sets.add(ids.sort().join("|"));
       }
+      expect(first.request.heroInventory.eligibleReferenceCount, niche.id).toBe(6);
+      expect(first.request.heroInventory.shortageToSix, niche.id).toBe(
+        Math.max(0, 6 - first.request.heroInventory.distinctArchetypeCount),
+      );
+      expect(
+        new Set(first.routes.map((route: any) => route.heroArchetype)).size,
+        niche.id,
+      ).toBe(first.request.heroInventory.selectedDistinctArchetypeCount);
       expect(sets.size, niche.id).toBeGreaterThanOrEqual(2);
     }
   }, 120_000);
+
+  it("prefers three different hero archetypes when cleared inventory supports them", () => {
+    const pack = buildInspirationPack(
+      {
+        ...baseRequest,
+        industry: "hvac",
+        styleTerms: [],
+        seed: "hero-archetype-separation",
+        recentReferenceIds: [],
+        recentRouteSignatures: [],
+      },
+      registry,
+      { repositoryRoot: path.resolve("."), requireDossiers: true },
+    );
+
+    expect(pack.request.heroInventory.eligibleReferenceCount).toBe(6);
+    expect(pack.request.heroInventory.distinctArchetypeCount).toBeGreaterThanOrEqual(3);
+    expect(new Set(pack.routes.map((route: any) => route.heroArchetype)).size).toBe(3);
+    expect(pack.request.heroInventory.selectedDistinctArchetypeCount).toBe(3);
+  });
 
   it("uses persisted recent trios to avoid an exact repeat and report the choice", () => {
     const options = { repositoryRoot: path.resolve("."), requireDossiers: true };

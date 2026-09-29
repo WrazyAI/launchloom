@@ -990,6 +990,74 @@ export default function Experience({ content, runtime }) {
     expect(summary.promotionError).toContain("promotion filesystem failure");
   });
 
+  it("repairs converged preview heroes before selecting a developer preview", async () => {
+    const { root, candidates } = await fixture();
+    let bakeoffCalls = 0;
+    const repairs: string[] = [];
+    const promotions: any[] = [];
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                fallback: true,
+                promotionReady: false,
+                previewDiversity: {
+                  required: true,
+                  pass: false,
+                  strategy: "converged-blocked",
+                  convergenceDetected: true,
+                },
+                visualDiversity: {
+                  pass: false,
+                  pairs: [
+                    {
+                      left: "candidate-a",
+                      right: "candidate-b",
+                      distance: 38,
+                      pass: false,
+                      reason: "Both first viewports use the same image-left split hero.",
+                    },
+                  ],
+                },
+              })
+            : report({
+                previewDiversity: {
+                  required: true,
+                  pass: true,
+                  strategy: "all-distinct",
+                  convergenceDetected: false,
+                },
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ candidateId }: any) => {
+        repairs.push(candidateId);
+      },
+      promoteImpl: async (options: any) => {
+        promotions.push(options);
+        return { candidateId: "candidate-a" };
+      },
+    });
+
+    expect(result.status).toBe("passed");
+    expect(bakeoffCalls).toBe(2);
+    expect(new Set(repairs)).toEqual(new Set(["candidate-a", "candidate-b"]));
+    expect(promotions).toHaveLength(1);
+    expect(promotions[0].selectionMode).toBe("creative-preview");
+    expect(result.previewDiversityPass).toBe(true);
+    expect(result.previewDiversityStrategy).toBe("all-distinct");
+  });
+
   it("uses rendered diversity findings to repair both v2 candidates before production promotion", async () => {
     const { root, candidates } = await fixture();
     let bakeoffCalls = 0;
