@@ -42,6 +42,10 @@ const STRUCTURAL_FIELDS = [
   "servicePresentation",
   "typographyCategory",
 ];
+// Structural distance is a minimum-quality guard, not a ranking boost. Ranking
+// it too heavily made a few high-distance references dominate every seed.
+const MAX_SHARED_STRUCTURAL_FIELDS = 2;
+const MIN_PAIRWISE_STRUCTURAL_DISTANCE = 65;
 const BUSINESS_KIND_GROUPS = [
   ["auto-repair", "auto-repair-shop", "auto-mechanic", "mechanic", "mechanic-shop", "garage", "independent-garage", "local-auto-repair", "independent-auto-service", "vehicle-diagnostics", "vehicle-servicing", "vehicle-maintenance", "brake-service", "car-repair", "automotive-repair"],
   ["hvac", "hvac-contractor", "heating-and-cooling", "heating-cooling", "heating-and-cooling-contractor", "air-conditioning", "air-conditioning-and-heating", "heating-contractor", "cooling-contractor", "furnace-repair", "ac-repair"],
@@ -382,7 +386,7 @@ function tokenSetDistance(left, right) {
 }
 
 function selectionReferenceDna(record) {
-  return record.selectionReferenceDna || record.canonicalReferenceDna || {};
+  return record.selectionReferenceDna || record.canonicalReferenceDna || record.referenceDna || {};
 }
 
 /**
@@ -435,13 +439,15 @@ export function referenceStructuralDistance(left, right) {
 }
 
 function structurallyIndependent(record, selected) {
-  const candidateFamily = buildRouteContract(record).familyId;
-  return (
-    !selected.some((item) => buildRouteContract(item).familyId === candidateFamily) &&
-    STRUCTURAL_FIELDS.every(
-      (field) => !selected.some((item) => item[field] === record[field]),
-    )
-  );
+  return selected.every((item) => {
+    const sharedFields = STRUCTURAL_FIELDS.filter(
+      (field) => normalizedPhrase(item[field]) === normalizedPhrase(record[field]),
+    ).length;
+    return (
+      sharedFields <= MAX_SHARED_STRUCTURAL_FIELDS &&
+      referenceStructuralDistance(item, record) >= MIN_PAIRWISE_STRUCTURAL_DISTANCE
+    );
+  });
 }
 
 function evidenceFor(record) {
@@ -529,23 +535,33 @@ function independentAnchors(ranked, request, history) {
     candidate.patternExposure = candidate.anchors.reduce((sum, anchor) =>
       sum + Number(history.recentFamilyIds.has(buildRouteContract(anchor).familyId.toLowerCase())) +
         Number(history.recentRouteSignatures.has(signatureFor(anchor))), 0);
-    candidate.rankScore =
-      candidate.minimumDistance * 0.8 +
-      candidate.totalDistance * 0.15 +
-      candidate.fitScore +
-      stableFraction(`${request.seed}|${candidate.stableKey}`) * 90;
   }
-  candidates.sort(
-    (left, right) =>
-      right.explicitCount - left.explicitCount ||
-      Number(left.repeatedRecentTrio) - Number(right.repeatedRecentTrio) ||
-      left.exposure - right.exposure ||
-      left.latestTrioOverlap - right.latestTrioOverlap ||
-      left.patternExposure - right.patternExposure ||
-      right.rankScore - left.rankScore ||
-      left.stableKey.localeCompare(right.stableKey),
+  let eligible = candidates.filter(
+    (candidate) => candidate.explicitCount === Math.max(...candidates.map((item) => item.explicitCount)),
   );
-  return { chosen: candidates[0], validTrioCount: candidates.length };
+  if (eligible.some((candidate) => !candidate.repeatedRecentTrio))
+    eligible = eligible.filter((candidate) => !candidate.repeatedRecentTrio);
+  const minimumExposure = Math.min(...eligible.map((candidate) => candidate.exposure));
+  eligible = eligible.filter((candidate) => candidate.exposure === minimumExposure);
+  const minimumLatestOverlap = Math.min(...eligible.map((candidate) => candidate.latestTrioOverlap));
+  eligible = eligible.filter((candidate) => candidate.latestTrioOverlap === minimumLatestOverlap);
+  const minimumPatternExposure = Math.min(...eligible.map((candidate) => candidate.patternExposure));
+  eligible = eligible.filter((candidate) => candidate.patternExposure === minimumPatternExposure);
+  const strongestFit = Math.max(...eligible.map((candidate) => candidate.fitScore));
+  eligible = eligible.filter((candidate) => candidate.fitScore >= strongestFit - 8);
+  eligible.sort((left, right) => left.stableKey.localeCompare(right.stableKey));
+  const seedContext = [
+    request.seed,
+    request.industry,
+    ...(Array.isArray(request.styleTerms) ? request.styleTerms : []),
+    request.styleText || "",
+    eligible.map((candidate) => candidate.stableKey).join(";"),
+  ].join("|");
+  const selectedIndex = Math.min(
+    eligible.length - 1,
+    Math.floor(stableFraction(seedContext) * eligible.length),
+  );
+  return { chosen: eligible[selectedIndex], validTrioCount: candidates.length };
 }
 
 function selectionHistory(request, eligibleIds, eligibleSignatures, industry) {
