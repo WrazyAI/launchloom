@@ -80,6 +80,7 @@ const fixtures = [
     key: "care-wellness",
     businessName: "Harbor Glow Wellness",
     industry: "wellness",
+    expectedReferenceGap: "wellness",
     address: "50 Example Boulevard, Austin, TX 78704",
     primaryCity: "Austin, TX",
     services: ["Skin consultation", "Skin renewal", "Wrinkle smoothing"],
@@ -484,13 +485,28 @@ async function main() {
       await fs.writeFile(renderConfigPath, `${JSON.stringify(renderConfig, null, 2)}\n`);
       const historyPath = path.join(fixtureDir, "empty-history.json");
       await fs.writeFile(historyPath, JSON.stringify({ version: 1, launches: [] }));
-      execFileSync(process.execPath, [
-        path.join(repository, "scripts/compile-inspiration-pack.mjs"),
-        "--config", path.join(fixtureDir, "site.config.json"),
-        "--intake", path.join(fixtureDir, "canonical-site-brief.json"),
-        "--history", historyPath,
-        "--out", path.join(fixtureDir, "inspiration-pack.json"),
-      ], { cwd: repository, stdio: "pipe", env: { ...process.env, LAUNCHLOOM_INTAKE_ID: intake.submissionId } });
+      let referenceGapError = null;
+      try {
+        execFileSync(process.execPath, [
+          path.join(repository, "scripts/compile-inspiration-pack.mjs"),
+          "--config", path.join(fixtureDir, "site.config.json"),
+          "--intake", path.join(fixtureDir, "canonical-site-brief.json"),
+          "--history", historyPath,
+          "--out", path.join(fixtureDir, "inspiration-pack.json"),
+        ], { cwd: repository, stdio: "pipe", env: { ...process.env, LAUNCHLOOM_INTAKE_ID: intake.submissionId } });
+      } catch (error) {
+        referenceGapError = error;
+      }
+      if (fixture.expectedReferenceGap) {
+        const diagnostic = String(referenceGapError?.stderr || "");
+        if (!diagnostic.includes(`matched to '${fixture.expectedReferenceGap}'`) ||
+            !diagnostic.includes("three structurally independent business-matched dossiers are required"))
+          throw new Error(`${fixture.key} did not fail closed on its unsupported reference niche.`, { cause: referenceGapError });
+        summary.push({ key: fixture.key, status: "reference-coverage-blocked", businessKind: config.businessKind });
+        console.log(`fixture_pipeline_rejected=${fixture.key} business_kind=${config.businessKind}`);
+        continue;
+      }
+      if (referenceGapError) throw referenceGapError;
 
       await fs.writeFile(siteConfigPath, `${JSON.stringify(renderConfig, null, 2)}\n`);
       const siteOrigin = `https://${fixture.key}.fixture.pages.dev`;

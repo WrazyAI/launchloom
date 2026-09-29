@@ -156,6 +156,15 @@ const STOCK_PACKS = {
   },
   "professional-services": {
     hero: "/images/packs/professional-services-advisory-v1.png",
+    metadata: {
+      hero: {
+        provider: "LaunchLoom",
+        creator: "LaunchLoom",
+        sourceUrl: "/images/packs/professional-services-advisory-v1.png",
+        license: "LaunchLoom-owned generated fallback",
+        subject: "illustrative professional consultation; pictured people are not client staff",
+      },
+    },
   },
 };
 
@@ -649,10 +658,14 @@ function businessKindFor(intake, industry) {
   return profile?.industry === industry ? profile.businessKind : industry;
 }
 
+function reviewedStockPack(kind) {
+  return STOCK_PACKS[kind === "accounting" ? "professional-services" : kind];
+}
+
 function stockImages(kind) {
   // These are reviewed packs, not a live keyword search. If the pack does not
   // describe the business, the template intentionally renders brand art.
-  const pack = STOCK_PACKS[kind] || {};
+  const pack = reviewedStockPack(kind) || {};
   return {
     ...(pack.hero ? { hero: pack.hero } : {}),
     ...(pack.secondary ? { secondary: pack.secondary } : {}),
@@ -660,7 +673,7 @@ function stockImages(kind) {
 }
 
 function stockAssetReport(kind, images) {
-  const pack = STOCK_PACKS[kind];
+  const pack = reviewedStockPack(kind);
   if (!pack?.metadata) return [];
   return ["hero", "secondary"]
     .filter((placement) => images[placement] && pack.metadata[placement])

@@ -558,6 +558,32 @@ describe("site configuration", () => {
     );
   });
 
+  it("keeps the accounting reference niche while using its reviewed advisory image", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Oak & Ledger Tax",
+        industry: "accounting",
+        services: "Tax preparation\nBookkeeping\nPayroll processing",
+        preset: "wellness",
+      },
+    );
+
+    expect(config.businessKind).toBe("accounting");
+    expect(config.images.hero).toBe(
+      "/images/packs/professional-services-advisory-v1.png",
+    );
+    expect(config.assetReport.used).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          asset: "hero",
+          source: "stock-pack",
+          license: "LaunchLoom-owned generated fallback",
+        }),
+      ]),
+    );
+  });
+
   it("enables a restrained exit offer only when the client supplied a real offer", () => {
     const config = normalise(
       {},

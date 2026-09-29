@@ -71,7 +71,8 @@ landscaping, electrician, family dentistry, bistro, grooming, and tax adviser
 are aliases or service specialties, not independent pools; they may route to a
 core niche only when the business itself fits that niche. Broad onboarding
 categories such as wellness and professional services are intake buckets, not
-reference families.
+reference families. A skin-aesthetics intake left at the broad wellness kind
+has no production reference pool and fails closed.
 
 These distinct subjects have archive examples but no complete, production-
 supported reference pool: event/wedding venues, medical clinics, bicycle
