@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -38,6 +39,49 @@ jobs:
           npm ci
           npm run check
           npm run build
+      - name: Reproduce pre-fix feedback, email, and SEO behavior
+        run: |
+          git worktree add "$RUNNER_TEMP/pre-fix" e52b4f2c66921cb315063d881d5e01a03a406578
+          cd "$RUNNER_TEMP/pre-fix"
+          npm ci
+          npx vitest run --config vitest.worker.config.ts worker/test/client-feedback.test.ts -t "reproduces a transient dispatch error as a browser-visible failure after feedback was recorded"
+          node --input-type=module - <<'NODE'
+          const { renderLifecycleEmail } = await import("./emails/render-email.mjs");
+          const failedEmail = renderLifecycleEmail({
+            audience: "manual-attention",
+            kind: "revision-failed",
+            clientName: "Runtime fixture",
+            previewUrl: "https://github.com/WrazyAI/example-client/pull/44",
+            reviewUrl: "https://github.com/WrazyAI/example-client/pull/44"
+          });
+          const primaryHref = failedEmail.html.match(/href="([^"]+)"/u)?.[1] || "";
+          if (primaryHref !== "https://github.com/WrazyAI/example-client/pull/44")
+            throw new Error("Pre-fix failure email did not reproduce the GitHub-only primary action.");
+          console.log("prefx_failed_revision_primary=github");
+
+          const { researchSiteContext } = await import("./scripts/seo-research.mjs");
+          const originalFetch = globalThis.fetch;
+          let fetchCalls = 0;
+          globalThis.fetch = async () => {
+            fetchCalls += 1;
+            throw new Error("Unexpected online research call.");
+          };
+          try {
+            const dossier = await researchSiteContext({
+              businessName: "Runtime SEO fixture",
+              industry: "home-services",
+              services: ["drain cleaning"],
+              primaryCity: "Tacoma, WA"
+            }, {});
+            if (fetchCalls !== 0) throw new Error("Pre-fix SEO unexpectedly performed online research.");
+            if (dossier.mode !== "context-only" || dossier.publishReady !== false)
+              throw new Error("Pre-fix SEO reproduction did not remain context-only.");
+            console.log("prefx_no_dataforseo_fetch_calls=0");
+            console.log("prefx_no_dataforseo_mode=context-only");
+          } finally {
+            globalThis.fetch = originalFetch;
+          }
+          NODE
       - name: Smoke no-DataForSEO online fallback
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
