@@ -455,7 +455,11 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
     } catch (error) {
       queriesAttempted += 1;
       failed += 1;
-      warnings.push(`Fallback web search unavailable for one bounded query: ${text(error instanceof Error ? error.message : error, 240)}`);
+      costComplete = false;
+      warnings.push(
+        `Fallback web search unavailable for one bounded query: ${text(error instanceof Error ? error.message : error, 240)} Additional fallback queries were stopped because provider spend for the failed request is unknown.`,
+      );
+      break;
     }
   }
   const incomplete =
