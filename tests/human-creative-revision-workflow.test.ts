@@ -296,6 +296,41 @@ describe("human creative revision lifecycle", () => {
     }
   });
 
+  it("uses the reviewed site or deployed revision as the failed-revision primary destination", () => {
+    const developer = readFileSync(
+      ".github/workflows/process-feedback.yml",
+      "utf8",
+    );
+    const client = readFileSync(
+      ".github/workflows/process-client-feedback.yml",
+      "utf8",
+    );
+
+    for (const workflow of [developer, client]) {
+      expect(workflow).toContain(
+        'REVIEWED_PAGE: ${{ github.event.client_payload.reviewedPage }}',
+      );
+      expect(workflow).toContain(
+        'SITE_URL=$(REVIEWED_PAGE="$REVIEWED_PAGE" node -e',
+      );
+      expect(workflow).toContain(
+        'SITE_URL="${{ steps.deploy.outputs.preview }}"',
+      );
+      expect(workflow).toContain(
+        'if [ -z "$SITE_URL" ]; then SITE_URL="$REVIEWED_PAGE"; fi',
+      );
+      expect(workflow).toContain('--preview "$SITE_URL" --review "$SITE_URL"');
+      expect(workflow).toContain('--diagnostic-pr "https://github.com/');
+      expect(workflow).toContain('--diagnostic-run "$RUN_URL"');
+      expect(workflow).not.toMatch(
+        /--preview "https:\/\/github\.com\/\$CLIENT_REPO\/pull\//u,
+      );
+      expect(workflow).not.toMatch(
+        /--review "https:\/\/github\.com\/\$CLIENT_REPO\/pull\//u,
+      );
+    }
+  });
+
   it("returns client-requested revisions to the developer with the triggering request in the email", () => {
     const workflow = readFileSync(
       ".github/workflows/process-client-feedback.yml",
