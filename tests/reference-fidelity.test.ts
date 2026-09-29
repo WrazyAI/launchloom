@@ -88,6 +88,27 @@ export default function Experience({ content }) { return <main data-mobile-recom
     ]));
   });
 
+  it("ignores local helper components that do not accept props", () => {
+    const experience = validExperience.replace(
+      "</main>",
+      "<Ornament /></main>",
+    );
+    const source = [
+      'function Ornament() { return <span aria-hidden="true">* </span>; }',
+      `export default function Experience({ content }) { return ${experience}; }`,
+    ].join("\n");
+
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: source,
+      stylesSource: validStyles,
+      motionSource: validMotion,
+    });
+
+    expect(report.pass).toBe(true);
+    expect(report.findings).toEqual([]);
+  });
+
   it("counts the trusted FAQList runtime helper as a sealed FAQ output binding", () => {
     const source = `import { FAQList } from "@launchloom/runtime";\n${validExperience.replace("{content.faqs}", "<FAQList content={content} />")}`;
     const report = validateReferenceCandidate({ referenceDna: dna, experienceSource: source, stylesSource: validStyles, motionSource: validMotion });

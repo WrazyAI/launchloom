@@ -242,10 +242,10 @@ function outputContentPaths(source) {
       const value = props.get(key);
       if (value?.length) bindings.set(name.text, value);
     };
-    if (ts.isIdentifier(parameter)) {
+    if (parameter && ts.isIdentifier(parameter)) {
       if (props.has(parameter.text)) bindProp(parameter, parameter.text);
       else if (props.has("content")) bindProp(parameter, "content");
-    } else if (ts.isObjectBindingPattern(parameter)) {
+    } else if (parameter && ts.isObjectBindingPattern(parameter)) {
       for (const element of parameter.elements) {
         if (!ts.isBindingElement(element)) continue;
         const key = propertyName(element.propertyName || element.name);
