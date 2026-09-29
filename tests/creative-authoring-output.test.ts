@@ -71,6 +71,24 @@ describe("creative authoring output budgets", () => {
     expect(checklist).toContain("semantically matching section");
   });
 
+  it("states distinct desktop and mobile hero topologies as separate layout contracts", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+      compositionTopology: {
+        hero: "media-overlay",
+        mobileHero: "type-led-statement",
+        mediaRelation: "copy-over-media",
+        mobileMediaRelation: "copy-leads-opening",
+      },
+    });
+
+    expect(checklist).toContain("Desktop hero topology: media-overlay");
+    expect(checklist).toContain("Desktop media relation: copy-over-media");
+    expect(checklist).toContain("Mobile hero topology: type-led-statement");
+    expect(checklist).toContain("Mobile media relation: copy-leads-opening");
+    expect(checklist).toContain("do not carry desktop image occupancy into mobile");
+  });
+
   it("keeps required navigation links when a route has no reference DNA", () => {
     const checklist = referenceImplementationChecklist(undefined);
 

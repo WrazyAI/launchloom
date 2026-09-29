@@ -33,6 +33,16 @@ export function referenceImplementationChecklist(referenceDna) {
   const sections = Array.isArray(referenceDna?.sectionSequence)
     ? referenceDna.sectionSequence
     : [];
+  const topology = referenceDna?.compositionTopology || {};
+  const viewportTopology = topology.hero || topology.mobileHero
+    ? [
+        `Desktop hero topology: ${topology.hero || "unclassified"}`,
+        `Desktop media relation: ${topology.mediaRelation || "unclassified"}`,
+        `Mobile hero topology: ${topology.mobileHero || "unclassified"}`,
+        `Mobile media relation: ${topology.mobileMediaRelation || "unclassified"}`,
+        "Implement desktop and mobile hero topology as separate responsive layout contracts. When they differ, do not carry desktop image occupancy into mobile or force the desktop overlay onto the mobile opening.",
+      ].join("\n")
+    : "";
   const sectionIds = sections.map((section) => {
     const id = String(section || "")
       .toLowerCase()
@@ -51,6 +61,7 @@ export function referenceImplementationChecklist(referenceDna) {
   return [
     'REQUIRED LITERAL SECTION IDS: put id="services", id="faqs", and id="contact" on the actual matching content sections. These must be literal JSX string attributes, not variables, expressions, aliases, or empty anchor elements.',
     navigationRequirement,
+    ...(viewportTopology ? ["VIEWPORT-SPECIFIC HERO TOPOLOGY (HARD REQUIREMENT):", viewportTopology] : []),
     'REFERENCE SECTION ORDER: put each data-reference-section value on its corresponding visible <section> element, in this exact DOM order:',
     ...sectionIds.map(
       (id, index) => `${index + 1}. data-reference-section="${id}"`,
