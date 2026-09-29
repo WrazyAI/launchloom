@@ -13,9 +13,6 @@
     "provenanceEvidencePaths": [
       "rights/business-verification.md",
       "rights/capture-record.md"
-    ],
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
     ]
   },
   "provenance": {

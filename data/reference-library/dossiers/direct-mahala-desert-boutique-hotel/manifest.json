@@ -10,9 +10,6 @@
     "rights": "permission-cleared",
     "rightsEvidence": "The requester attested that internal full-page desktop/mobile capture and derived design-prompt retention are cleared, and later explicitly confirmed that these screenshots may be sent to the LaunchLoom pipeline model as visual references. No hotel-owner grant or written license was uploaded. See the requester-attestation and provenance files.",
     "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md",
-    "assetEvidencePaths": [
-      "rights/REQUESTER-ATTESTATION.md"
-    ],
     "provenanceEvidencePaths": [
       "rights/PROVENANCE.md"
     ]

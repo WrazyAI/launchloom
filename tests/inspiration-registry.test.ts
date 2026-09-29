@@ -453,6 +453,14 @@ describe("inspiration registry", () => {
         expect(["licensed", "permission-cleared", "owned"], id).toContain(dossier.source.rights);
         expect(dossier.evidence.desktop.fullPage, id).toBe(true);
         expect(dossier.evidence.mobile.fullPage, id).toBe(true);
+        if (dossier.source.rights === "permission-cleared") {
+          expect(dossier.source.assetEvidencePaths || [], id).not.toContain(
+            dossier.source.rightsEvidencePath,
+          );
+        }
+        if (dossier.source.rights === "licensed") {
+          expect(dossier.source.assetEvidencePaths?.length || 0, id).toBeGreaterThan(0);
+        }
       }
     }
   }, 60_000);

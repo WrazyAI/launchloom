@@ -17,9 +17,6 @@
     "rights": "permission-cleared",
     "rightsEvidence": "Requester attestation recorded 2026-09-25 permits internal retention of the full-page captures and their use as visual input to the LaunchLoom pipeline model. No source-owner grant or license was uploaded. See rights/requester-attestation.md.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
-    ],
     "provenanceEvidencePaths": [
       "rights/capture-record.md"
     ]

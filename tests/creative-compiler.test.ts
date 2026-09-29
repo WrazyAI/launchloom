@@ -106,7 +106,6 @@ describe("creative compiler", () => {
         rights: "permission-cleared",
         rightsEvidence: "Requester attested to reference use.",
         rightsEvidencePath: "rights/requester-attestation.md",
-        assetEvidencePaths: ["rights/requester-attestation.md"],
       },
       tags: { business: ["home-services"] },
       designPrompt: `# Reference implementation brief\n\n${"A careful reference mechanic. ".repeat(40)}`,

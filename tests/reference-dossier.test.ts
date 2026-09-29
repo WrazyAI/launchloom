@@ -151,6 +151,111 @@ describe("reference dossiers", () => {
     expect(() => loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot })).toThrow(/local rights evidence path/iu);
   });
 
+  it("does not misclassify permission for retaining screenshots as an asset license", () => {
+    const fixture = createDossier({
+      productionEligible: true,
+      tags: {
+        business: ["local-service"],
+        style: ["editorial"],
+        composition: ["poster"],
+        conversion: ["consultation"],
+        motion: ["static"],
+        imagery: ["photography"],
+      },
+      source: {
+        name: "Permission-cleared screenshot reference",
+        url: "https://example.test/reference",
+        rights: "permission-cleared",
+        rightsEvidence: "Clearance covers retaining full-page screenshots and using them as model references.",
+        rightsEvidencePath: "rights/requester-attestation.md",
+      },
+    });
+    fs.mkdirSync(path.join(fixture.directory, "rights"), { recursive: true });
+    fs.writeFileSync(
+      path.join(fixture.directory, "rights", "requester-attestation.md"),
+      "Clearance for internal screenshot retention and model-reference use.",
+    );
+
+    const dossier = loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    });
+
+    expect(dossier.source.rightsEvidencePath).toBe("rights/requester-attestation.md");
+    expect(dossier.source.assetEvidencePaths).toBeUndefined();
+  });
+
+  it("still requires licensed production references to declare asset-license evidence", () => {
+    const fixture = createDossier({
+      productionEligible: true,
+      tags: {
+        business: ["local-service"],
+        style: ["editorial"],
+        composition: ["poster"],
+        conversion: ["consultation"],
+        motion: ["static"],
+        imagery: ["photography"],
+      },
+      source: {
+        name: "Licensed screenshot reference",
+        url: "https://example.test/reference",
+        rights: "licensed",
+        rightsEvidence: "The retained reference is under a commercial-use license.",
+        rightsEvidencePath: "rights/LICENSE.txt",
+      },
+    });
+    fs.mkdirSync(path.join(fixture.directory, "rights"), { recursive: true });
+    fs.writeFileSync(path.join(fixture.directory, "rights", "LICENSE.txt"), "License evidence.");
+
+    expect(() => loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    })).toThrow(/asset license evidence/iu);
+  });
+
+  it("validates and fingerprints declared provenance evidence files", () => {
+    const fixture = createDossier({
+      source: {
+        name: "LaunchLoom owned prototype",
+        url: "https://example.test/original-study",
+        rights: "owned",
+        rightsEvidence: "Created and captured by LaunchLoom for internal design research.",
+        provenanceEvidencePaths: ["rights/capture-record.md"],
+      },
+    });
+    fs.mkdirSync(path.join(fixture.directory, "rights"), { recursive: true });
+    const provenancePath = path.join(fixture.directory, "rights", "capture-record.md");
+    fs.writeFileSync(provenancePath, "Initial capture record.");
+
+    const first = loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    });
+    expect(first.source.provenanceEvidencePaths).toEqual(["rights/capture-record.md"]);
+    expect(first.evidenceDigests.provenance).toMatchObject({
+      "rights/capture-record.md": expect.stringMatching(/^[a-f0-9]{64}$/u),
+    });
+
+    fs.writeFileSync(provenancePath, "Updated capture record.");
+    const second = loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    });
+    expect(second.digest).not.toBe(first.digest);
+  });
+
+  it("rejects missing local provenance evidence instead of silently trusting its path", () => {
+    const fixture = createDossier({
+      source: {
+        name: "LaunchLoom owned prototype",
+        url: "https://example.test/original-study",
+        rights: "owned",
+        rightsEvidence: "Created and captured by LaunchLoom for internal design research.",
+        provenanceEvidencePaths: ["rights/missing-capture-record.md"],
+      },
+    });
+
+    expect(() => loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    })).toThrow(/missing local provenance evidence/iu);
+  });
+
   it("rejects screenshot paths that escape the dossier folder", () => {
     const fixture = createDossier({
       evidence: {

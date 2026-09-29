@@ -891,7 +891,6 @@ describe("production experience author", () => {
         rightsEvidence:
           "Requester-attested permission covers screenshot retention and model reference use.",
         rightsEvidencePath: "rights/clearance.md",
-        assetEvidencePaths: ["rights/clearance.md"],
       },
       tags: { business: ["jewelry"], style: [`editorial-${index}`] },
       designPrompt: `# Reference implementation brief\n\nReference ${index}: ${"Preserve this route's own composition, image role, and service presentation mechanics without copying its identity. ".repeat(16)}`,

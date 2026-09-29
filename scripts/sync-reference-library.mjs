@@ -152,18 +152,9 @@ function normalizeManifestEvidence(manifest, directory) {
       provenance.add(relative);
   }
   const normalizedAssets = unique(assets);
-  // Permission-cleared screenshots are reference evidence only: they are sent
-  // to the authoring model but are not packaged into generated client sites.
-  // Keep the attestation in the existing asset-rights evidence slot because
-  // the dossier validator requires a local evidence record for every
-  // production-eligible non-owned source.
-  if (
-    !normalizedAssets.length &&
-    manifest.productionEligible &&
-    manifest.source.rights !== "owned" &&
-    manifest.source.rightsEvidencePath
-  )
-    normalizedAssets.push(manifest.source.rightsEvidencePath);
+  // Screenshot-retention clearance is not an asset license. Keep its record
+  // in rightsEvidencePath (and provenance evidence when present), never in
+  // the asset-license/credit list.
   const normalizedProvenance = unique(
     [...provenance].filter((relative) => relative !== manifest.source.rightsEvidencePath),
   );
