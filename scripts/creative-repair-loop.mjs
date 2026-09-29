@@ -695,6 +695,9 @@ ${currentFiles.styles}
 CURRENT MOTION.JS
 ${currentFiles.motion}
 
+SOURCE SAFETY CONTRACT
+Experience.jsx is markup and className hooks only. Do not add style attributes or style props to Experience.jsx, including React style={{...}}, style variables, or spreads that supply a style prop. Do not add <style> elements or inline visual rules. Use className hooks in JSX and put all visual declarations in styles.css. When changing appearance, update the matching CSS selector and its Experience.jsx className hook; keep behavior in motion.js and do not use it to inject visual declarations into markup.
+
 REQUIRED STRUCTURAL CHECKLIST
 ${structuralChecklist}
 Keep each required ID and section marker on its semantically matching visible section, in the exact specified DOM order, while making the requested repair. Do not remove or rename them.

@@ -888,6 +888,9 @@ describe("creative repair loop", () => {
     expect(prompt).toContain(
       "Preserve verified business facts, sealed content bindings, accessibility",
     );
+    expect(prompt).toContain("SOURCE SAFETY CONTRACT");
+    expect(prompt).toContain("Do not add style attributes or style props to Experience.jsx");
+    expect(prompt).toContain("Use className hooks in JSX and put all visual declarations in styles.css");
     expect(prompt).not.toContain(
       "Preserve its composition and sealed content bindings.",
     );
