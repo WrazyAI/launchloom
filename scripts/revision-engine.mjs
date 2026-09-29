@@ -143,10 +143,84 @@ const brandNameRequest =
 const colorRequest = /\b(colou?rs?|color palette|palette|brand colors?)\b/i;
 const broadLayoutRequest =
   /\b(?:redesign|rework|refresh|improve|change|update|revise|strengthen)\b.{0,60}\b(?:layout|page structure|visual hierarchy|composition)\b|\b(?:layout|page structure|visual hierarchy|composition)\b.{0,60}\b(?:redesign|rework|refresh|improve|change|update|revise|strengthen)\b/i;
+const globalLayoutScope =
+  /\b(?:globally|site[- ]wide|page[- ]wide|whole (?:website|site|page)|entire (?:website|site|page)|throughout (?:the )?(?:site|page|website)|across (?:the )?(?:whole|entire) (?:site|page|website)|all sections|every section|across the board|overall (?:website|site|page|layout|composition|design|look|style))\b/i;
+const scopedLayoutRequest =
+  /\b(?:layout|composition|spacing|spacious|compact|density|tight(?:er)?|gaps?|font|typography|variant|center(?:ed)?|align(?:ment|ed)?|move|reorder|above|below|before|after|hide|remove|show|add|include|enable|disable|style|visual|imagery|premium|cinematic|asymmetrical|editorial|practical|featured|problem[- ]led|immersive|guided|quiet|numbered|cards?|work|local|consultation)\b/i;
 const layoutRequest =
   /\b(layout|reorder|move|above|below|before|after|hide|remove|show|add|section|spacing|spacious|compact|density|typography|font|modern|editorial|bold|immersive|center(?:ed)?)\b/i;
 const contentRequest =
   /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten|simplify|condense).{0,50}\b(faq|question|answer|process|step|hero|opening)\b|\b(faq|question|answer|process|step|hero|opening)\b.{0,50}(?:say|read|explain|mention|shorter|simpler|concise|bloated|too long)\b/i;
+const COPY_FIELD_TARGETS = [
+  [
+    "heroHeading",
+    /\b(?:hero|opening)(?:\s+(?:section|main))?\s+(?:heading|headline|title|h1)\b|\b(?:heading|headline|title|h1)\s+(?:for|in|of)\s+(?:the\s+)?(?:hero|opening)\b/i,
+  ],
+  [
+    "heroBody",
+    /\b(?:hero|opening)(?:\s+section)?\s+(?:body|paragraph|description|intro)\b|\b(?:body|paragraph|description|intro)\s+(?:for|in|of)\s+(?:the\s+)?(?:hero|opening)\b/i,
+  ],
+  [
+    "heroKicker",
+    /\b(?:hero|opening)(?:\s+section)?\s+(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?(?:hero|opening)\b/i,
+  ],
+  [
+    "servicesHeading",
+    /\bservices?\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?services?\b/i,
+  ],
+  [
+    "servicesIntro",
+    /\bservices?\s+(?:section\s+)?(?:intro|introduction|description|paragraph)\b|\b(?:intro|introduction|description|paragraph)\s+(?:for|in|of)\s+(?:the\s+)?services?\b/i,
+  ],
+  [
+    "aboutHeading",
+    /\babout(?:\s+us)?\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?about(?:\s+us)?\b/i,
+  ],
+  [
+    "aboutBody",
+    /\babout(?:\s+us)?\s+(?:section\s+)?(?:body|paragraph|description|copy)\b|\b(?:body|paragraph|description|copy)\s+(?:for|in|of)\s+(?:the\s+)?about(?:\s+us)?\b/i,
+  ],
+  [
+    "aboutKicker",
+    /\babout(?:\s+us)?\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?about(?:\s+us)?\b/i,
+  ],
+  [
+    "contactHeading",
+    /\bcontact\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?contact\b/i,
+  ],
+  [
+    "contactKicker",
+    /\bcontact\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?contact\b/i,
+  ],
+  [
+    "processHeading",
+    /\bprocess\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?process\b/i,
+  ],
+  [
+    "processKicker",
+    /\bprocess\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?process\b/i,
+  ],
+  [
+    "faqHeading",
+    /\b(?:faqs?|questions?)\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?(?:faqs?|questions?)\b/i,
+  ],
+  [
+    "faqKicker",
+    /\b(?:faqs?|questions?)\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?(?:faqs?|questions?)\b/i,
+  ],
+  [
+    "formIntro",
+    /\b(?:contact |request )?form\s+(?:intro|introduction|description|prompt)\b|\b(?:intro|introduction|description|prompt)\s+(?:for|in|of)\s+(?:the\s+)?(?:contact |request )?form\b/i,
+  ],
+];
+const COPY_SECTION_FIELDS = {
+  hero: ["heroKicker", "heroHeading", "heroBody"],
+  services: ["servicesHeading", "servicesIntro"],
+  about: ["aboutKicker", "aboutHeading", "aboutBody"],
+  contact: ["contactKicker", "contactHeading", "formIntro"],
+  process: ["processKicker", "processHeading"],
+  faq: ["faqKicker", "faqHeading"],
+};
 const conversionFeatureRequest =
   /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant|chat)|ai (?:faq )?(?:chat|assistant|chatbot)|chatbot|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
 const creativeVisualRequest =
@@ -372,10 +446,119 @@ function mentionedSection(text) {
       new RegExp(`\\b${alias.replace(" ", "\\s+")}s?\\b`).test(lowered),
     )?.[1];
 }
+function explicitSectionScope(alias, text) {
+  const aliasPattern = alias
+    .split(/\s+/)
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("[-\\s]+");
+  const sectionTarget = `(?:the\\s+)?${aliasPattern}(?:\\s+(?:section|area|block))?`;
+  const action =
+    "(?:make|keep|change|update|adjust|tighten|loosen|space|center|centre|align|move|reorder|hide|remove|show|add|include|enable|disable|style|redesign|rework|refresh|simplify|improve|condense|expand|widen|narrow|reduce|increase)";
+  const layoutTerm =
+    "(?:layout|composition|spacing|spacious|compact|density|tight(?:er)?|gaps?|font|typography|variant|center(?:ed)?|align(?:ment|ed)?|style|visual|imagery|premium|cinematic|asymmetrical|editorial|practical|featured|problem[- ]led|immersive|guided|quiet|numbered|cards?|work|local|consultation)";
+  const patterns = [
+    new RegExp(`\\b${action}\\s+${sectionTarget}\\b`, "i"),
+    new RegExp(
+      `\\b(?:use|apply|give)\\b[^.!?;\\n]{0,45}\\b${layoutTerm}\\b[^.!?;\\n]{0,35}\\b(?:in|for|on|around|within)\\s+${sectionTarget}\\b`,
+      "i",
+    ),
+    new RegExp(
+      `\\b${sectionTarget}\\s+(?:should|needs?\\s+to|must|could|can|is|feels?|looks?|seems?)\\s+(?:be\\s+)?(?:more|less|too|very|tighter|looser|centered|centred|compact|spacious|practical|editorial|featured|immersive|quiet|numbered)\\b`,
+      "i",
+    ),
+    new RegExp(
+      `\\b${layoutTerm}\\b[^.!?;\\n]{0,35}\\b(?:in|for|on|around|within|of)\\s+${sectionTarget}\\b`,
+      "i",
+    ),
+    new RegExp(
+      `\\b(?:in|within|around|for|on)\\s+${sectionTarget}\\b[^.!?;\\n]{0,60}\\b${layoutTerm}\\b`,
+      "i",
+    ),
+  ];
+  return patterns.some((pattern) => pattern.test(text));
+}
+function explicitlyScopedSections(text) {
+  const lowered = String(text || "").toLowerCase();
+  return [
+    ...new Set(
+      [...SECTION_ALIASES.entries()]
+        .filter(([alias]) => explicitSectionScope(alias, lowered))
+        .map(([, type]) => type),
+    ),
+  ];
+}
+function scopedLayoutSections(feedback) {
+  if (broadLayoutRequest.test(feedback) || globalLayoutScope.test(feedback))
+    return [];
+  return explicitlyScopedSections(feedback);
+}
+function wholePhraseContains(text, phrase) {
+  const tokens = (value) =>
+    String(value || "")
+      .toLocaleLowerCase()
+      .match(/[\p{L}\p{N}]+/gu) || [];
+  const phraseTokens = tokens(phrase);
+  const textTokens = tokens(text);
+  if (!phraseTokens.length || phraseTokens.length > textTokens.length)
+    return false;
+  return textTokens.some((_, start) =>
+    phraseTokens.every((token, offset) => textTokens[start + offset] === token),
+  );
+}
+function requestedSectionVariant(feedback, sectionType) {
+  const variants = [...(SECTION_VARIANTS[sectionType] || [])].sort(
+    (left, right) => right.length - left.length,
+  );
+  for (const variant of variants) {
+    const pattern = variant
+      .split("-")
+      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("[-\\s]+");
+    if (new RegExp(`\\b${pattern}\\b`, "i").test(feedback)) return variant;
+  }
+  if (
+    sectionType === "hero" &&
+    /\b(?:center|centered|centre|centred)\b/i.test(feedback) &&
+    SECTION_VARIANTS.hero.has("centered")
+  )
+    return "centered";
+  return undefined;
+}
+function operationMatchesSectionScope(operation, sectionTypes, feedback) {
+  if (!sectionTypes.length) return true;
+  if (operation.kind === "set_design_treatment") return false;
+  if (operation.kind === "reorder_section")
+    return (
+      sectionTypes.includes(operation.sectionType) ||
+      sectionTypes.includes(operation.relativeTo)
+    );
+  if (operation.kind === "set_section_enabled")
+    return sectionTypes.includes(operation.sectionType);
+  if (operation.kind === "set_section_variant")
+    return (
+      sectionTypes.includes(operation.sectionType) &&
+      requestedSectionVariant(feedback, operation.sectionType) ===
+        operation.variant
+    );
+  return false;
+}
+function sameStructuralOperation(expected, actual) {
+  if (expected.kind !== actual.kind) return false;
+  const fields = {
+    set_section_enabled: ["sectionType", "enabled"],
+    reorder_section: ["sectionType", "relativeTo", "position"],
+    set_section_variant: ["sectionType", "variant"],
+    set_design_treatment: ["density", "typography"],
+  }[expected.kind];
+  return Boolean(
+    fields && fields.every((field) => expected[field] === actual[field]),
+  );
+}
 function structuralOperations(feedback, config) {
   const text = clean(feedback, 1200).toLowerCase();
   const operations = [];
   const sections = currentSections(config);
+  const scopedSections = scopedLayoutSections(feedback);
   const hide = text.match(
     /\b(?:hide|remove|drop|disable)\s+(?:the\s+)?([a-z -]+?)(?:\s+section)?(?:[.,]|$)/i,
   );
@@ -415,28 +598,33 @@ function structuralOperations(feedback, config) {
       });
   }
   if (
+    scopedSections.length === 0 &&
     /\b(more spacious|more breathing room|increase (?:the )?spacing|generous spacing)\b/i.test(
       text,
     )
   )
     operations.push({ kind: "set_design_treatment", density: "spacious" });
   if (
+    scopedSections.length === 0 &&
     /\b(more compact|less spacing|tighter|reduce (?:the )?spacing)\b/i.test(
       text,
     )
   )
     operations.push({ kind: "set_design_treatment", density: "compact" });
   if (
+    scopedSections.length === 0 &&
     /\b(editorial|serif)\b/i.test(text) &&
     /\b(font|typography|look|style|layout)\b/i.test(text)
   )
     operations.push({ kind: "set_design_treatment", typography: "editorial" });
   if (
+    scopedSections.length === 0 &&
     /\b(modern|sans(?: serif)?|cleaner)\b/i.test(text) &&
     /\b(font|typography|look|style|layout)\b/i.test(text)
   )
     operations.push({ kind: "set_design_treatment", typography: "sans" });
   if (
+    scopedSections.length === 0 &&
     /\b(bold|stronger)\b/i.test(text) &&
     /\b(font|typography|look|style|layout|visual)\b/i.test(text)
   )
@@ -599,8 +787,12 @@ function intentsFor(feedback, config) {
   const structural = layoutRequest.test(structuralFeedback)
     ? structuralOperations(structuralFeedback, config)
     : [];
+  const sectionScopedLayoutRequested =
+    scopedLayoutSections(feedback).length > 0 &&
+    scopedLayoutRequest.test(feedback);
   if (
     broadLayoutRequest.test(feedback) ||
+    sectionScopedLayoutRequested ||
     structural.some(
       (operation) =>
         !(
@@ -622,6 +814,93 @@ function intentsFor(feedback, config) {
     intents.push("layout");
   return intents.length ? [...new Set(intents)] : ["unknown"];
 }
+function explicitContentTargets(feedback, config) {
+  const text = feedback.replace(/^\s*\[[^\]]+\]\s*/, "");
+  const namedServices = (config.services || []).filter(
+    (service) =>
+      service &&
+      [service.name, service.slug]
+        .filter((value) => String(value || "").trim())
+        .some((value) => wholePhraseContains(text, value)),
+  );
+  const specificServiceDescription =
+    namedServices.length > 0 &&
+    /\bservice (?:copy|wording|description|card)\b/i.test(text);
+  const exactFields = COPY_FIELD_TARGETS.filter(
+    ([field, pattern]) =>
+      pattern.test(text) &&
+      !(field === "servicesIntro" && specificServiceDescription),
+  ).map(([field]) => field);
+  const targets = exactFields.map((field) => ({ kind: "copy-field", field }));
+  for (const service of namedServices)
+    targets.push({
+      kind: "service",
+      slug: service.slug,
+    });
+
+  const exactFaqCopyField = exactFields.some(
+    (field) => field === "faqHeading" || field === "faqKicker",
+  );
+  if (
+    /\banswers?\b|\bfaq (?:questions|entries|content)\b/i.test(text) ||
+    (/\b(?:faqs?|frequently asked questions?)\b/i.test(text) &&
+      !exactFaqCopyField)
+  )
+    targets.push({ kind: "operation", operation: "set_faqs" });
+  const exactProcessCopyField = exactFields.some(
+    (field) => field === "processHeading" || field === "processKicker",
+  );
+  if (
+    /\b(?:steps?|how it works)\b/i.test(text) ||
+    (/\bprocess\b/i.test(text) && !exactProcessCopyField)
+  )
+    targets.push({ kind: "operation", operation: "set_process" });
+
+  for (const [section, fields] of Object.entries(COPY_SECTION_FIELDS)) {
+    if (
+      section === "faq" ||
+      section === "process" ||
+      exactFields.some((field) => fields.includes(field))
+    )
+      continue;
+    const sectionPattern =
+      section === "hero"
+        ? /\b(hero|opening)\b/i
+        : new RegExp(`\\b${section}\\b`, "i");
+    if (sectionPattern.test(text) && contentRequest.test(text))
+      targets.push({ kind: "copy-section", section, fields });
+  }
+  if (/\bservice (?:copy|wording|description|card)\b/i.test(text))
+    targets.push({ kind: "service-copy" });
+  return targets;
+}
+function contentOperationMatchesTarget(operation, target) {
+  if (target.kind === "copy-field")
+    return operation.kind === "set_copy" && operation.field === target.field;
+  if (target.kind === "copy-section")
+    return (
+      (operation.kind === "set_copy" &&
+        target.fields.includes(operation.field)) ||
+      (target.section === "services" && operation.kind === "set_service_copy")
+    );
+  if (target.kind === "service")
+    return (
+      operation.kind === "set_service_copy" &&
+      operation.serviceSlug === target.slug
+    );
+  if (target.kind === "service-copy")
+    return operation.kind === "set_service_copy";
+  if (target.kind === "operation") return operation.kind === target.operation;
+  return false;
+}
+function contentTargetsSatisfied(targets, operations) {
+  if (!targets.length) return intentSatisfied("content", operations);
+  return targets.every((target) =>
+    operations.some((operation) =>
+      contentOperationMatchesTarget(operation, target),
+    ),
+  );
+}
 export async function modelOperations(
   feedbackItems,
   config,
@@ -642,21 +921,21 @@ export async function modelOperations(
       responseCache: true,
       responseCacheTtlSeconds: 900,
       body: {
-          model,
-          reasoning_effort: reasoningEffort,
-          temperature: 0.1,
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
-            },
-            {
-              role: "user",
-              content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
-            },
-          ],
-        },
+        model,
+        reasoning_effort: reasoningEffort,
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. When feedback names specific section(s), only edit those sections; never use page-wide design treatment or edit another section to satisfy a section-specific request. If the allowed operations cannot express the requested scope, return no operation. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
+          },
+          {
+            role: "user",
+            content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
+          },
+        ],
+      },
     });
     if (!response.ok) continue;
     try {
@@ -1068,6 +1347,9 @@ export async function planRevision(
       feedbackIndex,
     })),
   );
+  const contentTargets = items.map((feedback) =>
+    explicitContentTargets(feedback, config),
+  );
   const modeled = (await planner(items, config)).filter((operation) => {
     if (!MODEL_OPERATION_KINDS.has(operation.kind)) return false;
     const feedback = items[operation.feedbackIndex];
@@ -1082,6 +1364,28 @@ export async function planRevision(
       ].includes(operation.kind)
     )
       if (intents.includes("layout")) {
+        const deterministicStructural = deterministic.filter(
+          (expected) =>
+            expected.feedbackIndex === operation.feedbackIndex &&
+            [
+              "set_section_enabled",
+              "reorder_section",
+              "set_section_variant",
+              "set_design_treatment",
+            ].includes(expected.kind),
+        );
+        if (
+          deterministicStructural.length > 0 &&
+          !deterministicStructural.some((expected) =>
+            sameStructuralOperation(expected, operation),
+          )
+        )
+          return false;
+        const sectionTargets = scopedLayoutSections(feedback);
+        if (
+          !operationMatchesSectionScope(operation, sectionTargets, feedback)
+        )
+          return false;
         const broadLayout = broadLayoutRequest.test(feedback);
         if (operation.kind === "set_design_treatment") {
           if (
@@ -1120,7 +1424,12 @@ export async function planRevision(
       } else return false;
     if (operation.kind === "set_conversion_feature")
       return intents.includes("conversion-feature");
-    return intents.includes("content");
+    if (!intents.includes("content")) return false;
+    const targets = contentTargets[operation.feedbackIndex];
+    return (
+      !targets.length ||
+      targets.some((target) => contentOperationMatchesTarget(operation, target))
+    );
   });
   const candidates = [...deterministic, ...modeled]
     .filter(
@@ -1160,11 +1469,19 @@ export async function planRevision(
       (operation) => operation.feedbackIndex === feedbackIndex,
     );
     const fulfilled = intents.filter((intent) =>
-      intentSatisfied(intent, operations),
+      intent === "content"
+        ? contentTargetsSatisfied(contentTargets[feedbackIndex], operations)
+        : intent === "layout" && scopedLayoutSections(feedback).length > 0
+          ? operations.some((operation) =>
+              operationMatchesSectionScope(
+              operation,
+              scopedLayoutSections(feedback),
+              feedback,
+            ),
+          )
+          : intentSatisfied(intent, operations),
     );
-    const unresolved = intents.filter(
-      (intent) => !fulfilled.includes(intent),
-    );
+    const unresolved = intents.filter((intent) => !fulfilled.includes(intent));
     const creativeDeferred =
       config.design?.experience?.renderer === "creative-candidate"
         ? unresolved.filter((intent) => intent === "layout")
@@ -1234,44 +1551,100 @@ export function ensureLegacySocialProofMarkup(source) {
 export function expectedArtifacts(operations, config) {
   return operations.flatMap((operation) => {
     if (operation.kind === "replace_asset") {
-      const placement = {
-        logo: "header",
-        photoOne: "hero",
-        photoTwo: "about",
-        photoThree: "gallery",
-      }[operation.slot] || "page";
-      return [{ type: "asset", url: clean(operation.url), route: "/", placement, slot: operation.slot }];
+      const placement =
+        {
+          logo: "header",
+          photoOne: "hero",
+          photoTwo: "about",
+          photoThree: "gallery",
+        }[operation.slot] || "page";
+      return [
+        {
+          type: "asset",
+          url: clean(operation.url),
+          route: "/",
+          placement,
+          slot: operation.slot,
+        },
+      ];
     }
     if (operation.kind === "replace_copy_fragment") {
-      const serviceMatch = operation.path?.match(/^services\[(\d+)\]\.description$/u);
+      const serviceMatch = operation.path?.match(
+        /^services\[(\d+)\]\.description$/u,
+      );
       const serviceSlug = serviceMatch
         ? config.services?.[Number(serviceMatch[1])]?.slug
         : "";
-      const route = serviceSlug ? `/services/${serviceSlug}/` :
-        operation.path?.startsWith("copy.about") ? "/about/" :
-          operation.path === "copy.contactHeading" ? "/contact/" :
-            operation.path?.startsWith("copy.services") ? "/services/" : "/";
-      const placement = serviceMatch ? "service-description" :
-        operation.path === "copy.heroHeading" ? "hero-heading" :
-          ["copy.contactHeading", "copy.servicesHeading"].includes(operation.path) ? "heading" :
-          operation.path === "copy.heroKicker" ? "hero-eyebrow" :
-            operation.path === "copy.heroBody" ? "hero-copy" :
-              operation.path?.startsWith("conversion.process[") ? "process-step" :
-                operation.path?.endsWith(".question") && operation.path?.startsWith("conversion.faqs[") ? "faq-question" :
-                  operation.path?.endsWith(".answer") && operation.path?.startsWith("conversion.faqs[") ? "faq-answer" :
-                    operation.path?.startsWith("differentiators[") ? "proof-point" : "page-copy";
-      return [{ type: "text", value: clean(operation.to), path: operation.path, route, placement }];
+      const route = serviceSlug
+        ? `/services/${serviceSlug}/`
+        : operation.path?.startsWith("copy.about")
+          ? "/about/"
+          : operation.path === "copy.contactHeading"
+            ? "/contact/"
+            : operation.path?.startsWith("copy.services")
+              ? "/services/"
+              : "/";
+      const placement = serviceMatch
+        ? "service-description"
+        : operation.path === "copy.heroHeading"
+          ? "hero-heading"
+          : ["copy.contactHeading", "copy.servicesHeading"].includes(
+                operation.path,
+              )
+            ? "heading"
+            : operation.path === "copy.heroKicker"
+              ? "hero-eyebrow"
+              : operation.path === "copy.heroBody"
+                ? "hero-copy"
+                : operation.path?.startsWith("conversion.process[")
+                  ? "process-step"
+                  : operation.path?.endsWith(".question") &&
+                      operation.path?.startsWith("conversion.faqs[")
+                    ? "faq-question"
+                    : operation.path?.endsWith(".answer") &&
+                        operation.path?.startsWith("conversion.faqs[")
+                      ? "faq-answer"
+                      : operation.path?.startsWith("differentiators[")
+                        ? "proof-point"
+                        : "page-copy";
+      return [
+        {
+          type: "text",
+          value: clean(operation.to),
+          path: operation.path,
+          route,
+          placement,
+        },
+      ];
     }
     if (operation.kind === "update_business_fact")
-      return [{ type: "text", value: clean(operation.value), path: `business.${operation.field}`, route: "/", placement: "business-fact" }];
+      return [
+        {
+          type: "text",
+          value: clean(operation.value),
+          path: `business.${operation.field}`,
+          route: "/",
+          placement: "business-fact",
+        },
+      ];
     if (operation.kind === "update_design_token") {
       const artifacts = [];
       if (operation.value)
-        artifacts.push({ type: "style", field: "primaryColor", value: clean(operation.value).toLowerCase() });
+        artifacts.push({
+          type: "style",
+          field: "primaryColor",
+          value: clean(operation.value).toLowerCase(),
+        });
       if (operation.density)
-        artifacts.push({ type: "class", marker: `density-${operation.density}` });
+        artifacts.push({
+          type: "class",
+          marker: `density-${operation.density}`,
+        });
       if (operation.typography)
-        artifacts.push({ type: "class", marker: `type-${operation.typography}` });
+        artifacts.push({
+          type: "class",
+          marker: `type-${operation.typography}`,
+        });
       return artifacts;
     }
     if (operation.kind === "set_social_proof")
@@ -1369,67 +1742,108 @@ function sectionIdFor(config, type) {
 function renderedTextVariants(value) {
   const ampersands = String(value).replace(/&/gu, "&amp;");
   const markup = ampersands.replace(/</gu, "&lt;").replace(/>/gu, "&gt;");
-  return [...new Set([
-    markup,
-    markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#39;"),
-    markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#x27;"),
-    ...(!/[<>]/u.test(value) ? [ampersands] : []),
-  ])];
+  return [
+    ...new Set([
+      markup,
+      markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#39;"),
+      markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#x27;"),
+      ...(!/[<>]/u.test(value) ? [ampersands] : []),
+    ]),
+  ];
 }
 function elementBodies(html, tag) {
-  return [...html.matchAll(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "giu"))]
-    .map((match) => match[1]);
+  return [
+    ...html.matchAll(
+      new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "giu"),
+    ),
+  ].map((match) => match[1]);
 }
 function containsRenderedText(html, value) {
   return renderedTextVariants(value).some((variant) => html.includes(variant));
 }
 function containsTextInElement(html, tag, value) {
-  return elementBodies(html, tag).some((body) => containsRenderedText(body, value));
+  return elementBodies(html, tag).some((body) =>
+    containsRenderedText(body, value),
+  );
 }
 function containsTextInHero(html, tag, value) {
-  const sections = [...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/giu)];
+  const sections = [
+    ...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/giu),
+  ];
   const heroSections = sections
     .filter((match) => /hero/iu.test(match[1]))
     .map((match) => match[2]);
-  return heroSections.some((section) => containsTextInElement(section, tag, value));
+  return heroSections.some((section) =>
+    containsTextInElement(section, tag, value),
+  );
 }
 function containsArtifactText(html, artifact) {
   if (!html) return false;
   if (artifact.placement === "hero-heading")
     return containsTextInHero(html, "h1", artifact.value);
   if (artifact.placement === "heading")
-    return ["h1", "h2", "h3"].some((tag) => containsTextInElement(html, tag, artifact.value));
+    return ["h1", "h2", "h3"].some((tag) =>
+      containsTextInElement(html, tag, artifact.value),
+    );
   if (artifact.placement === "hero-eyebrow")
-    return ["span", "p"].some((tag) => containsTextInHero(html, tag, artifact.value));
+    return ["span", "p"].some((tag) =>
+      containsTextInHero(html, tag, artifact.value),
+    );
   if (artifact.placement === "hero-copy")
     return containsTextInHero(html, "p", artifact.value);
-  if (artifact.placement === "service-description" || artifact.placement === "faq-answer" || artifact.placement === "proof-point")
+  if (
+    artifact.placement === "service-description" ||
+    artifact.placement === "faq-answer" ||
+    artifact.placement === "proof-point"
+  )
     return containsTextInElement(html, "p", artifact.value);
   if (artifact.placement === "process-step")
-    return containsTextInElement(html, "li", artifact.value) || containsTextInElement(html, "p", artifact.value);
+    return (
+      containsTextInElement(html, "li", artifact.value) ||
+      containsTextInElement(html, "p", artifact.value)
+    );
   if (artifact.placement === "faq-question")
     return containsTextInElement(html, "summary", artifact.value);
   return containsRenderedText(html, artifact.value);
 }
 function imageSourceMarkup(url) {
   const ampersands = String(url).replace(/&/gu, "&amp;");
-  return [`src=\"${url}\"`, `src='${url}'`, `src=\"${ampersands}\"`, `src='${ampersands}'`];
+  return [
+    `src=\"${url}\"`,
+    `src='${url}'`,
+    `src=\"${ampersands}\"`,
+    `src='${ampersands}'`,
+  ];
 }
 function assetPlacementHtml(html, placement) {
   if (placement === "header")
     return html.match(/<header\b[\s\S]*?<\/header>/iu)?.[0] || "";
   if (["hero", "about", "gallery"].includes(placement)) {
-    const sections = [...html.matchAll(/<section\b([^>]*)>[\s\S]*?<\/section>/giu)];
-    return sections.find((match) => match[1].toLocaleLowerCase().includes(placement))?.[0] || "";
+    const sections = [
+      ...html.matchAll(/<section\b([^>]*)>[\s\S]*?<\/section>/giu),
+    ];
+    return (
+      sections.find((match) =>
+        match[1].toLocaleLowerCase().includes(placement),
+      )?.[0] || ""
+    );
   }
   return html;
 }
 function containsAsset(html, artifact) {
   const region = assetPlacementHtml(html, artifact.placement);
-  return imageSourceMarkup(artifact.url).some((marker) => region.includes(marker));
+  return imageSourceMarkup(artifact.url).some((marker) =>
+    region.includes(marker),
+  );
 }
 /** @param {Record<string, string> | null} [htmlPages=null] */
-export function verifyRevision(config, report, html = "", allHtml = html, htmlPages = null) {
+export function verifyRevision(
+  config,
+  report,
+  html = "",
+  allHtml = html,
+  htmlPages = null,
+) {
   const failures = [];
   const selectedCandidateId = String(
     config.design?.experience?.candidateId || "",
@@ -1443,10 +1857,7 @@ export function verifyRevision(config, report, html = "", allHtml = html, htmlPa
     (!selectedCandidateId || verifiedCandidateId === selectedCandidateId);
   if (!Array.isArray(report.results) || !report.results.length)
     failures.push("Revision has no per-feedback results.");
-  if (
-    report.creativeSourceRepairRequired === true &&
-    !creativeSourceVerified
-  )
+  if (report.creativeSourceRepairRequired === true && !creativeSourceVerified)
     failures.push(
       "Creative source repair was required but did not pass rendered human verification.",
     );
@@ -1488,12 +1899,21 @@ export function verifyRevision(config, report, html = "", allHtml = html, htmlPa
     const renderedPage = artifact.route
       ? htmlPages
         ? htmlPages[artifact.route] || ""
-        : artifact.route === "/" ? html : allHtml
+        : artifact.route === "/"
+          ? html
+          : allHtml
       : allHtml;
-    if (artifact.type === "text" && !containsArtifactText(renderedPage, artifact))
-      failures.push(`Missing rendered text at ${artifact.path || "the expected page"}: ${artifact.value.slice(0, 80)}`);
+    if (
+      artifact.type === "text" &&
+      !containsArtifactText(renderedPage, artifact)
+    )
+      failures.push(
+        `Missing rendered text at ${artifact.path || "the expected page"}: ${artifact.value.slice(0, 80)}`,
+      );
     if (artifact.type === "asset" && !containsAsset(renderedPage, artifact))
-      failures.push(`Missing rendered replacement asset at ${artifact.placement || "the expected page"}: ${artifact.url}`);
+      failures.push(
+        `Missing rendered replacement asset at ${artifact.placement || "the expected page"}: ${artifact.url}`,
+      );
     if (
       artifact.type === "style" &&
       !html.toLowerCase().includes(artifact.value)

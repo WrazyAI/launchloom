@@ -106,6 +106,100 @@ describe("contextual image generation", () => {
     expect(reused.requests).toBe(0);
   });
 
+  it("does not reuse generated imagery after the client art direction changes", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-art-direction-"));
+    const manifestPath = join(outputDir, "generated-assets.json");
+    let requests = 0;
+    const prompts: string[] = [];
+    const falClient = {
+      config() {},
+      async subscribe(_model: string, options: { input: { prompt: string } }) {
+        requests += 1;
+        prompts.push(options.input.prompt);
+        return {
+          requestId: `art-direction-${requests}`,
+          data: { images: [{ url: `https://fal.example/art-${requests}.jpg` }] },
+        };
+      },
+    };
+    const inspiration = { routes: [{ id: "route-01", signature: "independent composition" }] };
+    const site = fixture();
+
+    await generate({
+      site,
+      inspiration,
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient,
+      fetchImpl: async () => fakeImageResponse(),
+      maxImages: 1,
+    });
+    site.style.artDirection =
+      "INTERNAL FICTIONAL CANARY ONLY. No public office. Do not claim emergency availability, certifications, reviews, warranty, prices, response times, staff, or outcomes. Design direction: a crisp technical identity using deep ink, warm white, and a small copper accent; favor a distinct diagrammatic or climate-map visual concept over a generic split hero.";
+
+    const revised = await generate({
+      site,
+      inspiration,
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient,
+      fetchImpl: async () => fakeImageResponse(),
+      maxImages: 1,
+    });
+
+    expect(requests).toBe(2);
+    expect(revised.manifest.placements[0].reused).not.toBe(true);
+    expect(prompts[1]).toContain("diagrammatic or climate-map visual concept");
+    expect(prompts[1]).not.toContain("INTERNAL FICTIONAL CANARY ONLY");
+  });
+
+  it("keeps layout and typography labels out of standalone image prompts", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const prompts: string[] = [];
+    await generate({
+      site: fixture(),
+      inspiration: {
+        routes: [
+          {
+            id: "route-poster-study",
+            familyId: "typographic-poster",
+            heroGeometry: "typographic-monument",
+            typographyCategory: "condensed-display",
+            signature: "poster-like headline composition",
+            referenceDna: {
+              familyId: "3d-portfolio-object-led",
+              heroGeometry: { mode: "typographic-monument" },
+              imageTreatment: { mode: "sculptural-object", crop: "wide-studio" },
+              palette: { contrastIntent: "quiet studio contrast" },
+            },
+          },
+        ],
+      },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 1,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { input: { prompt: string } }) {
+          prompts.push(options.input.prompt);
+          return { data: { images: [{ url: "https://fal.example/standalone.jpg" }] } };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(prompts).toHaveLength(1);
+    expect(prompts[0]).toMatch(/standalone visual image asset/iu);
+    expect(prompts[0]).toMatch(/never a website or webpage screenshot.*mockup.*poster/iu);
+    expect(prompts[0]).toMatch(/no readable text|no text-like marks/iu);
+    expect(prompts[0]).not.toContain("typographic-poster");
+    expect(prompts[0]).not.toContain("typographic-monument");
+    expect(prompts[0]).not.toContain("poster-like headline composition");
+  });
+
   it("preserves client photos and only fills missing placements", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const site = fixture();
@@ -321,7 +415,7 @@ describe("contextual image generation", () => {
       id: `route-0${number}`,
       signature: `budget-route-${number}`,
     }));
-    const calls: string[] = [];
+    let calls = 0;
     const result = await generate({
       site: fixture(),
       inspiration: { routes },
@@ -331,7 +425,7 @@ describe("contextual image generation", () => {
       falClient: {
         config() {},
         async subscribe(_model: string, options: { input: { prompt: string } }) {
-          calls.push(options.input.prompt.match(/budget-route-\d/)![0]);
+          calls += 1;
           if (!options.input.prompt.includes("Make the subject simpler"))
             throw new Error("Retry this placement.");
           return { data: { images: [{ url: "https://fal.example/retry.jpg" }] } };
@@ -340,7 +434,7 @@ describe("contextual image generation", () => {
       fetchImpl: async () => fakeImageResponse(),
     });
 
-    expect(calls).toEqual(routes.flatMap((route) => Array(2).fill(route.signature)));
+    expect(calls).toBe(6);
     expect(result.requests).toBe(6);
     expect(result.requests).toBeLessThanOrEqual(maxRequests);
     for (const manifest of result.manifest.routes) {
@@ -362,7 +456,7 @@ describe("contextual image generation", () => {
     }));
     const site = fixture();
     site.images = { hero: "/images/packs/workshop-hero.webp" };
-    const calls: string[] = [];
+    let calls = 0;
     const result = await generate({
       site,
       inspiration: { routes },
@@ -371,14 +465,14 @@ describe("contextual image generation", () => {
       maxRequests,
       falClient: {
         config() {},
-        async subscribe(_model: string, options: { input: { prompt: string } }) {
-          calls.push(options.input.prompt.match(/budget-route-\d/)![0]);
+        async subscribe(_model: string, _options: { input: { prompt: string } }) {
+          calls += 1;
           throw new Error("Provider unavailable.");
         },
       },
     });
 
-    expect(calls).toEqual(routes.slice(0, Math.max(0, maxRequests)).map((route) => route.signature));
+    expect(calls).toBe(Math.max(0, maxRequests));
     expect(result.requests).toBe(Math.max(0, maxRequests));
     expect(result.manifest.routes).toHaveLength(3);
     expect(result.manifest.placements).toHaveLength(0);

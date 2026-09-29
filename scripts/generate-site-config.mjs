@@ -1079,6 +1079,49 @@ function defaultFaq(industry, cta, kind = industry) {
 
 const GENERIC_COPY =
   /tailored to your needs|talk through your needs|personalized support|quality you can trust|when it matters|next level|we are here for you|your trusted partner|one[- ]stop/i;
+const REPAIR_OUTCOME_ISSUE =
+  "Generated copy includes a repair outcome prohibited by the client art direction.";
+const REPAIR_OUTCOME_CLAIM =
+  /\b(?:gets?|got|will be|is|are|was|were)\s+(?:(?:completely|fully)\s+)?(?:fixed|repaired|solved|restored|resolved)\b|\b(?:we|our team)\s+(?:will|can)\s+(?:fix|repair|solve|restore)\b/i;
+
+function explicitlyProhibitsRepairOutcomes(config) {
+  const direction = String(config.style?.artDirection || "");
+  const seoProhibitions = Array.isArray(config.seoResearch?.prohibitedClaims)
+    ? config.seoResearch.prohibitedClaims.join("\n")
+    : "";
+  const prohibitionText = `${direction}\n${seoProhibitions}`;
+  return (
+    /\b(?:do not|don't|never|avoid)\b[^.!?]{0,100}\b(?:claim|promise|assert|state)\b[^.!?]{0,180}\b(?:repair|service|work)\s+(?:outcomes?|results?)\b/i.test(
+      prohibitionText,
+    ) || /\brepair\s+(?:outcomes?|results?)\b/i.test(seoProhibitions)
+  );
+}
+
+function visitorFacingCopy(config) {
+  return [
+    config.business?.tagline,
+    config.business?.description,
+    ...Object.values(config.copy || {}),
+    ...(config.services || []).flatMap((service) => [
+      service?.description,
+      ...Object.values(service?.decisionSupport || {}),
+    ]),
+    ...(config.differentiators || []),
+    ...(config.conversion?.process || []),
+    ...(config.conversion?.faqs || []).flatMap((faq) => [
+      faq?.question,
+      faq?.answer,
+    ]),
+  ]
+    .filter((value) => typeof value === "string")
+    .join("\n");
+}
+function violatesExplicitRepairOutcomeProhibition(config) {
+  return (
+    explicitlyProhibitsRepairOutcomes(config) &&
+    REPAIR_OUTCOME_CLAIM.test(visitorFacingCopy(config))
+  );
+}
 
 export function evaluateDraft(config) {
   const issues = [];
@@ -1118,6 +1161,8 @@ export function evaluateDraft(config) {
     )
   )
     issues.push("The primary headings use generic marketing language.");
+  if (violatesExplicitRepairOutcomeProhibition(config))
+    issues.push(REPAIR_OUTCOME_ISSUE);
   if (
     wordCount(copy.heroHeading || config.business?.tagline) > 10 ||
     text(copy.heroHeading || config.business?.tagline, 200).length > 72 ||
@@ -1734,7 +1779,7 @@ async function askModel(intake, effort, model = MODEL) {
 }
 
 async function refineDraft(intake, draft, report, model = MODEL) {
-  const systemPrompt = `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`;
+  const systemPrompt = `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. Treat explicit negative instructions in client art direction and prohibitedClaims as hard constraints. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`;
   const identity = {
     businessName: intake.businessName || intake.business?.name || "",
     email: intake.email || intake.business?.email || "",
@@ -1816,15 +1861,32 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       groundedIntake,
     );
     const finalReport = evaluateDraft(refined);
-    const selected = finalReport.score >= initialReport.score ? refined : draft;
+    const initialHasProhibitedClaim = initialReport.issues.includes(REPAIR_OUTCOME_ISSUE);
+    const refinedHasProhibitedClaim = finalReport.issues.includes(REPAIR_OUTCOME_ISSUE);
+    const selected =
+      initialHasProhibitedClaim && !refinedHasProhibitedClaim
+        ? refined
+        : !initialHasProhibitedClaim && refinedHasProhibitedClaim
+          ? draft
+          : finalReport.score >= initialReport.score
+            ? refined
+            : draft;
+    const selectedReport = selected === refined ? finalReport : initialReport;
+    if (selectedReport.issues.includes(REPAIR_OUTCOME_ISSUE))
+      throw new Error(REPAIR_OUTCOME_ISSUE);
     return {
       ...selected,
       qualityReport: {
-        ...(selected === refined ? finalReport : initialReport),
+        ...selectedReport,
         refined: selected === refined,
       },
     };
   } catch (error) {
+    if (initialReport.issues.includes(REPAIR_OUTCOME_ISSUE))
+      throw new Error(
+        "Copy generation stopped because the explicit repair-outcome prohibition could not be satisfied.",
+        { cause: error },
+      );
     console.warn(
       "Quality refinement failed; keeping validated initial draft.",
       error instanceof Error ? error.message : error,

@@ -31,7 +31,9 @@ Call `buildInspirationPack(request, registry)`. The returned pack is determinist
 
 The module owns normalization, rights validation, relevance scoring, deterministic tie-breaking, structural separation, recent-history exclusion, bounded freshness fallback, and evidence shaping. Callers never receive source assets or download locations. Fresh references and route signatures are preferred; if those exclusions make three independent routes impossible, route-signature exclusions are relaxed first, then reference exclusions, and the selected mode is recorded in the pack summary.
 
-Each route must differ in navigation, hero geometry, service presentation, and typography category. References cannot be reused across routes. If the full registry cannot supply three independent routes, compilation stops with an explicit error.
+The selector requires every route pair to differ by at least 65 points on the 0-100 Reference DNA structural-distance measure and to share no more than two of the navigation, hero-geometry, service-presentation, and typography categories. References cannot be reused. Route-family labels are not a hard gate because curated DNA can show meaningful differences within one broad family. This allows real design variation without forcing every field to be unique, which had repeatedly pinned some niches to the same anchors. If the niche cannot supply three routes above that structural floor, compilation stops with an explicit error. Rendered screenshot diversity remains a separate and stricter promotion gate.
+
+Among eligible trios, selection prioritizes explicit reference requests, avoids recent exact trios, minimizes measured recent exposure and pattern reuse, then considers business/style fit. The final pick is a stable seeded index over the strongest-fit band (within eight points of the best aggregate fit), so repeated content does not collapse onto one high-distance anchor. The same seed and input history always produce the same routes.
 
 ## Cached ingestion
 

@@ -240,6 +240,8 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
   let rightsEvidencePath = "";
   const assetEvidencePaths = [];
   const assetEvidenceDigests = {};
+  const provenanceEvidencePaths = [];
+  const provenanceEvidenceDigests = {};
   if (rights !== "owned") {
     rightsEvidencePath = requiredText(source?.rightsEvidencePath, "local rights evidence path", 260);
     if (path.isAbsolute(rightsEvidencePath))
@@ -250,9 +252,11 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       throw new Error(`Reference dossier '${id}' is missing its local license or permission evidence.`);
     within(fs.realpathSync(directory), fs.realpathSync(proofPath), "rights evidence path");
     rightsEvidenceDigest = crypto.createHash("sha256").update(fs.readFileSync(proofPath)).digest("hex");
-    const declaredAssets = Array.isArray(source?.assetEvidencePaths) ? source.assetEvidencePaths : [];
-    if (manifest.productionEligible && !declaredAssets.length)
-      throw new Error(`Production dossier '${id}' needs explicit license evidence for bundled images and fonts.`);
+    const declaredAssets = Array.isArray(source?.assetEvidencePaths)
+      ? source.assetEvidencePaths.filter((value) => String(value || "").trim() !== rightsEvidencePath)
+      : [];
+    if (manifest.productionEligible && rights === "licensed" && !declaredAssets.length)
+      throw new Error(`Production dossier '${id}' needs explicit asset license evidence for bundled images and fonts.`);
     for (const value of declaredAssets) {
       const relative = requiredText(value, "asset rights evidence path", 260);
       if (path.isAbsolute(relative))
@@ -265,6 +269,31 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       assetEvidencePaths.push(relative);
       assetEvidenceDigests[relative] = crypto.createHash("sha256").update(fs.readFileSync(assetPath)).digest("hex");
     }
+  }
+  const declaredProvenance = Array.isArray(source?.provenanceEvidencePaths)
+    ? source.provenanceEvidencePaths.filter(
+        (value) => String(value || "").trim() !== rightsEvidencePath,
+      )
+    : [];
+  for (const value of declaredProvenance) {
+    const relative = requiredText(value, "provenance evidence path", 260);
+    if (path.isAbsolute(relative))
+      throw new Error("Reference provenance evidence paths must be dossier-relative.");
+    const evidencePath = path.resolve(directory, relative);
+    within(directory, evidencePath, "provenance evidence path");
+    if (
+      !fs.existsSync(evidencePath) ||
+      fs.lstatSync(evidencePath).isSymbolicLink() ||
+      !fs.statSync(evidencePath).isFile()
+    )
+      throw new Error(`Reference dossier '${id}' is missing local provenance evidence: ${relative}.`);
+    within(fs.realpathSync(directory), fs.realpathSync(evidencePath), "provenance evidence path");
+    if (provenanceEvidencePaths.includes(relative)) continue;
+    provenanceEvidencePaths.push(relative);
+    provenanceEvidenceDigests[relative] = crypto
+      .createHash("sha256")
+      .update(fs.readFileSync(evidencePath))
+      .digest("hex");
   }
   const promptPath = path.join(directory, "design-prompt.md");
   if (
@@ -294,6 +323,7 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       rightsEvidence: requiredText(source.rightsEvidence, "rights evidence", 600),
       ...(rightsEvidencePath ? { rightsEvidencePath } : {}),
       ...(assetEvidencePaths.length ? { assetEvidencePaths } : {}),
+      ...(provenanceEvidencePaths.length ? { provenanceEvidencePaths } : {}),
     },
     businessKinds,
     tags,
@@ -306,6 +336,7 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       mobile: crypto.createHash("sha256").update(fs.readFileSync(mobile.absolutePath)).digest("hex"),
       rightsEvidence: rightsEvidenceDigest,
       assets: assetEvidenceDigests,
+      provenance: provenanceEvidenceDigests,
     },
     digest: crypto.createHash("sha256").update(JSON.stringify({
       manifest,
@@ -314,6 +345,7 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       mobileDigest: crypto.createHash("sha256").update(fs.readFileSync(mobile.absolutePath)).digest("hex"),
       rightsEvidenceDigest,
       assetEvidenceDigests,
+      provenanceEvidenceDigests,
     })).digest("hex"),
   };
 }

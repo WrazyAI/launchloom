@@ -11,10 +11,11 @@ Production references are stored as canonical dossiers in
 `data/reference-library/dossiers/`, indexed by
 `data/reference-library/core-collection.json`. Each dossier folder contains a
 full-page desktop capture, a full-page mobile capture, a local rights record,
-a business/source manifest, and a detailed `design-prompt.md`. The first core
-contains three structurally independent references for each of ten supported
-niches. A niche without three eligible dossiers fails closed; unrelated designs
-are never used as filler.
+a business/source manifest, and a detailed `design-prompt.md`. The current core
+contains six eligible references for each of fourteen supported niches. The
+selector draws three pairwise-distinct references from the matching niche; a
+niche without three eligible dossiers above the structural-distance floor
+fails closed. Unrelated designs are never used as filler.
 
 `reference-dossier.mjs` verifies the screenshots, capture dimensions, prompt,
 rights evidence, registered paths, and content digest. Production packs bind

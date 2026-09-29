@@ -98,15 +98,22 @@ describe("inspiration registry", () => {
     expect(
       new Set(first.routes.flatMap((route: any) => route.referenceIds)).size,
     ).toBe(first.routes.flatMap((route: any) => route.referenceIds).length);
-    for (const field of [
+    const structuralFields = [
       "navigation",
       "heroGeometry",
       "servicePresentation",
       "typographyCategory",
-    ]) {
-      expect(new Set(first.routes.map((route: any) => route[field])).size).toBe(
-        3,
-      );
+    ];
+    for (let left = 0; left < first.routes.length; left += 1) {
+      for (let right = left + 1; right < first.routes.length; right += 1) {
+        const sharedFields = structuralFields.filter(
+          (field) => (first.routes[left] as any)[field] === (first.routes[right] as any)[field],
+        );
+        expect(sharedFields.length).toBeLessThanOrEqual(2);
+        expect(
+          referenceStructuralDistance(first.routes[left], first.routes[right]),
+        ).toBeGreaterThanOrEqual(65);
+      }
     }
     expect(
       new Set(first.routes.map((route: any) => route.signature)).size,
@@ -129,11 +136,73 @@ describe("inspiration registry", () => {
         expect(ids).toHaveLength(3);
         expect(new Set(ids).size, niche.id).toBe(3);
         expect(ids.every((id: string) => niche.referenceIds.includes(id)), niche.id).toBe(true);
-        for (const field of ["navigation", "heroGeometry", "servicePresentation", "typographyCategory", "familyId"])
-          expect(new Set(first.routes.map((route: any) => route[field])).size, `${niche.id}:${field}`).toBe(3);
+        const structuralFields = [
+          "navigation",
+          "heroGeometry",
+          "servicePresentation",
+          "typographyCategory",
+        ];
+        for (let left = 0; left < first.routes.length; left += 1) {
+          for (let right = left + 1; right < first.routes.length; right += 1) {
+            const sharedFields = structuralFields.filter(
+              (field) => (first.routes[left] as any)[field] === (first.routes[right] as any)[field],
+            );
+            expect(sharedFields.length, `${niche.id}:shared-fields`).toBeLessThanOrEqual(2);
+            expect(
+              referenceStructuralDistance(first.routes[left], first.routes[right]),
+              `${niche.id}:structural-distance`,
+            ).toBeGreaterThanOrEqual(65);
+          }
+        }
         sets.add(ids.sort().join("|"));
       }
       expect(sets.size, niche.id).toBeGreaterThanOrEqual(2);
+    }
+  }, 120_000);
+
+  it("keeps every core niche balanced over deterministic seed runs", () => {
+    const core = JSON.parse(
+      fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"),
+    );
+
+    for (const niche of core.niches) {
+      const counts = new Map<string, number>(
+        niche.referenceIds.map((id: string) => [id, 0]),
+      );
+      const trios = new Set<string>();
+      const idsForNiche = new Set(niche.referenceIds);
+      const selectionRegistry = {
+        ...registry,
+        records: registry.records.map((record: any) => {
+          if (!idsForNiche.has(record.id)) return record;
+          const dossier = loadReferenceDossier(record.dossierPath);
+          return { ...record, canonicalReferenceDna: dossier.referenceDna };
+        }),
+      };
+
+      for (let index = 0; index < 30; index += 1) {
+        const pack = buildInspirationPack({
+          ...baseRequest,
+          industry: niche.businessKind,
+          styleTerms: [],
+          seed: `long-run-${niche.businessKind}-${index}`,
+        }, selectionRegistry, {
+          repositoryRoot: path.resolve("."),
+          requireDossiers: false,
+        });
+        const ids = pack.routes.map((route: any) => route.referenceIds[0]);
+        expect(ids, niche.businessKind).toHaveLength(3);
+        expect(new Set(ids).size, niche.businessKind).toBe(3);
+        expect(ids.every((id: string) => idsForNiche.has(id)), niche.businessKind).toBe(true);
+        expect(pack.request.selectionHistory.validTrioCount, `${niche.businessKind} eligible trios`).toBeGreaterThanOrEqual(16);
+        ids.forEach((id: string) => counts.set(id, (counts.get(id) || 0) + 1));
+        trios.add([...ids].sort().join("|"));
+      }
+
+      const exposures = [...counts.values()];
+      expect(Math.min(...exposures), `${niche.businessKind} minimum exposure`).toBeGreaterThanOrEqual(5);
+      expect(Math.max(...exposures), `${niche.businessKind} maximum exposure`).toBeLessThanOrEqual(25);
+      expect(trios.size, `${niche.businessKind} unique trios`).toBeGreaterThanOrEqual(9);
     }
   }, 120_000);
 
@@ -453,6 +522,14 @@ describe("inspiration registry", () => {
         expect(["licensed", "permission-cleared", "owned"], id).toContain(dossier.source.rights);
         expect(dossier.evidence.desktop.fullPage, id).toBe(true);
         expect(dossier.evidence.mobile.fullPage, id).toBe(true);
+        if (dossier.source.rights === "permission-cleared") {
+          expect(dossier.source.assetEvidencePaths || [], id).not.toContain(
+            dossier.source.rightsEvidencePath,
+          );
+        }
+        if (dossier.source.rights === "licensed") {
+          expect(dossier.source.assetEvidencePaths?.length || 0, id).toBeGreaterThan(0);
+        }
       }
     }
   }, 60_000);
