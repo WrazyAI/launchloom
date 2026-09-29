@@ -348,6 +348,9 @@ describe("human creative revision lifecycle", () => {
       expect(workflow).toContain(
         'REVISION_FAILURE_SITE_URL: ${{ steps.deploy.outputs.preview || github.event.client_payload.reviewedPage }}',
       );
+      expect(workflow).toContain(
+        'REVISION_FAILURE_RUN_URL: https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}',
+      );
       expect(workflow).not.toMatch(
         /--preview "https:\/\/github\.com\/\$CLIENT_REPO\/pull\//u,
       );
