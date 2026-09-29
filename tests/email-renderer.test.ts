@@ -28,7 +28,7 @@ describe("LaunchLoom lifecycle emails", () => {
     ["developer", "revision", "Review developer preview"],
     ["client", "published", "Review your website"],
     ["delivery-failure", "published", "Open production website"],
-    ["manual-attention", "revision-failed", "Review failed request"],
+    ["manual-attention", "revision-failed", "Open reviewed website"],
   ] as const)(
     "renders the %s %s stage with HTML and text",
     (audience, kind, label) => {
