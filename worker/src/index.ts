@@ -1987,7 +1987,8 @@ async function approval(request: Request, env: Env) {
 }
 
 async function lead(request: Request, env: Env) {
-  const headers = cors(request, platformOrigins(env));
+  let allowedOrigins = platformOrigins(env);
+  const headers = cors(request, allowedOrigins);
   if (request.method === "OPTIONS")
     return new Response(null, { status: 204, headers });
   if (request.method !== "POST")
@@ -1998,6 +1999,9 @@ async function lead(request: Request, env: Env) {
       String(body.token || ""),
       env.LEAD_SIGNING_SECRET,
     );
+    allowedOrigins = Array.isArray(claims.allowedOrigins)
+      ? claims.allowedOrigins
+      : [];
     if (!claims.project || !claims.recipient || !claims.allowedOrigins?.length)
       throw new Error("Invalid lead form.");
     assertClaimOrigin(
@@ -2027,12 +2031,30 @@ async function lead(request: Request, env: Env) {
       pageUrl: clean(body.pageUrl, 4_000),
       qualification,
     });
-    await sendEmail(env, {
-      to: claims.recipient,
-      replyTo: email,
-      ...leadEmail,
-      tag: "client-lead",
-    });
+    try {
+      await sendEmail(env, {
+        to: claims.recipient,
+        replyTo: email,
+        ...leadEmail,
+        tag: "client-lead",
+        required: true,
+      });
+    } catch {
+      console.error(
+        JSON.stringify({
+          event: "lead.email_delivery_failed",
+          project: clean(claims.project, 100),
+        }),
+      );
+      return json(
+        {
+          error:
+            "We could not send your request right now. Please call the business directly.",
+        },
+        503,
+        cors(request, claims.allowedOrigins),
+      );
+    }
     return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
   } catch (error) {
     console.error("Lead failed", error);
@@ -2044,7 +2066,7 @@ async function lead(request: Request, env: Env) {
             : "We couldn’t send your request.",
       },
       403,
-      headers,
+      cors(request, allowedOrigins),
     );
   }
 }
