@@ -506,17 +506,17 @@ describe("inspiration registry", () => {
     },
   );
 
-  it("defines an exact 84-dossier core with six verified references per niche and production-randomizer coverage", () => {
+  it("defines an exact 96-dossier core with six verified references per niche and production-randomizer coverage", () => {
     const corePath = path.resolve("data/reference-library/core-collection.json");
     const core = JSON.parse(fs.readFileSync(corePath, "utf8"));
     expect(core.schemaVersion).toBe(1);
-    expect(core.id).toBe("local-seo-core-84");
-    expect(core.niches).toHaveLength(14);
+    expect(core.id).toBe("local-seo-core-96");
+    expect(core.niches).toHaveLength(16);
     expect(core.niches.every((niche: any) => niche.referenceIds.length === 6)).toBe(true);
 
     const allIds = core.niches.flatMap((niche: any) => niche.referenceIds);
-    expect(allIds).toHaveLength(84);
-    expect(new Set(allIds).size).toBe(84);
+    expect(allIds).toHaveLength(96);
+    expect(new Set(allIds).size).toBe(96);
 
     for (const niche of core.niches) {
       const pack = buildInspirationPack({

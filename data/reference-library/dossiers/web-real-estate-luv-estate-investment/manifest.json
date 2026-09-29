@@ -1,10 +1,16 @@
 {
   "schemaVersion": 1,
   "id": "web-real-estate-luv-estate-investment",
-  "productionEligible": false,
+  "productionEligible": true,
   "referenceName": "LUV Estate: architecture-led property and investment story",
   "familyId": "real-estate-integrated-investment",
-  "businessKinds": ["real estate", "real-estate", "property investment", "property development", "luxury real estate"],
+  "businessKinds": [
+    "real estate",
+    "real-estate",
+    "property investment",
+    "property development",
+    "luxury real estate"
+  ],
   "source": {
     "name": "LUV Estate official website",
     "url": "https://luv.estate/",
@@ -12,39 +18,170 @@
     "rights": "permission-cleared",
     "rightsEvidence": "Requester-attested clearance dated 2026-09-29 covers internal desktop and mobile screenshot retention, derived design prompts, and pipeline-model reference use. No source-owner grant was supplied or independently verified.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "provenanceEvidencePaths": ["rights/business-verification.md", "rights/capture-record.md"]
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
   },
   "tags": {
-    "business": ["real-estate", "property investment", "architectural development", "luxury property"],
-    "style": ["cinematic Mediterranean", "warm mineral palette", "quiet architecture editorial"],
-    "composition": ["full-bleed coastal film", "offset property thesis", "expertise chapter rail", "image-led closing invitation"],
-    "conversion": ["property discovery inquiry", "investment discussion", "group navigation"],
-    "motion": ["ambient hero film", "chapter carousel", "poster fallback"],
-    "imagery": ["coastal architecture", "landscape developments", "construction and investment still life"]
+    "business": [
+      "real-estate",
+      "property investment",
+      "architectural development",
+      "luxury property"
+    ],
+    "style": [
+      "cinematic Mediterranean",
+      "warm mineral palette",
+      "quiet architecture editorial"
+    ],
+    "composition": [
+      "full-bleed coastal film",
+      "offset property thesis",
+      "expertise chapter rail",
+      "image-led closing invitation"
+    ],
+    "conversion": [
+      "property discovery inquiry",
+      "investment discussion",
+      "group navigation"
+    ],
+    "motion": [
+      "ambient hero film",
+      "chapter carousel",
+      "poster fallback"
+    ],
+    "imagery": [
+      "coastal architecture",
+      "landscape developments",
+      "construction and investment still life"
+    ]
   },
   "evidence": {
-    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 1000}, "screenshotHeight": 4706},
-    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}, "screenshotHeight": 4626}
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshotHeight": 4706
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotHeight": 4626
+    }
   },
   "referenceDna": {
     "annotatedDescription": "A quiet coastal film introduces a large serif statement with only a compact wordmark and minimal navigation. A clay-toned introduction pairs concise property and investment context with a wide aerial development image. After a bright expertise prelude, several image-led capability chapters sit on a pale surface with generous spacing and simple next controls. A two-part contact scene and near-black group footer close the page. Transfer the film-to-thesis-to-expertise narrative and restrained scene changes only. Do not copy the source's names, images, logo, text, marks, claims, palette values, property locations, or projects.",
-    "heroGeometry": {"mode": "quiet architecture film title field", "alignment": "small corner wordmark and right-aligned utility links with a left-anchored serif statement", "viewport": "establish the property and investment orientation with one short thesis over an atmospheric still or muted film"},
-    "navigationGeometry": {"mode": "transparent lifestyle wordmark nav", "placement": "small overlay links along the top edge of the image field", "mobile": "retain a compact brand and clear menu while keeping the opening legible"},
-    "typography": {"display": "geometric modern sans with restrained editorial contrast", "body": "clean small sans", "scale": "large two-line opening, small chapter labels, comfortable body measure"},
-    "palette": {"surfaces": ["soft clay", "warm ivory", "near black"], "ink": "dark umber and white", "accents": ["muted sand", "deep charcoal"], "contrastIntent": "warm low-saturation scenes with controlled high-contrast text and buttons"},
-    "imageTreatment": {"mode": "slow architectural film and project stills", "crop": "full-bleed landscape opening, wide aerial property view, then image-led capability moments", "focalPoint": "hold the landscape, architecture, and spatial detail as the visual subject"},
-    "sectionSequence": ["cinematic estate film", "property investment thesis", "image led expertise chapter", "vision statement", "integrated development process", "investor value chapter", "architecture quality chapter", "contact invitation", "expanded group footer"],
-    "servicePresentation": {"pattern": "image led expertise chapters", "interaction": "a short overview leads into image-and-copy capabilities that can be paged horizontally on desktop"},
-    "ctaPlacement": {"primary": "contact the real estate or investment team", "secondary": "browse verified projects or group services", "early": "contact invitation after expertise story"},
-    "motion": {"primitive": "slow architectural film crossfade", "library": "native video or CSS transitions with an optional short GSAP timeline", "reducedMotion": "use an approved still and preserve every capability and contact link"},
-    "mobileRecomposition": {"strategy": "cinematic stacked image and expertise story", "rules": ["replace sideways expertise movement with a vertical or touch-safe sequence", "use a poster rather than requiring video playback", "stack the closing contact text and client-provided image", "keep body text and controls readable over warm surfaces"]},
-    "prohibitedPatterns": ["copying LUV name, marks, source media, properties, people, prices, claims, or exact trade dress", "making an investment return, value, or performance guarantee", "using a sourced investment chart as client proof", "putting dense white text on moving video", "replacing each expertise story with interchangeable service cards"],
-    "requiredSignatureElements": [
-      {"id": "architecture-film-opening", "selector": "[data-reference-signature=architecture-film-opening]", "description": "Atmospheric architecture or landscape introduces the promise before details."},
-      {"id": "integrated-expertise-chapters", "selector": "[data-reference-signature=integrated-expertise-chapters]", "description": "Capabilities are expressed as image-and-narrative chapters, not an identical tile grid."},
-      {"id": "estate-investment-contact-close", "selector": "[data-reference-signature=estate-investment-contact-close]", "description": "A compact closing inquiry follows a small set of distinct proof or expertise chapters."}
+    "heroGeometry": {
+      "mode": "quiet architecture film title field",
+      "alignment": "small corner wordmark and right-aligned utility links with a left-anchored serif statement",
+      "viewport": "establish the property and investment orientation with one short thesis over an atmospheric still or muted film"
+    },
+    "navigationGeometry": {
+      "mode": "transparent lifestyle wordmark nav",
+      "placement": "small overlay links along the top edge of the image field",
+      "mobile": "retain a compact brand and clear menu while keeping the opening legible"
+    },
+    "typography": {
+      "display": "geometric modern sans with restrained editorial contrast",
+      "body": "clean small sans",
+      "scale": "large two-line opening, small chapter labels, comfortable body measure"
+    },
+    "palette": {
+      "surfaces": [
+        "soft clay",
+        "warm ivory",
+        "near black"
+      ],
+      "ink": "dark umber and white",
+      "accents": [
+        "muted sand",
+        "deep charcoal"
+      ],
+      "contrastIntent": "warm low-saturation scenes with controlled high-contrast text and buttons"
+    },
+    "imageTreatment": {
+      "mode": "slow architectural film and project stills",
+      "crop": "full-bleed landscape opening, wide aerial property view, then image-led capability moments",
+      "focalPoint": "hold the landscape, architecture, and spatial detail as the visual subject"
+    },
+    "sectionSequence": [
+      "cinematic estate film",
+      "property investment thesis",
+      "image led expertise chapter",
+      "vision statement",
+      "integrated development process",
+      "investor value chapter",
+      "architecture quality chapter",
+      "contact invitation",
+      "expanded group footer"
     ],
-    "acceptanceChecks": ["The opening image has a static fallback and readable overlay copy.", "The property or development thesis appears before a dense capability list.", "Each capability has a distinct verified purpose rather than repeating the same value claim.", "Investment language contains no unsupplied financial performance promise.", "The mobile sequence stacks without horizontal overflow and keeps contact reachable."]
+    "servicePresentation": {
+      "pattern": "image led expertise chapters",
+      "interaction": "a short overview leads into image-and-copy capabilities that can be paged horizontally on desktop"
+    },
+    "ctaPlacement": {
+      "primary": "contact the real estate or investment team",
+      "secondary": "browse verified projects or group services",
+      "early": "contact invitation after expertise story"
+    },
+    "motion": {
+      "primitive": "slow architectural film crossfade",
+      "library": "native video or CSS transitions with an optional short GSAP timeline",
+      "reducedMotion": "use an approved still and preserve every capability and contact link"
+    },
+    "mobileRecomposition": {
+      "strategy": "cinematic stacked image and expertise story",
+      "rules": [
+        "replace sideways expertise movement with a vertical or touch-safe sequence",
+        "use a poster rather than requiring video playback",
+        "stack the closing contact text and client-provided image",
+        "keep body text and controls readable over warm surfaces"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying LUV name, marks, source media, properties, people, prices, claims, or exact trade dress",
+      "making an investment return, value, or performance guarantee",
+      "using a sourced investment chart as client proof",
+      "putting dense white text on moving video",
+      "replacing each expertise story with interchangeable service cards"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "architecture-film-opening",
+        "selector": "[data-reference-signature=architecture-film-opening]",
+        "description": "Atmospheric architecture or landscape introduces the promise before details."
+      },
+      {
+        "id": "integrated-expertise-chapters",
+        "selector": "[data-reference-signature=integrated-expertise-chapters]",
+        "description": "Capabilities are expressed as image-and-narrative chapters, not an identical tile grid."
+      },
+      {
+        "id": "estate-investment-contact-close",
+        "selector": "[data-reference-signature=estate-investment-contact-close]",
+        "description": "A compact closing inquiry follows a small set of distinct proof or expertise chapters."
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening image has a static fallback and readable overlay copy.",
+      "The property or development thesis appears before a dense capability list.",
+      "Each capability has a distinct verified purpose rather than repeating the same value claim.",
+      "Investment language contains no unsupplied financial performance promise.",
+      "The mobile sequence stacks without horizontal overflow and keeps contact reachable."
+    ]
   },
-  "review": {"status": "reviewed", "reviewer": "Codex direct-source capture QA", "date": "2026-09-29", "notes": "Official site identifies LUV Estate as a real estate and investment firm and describes its architecture, project, investment, and contact sections. Full-page captures were inspected after rejecting optional cookies. No broken images or page errors were observed."}
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-29",
+    "notes": "Official site identifies LUV Estate as a real estate and investment firm and describes its architecture, project, investment, and contact sections. Full-page captures were inspected after rejecting optional cookies. No broken images or page errors were observed."
+  }
 }

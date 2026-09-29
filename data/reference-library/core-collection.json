@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "local-seo-core-84",
+  "id": "local-seo-core-96",
   "title": "LaunchLoom Local SEO Reference Core",
-  "updatedAt": "2026-09-26",
+  "updatedAt": "2026-09-29",
   "selectionContract": "Each niche has exactly six unique, production-eligible, business-matched dossiers. The selector chooses three independent routes with seeded exposure balancing and fails closed rather than filling from another niche.",
   "rightsContract": "Every listed dossier has a local rights/provenance record. Direct-site permission status reflects requester attestation and is not represented as independently verified source-owner permission.",
   "sourceDesignRule": "Transfer composition, information hierarchy, service mechanics, responsive behavior, and motion only. Source identities, copy, imagery, facts, claims, prices, credentials, and trade dress do not transfer to client sites.",
@@ -187,6 +187,32 @@
         "web-painting-mfl",
         "web-painting-novak",
         "web-painting-southern"
+      ]
+    },
+    {
+      "id": "real-estate-and-property",
+      "label": "Real estate and property services",
+      "businessKind": "real-estate",
+      "referenceIds": [
+        "web-real-estate-serhant-media-brokerage",
+        "web-real-estate-stoebe-boutique-listings",
+        "web-real-estate-luv-estate-investment",
+        "web-real-estate-greystar-renter-discovery",
+        "web-real-estate-bosa-property-development",
+        "web-real-estate-humahome-property-search"
+      ]
+    },
+    {
+      "id": "veterinary-and-pet-care",
+      "label": "Veterinary practices and animal hospitals",
+      "businessKind": "veterinary",
+      "referenceIds": [
+        "web-veterinary-modern-animal",
+        "web-veterinary-veg-emergency",
+        "web-veterinary-schwarzman-amc",
+        "web-veterinary-lap-of-love",
+        "web-veterinary-perry-paws-mobile",
+        "web-veterinary-cat-clinic-edinburgh"
       ]
     }
   ]

@@ -65,6 +65,7 @@ const BUSINESS_KIND_GROUPS = [
   ["automotive", "auto", "auto-services", "auto-dealership", "used-car-dealer", "vehicle-sales"],
   ["events", "event-venue", "wedding-venue", "wedding", "event-services"],
   ["real-estate", "realtor", "real-estate-agent", "property", "home-sales", "property-management"],
+  ["veterinary", "veterinarian", "vet", "vet-clinic", "animal-clinic", "animal-hospital", "pet-care", "pet-clinic"],
 ];
 
 function cleanText(value, limit = 180) {

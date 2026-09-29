@@ -577,6 +577,18 @@ const BUSINESS_KIND_PROFILES = [
     aliases: ["accounting", "accountant", "accountancy", "bookkeeping"],
     facts: /\b(?:accounting|accountant|accountancy|bookkeeping|tax accounting)\b/iu,
   },
+  {
+    businessKind: "real-estate",
+    industry: "real-estate",
+    aliases: ["real-estate", "real-estate-agent", "real-estate-brokerage", "realty", "realtor", "property-management"],
+    facts: /\b(?:real estate|realty|realtor|property management|real estate agent|real estate broker|property development|real estate development)\b/iu,
+  },
+  {
+    businessKind: "veterinary",
+    industry: "wellness",
+    aliases: ["veterinary", "veterinarian", "vet", "vet-clinic", "animal-clinic", "animal-hospital", "pet-care"],
+    facts: /\b(?:veterinar\w*|vet clinic|animal clinic|animal hospital|animal medical center|pet clinic|pet hospital)\b/iu,
+  },
 ];
 
 const BROAD_INDUSTRIES = new Set([
@@ -633,13 +645,16 @@ function industryFor(intake) {
   if (BROAD_INDUSTRIES.has(selected) && selected !== "other") return selected;
 
   const facts = intakeFacts(intake);
+  const veterinaryProfile = businessProfileFromFacts(intake);
+  if (veterinaryProfile?.businessKind === "veterinary")
+    return veterinaryProfile.industry;
   if (
     /\b(?:pets?|veterinar\w*|vet clinic|animal hospital|(?:dog|cat)\s+(?:groom\w*|boarding|daycare|sitting|walking|training|care|food|treats|supplies))\b/iu.test(
       facts,
     )
   )
     return "other";
-  const factProfile = businessProfileFromFacts(intake);
+  const factProfile = veterinaryProfile || businessProfileFromFacts(intake);
   if (factProfile) return factProfile.industry;
   if (selected === "other") return "other";
   if (/\b(?:health|care|wellness|clinic|therapy|dental|medspa|medical|beauty)\b/u.test(facts))

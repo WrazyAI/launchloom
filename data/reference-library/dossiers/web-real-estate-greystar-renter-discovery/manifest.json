@@ -1,10 +1,16 @@
 {
   "schemaVersion": 1,
   "id": "web-real-estate-greystar-renter-discovery",
-  "productionEligible": false,
+  "productionEligible": true,
   "referenceName": "Greystar: renter search, apartment discovery, and city guides",
   "familyId": "real-estate-renter-discovery",
-  "businessKinds": ["real estate", "real-estate", "property management", "apartment rental", "multifamily housing"],
+  "businessKinds": [
+    "real estate",
+    "real-estate",
+    "property management",
+    "apartment rental",
+    "multifamily housing"
+  ],
   "source": {
     "name": "Greystar official website",
     "url": "https://www.greystar.com/",
@@ -12,39 +18,174 @@
     "rights": "permission-cleared",
     "rightsEvidence": "Requester-attested clearance dated 2026-09-29 covers internal desktop and mobile screenshot retention, derived design prompts, and pipeline-model reference use. No source-owner grant was supplied or independently verified.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "provenanceEvidencePaths": ["rights/business-verification.md", "rights/capture-record.md"]
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
   },
   "tags": {
-    "business": ["real-estate", "property management", "apartment rentals", "multifamily housing"],
-    "style": ["bright renter utility", "soft blue and sand", "humanist product editorial"],
-    "composition": ["rental search console", "community carousel", "benefit triptych", "city discovery rail", "renter advice"],
-    "conversion": ["search by city", "view community", "schedule tour", "resident help"],
-    "motion": ["touch safe community carousel", "static search fallback", "low emphasis image reveal"],
-    "imagery": ["apartment interiors", "resident life", "city panoramas", "practical renter scenarios"]
+    "business": [
+      "real-estate",
+      "property management",
+      "apartment rentals",
+      "multifamily housing"
+    ],
+    "style": [
+      "bright renter utility",
+      "soft blue and sand",
+      "humanist product editorial"
+    ],
+    "composition": [
+      "rental search console",
+      "community carousel",
+      "benefit triptych",
+      "city discovery rail",
+      "renter advice"
+    ],
+    "conversion": [
+      "search by city",
+      "view community",
+      "schedule tour",
+      "resident help"
+    ],
+    "motion": [
+      "touch safe community carousel",
+      "static search fallback",
+      "low emphasis image reveal"
+    ],
+    "imagery": [
+      "apartment interiors",
+      "resident life",
+      "city panoramas",
+      "practical renter scenarios"
+    ]
   },
   "evidence": {
-    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 1000}, "screenshotHeight": 5520},
-    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}, "screenshotHeight": 6389}
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "screenshotHeight": 5520
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotHeight": 6389
+    }
   },
   "referenceDna": {
     "annotatedDescription": "A bright bedroom image supports a centered search card; an immediate apartment carousel follows with rent context. The next sections mix a short renting rationale with a large resident-life photograph, three practical benefit stories, a horizontally browsable city selector, useful moving and rental-safety guides, and a partner/contact close. A local apartment directory and a formal corporate footer finish the long page. The composition serves a renter through a search-first task path, not through luxury branding. Source property names, rates, locations, people, and operational claims do not transfer.",
-    "heroGeometry": {"mode": "bright rental search console over domestic image", "alignment": "centered light search surface layered over a full-width interior scene", "viewport": "search for a home or community is the first practical decision"},
-    "navigationGeometry": {"mode": "resident utility and business switcher", "placement": "slim utility header with resident tools and business contact", "mobile": "collapse utility items while retaining a visible search field and resident support route"},
-    "typography": {"display": "humanist product grotesk", "body": "compact readable sans", "scale": "medium search headline, short benefit titles, dense but legible rental facts"},
-    "palette": {"surfaces": ["white", "pale sky blue", "warm sand", "navy footer"], "ink": "deep navy", "accents": ["clear blue", "soft gold"], "contrastIntent": "highly legible utility controls and housing information across bright surfaces"},
-    "imageTreatment": {"mode": "everyday apartment and resident documentary", "crop": "large bedroom hero followed by community, city, and lived-in moments", "focalPoint": "show practical residential spaces and people with room around overlay text"},
-    "sectionSequence": ["renter search hero", "available communities carousel", "resident life rationale", "resident benefit triptych", "city discovery rail", "renter education articles", "management partnership invitation", "local apartment directories", "corporate footer"],
-    "servicePresentation": {"pattern": "community carousel and rental advice", "interaction": "browse places with location and rent context, then read decision-support content for tours and moving"},
-    "ctaPlacement": {"primary": "search rental homes by city or community", "secondary": "learn about renting or contact resident support", "early": "rental location search in hero console"},
-    "motion": {"primitive": "touch safe community carousel", "library": "native scrolling and CSS transitions", "reducedMotion": "render the first community cards in a static list and keep all links available"},
-    "mobileRecomposition": {"strategy": "renter search console then one column communities", "rules": ["keep the search action visible without scrolling through explanation", "stack the community cards with full rent context", "convert city and guide rails into touch-safe rows", "preserve resident support and access links in the compact menu"]},
-    "prohibitedPatterns": ["copying Greystar identity, apartment images, prices, community names, people, rates, or scale claims", "presenting a managed property as the client's own without proof", "inventing rent, fees, availability, amenities, or resident services", "placing text over a busy resident photograph", "turning search results or renter advice into one undifferentiated card wall"],
-    "requiredSignatureElements": [
-      {"id": "renter-search-console", "selector": "[data-reference-signature=renter-search-console]", "description": "A location or community search is the primary opening interaction."},
-      {"id": "community-listing-rail", "selector": "[data-reference-signature=community-listing-rail]", "description": "Places are browseable with verified location and pricing context."},
-      {"id": "renter-guide-cluster", "selector": "[data-reference-signature=renter-guide-cluster]", "description": "Useful renter guidance appears before the close and answers real customer questions."}
+    "heroGeometry": {
+      "mode": "bright rental search console over domestic image",
+      "alignment": "centered light search surface layered over a full-width interior scene",
+      "viewport": "search for a home or community is the first practical decision"
+    },
+    "navigationGeometry": {
+      "mode": "resident utility and business switcher",
+      "placement": "slim utility header with resident tools and business contact",
+      "mobile": "collapse utility items while retaining a visible search field and resident support route"
+    },
+    "typography": {
+      "display": "humanist product grotesk",
+      "body": "compact readable sans",
+      "scale": "medium search headline, short benefit titles, dense but legible rental facts"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "pale sky blue",
+        "warm sand",
+        "navy footer"
+      ],
+      "ink": "deep navy",
+      "accents": [
+        "clear blue",
+        "soft gold"
+      ],
+      "contrastIntent": "highly legible utility controls and housing information across bright surfaces"
+    },
+    "imageTreatment": {
+      "mode": "everyday apartment and resident documentary",
+      "crop": "large bedroom hero followed by community, city, and lived-in moments",
+      "focalPoint": "show practical residential spaces and people with room around overlay text"
+    },
+    "sectionSequence": [
+      "renter search hero",
+      "available communities carousel",
+      "resident life rationale",
+      "resident benefit triptych",
+      "city discovery rail",
+      "renter education articles",
+      "management partnership invitation",
+      "local apartment directories",
+      "corporate footer"
     ],
-    "acceptanceChecks": ["Opening search and resident-help actions are distinct.", "Rental costs and availability are shown only if supplied and current.", "Community cards remain usable on touch devices without horizontal page overflow.", "Renter advice is factual and tied to the client's actual service.", "No source location, property, person, pricing, or scale claim is presented as client proof."]
+    "servicePresentation": {
+      "pattern": "community carousel and rental advice",
+      "interaction": "browse places with location and rent context, then read decision-support content for tours and moving"
+    },
+    "ctaPlacement": {
+      "primary": "search rental homes by city or community",
+      "secondary": "learn about renting or contact resident support",
+      "early": "rental location search in hero console"
+    },
+    "motion": {
+      "primitive": "touch safe community carousel",
+      "library": "native scrolling and CSS transitions",
+      "reducedMotion": "render the first community cards in a static list and keep all links available"
+    },
+    "mobileRecomposition": {
+      "strategy": "renter search console then one column communities",
+      "rules": [
+        "keep the search action visible without scrolling through explanation",
+        "stack the community cards with full rent context",
+        "convert city and guide rails into touch-safe rows",
+        "preserve resident support and access links in the compact menu"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying Greystar identity, apartment images, prices, community names, people, rates, or scale claims",
+      "presenting a managed property as the client's own without proof",
+      "inventing rent, fees, availability, amenities, or resident services",
+      "placing text over a busy resident photograph",
+      "turning search results or renter advice into one undifferentiated card wall"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "renter-search-console",
+        "selector": "[data-reference-signature=renter-search-console]",
+        "description": "A location or community search is the primary opening interaction."
+      },
+      {
+        "id": "community-listing-rail",
+        "selector": "[data-reference-signature=community-listing-rail]",
+        "description": "Places are browseable with verified location and pricing context."
+      },
+      {
+        "id": "renter-guide-cluster",
+        "selector": "[data-reference-signature=renter-guide-cluster]",
+        "description": "Useful renter guidance appears before the close and answers real customer questions."
+      }
+    ],
+    "acceptanceChecks": [
+      "Opening search and resident-help actions are distinct.",
+      "Rental costs and availability are shown only if supplied and current.",
+      "Community cards remain usable on touch devices without horizontal page overflow.",
+      "Renter advice is factual and tied to the client's actual service.",
+      "No source location, property, person, pricing, or scale claim is presented as client proof."
+    ]
   },
-  "review": {"status": "reviewed", "reviewer": "Codex direct-source capture QA", "date": "2026-09-29", "notes": "Official site identifies Greystar's apartment discovery and resident-help routes. Full-page home captures were inspected after optional cookies were rejected; HTTP 200 at both viewports, no broken content images or page errors, with some unresolved lazy image elements at the time of capture."}
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-29",
+    "notes": "Official site identifies Greystar's apartment discovery and resident-help routes. Full-page home captures were inspected after optional cookies were rejected; HTTP 200 at both viewports, no broken content images or page errors, with some unresolved lazy image elements at the time of capture."
+  }
 }

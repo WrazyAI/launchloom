@@ -1,10 +1,16 @@
 {
   "schemaVersion": 1,
   "id": "web-veterinary-lap-of-love",
-  "productionEligible": false,
+  "productionEligible": true,
   "referenceName": "At-home hospice support with a service compass and guided resources",
   "familyId": "veterinary-hospice-support-compass",
-  "businessKinds": ["veterinary hospice", "in-home veterinary care", "pet aftercare", "pet loss support"],
+  "businessKinds": [
+    "veterinary hospice",
+    "in-home veterinary care",
+    "pet aftercare",
+    "pet loss support",
+    "veterinary"
+  ],
   "source": {
     "name": "Lap of Love Veterinary Hospice official website",
     "url": "https://www.lapoflove.com/",
@@ -12,39 +18,173 @@
     "rights": "permission-cleared",
     "rightsEvidence": "Requester-attested clearance on 2026-09-29 covers retaining the paired desktop/mobile full-page captures, deriving a design prompt, and using these captures as internal pipeline-model visual references. No source-owner grant was supplied.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "provenanceEvidencePaths": ["rights/business-verification.md", "rights/capture-record.md"]
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
   },
   "tags": {
-    "business": ["veterinary hospice", "in-home euthanasia", "pet end-of-life care", "pet loss support"],
-    "style": ["compassionate editorial", "soft lilac wayfinding", "gentle serif hierarchy", "supportive resource design"],
-    "composition": ["service compass tiles", "veterinarian profile carousel", "vertical care menu", "testimonial field", "asymmetric resource mosaic"],
-    "conversion": ["find a veterinarian", "quality-of-life resources", "call for guidance", "service-specific next steps"],
-    "motion": ["controlled profile and testimonial rails", "quiet disclosure", "reduced-motion complete"],
-    "imagery": ["in-home pet and family imagery", "veterinarian portraits", "supportive resource photography", "reference evidence only"]
+    "business": [
+      "veterinary hospice",
+      "in-home euthanasia",
+      "pet end-of-life care",
+      "pet loss support",
+      "veterinary"
+    ],
+    "style": [
+      "compassionate editorial",
+      "soft lilac wayfinding",
+      "gentle serif hierarchy",
+      "supportive resource design"
+    ],
+    "composition": [
+      "service compass tiles",
+      "veterinarian profile carousel",
+      "vertical care menu",
+      "testimonial field",
+      "asymmetric resource mosaic"
+    ],
+    "conversion": [
+      "find a veterinarian",
+      "quality-of-life resources",
+      "call for guidance",
+      "service-specific next steps"
+    ],
+    "motion": [
+      "controlled profile and testimonial rails",
+      "quiet disclosure",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "in-home pet and family imagery",
+      "veterinarian portraits",
+      "supportive resource photography",
+      "reference evidence only"
+    ]
   },
   "evidence": {
-    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 1000}},
-    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}}
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
   },
   "referenceDna": {
     "annotatedDescription": "This care-support site uses a narrow utility header and a softly tinted opening with a concise service identity, a large home setting photograph, and a location lookup. Six outlined shortcut tiles act as a service compass. A veterinarian profile section combines short biography text with a horizontal portrait selector, while a simple vertical service index gives the page an accessible information spine. Testimonial cards sit within a warm contrasting chapter; practical articles form a looser image mosaic. A second location finder and distinct support callout finish the conversion path before a dark, multi-column footer. The overall voice is measured and compassionate. Translate the calm decision architecture and separate pathways, not the source words, brand mark, pet photographs, people, endorsements, or any medical guidance.",
-    "heroGeometry": {"mode": "soft two-field opening with service title and locator opposite an in-home photograph", "alignment": "left editorial copy and right image", "viewport": "service identity and find-care action are present before secondary information"},
-    "navigationGeometry": {"mode": "quiet utility bar with compact category links and discrete appointment controls", "placement": "top", "mobile": "two-row utility and brand actions above stacked promise, finder, image, and shortcuts"},
-    "typography": {"display": "compassionate high-contrast serif", "body": "open neutral sans", "scale": "moderate title, generous section headings, compact labels"},
-    "palette": {"surfaces": ["soft lilac", "warm white", "pale sand", "deep slate"], "ink": "blue-charcoal", "accents": ["muted lavender", "quiet botanical neutral"], "contrastIntent": "low-stress surfaces with dark text and distinct accessible control boundaries"},
-    "imageTreatment": {"mode": "home-context portraits and veterinarian photographs", "crop": "large welcoming hero portrait, small profile thumbnails, varied article crops", "focalPoint": "keep pet-family interaction gentle and legible; never imply a source person represents the generated practice"},
-    "sectionSequence": ["care identity and location finder", "service compass", "veterinarian profile", "service pathway index", "family testimonials", "support resource mosaic", "second finder and support callout", "quiet footer"],
-    "servicePresentation": {"pattern": "icon-led service compass at the opening followed by a plain vertical service menu", "interaction": "each item leads to a dedicated explanation or a clearly qualified contact route"},
-    "ctaPlacement": {"primary": "find the appropriate provider or service area", "secondary": "read practical support resources", "early": "location finder appears directly below the opening promise"},
-    "motion": {"primitive": "portrait and testimonial carousels with visible next/previous controls", "library": "native CSS or framework primitives; no source scripts", "reducedMotion": "show a static, browsable set of profiles and testimonials"},
-    "mobileRecomposition": {"strategy": "place location and care-finder actions before stacked service, profile, testimonial, and resource chapters", "rules": ["make the service compass a touch-friendly two-column or vertical set", "keep long service labels fully visible", "avoid an always-on chat tool obscuring content", "provide non-carousel ways to reach profiles and stories"]},
-    "prohibitedPatterns": ["using source hospice or end-of-life copy as medical guidance", "reusing brand symbols, photos, veterinarians, testimonials, phone number, or client stories", "making clinical or emotional outcomes sound guaranteed", "duplicating overlapping fixed chat controls", "borrowing service coverage or availability without client confirmation"],
-    "requiredSignatureElements": [
-      {"id": "care-service-compass", "selector": "[data-reference-signature=care-service-compass]", "description": "A compact set of distinct care routes appears near the opening as a service compass."},
-      {"id": "provider-profile-story", "selector": "[data-reference-signature=provider-profile-story]", "description": "A verified provider or process profile uses a restrained editorial portrait and short readable context."},
-      {"id": "support-resource-mosaic", "selector": "[data-reference-signature=support-resource-mosaic]", "description": "Practical education or preparation content is presented as a varied editorial resource group, not another uniform product grid."}
+    "heroGeometry": {
+      "mode": "soft two-field opening with service title and locator opposite an in-home photograph",
+      "alignment": "left editorial copy and right image",
+      "viewport": "service identity and find-care action are present before secondary information"
+    },
+    "navigationGeometry": {
+      "mode": "quiet utility bar with compact category links and discrete appointment controls",
+      "placement": "top",
+      "mobile": "two-row utility and brand actions above stacked promise, finder, image, and shortcuts"
+    },
+    "typography": {
+      "display": "compassionate high-contrast serif",
+      "body": "open neutral sans",
+      "scale": "moderate title, generous section headings, compact labels"
+    },
+    "palette": {
+      "surfaces": [
+        "soft lilac",
+        "warm white",
+        "pale sand",
+        "deep slate"
+      ],
+      "ink": "blue-charcoal",
+      "accents": [
+        "muted lavender",
+        "quiet botanical neutral"
+      ],
+      "contrastIntent": "low-stress surfaces with dark text and distinct accessible control boundaries"
+    },
+    "imageTreatment": {
+      "mode": "home-context portraits and veterinarian photographs",
+      "crop": "large welcoming hero portrait, small profile thumbnails, varied article crops",
+      "focalPoint": "keep pet-family interaction gentle and legible; never imply a source person represents the generated practice"
+    },
+    "sectionSequence": [
+      "care identity and location finder",
+      "service compass",
+      "veterinarian profile",
+      "service pathway index",
+      "family testimonials",
+      "support resource mosaic",
+      "second finder and support callout",
+      "quiet footer"
     ],
-    "acceptanceChecks": ["The page separates service routes from informational resources.", "Any locator asks only for a real operating area and does not imply a storefront where none exists.", "Medical statements and end-of-life language are only used when the client specifically offers and verifies that service.", "Mobile keeps support actions reachable without obstructing the page.", "Source identities, photos, testimonials, medical claims, contact details, and coverage are not copied."]
+    "servicePresentation": {
+      "pattern": "icon-led service compass at the opening followed by a plain vertical service menu",
+      "interaction": "each item leads to a dedicated explanation or a clearly qualified contact route"
+    },
+    "ctaPlacement": {
+      "primary": "find the appropriate provider or service area",
+      "secondary": "read practical support resources",
+      "early": "location finder appears directly below the opening promise"
+    },
+    "motion": {
+      "primitive": "portrait and testimonial carousels with visible next/previous controls",
+      "library": "native CSS or framework primitives; no source scripts",
+      "reducedMotion": "show a static, browsable set of profiles and testimonials"
+    },
+    "mobileRecomposition": {
+      "strategy": "place location and care-finder actions before stacked service, profile, testimonial, and resource chapters",
+      "rules": [
+        "make the service compass a touch-friendly two-column or vertical set",
+        "keep long service labels fully visible",
+        "avoid an always-on chat tool obscuring content",
+        "provide non-carousel ways to reach profiles and stories"
+      ]
+    },
+    "prohibitedPatterns": [
+      "using source hospice or end-of-life copy as medical guidance",
+      "reusing brand symbols, photos, veterinarians, testimonials, phone number, or client stories",
+      "making clinical or emotional outcomes sound guaranteed",
+      "duplicating overlapping fixed chat controls",
+      "borrowing service coverage or availability without client confirmation"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "care-service-compass",
+        "selector": "[data-reference-signature=care-service-compass]",
+        "description": "A compact set of distinct care routes appears near the opening as a service compass."
+      },
+      {
+        "id": "provider-profile-story",
+        "selector": "[data-reference-signature=provider-profile-story]",
+        "description": "A verified provider or process profile uses a restrained editorial portrait and short readable context."
+      },
+      {
+        "id": "support-resource-mosaic",
+        "selector": "[data-reference-signature=support-resource-mosaic]",
+        "description": "Practical education or preparation content is presented as a varied editorial resource group, not another uniform product grid."
+      }
+    ],
+    "acceptanceChecks": [
+      "The page separates service routes from informational resources.",
+      "Any locator asks only for a real operating area and does not imply a storefront where none exists.",
+      "Medical statements and end-of-life language are only used when the client specifically offers and verifies that service.",
+      "Mobile keeps support actions reachable without obstructing the page.",
+      "Source identities, photos, testimonials, medical claims, contact details, and coverage are not copied."
+    ]
   },
-  "review": {"status": "reviewed", "reviewer": "Codex direct-source capture QA", "date": "2026-09-29", "notes": "Official site returned HTTP 200 at both requested viewports. Full-page screenshots were recaptured after accepting its cookie prompt in the disposable browser page; no visible broken content images or JavaScript page errors were recorded. A blank embedded media rectangle is visible in both captures and is excluded as a source failure, not a signature."}
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-29",
+    "notes": "Official site returned HTTP 200 at both requested viewports. Full-page screenshots were recaptured after accepting its cookie prompt in the disposable browser page; no visible broken content images or JavaScript page errors were recorded. A blank embedded media rectangle is visible in both captures and is excluded as a source failure, not a signature."
+  }
 }

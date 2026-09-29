@@ -167,15 +167,15 @@ function normalizeManifestEvidence(manifest, directory) {
 }
 
 export function buildSyncedLibraryState({ core, registry, repositoryRoot = root }) {
-  if (!Array.isArray(core?.niches) || core.niches.length !== 14)
-    throw new Error("Canonical local SEO core must contain exactly 14 niches.");
+  if (!Array.isArray(core?.niches) || core.niches.length !== 16)
+    throw new Error("Canonical local SEO core must contain exactly 16 niches.");
   const coreIds = core.niches.flatMap((niche) => {
     if (!Array.isArray(niche.referenceIds) || niche.referenceIds.length !== 6)
       throw new Error(`Core niche '${niche.id}' must have exactly six reference IDs.`);
     return niche.referenceIds;
   });
-  if (new Set(coreIds).size !== 84)
-    throw new Error("Canonical core must contain exactly 84 unique dossier IDs.");
+  if (new Set(coreIds).size !== 96)
+    throw new Error("Canonical core must contain exactly 96 unique dossier IDs.");
 
   const existingById = new Map(registry.records.map((record) => [record.id, record]));
   const sourceByUrl = new Map();
@@ -296,5 +296,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     if (registryChanged) changed.push("data/inspiration-registry.json");
     throw new Error(`Reference library sync is stale (${changed.join(", ")}). Run npm run sync:reference-library -- --write.`);
   }
-  console.log(`reference_core_niches=${core.niches.length} reference_core_ids=84 registry_records=${next.registry.records.length} mode=${write ? "write" : check ? "check" : "plan"}`);
+  const referenceCount = core.niches.reduce(
+    (total, niche) => total + niche.referenceIds.length,
+    0,
+  );
+  console.log(`reference_core_niches=${core.niches.length} reference_core_ids=${referenceCount} registry_records=${next.registry.records.length} mode=${write ? "write" : check ? "check" : "plan"}`);
 }

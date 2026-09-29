@@ -1,10 +1,16 @@
 {
   "schemaVersion": 1,
   "id": "web-veterinary-schwarzman-amc",
-  "productionEligible": false,
+  "productionEligible": true,
   "referenceName": "Institutional animal hospital with public education and specialty pathways",
   "familyId": "veterinary-institutional-specialty-atlas",
-  "businessKinds": ["animal medical center", "specialty veterinary hospital", "veterinary emergency hospital", "veterinary clinic"],
+  "businessKinds": [
+    "animal medical center",
+    "specialty veterinary hospital",
+    "veterinary emergency hospital",
+    "veterinary clinic",
+    "veterinary"
+  ],
   "source": {
     "name": "Schwarzman Animal Medical Center official website",
     "url": "https://www.amcny.org/",
@@ -12,39 +18,174 @@
     "rights": "permission-cleared",
     "rightsEvidence": "Requester-attested clearance on 2026-09-29 covers retaining the paired desktop/mobile full-page captures, deriving a design prompt, and using these captures as internal pipeline-model visual references. No source-owner grant was supplied.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "provenanceEvidencePaths": ["rights/business-verification.md", "rights/capture-record.md"]
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
   },
   "tags": {
-    "business": ["animal hospital", "specialty veterinary", "emergency veterinary", "nonprofit animal medical center"],
-    "style": ["institutional editorial", "classic serif titles", "clinical navy utility", "public-benefit storytelling"],
-    "composition": ["multi-tier utility navigation", "full-width team hero", "paired feature stories", "public education field", "news index", "social image strip"],
-    "conversion": ["emergency contact", "appointment pathway", "specialty discovery", "visit preparation"],
-    "motion": ["static-first image chapters", "small editorial carousels", "reduced-motion complete"],
-    "imagery": ["clinical-team documentary photography", "patient stories", "education imagery", "reference evidence only"]
+    "business": [
+      "animal hospital",
+      "specialty veterinary",
+      "emergency veterinary",
+      "nonprofit animal medical center",
+      "veterinary"
+    ],
+    "style": [
+      "institutional editorial",
+      "classic serif titles",
+      "clinical navy utility",
+      "public-benefit storytelling"
+    ],
+    "composition": [
+      "multi-tier utility navigation",
+      "full-width team hero",
+      "paired feature stories",
+      "public education field",
+      "news index",
+      "social image strip"
+    ],
+    "conversion": [
+      "emergency contact",
+      "appointment pathway",
+      "specialty discovery",
+      "visit preparation"
+    ],
+    "motion": [
+      "static-first image chapters",
+      "small editorial carousels",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "clinical-team documentary photography",
+      "patient stories",
+      "education imagery",
+      "reference evidence only"
+    ]
   },
   "evidence": {
-    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 1000}},
-    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}}
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
   },
   "referenceDna": {
     "annotatedDescription": "This animal medical center uses layered utility navigation for pet owners, the veterinary community, and supporters. Its opening is a full-bleed clinical-team photograph with a calm serif statement and a single focused path. Two editorial feature stories introduce institutional work, then a colored public-education field presents resources as paired text-image modules. A compact three-item latest-news strip leads into a deep-blue social-image chapter, newsletter form, and dense charcoal sitemap. The visual grammar is civic and institutional rather than boutique: wide horizontal bands, clear access paths, credible staff context, and serif headings against clean sans-serif utility. Adapt the layered audience structure and editorial chapter rhythm only; all dates, awards, credentials, research, statistics, staff, addresses, imagery, and source claims are excluded unless separately verified for the client.",
-    "heroGeometry": {"mode": "full-width clinical-team photograph with a brief overlaid statement", "alignment": "wide image-led banner", "viewport": "two utility navigation levels above a single opening message and action"},
-    "navigationGeometry": {"mode": "institutional utility bar plus audience switcher", "placement": "two compact rows at top", "mobile": "brand with a compact menu; expose emergency/contact separately when relevant"},
-    "typography": {"display": "classic editorial serif", "body": "precise institutional sans", "scale": "moderate title with strong section labels and compact utility copy"},
-    "palette": {"surfaces": ["white", "cool pale blue", "deep institutional blue", "charcoal"], "ink": "deep navy and charcoal", "accents": ["clear blue", "limited alert tone"], "contrastIntent": "information-dense navigation and education stay readable with clear hierarchy"},
-    "imageTreatment": {"mode": "documentary team and animal-care images paired with editorial feature cards", "crop": "wide opening crop followed by consistent landscape and square crops", "focalPoint": "keep people and patients visible; preserve room for hero title"},
-    "sectionSequence": ["audience utility navigation", "clinical-team hero", "two institutional features", "public education band", "latest updates", "social image triptych", "newsletter", "institutional sitemap"],
-    "servicePresentation": {"pattern": "specialty and care pathways organized as an information atlas, not a sales card grid", "interaction": "audience and service links lead to distinct detail, appointment, or referral routes"},
-    "ctaPlacement": {"primary": "urgent contact or appointment according to the verified practice", "secondary": "specialty and visit information", "early": "a single direct action appears within or just below the hero"},
-    "motion": {"primitive": "small news and social image carousel controls", "library": "native CSS or framework primitives; no source code", "reducedMotion": "show an ordered static row and keep all content in the document"},
-    "mobileRecomposition": {"strategy": "compress utility navigation, then sequence image, action, feature stories, education, and news vertically", "rules": ["keep urgent contact distinctly available when clinically applicable", "stack paired editorial features without shrinking body copy", "turn latest updates into an accessible vertical list", "retain sitemap groups as compact accordions with expanded-state semantics"]},
-    "prohibitedPatterns": ["copying institution wordmarks, team or patient photos, staff identities, awards, accreditation, research claims, ratings, or copy", "implying specialty credentials or hospital capacity without client proof", "burying practical care access under donor and education content", "recreating inaccessible dense desktop navigation on mobile", "using source content as medical advice"],
-    "requiredSignatureElements": [
-      {"id": "audience-utility-navigation", "selector": "[data-reference-signature=audience-utility-navigation]", "description": "When the client serves genuinely distinct audiences, a compact utility system makes their routes clear without crowding the main navigation."},
-      {"id": "editorial-care-features", "selector": "[data-reference-signature=editorial-care-features]", "description": "The first supporting chapter pairs a small number of image-led feature stories with explanatory text."},
-      {"id": "education-band", "selector": "[data-reference-signature=education-band]", "description": "A distinct educational section provides useful visitor guidance linked to confirmed services."}
+    "heroGeometry": {
+      "mode": "full-width clinical-team photograph with a brief overlaid statement",
+      "alignment": "wide image-led banner",
+      "viewport": "two utility navigation levels above a single opening message and action"
+    },
+    "navigationGeometry": {
+      "mode": "institutional utility bar plus audience switcher",
+      "placement": "two compact rows at top",
+      "mobile": "brand with a compact menu; expose emergency/contact separately when relevant"
+    },
+    "typography": {
+      "display": "classic editorial serif",
+      "body": "precise institutional sans",
+      "scale": "moderate title with strong section labels and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "cool pale blue",
+        "deep institutional blue",
+        "charcoal"
+      ],
+      "ink": "deep navy and charcoal",
+      "accents": [
+        "clear blue",
+        "limited alert tone"
+      ],
+      "contrastIntent": "information-dense navigation and education stay readable with clear hierarchy"
+    },
+    "imageTreatment": {
+      "mode": "documentary team and animal-care images paired with editorial feature cards",
+      "crop": "wide opening crop followed by consistent landscape and square crops",
+      "focalPoint": "keep people and patients visible; preserve room for hero title"
+    },
+    "sectionSequence": [
+      "audience utility navigation",
+      "clinical-team hero",
+      "two institutional features",
+      "public education band",
+      "latest updates",
+      "social image triptych",
+      "newsletter",
+      "institutional sitemap"
     ],
-    "acceptanceChecks": ["The hero action remains visible at standard desktop and mobile viewports.", "Visitor care access is not subordinated to institutional or editorial material.", "Only verified client audiences, capabilities, credentials, figures, research, and impact claims appear.", "Mobile utility navigation has no horizontal overflow and retains keyboard access.", "All source staff, patient imagery, marks, wording, and claims remain untransferred."]
+    "servicePresentation": {
+      "pattern": "specialty and care pathways organized as an information atlas, not a sales card grid",
+      "interaction": "audience and service links lead to distinct detail, appointment, or referral routes"
+    },
+    "ctaPlacement": {
+      "primary": "urgent contact or appointment according to the verified practice",
+      "secondary": "specialty and visit information",
+      "early": "a single direct action appears within or just below the hero"
+    },
+    "motion": {
+      "primitive": "small news and social image carousel controls",
+      "library": "native CSS or framework primitives; no source code",
+      "reducedMotion": "show an ordered static row and keep all content in the document"
+    },
+    "mobileRecomposition": {
+      "strategy": "compress utility navigation, then sequence image, action, feature stories, education, and news vertically",
+      "rules": [
+        "keep urgent contact distinctly available when clinically applicable",
+        "stack paired editorial features without shrinking body copy",
+        "turn latest updates into an accessible vertical list",
+        "retain sitemap groups as compact accordions with expanded-state semantics"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying institution wordmarks, team or patient photos, staff identities, awards, accreditation, research claims, ratings, or copy",
+      "implying specialty credentials or hospital capacity without client proof",
+      "burying practical care access under donor and education content",
+      "recreating inaccessible dense desktop navigation on mobile",
+      "using source content as medical advice"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "audience-utility-navigation",
+        "selector": "[data-reference-signature=audience-utility-navigation]",
+        "description": "When the client serves genuinely distinct audiences, a compact utility system makes their routes clear without crowding the main navigation."
+      },
+      {
+        "id": "editorial-care-features",
+        "selector": "[data-reference-signature=editorial-care-features]",
+        "description": "The first supporting chapter pairs a small number of image-led feature stories with explanatory text."
+      },
+      {
+        "id": "education-band",
+        "selector": "[data-reference-signature=education-band]",
+        "description": "A distinct educational section provides useful visitor guidance linked to confirmed services."
+      }
+    ],
+    "acceptanceChecks": [
+      "The hero action remains visible at standard desktop and mobile viewports.",
+      "Visitor care access is not subordinated to institutional or editorial material.",
+      "Only verified client audiences, capabilities, credentials, figures, research, and impact claims appear.",
+      "Mobile utility navigation has no horizontal overflow and retains keyboard access.",
+      "All source staff, patient imagery, marks, wording, and claims remain untransferred."
+    ]
   },
-  "review": {"status": "reviewed", "reviewer": "Codex direct-source capture QA", "date": "2026-09-29", "notes": "Official page returned HTTP 200. Both full-page captures show the multi-tier navigation, team hero, editorial features, educational area, news, social photography, form, and footer. Mobile document width measured 392 px at a 390 px viewport; screenshot is viewport-cropped to 390 px and the 2 px source overflow is noted. One third-party source script error occurred. No source imagery is used as client media."}
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-29",
+    "notes": "Official page returned HTTP 200. Both full-page captures show the multi-tier navigation, team hero, editorial features, educational area, news, social photography, form, and footer. Mobile document width measured 392 px at a 390 px viewport; screenshot is viewport-cropped to 390 px and the 2 px source overflow is noted. One third-party source script error occurred. No source imagery is used as client media."
+  }
 }

@@ -129,6 +129,8 @@ describe("site configuration", () => {
     ["hvac", "home-services", "hvac"],
     ["roofing", "home-services", "roofing"],
     ["painting", "home-services", "painting"],
+    ["real-estate", "real-estate", "real-estate"],
+    ["veterinary", "wellness", "veterinary"],
   ])(
     "maps the %s intake niche to the %s site recipe and %s reference niche",
     (selectedIndustry, expectedIndustry, expectedBusinessKind) => {

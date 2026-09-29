@@ -12,7 +12,7 @@ Production references are stored as canonical dossiers in
 `data/reference-library/core-collection.json`. Each dossier folder contains a
 full-page desktop capture, a full-page mobile capture, a local rights record,
 a business/source manifest, and a detailed `design-prompt.md`. The current core
-contains six eligible references for each of fourteen supported niches. The
+contains six eligible references for each of sixteen supported niches. The
 selector draws three pairwise-distinct references from the matching niche; a
 niche without three eligible dossiers above the structural-distance floor
 fails closed. Unrelated designs are never used as filler.
