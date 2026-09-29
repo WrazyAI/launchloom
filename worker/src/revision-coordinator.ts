@@ -53,6 +53,7 @@ type FailureNotice = {
   requestId: string;
   reason: string;
   attempts: number;
+  siteUrl?: string;
 };
 
 export type EnqueueResult =
@@ -228,6 +229,7 @@ async function notifyFailure(
   env: RevisionCoordinatorEnv,
   row: RevisionRow,
   reason: string,
+  failureSiteUrl = "",
 ) {
   if (
     !env.RESEND_API_KEY ||
@@ -238,7 +240,7 @@ async function notifyFailure(
   const diagnosticTarget = row.pr
     ? `https://github.com/${row.repo}/pull/${row.pr}`
     : `https://github.com/${row.repo}/issues/${row.feedback_issue}`;
-  const reviewedPage = safeReviewedPage(row.reviewed_page);
+  const reviewedPage = safeReviewedPage(failureSiteUrl || row.reviewed_page);
   if (!reviewedPage) {
     console.error(
       JSON.stringify({
@@ -944,7 +946,11 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     );
   }
 
-  private async markFailed(row: RevisionRow, error: unknown) {
+  private async markFailed(
+    row: RevisionRow,
+    error: unknown,
+    failureSiteUrl = "",
+  ) {
     const reason = cleanError(error);
     this.ctx.storage.sql.exec(
       "UPDATE revision_requests SET status = 'failed', failure = ?, completed_at = ? WHERE request_id = ?",
@@ -960,7 +966,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         reason,
       }),
     );
-    if (await notifyFailure(this.env, row, reason)) {
+    if (await notifyFailure(this.env, row, reason, failureSiteUrl)) {
       await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
       await this.ctx.storage.deleteAlarm();
     } else {
@@ -968,6 +974,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         requestId: row.request_id,
         reason,
         attempts: 1,
+        ...(failureSiteUrl ? { siteUrl: safeReviewedPage(failureSiteUrl) } : {}),
       });
       await this.ctx.storage.setAlarm(Date.now() + 5 * 60_000);
     }
@@ -1184,11 +1191,19 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     };
   }
 
-  async fail(requestId: string, reason: string): Promise<{ ok: true }> {
+  async fail(
+    requestId: string,
+    reason: string,
+    failureSiteUrl = "",
+  ): Promise<{ ok: true }> {
     const row = this.row(requestId);
     if (!row || row.status === "completed" || row.status === "failed")
       return { ok: true };
-    await this.markFailed(row, reason || "Revision workflow failed.");
+    await this.markFailed(
+      row,
+      reason || "Revision workflow failed.",
+      failureSiteUrl,
+    );
     await this.promoteQueued();
     return { ok: true };
   }
@@ -1288,7 +1303,10 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       await this.ctx.storage.get<FailureNotice>(FAILURE_NOTICE_KEY);
     if (notice) {
       const failed = this.row(notice.requestId);
-      if (!failed || (await notifyFailure(this.env, failed, notice.reason))) {
+      if (
+        !failed ||
+        (await notifyFailure(this.env, failed, notice.reason, notice.siteUrl || ""))
+      ) {
         await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
         await this.ctx.storage.deleteAlarm();
       } else {
