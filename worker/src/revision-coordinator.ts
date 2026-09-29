@@ -196,6 +196,7 @@ const DISPATCH_RETRY_MS = 15 * 60_000;
 const RUN_TIMEOUT_MS = 50 * 60_000;
 const CREATIVE_OVERRIDE_STALE_MS = 2 * 60_000;
 const RETENTION_MS = 30 * 24 * 60 * 60_000;
+const LEGACY_FAILURE_NOTICE_KEY = "pending-failure-notice";
 const FAILURE_NOTICE_PREFIX = "pending-failure-notice:";
 
 function failureNoticeKey(requestId: string) {
@@ -443,6 +444,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       } catch {
         // Existing Durable Objects already have the structure column.
       }
+      await this.migrateLegacyFailureNotice();
     });
   }
 
@@ -933,6 +935,23 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     return { allowed: true, retryAfterSeconds: 0 };
   }
 
+  private async migrateLegacyFailureNotice() {
+    const legacy = await this.ctx.storage.get<
+      Omit<FailureNotice, "nextAttemptAt" | "runUrl"> & {
+        runUrl?: string;
+        nextAttemptAt?: number;
+      }
+    >(LEGACY_FAILURE_NOTICE_KEY);
+    if (!legacy?.requestId) return;
+    const key = failureNoticeKey(legacy.requestId);
+    if (!(await this.ctx.storage.get(key)))
+      await this.ctx.storage.put<FailureNotice>(key, {
+        ...legacy,
+        nextAttemptAt: Number(legacy.nextAttemptAt) || Date.now(),
+      });
+    await this.ctx.storage.delete(LEGACY_FAILURE_NOTICE_KEY);
+  }
+
   private activeRevisionRow() {
     return this.ctx.storage.sql
       .exec<RevisionRow>(
@@ -942,6 +961,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   private async scheduleCoordinatorAlarm() {
+    await this.migrateLegacyFailureNotice();
     const now = Date.now();
     const due: number[] = [];
     const notices = await this.ctx.storage.list<FailureNotice>({
@@ -1474,6 +1494,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   async alarm() {
+    await this.migrateLegacyFailureNotice();
     const now = Date.now();
     const notices = await this.ctx.storage.list<FailureNotice>({
       prefix: FAILURE_NOTICE_PREFIX,
