@@ -24,6 +24,105 @@ const COPY_FIELDS = new Set([
   "faqHeading",
   "formIntro",
 ]);
+const COPY_RENDER_TARGETS = {
+  heroKicker: {
+    route: "/",
+    sectionType: "hero",
+    placement: "hero-eyebrow",
+    tags: ["span", "p"],
+  },
+  heroHeading: {
+    route: "/",
+    sectionType: "hero",
+    placement: "hero-heading",
+    tags: ["h1"],
+  },
+  heroBody: {
+    route: "/",
+    sectionType: "hero",
+    placement: "hero-copy",
+    tags: ["p"],
+  },
+  servicesHeading: {
+    route: "/services/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-heading",
+    tags: ["h1"],
+  },
+  servicesIntro: {
+    route: "/services/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-copy",
+    tags: ["p"],
+  },
+  aboutKicker: {
+    route: "/about/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-eyebrow",
+    tags: ["span"],
+  },
+  aboutHeading: {
+    route: "/about/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-heading",
+    tags: ["h1"],
+  },
+  aboutBody: {
+    route: "/about/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-copy",
+    tags: ["p"],
+  },
+  contactKicker: {
+    route: "/contact/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-eyebrow",
+    tags: ["span"],
+  },
+  contactHeading: {
+    route: "/contact/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-heading",
+    tags: ["h1"],
+  },
+  processKicker: {
+    route: "/",
+    sectionType: "process",
+    placement: "section-kicker",
+    tags: ["span", "p"],
+  },
+  processHeading: {
+    route: "/",
+    sectionType: "process",
+    placement: "section-heading",
+    tags: ["h2"],
+  },
+  faqKicker: {
+    route: "/",
+    sectionType: "faq",
+    placement: "section-kicker",
+    tags: ["span", "p"],
+  },
+  faqHeading: {
+    route: "/",
+    sectionType: "faq",
+    placement: "section-heading",
+    tags: ["h2"],
+  },
+  formIntro: {
+    route: "/contact/",
+    sectionClass: "inner-hero",
+    placement: "inner-hero-copy",
+    tags: ["p"],
+  },
+};
+const RENDERED_SECTION_ALIASES = {
+  hero: ["opening", "banner"],
+  services: ["service"],
+  about: ["story", "team"],
+  process: ["steps"],
+  faq: ["faqs", "questions"],
+};
 
 const PALETTE_KEYS = [
   "primaryColor",
@@ -1663,8 +1762,23 @@ export function expectedArtifacts(operations, config) {
         field,
         value: operation.palette[field].toLowerCase(),
       }));
-    if (operation.kind === "set_copy")
-      return [{ type: "text", value: clean(operation.value) }];
+    if (operation.kind === "set_copy") {
+      const target = COPY_RENDER_TARGETS[operation.field];
+      if (!COPY_FIELDS.has(operation.field) || !target)
+        throw new Error(
+          `Cannot verify rendered copy for unsupported field: ${operation.field || "(missing)"}`,
+        );
+      return [
+        {
+          type: "text",
+          value: clean(config.copy?.[operation.field] ?? operation.value),
+          path: `copy.${operation.field}`,
+          field: operation.field,
+          ...target,
+          tags: [...target.tags],
+        },
+      ];
+    }
     if (operation.kind === "set_service_copy")
       return [{ type: "text", value: clean(operation.description) }];
     if (operation.kind === "set_process")
@@ -1777,8 +1891,47 @@ function containsTextInHero(html, tag, value) {
     containsTextInElement(section, tag, value),
   );
 }
-function containsArtifactText(html, artifact) {
+function htmlAttributeValue(attributes, name) {
+  const match = attributes.match(
+    new RegExp(`(?:^|\\s)${name}\\s*=\\s*(["'])(.*?)\\1`, "iu"),
+  );
+  return match?.[2] || "";
+}
+function containsTextInCopyTarget(html, artifact, config) {
+  const sectionTargets = new Set();
+  if (artifact.sectionType) {
+    const sectionId = sectionIdFor(config, artifact.sectionType);
+    if (sectionId) sectionTargets.add(sectionId);
+    sectionTargets.add(artifact.sectionType);
+    for (const alias of RENDERED_SECTION_ALIASES[artifact.sectionType] || [])
+      sectionTargets.add(alias);
+  }
+  const regions = [
+    ...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/giu),
+  ]
+    .filter(([_, attributes]) => {
+      if (artifact.sectionClass) {
+        const classes = htmlAttributeValue(attributes, "class").split(/\s+/u);
+        if (classes.includes(artifact.sectionClass)) return true;
+      }
+      if (sectionTargets.size) {
+        const id = htmlAttributeValue(attributes, "id");
+        const marker = htmlAttributeValue(attributes, "data-reference-section");
+        return sectionTargets.has(id) || sectionTargets.has(marker);
+      }
+      return false;
+    })
+    .map(([, , body]) => body);
+  return regions.some((region) =>
+    (artifact.tags || []).some((tag) =>
+      containsTextInElement(region, tag, artifact.value),
+    ),
+  );
+}
+function containsArtifactText(html, artifact, config) {
   if (!html) return false;
+  if (artifact.field)
+    return containsTextInCopyTarget(html, artifact, config);
   if (artifact.placement === "hero-heading")
     return containsTextInHero(html, "h1", artifact.value);
   if (artifact.placement === "heading")
@@ -1905,7 +2058,7 @@ export function verifyRevision(
       : allHtml;
     if (
       artifact.type === "text" &&
-      !containsArtifactText(renderedPage, artifact)
+      !containsArtifactText(renderedPage, artifact, config)
     )
       failures.push(
         `Missing rendered text at ${artifact.path || "the expected page"}: ${artifact.value.slice(0, 80)}`,

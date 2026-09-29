@@ -1026,6 +1026,52 @@ describe("revision operations", () => {
     expect(planned.config.copy.heroHeading).toBe("Clear support at home");
   });
 
+  it("requires modeled set_copy text in its requested rendered field", () => {
+    const draft = {
+      ...config(),
+      copy: { heroHeading: "Original heading" },
+      design: {
+        sections: [{ id: "opening", type: "hero", variant: "editorial" }],
+      },
+    };
+    const operation = {
+      kind: "set_copy",
+      field: "heroHeading",
+      value: "Clear support at home",
+    };
+    applyOperation(draft, operation);
+    const report = {
+      results: [{ feedbackIndex: 0, status: "fulfilled", unresolved: [] }],
+      expectedArtifacts: expectedArtifacts([operation], draft),
+    };
+    expect(report.expectedArtifacts[0]).toMatchObject({
+      path: "copy.heroHeading",
+      field: "heroHeading",
+      route: "/",
+      sectionType: "hero",
+      placement: "hero-heading",
+      tags: ["h1"],
+    });
+    const wrongLocation =
+      '<section id="opening"><h1>Original heading</h1><p>Clear support at home</p></section>';
+
+    expect(
+      verifyRevision(draft, report, wrongLocation, wrongLocation, {
+        "/": wrongLocation,
+      }).failures,
+    ).toContain(
+      "Missing rendered text at copy.heroHeading: Clear support at home",
+    );
+
+    const correctLocation =
+      '<section id="opening"><h1>Clear support at home</h1></section>';
+    expect(
+      verifyRevision(draft, report, correctLocation, correctLocation, {
+        "/": correctLocation,
+      }).ok,
+    ).toBe(true);
+  });
+
   it("does not let an unrelated FAQ edit satisfy a hero-heading request", async () => {
     const draft = config();
     const planned = await planRevision(
