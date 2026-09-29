@@ -28,6 +28,7 @@ jobs:
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
+      ASSET_BASE_URL: https://assets.launchloom.wrazyos.com
       REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
       REVISION_REQUEST_ID: ${{ github.event.client_payload.requestId }}
       FEEDBACK_COMMENT_ID: ${{ github.event.client_payload.feedbackComment }}
