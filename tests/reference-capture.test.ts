@@ -228,7 +228,7 @@ describe("full-page reference screenshot stitching plan", () => {
         html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
         #scroll-root { position: fixed; top: 100px; left: 0; right: 0; bottom: 0; overflow-y: auto; background: white; }
         .scene { height: 100vh; display: grid; place-items: center; font: 30px sans-serif; }
-        #delayed { color: rgb(220, 0, 0); opacity: 0; }
+        #delayed { background: rgb(220, 0, 0); color: white; padding: 12px; opacity: 0; }
         #delayed.visible { opacity: 1; }
       </style></head><body><main id="scroll-root">
         <section class="scene">Opening scene</section>
@@ -268,37 +268,18 @@ describe("full-page reference screenshot stitching plan", () => {
         .toBuffer({ resolveWithObject: true });
       let redPixels = 0;
       let firstRedRow = info.height;
-      let firstRedColumn = info.width;
       for (let row = 0; row < info.height; row += 1)
         for (let column = 0; column < info.width; column += 1) {
           const index = (row * info.width + column) * 3;
           if (
-            data[index] > 170 &&
-            data[index + 1] < 90 &&
-            data[index + 2] < 90
+            data[index] > 200 &&
+            data[index + 1] < 40 &&
+            data[index + 2] < 40
           ) {
             redPixels += 1;
-            if (row < firstRedRow) {
-              firstRedRow = row;
-              firstRedColumn = column;
-            }
+            firstRedRow = Math.min(firstRedRow, row);
           }
         }
-      if (firstRedRow < 1_200 || firstRedRow >= 1_300)
-        console.error(
-          "reference-capture-position-diagnostic",
-          JSON.stringify({
-            firstRedRow,
-            firstRedColumn,
-            redPixels,
-            rawInfo: info,
-            firstRedPixel:
-              firstRedRow < info.height
-                ? [...data.subarray((firstRedRow * info.width + firstRedColumn) * 3, (firstRedRow * info.width + firstRedColumn) * 3 + 12)]
-                : [],
-            mobile: record.captures.mobile,
-          }),
-        );
       expect(redPixels).toBeGreaterThan(100);
       expect(firstRedRow).toBeGreaterThanOrEqual(1_200);
       expect(firstRedRow).toBeLessThan(1_300);

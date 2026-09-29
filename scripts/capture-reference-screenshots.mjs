@@ -222,7 +222,6 @@ async function captureViewport(
   let frameCount = 1;
   let captureMethod = "playwright-native-full-page-v1";
   let stitchedHeight = scroll.height;
-  const frameScrollPositions = [];
   if (!scroll.custom) {
     // Scroll once to trigger lazy media, then use Chromium's native full-page
     // capture. This keeps sticky/fixed UI from being duplicated at every seam.
@@ -283,15 +282,6 @@ async function captureViewport(
       // pre-reveal blank state even though the eventual full-page dimensions
       // look valid.
       await page.waitForTimeout(SCROLL_REVEAL_SETTLE_MS);
-      const beforeScreenshot = await page.evaluate(() => {
-        const root = window.__launchLoomCaptureScrollRoot;
-        return {
-          scrollTop: root.scrollTop,
-          firstChildTops: [...root.children]
-            .slice(0, 3)
-            .map((element) => Math.round(element.getBoundingClientRect().top)),
-        };
-      });
       if (index > 0)
         await page.addStyleTag({
           content:
@@ -302,14 +292,6 @@ async function captureViewport(
         animations: "disabled",
         caret: "hide",
         timeout: 60_000,
-      });
-      const afterScreenshot = await page.evaluate(
-        () => window.__launchLoomCaptureScrollRoot.scrollTop,
-      );
-      frameScrollPositions.push({
-        requested: frame.scrollTop,
-        beforeScreenshot,
-        afterScreenshot,
       });
       const strip = await sharp(screenshot)
         .extract({
@@ -405,7 +387,6 @@ async function captureViewport(
       iframeFailures,
       pageErrors: pageErrors.slice(0, 20),
       frames: frameCount,
-      ...(scroll.custom ? { frameScrollPositions } : {}),
     },
   };
 }
