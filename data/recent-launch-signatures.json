@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-26T01:04:45.370Z",
+  "updatedAt": "2026-09-29T17:27:34.293Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -119,6 +119,37 @@
         "distributed-object-stage-nav|isolated-3d-object-on-deep-stage|object-led-capability-atlas|instrument-serif-with-technical-mono|object-reveal-to-case-stack|deep-focus-object-render",
         "floating-tool-nav|layered-collage-with-offset-product-stills|annotated-feature-objects|serif-and-sans-pair|collage-to-feature-to-proof|hand-drawn-product-collage",
         "measured-professional-navigation|narrow-positioning-with-portrait-proof|ruled-expertise-ledger|restrained-humanist-serif|position-proof-process|named-professional-portrait"
+      ]
+    },
+    {
+      "id": "2026-09-29-apex-air-conditioning-heating-attempt-83",
+      "launchedAt": "2026-09-29T17:27:34.292Z",
+      "stage": "attempt",
+      "businessName": "Apex Air Conditioning & Heating",
+      "businessKind": "hvac",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "editorial-monument",
+        "hvac-local-aerial-hero",
+        "hvac-symptom-first-choice-grid",
+        "hvac-three-part-contact-ribbon",
+        "typographic-poster",
+        "utility-diagnostic"
+      ],
+      "referenceIds": [
+        "web-hvac-alamo-austin-air",
+        "web-hvac-allied-air-heat",
+        "web-hvac-city-wide-austin"
+      ],
+      "routeSignatures": [
+        "Blue service link line and a bright quote control above the hero, with contact r|A suburban-home photo carries the firm introduction while a conspicuous three-pa|Use a heating/cooling/air-quality/ductless service grid only for services the cl|Direct sans headings in saturated blue, slim body paragraphs and red underline/C|house-photo opening -> phone-and-quote ribbon -> service two-by-two image grid -|Technician action photos form a two-by-two service grid; family/team, financing,",
+        "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
+        "Thin service-area utility line, white brand row, service links, call number and |A dark technician-at-condenser photograph supports a left-aligned plainspoken re|Start with what the system is doing, route to confirmed AC/heating/maintenance s|Large friendly sans headlines, compact status labels and concise visitor-centere|technician hero -> symptom-choice cards -> service photograph grid -> diagnosis |Authentic technician scenes fill a service photo grid, while a simple circular m"
       ]
     }
   ]
