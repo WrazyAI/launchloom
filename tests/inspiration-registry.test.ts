@@ -992,7 +992,7 @@ describe("inspiration registry", () => {
     })).toThrow(/(?:folder|manifest) is missing/iu);
   });
 
-  it("keeps a fresh route trio when expanded references provide alternatives to old signatures", () => {
+  it("reports reference freshness separately from prior route-signature exposure", () => {
     const pack = buildInspirationPack(
       {
         ...baseRequest,
@@ -1013,6 +1013,7 @@ describe("inspiration registry", () => {
 
     expect(pack.routes).toHaveLength(3);
     expect(pack.request.freshnessFallback).toBe("fresh");
+    expect(pack.request.selectionHistory.selectedPatternExposure).toBeGreaterThan(0);
   });
 
   it("fails clearly when the registry cannot supply three independent routes", () => {

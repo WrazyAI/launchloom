@@ -45,7 +45,7 @@ describe("inspiration compilation history", () => {
 
     expect(pack.request.styleTerms).toEqual(expect.arrayContaining(["plum", "citrus"]));
     expect(pack.request.styleTerms).toEqual(
-      expect.arrayContaining(["vermilion", "annotations", "paper", "cutout", "electric", "lime", "graphite"]),
+      expect.arrayContaining(["vermilion", "annotations", "paper", "cutout", "warm", "electric", "lime", "graphite"]),
     );
     expect(pack.request.styleTerms).not.toEqual(
       expect.arrayContaining(["fictional", "verified", "credentials", "prices", "generic", "split", "hero"]),
