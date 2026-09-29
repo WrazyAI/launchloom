@@ -79,7 +79,7 @@ describe("RevisionCoordinator", () => {
     expect(dispatchCount).toBe(1);
 
     await runInDurableObject(coordinator, async (instance, state) => {
-      await instance.alarm();
+      await instance.alarm!();
       const row = state.storage.sql.exec<{ status: string; dispatch_attempts: number }>(
         "SELECT status, dispatch_attempts FROM revision_requests WHERE request_id = ?",
         "request-single-dispatch",
@@ -207,15 +207,15 @@ describe("RevisionCoordinator", () => {
     expect(failureEmails).toHaveLength(0);
 
     await runInDurableObject(coordinator, async (instance, state) => {
-      await instance.alarm();
-      await instance.alarm();
+      await instance.alarm!();
+      await instance.alarm!();
       let row = state.storage.sql.exec<{ status: string; dispatch_attempts: number }>(
         "SELECT status, dispatch_attempts FROM revision_requests WHERE request_id = ?",
         "request-dispatch-fail",
       ).toArray()[0];
       expect(row).toEqual({ status: "dispatching", dispatch_attempts: 3 });
 
-      await instance.alarm();
+      await instance.alarm!();
       row = state.storage.sql.exec<{ status: string; dispatch_attempts: number }>(
         "SELECT status, dispatch_attempts FROM revision_requests WHERE request_id = ?",
         "request-dispatch-fail",
