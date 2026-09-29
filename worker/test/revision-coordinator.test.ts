@@ -139,6 +139,27 @@ describe("RevisionCoordinator", () => {
     expect(dispatchCount).toBe(1);
   });
 
+  it("rejects a changed payload that reuses an accepted submission id", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName(
+      "changed-retry-test",
+    );
+    const input = request("request-changed-retry", "Original wording.");
+    await coordinator.enqueue(input);
+
+    await expect(
+      coordinator.enqueue({
+        ...input,
+        fingerprint: "different-fingerprint",
+        feedback: "Edited wording after an ambiguous retry.",
+      }),
+    ).resolves.toMatchObject({
+      ok: false,
+      code: "revision_request_mismatch",
+      error: expect.stringContaining("Refresh the review page"),
+    });
+    expect(dispatchCount).toBe(1);
+  });
+
   it("lets feedback proceed after a creative-release dispatch lock goes stale", async () => {
     const coordinator = env.REVISION_COORDINATOR.getByName(
       "stale-creative-release-test",
