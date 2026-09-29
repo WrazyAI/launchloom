@@ -63,6 +63,7 @@ export default function ClientFeedbackForm({
     ) as Record<ColorRole, { enabled: boolean; hex: string }>,
   );
   const fileInput = useRef<HTMLInputElement | null>(null);
+  const submissionId = useRef("");
 
   const imageCategory = category === "logo" || category === "photos";
   const targetOptions = category === "logo" ? [LOGO_TARGET] : PHOTO_TARGETS;
@@ -172,6 +173,7 @@ export default function ClientFeedbackForm({
         ]
       : [];
     const details = { attachments, colors: colorSelections };
+    submissionId.current ||= crypto.randomUUID();
     setBusy(true);
     setStatus("Sending…");
     try {
@@ -186,7 +188,7 @@ export default function ClientFeedbackForm({
         form.set("category", category);
         form.set("email", submittedEmail);
         form.set("pageUrl", pageUrl);
-        form.set("submissionId", crypto.randomUUID());
+        form.set("submissionId", submissionId.current);
         form.set("replacementAsset", replacement);
         form.set("replacementTarget", target);
         if (colorSelections.length)
@@ -205,7 +207,7 @@ export default function ClientFeedbackForm({
             category,
             email: submittedEmail,
             pageUrl,
-            submissionId: crypto.randomUUID(),
+            submissionId: submissionId.current,
             details,
           }),
         });
@@ -232,6 +234,7 @@ export default function ClientFeedbackForm({
         ) as Record<ColorRole, { enabled: boolean; hex: string }>,
       );
       setStatus("");
+      submissionId.current = "";
       onSubmitted({ ok: true, queueStatus: data.queueStatus });
     } catch {
       setStatus("The request could not be sent. Please try again.");
