@@ -229,6 +229,110 @@ describe("RevisionCoordinator", () => {
     expect(String(failureEmails[0].text)).toContain("Open reviewed website: https://review.example.pages.dev/");
   });
 
+  it("promotes the waiting request when dispatch retries are exhausted", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName(
+      "dispatch-exhaustion-promotion-test",
+    );
+    network.use(
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        () => {
+          dispatchCount += 1;
+          return HttpResponse.json(
+            { message: "dispatch unavailable" },
+            { status: 503 },
+          );
+        },
+      ),
+    );
+
+    await coordinator.enqueue(
+      request("request-exhaust-active", "First request."),
+    );
+    await coordinator.enqueue(
+      request("request-exhaust-queued", "Second request."),
+    );
+
+    await runInDurableObject(coordinator, async (instance, state) => {
+      await instance.alarm!();
+      await instance.alarm!();
+      await instance.alarm!();
+
+      const rows = state.storage.sql
+        .exec<{ request_id: string; status: string; dispatch_attempts: number }>(
+          "SELECT request_id, status, dispatch_attempts FROM revision_requests WHERE request_id IN (?, ?) ORDER BY request_id",
+          "request-exhaust-active",
+          "request-exhaust-queued",
+        )
+        .toArray();
+      expect(rows).toEqual([
+        {
+          request_id: "request-exhaust-active",
+          status: "failed",
+          dispatch_attempts: 3,
+        },
+        {
+          request_id: "request-exhaust-queued",
+          status: "dispatching",
+          dispatch_attempts: 1,
+        },
+      ]);
+      expect(await state.storage.getAlarm()).not.toBeNull();
+    });
+  });
+
+  it("keeps the promoted revision alarm while retrying a failed failure-email notice", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName(
+      "failure-notice-and-promotion-test",
+    );
+    let resendAttempts = 0;
+    network.use(
+      http.post("https://api.resend.com/emails", async ({ request }) => {
+        failureEmails.push((await request.json()) as Record<string, unknown>);
+        resendAttempts += 1;
+        return resendAttempts === 1
+          ? HttpResponse.json({ message: "temporary email failure" }, { status: 503 })
+          : HttpResponse.json({ id: "email-retry-ok" });
+      }),
+    );
+
+    await coordinator.enqueue(
+      request("request-notice-fail", "First request fails."),
+    );
+    await coordinator.enqueue(
+      request("request-notice-promoted", "Second request continues."),
+    );
+    await coordinator.claim("request-notice-fail");
+    await coordinator.fail("request-notice-fail", "Build failed.");
+
+    expect(dispatchCount).toBe(2);
+    expect(resendAttempts).toBe(1);
+
+    await runInDurableObject(coordinator, async (instance, state) => {
+      const notices = await state.storage.list<{
+        nextAttemptAt: number;
+      }>({ prefix: "pending-failure-notice:" });
+      expect(notices.size).toBe(1);
+      for (const [key, notice] of notices)
+        await state.storage.put(key, { ...notice, nextAttemptAt: 0 });
+
+      await instance.alarm!();
+
+      const promoted = state.storage.sql
+        .exec<{ status: string }>(
+          "SELECT status FROM revision_requests WHERE request_id = ?",
+          "request-notice-promoted",
+        )
+        .toArray()[0];
+      expect(promoted.status).toBe("dispatched");
+      expect(await state.storage.getAlarm()).not.toBeNull();
+      expect(
+        (await state.storage.list({ prefix: "pending-failure-notice:" })).size,
+      ).toBe(0);
+    });
+    expect(resendAttempts).toBe(2);
+  });
+
   it("rate limits AI chat per visitor and resets the window", async () => {
     const coordinator = env.REVISION_COORDINATOR.getByName("ai-rate-test");
     for (let count = 0; count < 12; count += 1)
