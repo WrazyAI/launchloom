@@ -107,7 +107,7 @@ describe("inspiration registry", () => {
     for (let left = 0; left < first.routes.length; left += 1) {
       for (let right = left + 1; right < first.routes.length; right += 1) {
         const sharedFields = structuralFields.filter(
-          (field) => first.routes[left][field] === first.routes[right][field],
+          (field) => (first.routes[left] as any)[field] === (first.routes[right] as any)[field],
         );
         expect(sharedFields.length).toBeLessThanOrEqual(2);
         expect(
@@ -145,7 +145,7 @@ describe("inspiration registry", () => {
         for (let left = 0; left < first.routes.length; left += 1) {
           for (let right = left + 1; right < first.routes.length; right += 1) {
             const sharedFields = structuralFields.filter(
-              (field) => first.routes[left][field] === first.routes[right][field],
+              (field) => (first.routes[left] as any)[field] === (first.routes[right] as any)[field],
             );
             expect(sharedFields.length, `${niche.id}:shared-fields`).toBeLessThanOrEqual(2);
             expect(
@@ -166,7 +166,9 @@ describe("inspiration registry", () => {
     );
 
     for (const niche of core.niches) {
-      const counts = new Map(niche.referenceIds.map((id: string) => [id, 0]));
+      const counts = new Map<string, number>(
+        niche.referenceIds.map((id: string) => [id, 0]),
+      );
       const trios = new Set<string>();
       const idsForNiche = new Set(niche.referenceIds);
       const selectionRegistry = {
