@@ -67,7 +67,8 @@
         "width": 1440,
         "height": 1000
       },
-      "screenshotHeight": 5970
+      "screenshotHeight": 5970,
+      "sha256": "f0190138336025dc1a4f99c893d7ff6b889ff8940a5433bfde0d26e555d3130b"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -76,7 +77,8 @@
         "width": 390,
         "height": 844
       },
-      "screenshotHeight": 7565
+      "screenshotHeight": 7565,
+      "sha256": "caacb9395c0c121edd460efbe1df1d49628b620b6544e8de30cc3bbff41fc2e1"
     }
   },
   "referenceDna": {
@@ -178,7 +180,17 @@
       "Current project status is clear and not inferred from imagery.",
       "Mobile sector and project browsing remains keyboard and touch accessible.",
       "No unsupplied development, sustainability, scale, or results claim appears."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

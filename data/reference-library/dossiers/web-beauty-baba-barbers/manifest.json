@@ -78,7 +78,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "19ae94661992161fc98c490b4b9212dc3f3c67c21736c9c8f079e4767d28a7b1"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -86,7 +87,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "da76bcb605646eb1615ad5265f4024382d20aae76740c2d9709216b079088029"
     }
   },
   "referenceDna": {
@@ -188,7 +190,17 @@
       "All signature relationships are visible in rendered desktop and mobile screenshots.",
       "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
       "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "type-led-statement",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-leads-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-permission-attested",

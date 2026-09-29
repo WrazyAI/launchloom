@@ -79,7 +79,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "3a308a925e79416ee140c64d4a5b55e80ad741acc79833634097cc4a64ba6a0d"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -87,7 +88,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "35c3c6a90349b390aa1df4804cf854d29a861eac502102262b065e99c28d8cb4"
     }
   },
   "referenceDna": {
@@ -199,7 +201,17 @@
       "mobile preserves an intentional image/text rhythm",
       "FAQ and enquiry remain discoverable",
       "no source brand, copy, image or award is reused"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "type-led-statement",
+      "mobileHero": "image-led-stage",
+      "mediaRelation": "copy-leads-opening",
+      "mobileMediaRelation": "media-leads-copy",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "requester-attested-internal-and-model-reference",

@@ -70,7 +70,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "fbf958cb0fb4e1473425bbcfa93678ba732e52e36b9ed40cdb81ae49c23a2200"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -78,7 +79,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "e8489a5e8c3e1623d340f905616852d38fe78bb8d9f994a7c2a4be20cd58c693"
     }
   },
   "referenceDna": {
@@ -180,7 +182,17 @@
       "Only verified client audiences, capabilities, credentials, figures, research, and impact claims appear.",
       "Mobile utility navigation has no horizontal overflow and retains keyboard access.",
       "All source staff, patient imagery, marks, wording, and claims remain untransferred."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

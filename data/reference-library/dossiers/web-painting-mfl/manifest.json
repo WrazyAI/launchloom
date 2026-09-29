@@ -61,7 +61,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "7cc8247867d45793842c592d7bdddcf08805e23a0163a9d4069e377bdc9898d5"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -69,7 +70,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "305e5a2d87e80bfa4925d72304d4b3d62dfcf04f6b7077bb394d17e89f01b332"
     }
   },
   "referenceDna": {
@@ -169,7 +171,17 @@
       "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
       "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
       "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "utility-panel",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "task-panel-in-opening",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

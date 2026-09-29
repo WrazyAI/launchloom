@@ -62,7 +62,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "a9005d8503745735baf843e7379594bcba02adae0fb847939063fffad122eea5"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -70,7 +71,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "06497cd094b223a12e64bcb002ba70736995a07069add2ffea463aaab92e304f"
     }
   },
   "referenceDna": {
@@ -169,7 +171,17 @@
       "Opening has a working primary action and a useful secondary route.",
       "At 390 px, all sections and controls fit without horizontal overflow.",
       "No source brand, photograph, review, staff identity or unsupported claim is reused."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

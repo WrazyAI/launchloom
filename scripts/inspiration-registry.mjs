@@ -524,12 +524,11 @@ function independentAnchors(ranked, request, history) {
     if (topology === "unclassified") continue;
     topologyFrequency.set(topology, (topologyFrequency.get(topology) || 0) + 1);
   }
-  const recurringHeroTopologies = new Set(
-    [...topologyFrequency]
-      .filter(([, count]) => count >= 2)
-      .map(([topology]) => topology),
-  );
-  const requireHeroVariety = recurringHeroTopologies.size >= 2;
+  // Screenshot-curated singleton layouts are still real alternatives. Require
+  // at least two available topologies in each candidate trio, while exposure
+  // balancing rotates the rare patterns instead of pinning one to every run.
+  const classifiedHeroTopologies = new Set(topologyFrequency.keys());
+  const requireHeroVariety = classifiedHeroTopologies.size >= 2;
   for (let first = 0; first < ranked.length; first += 1) {
     for (let second = first + 1; second < ranked.length; second += 1) {
       for (let third = second + 1; third < ranked.length; third += 1) {
@@ -539,7 +538,7 @@ function independentAnchors(ranked, request, history) {
           (anchor) => compositionTopologyFor(anchor).hero,
         );
         const selectedClassifiedTopologies = new Set(
-          heroTopologies.filter((topology) => recurringHeroTopologies.has(topology)),
+          heroTopologies.filter((topology) => classifiedHeroTopologies.has(topology)),
         );
         if (
           (requireHeroVariety &&

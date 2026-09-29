@@ -71,7 +71,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "3a8775cc51afc84c8fb7e8e72e3030b38d92130be4634937b067bbe2b195e909"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -79,7 +80,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "9a6fbde0337ab9add78b48df88ccb38edc716b9c8968915b13ee9d97fb2ebcf5"
     }
   },
   "referenceDna": {
@@ -183,7 +185,17 @@
       "motion has a still/reduced-motion fallback and does not hide essential content",
       "no source name, exact wordmark, source photograph, quote, reviewer, or source-specific claim is reused",
       "rendered body and document widths match both desktop and mobile viewports"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "image-led-stage",
+      "mobileHero": "image-led-stage",
+      "mediaRelation": "media-leads-copy",
+      "mobileMediaRelation": "media-leads-copy",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "eligible-candidate-not-yet-added-to-production-pool",

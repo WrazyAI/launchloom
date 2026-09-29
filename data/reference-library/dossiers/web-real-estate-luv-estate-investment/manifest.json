@@ -65,7 +65,8 @@
         "width": 1440,
         "height": 1000
       },
-      "screenshotHeight": 4706
+      "screenshotHeight": 4706,
+      "sha256": "69e048080720c1808219f4eca1c3b0bf9ee00f6052afba085ace16cc43967af4"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -74,7 +75,8 @@
         "width": 390,
         "height": 844
       },
-      "screenshotHeight": 4626
+      "screenshotHeight": 4626,
+      "sha256": "d8b74f1b3e5bc39c08320a52087f28cecccdfe0efca53ed4714795f032afb78f"
     }
   },
   "referenceDna": {
@@ -176,7 +178,17 @@
       "Each capability has a distinct verified purpose rather than repeating the same value claim.",
       "Investment language contains no unsupplied financial performance promise.",
       "The mobile sequence stacks without horizontal overflow and keeps contact reachable."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

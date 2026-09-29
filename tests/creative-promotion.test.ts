@@ -408,7 +408,9 @@ describe("creative candidate promotion", () => {
     const baseDna = buildReferenceDna(record, { requireEvidence: true });
     baseDna.compositionTopology = {
       hero: "media-overlay",
+      mobileHero: "media-overlay",
       mediaRelation: "copy-over-media",
+      mobileMediaRelation: "copy-over-media",
       basis: "curated-dna",
     };
     metadata.version = 2;

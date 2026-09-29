@@ -69,7 +69,8 @@
         "width": 1440,
         "height": 1000
       },
-      "screenshotHeight": 4320
+      "screenshotHeight": 4320,
+      "sha256": "0fd1bdb57406e0ea42bed7ebfcb09b5dff9e2d3aaac6a5ae2620072a30ff8e37"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -78,7 +79,8 @@
         "width": 390,
         "height": 844
       },
-      "screenshotHeight": 6602
+      "screenshotHeight": 6602,
+      "sha256": "2873bd23419df135d71710cc9a5215e8da34655243124761858447868ebec91a"
     }
   },
   "referenceDna": {
@@ -180,7 +182,17 @@
       "The sample property artifact uses only verified client inventory or a clearly labeled neutral placeholder.",
       "Mobile retains the buyer journey and form without image/text collisions.",
       "Local-market terms are grounded in the client's submitted, researched, and verified service areas."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

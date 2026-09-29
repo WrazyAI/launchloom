@@ -125,6 +125,22 @@ describe("inspiration registry", () => {
   });
 
   it("selects a home-services trio with distinct recurring hero topologies", () => {
+    const core = JSON.parse(
+      fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"),
+    );
+    const homeServicesIds = new Set(
+      core.niches.find((niche: any) => niche.businessKind === "home-services").referenceIds,
+    );
+    const selectionRegistry = {
+      ...registry,
+      records: registry.records.map((record: any) => {
+        if (!homeServicesIds.has(record.id)) return record;
+        const dossier = loadReferenceDossier(record.dossierPath, {
+          repositoryRoot: path.resolve("."),
+        });
+        return { ...record, canonicalReferenceDna: dossier.referenceDna };
+      }),
+    };
     const pack = buildInspirationPack(
       {
         ...baseRequest,
@@ -132,7 +148,7 @@ describe("inspiration registry", () => {
         styleTerms: [],
         seed: "topology-test-2",
       },
-      registry,
+      selectionRegistry,
       { repositoryRoot: path.resolve("."), requireDossiers: true },
     );
 
@@ -220,6 +236,12 @@ describe("inspiration registry", () => {
           return { ...record, canonicalReferenceDna: dossier.referenceDna };
         }),
       };
+      const availableHeroTopologies = new Set(
+        selectionRegistry.records
+          .filter((record: any) => idsForNiche.has(record.id))
+          .map((record: any) => record.canonicalReferenceDna?.compositionTopology?.hero)
+          .filter((hero: string | undefined) => hero && hero !== "unclassified"),
+      );
 
       for (let index = 0; index < 30; index += 1) {
         const pack = buildInspirationPack({
@@ -236,11 +258,13 @@ describe("inspiration registry", () => {
         expect(new Set(ids).size, niche.businessKind).toBe(3);
         expect(ids.every((id: string) => idsForNiche.has(id)), niche.businessKind).toBe(true);
         expect(pack.request.selectionHistory.validTrioCount, `${niche.businessKind} topology-safe eligible trios`).toBeGreaterThanOrEqual(9);
-        if (pack.request.selectionHistory.heroVarietyEnforced)
+        if (availableHeroTopologies.size > 1) {
+          expect(pack.request.selectionHistory.heroVarietyEnforced, niche.businessKind).toBe(true);
           expect(
             new Set(pack.routes.map((route: any) => route.compositionTopology.hero)).size,
             `${niche.businessKind} hero topology variety`,
           ).toBeGreaterThan(1);
+        }
         ids.forEach((id: string) => counts.set(id, (counts.get(id) || 0) + 1));
         trios.add([...ids].sort().join("|"));
       }

@@ -69,7 +69,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "4c95810d57d43040fd315921430f080327fe74d24f5765e18ec4034529b0d75a"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -77,7 +78,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "cb5b21c81a4ddbe3f65a48757c578052e97d41b762fb0cdd9187c5bfe69abe1e"
     }
   },
   "referenceDna": {
@@ -169,7 +171,20 @@
       "Selecting a navigation destination shows exactly one readable overlay panel and Escape closes it.",
       "At 390 by 844, the four-way nav becomes a two-column grid and the page has no horizontal overflow.",
       "No original demo photo, remote font, fake business contact, or unsourced claim appears in the page."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "centered-field",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "centered-opening-field",
+      "basis": "curated-screenshots",
+      "confidence": "medium",
+      "secondaryPatterns": [
+        "hybrid-hero-needs-human-review"
+      ],
+      "note": "Screenshot shows overlapping layout mechanics; preserve the hybrid treatment rather than flattening it to this primary topology.",
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

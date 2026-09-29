@@ -67,7 +67,8 @@
         "width": 1440,
         "height": 1000
       },
-      "screenshotHeight": 10687
+      "screenshotHeight": 10687,
+      "sha256": "b1953d99cca0eec0a302b56948393ca13862402829c476053bb90229309c5fe9"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -76,7 +77,8 @@
         "width": 390,
         "height": 844
       },
-      "screenshotHeight": 14021
+      "screenshotHeight": 14021,
+      "sha256": "a2bd9b74b7c66f9d93c65b44a3ea824a1401574cc59a647bb6fc33ab5d5a4c8a"
     }
   },
   "referenceDna": {
@@ -181,7 +183,20 @@
       "Property tiles show only client-approved facts and imagery.",
       "The mobile treatment preserves search, category, and listing hierarchy.",
       "All source property photography, wording, people, and numeric claims are excluded from client implementation."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "editorial-stack",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "vertical-copy-media-stack",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "medium",
+      "secondaryPatterns": [
+        "hybrid-hero-needs-human-review"
+      ],
+      "note": "Screenshot shows overlapping layout mechanics; preserve the hybrid treatment rather than flattening it to this primary topology.",
+      "mobileTreatmentChanged": true
+    }
   },
   "review": {
     "status": "reviewed",

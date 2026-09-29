@@ -87,6 +87,80 @@ describe("authored creative repair scope", () => {
     });
   });
 
+  it("rejects swapping a section's sealed token while keeping the required token elsewhere", () => {
+    const beforeExperience = `export default function Experience({ content }) {
+  return <main>
+    <section data-reference-section="hero"><h1>{content.hero.heading}</h1><a href="#contact">{content.hero.primaryLabel}</a></section>
+    <section data-reference-section="services"><h2>{content.hero.heading}</h2></section>
+    <section data-reference-section="faqs"><h2>FAQs</h2></section>
+    <section data-reference-section="contact"><h2>Contact</h2></section>
+  </main>;
+}`;
+    const before = { ...files, experience: beforeExperience };
+    const after = {
+      ...before,
+      experience: beforeExperience.replace(
+        "{content.hero.heading}",
+        "{content.copy.heroHeading}",
+      ),
+    };
+
+    expect(() =>
+      assertCreativeRevisionScope(before, after, heroScope()),
+    ).toThrow(/sealed content bindings changed inside a declared section/iu);
+  });
+
+  it("resolves destructured content aliases when checking sealed bindings", () => {
+    const beforeExperience = `export default function Experience({ content }) {
+  const { hero } = content;
+  return <main>
+    <section data-reference-section="hero"><h1>{content.hero.heading}</h1><a href="#contact">{content.hero.primaryLabel}</a></section>
+    <section data-reference-section="services"><h2>{hero.heading}</h2></section>
+    <section data-reference-section="faqs"><h2>FAQs</h2></section>
+    <section data-reference-section="contact"><h2>Contact</h2></section>
+  </main>;
+}`;
+    const after = {
+      ...files,
+      experience: beforeExperience.replace(
+        "{content.hero.heading}",
+        "{hero.heading}",
+      ),
+    };
+
+    expect(() =>
+      assertCreativeRevisionScope(
+        { ...files, experience: beforeExperience },
+        after,
+        heroScope(),
+      ),
+    ).not.toThrow();
+  });
+
+  it("rejects changing a destructured sealed token to another field", () => {
+    const beforeExperience = `export default function Experience({ content }) {
+  const { hero } = content;
+  return <main>
+    <section data-reference-section="hero"><h1>{hero.heading}</h1><a href="#contact">{content.hero.primaryLabel}</a></section>
+    <section data-reference-section="services"><h2>{content.hero.heading}</h2></section>
+    <section data-reference-section="faqs"><h2>FAQs</h2></section>
+    <section data-reference-section="contact"><h2>Contact</h2></section>
+  </main>;
+}`;
+    const after = {
+      ...files,
+      experience: beforeExperience.replace("{hero.heading}", "{hero.body}"),
+    };
+
+    expect(() =>
+      assertCreativeRevisionScope(
+        { ...files, experience: beforeExperience },
+        after,
+        heroScope(),
+      ),
+    ).toThrow(/sealed content bindings changed inside a declared section/iu);
+  });
+
   it("rejects a literal patch that targets content outside the declared section", () => {
     const patched = applyCreativeRepairEdits(files, [
       { file: "experience", find: "<h2>Services</h2>", replace: "<h2>Different</h2>" },

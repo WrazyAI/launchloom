@@ -1,5 +1,7 @@
 const area = (rect) => Math.max(0, Number(rect?.width) || 0) * Math.max(0, Number(rect?.height) || 0);
 
+export const CSS_IMAGE_URL_PATTERN = /url\s*\(/iu;
+
 function intersectionArea(left, right) {
   const width = Math.max(
     0,
@@ -26,13 +28,22 @@ function box(rect) {
  * data attributes only locate the regions; their declared topology is never
  * treated as evidence.
  */
-export function validateRenderedCompositionTopology(topology, evidence) {
-  const expectedHero = String(topology?.hero || "unclassified");
+export function validateRenderedCompositionTopology(
+  topology,
+  evidence,
+  { viewportKind = "desktop" } = {},
+) {
+  const expectedHero = String(
+    viewportKind === "mobile"
+      ? topology?.mobileHero || "unclassified"
+      : topology?.hero || "unclassified",
+  );
   if (expectedHero === "unclassified")
     return {
       pass: true,
       skipped: true,
       expectedHero,
+      viewportKind,
       findings: [],
       reason: "No normalized hero topology is available; screenshot fidelity remains authoritative.",
     };
@@ -137,6 +148,7 @@ export function validateRenderedCompositionTopology(topology, evidence) {
     pass: findings.length === 0,
     skipped: false,
     expectedHero,
+    viewportKind,
     findings,
     measured: {
       copyRegionCount: copies.length,

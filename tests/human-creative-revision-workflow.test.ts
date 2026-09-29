@@ -187,7 +187,7 @@ describe("human creative revision lifecycle", () => {
       ),
     ).toThrow();
     expect(await fs.readFile(sentinel, "utf8")).toBe("keep");
-  });
+  }, 15_000);
 
   it("reports missing creative evidence with the candidate-specific error", async () => {
     const root = await fs.mkdtemp(

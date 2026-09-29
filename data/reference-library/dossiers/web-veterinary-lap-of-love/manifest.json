@@ -69,7 +69,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "80e237ebef236850e8eefcb964177ce219cd3881d801d4ebdbc61336e7f70555"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -77,7 +78,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "eaa38f469ade40bbc52bcb4f9044806423cddd04ea0fb643c72390593b706b40"
     }
   },
   "referenceDna": {
@@ -179,7 +181,17 @@
       "Medical statements and end-of-life language are only used when the client specifically offers and verifies that service.",
       "Mobile keeps support actions reachable without obstructing the page.",
       "Source identities, photos, testimonials, medical claims, contact details, and coverage are not copied."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "utility-panel",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "task-panel-in-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

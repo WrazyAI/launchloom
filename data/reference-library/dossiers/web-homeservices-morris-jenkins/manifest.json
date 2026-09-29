@@ -63,7 +63,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "60ae5d3e9601747e924b30939eff3fa8e311a5b7376e42a347a911b4186ca87e"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -71,7 +72,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "28177895e18ad71bf23f6b2bd0236fde98b2b48dbed16236455de67d94ff46fd"
     }
   },
   "referenceDna": {
@@ -169,7 +171,20 @@
       "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
       "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
       "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "medium",
+      "secondaryPatterns": [
+        "hybrid-hero-needs-human-review"
+      ],
+      "note": "Screenshot shows overlapping layout mechanics; preserve the hybrid treatment rather than flattening it to this primary topology.",
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

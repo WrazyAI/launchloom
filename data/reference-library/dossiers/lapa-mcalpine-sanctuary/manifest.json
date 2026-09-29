@@ -78,7 +78,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "c04533dab4f2044104dbe76aaf9522b1455b7d2aeed6d3319b3f1bd0a0345d3a"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -86,7 +87,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "226c26e05cfd0380127dbb27f3ad6c4b8a671aa8d68edd3a66772e211bb0ee6b"
     }
   },
   "referenceDna": {
@@ -195,7 +197,17 @@
       "primary enquiry remains findable on mobile",
       "no source project, imagery, name or claim is reused",
       "no blank area pushes the main action unreasonably far down"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "requester-attested-internal-and-model-reference",

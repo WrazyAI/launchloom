@@ -62,7 +62,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "85d1b2d17c3072debe23075f3f0e83fea2d6681973365153eec59484177d71b2"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -70,7 +71,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "783d41829667063efff63064eff70b5bc8cbeeef7cd44c21708f399d504a2a61"
     }
   },
   "referenceDna": {
@@ -176,7 +178,17 @@
       "Services, FAQs, and Contact remain distinct, navigable content areas in the new client page.",
       "At 390 px display type, images, nav, and CTAs fit without horizontal overflow or overlap.",
       "No source brand, photograph, testimonial, staff identity, amenity, or business claim is reused as client fact."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

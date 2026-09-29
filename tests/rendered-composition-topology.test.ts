@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { validateRenderedCompositionTopology } from "../scripts/rendered-composition-topology.mjs";
+import {
+  CSS_IMAGE_URL_PATTERN,
+  validateRenderedCompositionTopology,
+} from "../scripts/rendered-composition-topology.mjs";
 
 const box = (left: number, top: number, width: number, height: number) => ({
   left,
@@ -9,6 +12,11 @@ const box = (left: number, top: number, width: number, height: number) => ({
 });
 
 describe("rendered composition topology", () => {
+  it("counts CSS image URLs as media but not gradient-only fills", () => {
+    expect(CSS_IMAGE_URL_PATTERN.test("linear-gradient(90deg, #123, #456)")).toBe(false);
+    expect(CSS_IMAGE_URL_PATTERN.test('linear-gradient(#0008, #0008), url("/hero.webp")')).toBe(true);
+  });
+
   it("rejects a split-hero declaration when the rendered copy and image overlap", () => {
     const result = validateRenderedCompositionTopology(
       { hero: "split-media" },
@@ -53,6 +61,20 @@ describe("rendered composition topology", () => {
 
     expect(result.pass).toBe(true);
     expect(result.measured?.visibleMediaImageCount).toBe(1);
+  });
+
+  it("validates the mobile-specific composition instead of reusing desktop topology", () => {
+    const result = validateRenderedCompositionTopology(
+      { hero: "split-media", mobileHero: "editorial-stack" },
+      {
+        hero: box(0, 0, 390, 800),
+        copy: [box(24, 36, 342, 230)],
+        media: [{ container: box(24, 320, 342, 360), visuals: [box(24, 320, 342, 360)] }],
+      },
+      { viewportKind: "mobile" },
+    );
+
+    expect(result).toMatchObject({ pass: true, expectedHero: "editorial-stack", viewportKind: "mobile" });
   });
 
   it("skips only an explicitly unclassified reference topology", () => {

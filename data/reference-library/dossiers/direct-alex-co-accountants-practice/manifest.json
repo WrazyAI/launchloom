@@ -88,7 +88,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "27ec041e90d90c13041d64bc7f39ba8866df5d2e000567cb898adbe7c36cfb0e"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -96,7 +97,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "2d5e0603facdb93c8a48a8bf35711ac076822f77460142edba520abdd1e2959d"
     }
   },
   "referenceDna": {
@@ -209,7 +211,17 @@
       "supporting trust details add new information",
       "all imagery is client-owned or separately licensed/generated",
       "mobile nav and service labels are legible without overflow"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-permission-attested",

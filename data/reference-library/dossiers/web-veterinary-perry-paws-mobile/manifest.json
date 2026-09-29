@@ -69,7 +69,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "0ccd5a10f62aea50b5c78d6106c0be7e64984e923f07b4ad75fd38cff7204a0a"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -77,7 +78,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "2d560a289e10dc53637724239dc49e06b0ac31bafc271bb90f0486032f67ea53"
     }
   },
   "referenceDna": {
@@ -177,7 +179,17 @@
       "Coverage is based on submitted or verified facts and does not imply a clinic address.",
       "Mobile action and all service descriptions fit without horizontal overflow.",
       "Testimonials, fear-free credentials, prices, and health claims are not borrowed from the source."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "type-led-statement",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "copy-leads-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

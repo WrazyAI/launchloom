@@ -68,7 +68,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "9387878e93942d39cf3022c6593124ed26c8932af943ebaaa835066a9ba3eb1c"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -76,7 +77,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "bb1c66501a341d79075a35948e37d4dad126185e5bd2b9f804f27f0112481abd"
     }
   },
   "referenceDna": {
@@ -177,7 +179,17 @@
       "Large numbers are omitted unless the client provides a source and date.",
       "Mobile makes the primary action reachable without horizontal scrolling or overlay obstruction.",
       "No source copy, logo, photo, review, rating, press mark, numerical claim, or exact brand palette is reused."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "utility-panel",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "task-panel-in-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

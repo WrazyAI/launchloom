@@ -68,7 +68,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "e930fafb78bc3cb40e764c93a9b1fcab98d23d00ce55020b2b2d8335c67ef3e3"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -76,7 +77,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "48bf7ce2404053dcc6ddf37cc4fc6bb0c01a9df7365ccdc08963f0292d29592f"
     }
   },
   "referenceDna": {
@@ -184,7 +186,17 @@
       "Any project comparison uses client-approved images with truthful labels; otherwise a practical process explanation fills that position.",
       "At 390 px, service choices, comparison labels and contact controls remain readable, reachable and free of horizontal overflow.",
       "No source identity, review, photograph, warranty, statistic, credential, address or doorway-style city list enters the generated page."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

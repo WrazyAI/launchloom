@@ -70,7 +70,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "ec86e73a1d11837ea9a748815f492fe957933e752b40db0c7a8e09af0eabc1b8"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -78,7 +79,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "2d03c53589a0e154c6cc7f573baec1447019468aa6a7f37c6b96976f518460bc"
     }
   },
   "referenceDna": {
@@ -179,7 +181,17 @@
       "A real client app or membership is mentioned only when confirmed by intake.",
       "Every disclosure and story control works with keyboard and reduced motion.",
       "No blank capture artifact, source identity, unsupported rating, price, service area, or claim is transferred."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "utility-panel",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "task-panel-in-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

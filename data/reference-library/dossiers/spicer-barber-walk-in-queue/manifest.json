@@ -85,7 +85,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "9b8251808d00b7153bdc54b3c7298701918cbd59ecfa054b962a8d75971a0554"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -93,7 +94,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "1a9d632230101f048360e1909ed58718ad52d7b903c1f6583aa4e32660a46dcd"
     }
   },
   "referenceDna": {
@@ -207,7 +209,20 @@
       "all hours, staff names, prices, reviews, and service terms are verified",
       "reduced-motion state is static and no reveal content remains hidden",
       "CC BY footer attribution remains linked in any adapted template"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "utility-panel",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "task-panel-in-opening",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "medium",
+      "secondaryPatterns": [
+        "hybrid-hero-needs-human-review"
+      ],
+      "note": "Screenshot shows overlapping layout mechanics; preserve the hybrid treatment rather than flattening it to this primary topology.",
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "cc-by-production-reference-with-static-html-caveat",

@@ -25,8 +25,10 @@ function createDossier(overrides: Record<string, unknown> = {}) {
   temporaryRoots.push(repositoryRoot);
   const directory = path.join(repositoryRoot, "dossiers", "sample-reference");
   fs.mkdirSync(path.join(directory, "screenshots"), { recursive: true });
-  fs.writeFileSync(path.join(directory, "screenshots", "desktop.png"), png(1440, 3200));
-  fs.writeFileSync(path.join(directory, "screenshots", "mobile.png"), png(390, 3600));
+  const desktopBytes = png(1440, 3200);
+  const mobileBytes = png(390, 3600);
+  fs.writeFileSync(path.join(directory, "screenshots", "desktop.png"), desktopBytes);
+  fs.writeFileSync(path.join(directory, "screenshots", "mobile.png"), mobileBytes);
   fs.writeFileSync(
     path.join(directory, "design-prompt.md"),
     `# Reference implementation brief\n\n## Visual hierarchy\n\nA focused opening with a distinct typographic scale, clear conversion action, considered image crop, and generous negative space. Keep the promise concise and make the primary action visible without scrolling.\n\n## Page sequence\n\nOpening, evidence-led service presentation, concise questions, and an unmistakable contact close. Each chapter should have a separate visual rhythm and avoid repeating the same card grammar.\n\n## Responsive translation\n\nAt mobile width, preserve the opening hierarchy, make the imagery intentional rather than merely stacked, keep all navigation and calls to action touch-safe, and remove any effect that causes horizontal overflow.\n\n## Signature elements\n\nUse the reference's unique image composition and direct service index as visible signatures.\n\n## Prohibited patterns\n\nDo not turn the page into a generic split hero, rounded-card wall, repeated accordion, or late-only contact funnel.\n`,
@@ -46,6 +48,16 @@ function createDossier(overrides: Record<string, unknown> = {}) {
     prohibitedPatterns: ["generic-split-hero", "generic-card-wall", "repeated-accordion"],
     requiredSignatureElements: [{ id: "service-index", selector: "[data-reference-signature=service-index]", description: "open service index" }],
     acceptanceChecks: ["opening promise and action are visible", "services are easy to scan", "mobile retains the image treatment"],
+    compositionTopology: {
+      hero: "centered-field",
+      mobileHero: "editorial-stack",
+      mediaRelation: "centered-opening-field",
+      mobileMediaRelation: "vertical-copy-media-stack",
+      basis: "curated-screenshots",
+      confidence: "high",
+      secondaryPatterns: [],
+      mobileTreatmentChanged: true,
+    },
   };
   const manifest = {
     schemaVersion: 1,
@@ -63,11 +75,13 @@ function createDossier(overrides: Record<string, unknown> = {}) {
     evidence: {
       desktop: {
         path: "screenshots/desktop.png",
+        sha256: crypto.createHash("sha256").update(desktopBytes).digest("hex"),
         capture: "full-page",
         viewport: { width: 1440, height: 1000 },
       },
       mobile: {
         path: "screenshots/mobile.png",
+        sha256: crypto.createHash("sha256").update(mobileBytes).digest("hex"),
         capture: "full-page",
         viewport: { width: 390, height: 844 },
       },
@@ -97,6 +111,7 @@ describe("reference dossiers", () => {
       available: true,
       required: true,
       fullPage: true,
+      sha256: expect.stringMatching(/^[a-f0-9]{64}$/u),
       width: 1440,
       height: 3200,
     });
@@ -106,6 +121,11 @@ describe("reference dossiers", () => {
       fullPage: true,
       width: 390,
       height: 3600,
+    });
+    expect(dossier.referenceDna.compositionTopology).toMatchObject({
+      hero: "centered-field",
+      mobileHero: "editorial-stack",
+      basis: "curated-screenshots",
     });
     expect(dossier.designPrompt).toContain("## Signature elements");
     expect(dossier.digest).toMatch(/^[a-f0-9]{64}$/u);
@@ -267,6 +287,59 @@ describe("reference dossiers", () => {
     expect(() => loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot })).toThrow(/must stay inside its dossier/iu);
   });
 
+  it("requires and verifies declared screenshot hashes for production references", () => {
+    const fixture = createDossier({
+      productionEligible: true,
+      tags: {
+        business: ["local-service"],
+        style: ["editorial"],
+        composition: ["poster"],
+        conversion: ["consultation"],
+        motion: ["static"],
+        imagery: ["photography"],
+      },
+      source: {
+        name: "Permission-cleared screenshot reference",
+        url: "https://example.test/reference",
+        rights: "permission-cleared",
+        rightsEvidence: "Clearance covers retaining paired screenshots.",
+        rightsEvidencePath: "rights/requester-attestation.md",
+      },
+    });
+    fs.mkdirSync(path.join(fixture.directory, "rights"), { recursive: true });
+    fs.writeFileSync(path.join(fixture.directory, "rights/requester-attestation.md"), "Cleared.");
+    const manifestPath = path.join(fixture.directory, "manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    manifest.evidence.mobile.sha256 = "0".repeat(64);
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+
+    expect(() => loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    })).toThrow(/mobile screenshot SHA-256 digest does not match/iu);
+  });
+
+  it("requires hashes on both screenshots for production references", () => {
+    const fixture = createDossier({
+      productionEligible: true,
+      tags: {
+        business: ["local-service"],
+        style: ["editorial"],
+        composition: ["poster"],
+        conversion: ["consultation"],
+        motion: ["static"],
+        imagery: ["photography"],
+      },
+    });
+    const manifestPath = path.join(fixture.directory, "manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    delete manifest.evidence.desktop.sha256;
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+
+    expect(() => loadReferenceDossier(fixture.dossierPath, {
+      repositoryRoot: fixture.repositoryRoot,
+    })).toThrow(/desktop screenshot must declare a SHA-256 digest/iu);
+  });
+
   it("rejects screenshot symlinks and fingerprints screenshot bytes", () => {
     const fixture = createDossier();
     const desktop = path.join(fixture.directory, "screenshots", "desktop.png");
@@ -279,7 +352,12 @@ describe("reference dossiers", () => {
     fs.unlinkSync(desktop);
     fs.copyFileSync(external, desktop);
     const first = loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot });
-    fs.writeFileSync(desktop, png(1440, 3201));
+    const changedScreenshot = png(1440, 3201);
+    fs.writeFileSync(desktop, changedScreenshot);
+    const manifestPath = path.join(fixture.directory, "manifest.json");
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    manifest.evidence.desktop.sha256 = crypto.createHash("sha256").update(changedScreenshot).digest("hex");
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest));
     const second = loadReferenceDossier(fixture.dossierPath, { repositoryRoot: fixture.repositoryRoot });
     expect(second.digest).not.toBe(first.digest);
   });

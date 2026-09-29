@@ -67,7 +67,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "aceb47c081a045d532778559d1076fd5931c3abc485cfd66084a163e4e9787a1"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -75,7 +76,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "c66aeacb4c59c8eeb826dccaa923efa99a24bfa6b203167f104c4ec9ac25b57e"
     }
   },
   "referenceDna": {
@@ -177,7 +179,17 @@
       "Numbered content describes a real sequence rather than decorative card numbering.",
       "The mobile image crop keeps headline and action legible.",
       "No source brand assets, photographs, story text, rating, credentials, opening hours, or local adverts are reused."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "type-led-statement",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-leads-opening",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

@@ -73,7 +73,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "194e9a04b4925806949cf9c2c23d503e7127011f4dbdfaa68e8445df08d33767"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -81,7 +82,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "ec59615e73a415d18a9037e847d892d0107b6e96384ac96f824502bae7930446"
     }
   },
   "referenceDna": {
@@ -193,7 +195,17 @@
       "legal advice content is only sourced from the client",
       "form language does not imply representation before intake",
       "mobile rows and fee details stay readable"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "type-led-statement",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "copy-leads-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-open-license-pilot",

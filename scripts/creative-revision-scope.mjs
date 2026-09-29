@@ -707,6 +707,138 @@ function scopedVisitorCopy(source, scopedIds) {
   return copy;
 }
 
+function appendContentPath(base, property) {
+  return base.map((prefix) => (prefix ? `${prefix}.${property}` : property));
+}
+
+function contentPathsInExpression(node, aliases) {
+  if (ts.isIdentifier(node)) {
+    if (node.text === "content") return [""];
+    return aliases.get(node.text) || [];
+  }
+  if (ts.isPropertyAccessExpression(node)) {
+    const base = contentPathsInExpression(node.expression, aliases);
+    return base.length ? appendContentPath(base, node.name.text) : [];
+  }
+  if (ts.isElementAccessExpression(node)) {
+    const argument = node.argumentExpression;
+    const key = argument && (ts.isStringLiteral(argument) || ts.isNumericLiteral(argument))
+      ? argument.text
+      : null;
+    const base = contentPathsInExpression(node.expression, aliases);
+    return base.length && key !== null ? appendContentPath(base, key) : [];
+  }
+  const found = new Set();
+  ts.forEachChild(node, (child) => {
+    for (const path of contentPathsInExpression(child, aliases))
+      if (path) found.add(path);
+  });
+  return [...found];
+}
+
+function addContentAlias(aliases, name, paths) {
+  if (!name || !paths.length) return false;
+  const existing = aliases.get(name) || [];
+  const merged = [...new Set([...existing, ...paths])].sort();
+  if (existing.length === merged.length && existing.every((path, index) => path === merged[index]))
+    return false;
+  aliases.set(name, merged);
+  return true;
+}
+
+function bindContentPattern(pattern, basePaths, aliases) {
+  if (ts.isIdentifier(pattern))
+    return addContentAlias(aliases, pattern.text, basePaths);
+  if (!ts.isObjectBindingPattern(pattern)) return false;
+  let changed = false;
+  for (const element of pattern.elements) {
+    if (element.dotDotDotToken) {
+      changed = addContentAlias(aliases, element.name.getText(), [
+        ...basePaths.map((base) => (base ? `${base}.*` : "*")),
+      ]) || changed;
+      continue;
+    }
+    const property = element.propertyName || element.name;
+    const key = ts.isIdentifier(property) || ts.isStringLiteral(property) || ts.isNumericLiteral(property)
+      ? property.text
+      : "*";
+    changed = bindContentPattern(
+      element.name,
+      appendContentPath(basePaths, key),
+      aliases,
+    ) || changed;
+  }
+  return changed;
+}
+
+function contentAliasesForSection(section) {
+  let owner = section.node;
+  while (owner && !ts.isFunctionLike(owner)) owner = owner.parent;
+  const aliases = new Map();
+  if (!owner) return aliases;
+  for (const parameter of owner.parameters || []) {
+    if (ts.isIdentifier(parameter.name) && parameter.name.text === "content")
+      addContentAlias(aliases, "content", [""]);
+    else if (ts.isObjectBindingPattern(parameter.name)) {
+      for (const element of parameter.name.elements) {
+        const property = element.propertyName || element.name;
+        if (
+          (ts.isIdentifier(property) || ts.isStringLiteral(property)) &&
+          property.text === "content"
+        )
+          bindContentPattern(element.name, [""], aliases);
+      }
+    }
+  }
+  const body = owner.body;
+  if (!body) return aliases;
+  // Resolve chains such as `const heroCopy = content.hero; const title =
+  // heroCopy.heading` without leaking aliases from other component functions.
+  for (let pass = 0; pass < 8; pass += 1) {
+    let changed = false;
+    const visit = (node) => {
+      if (node !== body && ts.isFunctionLike(node)) return;
+      if (ts.isVariableDeclaration(node) && node.initializer)
+        changed = bindContentPattern(
+          node.name,
+          contentPathsInExpression(node.initializer, aliases),
+          aliases,
+        ) || changed;
+      ts.forEachChild(node, visit);
+    };
+    visit(body);
+    if (!changed) break;
+  }
+  return aliases;
+}
+
+function scopedContentBindings(source, scopedIds) {
+  const { file, sections } = collectSections(source);
+  const scoped = new Set(scopedIds);
+  return sections
+    .filter((section) => scoped.has(section.id))
+    .map((section) => {
+      const aliases = contentAliasesForSection(section);
+      const paths = [];
+      const visit = (node) => {
+        if (node !== section.node && sectionMarker(node, file)) return;
+        if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
+          const parent = node.parent;
+          const parentContinuesPath =
+            (ts.isPropertyAccessExpression(parent) ||
+              ts.isElementAccessExpression(parent)) &&
+            parent.expression === node &&
+            contentPathsInExpression(parent, aliases).length > 0;
+          if (!parentContinuesPath)
+            paths.push(...contentPathsInExpression(node, aliases).filter(Boolean));
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(section.node);
+      return [section.id, paths.sort()];
+    });
+}
+
 function scopedPropSpreads(source, scopedIds) {
   const { file, sections } = collectSections(source);
   const scoped = new Set(scopedIds);
@@ -2002,6 +2134,13 @@ export function assertCreativeRevisionScope(before, after, scope) {
     JSON.stringify(protectedSectionSnapshots(after.experience, sectionIds))
   )
     throw scopeError("JSX changed outside declared section scope.");
+  if (
+    JSON.stringify(scopedContentBindings(before.experience, sectionIds)) !==
+    JSON.stringify(scopedContentBindings(after.experience, sectionIds))
+  )
+    throw scopeError(
+      "sealed content bindings changed inside a declared section; content edits must use the approved revision path.",
+    );
   const approvedCopy = scopedVisitorCopy(before.experience, sectionIds);
   for (const value of scopedVisitorCopy(after.experience, sectionIds))
     if (!approvedCopy.has(value) && !FIXED_UI_COPY.has(value))

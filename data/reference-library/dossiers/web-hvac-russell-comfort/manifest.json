@@ -79,7 +79,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "d03fc43d2b048502055b8532bca7b51f3db6c2a40fbb159f9727ded6edbcf924"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -87,7 +88,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "7d27b3f0fb37b2274c46a074818e123056937e270c8ebdf017a34d2aa8ce2106"
     }
   },
   "referenceDna": {
@@ -192,7 +194,20 @@
       "All signature relationships are visible in rendered desktop and mobile screenshots.",
       "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
       "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "type-led-statement",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-leads-opening",
+      "basis": "curated-screenshots",
+      "confidence": "medium",
+      "secondaryPatterns": [
+        "hybrid-hero-needs-human-review"
+      ],
+      "note": "Screenshot shows overlapping layout mechanics; preserve the hybrid treatment rather than flattening it to this primary topology.",
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-permission-attested",

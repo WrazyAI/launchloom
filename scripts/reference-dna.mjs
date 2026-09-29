@@ -97,12 +97,29 @@ export function inferCompositionTopology(referenceDna) {
     typeof declared === "string" ? declared : declared?.hero,
     80,
   ).toLowerCase();
-  if (HERO_COMPOSITION_TOPOLOGIES.has(declaredHero))
+  const declaredMobileHero = clean(
+    typeof declared === "object" ? declared?.mobileHero : "",
+    80,
+  ).toLowerCase();
+  if (HERO_COMPOSITION_TOPOLOGIES.has(declaredHero)) {
+    const mobileHero = HERO_COMPOSITION_TOPOLOGIES.has(declaredMobileHero)
+      ? declaredMobileHero
+      : "unclassified";
     return {
       hero: declaredHero,
+      mobileHero,
       mediaRelation: clean(declared?.mediaRelation, 80) || mediaRelationFor(declaredHero),
-      basis: "curated-dna",
+      mobileMediaRelation:
+        clean(declared?.mobileMediaRelation, 80) || mediaRelationFor(mobileHero),
+      basis: clean(declared?.basis, 80) || "curated-dna",
+      confidence: clean(declared?.confidence, 20) || undefined,
+      secondaryPatterns: Array.isArray(declared?.secondaryPatterns)
+        ? list(declared.secondaryPatterns, 12)
+        : [],
+      note: clean(declared?.note, 400) || undefined,
+      mobileTreatmentChanged: declared?.mobileTreatmentChanged === true,
     };
+  }
 
   const hero = referenceDna?.heroGeometry || {};
   const image = referenceDna?.imageTreatment || {};
@@ -152,8 +169,10 @@ export function inferCompositionTopology(referenceDna) {
     hero: HERO_COMPOSITION_TOPOLOGIES.has(normalizedHero)
       ? normalizedHero
       : "unclassified",
+    mobileHero: "unclassified",
     mediaRelation: mediaRelationFor(normalizedHero),
-    basis: "curated-dna",
+    mobileMediaRelation: mediaRelationFor("unclassified"),
+    basis: "inferred-dna",
   };
 }
 
@@ -586,6 +605,7 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
       canonical?.mobileRecomposition ||
       analyzed.mobileRecomposition ||
       defaults.mobileRecomposition,
+    compositionTopology: canonical?.compositionTopology || analyzed.compositionTopology || undefined,
     prohibitedPatterns: list(
       [
         ...(canonical
@@ -628,6 +648,22 @@ export function validateReferenceDna(value, { requireEvidence = true } = {}) {
   if (!Array.isArray(value.prohibitedPatterns) || !value.prohibitedPatterns.length) throw new Error("Reference DNA needs prohibited patterns.");
   if (!Array.isArray(value.requiredSignatureElements) || !value.requiredSignatureElements.length) throw new Error("Reference DNA needs required signature elements.");
   if (!Array.isArray(value.acceptanceChecks) || !value.acceptanceChecks.length) throw new Error("Reference DNA needs acceptance checks.");
+  if (value.compositionTopology?.basis === "curated-screenshots") {
+    const topology = value.compositionTopology;
+    if (
+      typeof topology !== "object" ||
+      !HERO_COMPOSITION_TOPOLOGIES.has(topology.hero) ||
+      !HERO_COMPOSITION_TOPOLOGIES.has(topology.mobileHero) ||
+      typeof topology.basis !== "string" ||
+      !["high", "medium"].includes(topology.confidence) ||
+      !Array.isArray(topology.secondaryPatterns || []) ||
+      typeof topology.mediaRelation !== "string" ||
+      !topology.mediaRelation ||
+      typeof topology.mobileMediaRelation !== "string" ||
+      !topology.mobileMediaRelation
+    )
+      throw new Error("Reference DNA compositionTopology must declare desktop/mobile heroes, relationships, basis, confidence, and secondary patterns.");
+  }
   if (value.analyzedFromEvidence) {
     if (!value.measurements || typeof value.measurements !== "object")
       throw new Error("Evidence-analyzed Reference DNA needs measurements.");

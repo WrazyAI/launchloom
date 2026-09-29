@@ -12,7 +12,10 @@ import {
 } from "./creative-compiler.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
-import { validateRenderedCompositionTopology } from "./rendered-composition-topology.mjs";
+import {
+  CSS_IMAGE_URL_PATTERN,
+  validateRenderedCompositionTopology,
+} from "./rendered-composition-topology.mjs";
 import {
   evaluateRenderedDiversity,
   evaluateRenderedReferenceFidelity,
@@ -105,25 +108,41 @@ async function startServer(root) {
 }
 
 async function inspect(page) {
-  return page.evaluate(() => {
+  return page.evaluate((imageBackgroundPattern) => {
+    const hasImageBackground = new RegExp(imageBackgroundPattern, "iu");
     const root = document.querySelector("[data-creative-candidate]");
     const hero = root?.querySelector("[data-hero]");
     const heroBounds = hero?.getBoundingClientRect();
     const rect = (element) => {
       const bounds = element.getBoundingClientRect();
-      return {
-        left: bounds.left,
-        top: bounds.top,
-        width: bounds.width,
-        height: bounds.height,
-      };
+      let left = Math.max(0, bounds.left);
+      let top = Math.max(0, bounds.top);
+      let right = Math.min(window.innerWidth, bounds.right);
+      let bottom = Math.min(window.innerHeight, bounds.bottom);
+      let opacity = 1;
+      for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+        const style = window.getComputedStyle(ancestor);
+        if (style.display === "none" || style.visibility === "hidden" || style.visibility === "collapse")
+          return null;
+        opacity *= Number.isFinite(Number.parseFloat(style.opacity))
+          ? Number.parseFloat(style.opacity)
+          : 1;
+        if (opacity <= 0.02) return null;
+        if (ancestor === element) continue;
+        const clip = ancestor.getBoundingClientRect();
+        if (["hidden", "clip", "scroll", "auto"].includes(style.overflowX)) {
+          left = Math.max(left, clip.left);
+          right = Math.min(right, clip.right);
+        }
+        if (["hidden", "clip", "scroll", "auto"].includes(style.overflowY)) {
+          top = Math.max(top, clip.top);
+          bottom = Math.min(bottom, clip.bottom);
+        }
+      }
+      if (right - left < 16 || bottom - top < 16) return null;
+      return { left, top, width: right - left, height: bottom - top };
     };
-    const visible = (element) => {
-      const style = window.getComputedStyle(element);
-      const bounds = element.getBoundingClientRect();
-      return style.display !== "none" && style.visibility !== "hidden" &&
-        bounds.width >= 16 && bounds.height >= 16;
-    };
+    const visible = (element) => Boolean(rect(element));
     const copyRegions = hero
       ? [...hero.querySelectorAll("[data-hero-copy]")]
           .filter(visible)
@@ -140,7 +159,7 @@ async function inspect(page) {
                   return node.complete && node.naturalWidth > 0;
                 if (node instanceof HTMLVideoElement)
                   return node.readyState >= 2;
-                return window.getComputedStyle(node).backgroundImage !== "none";
+                return hasImageBackground.test(window.getComputedStyle(node).backgroundImage);
               });
             return {
               container: rect(element),
@@ -185,7 +204,7 @@ async function inspect(page) {
         utilityCount: hero?.querySelectorAll('form, input, select, textarea, [role="search"], [role="combobox"]').length || 0,
       },
     };
-  });
+  }, CSS_IMAGE_URL_PATTERN.source);
 }
 
 function hardFailures(evidence, viewport) {
@@ -359,6 +378,9 @@ export async function runCreativeBakeoff({
             const browserErrors = [];
             page.on("pageerror", (error) => browserErrors.push(error.message));
             await page.goto(origin, { waitUntil: "networkidle" });
+            // Let the authored first-view reveal settle before measuring
+            // opacity-sensitive visual evidence or taking the viewport shot.
+            await page.waitForTimeout(900);
             const evidence = await inspect(page);
             const failures = [...hardFailures(evidence, viewport), browserErrors.length > 0 && "browser error"].filter(Boolean);
             const compositionTopology = candidate.manifest.version >= 2
@@ -366,9 +388,10 @@ export async function runCreativeBakeoff({
               : null;
             const compositionGeometry = compositionTopology
               ? validateRenderedCompositionTopology(
-                  compositionTopology,
-                  evidence.compositionEvidence,
-                )
+                compositionTopology,
+                evidence.compositionEvidence,
+                { viewportKind: viewport.name === "mobile" ? "mobile" : "desktop" },
+              )
               : candidate.manifest.version >= 2
                 ? {
                     pass: true,

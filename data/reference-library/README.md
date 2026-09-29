@@ -25,7 +25,19 @@ Every dossier has:
   and how to translate them without copying source branding, copy, or assets.
 - `screenshots/desktop.png` and `screenshots/mobile.png`: full-page captures
   at the viewport widths recorded in that dossier's manifest (desktop and
-  compact mobile).
+  compact mobile). Their SHA-256 values are recorded in the manifest and
+  checked against the retained bytes whenever the dossier is loaded.
+
+Every production dossier also has an explicit desktop and mobile
+`referenceDna.compositionTopology`, reviewed against the first viewport of each
+full-page capture. This is separate from `mobileRecomposition`, which explains
+responsive behavior but is not an exact hero-layout label. Nine hybrid or
+visually ambiguous references are marked medium-confidence with a note rather
+than treated as unquestionable single-pattern examples. When a niche offers
+more than one classified hero composition, the selector requires each
+three-route candidate set to include at least two, while seeded exposure
+balancing rotates rarer patterns across runs. The rendered composition gate
+evaluates desktop and mobile against their own contracts.
 
 The original ten niche pools contain 46 direct business-site captures and 14
 licensed sector-specific template demos. Those demos are useful visual

@@ -74,7 +74,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "d702019ebfc11452a5434bb076eed3ff28f87bc65f78fab646f1dd9dbd3e7810"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -82,7 +83,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "f1a8f120a7b6b2672dccb83d74978f43e2c8f6e59afdec6fd00fbed19658e2ca"
     }
   },
   "referenceDna": {
@@ -191,7 +193,17 @@
       "At 390 by 844, each split chapter becomes image-first and the page width stays within the viewport.",
       "FAQs and contact appear as real page sections with keyboard-accessible controls and visible form status.",
       "No generated person is represented as a real caregiver or customer, and no service claims are stated as verified facts."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "editorial-stack",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "vertical-copy-media-stack",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

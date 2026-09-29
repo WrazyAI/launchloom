@@ -68,7 +68,8 @@
         "width": 1440,
         "height": 1000
       },
-      "screenshotHeight": 5520
+      "screenshotHeight": 5520,
+      "sha256": "850e01d0908ed77050abd33f4238e45bcb4d456f5bc066eaceeb57310e13ccd7"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -77,7 +78,8 @@
         "width": 390,
         "height": 844
       },
-      "screenshotHeight": 6389
+      "screenshotHeight": 6389,
+      "sha256": "a7cf6bfb98ad2898a4eb548cf1f309bf5f38531550aa8a8e2e945d8a4d9b5df3"
     }
   },
   "referenceDna": {
@@ -180,7 +182,17 @@
       "Community cards remain usable on touch devices without horizontal page overflow.",
       "Renter advice is factual and tied to the client's actual service.",
       "No source location, property, person, pricing, or scale claim is presented as client proof."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "utility-panel",
+      "mobileHero": "utility-panel",
+      "mediaRelation": "task-panel-in-opening",
+      "mobileMediaRelation": "task-panel-in-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": true
+    }
   },
   "review": {
     "status": "reviewed",

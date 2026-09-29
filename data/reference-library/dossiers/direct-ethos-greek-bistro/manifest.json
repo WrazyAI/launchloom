@@ -85,7 +85,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "c6f83d249e88252da71d40b5ee9e05f431f0c52bb02c2ba3a912fabb9682dc01"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -93,7 +94,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "d66bc76771dec7266f0354c55655aeed86a539768ed9378f97a0f995a2f14256"
     }
   },
   "referenceDna": {
@@ -205,7 +207,17 @@
       "reviews and ratings are authentic and approved or omitted",
       "mobile circle navigation remains touch-safe",
       "no source image, copy or brand enters client output"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "image-led-stage",
+      "mobileHero": "image-led-stage",
+      "mediaRelation": "media-leads-copy",
+      "mobileMediaRelation": "media-leads-copy",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": true
+    }
   },
   "review": {
     "status": "requester-attested-internal-and-model-reference",
