@@ -143,6 +143,10 @@ const brandNameRequest =
 const colorRequest = /\b(colou?rs?|color palette|palette|brand colors?)\b/i;
 const broadLayoutRequest =
   /\b(?:redesign|rework|refresh|improve|change|update|revise|strengthen)\b.{0,60}\b(?:layout|page structure|visual hierarchy|composition)\b|\b(?:layout|page structure|visual hierarchy|composition)\b.{0,60}\b(?:redesign|rework|refresh|improve|change|update|revise|strengthen)\b/i;
+const globalLayoutScope =
+  /\b(?:globally|site[- ]wide|throughout (?:the )?(?:site|page)|across (?:the )?(?:whole|entire) (?:site|page)|all sections)\b/i;
+const scopedLayoutRequest =
+  /\b(?:layout|composition|spacing|spacious|compact|density|tight(?:er)?|gaps?|font|typography|variant|center(?:ed)?|align(?:ment|ed)?|move|reorder|above|below|before|after|hide|remove|show|add|include|enable|disable|style|visual|imagery|premium|cinematic|asymmetrical|editorial|practical|featured|problem[- ]led|immersive|guided|quiet|numbered|cards?|work|local|consultation)\b/i;
 const layoutRequest =
   /\b(layout|reorder|move|above|below|before|after|hide|remove|show|add|section|spacing|spacious|compact|density|typography|font|modern|editorial|bold|immersive|center(?:ed)?)\b/i;
 const contentRequest =
@@ -442,10 +446,79 @@ function mentionedSection(text) {
       new RegExp(`\\b${alias.replace(" ", "\\s+")}s?\\b`).test(lowered),
     )?.[1];
 }
+function mentionedSections(text) {
+  const lowered = String(text || "").toLowerCase();
+  return [
+    ...new Set(
+      [...SECTION_ALIASES.entries()]
+        .filter(([alias]) =>
+          new RegExp(`\\b${alias.replace(" ", "\\s+")}s?\\b`).test(
+            lowered,
+          ),
+        )
+        .map(([, type]) => type),
+    ),
+  ];
+}
+function scopedLayoutSections(feedback) {
+  if (broadLayoutRequest.test(feedback) || globalLayoutScope.test(feedback))
+    return [];
+  return mentionedSections(feedback);
+}
+function requestedSectionVariant(feedback, sectionType) {
+  const variants = [...(SECTION_VARIANTS[sectionType] || [])].sort(
+    (left, right) => right.length - left.length,
+  );
+  for (const variant of variants) {
+    const pattern = variant
+      .split("-")
+      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("[-\\s]+");
+    if (new RegExp(`\\b${pattern}\\b`, "i").test(feedback)) return variant;
+  }
+  if (
+    sectionType === "hero" &&
+    /\b(?:center|centered|centre|centred)\b/i.test(feedback) &&
+    SECTION_VARIANTS.hero.has("centered")
+  )
+    return "centered";
+  return undefined;
+}
+function operationMatchesSectionScope(operation, sectionTypes, feedback) {
+  if (!sectionTypes.length) return true;
+  if (operation.kind === "set_design_treatment") return false;
+  if (operation.kind === "reorder_section")
+    return (
+      sectionTypes.includes(operation.sectionType) ||
+      sectionTypes.includes(operation.relativeTo)
+    );
+  if (operation.kind === "set_section_enabled")
+    return sectionTypes.includes(operation.sectionType);
+  if (operation.kind === "set_section_variant")
+    return (
+      sectionTypes.includes(operation.sectionType) &&
+      requestedSectionVariant(feedback, operation.sectionType) ===
+        operation.variant
+    );
+  return false;
+}
+function sameStructuralOperation(expected, actual) {
+  if (expected.kind !== actual.kind) return false;
+  const fields = {
+    set_section_enabled: ["sectionType", "enabled"],
+    reorder_section: ["sectionType", "relativeTo", "position"],
+    set_section_variant: ["sectionType", "variant"],
+    set_design_treatment: ["density", "typography"],
+  }[expected.kind];
+  return Boolean(
+    fields && fields.every((field) => expected[field] === actual[field]),
+  );
+}
 function structuralOperations(feedback, config) {
   const text = clean(feedback, 1200).toLowerCase();
   const operations = [];
   const sections = currentSections(config);
+  const scopedSections = scopedLayoutSections(feedback);
   const hide = text.match(
     /\b(?:hide|remove|drop|disable)\s+(?:the\s+)?([a-z -]+?)(?:\s+section)?(?:[.,]|$)/i,
   );
@@ -485,28 +558,33 @@ function structuralOperations(feedback, config) {
       });
   }
   if (
+    scopedSections.length === 0 &&
     /\b(more spacious|more breathing room|increase (?:the )?spacing|generous spacing)\b/i.test(
       text,
     )
   )
     operations.push({ kind: "set_design_treatment", density: "spacious" });
   if (
+    scopedSections.length === 0 &&
     /\b(more compact|less spacing|tighter|reduce (?:the )?spacing)\b/i.test(
       text,
     )
   )
     operations.push({ kind: "set_design_treatment", density: "compact" });
   if (
+    scopedSections.length === 0 &&
     /\b(editorial|serif)\b/i.test(text) &&
     /\b(font|typography|look|style|layout)\b/i.test(text)
   )
     operations.push({ kind: "set_design_treatment", typography: "editorial" });
   if (
+    scopedSections.length === 0 &&
     /\b(modern|sans(?: serif)?|cleaner)\b/i.test(text) &&
     /\b(font|typography|look|style|layout)\b/i.test(text)
   )
     operations.push({ kind: "set_design_treatment", typography: "sans" });
   if (
+    scopedSections.length === 0 &&
     /\b(bold|stronger)\b/i.test(text) &&
     /\b(font|typography|look|style|layout|visual)\b/i.test(text)
   )
@@ -669,8 +747,12 @@ function intentsFor(feedback, config) {
   const structural = layoutRequest.test(structuralFeedback)
     ? structuralOperations(structuralFeedback, config)
     : [];
+  const sectionScopedLayoutRequested =
+    scopedLayoutSections(feedback).length > 0 &&
+    scopedLayoutRequest.test(feedback);
   if (
     broadLayoutRequest.test(feedback) ||
+    sectionScopedLayoutRequested ||
     structural.some(
       (operation) =>
         !(
@@ -802,7 +884,7 @@ export async function modelOperations(
         messages: [
           {
             role: "system",
-            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
+            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. When feedback names specific section(s), only edit those sections; never use page-wide design treatment or edit another section to satisfy a section-specific request. If the allowed operations cannot express the requested scope, return no operation. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
           },
           {
             role: "user",
@@ -1238,6 +1320,28 @@ export async function planRevision(
       ].includes(operation.kind)
     )
       if (intents.includes("layout")) {
+        const deterministicStructural = deterministic.filter(
+          (expected) =>
+            expected.feedbackIndex === operation.feedbackIndex &&
+            [
+              "set_section_enabled",
+              "reorder_section",
+              "set_section_variant",
+              "set_design_treatment",
+            ].includes(expected.kind),
+        );
+        if (
+          deterministicStructural.length > 0 &&
+          !deterministicStructural.some((expected) =>
+            sameStructuralOperation(expected, operation),
+          )
+        )
+          return false;
+        const sectionTargets = scopedLayoutSections(feedback);
+        if (
+          !operationMatchesSectionScope(operation, sectionTargets, feedback)
+        )
+          return false;
         const broadLayout = broadLayoutRequest.test(feedback);
         if (operation.kind === "set_design_treatment") {
           if (
@@ -1323,7 +1427,15 @@ export async function planRevision(
     const fulfilled = intents.filter((intent) =>
       intent === "content"
         ? contentTargetsSatisfied(contentTargets[feedbackIndex], operations)
-        : intentSatisfied(intent, operations),
+        : intent === "layout" && scopedLayoutSections(feedback).length > 0
+          ? operations.some((operation) =>
+              operationMatchesSectionScope(
+              operation,
+              scopedLayoutSections(feedback),
+              feedback,
+            ),
+          )
+          : intentSatisfied(intent, operations),
     );
     const unresolved = intents.filter((intent) => !fulfilled.includes(intent));
     const creativeDeferred =
