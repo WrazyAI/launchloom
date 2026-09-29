@@ -527,16 +527,30 @@ describe("SEO market map", () => {
     expect(dossier.publishReady).toBe(false);
   });
 
-  it("degrades honestly when the bounded online fallback is unreachable", async () => {
-    const dossier = await researchSiteContext(intake, {
-      webSearch: { search: vi.fn(async () => { throw new Error("search unavailable"); }) },
-      maxFallbackSearchQueries: 1,
+  it("degrades honestly and stops after an unknown-cost fallback failure", async () => {
+    const search = vi.fn(async () => {
+      throw new Error("search unavailable");
     });
+    const dossier = await researchSiteContext(intake, {
+      webSearch: { search },
+      maxFallbackSearchQueries: 3,
+    });
+    expect(search).toHaveBeenCalledTimes(1);
     expect(dossier.mode).toBe("context-only");
     expect(dossier.publishReady).toBe(false);
-    expect(dossier.fallbackSearch).toMatchObject({ status: "failed", queriesAttempted: 1, failedQueries: 1 });
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "failed",
+      queriesAttempted: 1,
+      failedQueries: 1,
+      costComplete: false,
+    });
     expect(dossier.externalSearchEvidence).toEqual([]);
     expect(dossier.warnings.join(" ")).toContain("search unavailable");
-    expect(dossier.warnings.join(" ")).toContain("returned no usable cited evidence");
+    expect(dossier.warnings.join(" ")).toContain(
+      "provider spend for the failed request is unknown",
+    );
+    expect(dossier.warnings.join(" ")).toContain(
+      "returned no usable cited evidence",
+    );
   });
 });
