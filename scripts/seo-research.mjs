@@ -1015,7 +1015,7 @@ export function renderSeoMapMarkdown(dossier) {
     `Keyword metrics measured: ${dossier.marketSnapshot?.measuredKeywords || 0}/${dossier.marketSnapshot?.queriedKeywords || 0}`,
     `DataForSEO provider-reported spend: ${spendSummary} (cap ${Number(dossier.cost?.limitUsd || 0).toFixed(2)}).`,
     dossier.fallbackSearch?.status && dossier.fallbackSearch.status !== "unavailable"
-      ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s). These observations do not satisfy measured SEO publication requirements.`
+      ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported spend ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations do not satisfy measured SEO publication requirements.`
       : "Fallback web search: unavailable.",
     "",
     "## B. Competitors and structural observations",
