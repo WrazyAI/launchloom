@@ -198,6 +198,14 @@ describe("RevisionCoordinator", () => {
       subject: expect.stringContaining("Revision needs attention"),
       text: expect.stringContaining("Update the offer."),
     });
+    expect(String(failureEmails[0].text)).toContain(
+      "Open reviewed website: https://review.example.pages.dev/",
+    );
+    expect(String(failureEmails[0].text)).toContain(
+      "Pull request: https://github.com/WrazyAI/example-client/pull/2",
+    );
+    const primaryHref = String(failureEmails[0].html).match(/href="([^"]+)"/)?.[1];
+    expect(primaryHref).toBe("https://review.example.pages.dev/");
 
     expect(dispatchCount).toBe(2);
     await expect(coordinator.claim("request-3002")).resolves.toEqual({
