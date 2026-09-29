@@ -146,7 +146,7 @@ describe("bounded client review uploads", () => {
         dispatch_attempts: 1,
       });
 
-      await instance.alarm();
+      await instance.alarm!();
       row = state.storage.sql.exec<{ request_id: string; status: string; reviewed_page: string; dispatch_attempts: number }>(
         "SELECT request_id, status, reviewed_page, dispatch_attempts FROM revision_requests WHERE request_id = ?",
         submissionId,
