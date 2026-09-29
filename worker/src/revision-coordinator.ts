@@ -65,6 +65,7 @@ type FailureNotice = {
   reason: string;
   attempts: number;
   siteUrl?: string;
+  runUrl?: string;
   nextAttemptAt: number;
 };
 
@@ -218,6 +219,27 @@ function safeReviewedPage(value: string) {
   }
 }
 
+function safeDiagnosticRunUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.hostname !== "github.com" ||
+      url.username ||
+      url.password ||
+      !/^\/WrazyAI\/launchloom\/actions\/runs\/[1-9][0-9]*\/?$/u.test(
+        url.pathname,
+      )
+    )
+      return "";
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 async function github(
   env: RevisionCoordinatorEnv,
   path: string,
@@ -246,6 +268,7 @@ async function notifyFailure(
   row: RevisionRow,
   reason: string,
   failureSiteUrl = "",
+  failureRunUrl = "",
 ) {
   if (
     !env.RESEND_API_KEY ||
@@ -274,6 +297,7 @@ async function notifyFailure(
     previewUrl: reviewedPage,
     reviewUrl: reviewedPage,
     diagnosticPrUrl: diagnosticTarget,
+    diagnosticRunUrl: safeDiagnosticRunUrl(failureRunUrl),
     clientFeedback: `${row.category ? `[${row.category}] ` : ""}${row.feedback}`,
     revisionOutcome: `${reason}\n\nRequest ID: ${row.request_id}`,
   });
@@ -1068,6 +1092,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     row: RevisionRow,
     error: unknown,
     failureSiteUrl = "",
+    failureRunUrl = "",
   ) {
     const reason = cleanError(error);
     this.ctx.storage.sql.exec(
@@ -1085,7 +1110,15 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       }),
     );
     const noticeKey = failureNoticeKey(row.request_id);
-    if (await notifyFailure(this.env, row, reason, failureSiteUrl))
+    if (
+      await notifyFailure(
+        this.env,
+        row,
+        reason,
+        failureSiteUrl,
+        failureRunUrl,
+      )
+    )
       await this.ctx.storage.delete(noticeKey);
     else
       await this.ctx.storage.put<FailureNotice>(noticeKey, {
@@ -1093,6 +1126,9 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         reason,
         attempts: 1,
         ...(failureSiteUrl ? { siteUrl: safeReviewedPage(failureSiteUrl) } : {}),
+        ...(failureRunUrl
+          ? { runUrl: safeDiagnosticRunUrl(failureRunUrl) }
+          : {}),
         nextAttemptAt: Date.now() + 5 * 60_000,
       });
     await this.scheduleCoordinatorAlarm();
@@ -1315,6 +1351,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     requestId: string,
     reason: string,
     failureSiteUrl = "",
+    failureRunUrl = "",
   ): Promise<{ ok: true }> {
     const row = this.row(requestId);
     if (!row || row.status === "completed" || row.status === "failed")
@@ -1323,6 +1360,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       row,
       reason || "Revision workflow failed.",
       failureSiteUrl,
+      failureRunUrl,
     );
     await this.promoteQueued();
     await this.scheduleCoordinatorAlarm();
@@ -1436,6 +1474,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           failed,
           notice.reason,
           notice.siteUrl || "",
+          notice.runUrl || "",
         ))
       ) {
         await this.ctx.storage.delete(key);
