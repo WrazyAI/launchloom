@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -329,6 +330,36 @@ describe("reference dossiers", () => {
       const imageBytes = Buffer.from(dataUrl.slice(dataUrl.indexOf(",") + 1), "base64");
       expect(dataUrl).toMatch(/^data:image\/jpeg;base64,/u);
       expect(imageBytes.length).toBeLessThanOrEqual(900_000);
+    }
+  });
+
+  it("records checksums for every auto repair, HVAC, roofing, and painting capture", () => {
+    const core = JSON.parse(
+      fs.readFileSync("data/reference-library/core-collection.json", "utf8"),
+    );
+    const targetKinds = new Set(["auto-repair", "hvac", "roofing", "painting"]);
+    const dossierIds = core.niches
+      .filter((niche: { businessKind: string }) => targetKinds.has(niche.businessKind))
+      .flatMap((niche: { referenceIds: string[] }) => niche.referenceIds);
+
+    expect(dossierIds).toHaveLength(24);
+    for (const dossierId of dossierIds) {
+      const dossierRoot = path.join("data/reference-library/dossiers", dossierId);
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(dossierRoot, "manifest.json"), "utf8"),
+      );
+      const captureRecord = fs.readFileSync(
+        path.join(dossierRoot, "rights/capture-record.md"),
+        "utf8",
+      );
+      for (const viewport of ["desktop", "mobile"] as const) {
+        const screenshotPath = path.join(dossierRoot, manifest.evidence[viewport].path);
+        const digest = crypto
+          .createHash("sha256")
+          .update(fs.readFileSync(screenshotPath))
+          .digest("hex");
+        expect(captureRecord, `${dossierId} ${viewport} screenshot checksum`).toContain(digest);
+      }
     }
   });
 
