@@ -296,6 +296,28 @@ describe("human creative revision lifecycle", () => {
     }
   });
 
+  it("does not erase reviewer feedback draft on a rejected submission", () => {
+    const banner = readFileSync(
+      "templates/client-site/src/components/ReviewBanner.astro",
+      "utf8",
+    );
+    const panel = readFileSync("src/components/ReviewPanel.tsx", "utf8");
+
+    const bannerReject = banner.indexOf(
+      'if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");',
+    );
+    const bannerReset = banner.indexOf('feedbackSubmissionId = "";', bannerReject);
+    const formReset = banner.indexOf("form.reset();", bannerReject);
+    expect(bannerReject).toBeGreaterThan(-1);
+    expect(bannerReset).toBeGreaterThan(bannerReject);
+    expect(formReset).toBeGreaterThan(bannerReject);
+
+    const panelResponse = panel.indexOf("if (response.ok) {");
+    const panelClear = panel.indexOf('setComment("");', panelResponse);
+    expect(panelResponse).toBeGreaterThan(-1);
+    expect(panelClear).toBeGreaterThan(panelResponse);
+  });
+
   it("uses the reviewed site or deployed revision as the failed-revision primary destination", () => {
     const developer = readFileSync(
       ".github/workflows/process-feedback.yml",
