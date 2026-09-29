@@ -57,8 +57,10 @@ describe("LaunchLoom lifecycle emails", () => {
       audience: "manual-attention",
       kind: "revision-failed",
       clientName: "North Shore Care",
-      previewUrl: "https://github.com/WrazyAI/example/pull/2",
-      reviewUrl: "https://github.com/WrazyAI/example/pull/2",
+      previewUrl: "https://review.example.pages.dev/services/",
+      reviewUrl: "https://review.example.pages.dev/services/",
+      diagnosticPrUrl: "https://github.com/WrazyAI/example/pull/2",
+      diagnosticRunUrl: "https://github.com/WrazyAI/launchloom/actions/runs/123",
       clientFeedback: "Simplify the hero and add a chatbot.",
       revisionOutcome: "The chatbot request needs manual implementation.",
     });
@@ -67,6 +69,12 @@ describe("LaunchLoom lifecycle emails", () => {
     expect(email.html).toContain("Feedback that needs attention");
     expect(email.text).toContain("Simplify the hero");
     expect(email.text).toContain("needs manual implementation");
+    expect(email.text).toContain("Open reviewed website: https://review.example.pages.dev/services/");
+    expect(email.text).toContain("Pull request: https://github.com/WrazyAI/example/pull/2");
+    expect(email.text).toContain("Actions run: https://github.com/WrazyAI/launchloom/actions/runs/123");
+    const primaryHref = email.html.match(/href="([^"]+)"/)?.[1];
+    expect(primaryHref).toBe("https://review.example.pages.dev/services/");
+    expect(email.html).toContain("Diagnostics:");
     expect(email.html).not.toContain("—");
   });
 
