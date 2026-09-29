@@ -2207,6 +2207,28 @@ function safeRevisionFailureSite(value: unknown) {
   }
 }
 
+function safeRevisionFailureRun(value: unknown) {
+  if (typeof value !== "string" || !value) return "";
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.hostname !== "github.com" ||
+      url.username ||
+      url.password ||
+      !/^\/WrazyAI\/launchloom\/actions\/runs\/[1-9][0-9]*\/?$/u.test(
+        url.pathname,
+      )
+    )
+      return "";
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 async function revisionCoordinator(request: Request, env: Env) {
   if (request.method !== "POST")
     return json({ error: "Method not allowed" }, 405);
@@ -2236,6 +2258,7 @@ async function revisionCoordinator(request: Request, env: Env) {
           requestId,
           clean(body.reason, 500) || "Revision workflow failed.",
           safeRevisionFailureSite(body.failureSiteUrl),
+          safeRevisionFailureRun(body.failureRunUrl),
         ),
       );
     if (action === "resume") return json(await coordinator.resume(requestId));
