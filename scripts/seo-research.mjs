@@ -325,6 +325,13 @@ function boundedOptions(options) {
   };
 }
 
+/**
+ * @param {{
+ *   apiKey?: string,
+ *   fetchImpl?: typeof fetch,
+ *   model?: string,
+ * }} [options]
+ */
 export function createOpenRouterWebSearchClient({
   apiKey,
   fetchImpl = fetch,
