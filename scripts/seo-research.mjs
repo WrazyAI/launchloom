@@ -322,7 +322,7 @@ function boundedOptions(options) {
 export function createOpenRouterWebSearchClient({
   apiKey,
   fetchImpl = fetch,
-  model = process.env.SEO_FALLBACK_SEARCH_MODEL || "openai/gpt-5.6-luna",
+  model = process.env.SEO_FALLBACK_SEARCH_MODEL || "openai/gpt-6-luna",
 } = {}) {
   if (!apiKey) throw new Error("OpenRouter API key is required.");
   return {
