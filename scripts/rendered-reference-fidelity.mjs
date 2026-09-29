@@ -460,8 +460,14 @@ export async function evaluateRenderedDiversity({
     maxTokens: 12_000,
     fetchImpl,
   });
-  const minimumPair = result.audit.pairs.length
-    ? Math.min(...result.audit.pairs.map((pair) => Number(pair.distance || 0)))
+  const pairs = result.audit.pairs.map((pair) => ({
+    ...pair,
+    pass:
+      Number(pair.distance || 0) >=
+      RENDERED_REFERENCE_THRESHOLDS.pairwiseDistinctiveness,
+  }));
+  const minimumPair = pairs.length
+    ? Math.min(...pairs.map((pair) => Number(pair.distance || 0)))
     : 100;
   const score = Math.min(
     Number(result.audit.overallDistinctiveness || 0),
@@ -478,5 +484,9 @@ export async function evaluateRenderedDiversity({
     score,
     minimumPairDistance: minimumPair,
     ...result,
+    audit: {
+      ...result.audit,
+      pairs,
+    },
   };
 }
