@@ -92,6 +92,10 @@ describe("bounded client review uploads", () => {
     );
 
     const submissionId = "client-feedback-dispatch-001";
+    const coordinator = env.REVISION_COORDINATOR.getByName("wrazyai/example-client");
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      state.storage.sql.exec("DELETE FROM revision_requests");
+    });
     const requestBody = {
       token,
       comment: "Please tighten this wording.",
@@ -130,7 +134,6 @@ describe("bounded client review uploads", () => {
     expect(comments).toHaveLength(1);
     expect(dispatchAttempts).toBe(1);
 
-    const coordinator = env.REVISION_COORDINATOR.getByName("wrazyai/example-client");
     await runInDurableObject(coordinator, async (instance, state) => {
       let row = state.storage.sql.exec<{ request_id: string; status: string; reviewed_page: string; dispatch_attempts: number }>(
         "SELECT request_id, status, reviewed_page, dispatch_attempts FROM revision_requests WHERE request_id = ?",
