@@ -3,6 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
+  EARLY_CONVERSION_OUTPUT_CONTRACT,
+  REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
   authoringCompletionDiagnostics,
   completionLimitRequestField,
   formatAuthoringCompletionDiagnostics,
@@ -514,6 +516,10 @@ ${formatModelBoundContentShape(contentShape)}
 CLIENT VISUAL BRIEF
 ${JSON.stringify(visualBrief, null, 2)}
 Preserve this client art direction during repair. Do not repair toward a generic LaunchLoom house style or overwrite an explicit light/dark, palette, composition, or named-reference request unless a measured finding requires that exact change.
+
+${REFERENCE_PROVENANCE_OUTPUT_CONTRACT}
+
+${EARLY_CONVERSION_OUTPUT_CONTRACT}
 
 TRUSTED @launchloom/runtime HELPERS
 LeadForm, FAQList, ContactLinks, LocationMap, ChatLauncher, SocialProof, resolveAsset, useReducedMotion.

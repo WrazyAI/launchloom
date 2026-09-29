@@ -714,6 +714,71 @@ describe("creative repair loop", () => {
     );
   });
 
+  it("keeps reference provenance out of client copy and preserves the contact-bound early action", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-reference-safety-repair-prompt-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(repaired) } }],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        familyId: "service-editorial",
+        referenceName: "Licensed service template",
+        rights: "licensed",
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      referenceDossier: {
+        id: "licensed-service-template",
+        familyId: "service-editorial",
+        referenceName: "Licensed service template",
+        source: { rights: "licensed" },
+        tags: { business: ["hvac"] },
+        designPrompt: "A source reference whose exact identity and credit must not become client copy.",
+      },
+      findings: [
+        {
+          category: "generic-grammar",
+          evidence: "The opening composition is too generic.",
+        },
+      ],
+      files: {
+        experience:
+          '<a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a>',
+        styles: "",
+        motion: "",
+      },
+      screenshots: [],
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(prompt).toContain("REFERENCE PROVENANCE BOUNDARY");
+    expect(prompt).toContain("rights and attribution are research metadata only");
+    expect(prompt).toContain("Never render them in visitor-facing copy");
+    expect(prompt).toContain("EARLY CONVERSION INVARIANT");
+    expect(prompt).toContain("native anchor to #contact");
+    expect(prompt).toContain("content.hero.primaryLabel");
+    expect(prompt).toContain("data-early-conversion");
+    expect(prompt).toContain("Do not replace it with a button, form, or JavaScript-only action");
+  });
+
   it("preserves composition when a repair finding is non-visual", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-copy-repair-prompt-"),

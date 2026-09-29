@@ -7,6 +7,18 @@ export const AUTHORING_STAGE_BUDGETS = Object.freeze({
 
 export const CREATIVE_REPAIR_MAX_COMPLETION_TOKENS = 48_000;
 
+export const EARLY_CONVERSION_OUTPUT_CONTRACT = [
+  "EARLY CONVERSION INVARIANT",
+  "The element marked data-early-conversion must be a compact native anchor to #contact whose visible label is supplied by content.hero.primaryLabel. Keep the marker on that same contact-bound anchor and preserve the assigned Reference DNA CTA placement.",
+  "Do not replace it with a button, form, or JavaScript-only action, and do not hardcode its label.",
+].join("\n");
+
+export const REFERENCE_PROVENANCE_OUTPUT_CONTRACT = [
+  "REFERENCE PROVENANCE BOUNDARY",
+  "The reference source, source name, URL, rights and attribution are research metadata only.",
+  "Never render them in visitor-facing copy, page titles or descriptions, Open Graph metadata, structured data, image alt text, link labels, or credits; they are not client business facts.",
+].join("\n");
+
 export function completionLimitRequestField(tokens) {
   if (!Number.isSafeInteger(tokens) || tokens < 1)
     throw new Error("OpenRouter completion-token limit must be a positive integer.");

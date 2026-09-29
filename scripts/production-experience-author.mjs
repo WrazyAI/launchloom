@@ -5,6 +5,10 @@ import {
   assertIndependentRoutes,
   buildCandidateManifest,
 } from "./creative-compiler.mjs";
+import {
+  EARLY_CONVERSION_OUTPUT_CONTRACT,
+  REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+} from "./creative-authoring-output.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 
@@ -1923,7 +1927,9 @@ function authorRules() {
     "Use only React, @launchloom/runtime, GSAP, and GSAP ScrollTrigger in Experience.jsx. The deterministic host imports and mounts motion.js; do not import or invoke ./motion.js from Experience.jsx.",
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
     "Keep literal Services, FAQs, and Contact section anchors in the page. For dossier-backed routes, let the primary navigation follow the assigned reference geometry instead of forcing all three anchors into one conventional menu. Put conversion in the hero or immediately after it.",
-    "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; use a compact anchor CTA for early conversion and do not fake a form or create a second lead endpoint.",
+    "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; do not fake a form or create a second lead endpoint.",
+    EARLY_CONVERSION_OUTPUT_CONTRACT,
+    REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',

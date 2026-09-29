@@ -1055,6 +1055,15 @@ describe("production experience author", () => {
         ),
       ),
     ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes("EARLY CONVERSION INVARIANT") &&
+        request.rules.includes("native anchor to #contact") &&
+        request.rules.includes("data-early-conversion") &&
+        request.rules.includes("REFERENCE PROVENANCE BOUNDARY") &&
+        !request.rules.includes("anchor or button"),
+      ),
+    ).toBe(true);
   });
 
   it("rejects unsafe imports and network-capable authored code", async () => {

@@ -198,6 +198,9 @@ describe("reference dossiers", () => {
     expect(context).toContain("Do not average it with other references");
     expect(context).toContain("## Signature elements");
     expect(context).toContain("do not copy brand identity");
+    expect(context).toContain("REFERENCE PROVENANCE BOUNDARY");
+    expect(context).toContain("rights and attribution are research metadata only");
+    expect(context).toContain("Never render them in visitor-facing copy");
     expect(() => referenceDossierPromptBlock(dossier, { maximumCharacters: 12 })).toThrow(/character budget/iu);
   });
 

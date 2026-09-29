@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { validateReferenceDna } from "./reference-dna.mjs";
+import { REFERENCE_PROVENANCE_OUTPUT_CONTRACT } from "./creative-authoring-output.mjs";
 
 const CLEARED_RIGHTS = new Set(["owned", "licensed", "permission-cleared"]);
 const PROMPT_HEADINGS = [
@@ -435,6 +436,7 @@ export function referenceDossierPromptBlock(dossier, { maximumCharacters = 18_00
     `Family: ${dossier.familyId}`,
     `Tags: ${JSON.stringify(dossier.tags || {})}`,
     `Rights: ${dossier.source.rights}. Transfer visual mechanics only; do not copy brand identity, source copy, assets, or trade dress.`,
+    REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     "The dossier is the authoritative description of this route. Do not average it with other references or substitute a familiar template.",
     designPrompt,
   ].join("\n\n");
