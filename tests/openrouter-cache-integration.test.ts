@@ -42,13 +42,17 @@ describe("OpenRouter cache integration", () => {
     }
   });
 
-  it("keeps measured SEO research independent from language model output", () => {
+  it("keeps measured SEO fields separate from bounded OpenRouter search evidence", () => {
     const source = fs.readFileSync("scripts/seo-research.mjs", "utf8");
     expect(source).toContain("createDataForSeoClient");
     expect(source).toContain("googleSearchVolume");
     expect(source).toContain("bulkKeywordDifficulty");
-    expect(source).not.toContain("openRouterChatCompletion");
-    expect(source).not.toContain("OPENROUTER_API_KEY");
+    expect(source).toContain("openRouterChatCompletion");
+    expect(source).toContain('type: "openrouter:web_search"');
+    expect(source).toContain('annotation?.type === "url_citation"');
+    expect(source).toContain('provenance: "external_search_observation"');
+    expect(source).toContain("publishReady: false");
+    expect(source).not.toContain("message?.content");
   });
 
   it("uses xhigh as the default Luna creative reasoning effort", () => {
