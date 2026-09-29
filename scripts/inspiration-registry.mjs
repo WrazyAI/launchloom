@@ -61,7 +61,7 @@ const BUSINESS_KIND_GROUPS = [
   ["fitness", "gym", "strength-training", "personal-training", "sports-performance", "fitness-studio", "sports-club", "pilates", "yoga"],
   ["restaurant", "dining", "food", "food-and-drink", "indian-restaurant", "greek-restaurant", "mediterranean-restaurant", "fine-dining", "multi-location-dining", "catering", "cafe", "bakery"],
   ["hospitality", "hotel", "boutique-hotel", "resort", "motel", "lodging", "inn", "guesthouse", "destination-stay"],
-  ["architecture", "architectural-design", "architect", "interior-design", "residential-architecture", "luxury-home-design", "design-studio", "hospitality-design", "restaurant-interiors"],
+  ["architecture", "architectural-design", "architect", "interior-design", "residential-architecture", "luxury-home-design", "hospitality-design", "restaurant-interiors"],
   ["legal-services", "legal", "law", "law-firm", "lawyer", "attorney", "solicitor", "legal-practice"],
   ["accounting", "accountant", "accountancy", "tax-accounting", "bookkeeping"],
   ["jewelry", "jewellery", "jewelery", "jeweler", "jeweller", "fine-jewelry", "fine-jewellery", "independent-jewelry", "designer-jewelry", "luxury-retail", "sculptural-accessories", "wearable-product"],
@@ -219,6 +219,15 @@ function referenceIdsForBusinessKind(repositoryRoot, industry) {
   if (GENERIC_BUSINESS_KINDS.has(target))
     throw new Error(
       `A specific business kind is required to select production references; '${industry}' is too broad.`,
+    );
+  const unsupportedKind = (collection.unsupportedBusinessKinds || []).find((item) =>
+    (Array.isArray(item.businessKinds) ? item.businessKinds : [])
+      .map(normalizeBusinessKind)
+      .includes(target),
+  );
+  if (unsupportedKind)
+    throw new Error(
+      `Business kind '${industry}' is explicitly unsupported for production reference selection (${unsupportedKind.id}): ${unsupportedKind.reason}`,
     );
   const exactNiches = collection.niches.filter((niche) =>
     [niche.id, niche.businessKind].map(normalizeBusinessKind).includes(target),

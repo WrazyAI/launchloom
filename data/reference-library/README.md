@@ -52,7 +52,8 @@ those four pools do not use licensed templates.
 The 96 core IDs are enumerated in `core-collection.json`. The core includes
 home services, dental, home care, fitness, restaurants, lodging,
 architecture/interior design, law firms, beauty/grooming, accounting, auto
-repair, HVAC, roofing, painting, real estate/property, and veterinary/pet care.
+repair, HVAC, roofing, painting, real estate/property, and veterinary
+practices.
 The new real-estate and veterinary pools each contain six permission-cleared
 direct-business captures with paired full-page desktop/mobile evidence and
 their own source-specific design prompts. The licensed Spicer roofing template
@@ -83,25 +84,29 @@ to the historical owned-study provenance record, not an asset-by-asset audit.
 
 The 16 core niches above are the only production reference pools in this
 collection. Descriptive or adjacent tags such as garage door, plumbing,
-landscaping, electrician, family dentistry, bistro, grooming, and tax adviser
-are aliases or service specialties, not independent pools; they may route to a
-core niche only when the business itself fits that niche. Broad onboarding
+landscaping, electrician, family dentistry, bistro, and tax adviser are aliases
+or service specialties, not independent pools; they may route to a core niche
+only when the business itself fits that niche. Veterinary references are
+specifically clinical: pet grooming, boarding, sitting, walking, training, and
+pet retail do not route to veterinary. Architecture/interior-design references
+do not route to general graphic or digital design studios. Broad onboarding
 categories such as wellness and professional services are intake buckets, not
 reference families. A skin-aesthetics intake left at the broad wellness kind
 has no production reference pool and fails closed.
 
-These distinct subjects have archive examples but no complete, production-
-supported reference pool: event/wedding venues, medical clinics, bicycle
-workshops, auto dealerships, jewelry, independent retail, and industrial
-contractors. The event invitation, medical clinic, dealership, and industrial
-contractor examples are licensed templates, not verified real-business sites.
-The bicycle workshop, jewelry, and independent retail examples include direct
-site captures. None of these subjects has six selected, verified business
-references. Architecture, fitness, auto repair, roofing, and plumbing also
-have archive entries, but these are adjacent to or within existing core niches;
+`core-collection.json` records unsupported near-neighbor kinds and why each
+must fail closed. Current gaps include event/wedding venues, general medical
+clinics, bicycle workshops, dealerships and ambiguous automotive labels,
+jewelry, independent retail, general graphic/digital design studios,
+non-clinical pet services, and industrial contractors. Several have archive
+examples, but those do not form a six-business production pool: licensed
+template demonstrations are not
+verified businesses, and one-off direct-site captures are not enough for a
+niche. Architecture, fitness, auto repair, roofing, and plumbing also have
+archive entries, but these are adjacent to or within existing core niches;
 their archive status does not create a new production pool.
 
-Real estate/property and veterinary/pet care now each have six curated
+Real estate/property and veterinary practice niches now each have six curated
 production reference dossiers. Generic "other" remains intentionally
 uncovered, rather than being filled with visually unrelated references. Keep
 that broad kind fail-closed until a specific business niche receives its own

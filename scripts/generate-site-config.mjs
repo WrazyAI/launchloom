@@ -22,6 +22,17 @@ import {
   selectExperienceVariantId,
 } from "../templates/client-site/src/lib/experience-pack.ts";
 
+const referenceCoverage = JSON.parse(
+  readFileSync(new URL("../data/reference-library/core-collection.json", import.meta.url), "utf8"),
+);
+const unsupportedBusinessKinds = new Set(
+  (referenceCoverage.unsupportedBusinessKinds || []).flatMap((entry) =>
+    (Array.isArray(entry.businessKinds) ? entry.businessKinds : []).map((kind) =>
+      String(kind).toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, ""),
+    ),
+  ),
+);
+
 export { parseModelJson } from "./model-json.mjs";
 
 function recentFingerprintsForSelection() {
@@ -640,6 +651,7 @@ function intakeFacts(intake) {
 
 function industryFor(intake) {
   const selected = industryKey(intake.industry);
+  if (unsupportedBusinessKinds.has(selected)) return "other";
   const explicitProfile = explicitBusinessProfile(intake);
   if (explicitProfile) return explicitProfile.industry;
   if (BROAD_INDUSTRIES.has(selected) && selected !== "other") return selected;
@@ -669,6 +681,8 @@ function industryFor(intake) {
 }
 
 function businessKindFor(intake, industry) {
+  const selected = industryKey(intake.industry);
+  if (unsupportedBusinessKinds.has(selected)) return selected;
   const profile = explicitBusinessProfile(intake) || businessProfileFromFacts(intake);
   return profile?.industry === industry ? profile.businessKind : industry;
 }

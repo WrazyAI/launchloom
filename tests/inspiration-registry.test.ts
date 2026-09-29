@@ -559,7 +559,19 @@ describe("inspiration registry", () => {
     }
   });
 
-  it.each(["automotive", "jewelry", "event-venue", "wellness", "healthcare"])("fails closed for the out-of-core %s niche rather than borrowing unrelated designs", (industry) => {
+  it.each(["automotive", "jewelry", "event-venue"])("reports the explicit coverage boundary for out-of-core %s", (industry) => {
+    expect(() => buildInspirationPack({
+      ...baseRequest,
+      industry,
+      recentReferenceIds: [],
+      recentRouteSignatures: [],
+    }, registry, {
+      repositoryRoot: path.resolve("."),
+      requireDossiers: true,
+    })).toThrow(/explicitly unsupported for production reference selection/iu);
+  });
+
+  it.each(["wellness", "healthcare"])("fails closed for the broad out-of-core %s bucket", (industry) => {
     expect(() => buildInspirationPack({
       ...baseRequest,
       industry,
@@ -585,7 +597,37 @@ describe("inspiration registry", () => {
     }, registry, {
       repositoryRoot: path.resolve("."),
       requireDossiers: true,
-    })).toThrow(/0 eligible dossier\(s\) matched to 'pet-care'/iu);
+    })).toThrow(/explicitly unsupported.*non-clinical-pet-services/iu);
+  });
+
+  it("fails closed for every machine-classified unsupported business kind", () => {
+    const core = JSON.parse(
+      fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"),
+    );
+    expect(core.unsupportedBusinessKinds).toHaveLength(7);
+    const unsupportedAliases = core.unsupportedBusinessKinds.flatMap(
+      (boundary: any) => boundary.businessKinds,
+    );
+    expect(new Set(unsupportedAliases).size).toBe(unsupportedAliases.length);
+    expect(
+      unsupportedAliases.some((kind: string) =>
+        core.niches.some((niche: any) => niche.businessKind === kind),
+      ),
+    ).toBe(false);
+    for (const boundary of core.unsupportedBusinessKinds) {
+      for (const industry of boundary.businessKinds) {
+        expect(() => buildInspirationPack({
+          ...baseRequest,
+          industry,
+          seed: `unsupported-${boundary.id}-${industry}`,
+        }, registry, {
+          repositoryRoot: path.resolve("."),
+          requireDossiers: true,
+        }), `${boundary.id}:${industry}`).toThrow(
+          `Business kind '${industry}' is explicitly unsupported for production reference selection (${boundary.id}): ${boundary.reason}`,
+        );
+      }
+    }
   });
 
   it.each(["auto-repair", "hvac", "roofing", "painting"])(

@@ -318,8 +318,22 @@ describe("site configuration", () => {
     });
 
     expect(config.industry).toBe("other");
-    expect(config.businessKind).toBe("other");
+    expect(config.businessKind).toBe("pet-care");
   });
+
+  it.each(["design-studio", "auto-dealership", "event-venue"])(
+    "preserves unsupported business kind %s so reference selection can fail with the correct gap",
+    (industry) => {
+      const config = normalise({}, {
+        businessName: "Independent Studio",
+        industry,
+        services: "Consultation and project planning",
+      });
+
+      expect(config.industry).toBe("other");
+      expect(config.businessKind).toBe(industry);
+    },
+  );
 
   it("does not classify a barber as a pet business because of grooming language", () => {
     const config = normalise({}, {
