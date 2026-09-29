@@ -48,10 +48,14 @@ an unconfirmed service.
 When DataForSEO credentials are absent, the generation workflow can use the
 already-configured `OPENROUTER_API_KEY` for a bounded live-search fallback.
 That path runs at most the configured number of queries (default 3, hard maximum
-5), caps each query at four web results, and stores only provider-returned URL
-citations: query, source URL, title, extracted snippet, retrieval time, provider,
-and provenance. Model-authored prose is discarded and is never treated as
-search evidence.
+5), caps each query at four web results, and stops when provider-reported spend
+reaches the fallback budget (default $0.05, hard maximum $0.25). If a completed
+request does not report cost, LaunchLoom keeps that request's cited evidence but
+does not issue another fallback query because the budget can no longer be
+enforced. The dossier records fallback spend and budget state separately from
+DataForSEO cost. It stores only provider-returned URL citations: query, source
+URL, title, extracted snippet, retrieval time, provider, and provenance.
+Model-authored prose is discarded and is never treated as search evidence.
 
 Fallback web observations remain separate from confirmed business facts and
 measured SEO fields. They do not create search volume, Keyword Difficulty,
@@ -86,6 +90,7 @@ GitHub Actions variables:
 - `SEO_RESEARCH_MAX_TASKS` defaults to `16`
 - `SEO_RESEARCH_MAX_USD` defaults to `0.25`
 - `SEO_FALLBACK_MAX_QUERIES` defaults to `3` and is hard-capped at `5`
+- `SEO_FALLBACK_MAX_USD` defaults to `0.05` and is hard-capped at `0.25`
 - `SEO_FALLBACK_SEARCH_MODEL` defaults to `openai/gpt-6-luna`
 - Optional location overrides: `SEO_RESEARCH_LOCATION_NAME` and
   `SEO_RESEARCH_LABS_LOCATION_NAME`
