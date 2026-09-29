@@ -1334,6 +1334,12 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       else await this.ctx.storage.setAlarm(Date.now() + (RUN_TIMEOUT_MS - age));
       return;
     }
+    if (active.status === "dispatched") {
+      if (age >= RUN_TIMEOUT_MS)
+        await this.markFailed(active, "Revision workflow did not claim the dispatched request.");
+      else await this.ctx.storage.setAlarm(Date.now() + (RUN_TIMEOUT_MS - age));
+      return;
+    }
     if (active.dispatch_attempts >= 3) {
       await this.markFailed(active, "Revision workflow could not be started.");
       return;
