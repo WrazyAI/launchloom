@@ -1206,6 +1206,21 @@ describe("structured image replacements on creative candidates", () => {
     expect(planned.ok).toBe(true);
   });
 
+  it("ignores the category prefix on a structured image note", async () => {
+    const planned = await planRevision(
+      [
+        item(
+          "[Hero image] Smoke test: replace the opening image with the selected generated photo.",
+        ),
+      ],
+      creative(),
+      async () => [],
+    );
+    expect(planned.results[0].intents).toEqual(["image"]);
+    expect(planned.results[0].status).toBe("fulfilled");
+    expect(planned.ok).toBe(true);
+  });
+
   it("still routes composition requests to the creative lane", async () => {
     const planned = await planRevision(
       [item("replace the hero image and make the layout bolder")],

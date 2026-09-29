@@ -180,6 +180,7 @@ const creativeVisualKeyword =
 // "replace the hero image" note. Composition, sizing, and non-image asks stay.
 function residualVisualRequest(feedback) {
   return clean(feedback, 4000)
+    .replace(/^\s*\[[^\]]+\]\s*/u, "")
     .split(/(?<=[.;!?])\s+/u)
     .map((clause) =>
       pureStructuredImageClause.test(clause) &&
