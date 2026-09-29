@@ -128,6 +128,7 @@ export function launchRecordFrom({
         route.referenceDna?.familyId,
       ]),
     ),
+    heroArchetypes: cleanList(routes.map((route) => route.heroArchetype)),
     referenceIds: cleanList(
       routes.flatMap((route) => [
         ...(Array.isArray(route.referenceIds) ? route.referenceIds : []),

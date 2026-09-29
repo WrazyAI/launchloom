@@ -683,5 +683,13 @@ describe("rendered reference fidelity", () => {
     });
     expect(result.pass).toBe(false);
     expect(result.minimumPairDistance).toBe(58);
+    expect(result.audit.pairs).toEqual([
+      expect.objectContaining({
+        left: "candidate-a",
+        right: "candidate-b",
+        distance: 58,
+        pass: false,
+      }),
+    ]);
   });
 });
