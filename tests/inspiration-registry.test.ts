@@ -6,7 +6,11 @@ import {
   buildInspirationPack,
   referenceStructuralDistance,
 } from "../scripts/inspiration-registry.mjs";
-import { assertReferenceDossierPack, loadReferenceDossier } from "../scripts/reference-dossier.mjs";
+import {
+  assertReferenceDossierMatchesRecord,
+  assertReferenceDossierPack,
+  loadReferenceDossier,
+} from "../scripts/reference-dossier.mjs";
 
 const registry = JSON.parse(
   fs.readFileSync(path.resolve("data/inspiration-registry.json"), "utf8"),
@@ -122,17 +126,34 @@ describe("inspiration registry", () => {
 
   it("varies the eligible trio across bounded seeds in every core niche", () => {
     const core = JSON.parse(fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"));
-    const options = { repositoryRoot: path.resolve("."), requireDossiers: true };
+    const repositoryRoot = path.resolve(".");
     for (const niche of core.niches) {
+      const nicheIds = new Set(niche.referenceIds);
+      const selectionRegistry = {
+        ...registry,
+        records: registry.records.map((record: any) => {
+          if (!nicheIds.has(record.id)) return record;
+          const dossier = loadReferenceDossier(record.dossierPath, { repositoryRoot });
+          expect(dossier.id, `${niche.id}:${record.id}`).toBe(record.id);
+          expect(dossier.productionEligible, `${niche.id}:${record.id}`).toBe(true);
+          expect(dossier.familyId, `${niche.id}:${record.id}`).toBe(
+            record.referenceFamilyId || record.familyId,
+          );
+          expect(dossier.source.rights, `${niche.id}:${record.id}`).toBe(record.rights);
+          assertReferenceDossierMatchesRecord(dossier, record, { repositoryRoot });
+          return { ...record, canonicalReferenceDna: dossier.referenceDna };
+        }),
+      };
+      const options = { repositoryRoot, requireDossiers: false };
       const sets = new Set<string>();
       for (const index of [1, 2, 3, 4, 5, 6]) {
         const request = { ...baseRequest, industry: niche.businessKind, styleTerms: [], seed: `rotation-${index}` };
-        const first = buildInspirationPack(request, registry, options);
-        const second = buildInspirationPack(request, registry, options);
-        expect(first.routes.map((route: any) => route.referenceDossier.id), niche.id).toEqual(
-          second.routes.map((route: any) => route.referenceDossier.id),
+        const first = buildInspirationPack(request, selectionRegistry, options);
+        const second = buildInspirationPack(request, selectionRegistry, options);
+        expect(first.routes.map((route: any) => route.referenceIds[0]), niche.id).toEqual(
+          second.routes.map((route: any) => route.referenceIds[0]),
         );
-        const ids = first.routes.map((route: any) => route.referenceDossier.id);
+        const ids = first.routes.map((route: any) => route.referenceIds[0]);
         expect(ids).toHaveLength(3);
         expect(new Set(ids).size, niche.id).toBe(3);
         expect(ids.every((id: string) => niche.referenceIds.includes(id)), niche.id).toBe(true);
