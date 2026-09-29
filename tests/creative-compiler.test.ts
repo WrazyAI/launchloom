@@ -69,6 +69,34 @@ describe("creative compiler", () => {
     })))).toThrow(/not independent/iu);
   });
 
+  it("allows distinct references to share a broad creative family", () => {
+    const contracts = assertIndependentRoutes(
+      routes.map((route, index) => ({
+        ...route,
+        familyId: "editorial-monument",
+        referenceFamilyId: `reference-${index + 1}`,
+      })),
+    );
+
+    expect(contracts.map((route) => route.familyId)).toEqual([
+      "editorial-monument",
+      "editorial-monument",
+      "editorial-monument",
+    ]);
+    expect(new Set(contracts.map((route) => route.fingerprint)).size).toBe(3);
+  });
+
+  it("rejects reusing the same source reference across distinct routes", () => {
+    const reusedReferenceRoutes = routes.map((route) => ({
+      ...route,
+      referenceFamilyId: "same-source-reference",
+    }));
+
+    expect(() => assertIndependentRoutes(reusedReferenceRoutes)).toThrow(
+      /reuse the same reference source/iu,
+    );
+  });
+
   it("reports pairwise distance and dimension diversity", () => {
     const candidates = routes.map((route, index) => ({
       id: `candidate-${index + 1}`,
