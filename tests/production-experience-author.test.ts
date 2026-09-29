@@ -1147,12 +1147,17 @@ describe("production experience author", () => {
   });
 
   it("keeps successful sibling candidates when one route fails", async () => {
+    const routeError = new Error("simulated route failure");
+    routeError.stack = [
+      "Error: simulated route failure",
+      `    at validateProductionCandidateFiles (${process.cwd()}/scripts/production-experience-author.mjs:1430:9)`,
+    ].join("\n");
     const result = await authorExperienceCandidates({
       site,
       inspirationPack,
       generate: async (request) => {
         if (request.route.id === "route-02" && request.stage === "experience")
-          throw new Error("simulated route failure");
+          throw routeError;
         return safeStage(request);
       },
     });
@@ -1163,6 +1168,8 @@ describe("production experience author", () => {
         routeId: "route-02",
         candidateId: "candidate-b",
         error: "simulated route failure",
+        stack:
+          "at validateProductionCandidateFiles (<workspace>/scripts/production-experience-author.mjs:1430:9)",
       },
     ]);
   });

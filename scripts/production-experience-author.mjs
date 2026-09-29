@@ -2064,6 +2064,16 @@ function createGenerationLimiter(generate, maxConcurrency = 2) {
     });
 }
 
+function safeAuthorFailureStack(error) {
+  if (!(error instanceof Error) || typeof error.stack !== "string")
+    return undefined;
+  const frames = error.stack
+    .split("\n")
+    .slice(1, 13)
+    .map((frame) => frame.trim().replaceAll(process.cwd(), "<workspace>"));
+  return frames.length ? frames.join("\n").slice(0, 2400) : undefined;
+}
+
 /**
  * Deep module interface for Phase 2 production authorship.
  *
@@ -2346,14 +2356,17 @@ export async function authorExperienceCandidates({
       candidates.push(result.value);
       continue;
     }
-    failures.push({
+    const failure = {
       routeId: routes[index].id,
       candidateId: `candidate-${String.fromCharCode(97 + index)}`,
       error:
         result.reason instanceof Error
           ? result.reason.message
           : String(result.reason),
-    });
+    };
+    const stack = safeAuthorFailureStack(result.reason);
+    if (stack) failure.stack = stack;
+    failures.push(failure);
   }
   if (!candidates.length)
     throw new Error(
