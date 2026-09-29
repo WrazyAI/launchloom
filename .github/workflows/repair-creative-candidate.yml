@@ -274,6 +274,60 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/wait-for-pages-preview.mjs" --url "$PREVIEW"
           echo "url=$PREVIEW" >> "$GITHUB_OUTPUT"
 
+      - name: Register the final diagnostic preview for human review
+        id: diagnostic_review
+        if: always() && steps.diagnostic_preview.outputs.url != ''
+        continue-on-error: true
+        env:
+          CLIENT_DIR: ${{ steps.client.outputs.dir }}
+          CLIENT_REPO: ${{ github.event.client_payload.repo }}
+          CLIENT_PR: ${{ github.event.client_payload.pr }}
+          SITE_ID: ${{ steps.input.outputs.site_id }}
+          CANDIDATE: ${{ steps.input.outputs.candidate }}
+          DIAGNOSTIC_URL: ${{ steps.diagnostic_preview.outputs.url }}
+          CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}
+          FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
+        run: |
+          cd "$CLIENT_DIR"
+          HEAD_SHA=$(git rev-parse HEAD)
+          test -n "$CLIENT_EMAIL" || { echo "The signed client review email is required to register the diagnostic preview." >&2; exit 1; }
+          [[ "$FEEDBACK_ISSUE" =~ ^[1-9][0-9]*$ ]] || { echo "The signed feedback issue is required to register the diagnostic preview." >&2; exit 1; }
+          OVERRIDE_SESSION_ID=$(printf '%s' "$CLIENT_REPO:$CLIENT_PR:$HEAD_SHA:$CANDIDATE:diagnostic-review" | sha256sum | cut -c1-32)
+          TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" \
+            --stage developer \
+            --repo "$CLIENT_REPO" \
+            --pr "$CLIENT_PR" \
+            --sha "$HEAD_SHA" \
+            --site "$SITE_ID" \
+            --email "$LAUNCHLOOM_DEVELOPER_EMAIL" \
+            --client-email "$CLIENT_EMAIL" \
+            --feedback-issue "$FEEDBACK_ISSUE" \
+            --origins "$DIAGNOSTIC_URL,https://$SITE_ID.pages.dev" \
+            --preview-url "$DIAGNOSTIC_URL" \
+            --creative-repair-session "$OVERRIDE_SESSION_ID" \
+            --token-only true)
+          REVIEW_URL="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
+          SEND_ANYWAY_URL="$DIAGNOSTIC_URL?review=$TOKEN"
+          FINDINGS=$(jq -c '.findings // []' .launchloom/creative-recovery.json)
+          SESSION_JSON=$(jq -n \
+            --arg repo "$CLIENT_REPO" \
+            --arg session "$OVERRIDE_SESSION_ID" \
+            --argjson pr "$CLIENT_PR" \
+            --arg site "$SITE_ID" \
+            --arg sha "$HEAD_SHA" \
+            --arg candidate "$CANDIDATE" \
+            --arg preview "$DIAGNOSTIC_URL" \
+            --argjson findings "$FINDINGS" \
+            '{action:"register",repo:$repo,sessionId:$session,session:{sessionId:$session,repo:$repo,pr:$pr,siteId:$site,headSha:$sha,candidateId:$candidate,repairAvailable:false,previewUrl:$preview,findings:$findings}}')
+          curl --fail-with-body --silent --show-error \
+            -X POST "$LAUNCHLOOM_API_URL/api/internal/creative-repairs" \
+            -H "Authorization: Bearer $REVISION_COORDINATOR_SECRET" \
+            -H "Content-Type: application/json" \
+            --data "$SESSION_JSON" > "$RUNNER_TEMP/final-diagnostic-registration.json"
+          jq -e '.status == "available" and .repairAvailable == false' "$RUNNER_TEMP/final-diagnostic-registration.json" >/dev/null
+          echo "review_url=$REVIEW_URL" >> "$GITHUB_OUTPUT"
+          echo "send_anyway_url=$SEND_ANYWAY_URL" >> "$GITHUB_OUTPUT"
+
       - name: Return the final result to the developer
         id: finish
         if: always() && steps.claim.outputs.run == 'true'
@@ -287,11 +341,15 @@ jobs:
           SITE_ID: ${{ steps.input.outputs.site_id }}
           REPAIR_RESULT: ${{ steps.repair.outputs.result }}
           PROMOTION_READY: ${{ steps.quality.outputs.promotion_ready }}
+          OVERRIDE_REVIEW_URL: ${{ steps.diagnostic_review.outputs.review_url }}
+          SEND_ANYWAY_URL: ${{ steps.diagnostic_review.outputs.send_anyway_url }}
+          CLIENT_EMAIL: ${{ github.event.client_payload.clientEmail }}
+          FEEDBACK_ISSUE: ${{ github.event.client_payload.feedbackIssue }}
         run: |
           cd "$CLIENT_DIR"
           if [ "$REPAIR_RESULT" = passed ] && [ "$PROMOTION_READY" = true ] && [ -n "$PREVIEW_URL" ]; then
-            CLIENT_EMAIL=$(node -e 'const x=require(process.argv[1]); console.log(x.business.email || x.business.leadEmail || "")' "$PWD/src/site.config.json")
-            FEEDBACK_ISSUE=$(gh issue list --repo "$CLIENT_REPO" --state open --label launchloom-client-feedback --limit 1 --json number --jq '.[0].number // 0')
+            test -n "$CLIENT_EMAIL" || { echo "The signed client review email is required to issue the repaired developer review." >&2; exit 1; }
+            [[ "$FEEDBACK_ISSUE" =~ ^[1-9][0-9]*$ ]] || { echo "The signed feedback issue is required to issue the repaired developer review." >&2; exit 1; }
             ORIGINS="$PREVIEW_URL,https://$SITE_ID.pages.dev"
             TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage developer --repo "$CLIENT_REPO" --pr "$CLIENT_PR" --sha "$(git rev-parse HEAD)" --site "$SITE_ID" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$ORIGINS" --preview-url "$PREVIEW_URL" --token-only true)
             REVIEW_URL="${LAUNCHLOOM_PLATFORM_URL:-https://launchloom.wrazyos.com}/review?token=$TOKEN"
@@ -304,14 +362,14 @@ jobs:
           else
             OUTCOME=needs-attention
             RESULT_PREVIEW="$DIAGNOSTIC_URL"
-            RESULT_REVIEW=""
+            RESULT_REVIEW="$OVERRIDE_REVIEW_URL"
             if [ -n "$DIAGNOSTIC_URL" ]; then
               gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-creative-repair-result -->\n\n## Final creative repair needs attention\n\nThe one allowed repair completed, but the result still did not clear all promotion checks. This diagnostic preview is noindex and cannot be approved or published.\n\nDiagnostic preview: $DIAGNOSTIC_URL"
             else
               gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "<!-- launchloom-creative-repair-result -->\n\n## Final creative repair needs attention\n\nThe one allowed repair did not produce a hard-check-safe diagnostic preview. The report and source are preserved in this private repository; no site was published."
             fi
             printf 'The single final repair did not pass all required checks. No automatic approval or client publication occurred.\n' > "$RUNNER_TEMP/creative-repair-outcome.txt"
-            node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$SITE_ID" --preview "${RESULT_PREVIEW:-https://github.com/$CLIENT_REPO/pull/$CLIENT_PR}" --review "https://github.com/$CLIENT_REPO/pull/$CLIENT_PR" --kind revision --audience manual-attention --outcome-file "$RUNNER_TEMP/creative-repair-outcome.txt" --idempotency-key "creative-repair-$SESSION_ID"
+            node "$GITHUB_WORKSPACE/scripts/send-preview-email.mjs" --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$SITE_ID" --preview "${RESULT_PREVIEW:-https://github.com/$CLIENT_REPO/pull/$CLIENT_PR}" --review "${RESULT_REVIEW:-https://github.com/$CLIENT_REPO/pull/$CLIENT_PR}" --send-anyway-url "$SEND_ANYWAY_URL" --kind revision --audience manual-attention --outcome-file "$RUNNER_TEMP/creative-repair-outcome.txt" --idempotency-key "creative-repair-$SESSION_ID"
           fi
           BODY=$(jq -n --arg repo "$CLIENT_REPO" --arg session "$SESSION_ID" --arg outcome "$OUTCOME" --arg preview "$RESULT_PREVIEW" --arg review "$RESULT_REVIEW" '{action:"complete",repo:$repo,sessionId:$session,outcome:$outcome,previewUrl:(if $preview == "" then null else $preview end),reviewUrl:(if $review == "" then null else $review end)}')
           if [ "$OUTCOME" = needs-attention ] && [ -s .launchloom/creative-recovery.json ]; then

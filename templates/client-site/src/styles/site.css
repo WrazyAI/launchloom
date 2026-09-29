@@ -1683,6 +1683,107 @@ h2 {
     Arial,
     sans-serif;
 }
+.ll-review--diagnostic {
+  background: #fff7e7;
+  color: #402d13;
+  border-bottom: 1px solid #e6c27e;
+  box-shadow: 0 4px 18px #1a24151a;
+}
+.ll-review--diagnostic .ll-review__bar {
+  width: min(1320px, calc(100% - 32px));
+  min-height: 56px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 18px;
+  padding: 10px 0;
+}
+.ll-review--diagnostic .ll-review__summary {
+  color: #532f00;
+  font-weight: 850;
+}
+.ll-review__field-notice {
+  flex: 1 1 220px;
+  margin: 0;
+  color: #624719;
+  font-size: 12px;
+  font-weight: 550;
+}
+.ll-review__actions {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.ll-send-anyway {
+  border: 1px solid #7f2118;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #982e23;
+  color: #fff;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+.ll-send-anyway:hover:not(:disabled) {
+  background: #742018;
+}
+.ll-send-anyway:focus-visible,
+.ll-override-dialog button:focus-visible {
+  outline: 3px solid #173f74;
+  outline-offset: 3px;
+}
+.ll-send-anyway:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+.ll-override-dialog {
+  width: min(540px, calc(100vw - 32px));
+  max-width: none;
+  padding: 0;
+  border: 1px solid #d8ded7;
+  border-radius: 18px;
+  color: #18251f;
+  box-shadow: 0 24px 90px #07100b55;
+}
+.ll-override-dialog::backdrop {
+  background: #07100bcc;
+  backdrop-filter: blur(3px);
+}
+.ll-override-dialog__content {
+  padding: clamp(22px, 5vw, 32px);
+}
+.ll-override-dialog h2 {
+  margin: 0 0 10px;
+  font: 800 clamp(1.35rem, 4vw, 1.8rem)/1.1 Inter, Arial, sans-serif;
+  letter-spacing: -0.04em;
+}
+.ll-override-dialog p {
+  color: #5c6f69;
+  font: 500 0.9rem/1.55 Inter, Arial, sans-serif;
+}
+.ll-override-dialog .ll-override-status {
+  min-height: 1.3em;
+  color: #532f00;
+  font-weight: 700;
+}
+.ll-override-dialog button {
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font: 750 0.78rem/1.2 Inter, Arial, sans-serif;
+  cursor: pointer;
+}
+.ll-override-cancel {
+  border: 1px solid #c8d3c9;
+  background: #fff;
+  color: #253b32;
+}
+.ll-override-confirm {
+  border: 1px solid #7f2118;
+  background: #982e23;
+  color: #fff;
+}
+.ll-override-confirm:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
 .ll-review[hidden],
 .ll-review__modal[hidden] {
   display: none !important;
@@ -1957,6 +2058,24 @@ h2 {
   }
   .ll-review__actions {
     flex-shrink: 0;
+  }
+  .ll-review--diagnostic .ll-review__bar {
+    width: calc(100% - 24px);
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+  .ll-review--diagnostic .ll-review__summary,
+  .ll-review--diagnostic .ll-review__field-notice,
+  .ll-review--diagnostic .ll-review__actions {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .ll-review--diagnostic .ll-review__actions {
+    flex-shrink: 1;
+  }
+  .ll-review--diagnostic .ll-review__actions button {
+    white-space: normal;
+    text-align: left;
   }
   .ll-approve,
   .ll-feedback-open {
