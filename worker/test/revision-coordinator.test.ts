@@ -169,6 +169,50 @@ describe("RevisionCoordinator", () => {
     expect(dispatchCount).toBe(1);
   });
 
+  it("surfaces terminal dispatch failure only after bounded retries", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("dispatch-exhaustion-test");
+    network.use(
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        () => {
+          dispatchCount += 1;
+          return HttpResponse.json({ message: "dispatch unavailable" }, { status: 503 });
+        },
+      ),
+    );
+
+    await expect(
+      coordinator.enqueue(request("request-dispatch-fail", "Keep this draft safe.")),
+    ).resolves.toMatchObject({
+      ok: true,
+      queueStatus: "started",
+    });
+    expect(dispatchCount).toBe(1);
+    expect(failureEmails).toHaveLength(0);
+
+    await runInDurableObject(coordinator, async (instance, state) => {
+      await instance.alarm();
+      await instance.alarm();
+      let row = state.storage.sql.exec<{ status: string; dispatch_attempts: number }>(
+        "SELECT status, dispatch_attempts FROM revision_requests WHERE request_id = ?",
+        "request-dispatch-fail",
+      ).toArray()[0];
+      expect(row).toEqual({ status: "dispatching", dispatch_attempts: 3 });
+
+      await instance.alarm();
+      row = state.storage.sql.exec<{ status: string; dispatch_attempts: number }>(
+        "SELECT status, dispatch_attempts FROM revision_requests WHERE request_id = ?",
+        "request-dispatch-fail",
+      ).toArray()[0];
+      expect(row).toEqual({ status: "failed", dispatch_attempts: 3 });
+    });
+
+    expect(dispatchCount).toBe(3);
+    expect(failureEmails).toHaveLength(1);
+    expect(String(failureEmails[0].text)).toContain("Revision workflow could not be started.");
+    expect(String(failureEmails[0].text)).toContain("Open reviewed website: https://review.example.pages.dev/");
+  });
+
   it("rate limits AI chat per visitor and resets the window", async () => {
     const coordinator = env.REVISION_COORDINATOR.getByName("ai-rate-test");
     for (let count = 0; count < 12; count += 1)
