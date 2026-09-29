@@ -230,6 +230,7 @@ jobs:
         env:
           REVISION_QUEUE_ACTION: fail
           REVISION_FAILURE_SITE_URL: ${{ steps.deploy.outputs.preview || github.event.client_payload.reviewedPage }}
+          REVISION_FAILURE_RUN_URL: https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}
         run: |
           DETAILS=$(test -f "$RUNNER_TEMP/revision-outcome.txt" && tr '\n' ' ' < "$RUNNER_TEMP/revision-outcome.txt" || printf '%s' 'No validated revision outcome was produced.')
           export REVISION_FAILURE_REASON="Client revision workflow failed. $DETAILS Inspect GitHub Actions run ${{ github.run_id }}."
