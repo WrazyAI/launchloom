@@ -53,6 +53,24 @@ function candidateFindings(candidate) {
   ]);
 }
 
+function candidateDiversityFinding(report, candidateId) {
+  const diversity = report?.visualDiversity;
+  if (!diversity) return "";
+  const pairs = (diversity.pairs || []).filter(
+    (pair) => pair.left === candidateId || pair.right === candidateId,
+  );
+  if (!pairs.length && diversity.pass !== false) return "";
+  if (!pairs.length)
+    return `Rendered candidate diversity failed: ${diversity.summary || "the candidates share too much visual grammar"}. Preserve this candidate's assigned reference and make its composition distinct from its siblings.`;
+  return pairs.map((pair) => {
+    const sibling = pair.left === candidateId ? pair.right : pair.left;
+    const reason = pair.reason || diversity.summary || "the candidate set has converged";
+    return diversity.pass === false
+      ? `Rendered diversity failed at ${pair.distance ?? "unknown"}/100 against sibling ${sibling}. Make this candidate's reference-led composition more distinct; do not converge toward the sibling. Evidence: ${reason}`
+      : `Rendered diversity currently passes at ${pair.distance ?? "unknown"}/100 against sibling ${sibling}. Preserve or increase this candidate's distinct design grammar; do not converge toward the sibling. Evidence: ${reason}`;
+  }).join("\n");
+}
+
 function gateFindings(report) {
   return (report?.audit?.findings || []).map((item) => ({
     category: item.category,
@@ -815,8 +833,13 @@ export async function runRenderedCreativeRepair({
       let repairedAny = false;
       let rejectedAny = false;
       for (const candidate of candidates) {
+        const diversityFinding = candidateDiversityFinding(
+          report,
+          candidate.candidateId,
+        );
         const findings = [
           ...candidateFindings(candidate),
+          ...(diversityFinding ? [diversityFinding] : []),
           ...(humanRepairPending ? humanFindings : []),
         ];
         const repaired = await repair(
@@ -907,6 +930,9 @@ export async function runRenderedCreativeRepair({
         selectedId,
         [
           ...candidateFindings(reportCandidate(report, selectedId)),
+          ...(candidateDiversityFinding(report, selectedId)
+            ? [candidateDiversityFinding(report, selectedId)]
+            : []),
           ...gateFindings(visualGate),
         ],
         "selected-visual-gate",
@@ -943,6 +969,9 @@ export async function runRenderedCreativeRepair({
           selectedId,
           [
             ...humanFindings,
+            ...(candidateDiversityFinding(report, selectedId)
+              ? [candidateDiversityFinding(report, selectedId)]
+              : []),
             ...(humanGate.audit?.findings || []).map((finding) => ({
               category: finding.category,
               message: finding.evidence,

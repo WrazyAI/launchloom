@@ -1042,6 +1042,121 @@ export default function Experience({ content, runtime }) {
     expect(result.promotionReady).toBe(true);
   });
 
+  it("preserves passing sibling diversity while repairing preview candidates", async () => {
+    const { root, candidates } = await fixture();
+    let bakeoffCalls = 0;
+    const repairs: Array<{ candidateId: string; findings: string[] }> = [];
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                promotionReady: false,
+                candidates: [
+                  candidate("candidate-a", { valid: false, eligible: false }),
+                  candidate("candidate-b", { valid: false, eligible: false }),
+                ],
+                visualDiversity: {
+                  pass: true,
+                  pairs: [
+                    {
+                      left: "candidate-a",
+                      right: "candidate-b",
+                      distance: 78,
+                      pass: true,
+                      reason:
+                        "A is a dark full-bleed editorial stage; B is a light menu-led service index.",
+                    },
+                  ],
+                },
+              })
+            : report(),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ candidateId, findings }: any) => {
+        repairs.push({ candidateId, findings });
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(repairs.map((repair) => repair.candidateId).sort()).toEqual([
+      "candidate-a",
+      "candidate-b",
+    ]);
+    for (const repair of repairs) {
+      expect(repair.findings.join("\n")).toContain("sibling");
+      expect(repair.findings.join("\n")).toMatch(/preserve/iu);
+      expect(repair.findings.join("\n")).toContain("full-bleed editorial stage");
+    }
+  });
+
+  it("passes failed sibling diversity into preview candidate repairs", async () => {
+    const { root, candidates } = await fixture();
+    let bakeoffCalls = 0;
+    const repairs: Array<{ candidateId: string; findings: string[] }> = [];
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 1,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                promotionReady: false,
+                candidates: [
+                  candidate("candidate-a", { valid: false, eligible: false }),
+                  candidate("candidate-b", { valid: false, eligible: false }),
+                ],
+                visualDiversity: {
+                  pass: false,
+                  summary: "Both candidates collapsed into a split hero.",
+                  pairs: [
+                    {
+                      left: "candidate-a",
+                      right: "candidate-b",
+                      distance: 34,
+                      pass: false,
+                      reason: "Both use the same split-hero grammar.",
+                    },
+                  ],
+                },
+              })
+            : report(),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ candidateId, findings }: any) => {
+        repairs.push({ candidateId, findings });
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(repairs).toHaveLength(2);
+    for (const repair of repairs) {
+      expect(repair.findings.join("\n")).toMatch(/diversity failed at 34\/100/iu);
+      expect(repair.findings.join("\n")).toContain("sibling");
+      expect(repair.findings.join("\n")).toContain("split-hero grammar");
+    }
+  });
+
   it("repairs the selected candidate when promotion is blocked without diversity pairs", async () => {
     const { root, candidates } = await fixture();
     let bakeoffCalls = 0;
