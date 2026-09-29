@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
 import { compressImage } from "../lib/compress-image";
 
@@ -147,6 +147,7 @@ export default function FeedbackParts({
   const [advanced, setAdvanced] = useState(false);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const submissionId = useRef("");
 
   const togglePart = (id: PartId) => {
     setMessage("");
@@ -329,6 +330,7 @@ export default function FeedbackParts({
       setMessage("Add a note, an image, or a color first.");
       return;
     }
+    submissionId.current ||= crypto.randomUUID();
     setSubmitting(true);
     setMessage("Sending your request…");
     try {
@@ -340,7 +342,7 @@ export default function FeedbackParts({
           ...(creative ? { action: "feedback" } : {}),
           email: reviewerEmail,
           pageUrl,
-          submissionId: crypto.randomUUID(),
+          submissionId: submissionId.current,
           comment: textLines.join("\n"),
           category: active.map(labelFor).join(", ").slice(0, 80),
           details: { attachments, colors: selectedColors },
@@ -361,6 +363,7 @@ export default function FeedbackParts({
       setShowName(false);
       setColors(initialColors());
       setMessage("");
+      submissionId.current = "";
       onSubmitted({ ok: true, queueStatus: data.queueStatus });
     } catch {
       setMessage("The request could not be sent. Please try again.");
