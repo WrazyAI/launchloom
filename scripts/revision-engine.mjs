@@ -144,7 +144,7 @@ const colorRequest = /\b(colou?rs?|color palette|palette|brand colors?)\b/i;
 const broadLayoutRequest =
   /\b(?:redesign|rework|refresh|improve|change|update|revise|strengthen)\b.{0,60}\b(?:layout|page structure|visual hierarchy|composition)\b|\b(?:layout|page structure|visual hierarchy|composition)\b.{0,60}\b(?:redesign|rework|refresh|improve|change|update|revise|strengthen)\b/i;
 const globalLayoutScope =
-  /\b(?:globally|site[- ]wide|throughout (?:the )?(?:site|page)|across (?:the )?(?:whole|entire) (?:site|page)|all sections)\b/i;
+  /\b(?:globally|site[- ]wide|page[- ]wide|whole (?:website|site|page)|entire (?:website|site|page)|throughout (?:the )?(?:site|page|website)|across (?:the )?(?:whole|entire) (?:site|page|website)|all sections|every section|across the board|overall (?:website|site|page|layout|composition|design|look|style))\b/i;
 const scopedLayoutRequest =
   /\b(?:layout|composition|spacing|spacious|compact|density|tight(?:er)?|gaps?|font|typography|variant|center(?:ed)?|align(?:ment|ed)?|move|reorder|above|below|before|after|hide|remove|show|add|include|enable|disable|style|visual|imagery|premium|cinematic|asymmetrical|editorial|practical|featured|problem[- ]led|immersive|guided|quiet|numbered|cards?|work|local|consultation)\b/i;
 const layoutRequest =
@@ -446,16 +446,43 @@ function mentionedSection(text) {
       new RegExp(`\\b${alias.replace(" ", "\\s+")}s?\\b`).test(lowered),
     )?.[1];
 }
-function mentionedSections(text) {
+function explicitSectionScope(alias, text) {
+  const aliasPattern = alias
+    .split(/\s+/)
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("[-\\s]+");
+  const sectionTarget = `(?:the\\s+)?${aliasPattern}(?:\\s+(?:section|area|block))?`;
+  const action =
+    "(?:make|keep|change|update|adjust|tighten|loosen|space|center|centre|align|move|reorder|hide|remove|show|add|include|enable|disable|style|redesign|rework|refresh|simplify|improve|condense|expand|widen|narrow|reduce|increase)";
+  const layoutTerm =
+    "(?:layout|composition|spacing|spacious|compact|density|tight(?:er)?|gaps?|font|typography|variant|center(?:ed)?|align(?:ment|ed)?|style|visual|imagery|premium|cinematic|asymmetrical|editorial|practical|featured|problem[- ]led|immersive|guided|quiet|numbered|cards?|work|local|consultation)";
+  const patterns = [
+    new RegExp(`\\b${action}\\s+${sectionTarget}\\b`, "i"),
+    new RegExp(
+      `\\b(?:use|apply|give)\\b[^.!?;\\n]{0,45}\\b${layoutTerm}\\b[^.!?;\\n]{0,35}\\b(?:in|for|on|around|within)\\s+${sectionTarget}\\b`,
+      "i",
+    ),
+    new RegExp(
+      `\\b${sectionTarget}\\s+(?:should|needs?\\s+to|must|could|can|is|feels?|looks?|seems?)\\s+(?:be\\s+)?(?:more|less|too|very|tighter|looser|centered|centred|compact|spacious|practical|editorial|featured|immersive|quiet|numbered)\\b`,
+      "i",
+    ),
+    new RegExp(
+      `\\b${layoutTerm}\\b[^.!?;\\n]{0,35}\\b(?:in|for|on|around|within|of)\\s+${sectionTarget}\\b`,
+      "i",
+    ),
+    new RegExp(
+      `\\b(?:in|within|around|for|on)\\s+${sectionTarget}\\b[^.!?;\\n]{0,60}\\b${layoutTerm}\\b`,
+      "i",
+    ),
+  ];
+  return patterns.some((pattern) => pattern.test(text));
+}
+function explicitlyScopedSections(text) {
   const lowered = String(text || "").toLowerCase();
   return [
     ...new Set(
       [...SECTION_ALIASES.entries()]
-        .filter(([alias]) =>
-          new RegExp(`\\b${alias.replace(" ", "\\s+")}s?\\b`).test(
-            lowered,
-          ),
-        )
+        .filter(([alias]) => explicitSectionScope(alias, lowered))
         .map(([, type]) => type),
     ),
   ];
@@ -463,7 +490,20 @@ function mentionedSections(text) {
 function scopedLayoutSections(feedback) {
   if (broadLayoutRequest.test(feedback) || globalLayoutScope.test(feedback))
     return [];
-  return mentionedSections(feedback);
+  return explicitlyScopedSections(feedback);
+}
+function wholePhraseContains(text, phrase) {
+  const tokens = (value) =>
+    String(value || "")
+      .toLocaleLowerCase()
+      .match(/[\p{L}\p{N}]+/gu) || [];
+  const phraseTokens = tokens(phrase);
+  const textTokens = tokens(text);
+  if (!phraseTokens.length || phraseTokens.length > textTokens.length)
+    return false;
+  return textTokens.some((_, start) =>
+    phraseTokens.every((token, offset) => textTokens[start + offset] === token),
+  );
 }
 function requestedSectionVariant(feedback, sectionType) {
   const variants = [...(SECTION_VARIANTS[sectionType] || [])].sort(
@@ -776,18 +816,22 @@ function intentsFor(feedback, config) {
 }
 function explicitContentTargets(feedback, config) {
   const text = feedback.replace(/^\s*\[[^\]]+\]\s*/, "");
-  const exactFields = COPY_FIELD_TARGETS.filter(([, pattern]) =>
-    pattern.test(text),
+  const namedServices = (config.services || []).filter(
+    (service) =>
+      service &&
+      [service.name, service.slug]
+        .filter((value) => String(value || "").trim())
+        .some((value) => wholePhraseContains(text, value)),
+  );
+  const specificServiceDescription =
+    namedServices.length > 0 &&
+    /\bservice (?:copy|wording|description|card)\b/i.test(text);
+  const exactFields = COPY_FIELD_TARGETS.filter(
+    ([field, pattern]) =>
+      pattern.test(text) &&
+      !(field === "servicesIntro" && specificServiceDescription),
   ).map(([field]) => field);
   const targets = exactFields.map((field) => ({ kind: "copy-field", field }));
-
-  const namedServices = (config.services || []).filter((service) =>
-    [service.name, service.slug]
-      .filter(Boolean)
-      .some((value) =>
-        text.toLowerCase().includes(String(value).toLowerCase()),
-      ),
-  );
   for (const service of namedServices)
     targets.push({
       kind: "service",

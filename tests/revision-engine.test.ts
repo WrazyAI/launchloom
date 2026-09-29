@@ -713,6 +713,85 @@ describe("revision operations", () => {
     });
   });
 
+  it("keeps incidental service mentions from narrowing a page-wide spacing request", () => {
+    const operations = deterministicOperations(
+      "Make the page more spacious; my service has flexible hours.",
+      config(),
+    );
+
+    expect(operations).toContainEqual(
+      expect.objectContaining({
+        kind: "set_design_treatment",
+        density: "spacious",
+      }),
+    );
+  });
+
+  it("keeps an explicit whole-page request global when it names a section as context", () => {
+    const operations = deterministicOperations(
+      "Make the whole page more spacious, especially the services section.",
+      config(),
+    );
+
+    expect(operations).toContainEqual(
+      expect.objectContaining({
+        kind: "set_design_treatment",
+        density: "spacious",
+      }),
+    );
+  });
+
+  it("does not treat substrings or empty service names as named-service targets", async () => {
+    const draft = config();
+    draft.services = [
+      { name: "AC", slug: "ac-repair" },
+      { name: "", slug: "" },
+    ];
+    const planned = await planRevision(
+      ["Change the contact heading to Request a conversation."],
+      draft,
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "set_copy",
+          field: "contactHeading",
+          value: "Request a conversation",
+        },
+      ],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "fulfilled",
+      fulfilled: ["content"],
+    });
+    expect(planned.config.copy.contactHeading).toBe("Request a conversation");
+  });
+
+  it("matches a specifically named service as a whole phrase", async () => {
+    const draft = config();
+    draft.services = [{ name: "Brake Repair", slug: "brake-repair" }];
+    const planned = await planRevision(
+      ["Shorten the Brake Repair service description."],
+      draft,
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "set_service_copy",
+          serviceSlug: "brake-repair",
+          description: "A clear diagnostic and repair plan for your brakes.",
+        },
+      ],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "fulfilled",
+      fulfilled: ["content"],
+    });
+    expect(planned.config.services[0].description).toContain("diagnostic");
+  });
+
   it("does not fulfill a section-specific request with an unrelated section edit", async () => {
     const planned = await planRevision(
       ["Use a more practical layout for the FAQ section."],
