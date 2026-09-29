@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "web-veterinary-veg-emergency",
+  "productionEligible": false,
+  "referenceName": "High-urgency animal emergency service with signal-red wayfinding",
+  "familyId": "veterinary-emergency-signal-wayfinding",
+  "businessKinds": ["veterinary emergency hospital", "urgent veterinary care", "animal hospital", "pet emergency clinic"],
+  "source": {
+    "name": "VEG ER for Pets official website",
+    "url": "https://www.veg.com/",
+    "sourceType": "official direct veterinary-business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-29 covers retaining the paired desktop/mobile full-page captures, deriving a design prompt, and using these captures as internal pipeline-model visual references. No source-owner grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": ["rights/business-verification.md", "rights/capture-record.md"]
+  },
+  "tags": {
+    "business": ["veterinary emergency", "urgent pet care", "animal hospital", "after-hours veterinary"],
+    "style": ["high-contrast urgent utility", "heavy condensed display", "signal-color typography", "bright white ground"],
+    "composition": ["emergency-first hero", "location finder", "oversized metric chapter", "reason-to-trust columns", "review and editorial rails"],
+    "conversion": ["find nearest emergency hospital", "call or walk in", "urgent service guide"],
+    "motion": ["horizontal review rail", "minimal motion", "reduced-motion complete"],
+    "imagery": ["real emergency-care scenes", "pet portraits", "compact editorial article cards", "reference evidence only"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 1000}},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}}
+  },
+  "referenceDna": {
+    "annotatedDescription": "The emergency-veterinary page prioritizes action through a compact navigation line, a highly visible emergency headline, short urgency context, and a location-entry control. A second image-and-copy chapter establishes scope, followed by four scannable reassurance points, a very large evidence-led metric treatment, explanatory text, review excerpts, an external-coverage wordmark field, an educational article rail, and a black utility footer. The typography is assertive uppercase grotesk with one signal-red accent used for selected words and action labels. Translate the order, speed of scanning, location action, and contrast behavior using verified facts and original assets. Do not reuse the source logo, its numerical claims, testimonials, press marks, photographs, specific red, or branded expression.",
+    "heroGeometry": {"mode": "emergency poster paired with a clinic scene and immediate location lookup", "alignment": "asymmetric two-column opening", "viewport": "urgent service and location action are legible in the first screen"},
+    "navigationGeometry": {"mode": "small wordmark, compressed service links, and a simple mobile menu", "placement": "top edge", "mobile": "menu icon above a vertically stacked emergency headline and finder"},
+    "typography": {"display": "heavy compact grotesk", "body": "neutral readable sans", "scale": "short stacked caps, sharp section labels, rare oversized evidence numerals"},
+    "palette": {"surfaces": ["clean white", "deep black"], "ink": "near-black", "accents": ["high-energy warm signal", "restrained cool metric tone"], "contrastIntent": "emergency actions and essential text remain clear without relying on color alone"},
+    "imageTreatment": {"mode": "documentary care image with short supporting pet portraits", "crop": "rounded rectangular opening image and modular article crops", "focalPoint": "show the animal and care context; never put urgent instructions over a busy image"},
+    "sectionSequence": ["emergency poster and finder", "scope image chapter", "care principles", "evidence metric", "approach statement", "review rail", "external mention strip", "education articles", "contact footer"],
+    "servicePresentation": {"pattern": "problem and care-scope explanation followed by four concise decision principles", "interaction": "location finder and optional review/article rails; no required gated interaction"},
+    "ctaPlacement": {"primary": "locate an open emergency service", "secondary": "call or view care scope", "early": "find-care action appears beside the opening promise"},
+    "motion": {"primitive": "limited horizontal testimonial or article navigation", "library": "native CSS or framework primitives; no source scripts", "reducedMotion": "provide standard previous/next controls and static visible cards"},
+    "mobileRecomposition": {"strategy": "collapse to emergency headline, locator, image, then short explanatory chapters", "rules": ["keep emergency contact or location action before nonessential content", "stack the four decision principles instead of shrinking them", "use clipped rails only with visible controls and keyboard access", "avoid tiny trust marks and dense legal text in the primary reading path"]},
+    "prohibitedPatterns": ["copying the source wordmark, exact red treatment, photographs, reviews, press logos, statistics, copy, or claims", "using emergency or 24-hour availability unless client facts confirm it", "fake medical authority or urgency language", "using external ratings as invented proof", "decorative counters that imply business results"],
+    "requiredSignatureElements": [
+      {"id": "urgent-location-poster", "selector": "[data-reference-signature=urgent-location-poster]", "description": "A short, visually forceful problem-led opening puts an appropriate location or contact action close to the headline."},
+      {"id": "care-principles-row", "selector": "[data-reference-signature=care-principles-row]", "description": "A compact set of distinct care or process principles is arranged for fast scanning, not as repeated generic cards."},
+      {"id": "education-rail", "selector": "[data-reference-signature=education-rail]", "description": "A small education or FAQ chapter helps visitors understand a next step after the urgent opening."}
+    ],
+    "acceptanceChecks": ["Urgency is explicit only when the client's verified service and availability support it.", "Location or contact is a functional action, not a decorative search field.", "Large numbers are omitted unless the client provides a source and date.", "Mobile makes the primary action reachable without horizontal scrolling or overlay obstruction.", "No source copy, logo, photo, review, rating, press mark, numerical claim, or exact brand palette is reused."]
+  },
+  "review": {"status": "reviewed", "reviewer": "Codex direct-source capture QA", "date": "2026-09-29", "notes": "Official page returned HTTP 200 at both viewports. Full-page screenshots were inspected with the cookie notice dismissed in the temporary browser profile. Source scripts reported errors and several empty image references that resolved to the site root; the core emergency imagery and sections render. These source defects are not transferred as design guidance."}
+}

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "web-veterinary-cat-clinic-edinburgh",
+  "productionEligible": false,
+  "referenceName": "Feline-only clinic with three-action service gateway and compact care sequence",
+  "familyId": "veterinary-feline-calm-clinic",
+  "businessKinds": ["feline veterinary clinic", "cat-only veterinary practice", "independent veterinary clinic", "cat hospital"],
+  "source": {
+    "name": "The Cat Clinic Edinburgh official website",
+    "url": "https://www.catclinic.co.uk/",
+    "sourceType": "official direct veterinary-business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-29 covers retaining the paired desktop/mobile full-page captures, deriving a design prompt, and using these captures as internal pipeline-model visual references. No source-owner grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": ["rights/business-verification.md", "rights/capture-record.md"]
+  },
+  "tags": {
+    "business": ["veterinary", "feline-only clinic", "cat health", "independent practice"],
+    "style": ["quiet feline specialist", "classic serif and utility sans", "deep blue and pale aqua", "calm clinical clarity"],
+    "composition": ["photo-led mobile hero", "three-action gateway", "numbered care principles", "testimonial chapter", "coral urgent strip"],
+    "conversion": ["register a patient", "book an appointment", "out-of-hours information", "service discovery"],
+    "motion": ["controlled testimonial carousel", "standard navigation menu", "reduced-motion complete"],
+    "imagery": ["feline patient photography", "cat-focused clinic context", "reference evidence only"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 1000}},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}}
+  },
+  "referenceDna": {
+    "annotatedDescription": "The specialist clinic uses two slim navigation rows, separating utility actions from primary topic links. Its desktop opening reserves broad negative space around a dark-blue type field, while the phone composition brings a close feline image behind a compact headline and registration action. Three large pale-blue action panels then clarify patient registration, routine appointments, and urgent information. A split chapter follows with a concise three-part numbered service rationale, then a deep-blue client-story area. Later, a quiet editorial text-and-image section, a contrasting local urgent-information band, and a small retail/resource feature lead to a compact footer. Translate the useful three-action gateway, feline-first photography, and calm step sequence only. Do not adopt the exact blue, source branding, photography, claims, reviews, award language, name, or wording.",
+    "heroGeometry": {"mode": "negative-space desktop statement field and close pet-image mobile poster", "alignment": "desktop content anchored left in a calm color field; mobile image and statement stack", "viewport": "one-line service context and patient/appointment route remain immediately apparent"},
+    "navigationGeometry": {"mode": "two shallow navigation tiers separating patient actions from section links", "placement": "top edge", "mobile": "brand and patient call controls collapse into a short help/menu row"},
+    "typography": {"display": "quiet traditional serif", "body": "precise small sans", "scale": "compact display, strong section labels, restrained numbered micro-headings"},
+    "palette": {"surfaces": ["deep blue", "pale aqua", "clean white", "muted warm alert"], "ink": "high-contrast navy and charcoal", "accents": ["soft clinical blue", "limited coral alert"], "contrastIntent": "gentle healthcare palette with clear text, borders, and distinct action states"},
+    "imageTreatment": {"mode": "close feline subject image within a calm environment", "crop": "large mobile poster crop and separated desktop image chapter", "focalPoint": "show the animal comfortably and reserve readable title space; never depict the source team as the new clinic"},
+    "sectionSequence": ["dual-tier patient navigation", "feline-first hero", "three patient actions", "numbered care principles", "client story chapter", "editorial clinic explanation", "urgent information band", "resource feature and footer"],
+    "servicePresentation": {"pattern": "three primary visit actions followed by three short care principles", "interaction": "each action routes to a verified booking, registration, or urgent-care explanation"},
+    "ctaPlacement": {"primary": "book or register based on practice status", "secondary": "clearly verified urgent contact guidance", "early": "three action gateway follows directly after the hero"},
+    "motion": {"primitive": "optional client-story carousel with explicit previous, next, and position controls", "library": "native CSS or framework primitives; no source scripts", "reducedMotion": "present story items statically or with direct manual controls"},
+    "mobileRecomposition": {"strategy": "use a photographic feline opening, then stack three large actions and the care rationale", "rules": ["preserve touch-sized register and appointment controls", "keep emergency hours and eligibility accurate and explicit", "make testimonials accessible without auto-advance", "do not force desktop negative space into an empty mobile panel"]},
+    "prohibitedPatterns": ["claiming feline-only status, specialist credentials, awards, hours, or emergency services without client verification", "reusing source logo, precise blue palette, cat photos, reviews, copy, or local partner ads", "using source testimonials as proof for another practice", "empty oversized desktop hero fields caused by unavailable media", "decorative numbered service cards unrelated to an ordered decision process"],
+    "requiredSignatureElements": [
+      {"id": "patient-action-gateway", "selector": "[data-reference-signature=patient-action-gateway]", "description": "Three clearly distinct patient actions appear near the beginning, selected to match the actual practice."},
+      {"id": "care-principles-sequence", "selector": "[data-reference-signature=care-principles-sequence]", "description": "A short ordered sequence explains clinic-specific care principles only when that order is meaningful."},
+      {"id": "pet-story-chapter", "selector": "[data-reference-signature=pet-story-chapter]", "description": "A separate, visually distinct patient-story or factual proof chapter follows the immediate service actions."}
+    ],
+    "acceptanceChecks": ["The opening distinguishes the actual patient and service scope without claiming feline exclusivity unless true.", "The three action gateway routes to real booking, registration, or help destinations.", "Numbered content describes a real sequence rather than decorative card numbering.", "The mobile image crop keeps headline and action legible.", "No source brand assets, photographs, story text, rating, credentials, opening hours, or local adverts are reused."]
+  },
+  "review": {"status": "reviewed", "reviewer": "Codex direct-source capture QA", "date": "2026-09-29", "notes": "Official site returned HTTP 200 at both requested viewports. It identifies an independent feline-only clinic in Edinburgh and exposes registration, appointment, and emergency-care routes. Cookie preferences were rejected in the disposable browser context. Full-page desktop and mobile screenshots were inspected; no broken content images or page errors were recorded."}
+}

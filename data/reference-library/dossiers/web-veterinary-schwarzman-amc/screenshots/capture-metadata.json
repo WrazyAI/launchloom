@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://www.amcny.org/",
+  "captures": {
+    "desktop": {
+      "url": "https://www.amcny.org/",
+      "finalUrl": "https://www.amcny.org/",
+      "httpStatus": 200,
+      "title": "The Animal Medical Center - 24/7 Emergency, Urgent, and Specialty Care",
+      "h1": [
+        "Meet the Animal Hospital of the Future",
+        "Meet the Animal Hospital of the Future"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "image": {
+        "width": 1440,
+        "height": 4197
+      },
+      "documentWidth": 1440,
+      "documentHeight": 4197,
+      "scrollWidthOverflow": false,
+      "brokenImages": [],
+      "pageErrors": [
+        "IGQVJVVFFXbFdyO634hgdf83hjdj2UFUTk9OcW41dnY0TVVIM3NUdms0RnY2MmFWei02bUYyTjhvd201ZAllJeFljQVl3alFTcVctdl9HSFZASLWc0VWU0SWpYbHVEUVBGRThkSVdQdGQ5SFE1MmRXSlpR is not defined"
+      ],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    },
+    "mobile": {
+      "url": "https://www.amcny.org/",
+      "finalUrl": "https://www.amcny.org/",
+      "httpStatus": 200,
+      "title": "The Animal Medical Center - 24/7 Emergency, Urgent, and Specialty Care",
+      "h1": [
+        "Meet the Animal Hospital of the Future",
+        "Meet the Animal Hospital of the Future"
+      ],
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "image": {
+        "width": 390,
+        "height": 7329
+      },
+      "documentWidth": 392,
+      "documentHeight": 7329,
+      "scrollWidthOverflow": true,
+      "brokenImages": [],
+      "pageErrors": [
+        "IGQVJVVFFXbFdyO634hgdf83hjdj2UFUTk9OcW41dnY0TVVIM3NUdms0RnY2MmFWei02bUYyTjhvd201ZAllJeFljQVl3alFTcVctdl9HSFZASLWc0VWU0SWpYbHVEUVBGRThkSVdQdGQ5SFE1MmRXSlpR is not defined"
+      ],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    }
+  }
+}

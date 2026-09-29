@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "web-real-estate-serhant-media-brokerage",
+  "productionEligible": false,
+  "referenceName": "SERHANT: cinematic media and multi-market brokerage",
+  "familyId": "real-estate-media-brokerage",
+  "businessKinds": ["real estate", "real-estate", "real estate brokerage", "luxury brokerage"],
+  "source": {
+    "name": "SERHANT. official website",
+    "url": "https://serhant.com/",
+    "sourceType": "official direct real estate brokerage website captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance dated 2026-09-29 covers internal desktop and mobile screenshot retention, derived design prompts, and pipeline-model reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": ["rights/business-verification.md", "rights/capture-record.md"]
+  },
+  "tags": {
+    "business": ["real-estate", "real estate brokerage", "luxury brokerage", "property sales"],
+    "style": ["cinematic dark media", "editorial white property index", "high-energy brokerage brand"],
+    "composition": ["film hero with embedded search", "multi-market discovery", "property feed", "media divisions"],
+    "conversion": ["property search", "agent contact", "brokerage recruitment", "development inquiry"],
+    "motion": ["cinematic video chapters", "horizontal property carousel", "static-readable fallback"],
+    "imagery": ["agent and property film stills", "wide development photography", "property-card imagery"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 1000}, "screenshotHeight": 15188},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}, "screenshotHeight": 19977}
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dark, film-led opening pairs an agent-and-property moving image with a compact search control. A dense region selector and property feed quickly hand off into distinct cinematic chapters, then a development strip, media and technology capabilities, press features, and a long multi-path contact close. White listing intervals create contrast against dark story scenes. The source's people, properties, prices, statistics, words, badges, logos, video, and trademarked identity remain source-only. The transferable idea is a media-led brokerage whose search, market reach, and supporting disciplines are expressed as separate scenes.",
+    "heroGeometry": {"mode": "immersive media search stage", "alignment": "centered headline over dark moving image with compact search below", "viewport": "opening identifies the real-estate service and starts property discovery without a text wall"},
+    "navigationGeometry": {"mode": "global cinematic mega menu", "placement": "thin top overlay over the opening scene", "mobile": "reduce top utility links to a touch-safe menu while preserving a direct search or contact action"},
+    "typography": {"display": "bold neo grotesk", "body": "compact neutral sans", "scale": "large short headline, dense market labels, restrained explanatory copy"},
+    "palette": {"surfaces": ["near black", "white", "pale cool gray"], "ink": "white on cinematic scenes and deep blue-black on light listing surfaces", "accents": ["electric blue", "cool violet"], "contrastIntent": "strong scene contrast with readable labels and accessible search controls"},
+    "imageTreatment": {"mode": "filmic property montage", "crop": "full-width moving-image stills interrupted by precise listing crops", "focalPoint": "preserve the principal residence or human subject and keep key text over quiet image regions"},
+    "sectionSequence": ["film hero", "region discovery", "featured property feed", "development showcase", "media studio chapter", "brokerage capabilities", "press editorial", "contact capture", "multi-column compliance footer"],
+    "servicePresentation": {"pattern": "regional listing and agent atlas", "interaction": "searchable market taxonomy followed by property feed and distinct brokerage-discipline scenes"},
+    "ctaPlacement": {"primary": "find a property through the hero search", "secondary": "browse regions or contact an advisor", "early": "search overlay integrated into film hero"},
+    "motion": {"primitive": "film to listing scene transition", "library": "native video or CSS with optional GSAP sequencing", "reducedMotion": "poster still with fully visible search, labels, and links"},
+    "mobileRecomposition": {"strategy": "stacked media search and listing feed", "rules": ["keep the first search control above the initial listing sequence", "stack development and service scenes rather than shrinking desktop carousels", "preserve legible property facts and tap-sized controls", "provide a poster image when video or motion is unavailable"]},
+    "prohibitedPatterns": ["copying SERHANT. names, logos, video, people, properties, listing data, statistics, claims, or trademarks", "reproducing the exact dark and electric-blue trade dress", "making the page a generic card wall", "allowing autoplay video to carry essential content", "inventing agent credentials, market reach, sales totals, prices, or availability"],
+    "requiredSignatureElements": [
+      {"id": "film-led-search-stage", "selector": "[data-reference-signature=film-led-search-stage]", "description": "A large media hero combines with an integrated property and location search."},
+      {"id": "cross-region-property-feed", "selector": "[data-reference-signature=cross-region-property-feed]", "description": "Market selection leads into a property discovery feed rather than isolated generic service cards."},
+      {"id": "media-division-story", "selector": "[data-reference-signature=media-division-story]", "description": "Supporting brokerage capabilities appear as separate media, technology, or development story chapters."}
+    ],
+    "acceptanceChecks": ["The first viewport has a clear, working property-search or inquiry action.", "Property discovery and business capabilities have distinct section treatments.", "A still-image fallback communicates the opening if motion is disabled.", "Client location, service scope, credentials, prices, and property facts come only from sealed client content.", "At 390 px, no navigation, search, or listing information overflows horizontally."]
+  },
+  "review": {"status": "reviewed", "reviewer": "Codex direct-source capture QA", "date": "2026-09-29", "notes": "Official home and about pages confirm brokerage, property search, market, and supporting media/business divisions. Full-page desktop and mobile screenshots were inspected. Browser reported no broken content images; unresolved lazy image elements and non-blocking source JavaScript errors are recorded in the capture record."}
+}

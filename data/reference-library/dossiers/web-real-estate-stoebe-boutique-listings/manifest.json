@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "web-real-estate-stoebe-boutique-listings",
+  "productionEligible": false,
+  "referenceName": "Stoebe & Co.: boutique market atlas and property-search panel",
+  "familyId": "real-estate-boutique-search",
+  "businessKinds": ["real estate", "real-estate", "real estate brokerage", "luxury brokerage", "property sales"],
+  "source": {
+    "name": "Stoebe & Co. official website",
+    "url": "https://stoebeco.com/",
+    "sourceType": "official direct real estate brokerage website captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance dated 2026-09-29 covers internal desktop and mobile screenshot retention, derived design prompts, and pipeline-model reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": ["rights/business-verification.md", "rights/capture-record.md"]
+  },
+  "tags": {
+    "business": ["real-estate", "boutique brokerage", "luxury listings", "rental and commercial property"],
+    "style": ["warm editorial luxury", "thin-line frame system", "serif property index"],
+    "composition": ["diagonal image wordmark cover", "floating property search", "market taxonomy tiles", "regional atlas"],
+    "conversion": ["address search", "buyer and seller paths", "valuation inquiry", "newsletter sign-up"],
+    "motion": ["paginated listing carousel", "subtle scene transitions", "static-first content"],
+    "imagery": ["warm interiors", "coastal homes", "regional property tiles", "mobile product scene"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 1000}, "screenshotHeight": 10687},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}, "screenshotHeight": 14021}
+  },
+  "referenceDna": {
+    "annotatedDescription": "A thin framed utility header leads into an asymmetrical home-photo cover with a small wordmark and tightly set promise. A floating white address-search surface interrupts the opening before a sparse proof-and-philosophy chapter. The page changes into a classified market atlas, a mobile-product demonstration, a short testimonial interlude, then property listings, a high-impact seller image, regional tiles, editorial social content, and a compact inquiry. Its visual language is warm, restrained, serif-led, and notably spacious. Do not transfer the source's property imagery, geography, people, brand, listing facts, statistics, wording, testimonials, or exact palette.",
+    "heroGeometry": {"mode": "diagonal image and wordmark cover", "alignment": "offset serif statement in a light wedge against an architectural photograph", "viewport": "pair a clear estate-market identity with a floating search action before extended explanation"},
+    "navigationGeometry": {"mode": "fine line dropdown property directory", "placement": "slim rounded-outline rail above the image cover", "mobile": "compact brand and menu control with property search kept reachable"},
+    "typography": {"display": "high contrast fashion serif", "body": "small neutral sans", "scale": "quiet oversized market headings, micro labels, short supporting paragraphs"},
+    "palette": {"surfaces": ["warm white", "soft gray", "pale sand"], "ink": "charcoal and muted dark gray", "accents": ["dusty rose", "soft bronze"], "contrastIntent": "restrained premium contrast with strong text legibility and clear controls"},
+    "imageTreatment": {"mode": "warm interior and listing editorial collage", "crop": "wide residential cover, then small market tiles and listing thumbnails", "focalPoint": "architectural light and home detail rather than embedded copy or identifiable source people"},
+    "sectionSequence": ["image wordmark cover", "floating address search", "sales proof measures", "editorial brokerage story", "market taxonomy tiles", "regional market index", "mobile product demonstration", "listing carousel", "testimonial interlude", "seller enquiry", "social gallery", "contact details"],
+    "servicePresentation": {"pattern": "audience market taxonomy", "interaction": "separate buyer, seller, rental, commercial, and regional pathways before showing listings"},
+    "ctaPlacement": {"primary": "search by address, neighborhood, or client intent", "secondary": "seller consultation or valuation request", "early": "floating property search between cover and brokerage story"},
+    "motion": {"primitive": "curated listing carousel with pagination", "library": "native overflow carousel with optional CSS transitions", "reducedMotion": "show a fixed listing set and accessible previous and next buttons"},
+    "mobileRecomposition": {"strategy": "single column listing catalogue and compact region menu", "rules": ["turn market tiles into a readable two-column or stacked index", "keep property-search controls in the first decision sequence", "stack property cards with readable location and key facts", "preserve whitespace without making headings clip"]},
+    "prohibitedPatterns": ["copying Stoebe & Co. identity, logos, photography, property data, statistics, exact colors, testimonials, or copy", "using its company or listing details as a client claim", "converting the page into a uniform rounded-card wall", "burying property search beneath a long brand essay", "inventing client markets, rankings, transaction figures, or inventory"],
+    "requiredSignatureElements": [
+      {"id": "floating-property-search", "selector": "[data-reference-signature=floating-property-search]", "description": "A search surface is visually distinct from and immediately follows the cover scene."},
+      {"id": "market-taxonomy-tiles", "selector": "[data-reference-signature=market-taxonomy-tiles]", "description": "Audience or property-market categories form a browseable editorial index."},
+      {"id": "mobile-property-toolkit", "selector": "[data-reference-signature=mobile-property-toolkit]", "description": "A mobile-facing product or search interaction is shown as a narrative chapter rather than a generic testimonial card."}
+    ],
+    "acceptanceChecks": ["The opening moves from a property image into a usable search control.", "Different client audiences or property categories remain separate pathways.", "Property tiles show only client-approved facts and imagery.", "The mobile treatment preserves search, category, and listing hierarchy.", "All source property photography, wording, people, and numeric claims are excluded from client implementation."]
+  },
+  "review": {"status": "reviewed", "reviewer": "Codex direct-source capture QA", "date": "2026-09-29", "notes": "Official home and About pages identify the independently owned Westhampton Beach brokerage, its market categories, team, listings, and contact routes. Full-page captures were inspected after rejecting non-essential cookies. No broken content images; the non-blocking missing Google Maps API console warning is recorded."}
+}

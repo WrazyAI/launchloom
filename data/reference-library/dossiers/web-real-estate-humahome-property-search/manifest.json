@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "web-real-estate-humahome-property-search",
+  "productionEligible": false,
+  "referenceName": "HumaHome: guided buyer matching and personalized property selection",
+  "familyId": "real-estate-guided-buyer-search",
+  "businessKinds": ["real estate", "real-estate", "property buying service", "buyer's agent", "residential property search"],
+  "source": {
+    "name": "HumaHome official website",
+    "url": "https://humahome.com/",
+    "discoverySource": "A1 Gallery real-estate category used for discovery metadata only",
+    "discoveryUrl": "https://www.a1.gallery/website/humahome",
+    "sourceType": "official direct real estate buyer-search business website captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance dated 2026-09-29 covers internal desktop and mobile screenshot retention, derived design prompts, and pipeline-model reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": ["rights/business-verification.md", "rights/capture-record.md"]
+  },
+  "tags": {
+    "business": ["real-estate", "buyer's agent", "property search", "home buying guidance", "Barcelona property"],
+    "style": ["editorial residential", "muted sage and terracotta", "large contrast serif"],
+    "composition": ["oversized image-led buyer promise", "numbered matching process", "sample buyer selection", "conversion color bands"],
+    "conversion": ["find a home", "guided buyer form", "seller inquiry", "consultation"],
+    "motion": ["scroll linked matching sequence", "asymmetric image offsets", "static content fallback"],
+    "imagery": ["warm home interiors", "buyer lifestyle photography", "property report interface preview"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 1000}, "screenshotHeight": 4320},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}, "screenshotHeight": 6602}
+  },
+  "referenceDna": {
+    "annotatedDescription": "A burnt-clay navigation band sits above a full-bleed interior and oversized high-contrast headline. The opening offers one direct way to begin a guided home search. The next chapters explain the market-scan method and show a four-stage buyer journey, then alternate an asymmetrical family/property image with a large terracotta statement band. A sample personalized property selection is shown as an inbox-like report artifact, not just a conventional listing grid, before a concise conversion close. The page is about a buying-advisory process rather than broad brokerage inventory. The source's geographic, pricing, timing, and service claims do not transfer to a client.",
+    "heroGeometry": {"mode": "oversized editorial buyer promise over a home scene", "alignment": "large left aligned serif over full-width residential image with a concise support sentence and compact dual actions", "viewport": "make the buyer's next step immediately legible without a long introduction"},
+    "navigationGeometry": {"mode": "rust segmented real estate channel bar", "placement": "full-width warm accent strip dividing residential service destinations", "mobile": "retain a compact utility row and collapse secondary channels into an accessible menu"},
+    "typography": {"display": "editorial contrast serif", "body": "quiet modern sans", "scale": "very large fluid opening, medium process headings, small practical labels"},
+    "palette": {"surfaces": ["muted sage", "warm ivory", "terracotta", "soft white"], "ink": "deep charcoal", "accents": ["clay red", "muted green"], "contrastIntent": "subtle residential color with decisive CTA contrast and readable image overlays"},
+    "imageTreatment": {"mode": "warm lived in architecture interiors with offset crops", "crop": "wide hero room, small regional/property inserts, and layered family-home photography", "focalPoint": "use the space and lived experience as context while leaving the heading area quiet"},
+    "sectionSequence": ["home search hero", "market scan explanation", "buyer step sequence", "fit criteria story", "market perspective band", "sample personalized selection", "service timing promise", "contact footer"],
+    "servicePresentation": {"pattern": "guided buyer intake and matching process", "interaction": "explain each short client decision step and show how a verified brief shapes the eventual property selection"},
+    "ctaPlacement": {"primary": "start a guided property search", "secondary": "understand the buying process", "early": "guided buyer intake action inside hero"},
+    "motion": {"primitive": "scroll linked matching sequence", "library": "native CSS or a small GSAP timeline for chapter transitions", "reducedMotion": "render all process steps and selection artifacts in a static order"},
+    "mobileRecomposition": {"strategy": "buyer promise then compact matching steps and sample selection", "rules": ["reduce headline size without clipping its serif contrast", "turn process steps into a vertical list", "stack image and copy chapters while preserving selective offsets", "keep the inquiry route visible before the footer"]},
+    "prohibitedPatterns": ["copying HumaHome identity, words, photographs, report design, local market details, prices, or exact terracotta palette", "claiming a property search covers marketplaces or inventory not confirmed for the client", "inventing buyer delivery times, selection frequency, access, or purchasing advice", "using an inbox mockup to suggest client results that have not been verified", "replacing the buyer journey with a generic listing-card wall"],
+    "requiredSignatureElements": [
+      {"id": "buyer-fit-hero", "selector": "[data-reference-signature=buyer-fit-hero]", "description": "One concise buyer-matching promise appears over a large, contextual home scene."},
+      {"id": "guided-search-process", "selector": "[data-reference-signature=guided-search-process]", "description": "The service is explained as a brief buyer journey rather than a feature-card grid."},
+      {"id": "personalized-property-preview", "selector": "[data-reference-signature=personalized-property-preview]", "description": "A sample selection or property brief is shown as a designed artifact using only client-approved facts."}
+    ],
+    "acceptanceChecks": ["The hero names the kind of buyer the client actually serves and presents a working first action.", "The process section explains next steps with no invented time or service claim.", "The sample property artifact uses only verified client inventory or a clearly labeled neutral placeholder.", "Mobile retains the buyer journey and form without image/text collisions.", "Local-market terms are grounded in the client's submitted, researched, and verified service areas."]
+  },
+  "review": {"status": "reviewed", "reviewer": "Codex direct-source capture QA", "date": "2026-09-29", "notes": "Official homepage identifies HumaHome as a Barcelona-area property search service for buyers and presents its process, market coverage, contact route, and sample selection format. A1 was used only to discover the direct official site. Full-page desktop/mobile captures returned HTTP 200 with no broken images, unresolved images, or page errors."}
+}

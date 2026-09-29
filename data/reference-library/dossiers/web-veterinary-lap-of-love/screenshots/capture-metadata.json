@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://www.lapoflove.com/",
+  "captures": {
+    "desktop": {
+      "url": "https://www.lapoflove.com/",
+      "finalUrl": "https://www.lapoflove.com/",
+      "httpStatus": 200,
+      "title": "Home | Lap of Love",
+      "h1": [
+        "Lap of Love Veterinary Hospice & In-Home Euthanasia"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "image": {
+        "width": 1440,
+        "height": 5056
+      },
+      "documentWidth": 1440,
+      "documentHeight": 5056,
+      "scrollWidthOverflow": false,
+      "brokenImages": [
+        "https://bat.bing.com/action/0?ti=343153047&tm=gtm002&Ver=2&mid=66334323-4b07-49f9-aeff-ebf473b71e84&bo=1&sid=2d25b1f0bc1811f18cbc4977050190bf&vid=2d25f270bc1811f18a808ff5078b173a&vids=1&msclkid=N&pi=0&lg=en-US&sw=1440&sh=1000&sc=24&nwd=1&tl=Home%20%7C%20Lap%20of%20Love&p=https%3A%2F%2Fwww.lapoflove.com%2F&r=&lt=1891&evt=pageLoad&sv=2&cdb=AQAQ&rn=782395"
+      ],
+      "pageErrors": [],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    },
+    "mobile": {
+      "url": "https://www.lapoflove.com/",
+      "finalUrl": "https://www.lapoflove.com/",
+      "httpStatus": 200,
+      "title": "Home | Lap of Love",
+      "h1": [
+        "Lap of Love Veterinary Hospice & In-Home Euthanasia"
+      ],
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "image": {
+        "width": 390,
+        "height": 6936
+      },
+      "documentWidth": 390,
+      "documentHeight": 6936,
+      "scrollWidthOverflow": false,
+      "brokenImages": [
+        "https://bat.bing.com/action/0?ti=343153047&tm=gtm002&Ver=2&mid=35ad37b4-cc5a-4075-b711-f88891537576&bo=1&sid=351610b0bc1811f1bbc001c6bd2bd89e&vid=35163ba0bc1811f1b191d953a206d513&vids=1&msclkid=N&pi=0&lg=en-US&sw=390&sh=844&sc=24&nwd=1&tl=Home%20%7C%20Lap%20of%20Love&p=https%3A%2F%2Fwww.lapoflove.com%2F&r=&lt=1991&evt=pageLoad&sv=2&cdb=AQAQ&rn=397093"
+      ],
+      "pageErrors": [],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    }
+  }
+}

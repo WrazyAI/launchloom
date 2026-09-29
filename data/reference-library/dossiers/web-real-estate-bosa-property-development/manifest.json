@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "id": "web-real-estate-bosa-property-development",
+  "productionEligible": false,
+  "referenceName": "Bosa Properties: sector-switching development portfolio",
+  "familyId": "real-estate-development-portfolio",
+  "businessKinds": ["real estate", "real-estate", "property development", "residential development", "commercial property"],
+  "source": {
+    "name": "Bosa Properties official website",
+    "url": "https://bosaproperties.com/",
+    "sourceType": "official direct property development and management company website captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance dated 2026-09-29 covers internal desktop and mobile screenshot retention, derived design prompts, and pipeline-model reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": ["rights/business-verification.md", "rights/capture-record.md"]
+  },
+  "tags": {
+    "business": ["real-estate", "property development", "residential development", "commercial property", "property management"],
+    "style": ["architectural corporate", "panoramic urban photography", "contemporary restrained"],
+    "composition": ["project portfolio filter", "sector switcher", "corporate mission statement", "development narrative"],
+    "conversion": ["browse development projects", "leasing inquiry", "corporate partnership", "careers"],
+    "motion": ["project-film crossfade", "filtered portfolio browse", "reduced-motion still"],
+    "imagery": ["urban building renderings", "residential project exteriors", "finished place photography"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 1000}, "screenshotHeight": 5970},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}, "screenshotHeight": 7565}
+  },
+  "referenceDna": {
+    "annotatedDescription": "A concise real-estate development thesis sits over a wide urban property image and a portfolio action. A broad project surface lets a visitor filter by sector and geography before the page divides residential offerings from office, retail, industrial, and hotel portfolios. Later chapters explain the operating model and work culture, then close with career, contact, and regional subsidiary pathways. Compared with agent-oriented designs, this pattern organizes a property company as a portfolio of projects and business lines. Source buildings, prices, counts, land claims, logos, and market details are not client facts.",
+    "heroGeometry": {"mode": "panoramic urban development statement", "alignment": "large architectural backdrop with short statement and compact portfolio control", "viewport": "introduce the developer's verified role and lead to a portfolio or inquiry route"},
+    "navigationGeometry": {"mode": "corporate sector mega navigation", "placement": "horizontal company menu with portfolio and solution routes", "mobile": "use a concise menu with visible sector paths and no narrow multi-column navigation"},
+    "typography": {"display": "architectural neo grotesk", "body": "neutral modern sans", "scale": "measured mission headline, clear sector headings, small project-state labels"},
+    "palette": {"surfaces": ["white", "cool gray", "deep blue-gray"], "ink": "near black", "accents": ["restrained blue", "muted green"], "contrastIntent": "corporate readability with image-first project moments and strong text contrast"},
+    "imageTreatment": {"mode": "built environment renders and finished places", "crop": "wide development hero followed by medium project images and sector thumbnails", "focalPoint": "keep building form and public realm visible without overlay copy obscuring architecture"},
+    "sectionSequence": ["developer manifesto", "project portfolio filter", "residential portfolio", "commercial and industrial sectors", "property operating model", "built place story", "career invitation", "contact and locations", "subsidiary links"],
+    "servicePresentation": {"pattern": "sector and project portfolio index", "interaction": "select an asset sector or project stage, then browse individually described developments"},
+    "ctaPlacement": {"primary": "explore the verified property portfolio", "secondary": "contact the team for leasing or partnership questions", "early": "portfolio exploration control in the hero"},
+    "motion": {"primitive": "slow project film transitions", "library": "native video or image transitions with optional GSAP sequencing", "reducedMotion": "poster image and accessible static portfolio filters"},
+    "mobileRecomposition": {"strategy": "sector selector then vertically stacked project cards", "rules": ["show sector choices before a long project inventory", "make project names and current status readable", "stack cards in a single column and avoid desktop-only hover filters", "keep corporate contact and accessibility links easy to reach"]},
+    "prohibitedPatterns": ["copying Bosa name, wordmark, project names, renderings, property facts, statistics, or public claims", "inventing completed units, development totals, managed square footage, or environmental targets", "presenting an active project as delivered without client confirmation", "using residential property imagery as proof of client ownership", "flattening distinct property sectors into repeated generic service cards"],
+    "requiredSignatureElements": [
+      {"id": "sector-project-switcher", "selector": "[data-reference-signature=sector-project-switcher]", "description": "Portfolio browsing distinguishes asset sectors or project stages before showing results."},
+      {"id": "development-portfolio", "selector": "[data-reference-signature=development-portfolio]", "description": "The main content has a real project inventory with client-verified project status and context."},
+      {"id": "purpose-and-operating-model", "selector": "[data-reference-signature=purpose-and-operating-model]", "description": "A separate company-purpose chapter explains the relationship between development and property operations."}
+    ],
+    "acceptanceChecks": ["The page identifies the client's actual role as developer, operator, landlord, or broker.", "Portfolio filters reflect only services and projects confirmed by the client.", "Current project status is clear and not inferred from imagery.", "Mobile sector and project browsing remains keyboard and touch accessible.", "No unsupplied development, sustainability, scale, or results claim appears."]
+  },
+  "review": {"status": "reviewed", "reviewer": "Codex direct-source capture QA", "date": "2026-09-29", "notes": "Official homepage and About page identify property development and management activities, residential and commercial sectors, project portfolio, and contact details. Full-page desktop and mobile captures were inspected. The only broken image diagnostic was a non-content Bing tracking pixel; seven to eight lazy content image elements remained unresolved at capture time."}
+}

@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://www.modernanimal.com/",
+  "captures": {
+    "desktop": {
+      "url": "https://www.modernanimal.com/",
+      "finalUrl": "https://www.modernanimal.com/",
+      "httpStatus": 200,
+      "title": "A Vet for The Animal People | Modern Animal",
+      "h1": [
+        "A Vet for the Animal People."
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "image": {
+        "width": 1440,
+        "height": 9491
+      },
+      "documentWidth": 1440,
+      "documentHeight": 9491,
+      "scrollWidthOverflow": false,
+      "brokenImages": [
+        "https://bat.bing.com/action/0?ti=97226536&tm=gtm002&Ver=2&mid=1671ad2f-b61b-46f7-ad08-72c5b30ca8a8&bo=2&sid=df2c9fc0bc1711f197037f7c3f289aa9&vid=df2cd7a0bc1711f18f6d8132fbafb55b&vids=1&msclkid=N&pi=0&lg=en-US&sw=1440&sh=1000&sc=24&nwd=1&tl=A%20Vet%20for%20The%20Animal%20People%20%7C%20Modern%20Animal&p=https%3A%2F%2Fwww.modernanimal.com%2F&r=&lt=2308&evt=pageLoad&sv=2&asc=G&cdb=AQAS&rn=170603"
+      ],
+      "pageErrors": [],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    },
+    "mobile": {
+      "url": "https://www.modernanimal.com/",
+      "finalUrl": "https://www.modernanimal.com/",
+      "httpStatus": 200,
+      "title": "A Vet for The Animal People | Modern Animal",
+      "h1": [
+        "A Vet for the Animal People."
+      ],
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "image": {
+        "width": 390,
+        "height": 12277
+      },
+      "documentWidth": 390,
+      "documentHeight": 12277,
+      "scrollWidthOverflow": false,
+      "brokenImages": [
+        "https://bat.bing.com/action/0?ti=97226536&tm=gtm002&Ver=2&mid=44fbf248-847b-4547-92ef-871d0e1991e6&bo=2&sid=ee8f20c0bc1711f1bc93c92ff771a12f&vid=ee911270bc1711f1ae0a1b2c781bb39c&vids=1&msclkid=N&pi=0&lg=en-US&sw=390&sh=844&sc=24&nwd=1&tl=A%20Vet%20for%20The%20Animal%20People%20%7C%20Modern%20Animal&p=https%3A%2F%2Fwww.modernanimal.com%2F&r=&lt=3694&evt=pageLoad&sv=2&asc=G&cdb=AQAS&rn=730859"
+      ],
+      "pageErrors": [],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    }
+  }
+}
