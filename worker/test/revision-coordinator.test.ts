@@ -229,6 +229,28 @@ describe("RevisionCoordinator", () => {
     ).resolves.toEqual({ allowed: true, retryAfterSeconds: 0 });
   });
 
+  it("uses a validated deployed preview for downstream failure notification and strips tokens", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("failure-preview-test");
+    await coordinator.enqueue(request("request-preview-failure", "Keep the revised preview reachable."));
+    await coordinator.claim("request-preview-failure");
+    await coordinator.fail(
+      "request-preview-failure",
+      "Email delivery failed after deploy.",
+      "https://review-revision-123.example.pages.dev/services/?review=signed-secret#section",
+    );
+
+    expect(failureEmails).toHaveLength(1);
+    const text = String(failureEmails[0].text);
+    expect(text).toContain(
+      "Open reviewed website: https://review-revision-123.example.pages.dev/services/",
+    );
+    expect(text).not.toContain("signed-secret");
+    const primaryHref = String(failureEmails[0].html).match(/href="([^"]+)"/)?.[1];
+    expect(primaryHref).toBe(
+      "https://review-revision-123.example.pages.dev/services/",
+    );
+  });
+
   it("preserves failures without blocking the next queued request", async () => {
     const coordinator = env.REVISION_COORDINATOR.getByName("failure-test");
     await coordinator.enqueue(request("request-3001", "Update the offer."));
