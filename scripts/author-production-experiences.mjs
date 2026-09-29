@@ -1,6 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { parseModelJson } from "./model-json.mjs";
+import {
+  assertReferenceDossierPack,
+  referenceDossierPromptBlock,
+} from "./reference-dossier.mjs";
 import { typographyPalettePrompt } from "./creative-typography.mjs";
 import { authorExperienceCandidates } from "./production-experience-author.mjs";
 import {
@@ -124,6 +128,7 @@ STRUCTURAL OUTPUT CHECK
 
 REFERENCE FIDELITY RULES
 - Do not average references or drift to a familiar LaunchLoom composition.
+- Treat the included permission-cleared Reference Dossier as the route's detailed design prompt; its full-page captures and structured Reference DNA are authoritative evidence.
 - A tall desktop reference may be a full-page capture. Its image-height fractions are not CSS vh. Use the recorded source capture dimensions and adapt the composition so the complete desktop header and hero fit within 1536x864 while preserving the reference's hierarchy, crop, and overlap.
 - Do not use a generic split hero, generic card wall, or repeated accordion unless Reference DNA explicitly requires it.
 - Preserve assigned section rhythm, hero geometry, navigation geometry, service presentation, and interaction concept.
@@ -160,6 +165,7 @@ function routePromptPrefix(request) {
       prohibitedPatterns: request.route.prohibitedPatterns,
       signature: request.route.signature,
       referenceDna: cacheableReferenceDna(request.route.referenceDna),
+      referenceDossier: referenceDossierPromptBlock(request.route.referenceDossier),
       evidence: (request.route.evidence || []).map((item) => ({
         name: item.name,
         source: item.source,
@@ -568,6 +574,9 @@ try {
     fs.readFile(configPath, "utf8").then(JSON.parse),
     fs.readFile(inspirationPath, "utf8").then(JSON.parse),
   ]);
+  assertReferenceDossierPack(inspirationPack, {
+    repositoryRoot: path.resolve(import.meta.dirname, ".."),
+  });
   const result = await authorExperienceCandidates({
     site,
     inspirationPack,

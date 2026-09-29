@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "lapa-groth-hospitality-studio",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "This is an interior/hospitality design studio with a different buyer journey from the selected architecture-practice core.",
+  "referenceName": "Groth hospitality research rail and project archive",
+  "familyId": "lapa-groth-hospitality-studio",
+  "source": {
+    "name": "Groth Studio",
+    "url": "https://www.groth.studio/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested on 2026-09-25 that clearance covers full-page screenshot retention, derivative prompts, and sending screenshots to the pipeline model as visual reference. The source-specific grant was not attached.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/requester-attestation.md"]
+  },
+  "provenance": {
+    "discoveryPageUrl": "https://www.lapa.ninja/post/groth/",
+    "capture": "Full-page direct-site captures at 1440x1000 and 390x844 after scrolling the full page to trigger visible reveal content and eager-loading imagery. No gallery screenshot, markup or source asset was saved outside the rendered reference captures.",
+    "retrievedAt": "2026-09-25",
+    "captureDimensions": { "desktop": [1440, 8066], "mobile": [390, 7639] },
+    "attribution": "Groth Studio is the captured website. Internal reference only; source screenshots and imagery are not client assets."
+  },
+  "businessKinds": ["interior-design", "hospitality-design", "architecture", "restaurant-interiors", "design-studio"],
+  "tags": {
+    "business": ["interior-design", "hospitality-design", "architecture", "restaurant-interiors", "design-studio"],
+    "style": ["typographic-masthead", "warm-mineral-editorial", "research-rail", "diagrammatic", "premium-hospitality"],
+    "composition": ["oversized-wordmark", "orange-research-sidebar", "project-records", "paired-line-drawing-and-photo", "dark-footer-plane"],
+    "conversion": ["hospitality-project-enquiry", "portfolio-case-links", "service-context"],
+    "motion": ["subtle-project-reveal", "scroll-driven-content", "static-reduced-motion-flow"],
+    "imagery": ["hospitality-interior-photography", "line-drawing-annotations", "paired-project-evidence"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A hospitality/interior design practice uses an oversized black wordmark, warm pale mineral portfolio surface, and a narrow bright orange research rail on desktop. The project archive pairs fine line drawings and material/interior photographs with a title and short note. A dark footer closes the experience. On mobile, the sidebar becomes a stackable annotation band and each project becomes a single-column record.",
+    "heroGeometry": { "mode": "oversized typographic masthead with side research rail", "alignment": "large wordmark and compact practice statement in main column; orange research module occupies a narrow right rail", "viewport": "identity, practice scope and project direction are immediately clear without replacing business-specific SEO copy" },
+    "navigationGeometry": { "mode": "micro uppercase utility links", "placement": "top edge above the large wordmark", "mobile": "menu and essentials in a compact row, with no sticky side rail" },
+    "typography": { "display": "heavy geometric grotesk masthead", "body": "compact neo-grotesk with mono annotations", "scale": "oversized wordmark, concise practice title, fine project labels and brief notes" },
+    "palette": { "surfaces": ["warm stone", "light mineral green", "deep charcoal"], "ink": "near-black", "accents": ["signal orange", "warm brown"], "contrastIntent": "high contrast at the wordmark and research panel, subdued body palette with legible fine labels" },
+    "imageTreatment": { "mode": "project photography paired with architectural line drawings", "crop": "alternating vertical interior crops and compact drawing previews", "focalPoint": "material, spatial layout and detail; no source venue or client identity copied" },
+    "sectionSequence": ["utility-navigation", "masthead", "practice-statement", "research-rail", "project-archive", "services", "faq", "dark-contact-footer"],
+    "servicePresentation": { "pattern": "project-led archive followed by a factual hospitality/interior service index", "interaction": "direct project links and simple service anchors" },
+    "ctaPlacement": { "primary": "project enquiry in compact navigation and dark footer", "secondary": "project archive links", "early": "small enquiry route after the practice statement" },
+    "motion": { "primitive": "subtle reveal as project records enter the reading area", "library": "native scroll reveal", "reducedMotion": "static project sequence with all captions visible" },
+    "mobileRecomposition": { "strategy": "stacked annotated project archive", "rules": ["move research notes between project groups", "pair each drawing or photo with its label", "keep captions above minimum readable size", "show services and contact without sideways rail", "preserve no-overflow layout"] },
+    "prohibitedPatterns": ["copying Groth identity, wordmark, orange rail, photos, drawings, clients or project copy", "fake research dashboard or metrics", "unverified project outcomes, area, clients or dates", "horizontal overflow from fixed sidebar", "missing local/service explanation under an oversized logo", "invented awards or credentials", "card wall replacing project records"],
+    "requiredSignatureElements": [
+      { "id": "typographic-masthead", "selector": "[data-reference-signature=typographic-masthead]", "description": "oversized typographic identity followed by actual service scope" },
+      { "id": "research-rail", "selector": "[data-reference-signature=research-rail]", "description": "annotated secondary rail that becomes in-flow content on mobile" },
+      { "id": "paired-project-evidence", "selector": "[data-reference-signature=paired-project-evidence]", "description": "project entry pairing an approved photo and diagram or annotation" },
+      { "id": "dark-enquiry-close", "selector": "[data-reference-signature=dark-enquiry-close]", "description": "high-contrast contact close" }
+    ],
+    "acceptanceChecks": ["portfolio projects use approved evidence and verifiable labels", "sidebar reflows into the mobile reading order", "visible copy states actual service area and scope", "conversion remains usable with reduced motion", "contact details match verified data", "no source artwork, branding, copy or claims enter client output"]
+  },
+  "review": { "status": "requester-attested-internal-and-model-reference", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "direct-site desktop/mobile capture, source-specific mechanics prompt and requester attestation; no source grant file uploaded" }
+}

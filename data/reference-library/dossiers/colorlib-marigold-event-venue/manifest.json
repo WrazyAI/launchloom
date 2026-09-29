@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-marigold-event-venue",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "An event venue has a different booking journey from the selected hotel/lodging niche and does not yet have three venue references.",
+  "referenceName": "Marigold centered invitation and event timeline",
+  "familyId": "colorlib-marigold-event-editorial",
+  "source": {
+    "name": "Colorlib Bootstrap Templates, Marigold",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/marigold",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned repository includes an MIT license for its source. Marigold CREDITS.txt identifies its included photographs as CC0 1.0 or Public Domain Mark. Both records and the Bootstrap MIT notice are retained in this dossier.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": [
+      "rights/CREDITS.txt",
+      "rights/PROVENANCE.md"
+    ]
+  },
+  "provenance": {
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "repositoryCommit": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "marigold/",
+    "archiveSha256": "b10abe713a3261e9f5d01f9af4c83e6d190f5f3e969ca3a45f346add980c1d14",
+    "retrievedAt": "2026-09-25",
+    "capture": {
+      "method": "Rendered from the pinned local repository with Playwright 1.63.0 and Chromium. No gallery screenshot or screenshot download was used.",
+      "desktopViewport": {
+        "width": 1536,
+        "height": 864,
+        "deviceScaleFactor": 1,
+        "fullPage": true
+      },
+      "mobileViewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 1,
+        "fullPage": true
+      },
+      "captureNotes": "Lazy CC0 photographs were scrolled into view and decoded before capture. A closed off-canvas navigation dialog was hidden only in the capture page. No visible page content was modified. The measured document had no horizontal overflow at either viewport. Gradient placeholders remain CSS-generated and are not third-party photographs."
+    },
+    "attribution": "Colorlib Bootstrap Templates, MIT source license. Include the MIT copyright and permission notice with copies or substantial portions. The photography is CC0 or public domain as itemized in rights/CREDITS.txt."
+  },
+  "businessKinds": [
+    "event-venue",
+    "wedding-venue",
+    "event-planner",
+    "hospitality",
+    "private-events"
+  ],
+  "tags": {
+    "business": ["event-venue", "wedding-venue", "event-planner", "hospitality", "private-events"],
+    "style": ["centered-invitation", "romantic-editorial", "muted-photography", "warm-paper", "serif-display"],
+    "composition": ["full-screen-poster-hero", "split-story", "timeline-schedule", "asymmetric-photo-mosaic", "long-form-event-page"],
+    "conversion": ["event-inquiry", "availability-request", "guest-information", "schedule-discovery"],
+    "motion": ["date-bound-countdown-optional", "native-drawer", "accessible-form-controls", "no-scroll-jacking"],
+    "imagery": ["cc0-event-photography", "muted-hero-image", "portrait-story-image", "irregular-photo-mosaic"]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": { "width": 1536, "height": 864 }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": { "width": 390, "height": 844 }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The page opens as a centered photographic invitation poster rather than a conventional service hero. Large high-contrast display type, event-date metadata, and a single response action sit directly over a full-bleed muted image. The following story uses a portrait image and long-form editorial text; an event-day section pairs a narrow introduction with a ruled timeline; a loose image sequence breaks the text rhythm; the response form is a large, distinct commitment step; and guest information and a closing footer finish the page. Transfer the invitation-to-decision mechanics to a real event venue or planner. The source wedding, people, date, place, schedule, travel advice, gift requests, and all personal copy are fictional demonstration content and are never client facts.",
+    "heroGeometry": {
+      "mode": "full-viewport photographic invitation poster with centered identity and action",
+      "alignment": "centered stack over a full-bleed image field",
+      "viewport": "one clear event proposition, verified date or availability cue, and next step in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "minimal wordmark nav with a compact action/control cluster",
+      "placement": "top edge, visually subordinate to the invitation hero",
+      "mobile": "collapsed accessible drawer with a small set of named page anchors"
+    },
+    "typography": {
+      "display": "high-contrast editorial serif for the event identity and chapter headings",
+      "body": "neutral readable sans for logistics, forms, and supporting copy",
+      "scale": "large centered poster title; small uppercase event labels; compact timeline metadata"
+    },
+    "palette": {
+      "surfaces": ["warm ivory", "soft muted neutral", "near-black photo overlay"],
+      "ink": "deep charcoal with warm gray secondary text",
+      "accents": ["restrained botanical green", "subtle warm metallic tone"],
+      "contrastIntent": "legible poster text over a sufficiently darkened image; calm paper sections with clear rules and controls"
+    },
+    "imageTreatment": {
+      "mode": "muted full-bleed opening, portrait story image, and irregular event-space mosaic",
+      "crop": "cover crops vary between poster, portrait, and gallery panels",
+      "focalPoint": "preserve a safe central text zone in the hero; treat reference photos as layout evidence, not proof of the client's venue or past events"
+    },
+    "sectionSequence": [
+      "event-invitation-hero",
+      "editorial-story",
+      "event-schedule-timeline",
+      "venue-or-event-photo-mosaic",
+      "availability-or-event-inquiry",
+      "guest-or-visit-information",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "event schedule as a ruled vertical timeline, with time or phase on a narrow rail and a short description beside it",
+      "interaction": "schedule remains readable without JavaScript; use anchor navigation and native form controls rather than hidden hover states",
+      "adaptation": "for a venue or planner, replace the wedding timetable with verified booking stages, event formats, or planning services; never present an invented event program"
+    },
+    "ctaPlacement": {
+      "primary": "response or availability action inside the hero, followed by a dedicated inquiry form later",
+      "secondary": "story, schedule, or venue-detail navigation",
+      "early": "the first viewport should make the next action clear without forcing users through the full story"
+    },
+    "motion": {
+      "primitive": "optional date countdown only for a verified, future event date; otherwise retain a static date or availability label",
+      "library": "CSS and native browser controls; no external animation library required",
+      "reducedMotion": "render the complete hero and all logistics as static content; forms and navigation remain operable"
+    },
+    "mobileRecomposition": {
+      "strategy": "stacked invitation poster followed by editorial event chapters",
+      "rules": [
+        "keep the event identity and primary response action readable without overlay collisions",
+        "stack story image and text with deliberate spacing",
+        "turn the timeline into a single vertical rail with time labels that do not crowd descriptions",
+        "recompose the irregular mosaic into a varied vertical sequence rather than uniform cards",
+        "stack form fields and guest information without horizontal scrolling"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying Marigold, its sample couple, date, wedding venue, address, itinerary, travel instructions, gifts, or personal narrative",
+      "inventing an event date, availability, venue capacity, package price, catering option, accommodation, or booking policy",
+      "using countdown urgency when the business has no verified fixed event date",
+      "recasting personal RSVP or gift registry mechanics as a venue booking system without a real operational integration",
+      "presenting CC0 event imagery as the client's venue or previous customers",
+      "flattening the timeline and image rhythm into a generic rounded-card grid"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "invitation-poster",
+        "selector": "[data-reference-signature=invitation-poster]",
+        "description": "centered full-bleed opening with a concise event proposition and visible next step"
+      },
+      {
+        "id": "event-timeline",
+        "selector": "[data-reference-signature=event-timeline]",
+        "description": "ruled schedule or planning timeline with a distinct time/phase rail"
+      },
+      {
+        "id": "event-image-mosaic",
+        "selector": "[data-reference-signature=event-image-mosaic]",
+        "description": "asymmetrical image rhythm using client or documented licensed photography"
+      },
+      {
+        "id": "availability-inquiry",
+        "selector": "[data-reference-signature=availability-inquiry]",
+        "description": "dedicated inquiry step that does not pretend to be a live booking system"
+      }
+    ],
+    "acceptanceChecks": [
+      "the desktop opening reads as an invitation poster rather than a split SaaS hero",
+      "only verified event dates, capacity, prices, availability, location, and service details appear",
+      "the timeline remains legible and understandable with motion disabled and JavaScript unavailable",
+      "desktop and mobile retain the same story-to-schedule-to-inquiry rhythm without overflow",
+      "every visible photo is client-provided or independently rights-cleared and is not represented as a client event"
+    ]
+  },
+  "review": {
+    "status": "curated-open-license-pilot",
+    "curator": "Codex-assisted",
+    "reviewedAt": "2026-09-25",
+    "scope": "Pinned repository render, per-template CC0 image-credit audit, paired viewport captures, and transferable invitation/timeline mechanics only. Wedding-demo content is not approved client content."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-roofing-storm-response",
+  "productionEligible": true,
+  "referenceName": "Storm-response roofing inspection",
+  "familyId": "spicer-roofing-storm-response",
+  "source": {
+    "name": "Spicer Designs Roofing website template",
+    "url": "https://www.spicerdesigns.com/templates/roofing",
+    "rights": "licensed",
+    "rightsEvidence": "The downloaded HTML template is released under Creative Commons Attribution 4.0. Its retained README states the hero artwork is AI-generated placeholder art. The full license is stored beside this manifest.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/README.md"]
+  },
+  "provenance": {
+    "archiveSha256": "5db60a1cbaa94d8e8d31249c445ee28c0624eb5ecf366995e481a1accbbd7a93",
+    "capture": "Local render of the official HTML template at 1440x1000 and 390x844; no layout, source copy, or source artwork was changed.",
+    "retrievedAt": "2026-09-25",
+    "attribution": "Spicer Designs, CC BY 4.0. Source attribution remains in the captured page footer and is recorded here."
+  },
+  "businessKinds": ["roofing", "home-services", "local-trades", "storm-repair"],
+  "tags": {
+    "business": ["roofing", "home-services", "local-trades", "storm-repair"],
+    "style": ["industrial-editorial", "storm-cinematic", "warning-orange", "dark-material"],
+    "composition": ["storm-alert-band", "image-led-roofline-hero", "diagnostic-checklist", "comparison-slider", "step-timeline"],
+    "conversion": ["inspection-request", "phone-call", "before-after-proof"],
+    "motion": ["damage-checker-state", "before-after-drag", "step-progress"],
+    "imagery": ["ai-generated-roof-art", "svg-roof-diagrams", "dark-roof-texture"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "Near-black storm-response page with a narrow orange alert strip, a wide roof-scene hero, a large left-aligned inspection promise, compact call/request actions, an early proof ribbon, a ground-level damage self-check, before/after comparison, homeowner-versus-contractor timeline, material selector, warranties, FAQs, and a detailed inspection form. The hero image is AI-generated placeholder art, not a customer property.",
+    "heroGeometry": { "mode": "dark roof-scene with oversized left-aligned storm inspection promise", "alignment": "copy left over an image and gradient with roof illustration on the right", "viewport": "complete alert strip, navigation, promise and first request action fit the 1536x864 opening" },
+    "navigationGeometry": { "mode": "compact trade utility bar", "placement": "below a full-width orange storm-alert strip", "mobile": "brand plus one phone action, navigation collapsed into a short row" },
+    "typography": { "display": "heavy condensed grotesk with uppercase labels", "body": "compact humanist sans", "scale": "large three-to-five-line poster headline, very small technical labels, readable body copy" },
+    "palette": { "surfaces": ["near-black", "charcoal", "warm paper"], "ink": "warm white", "accents": ["signal orange", "roofline amber"], "contrastIntent": "high contrast; reserve orange for urgency, focus and next actions" },
+    "imageTreatment": { "mode": "cinematic roofline illustration with a darkened photograph-like texture", "crop": "wide cover crop with fade into a solid text-safe region", "focalPoint": "roof edge and warm light on the right; headline stays over quiet dark space" },
+    "sectionSequence": ["hero", "conversion-band", "services", "image-chapter", "process", "products", "proof", "faq", "contact"],
+    "servicePresentation": { "pattern": "ground-level damage checklist followed by direct repair and replacement choices", "interaction": "checklist state plus a keyboard-accessible before/after control" },
+    "ctaPlacement": { "primary": "inspection request inside the first hero viewport", "secondary": "phone action beside it", "early": "after the alert band and before the damage checklist" },
+    "motion": { "primitive": "severity response on selected visible symptoms and a draggable comparison handle", "library": "native-css-and-browser-events", "reducedMotion": "static comparison with all form and service choices visible" },
+    "mobileRecomposition": { "strategy": "poster-first stacked service flow", "rules": ["show promise and request action before stats", "stack diagnostic choices without horizontal scrolling", "make comparison handle keyboard and touch accessible", "keep the first FAQ and contact path easy to reach"] },
+    "prohibitedPatterns": ["copied source headline or sample claims", "invented warranty numbers", "unverified insurance coverage promises", "fake storm damage metrics", "generic rounded-card wall", "emergency availability claim unsupported by client facts"],
+    "requiredSignatureElements": [
+      { "id": "storm-alert-band", "selector": "[data-reference-signature=storm-alert-band]", "description": "narrow high-visibility alert band above the utility navigation" },
+      { "id": "damage-self-check", "selector": "[data-reference-signature=damage-self-check]", "description": "ground-level symptom checklist that makes a roof concern legible" },
+      { "id": "work-comparison", "selector": "[data-reference-signature=work-comparison]", "description": "before/after work comparison with an accessible control" },
+      { "id": "claim-timeline", "selector": "[data-reference-signature=claim-timeline]", "description": "step timeline separating visitor actions from provider actions" }
+    ],
+    "acceptanceChecks": ["hero communicates the service and next action immediately", "urgent and planned work are both easy to distinguish", "all numeric claims come only from sealed verified tokens", "desktop hero fits at 100 percent zoom", "mobile has no horizontal overflow or inaccessible drag-only controls"]
+  },
+  "review": { "status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "source license, asset provenance, full-page paired captures, and transferable design mechanics" }
+}

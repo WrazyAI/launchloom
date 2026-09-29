@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-forecourt-showroom",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "Vehicle sales is a distinct niche from the selected ten; the library does not yet have three business-matched dealership references.",
+  "referenceName": "Forecourt price-led automotive showroom",
+  "familyId": "colorlib-forecourt-showroom",
+  "source": {
+    "name": "Colorlib Bootstrap Templates Forecourt",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/forecourt",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned repository template is under MIT. Its retained per-template credits identify every bundled photograph as CC0/Public Domain. Both notices are included in this dossier.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/CREDITS.txt"]
+  },
+  "provenance": {
+    "repositoryCommit": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "archiveSha256": "a08ab6e57a0db6c2dfd91a2c1afe310871d4cac27cd673f9f71b8cf0c0d9d13e",
+    "capture": "Pinned template rendered locally at 1440px and 390px content widths. Lazy images were loaded before capture; a closed, off-canvas drawer was hidden only for the mobile capture because it otherwise expanded the page canvas. Visible content and source markup were unchanged.",
+    "retrievedAt": "2026-09-25",
+    "attribution": "Colorlib Bootstrap Templates, MIT. Per-template photography credits retained; source footer remains visible in both screenshots."
+  },
+  "businessKinds": ["automotive", "auto-dealership", "used-car-dealer", "vehicle-sales"],
+  "tags": {
+    "business": ["automotive", "auto-dealership", "used-car-dealer", "vehicle-sales"],
+    "style": ["light-showroom", "price-led", "clean-retail", "orange-signal", "neutral-grotesk"],
+    "composition": ["search-attached-to-hero", "inventory-comparison-grid", "finance-explainer", "part-exchange-workflow", "branch-utility-cards"],
+    "conversion": ["stock-search", "vehicle-enquiry", "test-drive-request", "part-exchange-valuation"],
+    "motion": ["vehicle-filtering", "payment-slider", "progressive-form"],
+    "imagery": ["cc0-automotive-photography", "wide-showroom-image", "product-card-crops"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A bright automotive showroom page with a shallow wordmark/navigation row, a softly washed full-width showroom hero, a price/value promise, and a stock finder attached to the hero. Recent inventory is displayed as comparable vehicle records with image, model, specifications, and finance labels. Lower chapters explain payment assumptions, provide a part-exchange workflow, show branch utility details, and close with compliance text and navigation. All source cars, figures, branch facts, reviews, and claims are demo content.",
+    "heroGeometry": { "mode": "search-led showroom opening", "alignment": "large left-aligned value statement over a wide lightened showroom image with finder attached below", "viewport": "brand, clear value proposition, first stock-search fields and primary action fit in the opening desktop view" },
+    "navigationGeometry": { "mode": "compact retail utility bar", "placement": "shallow white strip above the showroom image", "mobile": "brand and compact menu remain; phone or enquiry route has one clear place" },
+    "typography": { "display": "bold neutral grotesk", "body": "compact humanist sans", "scale": "large two-line promise, clear model names, small metadata and explicit price labels" },
+    "palette": { "surfaces": ["white", "pale gray", "cool showroom silver"], "ink": "charcoal", "accents": ["signal orange", "cool gray"], "contrastIntent": "highly readable retail contrast with orange reserved for active search and actions" },
+    "imageTreatment": { "mode": "wide showroom context plus repeated vehicle records", "crop": "soft cover hero followed by consistent product-image crops", "focalPoint": "showroom context in hero; vehicle silhouette and model identity in inventory images" },
+    "sectionSequence": ["navigation", "hero", "vehicle-search", "inventory", "finance-explainer", "part-exchange", "branches", "faq", "contact"],
+    "servicePresentation": { "pattern": "inventory comparison with a separate payment explainer and part-exchange flow", "interaction": "stock filters and finance controls only when connected to accurate inventory and finance data" },
+    "ctaPlacement": { "primary": "stock finder action within the opening scene", "secondary": "call or test-drive enquiry in utility navigation", "early": "within the hero, immediately after the value statement" },
+    "motion": { "primitive": "data-backed filter and slider state", "library": "native forms and browser events", "reducedMotion": "show the complete stock list and static finance assumptions" },
+    "mobileRecomposition": { "strategy": "stacked retail search and inventory comparison", "rules": ["put stock filters immediately below the promise", "stack search controls full width", "show model, verified specification, price label and action together", "stack branch and finance data without sideways tables"] },
+    "prohibitedPatterns": ["copied vehicle names, photos, prices, finance or branch claims", "invented vehicle stock count", "unverified APR or payment calculator", "stock photo presented as available inventory", "generic reviews or guarantees", "glass-pill navigation", "unrelated bento-card wall"],
+    "requiredSignatureElements": [
+      { "id": "vehicle-finder", "selector": "[data-reference-signature=vehicle-finder]", "description": "search/filter controls attached to the showroom promise" },
+      { "id": "inventory-comparison", "selector": "[data-reference-signature=inventory-comparison]", "description": "vehicle records compared through image, model and verified details" },
+      { "id": "finance-explainer", "selector": "[data-reference-signature=finance-explainer]", "description": "separate finance assumptions or explainer, not an unsupported live price" },
+      { "id": "part-exchange", "selector": "[data-reference-signature=part-exchange]", "description": "focused vehicle valuation request" }
+    ],
+    "acceptanceChecks": ["stock search is the primary opening action", "vehicle imagery matches real client inventory or is explicitly illustrative", "all payment inputs and assumptions are verified", "branch details represent confirmed physical locations", "mobile inventory is readable without horizontal scrolling", "the page has a clear test-drive or vehicle-enquiry path"]
+  },
+  "review": { "status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "pinned MIT template, per-image CC0/Public Domain evidence, full-page desktop/mobile captures, and transferable retail mechanics" }
+}

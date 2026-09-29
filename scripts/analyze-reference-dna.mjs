@@ -1,6 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
+  assertReferenceDossierPack,
+  referenceDossierPromptBlock,
+} from "./reference-dossier.mjs";
+import {
   logOpenRouterCacheUsage,
   logOpenRouterResponseCacheUsage,
   openRouterChatCompletion,
@@ -230,6 +234,9 @@ ${JSON.stringify({
   motionOpportunity: route.motionOpportunity
 }, null, 2)}
 
+CURATED REFERENCE DOSSIER
+${referenceDossierPromptBlock(route.referenceDossier) || "No dossier was attached. Do not infer missing evidence from prose."}
+
 SOURCE CAPTURE DIMENSIONS
 ${JSON.stringify(captureDimensions, null, 2)}
 The desktop image may be a full-page capture or page excerpt. Its total image height is not a browser viewport height. The production desktop viewport is 1536x864 and the complete header plus hero must fit inside it at 100% zoom. Preserve the reference's hierarchy, crop, overlap, and spacing when adapting it to that viewport.
@@ -297,6 +304,7 @@ Rules:
 }
 
 export async function enrichInspirationPack(pack, { fetchImpl = fetch } = {}) {
+  assertReferenceDossierPack(pack, { repositoryRoot: path.resolve(import.meta.dirname, "..") });
   if (!process.env.OPENROUTER_API_KEY)
     throw new Error("OPENROUTER_API_KEY is required to derive Reference DNA from screenshots.");
   if (!Array.isArray(pack?.routes) || !pack.routes.length)

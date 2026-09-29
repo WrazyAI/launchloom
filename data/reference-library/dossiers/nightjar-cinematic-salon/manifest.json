@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "id": "nightjar-cinematic-salon",
+  "productionEligible": false,
+  "referenceName": "LaunchLoom nocturnal salon study",
+  "familyId": "launchloom-nocturnal-salon",
+  "source": {
+    "name": "LaunchLoom owned prototype",
+    "url": "https://nightjar-cinematic-prototype.pages.dev/",
+    "rights": "owned",
+    "rightsEvidence": "This is a LaunchLoom-owned original design study and its in-house rendered capture, stored for internal inspiration and implementation research."
+  },
+  "businessKinds": [
+    "hospitality",
+    "fine-jewelry",
+    "luxury-retail",
+    "beauty"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "LaunchLoom nocturnal salon study",
+    "heroGeometry": {
+      "mode": "full-bleed low-light room with inset statement",
+      "alignment": "scene-led with copy anchored to the image",
+      "viewport": "single cinematic opening scene"
+    },
+    "navigationGeometry": {
+      "mode": "discreet wordmark and corner links",
+      "placement": "top edge over image",
+      "mobile": "compact inline links"
+    },
+    "typography": {
+      "display": "high-contrast display serif",
+      "body": "neutral humanist sans",
+      "scale": "large statement with small utility labels"
+    },
+    "palette": {
+      "surfaces": [
+        "near-black",
+        "espresso",
+        "warm ivory"
+      ],
+      "ink": "warm ivory",
+      "accents": [
+        "muted brass",
+        "amber"
+      ],
+      "contrastIntent": "low-light contrast with clear text surfaces"
+    },
+    "imageTreatment": {
+      "mode": "warm interior and material close-ups",
+      "crop": "wide room scene followed by tight detail crops",
+      "focalPoint": "light sources and material texture"
+    },
+    "sectionSequence": [
+      "hero",
+      "image-chapter",
+      "editorial-intro",
+      "services",
+      "process",
+      "closing-scene",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "sensory service chapters",
+      "interaction": "image-led chapter transitions"
+    },
+    "ctaPlacement": {
+      "primary": "quiet booking action in hero",
+      "secondary": "service chapter link",
+      "early": "after opening scene"
+    },
+    "motion": {
+      "primitive": "slow scene crossfade",
+      "library": "gsap-scrolltrigger",
+      "reducedMotion": "use static image chapters"
+    },
+    "mobileRecomposition": {
+      "strategy": "single-column cinematic scenes",
+      "rules": [
+        "keep the call action in the opening flow",
+        "crop people and materials safely",
+        "remove pinned scenes"
+      ]
+    },
+    "prohibitedPatterns": [
+      "generic-card-wall",
+      "pill-navbar",
+      "bright clinical palette",
+      "decorative-numbered-service-cards"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "nocturnal-scene",
+        "selector": "[data-reference-signature=nocturnal-scene]",
+        "description": "full-bleed low-light opening scene"
+      },
+      {
+        "id": "material-chapter",
+        "selector": "[data-reference-signature=material-chapter]",
+        "description": "distinct material or atmosphere image chapter"
+      }
+    ],
+    "acceptanceChecks": [
+      "the hero is an image-led room scene, not a split template",
+      "warm highlights remain legible against dark surfaces",
+      "mobile preserves the scene-to-detail rhythm"
+    ],
+    "annotatedDescription": "Owned visual experiment suitable for studying atmosphere and conversion pacing."
+  },
+  "review": {
+    "status": "initial-curation",
+    "curator": "Codex-assisted screenshot review",
+    "reviewedAt": "2026-09-25",
+    "scope": "paired full-page evidence and transferable visual mechanics; not approval of sample business claims or production copy"
+  }
+}

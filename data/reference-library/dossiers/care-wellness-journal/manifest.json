@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "id": "care-wellness-journal",
+  "productionEligible": false,
+  "referenceName": "Care wellness journal study",
+  "familyId": "care-wellness-journal",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/inspiration-evidence/design-family-demos",
+    "rights": "owned",
+    "rightsEvidence": "This is a LaunchLoom-owned original design study and its in-house rendered capture, stored for internal inspiration and implementation research."
+  },
+  "businessKinds": [
+    "healthcare",
+    "home-care",
+    "elder-care",
+    "wellness"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Care wellness journal study",
+    "heroGeometry": {
+      "mode": "framed editorial statement beside a multi-window image mosaic",
+      "alignment": "asymmetric text panel and image windows",
+      "viewport": "compact editorial opening"
+    },
+    "navigationGeometry": {
+      "mode": "small wordmark with restrained utility links",
+      "placement": "top edge",
+      "mobile": "inline compact links"
+    },
+    "typography": {
+      "display": "editorial serif",
+      "body": "quiet neutral sans",
+      "scale": "large italic statement with compact captions"
+    },
+    "palette": {
+      "surfaces": [
+        "near-black",
+        "soft ivory",
+        "care green"
+      ],
+      "ink": "soft ivory",
+      "accents": [
+        "muted mint"
+      ],
+      "contrastIntent": "dark-light chapters with readable inversion"
+    },
+    "imageTreatment": {
+      "mode": "repeated landscape and care-image windows",
+      "crop": "asymmetric rectangular mosaic",
+      "focalPoint": "wide landscape and people"
+    },
+    "sectionSequence": [
+      "hero",
+      "image-mosaic",
+      "editorial-intro",
+      "services",
+      "image-chapter",
+      "process",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "compact editorial service panels",
+      "interaction": "simple row links"
+    },
+    "ctaPlacement": {
+      "primary": "conversation action in hero panel",
+      "secondary": "service-row link",
+      "early": "within the opening panel"
+    },
+    "motion": {
+      "primitive": "gentle image-window reveal",
+      "library": "css",
+      "reducedMotion": "static image mosaic"
+    },
+    "mobileRecomposition": {
+      "strategy": "editorial single column with image stack",
+      "rules": [
+        "unframe the headline when space is narrow",
+        "stack the crops",
+        "keep body copy short and actions visible"
+      ]
+    },
+    "prohibitedPatterns": [
+      "unrelated card wall",
+      "centered generic split hero",
+      "decorative marquee",
+      "dense long-form why-us copy"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "journal-opening",
+        "selector": "[data-reference-signature=journal-opening]",
+        "description": "framed editorial copy and image-window mosaic"
+      },
+      {
+        "id": "care-chapter",
+        "selector": "[data-reference-signature=care-chapter]",
+        "description": "clear surface transition into a care story"
+      }
+    ],
+    "acceptanceChecks": [
+      "opening keeps the editorial frame and mosaic relationship",
+      "large dark and light sections remain distinct",
+      "the service list does not become a generic grid"
+    ],
+    "annotatedDescription": "Owned rendered wellness and home-care study. The screenshot shows an editorial frame, offset image windows, and alternating dark, green, and light chapters. It is not a studio column or marquee reference."
+  },
+  "review": {
+    "status": "initial-curation",
+    "curator": "Codex-assisted screenshot review",
+    "reviewedAt": "2026-09-25",
+    "scope": "paired full-page evidence and transferable visual mechanics; not approval of sample business claims or production copy"
+  }
+}

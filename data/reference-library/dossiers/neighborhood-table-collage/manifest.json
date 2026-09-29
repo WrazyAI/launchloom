@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "id": "neighborhood-table-collage",
+  "productionEligible": false,
+  "referenceName": "Neighborhood collage market study",
+  "familyId": "neighborhood-table-collage",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/inspiration-evidence/a1-design-showcase",
+    "rights": "owned",
+    "rightsEvidence": "This is a LaunchLoom-owned original design study and its in-house rendered capture, stored for internal inspiration and implementation research."
+  },
+  "businessKinds": [
+    "food",
+    "hospitality",
+    "retail",
+    "community"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Neighborhood collage market",
+    "heroGeometry": {
+      "mode": "loose-product-collage",
+      "alignment": "left-copy-with-offset-product-tiles",
+      "viewport": "warm full-width opening with an asymmetrical image cluster"
+    },
+    "navigationGeometry": {
+      "mode": "market-day-navigation",
+      "placement": "small linear top row with utility CTA",
+      "mobile": "compact top row with inline action"
+    },
+    "typography": {
+      "display": "friendly-display-serif",
+      "body": "warm neutral sans",
+      "scale": "large conversational headline with compact utility labels"
+    },
+    "palette": {
+      "surfaces": [
+        "warm cream",
+        "soft sage",
+        "butter yellow",
+        "tomato orange",
+        "deep cocoa"
+      ],
+      "ink": "deep cocoa",
+      "accents": [
+        "tomato orange",
+        "butter yellow",
+        "sage"
+      ],
+      "contrastIntent": "warm high-contrast editorial commerce"
+    },
+    "imageTreatment": {
+      "mode": "overlapping-product-stills",
+      "crop": "varied rectangular crops with collage overlap",
+      "focalPoint": "product-centered with generous negative space"
+    },
+    "sectionSequence": [
+      "hero",
+      "services",
+      "image-mosaic",
+      "conversion-band",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "seasonal-shelf-menu",
+      "interaction": "quiet row hover and seasonal highlight"
+    },
+    "ctaPlacement": {
+      "primary": "hero-counter-action",
+      "secondary": "visit-band",
+      "early": "inside first collage"
+    },
+    "motion": {
+      "primitive": "collage-depth-parallax",
+      "library": "gsap-scrolltrigger",
+      "reducedMotion": "static stacked collage"
+    },
+    "mobileRecomposition": {
+      "strategy": "stacked-product-collage",
+      "rules": [
+        "stack product stills into an intentional offset stack",
+        "turn shelf rows into full-width touch targets",
+        "keep the visit action visible without overlaying copy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "generic-split-hero",
+      "uniform-rounded-card-grid",
+      "cool-blue-saas-palette",
+      "heavy-pill-navigation",
+      "dense-dashboard-services",
+      "monochrome-editorial-black"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "collage-hero",
+        "selector": "[data-reference-signature=collage-hero]",
+        "description": "asymmetrical product collage opening"
+      },
+      {
+        "id": "seasonal-shelf",
+        "selector": "[data-reference-signature=seasonal-shelf]",
+        "description": "seasonal menu or shelf rows"
+      },
+      {
+        "id": "visit-band",
+        "selector": "[data-reference-signature=visit-band]",
+        "description": "graphic band that moves visitors toward a visit or order"
+      },
+      {
+        "id": "product-still-overlap",
+        "selector": "[data-reference-signature=product-still-overlap]",
+        "description": "overlapping product stills with varied crops"
+      }
+    ],
+    "acceptanceChecks": [
+      "hero uses a loose product collage rather than a symmetric split",
+      "services read as seasonal shelf rows",
+      "a graphic visit or order band appears before the closing contact",
+      "mobile keeps the collage relationship while stacking safely"
+    ],
+    "annotatedDescription": "Owned LaunchLoom design study used as visual evidence. Original LaunchLoom study informed by multiple hospitality references."
+  },
+  "review": {
+    "status": "initial-curation",
+    "curator": "Codex-assisted screenshot review",
+    "reviewedAt": "2026-09-25",
+    "scope": "paired full-page evidence and transferable visual mechanics; not approval of sample business claims or production copy"
+  }
+}

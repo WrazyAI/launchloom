@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-meridian-clinic",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "Medical clinics are outside the selected ten niches and do not yet have three complete clinic references.",
+  "referenceName": "Meridian clinical utility and embedded booking",
+  "familyId": "colorlib-meridian-clinical-utility",
+  "source": {
+    "name": "Colorlib Bootstrap Templates, Meridian",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/meridian",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned repository includes an MIT license for its source. Meridian CREDITS.txt identifies its only included photograph as CC0 1.0 or Public Domain Mark; other photographic placeholders are CSS gradients. Both records and the Bootstrap MIT notice are retained in this dossier.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": [
+      "rights/CREDITS.txt",
+      "rights/PROVENANCE.md"
+    ]
+  },
+  "provenance": {
+    "repository": "https://github.com/ColorlibHQ/bootstrap-templates",
+    "repositoryCommit": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "templatePath": "meridian/",
+    "archiveSha256": "467447d3a2c893ea92486cc4c613312d4b822ea9f76920c9a748a3bf24c1b1d7",
+    "retrievedAt": "2026-09-25",
+    "capture": {
+      "method": "Rendered from the pinned local repository with Playwright 1.63.0 and Chromium. No gallery screenshot or screenshot download was used.",
+      "desktopViewport": {
+        "width": 1536,
+        "height": 864,
+        "deviceScaleFactor": 1,
+        "fullPage": true
+      },
+      "mobileViewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 1,
+        "fullPage": true
+      },
+      "captureNotes": "The credited CC0 hero photograph was loaded locally; CSS-generated gradient blocks were left intact. A closed off-canvas navigation dialog was hidden only in the capture page. No visible page content was modified. The measured document had no horizontal overflow at either viewport. The city-skyline photograph is not evidence of the demo clinic's premises and must not imply that a client clinic is there."
+    },
+    "attribution": "Colorlib Bootstrap Templates, MIT source license. Include the MIT copyright and permission notice with copies or substantial portions. The sole included photograph is CC0 or public domain as itemized in rights/CREDITS.txt."
+  },
+  "businessKinds": [
+    "medical-clinic",
+    "primary-care",
+    "specialty-clinic",
+    "healthcare",
+    "dental-practice"
+  ],
+  "tags": {
+    "business": ["medical-clinic", "primary-care", "specialty-clinic", "healthcare", "dental-practice"],
+    "style": ["clinical-utility", "calm-trustworthy", "teal-accent", "bright-modular", "high-legibility-sans"],
+    "composition": ["utility-strip", "split-hero-with-booking", "icon-service-grid", "patient-info-contact-split", "compact-footer"],
+    "conversion": ["appointment-request", "service-discovery", "patient-information", "hours-and-contact"],
+    "motion": ["native-form-controls", "disclosure-faq", "accessible-drawer", "no-scroll-jacking"],
+    "imagery": ["single-cc0-skyline-placeholder", "client-clinic-photos-priority", "css-generated-portrait-placeholders", "decorative-photo-not-proof"]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": { "width": 1536, "height": 864 }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": { "width": 390, "height": 844 }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A practical healthcare site begins with a slim emergency/contact utility strip and a compact clinic wordmark navigation with a direct appointment action. The first major section is a split composition: a large promise, short lede, two clear actions, and concise trust facts are balanced by an embedded appointment-request panel. Below, an icon-led service directory supports scanning, a provider/organization chapter is available for verified profiles, and a patient-information chapter pairs native expandable questions with hours and contact details. The overall language is bright and calm, with pale clinical surfaces and a restrained teal accent. Every source clinic name, location, phone, emergency instruction, provider, specialty, credential, insurer, price, wait time, outcome, and medical statement is fictional demo material and cannot be reused.",
+    "heroGeometry": {
+      "mode": "utility strip then a two-column clinical opening with an embedded appointment panel",
+      "alignment": "copy and service signals in the broad column, booking form in a narrower sidecar",
+      "viewport": "show the primary appointment path and a short factual promise immediately; no made-up statistics are needed to fill the space"
+    },
+    "navigationGeometry": {
+      "mode": "edge-to-edge utility strip above a compact brand and section navigation",
+      "placement": "utility information at the top edge, navigation directly below it",
+      "mobile": "small accessible drawer; preserve the urgent contact route only when supplied and regionally verified"
+    },
+    "typography": {
+      "display": "high-legibility contemporary sans with a strong but restrained clinical headline",
+      "body": "neutral sans with generous line-height for healthcare information",
+      "scale": "large concise hero title, clear service names, compact utility labels, readable form labels and patient information"
+    },
+    "palette": {
+      "surfaces": ["clean white", "pale mint-gray", "light cool neutral"],
+      "ink": "deep blue-green or charcoal for main text with muted slate secondary text",
+      "accents": ["restrained teal", "soft accessible green"],
+      "contrastIntent": "high text contrast and legible form states; color must never be the sole urgency or validation cue"
+    },
+    "imageTreatment": {
+      "mode": "one understated hero photo with low-contrast service surfaces and CSS or client-owned portrait areas",
+      "crop": "wide hero crop; small people or place images only when actual client assets exist",
+      "focalPoint": "do not treat the reference skyline or placeholder gradients as a clinic, clinician, or treatment image"
+    },
+    "sectionSequence": [
+      "utility-strip-and-navigation",
+      "hero-and-appointment-request",
+      "icon-led-services",
+      "verified-team-or-practice-information",
+      "optional-accepted-payment-information",
+      "patient-faq-and-contact-hours",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "scannable icon-led directory with a real service name, brief factual scope, and descriptive link",
+      "interaction": "standard links and focus-visible states; no hidden details required to understand the service",
+      "adaptation": "use only services in the verified business profile; remove provider, payment, insurance, diagnostic, or treatment-specific rows when unsupported"
+    },
+    "ctaPlacement": {
+      "primary": "appointment request in the hero booking panel and the navigation action",
+      "secondary": "service directory or patient-information anchor",
+      "early": "a useful next step is visible in the opening viewport, but should not promise an appointment slot or medical outcome"
+    },
+    "motion": {
+      "primitive": "native form validation, calendar/service selection only when supported by a real handler, and HTML details/summary FAQ disclosure",
+      "library": "CSS and browser-native interactions",
+      "reducedMotion": "all information remains visible and controls work without transitions; no auto-opening, flashing, or parallax"
+    },
+    "mobileRecomposition": {
+      "strategy": "utility strip, compact navigation, then stacked promise and appointment form",
+      "rules": [
+        "stack hero copy and form in a deliberate order with the action near the promise",
+        "do not put an overlong form in a narrow sticky overlay",
+        "flow service links into a single-column or two-column list based on text length",
+        "keep FAQ answers and hours readable with large tap targets",
+        "ensure emergency/contact details do not overflow or become ambiguous on small screens"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying Meridian or its sample clinic, city, address, phone, emergency advice, doctors, credentials, insurers, prices, hours, wait times, or outcome statistics",
+      "making clinical, diagnostic, safety, efficacy, urgent-care, or treatment claims without approved evidence and appropriate review",
+      "presenting the city skyline as the client's practice location or using CSS gradient blocks as fake clinician portraits",
+      "claiming a booking form confirms, schedules, or transmits an appointment when no working integration exists",
+      "showing sensitive patient data or collecting unnecessary health details in a marketing form",
+      "using color alone for errors, emergency status, consent, or booking selection"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "clinical-utility-strip",
+        "selector": "[data-reference-signature=clinical-utility-strip]",
+        "description": "compact contact or status strip containing only verified information"
+      },
+      {
+        "id": "embedded-appointment-panel",
+        "selector": "[data-reference-signature=embedded-appointment-panel]",
+        "description": "an accessible inquiry panel aligned with the hero promise"
+      },
+      {
+        "id": "service-directory",
+        "selector": "[data-reference-signature=service-directory]",
+        "description": "an icon-led, scannable list of verified services"
+      },
+      {
+        "id": "patient-info-contact",
+        "selector": "[data-reference-signature=patient-info-contact]",
+        "description": "patient FAQs and practical contact/hours information presented together"
+      }
+    ],
+    "acceptanceChecks": [
+      "primary appointment action is visible in the opening viewport and its behavior is accurately described",
+      "no invented medical claims, results, credentials, provider identities, emergency routing, or clinical availability appears",
+      "services, hours, location, emergency instructions, insurers, and payment details bind only to verified facts",
+      "the booking form collects only needed contact/request information and has keyboard and screen-reader labels",
+      "desktop and mobile preserve the utility-to-booking-to-services-to-patient-information rhythm without overflow"
+    ]
+  },
+  "review": {
+    "status": "curated-open-license-pilot",
+    "curator": "Codex-assisted",
+    "reviewedAt": "2026-09-25",
+    "scope": "Pinned repository render, per-template CC0 photograph audit, paired viewport captures, and transferable clinical-utility composition only. No demo healthcare claims or medical content are approved for reuse."
+  }
+}

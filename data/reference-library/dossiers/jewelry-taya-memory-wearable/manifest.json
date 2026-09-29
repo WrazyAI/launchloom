@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "jewelry-taya-memory-wearable",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "This is a product/e-commerce launch rather than a verified local jewelry business; jewelry is not one of the ten core niches.",
+  "referenceName": "Taya wearable jewelry product story",
+  "familyId": "taya-memory-wearable-editorial",
+  "source": {
+    "name": "Taya official website",
+    "url": "https://tayanecklace.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation covers persistent full-page screenshot and derived-prompt retention, including use of screenshots as pipeline visual references. No owner grant was uploaded or independently verified; scope is limited to this internal reference-library use.",
+    "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md",
+    "assetEvidencePaths": ["rights/ASSET-PROVENANCE.md"]
+  },
+  "provenance": {
+    "retrievedAt": "2026-09-25",
+    "capture": "Full-page captures from the live official domain at desktop 1440x1000 and mobile 390x844. Captures include first-party page imagery only as part of the screenshot evidence. Lazy imagery was triggered by scrolling before capture.",
+    "attribution": "Source brand and wordmark remain visible only as part of the original-site screenshots. Derived prompt describes transferable mechanics and prohibits reuse of brand assets, copy, and trade dress.",
+    "qa": "Both viewports had document and body widths equal to the viewport. All seven observed image elements completed successfully after scrolling; no broken image URL was observed."
+  },
+  "businessKinds": ["fine-jewelry", "wearable-product", "independent-retail", "consumer-electronics", "product-launch"],
+  "tags": {
+    "business": ["fine-jewelry", "wearable-product", "independent-retail", "consumer-electronics", "product-launch"],
+    "style": ["minimal-product-editorial", "warm-ivory", "soft-gold", "jewelry-first-technology", "serif-display"],
+    "composition": ["immersive-campaign-image", "suspended-product-line", "editorial-use-case-scene", "image-led-feature-rail", "centered-privacy-statement"],
+    "conversion": ["preorder-action", "product-education", "feature-proof", "privacy-reassurance", "testimonial-close"],
+    "motion": ["product-line-draw", "horizontal-testimonial-rail", "scroll-reveal", "reduced-motion-static-fallback"],
+    "imagery": ["close-cropped-wearable-portrait", "macro-pendant-still-life", "lifestyle-film-frame", "soft-natural-light", "first-party-reference-image-only"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A product-led wearable story that sells an expressive jewelry object before explaining its technology. A narrow wordmark/navigation sits over an immersive close-cropped campaign image; the promise and preorder action are embedded in the image composition. The page then uses a suspended pendant and fine chain as a visual connector into concise editorial context, a lifestyle-film chapter, a jewelry-first product story, four image-backed product attributes, a deliberate-activation/privacy explanation, a testimonial rail, and a compact footer. The reference is airy and product-focused rather than a standard ecommerce category grid.",
+    "heroGeometry": { "mode": "immersive close-cropped campaign image", "alignment": "full-width photograph with promise low-left and compact supporting sentence low-right; utility actions at the upper edge", "viewport": "opening campaign image occupies roughly the first 40 percent of the full-page desktop capture; wordmark, product promise, and preorder action remain legible in the opening" },
+    "navigationGeometry": { "mode": "minimal wordmark and compact utility navigation", "placement": "lightweight overlay at the top edge of the campaign image", "mobile": "small logo and hamburger over a full-width image; menu content opens separately without competing with the product image" },
+    "typography": { "display": "high-contrast editorial serif", "body": "quiet neutral sans serif", "scale": "large but compact campaign title, small uppercase utility labels, short body paragraphs, and restrained button text" },
+    "palette": { "surfaces": ["warm ivory", "soft white"], "ink": "near-black", "accents": ["pale gold", "sand", "muted taupe"], "contrastIntent": "low-chroma product luxury with dark text and controls held to clear contrast" },
+    "imageTreatment": { "mode": "natural-light campaign portrait, isolated pendant still life, and lifestyle use-case photography", "crop": "wide close crop for the opening; narrow product still-life crops; stacked portrait and detail panels on mobile", "focalPoint": "wearable product on a person or a single pendant; never crop the product out to protect decorative atmosphere" },
+    "sectionSequence": ["minimal-navigation", "campaign-hero", "suspended-pendant-and-editorial-intro", "lifestyle-film-chapter", "jewelry-first-product-story", "four-image-feature-rail", "voice-and-privacy-explanation", "testimonial-rail", "compact-footer"],
+    "servicePresentation": { "pattern": "product education rather than service cards: one wearable object is introduced, then its design and technical attributes are explained in an image-backed four-part rail", "interaction": "feature details stay short and scannable; any carousel remains operable with visible controls and a static fallback" },
+    "ctaPlacement": { "primary": "preorder or product action in the upper campaign image and again after product context", "secondary": "learn-how-it-works action after feature explanation", "early": "inside the opening image composition, not postponed to the footer" },
+    "motion": { "primitive": "fine chain or pendant line used as a visual connector, restrained image reveal, and horizontally navigable testimonial rail", "library": "source implementation library is not asserted; preserve mechanics with CSS or a vetted motion layer", "reducedMotion": "render a static chain illustration, show all features and testimonials in reading order, disable autoplay and scroll-linked transforms" },
+    "mobileRecomposition": { "strategy": "single-column campaign and product narrative", "rules": ["keep logo and menu controls in a compact top strip", "let the campaign image occupy the full content width with legible overlay copy", "make the pendant connector a short visual pause between image and editorial copy", "stack feature images with readable labels", "keep purchase and how-it-works actions reachable without sideways scrolling"] },
+    "prohibitedPatterns": ["copying Taya name, wordmark, logo, product silhouette, exact source text, imagery, testimonials, or trade dress", "inventing battery duration, materials, water resistance, audio quality, privacy behavior, preorder dates, price, or technical specifications", "presenting generated or stock people as the client's staff or customers", "generic ecommerce card wall", "autoplay video or sound", "scroll lock or motion that hides product information", "placing the only purchase action in the footer"],
+    "requiredSignatureElements": [
+      { "id": "wearable-campaign-opening", "selector": "[data-reference-signature=wearable-campaign-opening]", "description": "an image-first campaign opening where the wearable product and concise product promise share the same composition" },
+      { "id": "pendant-connector", "selector": "[data-reference-signature=pendant-connector]", "description": "a fine-line product or necklace motif that visually links the campaign to a concise editorial product explanation" },
+      { "id": "jewelry-first-feature-rail", "selector": "[data-reference-signature=jewelry-first-feature-rail]", "description": "a small sequence of image-backed product attributes that explains design before technical detail" },
+      { "id": "intentional-capture-explanation", "selector": "[data-reference-signature=intentional-capture-explanation]", "description": "a distinct privacy or activation explanation based only on verified client-provided product facts" }
+    ],
+    "acceptanceChecks": ["desktop opening reads as a wearable campaign rather than a generic split hero", "mobile keeps product image, promise, and primary action visible without horizontal overflow", "client-provided image assets outrank generated placeholders", "all product specifications and privacy claims are sealed verified facts", "the technical feature sequence remains understandable without animation", "reference imagery and source copy are not emitted into the generated site", "all image and motion elements have descriptive text and reduced-motion behavior"]
+  },
+  "review": { "status": "requester-attested-production-reference", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "Official-domain screenshots, source-derived visual mechanics, responsive review, and requester-attested internal model-reference use; no owner grant file was provided." }
+}

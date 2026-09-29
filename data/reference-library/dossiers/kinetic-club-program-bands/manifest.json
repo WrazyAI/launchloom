@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "id": "kinetic-club-program-bands",
+  "productionEligible": false,
+  "referenceName": "LaunchLoom kinetic club study",
+  "familyId": "launchloom-kinetic-club",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/inspiration-evidence/a1-design-showcase",
+    "rights": "owned",
+    "rightsEvidence": "This is a LaunchLoom-owned original design study and its in-house rendered capture, stored for internal inspiration and implementation research."
+  },
+  "businessKinds": [
+    "fitness",
+    "sports",
+    "automotive",
+    "performance"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "LaunchLoom kinetic club study",
+    "heroGeometry": {
+      "mode": "large action poster with a strong typographic block",
+      "alignment": "edge-led copy over energetic color field",
+      "viewport": "one-screen statement and action"
+    },
+    "navigationGeometry": {
+      "mode": "compact utility links",
+      "placement": "top edge",
+      "mobile": "collapsed or short inline navigation"
+    },
+    "typography": {
+      "display": "heavy condensed sans",
+      "body": "neutral sans",
+      "scale": "oversized poster scale with small program labels"
+    },
+    "palette": {
+      "surfaces": [
+        "ink",
+        "acid lime",
+        "signal orange"
+      ],
+      "ink": "off-white",
+      "accents": [
+        "acid lime",
+        "signal orange"
+      ],
+      "contrastIntent": "high-energy contrast"
+    },
+    "imageTreatment": {
+      "mode": "documentary action stills",
+      "crop": "full-bleed crop with subject-safe framing",
+      "focalPoint": "athlete or movement subject"
+    },
+    "sectionSequence": [
+      "hero",
+      "conversion-band",
+      "program-bands",
+      "image-chapter",
+      "proof",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "horizontal class or program bands",
+      "interaction": "directional row reveal"
+    },
+    "ctaPlacement": {
+      "primary": "primary class action in hero",
+      "secondary": "program-band action",
+      "early": "inside the poster"
+    },
+    "motion": {
+      "primitive": "velocity-linked type and band reveal",
+      "library": "gsap-scrolltrigger",
+      "reducedMotion": "freeze poster and show bands"
+    },
+    "mobileRecomposition": {
+      "strategy": "stacked action poster",
+      "rules": [
+        "replace horizontal scrub with touch-safe rows",
+        "protect action buttons from headline overlap",
+        "reduce motion when requested"
+      ]
+    },
+    "prohibitedPatterns": [
+      "soft editorial card grid",
+      "decorative numbered services",
+      "long about section before classes"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "club-poster",
+        "selector": "[data-reference-signature=club-poster]",
+        "description": "oversized performance headline"
+      },
+      {
+        "id": "program-bands",
+        "selector": "[data-reference-signature=program-bands]",
+        "description": "horizontal class or program bands"
+      }
+    ],
+    "acceptanceChecks": [
+      "the opening has athletic energy without copying a brand",
+      "program options are not generic cards",
+      "mobile remains usable without scroll-jacking"
+    ],
+    "annotatedDescription": "Owned LaunchLoom design study used as visual evidence. Original LaunchLoom study for high-energy businesses."
+  },
+  "review": {
+    "status": "initial-curation",
+    "curator": "Codex-assisted screenshot review",
+    "reviewedAt": "2026-09-25",
+    "scope": "paired full-page evidence and transferable visual mechanics; not approval of sample business claims or production copy"
+  }
+}

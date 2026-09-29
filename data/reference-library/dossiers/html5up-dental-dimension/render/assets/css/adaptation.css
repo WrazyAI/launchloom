@@ -1,0 +1,57 @@
+/* Fictional dental adaptation. Original layout rules remain in main.css under the source attribution. */
+:root { color-scheme: dark; --ink: #f5f1e8; --muted: #c5c2b8; --forest: #17251f; --gold: #c6a267; --line: rgba(245,241,232,.28); }
+html { scroll-behavior: smooth; }
+body { color: var(--ink); font-family: Arial, Helvetica, sans-serif; background: var(--forest); }
+#bg:before { background: linear-gradient(120deg, rgba(13,23,19,.78), rgba(13,23,19,.34) 55%, rgba(13,23,19,.68)); background-size: cover; background-position: center; background-repeat: no-repeat; }
+#bg:after { background-image: url("../../images/bg.jpg"); background-position: 58% center; background-size: cover; }
+#header { width: min(61rem, calc(100% - 2rem)); }
+#header .logo { border-color: var(--gold); color: var(--gold); }
+.logo-mark { display: inline-grid; width: 2.6rem; height: 2.6rem; place-items: center; border: 1px solid currentColor; border-radius: 50%; font: 1.4rem Georgia, serif; }
+#header .content .inner { border-top-color: var(--gold); border-bottom-color: var(--gold); max-width: 46rem; }
+#header .content h1 { font: 500 clamp(2.4rem, 7vw, 5.6rem)/.94 Georgia, 'Times New Roman', serif; letter-spacing: -.055em; text-transform: none; }
+#header .content p { color: var(--muted); font-size: clamp(.95rem,1.5vw,1.15rem); line-height: 1.55; letter-spacing: .015em; }
+#header .content .eyebrow, .eyebrow { color: var(--gold); font-size: .66rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+#header nav ul li { border-color: var(--line); }
+#header nav ul li a { color: var(--ink); font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+#header nav ul li a:hover { color: var(--gold); }
+.button, button.button, input[type=submit] { background: var(--gold); color: #18221d !important; border: 0; border-radius: 999px; font-size: .68rem; font-weight: 700; letter-spacing: .08em; padding: .8rem 1.2rem; text-transform: uppercase; }
+.button:hover, button.button:hover, input[type=submit]:hover { background: #e3c58e; }
+#main { position: fixed; inset: 1rem; align-items: center; justify-content: center; z-index: 10; pointer-events: none; }
+#main article { pointer-events: auto; max-height: min(86vh, 58rem); overflow-y: auto; border: 1px solid rgba(198,162,103,.42); border-radius: 4px; background: rgba(20,31,26,.96); color: var(--ink); box-shadow: 0 24px 100px rgba(0,0,0,.38); }
+#main article[hidden] { display: none; }
+#main article.active { display: block; }
+#main article .major { color: var(--ink); border-bottom-color: var(--gold); font: 500 clamp(1.8rem,4vw,3rem)/1 Georgia, serif; letter-spacing: -.04em; text-transform: none; }
+#main article p { color: var(--muted); line-height: 1.65; }
+#main article .image:before { background: linear-gradient(180deg, transparent 45%, rgba(10,18,14,.3)); opacity: 1; }
+#main article .image img { max-height: 18rem; width: 100%; object-fit: cover; }
+#main article .close { color: transparent; }
+#main article .close:before { border: 1px solid var(--line); }
+.service-list { margin: 1.5rem 0; }
+.service-list div { display: grid; grid-template-columns: minmax(9rem,.7fr) 1.3fr; gap: 1rem; border-top: 1px solid var(--line); padding: .9rem 0; }
+.service-list dt { color: var(--ink); font: 1.05rem Georgia,serif; }
+.service-list dd { color: var(--muted); font-size: .9rem; line-height: 1.5; }
+.text-link { color: var(--gold); font-size: .75rem; text-transform: uppercase; letter-spacing: .12em; }
+.step-list { display: grid; gap: .6rem; margin: 1.5rem 0; }
+.step-list li { display: flex; gap: 1rem; border-top: 1px solid var(--line); padding: .85rem 0; color: var(--muted); }
+.step-list b { color: var(--gold); font-size: .72rem; letter-spacing: .1em; }
+.faq-list details { border-top: 1px solid var(--line); padding: 1rem 0; }
+.faq-list summary { color: var(--ink); cursor: pointer; font: 1.08rem Georgia,serif; }
+.faq-list details p { margin-top: .75rem; font-size: .88rem; }
+.study-form { display: grid; gap: .9rem; }
+.study-form label { display: grid; gap: .4rem; color: var(--ink); font-size: .76rem; letter-spacing: .06em; text-transform: uppercase; }
+.study-form input, .study-form textarea { width: 100%; border: 1px solid var(--line); border-radius: 3px; background: rgba(255,255,255,.06); color: var(--ink); padding: .8rem; }
+.form-status { min-height: 1.4em; }
+#footer .copyright { color: rgba(245,241,232,.72); font-size: .59rem; line-height: 1.5; letter-spacing: .1em; }
+#footer .copyright a { color: #d9c08f; }
+@media (max-width: 736px) {
+	#header { width: calc(100% - 2rem); }
+	#header .content .inner { padding: 1.6rem .8rem; }
+	#header .content h1 { font-size: clamp(2rem, 10vw, 3.25rem); }
+	#header nav ul { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); min-width: min(22rem,calc(100vw - 2.4rem)); }
+	#header nav ul li { border: 1px solid var(--line); margin: .2rem; }
+	#header nav ul li a { height: 2.8rem; line-height: 2.8rem; }
+	#main { inset: .5rem; }
+	#main article { max-height: 86svh; padding: 3.6rem 1.4rem 1.4rem; }
+	.service-list div { grid-template-columns: 1fr; gap: .25rem; }
+}
+@media (prefers-reduced-motion: reduce) { *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }

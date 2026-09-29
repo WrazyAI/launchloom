@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "jewelry-panconesi-sculptural-luxury",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "This is a global luxury product brand rather than a verified local jewelry-service/storefront example; jewelry is not one of the ten core niches.",
+  "referenceName": "Panconesi sculptural luxury editorial commerce",
+  "familyId": "panconesi-sculptural-luxury-commerce",
+  "source": {
+    "name": "Panconesi official website",
+    "url": "https://marcopanconesi.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation covers persistent full-page screenshot and derived-prompt retention, including use of screenshots as pipeline visual references. No owner grant was uploaded or independently verified; scope is limited to this internal reference-library use.",
+    "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md",
+    "assetEvidencePaths": ["rights/ASSET-PROVENANCE.md"]
+  },
+  "provenance": {
+    "retrievedAt": "2026-09-25",
+    "capture": "Full-page direct captures from the official domain at desktop 1440x1000 and mobile 390x844. The site cookie notice was declined and a delayed newsletter overlay was closed locally so the underlying source page could be captured; no form or commerce action was submitted.",
+    "attribution": "The original site's visible source branding remains in the captures. The transferable prompt is a mechanics-only brief and does not reproduce exact brand copy, logo, source product names, or assets.",
+    "qa": "Desktop body and document widths were 1440px; mobile body and document widths were 390px. No page-level horizontal overflow was observed. Main editorial images loaded; hundreds of product image nodes remain lazy or off-canvas in the Shopify catalog and are not required for the captured homepage state."
+  },
+  "businessKinds": ["fine-jewelry", "designer-jewelry", "luxury-retail", "sculptural-accessories", "home-objects"],
+  "tags": {
+    "business": ["fine-jewelry", "designer-jewelry", "luxury-retail", "sculptural-accessories", "home-objects"],
+    "style": ["sculptural-luxury", "gallery-editorial", "restrained-monochrome", "soft-metallic", "contemporary-atelier"],
+    "composition": ["portrait-diptych", "editorial-statement-band", "edge-to-edge-image-grid", "oversized-object-portrait", "taxonomy-footer"],
+    "conversion": ["collection-discovery", "category-taxonomy", "search-and-cart-utility", "product-detail-link", "shipping-reassurance"],
+    "motion": ["announcement-marquee", "image-carousel-controls", "category-menu-disclosure", "reduced-motion-static-layout"],
+    "imagery": ["sculptural-product-photography", "portrait-with-wearable-detail", "hand-and-jewelry-editorial", "object-still-life", "first-party-reference-image-only"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A gallery-like luxury commerce page. A thin scrolling service announcement and a restrained wordmark header lead into a near-edge-to-edge portrait diptych featuring jewelry worn on the body. Instead of a conventional headline block, the page gives the brand proposition its own white editorial band, followed by a row of close portrait/product crops. Object stories then alternate concise text and still-life imagery, before a very large hand-with-jewelry image resets the scale. A compact service-information ledger and an expansive collection taxonomy close the page. The design relies on editorial photography, whitespace, and navigation depth rather than rounded cards or oversized promotional banners.",
+    "heroGeometry": { "mode": "portrait-led luxury diptych", "alignment": "two near-equal, edge-to-edge photographic panels under a narrow utility/nav strip; text follows in a separate centered statement band", "viewport": "announcement, compact brand/navigation, and the portrait image composition lead; purchase discovery remains available in the top navigation" },
+    "navigationGeometry": { "mode": "quiet wordmark with expandable category taxonomy and commerce utilities", "placement": "thin top strip beneath a restrained scrolling service announcement", "mobile": "announcement and compact logo/cart utility at the top; category navigation consolidates into a menu, while search and cart remain direct utilities" },
+    "typography": { "display": "refined contemporary serif or high-contrast editorial face", "body": "neutral low-contrast sans serif", "scale": "small navigational labels, centered medium editorial statement, very restrained metadata, no oversized landing-page headline" },
+    "palette": { "surfaces": ["soft white", "warm pale gray", "paper neutral"], "ink": "charcoal black", "accents": ["silver", "soft blue-gray", "natural skin and metal tones from approved photography"], "contrastIntent": "minimal, luminous product gallery; preserve dark readable text rather than using low-contrast gray for essential information" },
+    "imageTreatment": { "mode": "high-art-direction portrait and sculptural object photography", "crop": "tight diptych, edge-to-edge editorial rows, and one oversized body/product image; mobile converts the diptych to full-width stacked frames", "focalPoint": "jewelry as a body-worn sculptural object; product remains visible and recognizable" },
+    "sectionSequence": ["announcement-and-navigation", "portrait-diptych", "centered-editorial-statement", "edge-to-edge-image-grid", "object-story-pair", "oversized-jewelry-image-chapter", "shipping-and-service-ledger", "collection-taxonomy-and-footer"],
+    "servicePresentation": { "pattern": "retail discovery by collection, product family, material, and body placement, supported by short object stories; operational service details appear in a compact ledger", "interaction": "category disclosure and direct collection links; retain simple browse/search/cart controls and avoid invented product filters" },
+    "ctaPlacement": { "primary": "shop or collection discovery in persistent top utilities and within each editorial object story", "secondary": "newsletter signup and policy/service links near the footer", "early": "top navigation and first image section, without adding a loud conversion banner over the photography" },
+    "motion": { "primitive": "subtle repeated announcement line and explicit carousel/gallery navigation; any hover or category reveal remains secondary to imagery", "library": "implementation library not asserted; use CSS or native interactions unless a vetted runtime is already present", "reducedMotion": "stop the announcement ticker, keep image order static, and expose every category link without hover dependence" },
+    "mobileRecomposition": { "strategy": "portrait-led single-column editorial commerce", "rules": ["stack hero portraits as full-width frames without shrinking faces or product detail", "place the centered editorial statement between image chapters", "stack object-story text and image in a logical reading order", "convert category columns to labeled expandable groups", "keep product discovery, search, and cart reachable without page-level horizontal overflow"] },
+    "prohibitedPatterns": ["copying Panconesi name, logo, exact language, products, family names, portrait photography, or trade dress", "reusing demo prices, shipping thresholds, returns window, appointment details, or customer-service hours", "inventing precious-metal content, stone provenance, sustainability, craftsmanship claims, origin, or limited availability", "generic rounded product-card wall", "infinite product list without meaningful taxonomy", "low-contrast text over portrait imagery", "hover-only category access or autoplay that blocks shopping"],
+    "requiredSignatureElements": [
+      { "id": "portrait-diptych-opening", "selector": "[data-reference-signature=portrait-diptych-opening]", "description": "a large edge-to-edge portrait image composition that introduces the product world before a conventional product grid" },
+      { "id": "editorial-product-statement", "selector": "[data-reference-signature=editorial-product-statement]", "description": "a concise centered editorial statement isolated on a clean field between image chapters" },
+      { "id": "object-story-pair", "selector": "[data-reference-signature=object-story-pair]", "description": "short object-focused narratives paired with selected still-life imagery" },
+      { "id": "commerce-taxonomy-footer", "selector": "[data-reference-signature=commerce-taxonomy-footer]", "description": "a categorized browse directory and operational service ledger instead of a generic link dump" }
+    ],
+    "acceptanceChecks": ["desktop hero uses image composition and a separate editorial statement instead of a text-heavy split hero", "mobile portrait panels stack at full readable width with no horizontal overflow", "collection links are useful and derive from verified business categories", "prices, materials, shipping, returns, appointment, origin, and product claims are sealed client facts", "primary browse and cart actions remain accessible by keyboard and touch", "motion has a static and reduced-motion state", "reference photography and source brand assets are not reused in client output"]
+  },
+  "review": { "status": "requester-attested-production-reference", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "Official-domain screenshots, source-derived visual mechanics, desktop/mobile review, and requester-attested internal model-reference use; no owner grant file was provided." }
+}

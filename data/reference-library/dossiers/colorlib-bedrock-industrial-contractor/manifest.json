@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-bedrock-industrial-contractor",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "Commercial groundworks and civil engineering are not a local residential home-service reference in the selected core.",
+  "referenceName": "Bedrock industrial contractor fieldbook",
+  "familyId": "colorlib-bedrock-industrial-contractor",
+  "source": {
+    "name": "Colorlib Bootstrap Templates Bedrock",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/bedrock",
+    "rights": "licensed",
+    "rightsEvidence": "The pinned repository is MIT licensed. This template's retained CREDITS.txt identifies every photo as CC0 or Public Domain Mark. The MIT license and per-template image credits are stored in this dossier.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/CREDITS.txt"]
+  },
+  "provenance": {
+    "repositoryCommit": "f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf",
+    "archiveSha256": "a08ab6e57a0db6c2dfd91a2c1afe310871d4cac27cd673f9f71b8cf0c0d9d13e",
+    "capture": "Pinned MIT template rendered locally; CC0/Public Domain assets are evidenced by per-template CREDITS.txt. The mobile capture clips a closed off-canvas drawer that otherwise inflated screenshot width without changing visible content.",
+    "retrievedAt": "2026-09-25",
+    "attribution": "Colorlib Bootstrap Templates, MIT. Preserve the MIT notice in derivative/source distributions."
+  },
+  "businessKinds": ["construction", "civil-engineering", "groundworks", "commercial-contractor", "local-trades"],
+  "tags": {
+    "business": ["construction", "civil-engineering", "groundworks", "commercial-contractor", "local-trades"],
+    "style": ["industrial-editorial", "charcoal-and-warning-yellow", "technical-grotesk", "high-contrast"],
+    "composition": ["oversized-poster-headline", "metric-ribbon", "capability-grid", "sector-ledger", "project-tiles", "tender-form-split"],
+    "conversion": ["tender-request", "project-case-study", "scope-and-site-visit"],
+    "motion": ["theme-toggle", "native-section-navigation", "progressive-form-disclosure"],
+    "imagery": ["cc0-construction-photography", "darkened-site-hero", "project-photo-grid"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dark industrial contractor page with a small tender/contact bar, a very large stacked headline over a construction photo, a compact metric ribbon, capability grid, sector list, project portfolio, staged enquiry process, accreditation bar, and a tender request form. The included construction imagery is CC0/Public Domain per the template's credit file.",
+    "heroGeometry": { "mode": "oversized industrial poster over a wide construction-site image", "alignment": "large stacked type left with image field supporting the right half", "viewport": "logo, promise, short body and tender action fit within the first desktop viewport" },
+    "navigationGeometry": { "mode": "thin technical utility bar", "placement": "top edge with compact in-page section links", "mobile": "brand and one action remain visible; utility links collapse to a short row" },
+    "typography": { "display": "heavy compressed grotesk", "body": "neutral technical sans", "scale": "large stacked headline, uppercase micro-labels, concise body copy" },
+    "palette": { "surfaces": ["charcoal", "blue-black", "steel slate"], "ink": "cool white", "accents": ["construction yellow", "muted steel blue"], "contrastIntent": "industrial clarity with yellow used only for the action and active markers" },
+    "imageTreatment": { "mode": "CC0 construction-site photograph with darkened type-safe overlay", "crop": "wide hero cover and small rectangular project crops", "focalPoint": "crane/site activity behind the headline; project work remains visible in lower image tiles" },
+    "sectionSequence": ["hero", "conversion-band", "services", "coverage", "projects", "process", "proof", "faq", "contact"],
+    "servicePresentation": { "pattern": "capability grid followed by a numbered sector ledger", "interaction": "simple in-page section navigation and case-study links" },
+    "ctaPlacement": { "primary": "request a tender in the top utility bar and hero", "secondary": "recent work/case study", "early": "inside the hero after the concise project promise" },
+    "motion": { "primitive": "native section navigation with a discreet light/dark control", "library": "native-css-and-browser-events", "reducedMotion": "static image, grid and process sequence" },
+    "mobileRecomposition": { "strategy": "stacked project fieldbook", "rules": ["scale headline before changing visual order", "put the project action before capability details", "stack the sector ledger and process", "retain project-photo crops without horizontal overflow"] },
+    "prohibitedPatterns": ["copied tender claims", "invented turnover or employee metrics", "fabricated accreditations", "fake named project outcomes", "generic rounded-card wall", "decorative numbered services without business meaning"],
+    "requiredSignatureElements": [
+      { "id": "industrial-poster", "selector": "[data-reference-signature=industrial-poster]", "description": "oversized stacked promise over a construction-site field" },
+      { "id": "sector-ledger", "selector": "[data-reference-signature=sector-ledger]", "description": "scannable sectors or capability ledger with factual labels" },
+      { "id": "project-proof-grid", "selector": "[data-reference-signature=project-proof-grid]", "description": "project images that function as evidence rather than decoration" },
+      { "id": "tender-close", "selector": "[data-reference-signature=tender-close]", "description": "closing scope-request form paired with tender context" }
+    ],
+    "acceptanceChecks": ["one-screen desktop opening at 100 percent zoom", "projects are presented as evidence and use approved assets", "only verified credentials and outcomes appear", "tender request has a clear next step", "mobile keeps the poster, project proof and CTA sequence usable"]
+  },
+  "review": { "status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "MIT source pin, CC0 image credits, paired captures, and transferable design mechanics" }
+}

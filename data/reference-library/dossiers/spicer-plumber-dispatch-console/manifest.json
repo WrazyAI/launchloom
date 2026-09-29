@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-plumber-dispatch-console",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "This is a valid home-trades backup, but the curated three-reference home-services slot uses Fixwell, roofing and landscaping for source and structural variety.",
+  "referenceName": "Emergency plumber dispatch console",
+  "familyId": "spicer-plumber-dispatch-console",
+  "source": {
+    "name": "Spicer Designs Plumbing website template",
+    "url": "https://www.spicerdesigns.com/templates/plumber",
+    "rights": "licensed",
+    "rightsEvidence": "The downloaded HTML template is released under Creative Commons Attribution 4.0. Its retained README states the hero artwork is AI-generated placeholder art. The full license is stored beside this manifest.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/README.md"]
+  },
+  "provenance": {
+    "archiveSha256": "18821c280c0b7a623094ce80c4a5f1ba4eebab285ed66eddccb0c5206be9259e",
+    "capture": "Local render of the official HTML template at 1440x1000 and 390x844; no layout, source copy, or source artwork was changed.",
+    "retrievedAt": "2026-09-25",
+    "attribution": "Spicer Designs, CC BY 4.0. Source attribution remains in the captured page footer and is recorded here."
+  },
+  "businessKinds": ["plumbing", "home-services", "local-trades", "emergency-repair"],
+  "tags": {
+    "business": ["plumbing", "home-services", "local-trades", "emergency-repair"],
+    "style": ["technical-utility", "deep-navy", "cyan-signal", "dispatch-led"],
+    "composition": ["dispatch-console-hero", "three-path-emergency-triage", "filterable-flat-rate-table", "service-radius-graphic"],
+    "conversion": ["urgent-phone-first", "next-day-booking", "transparent-flat-rate", "service-request-form"],
+    "motion": ["category-filter", "status-indicator", "interactive-radius-map"],
+    "imagery": ["ai-generated-plumbing-scene", "pipeline-texture", "data-console-graphics"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A deep-navy/cyan plumbing service page with a compact dispatcher strip, a split hero pairing emergency copy and an ETA/flat-rate console, three distinct self-routing options, a filterable price table, a concise flat-rate explanation, a response-zone visualization, direct non-accordion FAQs, and a two-column contact close. The hero image is AI-generated placeholder artwork.",
+    "heroGeometry": { "mode": "emergency promise beside a dispatch-console instrument", "alignment": "left copy column and right console panel in a dark split composition", "viewport": "phone and same-day next step visible in the first 1536x864 viewport" },
+    "navigationGeometry": { "mode": "compact dispatcher utility bar", "placement": "small contact strip above direct service links", "mobile": "brand and phone remain visible; menu is brief and non-sticky" },
+    "typography": { "display": "heavy condensed grotesk", "body": "compact technical sans", "scale": "short high-impact headline, small data labels, readable dense rate rows" },
+    "palette": { "surfaces": ["deep navy", "blue-black", "slate panel"], "ink": "soft white", "accents": ["cyan", "signal yellow"], "contrastIntent": "high-contrast instrument-panel readability" },
+    "imageTreatment": { "mode": "low-light pipe-room atmosphere with embedded service console", "crop": "horizontal background with strong navy overlay", "focalPoint": "service instrument and pipe detail; no people or signage" },
+    "sectionSequence": ["hero", "conversion-band", "services", "pricing", "proof", "coverage", "faq", "contact"],
+    "servicePresentation": { "pattern": "emergency triage followed by a filterable flat-rate service table", "interaction": "three visitor paths and service-category filters" },
+    "ctaPlacement": { "primary": "same-day service action beside the hero console", "secondary": "call action beside the request", "early": "immediately in the emergency opening" },
+    "motion": { "primitive": "console status and price-category filtering", "library": "native-css-and-browser-events", "reducedMotion": "stable console status and complete rate table" },
+    "mobileRecomposition": { "strategy": "stacked emergency-to-planned-service flow", "rules": ["place emergency copy and phone action before console", "convert the table to labeled service rows", "stack the three triage choices", "remove map motion and prevent horizontal overflow"] },
+    "prohibitedPatterns": ["copied source name or demo claims", "invented ETA or dispatch status", "unverified licenses or reviews", "fake map coverage", "accordion-only emergency answers", "generic feature-card wall"],
+    "requiredSignatureElements": [
+      { "id": "dispatch-console", "selector": "[data-reference-signature=dispatch-console]", "description": "hero console for ETA and confirmed price context" },
+      { "id": "emergency-triage", "selector": "[data-reference-signature=emergency-triage]", "description": "clear urgent, scheduled, and unsure paths" },
+      { "id": "flat-rate-table", "selector": "[data-reference-signature=flat-rate-table]", "description": "filterable list of service scope, time, and price token fields" },
+      { "id": "response-zone-graphic", "selector": "[data-reference-signature=response-zone-graphic]", "description": "service-area visual that must be backed by client-provided location data" }
+    ],
+    "acceptanceChecks": ["urgent visitors can locate the phone action immediately", "planned jobs can compare scoped service rows", "price and ETA values remain sealed tokens", "desktop hero fits at 100 percent zoom", "mobile rate list remains readable without lateral scrolling"]
+  },
+  "review": { "status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "source license, asset provenance, paired captures, and transferable design mechanics" }
+}

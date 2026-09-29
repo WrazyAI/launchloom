@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "id": "care-concierge-cinematic",
+  "productionEligible": false,
+  "referenceName": "Care concierge cinematic study",
+  "familyId": "care-concierge-cinematic",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/inspiration-evidence/design-family-demos",
+    "rights": "owned",
+    "rightsEvidence": "This is a LaunchLoom-owned original design study and its in-house rendered capture, stored for internal inspiration and implementation research."
+  },
+  "businessKinds": [
+    "healthcare",
+    "home-care",
+    "elder-care",
+    "wellness"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Care concierge cinematic study",
+    "heroGeometry": {
+      "mode": "dark full-width landscape with left-anchored care promise",
+      "alignment": "text over a full-bleed natural scene",
+      "viewport": "cinematic hero with action visible"
+    },
+    "navigationGeometry": {
+      "mode": "quiet text navigation over image",
+      "placement": "top edge",
+      "mobile": "compact text menu"
+    },
+    "typography": {
+      "display": "editorial serif display",
+      "body": "neutral sans",
+      "scale": "large headline anchored to image with short support"
+    },
+    "palette": {
+      "surfaces": [
+        "deep forest",
+        "near-black",
+        "bone"
+      ],
+      "ink": "bone",
+      "accents": [
+        "soft sage"
+      ],
+      "contrastIntent": "cinematic contrast with warm natural image"
+    },
+    "imageTreatment": {
+      "mode": "full-width landscape with care context",
+      "crop": "darkened cover crop with subject-safe focus",
+      "focalPoint": "horizon and human figures"
+    },
+    "sectionSequence": [
+      "hero",
+      "services",
+      "image-chapter",
+      "proof",
+      "process",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "ruled service index",
+      "interaction": "direct row-to-service links"
+    },
+    "ctaPlacement": {
+      "primary": "hero request action",
+      "secondary": "service index links",
+      "early": "inside hero"
+    },
+    "motion": {
+      "primitive": "subtle landscape parallax",
+      "library": "gsap-scrolltrigger",
+      "reducedMotion": "use the static hero crop"
+    },
+    "mobileRecomposition": {
+      "strategy": "stacked cinematic story",
+      "rules": [
+        "retain headline contrast over image",
+        "move secondary contact action into flow",
+        "avoid image-dependent text placement"
+      ]
+    },
+    "prohibitedPatterns": [
+      "centered floating card",
+      "destination-style service tiles",
+      "automatic video requirement",
+      "dark surface without contrast"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "care-cinematic-hero",
+        "selector": "[data-reference-signature=care-cinematic-hero]",
+        "description": "dark natural image with anchored opening copy"
+      },
+      {
+        "id": "service-index",
+        "selector": "[data-reference-signature=service-index]",
+        "description": "horizontal ruled service index"
+      }
+    ],
+    "acceptanceChecks": [
+      "copy is anchored over a natural full-width hero",
+      "service navigation appears early",
+      "static image remains complete when motion is disabled"
+    ],
+    "annotatedDescription": "Owned rendered home-care study with a dark full-bleed landscape, anchored headline, and early ruled service index. The screenshot is a care page, not an aviation or luxury-transport reference."
+  },
+  "review": {
+    "status": "initial-curation",
+    "curator": "Codex-assisted screenshot review",
+    "reviewedAt": "2026-09-25",
+    "scope": "paired full-page evidence and transferable visual mechanics; not approval of sample business claims or production copy"
+  }
+}

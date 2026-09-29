@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "id": "trades-field-report",
+  "productionEligible": false,
+  "referenceName": "Trades field-report study",
+  "familyId": "trades-field-report",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/inspiration-evidence/design-family-demos",
+    "rights": "owned",
+    "rightsEvidence": "This is a LaunchLoom-owned original design study and its in-house rendered capture, stored for internal inspiration and implementation research."
+  },
+  "businessKinds": [
+    "local-trades",
+    "home-services",
+    "garage-door-repair",
+    "contractors"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Trades field-report study",
+    "heroGeometry": {
+      "mode": "centered narrow service statement above an offset photo mosaic",
+      "alignment": "compact editorial column with image tiles",
+      "viewport": "headline, summary, and primary action fit the opening"
+    },
+    "navigationGeometry": {
+      "mode": "simple text navigation",
+      "placement": "top edge",
+      "mobile": "inline links or compact menu"
+    },
+    "typography": {
+      "display": "neutral geometric sans",
+      "body": "neutral sans",
+      "scale": "moderate display size with tight field notes"
+    },
+    "palette": {
+      "surfaces": [
+        "warm white",
+        "deep green",
+        "service orange"
+      ],
+      "ink": "deep green",
+      "accents": [
+        "service orange"
+      ],
+      "contrastIntent": "clear utility contrast with restrained trade accent"
+    },
+    "imageTreatment": {
+      "mode": "two horizontal project crops with staggered alignment",
+      "crop": "wide rectangles with one supporting tile",
+      "focalPoint": "finished project detail"
+    },
+    "sectionSequence": [
+      "hero",
+      "image-mosaic",
+      "services",
+      "image-chapter",
+      "process",
+      "coverage",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "plain diagnostic service index",
+      "interaction": "direct expandable rows"
+    },
+    "ctaPlacement": {
+      "primary": "primary service request in hero",
+      "secondary": "phone call as secondary action",
+      "early": "immediately under hero summary"
+    },
+    "motion": {
+      "primitive": "subtle tile reveal",
+      "library": "css",
+      "reducedMotion": "leave all project tiles visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "centered narrow column with stacked work",
+      "rules": [
+        "avoid oversized line breaks",
+        "put image tiles after the opening copy",
+        "keep service descriptions to one sentence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "dark cinematic overlay",
+      "oversized wordmark poster",
+      "generic rounded card wall",
+      "service process hidden below long copy"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "field-report-intro",
+        "selector": "[data-reference-signature=field-report-intro]",
+        "description": "compact centered service statement"
+      },
+      {
+        "id": "diagnostic-index",
+        "selector": "[data-reference-signature=diagnostic-index]",
+        "description": "direct list of service or repair options"
+      }
+    ],
+    "acceptanceChecks": [
+      "headline remains balanced at desktop and mobile widths",
+      "photos sit directly after the promise",
+      "the service list is plain and easy to scan"
+    ],
+    "annotatedDescription": "Owned rendered garage-door service study. The screenshot shows a centered field-service promise, project photo tiles, and a plain repair index. It is not a liquid-glass or digital-studio reference."
+  },
+  "review": {
+    "status": "initial-curation",
+    "curator": "Codex-assisted screenshot review",
+    "reviewedAt": "2026-09-25",
+    "scope": "paired full-page evidence and transferable visual mechanics; not approval of sample business claims or production copy"
+  }
+}

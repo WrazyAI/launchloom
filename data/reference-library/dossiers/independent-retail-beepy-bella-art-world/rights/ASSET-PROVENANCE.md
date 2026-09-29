@@ -1,0 +1,9 @@
+# Asset and screenshot provenance
+
+- Captured directly from `https://beepybella.world/`, the official source domain. The Lapa page was used only to resolve the official link; its screenshots are not retained or used.
+- Desktop full-page screenshot: 1440 x 3224 pixels, browser viewport 1440 x 1000. Mobile full-page screenshot: 390 x 3227 pixels, browser viewport 390 x 844. Because the original uses a custom scroller with `overflow: hidden`, each final image is stitched from overlapping viewport screenshots taken directly from the original site; crops preserve viewport width and page order.
+- Observed first-party image assets were served from `beepybella.world/cdn/shop/` and included product photographs, apparel/accessory imagery, artwork, and a shop-hosted decorative graphic. They were not downloaded individually or reused outside the screenshots.
+- Desktop DOM measurements: viewport/document root width 1440px, body scroll width 3585px. The rendered content exceeds the nominal desktop viewport horizontally. Mobile viewport, document, and body widths all measured 390px with no horizontal overflow.
+- The page's embedded video frame returned an access-restriction/security challenge and rendered as a black video area in both full-page captures. This is a browser/network limitation and source defect note, not an endorsed design treatment. A blank `src` image placeholder remained in the mobile DOM; visible product and story imagery rendered.
+- No gallery screenshots were used. The capture was stitched from direct screenshots of the original site; no source package was downloaded. The stitching retains the site's visible products and artwork only as screenshot reference evidence.
+- Screenshots are retained under the requester's stated internal screenshot and model-reference clearance. No independent owner or asset-level license is asserted. Capture date: 2026-09-25.

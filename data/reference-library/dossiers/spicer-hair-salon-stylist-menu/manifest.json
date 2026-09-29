@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-hair-salon-stylist-menu",
+  "productionEligible": true,
+  "referenceName": "Spicer hair salon stylist-level menu",
+  "familyId": "spicer-hair-salon-stylist-menu",
+  "source": {
+    "name": "Spicer Designs Hair Salon HTML template",
+    "url": "https://www.spicerdesigns.com/templates/hair-salon",
+    "rights": "licensed",
+    "rightsEvidence": "The official source page states CC BY 4.0 and commercial use with the footer credit retained. The downloaded package includes its LICENSE and README, which identify the bundled hero artwork as AI-generated placeholder art and require keeping the Spicer Designs footer link.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/SOURCE-README.md", "rights/ASSET-PROVENANCE.md"]
+  },
+  "provenance": {
+    "archiveSha256": "82ef0a6e0889282fca67fb74bf468206a17af0cf8423abae959082755d089de6",
+    "retrievedAt": "2026-09-25",
+    "attribution": "The unmodified source HTML retains the required linked Spicer Designs footer credit, visible in both captures. Any future adaptation or derivative must preserve attribution and must not suggest endorsement.",
+    "capture": "Rendered locally from the exact official HTML archive at desktop 1440x1000 and mobile 390x844. Captures use the package's built-in prefers-reduced-motion static fallback so all scroll-reveal content is visible. Source files were not edited.",
+    "qa": "Body and document widths matched the viewport at desktop and mobile. The sole bundled hero image loaded. The static HTML has no reveal observer: 18 hs-rise groups remain hidden in the default motion preference, while reduced motion exposes them. FAQ uses native details; click-driven widgets are presentational and forms have no submit destination."
+  },
+  "businessKinds": ["hair-salon", "hair-stylist", "hair-colorist", "cosmetology", "independent-beauty"],
+  "tags": {
+    "business": ["hair-salon", "hair-stylist", "hair-colorist", "cosmetology", "independent-beauty"],
+    "style": ["nocturnal-salon-editorial", "charcoal-and-bronze", "warm-atelier", "quiet-mono-labels", "table-led-service-design"],
+    "composition": ["booking-utility-bar", "cinematic-salon-hero", "price-time-matrix", "stylist-level-comparison", "consultation-first-color-flow"],
+    "conversion": ["appointment-booking", "service-price-transparency", "duration-planning", "colour-consultation", "patch-test-qualification"],
+    "motion": ["section-rise-reveal", "native-faq-disclosure", "static-reduced-motion-fallback", "filter-control-presentational-in-html"],
+    "imagery": ["ai-generated-salon-interior-placeholder", "warm-practical-lighting", "no-identifiable-staff-or-customer", "source-art-not-reused"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dark, warm salon experience built around planning a visit rather than a vague beauty promise. A slim booking/phone utility bar precedes a cinematic salon-interior hero with two direct actions. The central service menu is a price-and-time matrix with columns for stylist levels, followed by a clear explanation of stylist tiers. Colour work takes a separate consultation and patch-test route. Product recommendations, a gallery policy, short proof, native FAQ, and a focused appointment form complete the page. The source intends Inter and Fraunces, but its generated font utility maps the custom font token to font-weight rather than font-family, so the capture appears system-sans; implement font roles correctly if adopting the intended pair.",
+    "heroGeometry": { "mode": "cinematic salon interior with concise service promise", "alignment": "dark image-backed hero with left-aligned headline and two compact actions; thin appointment and telephone bar above", "viewport": "phone/booking utility, service promise, and booking/menu actions occupy the first desktop screen" },
+    "navigationGeometry": { "mode": "small wordmark and plain section links", "placement": "inside the hero beneath a narrow utility bar", "mobile": "utility/phone remains readable, section links collapse or wrap, hero actions stack without obscuring the headline" },
+    "typography": { "display": "intended Fraunces editorial face, though static HTML currently falls back to system sans", "body": "intended Inter neutral sans, though font-family utility is miscompiled in the capture", "scale": "large two-line promise, compact uppercase mono-like labels, dense but readable service table" },
+    "palette": { "surfaces": ["deep plum-black", "charcoal", "warm dark brown"], "ink": "warm ivory", "accents": ["muted bronze", "soft copper", "dusty rose"], "contrastIntent": "moody salon atmosphere with high-contrast booking actions and readable table content" },
+    "imageTreatment": { "mode": "atmospheric salon-interior hero image with layered dark gradients", "crop": "wide hero image under left-to-right and bottom gradients; all later sections rely mostly on typography, tables, and lists", "focalPoint": "salon environment rather than a person; use only client-owned, licensed, or newly generated imagery" },
+    "sectionSequence": ["booking-utility-bar", "cinematic-hero", "price-and-duration-menu", "stylist-level-comparison", "colour-consultation-and-patch-test", "product-recommendations", "gallery-policy", "approved-proof", "questions", "appointment-form", "attribution-footer"],
+    "servicePresentation": { "pattern": "service matrix with a duration column and separate price by stylist level; colour services are routed through a consultation qualification instead of immediate booking", "interaction": "a colour-only filter button is presentational in the HTML archive; reproduce it only if a working filter is implemented, with a complete static menu fallback" },
+    "ctaPlacement": { "primary": "appointment request in the hero and again in the final focused form", "secondary": "service-menu jump link beside hero action", "early": "before the service matrix, with consultation qualification placed before any color booking" },
+    "motion": { "primitive": "small section-rise reveals and native FAQ disclosures", "library": "CSS transitions in the static package; no reveal observer is included in the HTML build", "reducedMotion": "make all content visible without transforms; this fallback was used for captures" },
+    "mobileRecomposition": { "strategy": "stacked dark salon-planning flow", "rules": ["keep telephone and booking access above the first section", "turn the service matrix into stacked service rows that retain duration and level pricing", "present stylist tiers as labeled blocks instead of shrinking columns", "keep the colour consultation path separate and visible", "stack form fields and preserve full-width touch actions without horizontal overflow"] },
+    "prohibitedPatterns": ["copying Spicer branding, sample salon name, source text, hero image, placeholder business, or footer attribution out of a derivative", "reusing demo prices, staff names, service times, reviews, color rules, or business hours as client facts", "inventing stylist credentials, price levels, appointment availability, allergy advice, patch-test timing, or color safety claims", "presenting AI-generated room art as the client's real premises", "leaving the static reveal groups invisible", "pretending the static HTML filter or form submits", "generic service-card wall or late-only appointment action"],
+    "requiredSignatureElements": [
+      { "id": "salon-booking-utility", "selector": "[data-reference-signature=salon-booking-utility]", "description": "a slim phone or booking utility above the cinematic salon opening" },
+      { "id": "stylist-price-time-matrix", "selector": "[data-reference-signature=stylist-price-time-matrix]", "description": "a service menu that exposes duration and verified price variation by stylist level" },
+      { "id": "color-consultation-path", "selector": "[data-reference-signature=color-consultation-path]", "description": "a separate consultation or patch-test booking path only when required by verified salon policy" },
+      { "id": "focused-appointment-close", "selector": "[data-reference-signature=focused-appointment-close]", "description": "a clear, minimal appointment request form with a truthful submission route" }
+    ],
+    "acceptanceChecks": ["desktop and mobile preserve the price/time/stylist-level relationship", "mobile service menu has no horizontal overflow", "booking and consultation routes are operational and use client tokens", "all prices, timing, staff credentials, color policies, and reviews are verified", "reveal elements remain visible if animation JavaScript is unavailable", "fonts use explicit font-family rules and have a readable fallback", "CC BY footer attribution remains linked in any adapted template" ]
+  },
+  "review": { "status": "cc-by-production-reference-with-static-html-caveat", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "Official package/license, single AI-generated hero asset, Google Fonts OFL metadata, local full-page renders, attribution, and responsive inspection." }
+}

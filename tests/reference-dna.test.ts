@@ -3,8 +3,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
 import { buildReferenceDna, normalizeSectionSequence, validateReferenceDna } from "../scripts/reference-dna.mjs";
+import { mergeInspirationRegistries, normalizeA1ReferenceLibrary } from "../scripts/a1-reference-library.mjs";
 
 const registry = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8"));
+const a1Library = JSON.parse(fs.readFileSync("data/a1-reference-library.json", "utf8"));
+const fullRegistry = mergeInspirationRegistries(
+  registry,
+  normalizeA1ReferenceLibrary(a1Library, { repositoryRoot: path.resolve(".") }),
+);
 
 describe("Reference DNA", () => {
   it("keeps registry evidence in tracked repository paths", () => {
@@ -16,6 +22,41 @@ describe("Reference DNA", () => {
         expect(record.mobileScreenshotPath).not.toMatch(/^artifacts\//u);
         expect(fs.existsSync(path.resolve(record.mobileScreenshotPath))).toBe(true);
       }
+    }
+  });
+
+  it("binds each active screenshot to its explicit reference family rather than Kokoro fallback DNA", () => {
+    const desktopPaths = fullRegistry.records.map((record: any) => record.screenshotPath);
+    expect(new Set(desktopPaths).size).toBe(desktopPaths.length);
+
+    for (const record of fullRegistry.records) {
+      const referenceFamilyId = record.referenceFamilyId || record.familyId;
+      expect(referenceFamilyId, `${record.id} must declare its reference family`).toBeTruthy();
+      const dna = buildReferenceDna({
+        ...record,
+        referenceFamilyId,
+        referenceName: record.referenceName || record.name,
+        referenceNotes: record.referenceNotes || record.notes,
+      });
+
+      expect(dna.familyId, record.id).toBe(referenceFamilyId);
+      expect(dna.evidence.desktopScreenshot.path, record.id).toBe(record.screenshotPath);
+      expect(dna.evidence.desktopScreenshot.available, record.id).toBe(true);
+      if (record.id !== "kokoro-spatial-editorial")
+        expect(dna.referenceName, record.id).not.toBe("Kokoro-style editorial architecture");
+      expect(validateReferenceDna(dna)).toBe(dna);
+    }
+  });
+
+  it("keeps unsupported screenshot claims retired and outside the active pool", () => {
+    const activeIds = new Set(fullRegistry.records.map((record: any) => record.id));
+    const retired = new Map(registry.retiredRecords.map((record: any) => [record.id, record]));
+
+    for (const id of ["neo-museum-object-stage", "prompt-fashion-archive"]) {
+      expect(activeIds.has(id)).toBe(false);
+      expect(retired.get(id)).toMatchObject({
+        retiredBecause: expect.any(String),
+      });
     }
   });
 
@@ -58,6 +99,46 @@ describe("Reference DNA", () => {
       "magazine-archive",
       "closing-scene",
     ]);
+  });
+
+  it("preserves section IDs and route geometry for a newly curated reference family", () => {
+    expect(normalizeSectionSequence([
+      "hero",
+      "practice-statement",
+      "project-index",
+      "services",
+      "contact",
+    ], "newly-curated-family")).toEqual([
+      "hero",
+      "practice-statement",
+      "project-index",
+      "services",
+      "contact",
+    ]);
+
+    const dna = buildReferenceDna({
+      id: "newly-curated-family",
+      referenceFamilyId: "newly-curated-family",
+      referenceName: "Asymmetric project archive",
+      source: "test reference",
+      rights: "reference-only",
+      screenshotPath: "tests/fixtures/reference.png",
+      navigation: "micro utility row",
+      heroGeometry: "full-bleed graphic color field",
+      servicePresentation: "asymmetric project archive and service index",
+      sectionRhythm: "graphic opening to projects to services",
+      typographyCategory: "heavy grotesk with serif accents",
+      imageStrategy: "varied architectural project crops",
+      mobileBehavior: "stack project notes between image chapters",
+      motionOpportunities: ["scroll reveal"],
+    });
+
+    expect(dna.familyId).toBe("newly-curated-family");
+    expect(dna.heroGeometry.mode).toBe("full-bleed graphic color field");
+    expect(dna.navigationGeometry.mode).toBe("micro utility row");
+    expect(dna.sectionSequence).toEqual(["hero", "services", "faq", "contact"]);
+    expect(dna.referenceName).toBe("Asymmetric project archive");
+    expect(dna.referenceName).not.toBe("Kokoro-style editorial architecture");
   });
 
   it("selects the neighborhood collage contract for food and market cues", () => {

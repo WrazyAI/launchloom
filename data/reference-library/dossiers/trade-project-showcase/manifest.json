@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "id": "trade-project-showcase",
+  "productionEligible": false,
+  "referenceName": "Trades project-led study",
+  "familyId": "trades-project-led",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/inspiration-evidence/design-family-demos",
+    "rights": "owned",
+    "rightsEvidence": "This is a LaunchLoom-owned original design study and its in-house rendered capture, stored for internal inspiration and implementation research."
+  },
+  "businessKinds": [
+    "local-trades",
+    "home-services",
+    "garage-door-repair",
+    "contractors"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Trades project-led study",
+    "heroGeometry": {
+      "mode": "oversized service poster beside a three-window project image stack",
+      "alignment": "dark text field beside tall image crops",
+      "viewport": "headline and request action visible before the next section"
+    },
+    "navigationGeometry": {
+      "mode": "small wordmark and direct utility links",
+      "placement": "top edge",
+      "mobile": "condensed inline links"
+    },
+    "typography": {
+      "display": "bold compressed sans",
+      "body": "technical sans",
+      "scale": "very large multi-line service statement"
+    },
+    "palette": {
+      "surfaces": [
+        "near-black",
+        "deep green",
+        "warm white"
+      ],
+      "ink": "warm white",
+      "accents": [
+        "service orange"
+      ],
+      "contrastIntent": "high-contrast trade-service poster"
+    },
+    "imageTreatment": {
+      "mode": "project-led image windows",
+      "crop": "one tall crop with two supporting windows",
+      "focalPoint": "finished work or equipment"
+    },
+    "sectionSequence": [
+      "hero",
+      "image-chapter",
+      "services",
+      "process",
+      "coverage",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "large-type service index",
+      "interaction": "open or navigate by service row"
+    },
+    "ctaPlacement": {
+      "primary": "request action within poster hero",
+      "secondary": "call action beside primary request",
+      "early": "inside the opening poster"
+    },
+    "motion": {
+      "primitive": "layered image-mask reveal",
+      "library": "gsap-scrolltrigger",
+      "reducedMotion": "show the project image stack statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "poster-first image stack",
+      "rules": [
+        "reduce headline scale before cropping",
+        "stack image windows in document order",
+        "keep both request and call actions reachable"
+      ]
+    },
+    "prohibitedPatterns": [
+      "3D object stage",
+      "decorative number columns",
+      "uniform service-card grid",
+      "split hero with tiny text"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "trade-poster",
+        "selector": "[data-reference-signature=trade-poster]",
+        "description": "large service poster headline"
+      },
+      {
+        "id": "project-window-stack",
+        "selector": "[data-reference-signature=project-window-stack]",
+        "description": "asymmetric vertical project image windows"
+      }
+    ],
+    "acceptanceChecks": [
+      "the service promise dominates the hero",
+      "images are clearly project evidence, not abstract decoration",
+      "service index follows the opening scene"
+    ],
+    "annotatedDescription": "Owned rendered garage-door repair study. The screenshot shows a large service poster beside finished-work image windows, followed by a direct repair index. It is not a 3D portfolio or sticky project stack."
+  },
+  "review": {
+    "status": "initial-curation",
+    "curator": "Codex-assisted screenshot review",
+    "reviewedAt": "2026-09-25",
+    "scope": "paired full-page evidence and transferable visual mechanics; not approval of sample business claims or production copy"
+  }
+}

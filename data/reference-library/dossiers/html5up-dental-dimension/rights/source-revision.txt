@@ -1,0 +1,11 @@
+Pinned upstream source checkout verification
+
+Repository: https://github.com/zce/html5up
+Command: git rev-parse HEAD
+Recorded output: f32c95cd40e42659857e2318b6deb1f6be43da5d
+Template directory: dimension/
+Official template page: https://html5up.net/dimension
+License file retained verbatim from that template directory: HTML5UP-CC-BY-3.0.txt
+Original attribution README retained verbatim: Dimension-original-README.txt
+
+This is a short source record, not a signed attestation. The pinned commit is independently retrievable from the repository URL. No HTML5 UP demo screenshot or original demo photo is bundled.

@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "id": "quiet-care-consultation",
+  "productionEligible": false,
+  "referenceName": "Quiet care consultation study",
+  "familyId": "quiet-care-consultation",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/inspiration-evidence/a1-design-showcase",
+    "rights": "owned",
+    "rightsEvidence": "This is a LaunchLoom-owned original design study and its in-house rendered capture, stored for internal inspiration and implementation research."
+  },
+  "businessKinds": [
+    "healthcare",
+    "home-care",
+    "elder-care",
+    "wellness"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Quiet care consultation study",
+    "heroGeometry": {
+      "mode": "warm editorial statement beside an illustrated person window",
+      "alignment": "left copy with a large right portrait illustration",
+      "viewport": "headline, short reassurance, and action"
+    },
+    "navigationGeometry": {
+      "mode": "quiet inline care links",
+      "placement": "top edge",
+      "mobile": "compact inline links"
+    },
+    "typography": {
+      "display": "editorial serif",
+      "body": "quiet neutral sans",
+      "scale": "large calm headline with short supporting copy"
+    },
+    "palette": {
+      "surfaces": [
+        "warm white",
+        "deep green",
+        "soft sage"
+      ],
+      "ink": "deep green",
+      "accents": [
+        "muted sage"
+      ],
+      "contrastIntent": "soft welcoming contrast"
+    },
+    "imageTreatment": {
+      "mode": "single illustrated person framed in a large arch",
+      "crop": "portrait crop inside a soft architectural mask",
+      "focalPoint": "person silhouette centered in the arch"
+    },
+    "sectionSequence": [
+      "hero",
+      "editorial-intro",
+      "services",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "ruled care-service rows",
+      "interaction": "simple direct links"
+    },
+    "ctaPlacement": {
+      "primary": "low-pressure conversation action",
+      "secondary": "service-row links",
+      "early": "in the opening copy"
+    },
+    "motion": {
+      "primitive": "subtle portrait-mask reveal",
+      "library": "css",
+      "reducedMotion": "show the complete illustration"
+    },
+    "mobileRecomposition": {
+      "strategy": "single-column care consultation",
+      "rules": [
+        "place the illustration after the promise",
+        "keep service rows full-width",
+        "keep contact action close to the form"
+      ]
+    },
+    "prohibitedPatterns": [
+      "clinical blue dashboard",
+      "generic service cards",
+      "invented staff portrait",
+      "long why-us essay"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "care-promise",
+        "selector": "[data-reference-signature=care-promise]",
+        "description": "warm editorial care promise"
+      },
+      {
+        "id": "care-service-ledger",
+        "selector": "[data-reference-signature=care-service-ledger]",
+        "description": "ruled care-service rows"
+      }
+    ],
+    "acceptanceChecks": [
+      "the portrait is clearly illustrative rather than a claimed staff member",
+      "the service rows remain scannable",
+      "the first action is low-pressure and visible"
+    ],
+    "annotatedDescription": "Owned LaunchLoom care study. The screenshot has a warm editorial opening, illustrated portrait window, deep-green reassurance section, and ruled care-service rows. Treat these as mechanics, not content or brand assets."
+  },
+  "review": {
+    "status": "initial-curation",
+    "curator": "Codex-assisted screenshot review",
+    "reviewedAt": "2026-09-25",
+    "scope": "paired full-page evidence and transferable visual mechanics; not approval of sample business claims or production copy"
+  }
+}

@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-brixton-cycles-community-workshop",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "Bicycle repair/retail is not the same visitor intent as automotive sales or auto repair; it is kept separate from car-business matching.",
+  "referenceName": "Brixton Cycles community-led urban bicycle workshop",
+  "familyId": "direct-cycles-community-workshop",
+  "source": {
+    "name": "Brixton Cycles official website",
+    "url": "https://www.brixtoncycles.co.uk/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester-attested scope relayed for this task permits internal full-page desktop/mobile screenshot retention, a derived prompt, and LaunchLoom pipeline-model visual-reference use. No source-owner grant or individual image/font license was uploaded; source assets are not retained separately or authorized for client use.",
+    "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md",
+    "assetEvidencePaths": [
+      "rights/PROVENANCE.md",
+      "rights/ASSET-PROVENANCE.md"
+    ]
+  },
+  "provenance": {
+    "officialPage": "https://www.brixtoncycles.co.uk/",
+    "sourceTitleObserved": "Brixton Cycles - A Workers' Co-operative Since 1983",
+    "capturedAt": "2026-09-25",
+    "capture": {
+      "method": "Rendered the official source page directly in Chromium at each viewport, scrolled the page to load deferred images, then captured the full page. No gallery thumbnail, gallery screenshot, LaunchLoom-generated site, or source-site asset file was used as a separate asset.",
+      "desktopViewport": {
+        "width": 1440,
+        "height": 900,
+        "deviceScaleFactor": 1,
+        "fullPage": true,
+        "screenshotHeight": 12688
+      },
+      "mobileViewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 1,
+        "fullPage": true,
+        "screenshotHeight": 20251,
+        "captureWidthClippedToViewport": true
+      },
+      "diagnostics": "All 25 image elements loaded at both viewports and browser font status was loaded. At desktop, document/body width matched 1440px. At mobile, the viewport was 390px while the document/body measured 397px because repeated marquee text extends beyond the right edge. The retained mobile screenshot is clipped to 390px, preserving the requested viewport width and recording the source's 7px overflow. The source title says workers' co-operative since 1983, while the current page story says stewardship changed in 2025 and describes a collective rather than a co-op. Treat all source business claims as non-transferable."
+    },
+    "attribution": "Official source page: Brixton Cycles, https://www.brixtoncycles.co.uk/. Capture retention and model input rely on the requester attestation in rights/REQUESTER-ATTESTATION.md."
+  },
+  "businessKinds": [
+    "bicycle-repair",
+    "bike-workshop",
+    "independent-bike-shop",
+    "cycling-retail",
+    "urban-mobility"
+  ],
+  "tags": {
+    "business": [
+      "bicycle-repair",
+      "bike-workshop",
+      "independent-bike-shop",
+      "cycling-retail",
+      "urban-mobility"
+    ],
+    "style": [
+      "community-workshop-editorial",
+      "charcoal-and-signal-yellow",
+      "documentary-repair-photography",
+      "urban-collective",
+      "condensed-display-type"
+    ],
+    "composition": [
+      "typographic-workshop-hero",
+      "repeating-text-divider",
+      "service-retail-community-directory",
+      "documentary-repair-mosaic",
+      "transparent-service-ledger",
+      "local-story-and-partner-chapters",
+      "visit-and-callback-close"
+    ],
+    "conversion": [
+      "service-price-discovery",
+      "repair-enquiry",
+      "callback-request",
+      "workshop-visit-details",
+      "stock-and-service-separation"
+    ],
+    "motion": [
+      "repeating-marquee-observed",
+      "native-section-navigation",
+      "static-reduced-motion-translation-required",
+      "no-verified-form-submission-claim"
+    ],
+    "imagery": [
+      "source-workshop-photography-in-screenshot-only",
+      "repair-process-photography",
+      "independent-retail-interior",
+      "local-business-context",
+      "client-owned-or-separately-cleared-assets-required"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "An urban bicycle workshop page with a compact top utility bar over a dark photographic hero, oversize condensed display type, and a bright yellow action accent. A repeated text strip separates the opening from a compact three-path directory for service, shop, and community. Later chapters distinguish retail stock from workshop repair, show a documentary repair-image mosaic, present a dense but legible service-price ledger, and return to local business context, partners, origin, proof, visit details, and a callback request. The direct site is image-rich and high contrast. Its current mobile document extends three pixels past the 390px viewport because of the repeated text strip; the retained screenshot is clipped to 390px. The source title and its updated ownership story conflict, so no history or identity claims are transferable. Source assets appear only inside the attested screenshots.",
+    "heroGeometry": {
+      "mode": "typographic urban-workshop poster",
+      "alignment": "large left-aligned display statement over a darkened documentary shop image, with compact primary and secondary actions below",
+      "viewport": "wordmark, service promise, and next step are visible in the opening without relying on a rating or unsupported metric"
+    },
+    "navigationGeometry": {
+      "mode": "compact uppercase workshop utility navigation",
+      "placement": "narrow dark utility band above the hero",
+      "mobile": "condensed top row with accessible menu and contact routes; avoid lateral overflow"
+    },
+    "typography": {
+      "display": "bold condensed sans with an occasional italic accent",
+      "body": "neutral sans for service details, inputs, and prices",
+      "scale": "oversized opening statement and section titles paired with compact metadata; keep mobile body and price copy readable"
+    },
+    "palette": {
+      "surfaces": ["near-black", "charcoal", "dark workshop photography"],
+      "ink": "warm white",
+      "accents": ["signal yellow", "muted neutral gray"],
+      "contrastIntent": "strong dark-field contrast with yellow reserved for key labels and actions"
+    },
+    "imageTreatment": {
+      "mode": "documentary workshop, repair-process, and independent-retail photography",
+      "crop": "wide hero followed by mixed landscape and portrait shop details",
+      "focalPoint": "real repair activity and workshop objects; source photographs are evidence only and must not be reused as client assets"
+    },
+    "sectionSequence": [
+      "hero",
+      "marquee",
+      "services",
+      "retail-inventory",
+      "service-pricing",
+      "editorial-intro",
+      "community-partners",
+      "image-mosaic",
+      "proof",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "short service, retail, and community directory followed by a transparent line-item repair ledger",
+      "interaction": "native section and enquiry links; use a visible service request path and do not imply unverified stock or form behavior"
+    },
+    "ctaPlacement": {
+      "primary": "repair or service enquiry within the hero and again at the contact close",
+      "secondary": "service pricing or confirmed stock discovery",
+      "early": "directly under the opening promise, before decorative proof or secondary content"
+    },
+    "motion": {
+      "primitive": "repeating typographic divider observed on the source page",
+      "library": "source animation implementation not inferred",
+      "reducedMotion": "use a static clipped divider and keep every message readable"
+    },
+    "mobileRecomposition": {
+      "strategy": "single-column workshop and pricing story with the documentary sequence preserved",
+      "rules": [
+        "stack the main promise and contact action before service detail",
+        "separate repair services from product stock",
+        "show prices with inclusions and parts conditions in readable rows",
+        "clip decorative strips and verify the document width at 390px and 320px",
+        "stack contact and visit facts without a sideways table"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copied source identity, writing, logo, exact price list, review claims, photography, or trade dress",
+      "unverified opening year, co-op or collective model, ownership, location, rating, review count, price, service ability, or hours",
+      "source photographs, fonts, or branded material reused as client assets",
+      "invented bike inventory, unsupported availability, fabricated service package, or misleading callback form",
+      "overflowing marquee, microcopy price table, generic rounded-card wall, or hover-only repair details"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "workshop-poster-opening",
+        "selector": "[data-reference-signature=workshop-poster-opening]",
+        "description": "high-contrast local workshop opening with a clear repair action"
+      },
+      {
+        "id": "service-shop-community-paths",
+        "selector": "[data-reference-signature=service-shop-community-paths]",
+        "description": "separate visitor paths for repair, product discovery, and community when verified"
+      },
+      {
+        "id": "transparent-service-ledger",
+        "selector": "[data-reference-signature=transparent-service-ledger]",
+        "description": "readable service scope and price or quote conditions"
+      },
+      {
+        "id": "local-contact-close",
+        "selector": "[data-reference-signature=local-contact-close]",
+        "description": "accurate workshop or service-area details with a real contact route"
+      }
+    ],
+    "acceptanceChecks": [
+      "the opening clearly communicates the verified local mobility service and a working next step",
+      "workshop repair, retail inventory, and community activity are only shown when they are real client offers",
+      "prices and inclusions match current approved business facts or are omitted",
+      "photography and fonts are client-owned or separately licensed, not copied from the source screenshot",
+      "mobile prices, controls, and contact details remain readable with no page overflow",
+      "any moving text strip has a static reduced-motion version and stays within the viewport",
+      "local address and service-area wording accurately describe the business location model"
+    ]
+  },
+  "review": {
+    "status": "requester-attested-visual-reference-with-mobile-overflow-caveat",
+    "reviewer": "Codex",
+    "reviewedAt": "2026-09-25",
+    "scope": "Official page capture, loaded-image checks, 1440px desktop and 390px mobile evidence, mobile overflow record, direct-source rights attestation, complete Reference DNA, six tag groups, and non-reuse safeguards."
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "attested-future-fitness",
+  "productionEligible": false,
+  "referenceName": "Future: product-led personal training story",
+  "familyId": "attested-future-fitness-product",
+  "businessKinds": ["fitness", "personal training", "digital coaching platform"],
+  "source": {
+    "name": "Future official website",
+    "url": "https://future.co/",
+    "sourceType": "official direct website, captured directly",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation on 2026-09-25 permits persistent desktop/mobile screenshots and use as pipeline-model visual reference. No owner license or grant file was uploaded; see the explicit scope and limitation in rights/requester-attestation.md.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md",
+      "rights/source-observations.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": ["fitness", "personal training", "digital coaching", "not a physical gym"],
+    "style": ["editorial product-led", "lifestyle fitness", "bright and cinematic"],
+    "composition": ["announcement strip", "phone-over-image hero", "feature carousel", "roadmap panel", "coach discovery close"],
+    "conversion": ["hero CTA", "coach-discovery CTA", "short onboarding/quiz action"],
+    "motion": ["user-controlled carousel", "product-screen reveals", "reduced-motion static fallback"],
+    "imagery": ["lifestyle athletic photography", "device mockups", "coach and exercise scenes", "direct-source screenshot evidence"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 900 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The source is a digital coaching product. Its long page begins with a compact announcement and oversized training promise over a lifestyle image, with a device mockup crossing the hero boundary. A centered product-value chapter introduces a wide benefit carousel, followed by a trainer introduction, an individualized roadmap, member stories/results, a coach-finding action, and a multi-column product footer. Mobile keeps the device preview close to the headline, stacks the roadmap inputs, and compresses coach/testimonial sections into a single column. Treat source copy, images, identity, product details, prices, and results as off-limits for a new local business.",
+    "heroGeometry": { "mode": "lifestyle image with oversized training headline and overlapping device preview", "alignment": "centered promise over asymmetrical portrait and product object", "viewport": "headline and primary action appear without scrolling on desktop and mobile" },
+    "navigationGeometry": { "mode": "small logo, a few text links, and one rounded action", "placement": "top edge below a narrow announcement strip", "mobile": "brand plus compact menu control and visible onboarding action" },
+    "typography": { "display": "editorial serif headline with clean sans product UI", "body": "neutral readable sans", "scale": "large promise, compact utility labels, modular feature headlines" },
+    "palette": { "surfaces": ["cool gray", "white", "black"], "ink": "near-black with white contrast on dark media", "accents": ["soft lavender or muted brand highlight"], "contrastIntent": "bright product surfaces with dark media interludes" },
+    "imageTreatment": { "mode": "full-bleed athletic portraits, device mockups, and coaching/product detail scenes", "crop": "large desktop lifestyle crops and contained product mockups on mobile", "focalPoint": "keep face and device state separate enough for clear reading" },
+    "sectionSequence": ["announcement", "hero and product preview", "benefit carousel", "coach introduction", "personal roadmap", "member proof", "coach discovery", "footer"],
+    "servicePresentation": { "pattern": "horizontal benefit carousel followed by a structured roadmap of factors", "interaction": "visitor-controlled carousel and clear in-page onboarding links" },
+    "ctaPlacement": { "primary": "in the hero", "secondary": "after benefit and roadmap information", "early": "above fold in announcement and hero flow" },
+    "motion": { "primitive": "horizontal feature carousel and product-media reveals", "library": "native controls and source-owned browser behavior only; do not import site scripts", "reducedMotion": "disable autoplay and scroll-driven effects, keep all slide content reachable" },
+    "mobileRecomposition": { "strategy": "product-preview-led single-column stack", "rules": ["place the device near the hero promise", "make carousels user-controlled", "stack roadmap inputs", "keep action links visible", "maintain viewport width"] },
+    "prohibitedPatterns": ["copying Future's app or identity", "calling online coaching a local gym", "invented fitness results", "unsupported trial or pricing claims", "autoplay carousel without controls"],
+    "requiredSignatureElements": [
+      { "id": "product-promise-stage", "selector": "[data-reference-signature=product-promise-stage]", "description": "hero combines training promise, lifestyle image, and device/product preview" },
+      { "id": "benefit-carousel", "selector": "[data-reference-signature=benefit-carousel]", "description": "horizontal visitor-controlled feature carousel" },
+      { "id": "personal-roadmap", "selector": "[data-reference-signature=personal-roadmap]", "description": "visual summary of inputs shaping the training plan" },
+      { "id": "coach-discovery-close", "selector": "[data-reference-signature=coach-discovery-close]", "description": "clear next action after story and proof content" }
+    ],
+    "acceptanceChecks": [
+      "The initial viewport has a clear training promise, an early action, and a bounded product preview.",
+      "Feature exploration, coaching/process, roadmap, proof, and discovery follow in a purposeful sequence.",
+      "At 390 px the page stays within the viewport, with user-controlled carousel and stacked roadmap.",
+      "The reference is tagged as digital coaching, not a local gym, and no source brand or content is reused.",
+      "New local business copy, contact details, location, classes, and claims are bound only to verified client facts."
+    ]
+  },
+  "review": { "status": "reviewed", "reviewer": "Codex direct-source QA", "date": "2026-09-25", "notes": "Direct page screenshots verified at 1440 and 390. No width overflow. Four desktop Cloudinary workout-card requests plus an empty image source were unresolved; mobile had one Cloudinary request and several empty src nodes. No source assets were downloaded. User-attested permission, no owner grant file." }
+}

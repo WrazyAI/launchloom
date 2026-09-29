@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "id": "urgent-trade-service-poster",
+  "productionEligible": false,
+  "referenceName": "LaunchLoom urgent trade poster",
+  "familyId": "launchloom-urgent-trade-poster",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/inspiration-evidence/a1-design-showcase",
+    "rights": "owned",
+    "rightsEvidence": "This is a LaunchLoom-owned original design study and its in-house rendered capture, stored for internal inspiration and implementation research."
+  },
+  "businessKinds": [
+    "local-trades",
+    "home-services",
+    "plumbing",
+    "hvac",
+    "emergency-repair"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "LaunchLoom urgent trade poster",
+    "heroGeometry": {
+      "mode": "urgent problem statement beside a high-visibility geometric signal",
+      "alignment": "left-anchored service type against an abstract warning frame",
+      "viewport": "one-screen problem summary with request and call actions"
+    },
+    "navigationGeometry": {
+      "mode": "compact direct service navigation",
+      "placement": "light utility strip above the poster",
+      "mobile": "short inline links and a visible phone action"
+    },
+    "typography": {
+      "display": "heavy industrial grotesk",
+      "body": "neutral utility sans",
+      "scale": "oversized multi-line problem statement with tight supporting copy"
+    },
+    "palette": {
+      "surfaces": [
+        "deep petrol",
+        "warm paper",
+        "signal orange",
+        "warning yellow"
+      ],
+      "ink": "white",
+      "accents": [
+        "signal orange",
+        "warning yellow"
+      ],
+      "contrastIntent": "high visibility with clean light-surface contrast"
+    },
+    "imageTreatment": {
+      "mode": "abstract geometric warning frame",
+      "crop": "diagonal frame and circular diagnostic symbol",
+      "focalPoint": "graphic signal rather than decorative stock photography"
+    },
+    "sectionSequence": [
+      "hero",
+      "conversion-band",
+      "services",
+      "image-chapter",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "problem-first diagnostic index",
+      "interaction": "direct expandable issue rows"
+    },
+    "ctaPlacement": {
+      "primary": "service request action in hero",
+      "secondary": "call-now action beside request",
+      "early": "inside the opening poster"
+    },
+    "motion": {
+      "primitive": "subtle warning-frame offset reveal",
+      "library": "css",
+      "reducedMotion": "keep the full geometry and issue index static"
+    },
+    "mobileRecomposition": {
+      "strategy": "stacked emergency service poster",
+      "rules": [
+        "reduce headline size before changing line breaks",
+        "place the signal shape after the opening copy",
+        "keep request and call actions visible and touch-safe"
+      ]
+    },
+    "prohibitedPatterns": [
+      "fake live emergency status",
+      "invented response-time guarantee",
+      "generic rounded-card wall",
+      "low-contrast orange text",
+      "urgent claims unsupported by client facts"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "urgent-service-poster",
+        "selector": "[data-reference-signature=urgent-service-poster]",
+        "description": "problem-led poster with a high-visibility geometric frame"
+      },
+      {
+        "id": "diagnostic-index",
+        "selector": "[data-reference-signature=diagnostic-index]",
+        "description": "plain issue-first service rows"
+      },
+      {
+        "id": "urgent-action-band",
+        "selector": "[data-reference-signature=urgent-action-band]",
+        "description": "high-contrast next-step band after the opening scene"
+      }
+    ],
+    "acceptanceChecks": [
+      "the visitor can identify the service and location intent quickly",
+      "the phone and request options are distinct",
+      "urgency is conveyed by hierarchy without fabricated availability claims",
+      "mobile preserves contrast and action visibility"
+    ],
+    "annotatedDescription": "Owned LaunchLoom urgent plumbing study. The full page pairs a deep-petrol problem poster and oversized diagonal yellow frame with an orange next-step band, a graphic diagnostic section, and a direct request close. The illustrated geometry is not live service status or a response-time promise."
+  },
+  "review": {
+    "status": "initial-curation",
+    "curator": "Codex-assisted screenshot review",
+    "reviewedAt": "2026-09-25",
+    "scope": "paired full-page evidence and transferable visual mechanics; not approval of sample business claims or production copy"
+  }
+}

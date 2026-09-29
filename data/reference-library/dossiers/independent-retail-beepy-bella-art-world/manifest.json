@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "independent-retail-beepy-bella-art-world",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "The source is artist-led online retail rather than a verified local jewelry storefront, and its source capture records a major width defect.",
+  "referenceName": "Beepy Bella artist-led independent retail world",
+  "familyId": "independent-retail-artist-world",
+  "source": {
+    "name": "Beepy Bella official website",
+    "url": "https://beepybella.world/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation covers persistent full-page screenshot and derived-prompt retention, including use of screenshots as pipeline visual references. No owner grant was uploaded or independently verified; scope is limited to this internal reference-library use.",
+    "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md",
+    "assetEvidencePaths": ["rights/ASSET-PROVENANCE.md"]
+  },
+  "provenance": {
+    "retrievedAt": "2026-09-25",
+    "capture": "Full-page direct captures from the official domain at desktop 1440x1000 and mobile 390x844. The source locks document scrolling and uses a custom scroller, so each screenshot is a stitch of direct original-domain viewport captures. No gallery image was used.",
+    "attribution": "Original source branding remains visible only inside the captured screenshots. Prompt describes transferable mechanics and prohibits reuse of the source brand, art, exact copy, products, and photographs.",
+    "qa": "At desktop the body scroll width measured 3585px while the viewport/document root remained 1440px, indicating horizontal content spill. At mobile the body/document widths were 390px with no page-level overflow. The embedded video frame was blocked by the browser/network security challenge and appeared black; this is documented as a source-capture fault, not a required design element."
+  },
+  "businessKinds": ["independent-jewelry", "artist-led-retail", "creative-goods", "fashion-accessories", "independent-apparel"],
+  "tags": {
+    "business": ["independent-jewelry", "artist-led-retail", "creative-goods", "fashion-accessories", "independent-apparel"],
+    "style": ["eccentric-art-retail", "whimsical-pop", "high-contrast-white-space", "handmade-world-building", "playful-editorial"],
+    "composition": ["split-product-stage", "circular-orbit-caption", "product-grid-interlude", "manifesto-image-slider", "multi-column-store-directory"],
+    "conversion": ["direct-shop-navigation", "product-grid-browse", "category-taxonomy", "currency-choice", "mailing-list-signup"],
+    "motion": ["orbiting-product-caption", "rotating-product-frame", "custom-smooth-scroll", "image-slider-dots", "static-media-fallback"],
+    "imagery": ["macro-product-photo", "colorful-object-portrait", "artist-process-imagery", "irregular-product-mix", "first-party-reference-image-only"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "An artist-led retail world with an intentionally eccentric opening: a dramatic close product photograph occupies one half of a split stage while another product sits inside a circular text orbit on the other half. A full-width segmented navigation grid is unusually explicit about shop, about, currency, search, and cart. The page moves through a compact product grid, a media interlude, a founder/story chapter paired with a large rotating product image, then into an extensive category directory and mailing-list close. It mixes editorial seriousness with playful object imagery, unusual product color, line-art marks, and large white fields. The source desktop has extreme horizontal body overflow and its embedded video was blocked in this capture; neither defect should be copied as an intended feature.",
+    "heroGeometry": { "mode": "asymmetric split product stage with circular orbital object", "alignment": "large close-cropped object photography on one side and a smaller isolated product surrounded by circular text and star-like marks on the other", "viewport": "wide desktop opening uses the full width beneath a ruled utility nav; mobile converts the orbital product to a centered opening panel followed by a large product photograph" },
+    "navigationGeometry": { "mode": "ruled multi-cell shop directory with utility controls", "placement": "full-width segmented desktop bar with brand mark, major destinations, currency, search, and basket", "mobile": "compact brand mark with search, basket, and menu; long store categories move into a disclosure menu" },
+    "typography": { "display": "plain modern sans with playful circular text composition", "body": "neutral sans serif", "scale": "small all-caps utility labels, high contrast in the product stage, concise product metadata, and dense but clearly divided directory lists" },
+    "palette": { "surfaces": ["bright white", "black media field", "soft gray product backgrounds"], "ink": "black", "accents": ["violet", "hot pink", "lime", "grass green", "candy color from approved product art"], "contrastIntent": "stark black/white editorial structure punctuated by saturated handmade product imagery" },
+    "imageTreatment": { "mode": "macro product photography, colorful handmade objects, fashion/product images, and artist-process imagery", "crop": "one dominant close-up paired with a contained isolated product; later sections shift to ordered product tiles and a large editorial image slider", "focalPoint": "the material or silhouette of the client's real product; use newly created art rather than source product shapes or photos" },
+    "sectionSequence": ["segmented-store-navigation", "split-product-stage", "product-frontpage-grid", "media-or-static-story-chapter", "artist-story-and-image-slider", "category-and-product-directory", "mailing-list-and-footer"],
+    "servicePresentation": { "pattern": "product-led independent store: a curated frontpage selection appears before broad category browsing; an artist/story section contextualizes the maker's actual work", "interaction": "native category disclosures, selectable product/gallery states, search and currency controls; no unsupported service configurator" },
+    "ctaPlacement": { "primary": "shop and browse actions in the top navigation, followed by direct product links in the frontpage grid", "secondary": "newsletter signup at the end of the store directory", "early": "shopping is immediately available without a large generic hero button; product tiles are the first conversion surface" },
+    "motion": { "primitive": "circular text/product rotation, a custom smooth-scrolling page, and a dot-controlled image slider", "library": "source implementation library not asserted; implement with CSS/native interactions unless a vetted motion runtime is already present", "reducedMotion": "freeze the orbit and slider on a selected frame, restore native browser scrolling, and keep all products and story copy available" },
+    "mobileRecomposition": { "strategy": "single-column illustrated retail journey with an object-first opener", "rules": ["keep the compact logo/search/cart/menu row usable", "center the circular product composition before or after a large crop without horizontal pinning", "display product cards in a clean two-column grid only when each item remains legible", "stack story copy and image slider with visible state controls", "move the full directory into labeled accordion or list groups and prevent desktop-width overflow"] },
+    "prohibitedPatterns": ["copying Beepy Bella name, logo, product names, original drawings, exact source copy, source photography, or trade dress", "copying distinctive product art, characters, or source motifs", "inventing price, founder history, handcrafted method, material, provenance, healing or wellness benefit, availability, or customer review", "replicating 3585px desktop body overflow", "recreating the blocked black video as a design signature", "autoplay sound, scroll lock, inaccessible circular text, or motion-only product information", "generic ecommerce card wall or fake social proof"],
+    "requiredSignatureElements": [
+      { "id": "orbital-product-stage", "selector": "[data-reference-signature=orbital-product-stage]", "description": "a circular caption or graphic framing one original client product image as a distinct opening object" },
+      { "id": "asymmetric-product-pair", "selector": "[data-reference-signature=asymmetric-product-pair]", "description": "a high-contrast scale pairing between one dominant product image and one contained object image" },
+      { "id": "artist-story-slider", "selector": "[data-reference-signature=artist-story-slider]", "description": "a maker or process story paired with a user-controllable image sequence, only when verified material exists" },
+      { "id": "category-world-directory", "selector": "[data-reference-signature=category-world-directory]", "description": "a deliberate directory of real store categories and supporting links rather than an undifferentiated footer" }
+    ],
+    "acceptanceChecks": ["opening establishes a product/art world distinct from luxury minimalism and generic ecommerce", "mobile has no horizontal overflow and every product/control fits the screen", "desktop content stays within the viewport despite the source's observed overflow", "video or media has an approved poster and useful fallback rather than a black empty region", "all founder, craft, material, health, and product claims use verified content tokens", "shop taxonomy is keyboard accessible and understandable without animation", "no source image or branded art is reused in generated client output"]
+  },
+  "review": { "status": "requester-attested-production-reference-with-source-qa-caveats", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "Official-domain screenshots stitched from direct viewport captures, source-derived visual mechanics, responsive review, and requester-attested internal model-reference use; source has desktop overflow and a browser-blocked media embed; no owner grant file was provided." }
+}

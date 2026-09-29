@@ -409,6 +409,21 @@ describe("site configuration", () => {
     expect(config.design.variantId).toMatch(/^general-/);
   });
 
+  it.each([
+    ["Northside Dental", "Family dentistry and crowns", "wellness", "dental"],
+    ["Maple Accounting", "Bookkeeping, payroll, and VAT", "professional-services", "accounting"],
+    ["Mason Tax Advisors", "Tax preparation and tax planning", "professional-services", "accounting"],
+    ["Smith Family Law", "Family law and civil litigation", "professional-services", "legal-services"],
+    ["Northline Architects", "Residential architecture and interiors", "professional-services", "architecture"],
+    ["Cedar Table Bistro", "Dinner reservations and catering", "hospitality", "restaurant"],
+    ["Harbor House Inn", "Rooms, overnight stays, and reservations", "hospitality", "hospitality"],
+    ["Juniper Hair Studio", "Hair coloring and cuts", "wellness", "beauty"],
+    ["Maple Wedding Venue", "Wedding venue hire and private events", "hospitality", "event-venue"],
+  ])("infers the specific reference business kind for %s", (businessName, services, industry, expectedKind) => {
+    const config = normalise({}, { businessName, services, industry });
+    expect(config.businessKind).toBe(expectedKind);
+  });
+
   it("selects a stable but intake-specific complete design variant", () => {
     const previous = process.env.LAUNCHLOOM_INTAKE_ID;
     process.env.LAUNCHLOOM_INTAKE_ID = "20";

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-auto-repair-digital-inspection",
+  "productionEligible": false,
+  "coreCollectionStatus": "backup",
+  "coreCollectionExclusionReason": "Auto repair is not one of the selected ten niches; the separate automotive pool does not yet contain three matching references.",
+  "referenceName": "Spicer local auto-repair symptom triage and inspection",
+  "familyId": "spicer-auto-repair-digital-inspection",
+  "source": {
+    "name": "Spicer Designs Auto Repair HTML template",
+    "url": "https://www.spicerdesigns.com/templates/auto-repair",
+    "rights": "licensed",
+    "rightsEvidence": "The official source page states CC BY 4.0 and commercial use with the footer credit retained. The downloaded package includes its LICENSE and README, which identify the bundled hero artwork as AI-generated placeholder art and require keeping the Spicer Designs footer link.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/SOURCE-README.md", "rights/ASSET-PROVENANCE.md"]
+  },
+  "provenance": {
+    "archiveSha256": "5b60237bcf2553f19662231c4e2122baf3aac80f0408b520dad640f36bacb5a8",
+    "retrievedAt": "2026-09-25",
+    "attribution": "The unmodified source HTML retains the required linked Spicer Designs footer credit, visible in both captures. This is an independent local repair-shop template, not manufacturer or automaker marketing.",
+    "capture": "Rendered locally from the exact official HTML archive at desktop 1440x1000 and mobile 390x844. Captures use the package's built-in prefers-reduced-motion static fallback so all scroll-reveal content is visible. Source files were not edited.",
+    "qa": "Body and document widths matched the viewport at desktop and mobile. The sole bundled hero image loaded. The static HTML has no reveal observer: 21 ar-rise groups remain hidden in the default motion preference, while reduced motion exposes them. FAQ uses native details; click-driven matcher widgets are presentational and the contact form opens a local email draft rather than submitting to a server."
+  },
+  "businessKinds": ["local-auto-repair", "mechanic-shop", "vehicle-diagnostics", "brake-service", "independent-auto-service"],
+  "tags": {
+    "business": ["local-auto-repair", "mechanic-shop", "vehicle-diagnostics", "brake-service", "independent-auto-service"],
+    "style": ["diagnostic-workshop-editorial", "near-black-and-signal-red", "evidence-led-service", "technical-quiet", "bay-first"],
+    "composition": ["repair-bay-hero", "symptom-matcher", "service-capability-grid", "digital-inspection-steps", "vehicle-make-ledger", "repair-commitment-strip"],
+    "conversion": ["diagnostic-request", "symptom-to-service-route", "labour-rate-disclosure", "digital-inspection-reassurance", "service-area-qualification"],
+    "motion": ["symptom-option-state", "inspection-step-sequence", "section-rise-reveal", "native-faq-disclosure", "static-reduced-motion-fallback"],
+    "imagery": ["ai-generated-repair-bay-placeholder", "dark-workshop-hero", "equipment-detail", "no-identifiable-technician-or-customer", "source-art-not-reused"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A local repair-shop experience that begins with diagnostic confidence and evidence, not an automaker's product catalog. A narrow call/hour utility bar precedes a dark service-bay hero with a clear diagnostic CTA and a compact facts strip. The next section asks what the vehicle is doing and pairs a symptom list with a proposed service explanation. A focused service grid follows, then a transparent labor-rate/make-served area and a digital inspection explanation that prioritizes findings for the vehicle owner. Repair commitments, genuine reviews, FAQ, and a short diagnostic request form close the page. The design is square-cornered, dark, and information-dense, with a single signal-red action color.",
+    "heroGeometry": { "mode": "service-bay diagnostic poster", "alignment": "dark wide workshop image with left-aligned diagnostic headline and actions; compact verified service facts run beneath the text", "viewport": "business name, diagnosis-first promise, main booking action, secondary symptom prompt, and only verified service facts are visible in the opening" },
+    "navigationGeometry": { "mode": "small repair-shop wordmark, direct service anchors, and phone/hours utility", "placement": "thin status/contact bar above a restrained hero navigation", "mobile": "compact wordmark and call/menu utilities above a vertically stacked diagnostic promise and action" },
+    "typography": { "display": "intended Inter heavy sans, though the static HTML font utility is miscompiled and resolves to system sans", "body": "intended Inter neutral sans with mono-like data labels, though font-family mapping must be verified", "scale": "large concise diagnostic headline, compact technical labels, readable service rows, and explicit numeric metadata" },
+    "palette": { "surfaces": ["near-black", "graphite", "dark steel"], "ink": "warm white", "accents": ["signal red", "muted graphite", "small neutral status tones"], "contrastIntent": "technical dark field with red used sparingly for booking and urgent signals; all body text remains legible" },
+    "imageTreatment": { "mode": "AI-generated auto-service bay image under a dark overlay", "crop": "wide hero crop that retains vehicle/bay context and text-safe negative space; later sections use typography and diagrams rather than more photography", "focalPoint": "local repair environment, not an automaker, brand vehicle campaign, identifiable technician, or customer" },
+    "sectionSequence": ["hours-and-phone-bar", "repair-bay-hero", "symptom-matcher", "service-capability-grid", "labour-rate-and-makes-serviced", "digital-inspection-explainer", "repair-commitments", "approved-review-proof", "questions", "diagnostic-request-form", "attribution-footer"],
+    "servicePresentation": { "pattern": "visitor-led symptom triage followed by a concise service grid and transparent labour-rate context; digital inspection explains how findings are documented and prioritized", "interaction": "symptom options are presentational in the static HTML archive; only create a matcher if each result is mapped to verified services and includes an unsure/contact path" },
+    "ctaPlacement": { "primary": "diagnostic request in the hero and the final form", "secondary": "symptom matcher prompt and direct call action", "early": "before the service list, with diagnostic process detail immediately after the symptom prompt" },
+    "motion": { "primitive": "selection state in a symptom matcher and sequential digital-inspection steps", "library": "CSS transitions in the static package; no reveal observer is included in the HTML build", "reducedMotion": "show the complete symptom list, static inspection steps, and all service information without transforms" },
+    "mobileRecomposition": { "strategy": "diagnostic-first stacked service page", "rules": ["keep phone and hours utility readable", "stack symptom options above their explanation and CTA", "convert service grid to compact labeled rows", "keep labour rate and vehicle coverage text readable without sideways scroll", "present digital inspection steps in a vertical numbered sequence and stack the form"] },
+    "prohibitedPatterns": ["copying Spicer name, sample shop identity, source copy, hero image, ratings, prices, warranty pledge, or footer attribution out of a derivative", "reusing sample diagnostic fees, labour rates, makes serviced, insurance/law statements, service results, or testimonials as client facts", "inventing certifications, warranty coverage, safety guarantees, supported makes, diagnostic outcome, turnaround time, or shop hours", "presenting the AI-generated shop image as the client's actual bay or staff", "automaker/vehicle-manufacturer product marketing rather than a local repair business", "leaving source matcher controls looking live when they are presentational", "hidden reveal content or an untruthful booking form"],
+    "requiredSignatureElements": [
+      { "id": "local-repair-bay-opening", "selector": "[data-reference-signature=local-repair-bay-opening]", "description": "a local service-bay image and diagnosis-first promise rather than vehicle model launch marketing" },
+      { "id": "symptom-to-service-triage", "selector": "[data-reference-signature=symptom-to-service-triage]", "description": "a small set of common verified symptom routes with a safe unsure/diagnostic option" },
+      { "id": "digital-inspection-proof", "selector": "[data-reference-signature=digital-inspection-proof]", "description": "a concise explanation of the client's actual inspection evidence and approval process" },
+      { "id": "transparent-labor-context", "selector": "[data-reference-signature=transparent-labor-context]", "description": "verified labor-rate or diagnostic-fee basis placed where visitors evaluate a repair request" }
+    ],
+    "acceptanceChecks": ["the opening clearly reads as an independent local repair shop, not automaker advertising", "symptom choices map only to verified services and never diagnose a visitor's vehicle", "labor rates, diagnostic fees, service makes, warranties, hours, and claims come from sealed business facts", "mobile symptom and service sections have no horizontal overflow", "form route and any matcher behavior are tested and described truthfully", "reduced-motion/default behavior never hides section content", "CC BY footer attribution remains linked in any adapted template"]
+  },
+  "review": { "status": "cc-by-production-reference-with-static-html-caveat", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "Official package/license, single AI-generated hero asset, Google Fonts OFL metadata, local full-page renders, attribution, and responsive inspection." }
+}

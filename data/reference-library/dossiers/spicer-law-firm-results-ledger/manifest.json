@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-law-firm-results-ledger",
+  "productionEligible": true,
+  "referenceName": "Spicer law-firm results ledger",
+  "familyId": "spicer-law-firm-results-ledger",
+  "source": {
+    "name": "Spicer Designs Law Firm template",
+    "url": "https://www.spicerdesigns.com/templates/law-firm",
+    "rights": "licensed",
+    "rightsEvidence": "The official downloadable template is licensed under Creative Commons Attribution 4.0. The source license is retained in this dossier, and the official preview preserves the required Spicer Designs attribution in its footer.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/ASSET-PROVENANCE.md"]
+  },
+  "provenance": {
+    "archiveSha256": "277746ddd678ac54aa6fb644687666e5559ccc9f3c50d7772014725e545c9d5d",
+    "capture": "Full-page screenshots were made from Spicer Designs' official live law-firm preview at 1440x900 and 390x844 after scrolling through the complete page to load lazy media. The official preview renders the same design as the licensed downloadable HTML package. No source text, layout, or imagery was edited; no source image file was separately retained.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 8356},
+    "mobileViewport": {"width": 390, "height": 844, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 13667},
+    "diagnostics": "At both viewports document width matched the viewport exactly. The source hero image decoded successfully. The screenshot includes fictional case values, lawyer profiles, client quotes, consultation promises and sample practice claims; none are transferable client facts.",
+    "attribution": "Spicer Designs, CC BY 4.0. Required attribution remains visible in the screenshot footer. Internal visual-mechanics reference only; do not ship source branding, text, code or imagery to client sites."
+  },
+  "businessKinds": ["legal-services", "law-firm", "attorney", "lawyer", "professional-services"],
+  "tags": {
+    "business": ["legal-services", "law-firm", "attorney", "lawyer", "professional-services"],
+    "style": ["dark-professional-editorial", "square-cornered-precision", "deep-navy-and-muted-gold", "high-trust-minimalism"],
+    "composition": ["no-photo-results-ledger-hero", "oversized-practice-rows", "tabular-outcomes", "engraved-attorney-plates", "consultation-sheet"],
+    "conversion": ["consultation-first", "matter-fit-qualification", "practice-area-routing", "short-confidential-enquiry"],
+    "motion": ["practice-area-anchor-navigation", "native-faq-disclosure", "static-case-ledger"],
+    "imagery": ["typographic-proof", "geometric-monogram-plates", "no-source-photography-needed"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 900}},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}}
+  },
+  "referenceDna": {
+    "annotatedDescription": "A square-cornered deep-navy legal page opens with a restrained utility line and a high-contrast trial-practice statement. Instead of relying on a hero portrait, it places a compact tabular matter-results ledger beside the proposition. Oversized numbered practice-area rows, a second readable outcomes table, typographic attorney profile plates, a clear case-process sequence, client-proof area, and a short consultation form create a deliberate evidence-first rhythm. Fine muted-gold rules and labels provide hierarchy. The screenshot's results, lawyers, testimonials, credentials and case assertions are fictional demo material and must never transfer.",
+    "heroGeometry": {"mode": "dark two-column legal statement beside a compact tabular proof ledger", "alignment": "left-aligned concise practice promise and consultation action face a structured right-side matter index", "viewport": "practice positioning and one contact action are visible immediately; proof occupies a secondary aligned column"},
+    "navigationGeometry": {"mode": "thin contact/availability line with compact wordmark and square-corner anchor nav", "placement": "utility details above the primary navigation; practice, results, attorneys, consultation are the key paths", "mobile": "compact wordmark, consultation action and collapsible links; preserve high contrast and comfortable targets"},
+    "typography": {"display": "editorial serif or high-authority restrained grotesk, with large practice rows", "body": "neutral legal-service sans", "scale": "measured headline, spacious area titles, small uppercase matter labels, tabular figures with legible notes"},
+    "palette": {"surfaces": ["deep navy", "ink blue", "lifted blue-gray"], "ink": "warm white", "accents": ["muted brass", "quiet slate"], "contrastIntent": "gold is reserved for rules and factual figures; small body copy remains comfortably legible against dark surfaces"},
+    "imageTreatment": {"mode": "proof-led page that can function without photography", "crop": "use geometric monogram/attorney plates only when approved headshots are unavailable and label no person as a real lawyer unless verified", "focalPoint": "the contrast between the opening matter ledger and large practice index carries hierarchy; avoid generic law-library imagery"},
+    "sectionSequence": ["utility-contact-line", "navigation", "practice-promise-and-proof-ledger", "practice-area-index", "documented-results-ledger", "attorney-profiles", "case-process", "client-proof", "consultation-form", "faq", "footer"],
+    "servicePresentation": {"pattern": "large numbered practice-area rows with concise matter-fit scope, followed by a tabular case-outcome ledger only when the firm supplies documented, publishable outcomes", "interaction": "practice anchors route directly to relevant explanation; filters are optional and only appropriate for a verified larger case list"},
+    "ctaPlacement": {"primary": "short consultation action alongside the opening practice statement", "secondary": "matter-fit or call path in the utility line only if client provides an actual contact channel", "early": "show practice areas and the type of matters accepted before firm history or long bios"},
+    "motion": {"primitive": "restrained anchor navigation and native FAQ disclosure; proof remains static and auditable", "library": "native anchors, HTML disclosure, small CSS state transitions", "reducedMotion": "all matter, practice and intake information remains fully visible without animation"},
+    "mobileRecomposition": {"strategy": "single-column proof-to-practice legal flow", "rules": ["put practice proposition and consultation action before the case ledger", "convert results to labeled rows with outcome and context kept together", "stack practice entries and attorney plates in reading order", "turn horizontal process steps into a vertical sequence", "keep disclaimers beside the claim they qualify", "no horizontal overflow"]},
+    "prohibitedPatterns": ["source firm name, logo, lawyers, case results, testimonials, prices, credentials or legal promises", "invented settlements, verdicts, case counts, success rates, years of experience or response times", "implied attorney-client relationship before intake or an unsupported confidentiality guarantee", "unverified jurisdiction, bar admission, specialties, awards or contingency terms", "using source monograms or generated portraits as real attorneys", "fake trust-badge walls, aggressive outcome promises, rounded generic benefit cards"],
+    "requiredSignatureElements": [
+      {"id": "law-opening-ledger", "selector": "[data-reference-signature=law-opening-ledger]", "description": "legal positioning statement balanced by a compact, factual matter or proof ledger"},
+      {"id": "practice-area-index", "selector": "[data-reference-signature=practice-area-index]", "description": "large, scan-friendly practice-area index with short verified scope"},
+      {"id": "documented-results-surface", "selector": "[data-reference-signature=documented-results-surface]", "description": "auditable client-supplied outcomes, or an explicitly non-results proof/process substitute when none are approved"},
+      {"id": "short-consultation-form", "selector": "[data-reference-signature=short-consultation-form]", "description": "brief consultation request that avoids implying representation or guaranteed confidentiality"}
+    ],
+    "acceptanceChecks": ["every legal claim, case outcome, credential and jurisdiction is client-approved and attributable", "a result is omitted when evidence or publication permission is absent", "disclaimers are adjacent to outcomes and intake language", "practice scope and first contact are clear without overpromising", "desktop hierarchy is legible at 100 percent zoom", "mobile outcome rows and intake are readable without horizontal overflow"]
+  },
+  "review": {"status": "curated-open-license-pilot", "curator": "Codex", "reviewedAt": "2026-09-26", "scope": "official source package license, official full-page desktop/mobile captures, legal-claim safeguards, and non-transferable demo content"}
+}

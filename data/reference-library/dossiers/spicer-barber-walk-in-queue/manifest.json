@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-barber-walk-in-queue",
+  "productionEligible": true,
+  "referenceName": "Spicer barber walk-in and queue-led shop",
+  "familyId": "spicer-barber-walk-in-queue",
+  "source": {
+    "name": "Spicer Designs Barber Shop HTML template",
+    "url": "https://www.spicerdesigns.com/templates/barber-shop",
+    "rights": "licensed",
+    "rightsEvidence": "The official source page states CC BY 4.0 and commercial use with the footer credit retained. The downloaded package includes its LICENSE and README, which identify the bundled hero artwork as AI-generated placeholder art and require keeping the Spicer Designs footer link.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": ["rights/SOURCE-README.md", "rights/ASSET-PROVENANCE.md"]
+  },
+  "provenance": {
+    "archiveSha256": "bc2a8da132aee05c736ba5f889c5fca286432c2dafe4a7a39a32d3cd64cecd35",
+    "retrievedAt": "2026-09-25",
+    "attribution": "The unmodified source HTML retains the required linked Spicer Designs footer credit, visible in both captures. Any future adaptation or derivative must preserve attribution and must not suggest endorsement.",
+    "capture": "Rendered locally from the exact official HTML archive at desktop 1440x1000 and mobile 390x844. Captures use the package's built-in prefers-reduced-motion static fallback so all scroll-reveal content is visible. Source files were not edited.",
+    "qa": "Body and document widths matched the viewport at desktop and mobile. The sole bundled hero image loaded. The static HTML has no reveal observer: 26 bb-rise groups remain hidden in the default motion preference, while reduced motion exposes them. FAQ uses native details; click-driven queue widgets are presentational and forms have no submit destination."
+  },
+  "businessKinds": ["barbershop", "barber", "mens-grooming", "walk-in-service", "independent-retail"],
+  "tags": {
+    "business": ["barbershop", "barber", "mens-grooming", "walk-in-service", "independent-retail"],
+    "style": ["dark-workshop-editorial", "burnt-orange-signal", "utilitarian-price-board", "high-contrast-grooming", "compact-shop-floor"],
+    "composition": ["live-status-strip", "walk-in-hero", "flat-price-board", "chair-availability-grid", "weekly-queue-pattern", "narrow-exception-booking"],
+    "conversion": ["walk-in-first", "queue-check", "flat-price-transparency", "barber-availability", "exception-appointment"],
+    "motion": ["queue-state-indicator", "availability-dots", "section-rise-reveal", "native-faq-disclosure", "static-reduced-motion-fallback"],
+    "imagery": ["ai-generated-barbershop-interior-placeholder", "dark-shop-atmosphere", "minimal-product-shelf", "no-identifiable-barber-or-customer", "source-art-not-reused"]
+  },
+  "evidence": {
+    "desktop": { "path": "screenshots/desktop.png", "capture": "full-page", "viewport": { "width": 1440, "height": 1000 } },
+    "mobile": { "path": "screenshots/mobile.png", "capture": "full-page", "viewport": { "width": 390, "height": 844 } }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A walk-in-first barber shop page that answers the immediate question of waiting time before discussing anything else. A narrow rust-orange status strip reports the current shop state, then a dark salon hero places the walk-in promise beside a compact queue estimate and two actions. A short flat price board follows, then a chair/barber availability grid, a day-of-week busyness table, a tiny product shelf, compact review proof, FAQ, and a booking form explicitly reserved for exceptions. The design is dark and utilitarian, with warm shop photography, sharp orange signals, low-friction price display, and a much shorter conversion route than a full salon menu.",
+    "heroGeometry": { "mode": "walk-in hero with queue status sidecar", "alignment": "dark shop interior with left-aligned walk-in promise and orange accent; a compact queue estimate card sits beside it", "viewport": "status strip, shop identity, walk-in promise, current wait state, and price-list action share the first desktop screen" },
+    "navigationGeometry": { "mode": "shop name and compact direct links under a live-state strip", "placement": "thin rust status bar at the top and small dark navigation inside the hero", "mobile": "status message wraps without clipping, menu condenses, and the wait estimate follows the hero promise in reading order" },
+    "typography": { "display": "intended Fraunces editorial face, though static HTML currently falls back to system sans", "body": "intended Inter neutral sans, though font-family utility is miscompiled in the capture", "scale": "large short walk-in message, monospace-like micro labels, compact flat prices, and clear status states" },
+    "palette": { "surfaces": ["near-black", "espresso brown", "warm charcoal"], "ink": "warm off-white", "accents": ["burnt orange", "rust", "muted copper"], "contrastIntent": "dark shop atmosphere with bright orange reserved for important wait/price/action states" },
+    "imageTreatment": { "mode": "AI-generated atmospheric barbershop interior hero under a strong dark overlay", "crop": "wide hero image with enough negative space for the promise and queue card; no other photography is required by the package", "focalPoint": "shop interior as atmosphere, not a real location or identifiable barber/customer" },
+    "sectionSequence": ["queue-status-strip", "walk-in-hero", "flat-price-board", "barber-availability-grid", "weekly-queue-planner", "small-product-shelf", "approved-review-proof", "questions", "exception-booking-form", "attribution-footer"],
+    "servicePresentation": { "pattern": "a short flat-price board, followed by barber/chair availability and a wait-planning view; walk-ins are the default and booking is only a secondary exception route", "interaction": "queue estimate and availability controls are presentational in the HTML archive; only show real-time states when backed by a current client data source, otherwise use static verified hours and a call/text route" },
+    "ctaPlacement": { "primary": "walk-in or queue-check action beside the hero promise", "secondary": "flat price list link in the opening", "early": "current service state and next step are above the price list; appointment booking is kept for cases the business actually books" },
+    "motion": { "primitive": "small queue-state pulse and barber availability indicators", "library": "CSS animation in the static package; no reveal observer is included in the HTML build", "reducedMotion": "show a static status label and fixed availability list; all sections are visible without transforms" },
+    "mobileRecomposition": { "strategy": "fast walk-in decision path with stacked practical panels", "rules": ["keep the status strip readable above the header", "place the queue estimate beneath the walk-in promise, not beside narrow text", "show flat-price services as compact one- or two-column rows with readable amounts", "stack availability and schedule tables with clear day labels", "reserve the final form for services that truly require booking and remove all sideways scroll"] },
+    "prohibitedPatterns": ["copying Spicer, sample shop name, source copy, source hero image, fake barber names, or footer attribution out of a derivative", "reusing placeholder wait time, open status, opening hours, service prices, barber availability, customer quotes, or surcharge claims", "inventing a live queue, appointment availability, staff schedule, no-wait promise, or guaranteed wait accuracy", "presenting AI-generated interior art as the client's real premises or staff", "leaving source reveal groups hidden or describing static widgets as live", "forcing every visitor into a booking form when walk-in is the verified default", "generic service card wall or high-pressure appointment CTA"],
+    "requiredSignatureElements": [
+      { "id": "walk-in-status-strip", "selector": "[data-reference-signature=walk-in-status-strip]", "description": "a truthful live-state strip or static opening-hours statement, using a live wait only when an actual data source exists" },
+      { "id": "flat-price-board", "selector": "[data-reference-signature=flat-price-board]", "description": "a compact, factual list of core service prices with no package confusion" },
+      { "id": "barber-availability-panel", "selector": "[data-reference-signature=barber-availability-panel]", "description": "barber availability only when the client supplies current staff and scheduling data" },
+      { "id": "exception-booking-route", "selector": "[data-reference-signature=exception-booking-route]", "description": "a booking or contact option clearly scoped to services that require advance arrangement" }
+    ],
+    "acceptanceChecks": ["opening answers walk-in versus booking and does not invent current wait status", "prices are easy to scan at desktop and mobile sizes", "real-time availability is omitted unless a live client data source exists", "mobile status and price sections fit the viewport without horizontal scroll", "all hours, staff names, prices, reviews, and service terms are verified", "reduced-motion state is static and no reveal content remains hidden", "CC BY footer attribution remains linked in any adapted template"]
+  },
+  "review": { "status": "cc-by-production-reference-with-static-html-caveat", "curator": "Codex", "reviewedAt": "2026-09-25", "scope": "Official package/license, single AI-generated hero asset, Google Fonts OFL metadata, local full-page renders, attribution, and responsive inspection." }
+}

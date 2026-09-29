@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-alex-co-accountants-practice",
+  "productionEligible": true,
+  "referenceName": "Alex & Co local practice trust-first accountancy",
+  "familyId": "direct-alex-co-trust-first-practice",
+  "source": {
+    "name": "Alex and Co Accountants official website",
+    "url": "https://www.alexandcoaccountants.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested on 2026-09-26 that clearance covers full-page screenshot retention, derived prompts, and pipeline-model visual-reference use. No source-owner grant file was uploaded.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "assetEvidencePaths": ["rights/provenance.md", "rights/requester-attestation.md"]
+  },
+  "provenance": {
+    "capture": "Captured the official website directly at 1440x900 and 390x844. Lazy images were set eager for the capture session, scrolled into view, and decoded. All images loaded. The desktop page is narrower than viewport but has no overflow; the capture includes the complete viewport.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {"width": 1440, "height": 900, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 6488},
+    "mobileViewport": {"width": 390, "height": 844, "deviceScaleFactor": 1, "fullPage": true, "screenshotHeight": 10835},
+    "diagnostics": "The site uses a dark navy photo-led hero with a serif statement and orange contact action; it continues through proof bites, service categories, industry groupings, process, team/testimonial, and contact close. All source identity, credentials, people, reviews, pricing, service claims and photography remain source-only.",
+    "attribution": "Alex and Co Accountants official site. Screenshot/prompt retention and model-reference use are based on requester attestation; no source-owner document was attached."
+  },
+  "businessKinds": ["accounting", "accountant", "accountancy", "bookkeeping", "chartered-accountant"],
+  "tags": {
+    "business": ["accounting", "accountant", "accountancy", "bookkeeping", "chartered-accountant"],
+    "style": ["trust-first-local-practice", "navy-and-orange", "classic-serif-promise", "human-scale-accountancy"],
+    "composition": ["utility-contact-strip", "photo-led-seriffed-hero", "proof-bites", "service-catalog", "industry-chip-field", "process-pairing", "testimonial-carousel"],
+    "conversion": ["book-a-conversation", "service-discovery", "sector-fit", "trust-before-enquiry"],
+    "motion": ["visitor-controlled-testimonial-rail", "native-anchor-navigation", "static-reduced-motion-layout"],
+    "imagery": ["office-document-backdrop", "consultation-process-scenes", "human-team-portraits"]
+  },
+  "evidence": {
+    "desktop": {"path": "screenshots/desktop.png", "capture": "full-page", "viewport": {"width": 1440, "height": 900}},
+    "mobile": {"path": "screenshots/mobile.png", "capture": "full-page", "viewport": {"width": 390, "height": 844}}
+  },
+  "referenceDna": {
+    "annotatedDescription": "A local-practice accounting site begins with a utility contact strip, compact nav, and navy photographic hero. A large serif promise and concise plain-language subcopy are balanced with a primary conversation action and secondary services path. Four trust details follow before categorized services, a dark sector-fit band, structured work process, concise why-us contrast, client feedback, and an assertive contact close. Orange marks actions and highlights. Source logo, staff, proof claims, prices, testimonials, professional registration, location and copy remain source-only.",
+    "heroGeometry": {"mode": "deep-navy photo-led hero with a large serif promise aligned left", "alignment": "headline and explanation occupy the left of a wide cropped office image, followed by a primary colored action and quieter secondary route", "viewport": "opening promise and conversion are visible above the fold, followed by a slim trust strip"},
+    "navigationGeometry": {"mode": "utility contact rail with white wordmark/navigation strip", "placement": "phone/email utility above or beside primary nav, with conversation CTA at the end", "mobile": "compact logo and menu with a direct contact path kept reachable"},
+    "typography": {"display": "classic high-contrast serif headline", "body": "clear modern sans", "scale": "large two-line practice promise, concise body, small proof labels, readable service text"},
+    "palette": {"surfaces": ["deep navy", "paper white", "pale warm grey"], "ink": "charcoal and white", "accents": ["bright orange", "muted blue-gray"], "contrastIntent": "orange marks actions; body and proof remain legible over image and light surfaces"},
+    "imageTreatment": {"mode": "darkened office/document context in the opening, followed by consultation/process scenes", "crop": "wide hero background and medium rectangular editorial images", "focalPoint": "the type and action remain primary while the image signals business context"},
+    "sectionSequence": ["contact-utility", "navigation", "practice-promise-hero", "trust-bites", "service-catalog", "sector-fit-band", "work-process", "why-this-practice", "client-proof", "contact-close", "footer"],
+    "servicePresentation": {"pattern": "categorized service groups with short descriptions, followed by a separate sector-fit taxonomy", "interaction": "direct service routes and compact sector links; show only client-approved services and specialties"},
+    "ctaPlacement": {"primary": "conversation CTA inside the opening promise", "secondary": "service/details route beside or immediately after it", "early": "show proof details before the full service taxonomy and process narrative"},
+    "motion": {"primitive": "visitor-controlled testimonial rail or small transitions, never autoplay", "library": "native buttons, anchors and CSS", "reducedMotion": "static proof and service content"},
+    "mobileRecomposition": {"strategy": "stacked trust-to-service flow", "rules": ["stack promise, actions and trust details before catalog", "use text-safe image cropping", "stack service groups in reading order", "avoid cramped chips and tiny testimonial text", "keep contact routes reachable", "no horizontal overflow"]},
+    "prohibitedPatterns": ["source name, logo, phone number, location, professional registration or staff", "source prices, promises, testimonials, client count or response expectations", "stock portraits presented as the client's people", "unverified credentials, savings, tax outcomes or offices", "generic finance charts and duplicated trust claims", "invented client proof or regulatory badges"],
+    "requiredSignatureElements": [
+      {"id": "practice-trust-hero", "selector": "[data-reference-signature=practice-trust-hero]", "description": "plain-language practice promise over restrained business-context imagery"},
+      {"id": "verified-proof-strip", "selector": "[data-reference-signature=verified-proof-strip]", "description": "up to four concise proof details with verified provenance"},
+      {"id": "service-catalog", "selector": "[data-reference-signature=service-catalog]", "description": "distinct service categories with clear descriptions and direct paths"},
+      {"id": "sector-fit-field", "selector": "[data-reference-signature=sector-fit-field]", "description": "sector routing limited to client-confirmed specialties"}
+    ],
+    "acceptanceChecks": ["contact, location, credentials, service scope, pricing and proof are verified", "one primary conversion path appears in the hero", "service groups help visitors identify fit", "supporting trust details add new information", "all imagery is client-owned or separately licensed/generated", "mobile nav and service labels are legible without overflow"]
+  },
+  "review": {"status": "curated-permission-attested", "curator": "Codex", "reviewedAt": "2026-09-26", "scope": "requester-attested direct-site evidence, local-accountancy business fit and non-transferable claims"}
+}

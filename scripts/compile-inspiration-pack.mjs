@@ -40,9 +40,9 @@ const registryPath = path.resolve(
 const historyPath = path.resolve(
   args.history || path.join(repository, "data/recent-launch-signatures.json"),
 );
-const a1LibraryPath = path.resolve(
-  args["a1-library"] || path.join(repository, "data/a1-reference-library.json"),
-);
+const a1LibraryPath = args["a1-library"]
+  ? path.resolve(args["a1-library"])
+  : "";
 const outputPath = path.resolve(
   args.out || ".launchloom/inspiration-pack.json",
 );
@@ -54,10 +54,12 @@ const [config, baseRegistry, history, intake, a1Library] = await Promise.all([
   args.intake
     ? fs.readFile(path.resolve(args.intake), "utf8").then(intakeFromMarkdown)
     : {},
-  fs.access(a1LibraryPath).then(
-    () => loadA1ReferenceLibrary(a1LibraryPath, { repositoryRoot: repository }),
-    () => null,
-  ),
+  a1LibraryPath
+    ? fs.access(a1LibraryPath).then(
+        () => loadA1ReferenceLibrary(a1LibraryPath, { repositoryRoot: repository }),
+        () => null,
+      )
+    : null,
 ]);
 const registry = a1Library
   ? mergeInspirationRegistries(baseRegistry, a1Library)
@@ -65,10 +67,10 @@ const registry = a1Library
 const recent = Array.isArray(history.launches)
   ? history.launches.slice(-30)
   : [];
-const normalizedIndustry = String(config.industry || "").toLowerCase();
+const normalizedIndustry = String(config.businessKind || config.industry || "").toLowerCase();
 const industry = ["", "all", "general", "other"].includes(normalizedIndustry)
   ? intake.industry || config.businessKind || config.preset || "all"
-  : config.industry;
+  : normalizedIndustry;
 const styleTerms = [
   ...words(intake.stylePreference),
   ...words(intake.brandNotes),
@@ -85,7 +87,6 @@ const pack = buildInspirationPack(
       "launchloom-intake",
     industry,
     styleTerms,
-    referenceCalibration: a1Library?.calibration,
     recentReferenceIds: recent.flatMap((launch) =>
       Array.isArray(launch.referenceIds) ? launch.referenceIds : [],
     ),
@@ -94,14 +95,18 @@ const pack = buildInspirationPack(
     ),
   },
   registry,
+  { repositoryRoot: repository, requireDossiers: true },
 );
 pack.referenceLibrary = {
+  policy: "permission-cleared-only",
+  selectedDossierCount: pack.routes.filter((route) => route.referenceDossier).length,
   a1: a1Library
     ? {
         source: a1Library.source,
         capturedAt: a1Library.capturedAt,
-        recordIds: a1Library.records.map((record) => record.id),
-        calibration: a1Library.calibration,
+        recordCount: a1Library.records.length,
+        routeSelectionEligible: false,
+        note: "Discovery cache only. A record must have a complete permission-cleared dossier before production selection.",
       }
     : null,
 };
