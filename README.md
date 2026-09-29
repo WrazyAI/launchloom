@@ -51,6 +51,7 @@ GitHub Actions variable:
 | `SEO_RESEARCH_MAX_TASKS`     | Optional DataForSEO task cap; defaults to `16`.                      |
 | `SEO_RESEARCH_MAX_USD`       | Optional DataForSEO spend cap; defaults to `0.25`.                    |
 | `SEO_FALLBACK_MAX_QUERIES`    | Optional live-search fallback cap; defaults to `3`, hard-capped at `5`. |
+| `SEO_FALLBACK_MAX_USD`        | Provider-reported fallback spend cap; defaults to `0.05`, hard-capped at `0.25`. Further queries stop once reached; unreported cost stops the fallback after the current query. |
 | `SEO_FALLBACK_SEARCH_MODEL`   | OpenRouter model used only to invoke bounded server-side web search; defaults to `openai/gpt-6-luna`. |
 
 The Cloudflare token must be scoped to the account and permit Workers Scripts edit, Pages edit, and R2 edit. Because `wrangler.jsonc` attaches the ready API Worker to `api.launchloom.wrazyos.com`, it also needs Workers Routes edit and Zone DNS edit for `wrazyos.com` on the first deployment.
