@@ -170,6 +170,25 @@ const conversionFeatureRequest =
   /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant|chat)|ai (?:faq )?(?:chat|assistant|chatbot)|chatbot|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
 const creativeVisualRequest =
   /\b(premium|high[- ]end|polished|cinematic|editorial|distinctive|generic|visual|composition|layout|hierarchy|spacing|whitespace|asymmetr(?:y|ical)|full[- ]bleed|motion|animation|reveal|scroll|mobile|responsive|typography|font|serif|sans|bold|minimal|modern|immersive|prominent|understated|simpler)\b|\b(move|place|reposition|resize|restyle|hide|remove|show|add|replace|change|swap)\b.{0,70}\b(hero|navigation|navbar|nav|cta|button|card|grid|image|imagery|photo|gallery|section|services?|feature|widget|calculator|carousel|tabs?|comparison|timeline|panel)\b|\b(larger|smaller|taller|shorter|wider|narrower)\b.{0,50}\b(hero|cta|button|image|imagery|photo|gallery|section|services?|feature|widget|panel)\b/i;
+const pureStructuredImageClause =
+  /^\s*(?:please\s+)?(?:smoke test:?\s*)?(?:replace|swap|change|update|use|choose|generate|regenerate|select)\b[^.;!?]{0,90}?\b(image|images|photo|photos|picture|pictures|logo|gallery|hero|opening|team photo)\b(?:\s+(?:instead|please|now))?[.!?]?\s*$/iu;
+const creativeVisualKeyword =
+  /\b(premium|high[- ]end|polished|cinematic|editorial|distinctive|generic|visual|composition|layout|hierarchy|spacing|whitespace|asymmetr(?:y|ical)|full[- ]bleed|motion|animation|reveal|scroll|mobile|responsive|typography|font|serif|sans|bold|minimal|modern|immersive|prominent|understated|simpler|larger|smaller|taller|shorter|wider|narrower|video|icon|illustration|graphic)\b/iu;
+
+// Drop clauses that are fully answered by a structured image replacement, so a
+// creative-candidate site does not need an authored source repair for a plain
+// "replace the hero image" note. Composition, sizing, and non-image asks stay.
+function residualVisualRequest(feedback) {
+  return clean(feedback, 4000)
+    .split(/(?<=[.;!?])\s+/u)
+    .map((clause) =>
+      pureStructuredImageClause.test(clause) &&
+      !creativeVisualKeyword.test(clause)
+        ? " "
+        : clause,
+    )
+    .join(" ");
+}
 
 function clean(value, limit = 360) {
   return String(value || "")
@@ -693,11 +712,18 @@ function intentsFor(item, config) {
     intents.push("content");
   if (conversionFeatureRequest.test(feedback))
     intents.push("conversion-feature");
-  if (
-    config.design?.experience?.renderer === "creative-candidate" &&
-    creativeVisualRequest.test(feedback)
-  )
-    intents.push("layout");
+  if (config.design?.experience?.renderer === "creative-candidate") {
+    // A structured replacement already answers an image request. Keep the
+    // authored creative lane for composition, sizing, and non-image visual
+    // changes, but do not require a source repair just because the note says
+    // "replace the hero image".
+    const structuredImageOnly =
+      Array.isArray(item?.assets) &&
+      item.assets.length > 0 &&
+      !creativeVisualRequest.test(residualVisualRequest(feedback));
+    if (!structuredImageOnly && creativeVisualRequest.test(feedback))
+      intents.push("layout");
+  }
   return intents.length ? [...new Set(intents)] : ["unknown"];
 }
 export async function modelOperations(
