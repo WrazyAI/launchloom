@@ -1,0 +1,57 @@
+name: One-time lead mailbox smoke test
+
+on:
+  push:
+    branches: [fix/lead-email-delivery-20260929]
+    paths: [.github/workflows/lead-mailbox-smoke-once.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-lead:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Submit one synthetic lead to the developer mailbox
+        env:
+          LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
+          LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { createHmac } from "node:crypto";
+
+          const secret = process.env.LEAD_SIGNING_SECRET;
+          const recipient = process.env.LAUNCHLOOM_DEVELOPER_EMAIL;
+          if (!secret || !recipient) throw new Error("Smoke-test configuration is missing.");
+
+          const origin = "https://launchloom.wrazyos.com";
+          const payload = Buffer.from(JSON.stringify({
+            project: "LaunchLoom delivery smoke test",
+            recipient,
+            allowedOrigins: [origin],
+            issuedAt: Date.now(),
+          })).toString("base64url");
+          const signature = createHmac("sha256", secret).update(payload).digest("base64url");
+          const token = `${payload}.${signature}`;
+          const response = await fetch("https://api.launchloom.wrazyos.com/api/lead", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Origin: origin },
+            body: JSON.stringify({
+              token,
+              name: "LaunchLoom delivery smoke test",
+              phone: "555-0100",
+              email: "lead-smoke@example.com",
+              message: "Synthetic mailbox delivery check. No customer inquiry; no action needed.",
+              qualification: { service: "Email delivery test" },
+              "bot-field": "",
+              pageUrl: `${origin}/?delivery-smoke-test`,
+            }),
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || result.ok !== true) {
+            console.error(`Lead endpoint failed with HTTP ${response.status}.`);
+            process.exit(1);
+          }
+          console.log("Synthetic lead accepted by the live lead endpoint and email provider.");
+          NODE
