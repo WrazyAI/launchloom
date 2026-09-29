@@ -28,13 +28,15 @@ const config = {
 const inspiration = {
   routes: [
     {
-      referenceIds: ["nightjar-cinematic-salon"],
+      referenceIds: ["nightjar-cinematic-salon", "nightjar-cinematic-salon"],
+      heroArchetype: "image-overlay",
       familyId: "cinematic-stage",
       referenceFamilyId: "a1-cinematic-3d",
       signature: "signature-a",
     },
     {
       referenceIds: ["kokoro-spatial-editorial"],
+      heroArchetype: "text-led-editorial",
       familyId: "editorial-monument",
       referenceFamilyId: "a1-kinetic-founder",
       signature: "signature-b",
@@ -72,6 +74,10 @@ describe("launch history", () => {
     expect(record.referenceIds).toEqual([
       "kokoro-spatial-editorial",
       "nightjar-cinematic-salon",
+    ]);
+    expect(record.heroArchetypes).toEqual([
+      "image-overlay",
+      "text-led-editorial",
     ]);
     expect(record.routeSignatures).toEqual(["signature-a", "signature-b"]);
   });
