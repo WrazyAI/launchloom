@@ -344,6 +344,9 @@ describe("human creative revision lifecycle", () => {
       expect(workflow).toContain('--preview "$SITE_URL" --review "$SITE_URL"');
       expect(workflow).toContain('--diagnostic-pr "https://github.com/');
       expect(workflow).toContain('--diagnostic-run "$RUN_URL"');
+      expect(workflow).toContain(
+        'REVISION_FAILURE_SITE_URL: ${{ steps.deploy.outputs.preview || github.event.client_payload.reviewedPage }}',
+      );
       expect(workflow).not.toMatch(
         /--preview "https:\/\/github\.com\/\$CLIENT_REPO\/pull\//u,
       );
