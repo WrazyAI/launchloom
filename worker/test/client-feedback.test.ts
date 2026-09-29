@@ -152,6 +152,25 @@ describe("bounded client review uploads", () => {
     expect(comments).toHaveLength(1);
     expect(dispatchAttempts).toBe(1);
 
+    const changedRetry = await SELF.fetch(
+      "https://api.launchloom.test/api/feedback",
+      {
+        method: "POST",
+        headers: { Origin: origin, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...requestBody,
+          comment: "This is a materially different retry.",
+        }),
+      },
+    );
+    expect(changedRetry.status).toBe(409);
+    expect(await changedRetry.json()).toMatchObject({
+      code: "revision_request_mismatch",
+      error: expect.stringContaining("Refresh the review page"),
+    });
+    expect(comments).toHaveLength(1);
+    expect(dispatchAttempts).toBe(1);
+
     await runInDurableObject(coordinator, async (instance, state) => {
       let row = state.storage.sql.exec<{ request_id: string; status: string; reviewed_page: string; dispatch_attempts: number }>(
         "SELECT request_id, status, reviewed_page, dispatch_attempts FROM revision_requests WHERE request_id = ?",
