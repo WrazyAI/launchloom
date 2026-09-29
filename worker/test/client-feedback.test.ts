@@ -1,4 +1,4 @@
-import { env, SELF } from "cloudflare:test";
+import { env, SELF, runInDurableObject } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { network } from "./network";
@@ -27,6 +27,24 @@ async function reviewToken() {
 }
 
 describe("bounded client review uploads", () => {
+  it("allows review Pages preflight without trusting an unrelated origin", async () => {
+    const allowed = await SELF.fetch("https://api.launchloom.test/api/feedback", {
+      method: "OPTIONS",
+      headers: { Origin: origin },
+    });
+    expect(allowed.status).toBe(204);
+    expect(allowed.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+    expect(allowed.headers.get("Access-Control-Allow-Methods")).toContain("POST");
+
+    const rejected = await SELF.fetch("https://api.launchloom.test/api/feedback", {
+      method: "OPTIONS",
+      headers: { Origin: "https://evil.example" },
+    });
+    expect(rejected.status).toBe(204);
+    expect(rejected.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+
+
   it("accepts a signed PNG replacement, stores a generated asset URL, and excludes the review token from GitHub", async () => {
     const token = await reviewToken();
     const comments: Array<{ body: string }> = [];
@@ -70,6 +88,111 @@ describe("bounded client review uploads", () => {
     const asset = key ? await env.ASSETS.get(key) : null;
     expect(asset?.httpMetadata?.contentType).toBe("image/png");
     expect(asset ? Array.from(new Uint8Array(await asset.arrayBuffer())) : []).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
+  });
+
+  it("accepts durably recorded feedback when the first dispatch fails and retries it idempotently", async () => {
+    const token = await reviewToken();
+    const comments: Array<{ body: string }> = [];
+    let dispatchAttempts = 0;
+    network.use(
+      http.get("https://api.github.com/repos/WrazyAI/example-client/issues/44/comments", () => HttpResponse.json(comments)),
+      http.post("https://api.github.com/repos/WrazyAI/example-client/issues/44/comments", async ({ request }) => {
+        const comment = await request.json() as { body: string };
+        comments.push(comment);
+        return HttpResponse.json({ id: 446 }, { status: 201 });
+      }),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches", () => {
+        dispatchAttempts += 1;
+        return dispatchAttempts === 1
+          ? HttpResponse.json({ message: "temporary dispatch failure" }, { status: 503 })
+          : new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    const submissionId = "client-feedback-dispatch-001";
+    const coordinator = env.REVISION_COORDINATOR.getByName("wrazyai/example-client");
+    await runInDurableObject(coordinator, async (_instance, state) => {
+      state.storage.sql.exec("DELETE FROM revision_requests");
+    });
+    const requestBody = {
+      token,
+      comment: "Please tighten this wording.",
+      category: "text",
+      email: "client@example.com",
+      pageUrl: `${origin}/services/?review=${token}`,
+      submissionId,
+    };
+    const response = await SELF.fetch("https://api.launchloom.test/api/feedback", {
+      method: "POST",
+      headers: { Origin: origin, "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      stage: "client",
+      requestId: submissionId,
+      queueStatus: "started",
+    });
+    expect(comments).toHaveLength(1);
+    expect(dispatchAttempts).toBe(1);
+
+    const duplicate = await SELF.fetch("https://api.launchloom.test/api/feedback", {
+      method: "POST",
+      headers: { Origin: origin, "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    expect(duplicate.status).toBe(200);
+    expect(await duplicate.json()).toMatchObject({
+      ok: true,
+      requestId: submissionId,
+      queueStatus: "duplicate",
+    });
+    expect(comments).toHaveLength(1);
+    expect(dispatchAttempts).toBe(1);
+
+    const changedRetry = await SELF.fetch(
+      "https://api.launchloom.test/api/feedback",
+      {
+        method: "POST",
+        headers: { Origin: origin, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...requestBody,
+          comment: "This is a materially different retry.",
+        }),
+      },
+    );
+    expect(changedRetry.status).toBe(409);
+    expect(await changedRetry.json()).toMatchObject({
+      code: "revision_request_mismatch",
+      error: expect.stringContaining("Refresh the review page"),
+    });
+    expect(comments).toHaveLength(1);
+    expect(dispatchAttempts).toBe(1);
+
+    await runInDurableObject(coordinator, async (instance, state) => {
+      let row = state.storage.sql.exec<{ request_id: string; status: string; reviewed_page: string; dispatch_attempts: number }>(
+        "SELECT request_id, status, reviewed_page, dispatch_attempts FROM revision_requests WHERE request_id = ?",
+        submissionId,
+      ).toArray()[0];
+      expect(row).toEqual({
+        request_id: submissionId,
+        status: "dispatching",
+        reviewed_page: `${origin}/services/`,
+        dispatch_attempts: 1,
+      });
+
+      await instance.alarm!();
+      row = state.storage.sql.exec<{ request_id: string; status: string; reviewed_page: string; dispatch_attempts: number }>(
+        "SELECT request_id, status, reviewed_page, dispatch_attempts FROM revision_requests WHERE request_id = ?",
+        submissionId,
+      ).toArray()[0];
+      expect(row.status).toBe("dispatched");
+      expect(row.dispatch_attempts).toBe(2);
+    });
+    expect(comments).toHaveLength(1);
+    expect(dispatchAttempts).toBe(2);
   });
 
   it("rejects unsupported client categories and malformed image bytes", async () => {

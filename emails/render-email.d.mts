@@ -5,6 +5,8 @@ export type LifecycleEmailInput = {
   previewUrl: string;
   reviewUrl?: string;
   sendAnywayUrl?: string;
+  diagnosticPrUrl?: string;
+  diagnosticRunUrl?: string;
   clientFeedback?: string;
   revisionOutcome?: string;
   queuedFeedback?: string;

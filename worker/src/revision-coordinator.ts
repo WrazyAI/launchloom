@@ -64,6 +64,9 @@ type FailureNotice = {
   requestId: string;
   reason: string;
   attempts: number;
+  siteUrl?: string;
+  runUrl?: string;
+  nextAttemptAt: number;
 };
 
 export type EnqueueResult =
@@ -74,7 +77,11 @@ export type EnqueueResult =
     }
   | {
       ok: false;
-      code: "revision_queue_full" | "creative_override_started";
+      code:
+        | "revision_queue_full"
+        | "creative_override_started"
+        | "revision_request_mismatch"
+        | "revision_request_failed";
       error: string;
     };
 
@@ -190,7 +197,12 @@ const DISPATCH_RETRY_MS = 15 * 60_000;
 const RUN_TIMEOUT_MS = 50 * 60_000;
 const CREATIVE_OVERRIDE_STALE_MS = 2 * 60_000;
 const RETENTION_MS = 30 * 24 * 60 * 60_000;
-const FAILURE_NOTICE_KEY = "pending-failure-notice";
+const LEGACY_FAILURE_NOTICE_KEY = "pending-failure-notice";
+const FAILURE_NOTICE_PREFIX = "pending-failure-notice:";
+
+function failureNoticeKey(requestId: string) {
+  return `${FAILURE_NOTICE_PREFIX}${requestId}`;
+}
 
 function cleanError(error: unknown) {
   return (
@@ -198,6 +210,39 @@ function cleanError(error: unknown) {
   )
     .replace(/[\r\n\t]+/g, " ")
     .slice(0, 500);
+}
+
+function safeReviewedPage(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password) return "";
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
+function safeDiagnosticRunUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.hostname !== "github.com" ||
+      url.username ||
+      url.password ||
+      !/^\/WrazyAI\/launchloom\/actions\/runs\/[1-9][0-9]*\/?$/u.test(
+        url.pathname,
+      )
+    )
+      return "";
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
 }
 
 async function github(
@@ -227,6 +272,8 @@ async function notifyFailure(
   env: RevisionCoordinatorEnv,
   row: RevisionRow,
   reason: string,
+  failureSiteUrl = "",
+  failureRunUrl = "",
 ) {
   if (
     !env.RESEND_API_KEY ||
@@ -234,15 +281,28 @@ async function notifyFailure(
     !env.LAUNCHLOOM_FEEDBACK_EMAIL
   )
     return true;
-  const target = row.pr
+  const diagnosticTarget = row.pr
     ? `https://github.com/${row.repo}/pull/${row.pr}`
     : `https://github.com/${row.repo}/issues/${row.feedback_issue}`;
+  const reviewedPage = safeReviewedPage(failureSiteUrl || row.reviewed_page);
+  if (!reviewedPage) {
+    console.error(
+      JSON.stringify({
+        event: "revision.failure_email_missing_reviewed_page",
+        repo: row.repo,
+        requestId: row.request_id,
+      }),
+    );
+    return false;
+  }
   const rendered = renderLifecycleEmail({
     audience: "manual-attention",
     kind: "revision-failed",
     clientName: row.site_id,
-    previewUrl: target,
-    reviewUrl: target,
+    previewUrl: reviewedPage,
+    reviewUrl: reviewedPage,
+    diagnosticPrUrl: diagnosticTarget,
+    diagnosticRunUrl: safeDiagnosticRunUrl(failureRunUrl),
     clientFeedback: `${row.category ? `[${row.category}] ` : ""}${row.feedback}`,
     revisionOutcome: `${reason}\n\nRequest ID: ${row.request_id}`,
   });
@@ -378,16 +438,14 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           updated_at INTEGER NOT NULL
         );
       `);
-      // Durable Objects created before structured feedback keep their original
-      // table. A duplicate-column failure is the expected no-op on current
-      // objects, so the migration is intentionally idempotent.
       try {
         this.ctx.storage.sql.exec(
           "ALTER TABLE revision_requests ADD COLUMN structure TEXT",
         );
       } catch {
-        // The structure column already exists.
+        // Existing Durable Objects already have the structure column.
       }
+      await this.migrateLegacyFailureNotice();
     });
   }
 
@@ -878,6 +936,64 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     return { allowed: true, retryAfterSeconds: 0 };
   }
 
+  private async migrateLegacyFailureNotice() {
+    const legacy = await this.ctx.storage.get<
+      Omit<FailureNotice, "nextAttemptAt" | "runUrl"> & {
+        runUrl?: string;
+        nextAttemptAt?: number;
+      }
+    >(LEGACY_FAILURE_NOTICE_KEY);
+    if (!legacy?.requestId) return;
+    const key = failureNoticeKey(legacy.requestId);
+    if (!(await this.ctx.storage.get(key)))
+      await this.ctx.storage.put<FailureNotice>(key, {
+        ...legacy,
+        nextAttemptAt: Number(legacy.nextAttemptAt) || Date.now(),
+      });
+    await this.ctx.storage.delete(LEGACY_FAILURE_NOTICE_KEY);
+  }
+
+  private activeRevisionRow() {
+    return this.ctx.storage.sql
+      .exec<RevisionRow>(
+        `SELECT * FROM revision_requests WHERE status IN ${ACTIVE} ORDER BY created_at LIMIT 1`,
+      )
+      .toArray()[0];
+  }
+
+  private async scheduleCoordinatorAlarm() {
+    await this.migrateLegacyFailureNotice();
+    const now = Date.now();
+    const due: number[] = [];
+    const notices = await this.ctx.storage.list<FailureNotice>({
+      prefix: FAILURE_NOTICE_PREFIX,
+    });
+    for (const notice of notices.values())
+      due.push(Number(notice.nextAttemptAt) || now + 5 * 60_000);
+
+    const active = this.activeRevisionRow();
+    if (active) {
+      if (active.status === "dispatching")
+        due.push(
+          active.dispatch_attempts >= 3
+            ? now + 1_000
+            : now + DISPATCH_RETRY_MS,
+        );
+      else
+        due.push(
+          (active.started_at || active.created_at) + RUN_TIMEOUT_MS,
+        );
+    }
+
+    if (!due.length) {
+      await this.ctx.storage.deleteAlarm();
+      return;
+    }
+    await this.ctx.storage.setAlarm(
+      Math.max(now + 1_000, Math.min(...due)),
+    );
+  }
+
   private async promoteQueued(): Promise<RevisionRow | undefined> {
     const promoted = this.ctx.storage.sql
       .exec<RevisionRow>(
@@ -891,12 +1007,19 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     );
     const next = this.row(promoted.request_id)!;
     try {
-      await this.dispatchRow(next);
-      return this.row(promoted.request_id)!;
+      await this.prepareAndDispatchRow(next);
     } catch (error) {
-      await this.markFailed(next, error);
-      return undefined;
+      await this.ctx.storage.setAlarm(Date.now() + DISPATCH_RETRY_MS);
+      console.error(
+        JSON.stringify({
+          event: "revision.promoted_dispatch_failed",
+          repo: next.repo,
+          requestId: next.request_id,
+          reason: cleanError(error),
+        }),
+      );
     }
+    return this.row(promoted.request_id)!;
   }
 
   private async createFeedbackComment(row: RevisionRow) {
@@ -933,6 +1056,24 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       .then((comment) => comment.id);
   }
 
+  private async prepareAndDispatchRow(row: RevisionRow) {
+    this.ctx.storage.sql.exec(
+      "UPDATE revision_requests SET dispatch_attempts = dispatch_attempts + 1 WHERE request_id = ?",
+      row.request_id,
+    );
+    let pending = this.row(row.request_id)!;
+    if (!pending.comment_id) {
+      const commentId = await this.createFeedbackComment(pending);
+      this.ctx.storage.sql.exec(
+        "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
+        commentId,
+        pending.request_id,
+      );
+      pending = this.row(pending.request_id)!;
+    }
+    await this.dispatchRow(pending);
+  }
+
   private async dispatchRow(row: RevisionRow) {
     if (!row.comment_id) throw new Error("Feedback comment was not persisted.");
     await github(this.env, "/repos/WrazyAI/launchloom/dispatches", {
@@ -950,12 +1091,13 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           feedbackIssue: row.feedback_issue,
           siteId: row.site_id,
           clientEmail: row.client_email,
+          reviewedPage: row.reviewed_page,
         },
       }),
     });
     const now = Date.now();
     this.ctx.storage.sql.exec(
-      "UPDATE revision_requests SET status = 'dispatched', started_at = ?, dispatch_attempts = dispatch_attempts + 1, failure = NULL WHERE request_id = ?",
+      "UPDATE revision_requests SET status = 'dispatched', started_at = ?, failure = NULL WHERE request_id = ?",
       now,
       row.request_id,
     );
@@ -970,7 +1112,12 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     );
   }
 
-  private async markFailed(row: RevisionRow, error: unknown) {
+  private async markFailed(
+    row: RevisionRow,
+    error: unknown,
+    failureSiteUrl = "",
+    failureRunUrl = "",
+  ) {
     const reason = cleanError(error);
     this.ctx.storage.sql.exec(
       "UPDATE revision_requests SET status = 'failed', failure = ?, completed_at = ? WHERE request_id = ?",
@@ -986,17 +1133,29 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         reason,
       }),
     );
-    if (await notifyFailure(this.env, row, reason)) {
-      await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
-      await this.ctx.storage.deleteAlarm();
-    } else {
-      await this.ctx.storage.put<FailureNotice>(FAILURE_NOTICE_KEY, {
+    const noticeKey = failureNoticeKey(row.request_id);
+    if (
+      await notifyFailure(
+        this.env,
+        row,
+        reason,
+        failureSiteUrl,
+        failureRunUrl,
+      )
+    )
+      await this.ctx.storage.delete(noticeKey);
+    else
+      await this.ctx.storage.put<FailureNotice>(noticeKey, {
         requestId: row.request_id,
         reason,
         attempts: 1,
+        ...(failureSiteUrl ? { siteUrl: safeReviewedPage(failureSiteUrl) } : {}),
+        ...(failureRunUrl
+          ? { runUrl: safeDiagnosticRunUrl(failureRunUrl) }
+          : {}),
+        nextAttemptAt: Date.now() + 5 * 60_000,
       });
-      await this.ctx.storage.setAlarm(Date.now() + 5 * 60_000);
-    }
+    await this.scheduleCoordinatorAlarm();
   }
 
   async enqueue(input: RevisionRequestInput): Promise<EnqueueResult> {
@@ -1036,12 +1195,29 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         input.fingerprint,
       )
       .toArray()[0];
-    if (duplicate)
+    if (duplicate) {
+      if (duplicate.request_id === input.requestId) {
+        if (duplicate.fingerprint !== input.fingerprint)
+          return {
+            ok: false,
+            code: "revision_request_mismatch",
+            error:
+              "This feedback retry no longer matches the request already recorded. Refresh the review page before sending another version.",
+          };
+        if (duplicate.status === "failed")
+          return {
+            ok: false,
+            code: "revision_request_failed",
+            error:
+              "This feedback was preserved, but its revision workflow could not start. The developer recovery queue must be cleared before it can continue.",
+          };
+      }
       return {
         ok: true,
         requestId: duplicate.request_id,
         queueStatus: "duplicate",
       };
+    }
 
     const active = this.ctx.storage.sql
       .exec<RevisionRow>(
@@ -1083,19 +1259,28 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       status,
       now,
     );
-    let row = this.row(input.requestId)!;
+    const row = this.row(input.requestId)!;
     try {
-      const commentId = await this.createFeedbackComment(row);
-      this.ctx.storage.sql.exec(
-        "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
-        commentId,
-        input.requestId,
-      );
-      row = this.row(input.requestId)!;
-      if (status === "dispatching") await this.dispatchRow(row);
+      if (status === "dispatching") await this.prepareAndDispatchRow(row);
+      else {
+        const commentId = await this.createFeedbackComment(row);
+        this.ctx.storage.sql.exec(
+          "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
+          commentId,
+          input.requestId,
+        );
+      }
     } catch (error) {
-      await this.markFailed(row, error);
-      throw error;
+      console.error(
+        JSON.stringify({
+          event: "revision.initial_dispatch_failed",
+          repo: input.repo,
+          requestId: input.requestId,
+          reason: cleanError(error),
+        }),
+      );
+      if (status === "dispatching")
+        await this.ctx.storage.setAlarm(Date.now() + DISPATCH_RETRY_MS);
     }
     console.log(
       JSON.stringify({
@@ -1123,7 +1308,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       now,
       requestId,
     );
-    await this.ctx.storage.setAlarm(now + RUN_TIMEOUT_MS);
+    await this.scheduleCoordinatorAlarm();
     console.log(
       JSON.stringify({ event: "revision.claimed", repo: row.repo, requestId }),
     );
@@ -1161,7 +1346,6 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
             promoted.request_id,
           );
       });
-      await this.ctx.storage.deleteAlarm();
       console.log(
         JSON.stringify({
           event: "revision.completed",
@@ -1172,10 +1356,17 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       if (promoted) {
         promoted = this.row(promoted.request_id)!;
         try {
-          await this.dispatchRow(promoted);
+          await this.prepareAndDispatchRow(promoted);
         } catch (error) {
-          await this.markFailed(promoted, error);
-          promoted = undefined;
+          await this.ctx.storage.setAlarm(Date.now() + DISPATCH_RETRY_MS);
+          console.error(
+            JSON.stringify({
+              event: "revision.promoted_dispatch_failed",
+              repo: promoted.repo,
+              requestId: promoted.request_id,
+              reason: cleanError(error),
+            }),
+          );
         }
       }
     }
@@ -1183,6 +1374,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       "UPDATE revision_requests SET feedback = '', category = '', structure = NULL WHERE status = 'completed' AND completed_at < ?",
       Date.now() - RETENTION_MS,
     );
+    await this.scheduleCoordinatorAlarm();
     return {
       ok: true,
       promoted: promoted
@@ -1196,12 +1388,23 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     };
   }
 
-  async fail(requestId: string, reason: string): Promise<{ ok: true }> {
+  async fail(
+    requestId: string,
+    reason: string,
+    failureSiteUrl = "",
+    failureRunUrl = "",
+  ): Promise<{ ok: true }> {
     const row = this.row(requestId);
     if (!row || row.status === "completed" || row.status === "failed")
       return { ok: true };
-    await this.markFailed(row, reason || "Revision workflow failed.");
+    await this.markFailed(
+      row,
+      reason || "Revision workflow failed.",
+      failureSiteUrl,
+      failureRunUrl,
+    );
     await this.promoteQueued();
+    await this.scheduleCoordinatorAlarm();
     return { ok: true };
   }
 
@@ -1210,10 +1413,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     if (!row || row.status === "completed") return { ok: true };
     if (row.status !== "failed")
       throw new Error("Only a failed revision request can be dismissed.");
-    const notice =
-      await this.ctx.storage.get<FailureNotice>(FAILURE_NOTICE_KEY);
-    if (notice?.requestId === requestId)
-      await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
+    await this.ctx.storage.delete(failureNoticeKey(requestId));
     this.ctx.storage.sql.exec(
       "UPDATE revision_requests SET status = 'completed', completed_at = ?, failure = ? WHERE request_id = ?",
       Date.now(),
@@ -1226,6 +1426,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       )
       .toArray()[0];
     if (!active) await this.promoteQueued();
+    await this.scheduleCoordinatorAlarm();
     console.log(
       JSON.stringify({
         event: "revision.dismissed",
@@ -1259,28 +1460,23 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         "UPDATE revision_requests SET status = 'queued', failure = NULL, completed_at = NULL WHERE request_id = ?",
         failed.request_id,
       );
+      await this.scheduleCoordinatorAlarm();
       return { ok: true, requestId: failed.request_id };
     }
-    await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
+    await this.ctx.storage.delete(failureNoticeKey(requestId));
     this.ctx.storage.sql.exec(
       "UPDATE revision_requests SET status = 'dispatching', failure = NULL WHERE request_id = ?",
       failed.request_id,
     );
     try {
-      if (!failed.comment_id) {
-        const commentId = await this.createFeedbackComment(failed);
-        this.ctx.storage.sql.exec(
-          "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
-          commentId,
-          failed.request_id,
-        );
-        failed = this.row(failed.request_id)!;
-      }
-      await this.dispatchRow(this.row(failed.request_id)!);
+      await this.prepareAndDispatchRow(failed);
     } catch (error) {
       await this.markFailed(failed, error);
+      await this.promoteQueued();
+      await this.scheduleCoordinatorAlarm();
       throw error;
     }
+    await this.scheduleCoordinatorAlarm();
     return { ok: true, requestId: failed.request_id };
   }
 
@@ -1305,46 +1501,71 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   async alarm() {
-    const notice =
-      await this.ctx.storage.get<FailureNotice>(FAILURE_NOTICE_KEY);
-    if (notice) {
+    await this.migrateLegacyFailureNotice();
+    const now = Date.now();
+    const notices = await this.ctx.storage.list<FailureNotice>({
+      prefix: FAILURE_NOTICE_PREFIX,
+    });
+    for (const [key, notice] of notices) {
+      if ((Number(notice.nextAttemptAt) || 0) > now) continue;
       const failed = this.row(notice.requestId);
-      if (!failed || (await notifyFailure(this.env, failed, notice.reason))) {
-        await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
-        await this.ctx.storage.deleteAlarm();
-      } else {
-        const attempts = notice.attempts + 1;
-        await this.ctx.storage.put<FailureNotice>(FAILURE_NOTICE_KEY, {
-          ...notice,
-          attempts,
-        });
-        await this.ctx.storage.setAlarm(
-          Date.now() + Math.min(60, 5 * 2 ** (attempts - 1)) * 60_000,
-        );
+      if (
+        !failed ||
+        (await notifyFailure(
+          this.env,
+          failed,
+          notice.reason,
+          notice.siteUrl || "",
+          notice.runUrl || "",
+        ))
+      ) {
+        await this.ctx.storage.delete(key);
+        continue;
       }
+      const attempts = notice.attempts + 1;
+      await this.ctx.storage.put<FailureNotice>(key, {
+        ...notice,
+        attempts,
+        nextAttemptAt:
+          now + Math.min(60, 5 * 2 ** (attempts - 1)) * 60_000,
+      });
+    }
+
+    const active = this.activeRevisionRow();
+    if (!active) {
+      await this.scheduleCoordinatorAlarm();
       return;
     }
-    const active = this.ctx.storage.sql
-      .exec<RevisionRow>(
-        `SELECT * FROM revision_requests WHERE status IN ${ACTIVE} ORDER BY created_at LIMIT 1`,
-      )
-      .toArray()[0];
-    if (!active) return;
-    const age = Date.now() - (active.started_at || active.created_at);
+
+    const age = now - (active.started_at || active.created_at);
     if (active.status === "running") {
-      if (age >= RUN_TIMEOUT_MS)
+      if (age >= RUN_TIMEOUT_MS) {
         await this.markFailed(active, "Revision workflow timed out.");
-      else await this.ctx.storage.setAlarm(Date.now() + (RUN_TIMEOUT_MS - age));
+        await this.promoteQueued();
+      }
+      await this.scheduleCoordinatorAlarm();
+      return;
+    }
+    if (active.status === "dispatched") {
+      if (age >= RUN_TIMEOUT_MS) {
+        await this.markFailed(
+          active,
+          "Revision workflow did not claim the dispatched request.",
+        );
+        await this.promoteQueued();
+      }
+      await this.scheduleCoordinatorAlarm();
       return;
     }
     if (active.dispatch_attempts >= 3) {
       await this.markFailed(active, "Revision workflow could not be started.");
+      await this.promoteQueued();
+      await this.scheduleCoordinatorAlarm();
       return;
     }
     try {
-      await this.dispatchRow(active);
+      await this.prepareAndDispatchRow(active);
     } catch (error) {
-      await this.ctx.storage.setAlarm(Date.now() + DISPATCH_RETRY_MS);
       console.error(
         JSON.stringify({
           event: "revision.dispatch_retry_failed",
@@ -1354,5 +1575,6 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         }),
       );
     }
+    await this.scheduleCoordinatorAlarm();
   }
 }

@@ -61,6 +61,8 @@ const { subject, html, text } = renderLifecycleEmail({
   previewUrl,
   reviewUrl,
   sendAnywayUrl: String(args["send-anyway-url"] || ""),
+  diagnosticPrUrl: String(args["diagnostic-pr"] || ""),
+  diagnosticRunUrl: String(args["diagnostic-run"] || ""),
   clientFeedback,
   revisionOutcome,
   queuedFeedback,
