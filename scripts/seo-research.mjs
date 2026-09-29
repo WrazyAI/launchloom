@@ -518,7 +518,10 @@ export async function researchSiteContext(intake = {}, options = {}) {
       maxQueries: Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES) || DEFAULT_FALLBACK_SEARCH_QUERIES)),
       maxResultsPerQuery: FALLBACK_RESULTS_PER_QUERY,
       costUsd: 0,
-      maxUsd: Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD) || DEFAULT_FALLBACK_MAX_USD)),
+      maxUsd: (() => {
+        const requested = Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD);
+        return Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number.isFinite(requested) ? requested : DEFAULT_FALLBACK_MAX_USD));
+      })(),
       costComplete: true,
       budgetExhausted: false,
     },
