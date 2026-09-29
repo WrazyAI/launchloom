@@ -24,7 +24,8 @@ describe("inspiration compilation history", () => {
         "No verified street address, emergency availability, credentials, reviews, prices, guarantees, response times, named staff, or patient outcomes.",
         "Design direction: an independent animal-care studio with art-directed veterinary field notes, calm but expressive plum, chalk, and citrus accents, close-cropped pet portraits, and clear care navigation.",
         "Use an unexpected image-and-type composition and one purposeful interactive care guide.",
-        "Avoid generic split hero, rounded card grids, blue medical stock photography, and copied brand assets.",
+        "Avoid generic split hero, rounded card grids, blue medical stock photography, and copied brand assets, but keep vermilion annotations and paper-cutout imagery.",
+        "Use not only warm tones but electric lime and graphite for contrast.",
       ].join(" "),
     };
     const configPath = path.join(root, "config.json");
@@ -43,6 +44,9 @@ describe("inspiration compilation history", () => {
     const pack = JSON.parse(fs.readFileSync(outputPath, "utf8"));
 
     expect(pack.request.styleTerms).toEqual(expect.arrayContaining(["plum", "citrus"]));
+    expect(pack.request.styleTerms).toEqual(
+      expect.arrayContaining(["vermilion", "annotations", "paper", "cutout", "electric", "lime", "graphite"]),
+    );
     expect(pack.request.styleTerms).not.toEqual(
       expect.arrayContaining(["fictional", "verified", "credentials", "prices", "generic", "split", "hero"]),
     );

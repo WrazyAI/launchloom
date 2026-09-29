@@ -578,6 +578,16 @@ describe("inspiration registry", () => {
     }, registry)).toThrow(/a specific business kind is required/iu);
   });
 
+  it("does not route generic pet care businesses into the veterinary reference niche", () => {
+    expect(() => buildInspirationPack({
+      ...baseRequest,
+      industry: "pet-care",
+    }, registry, {
+      repositoryRoot: path.resolve("."),
+      requireDossiers: true,
+    })).toThrow(/0 eligible dossier\(s\) matched to 'pet-care'/iu);
+  });
+
   it.each(["auto-repair", "hvac", "roofing", "painting"])(
     "selects a business-matched route trio from the six-reference %s niche",
     (industry) => {
@@ -654,6 +664,52 @@ describe("inspiration registry", () => {
       }
     }
   }, 60_000);
+
+  it("keeps style-conditioned production selection varied and dossier-backed across all core niches", () => {
+    const core = JSON.parse(
+      fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"),
+    );
+    const repositoryRoot = path.resolve(".");
+
+    for (const niche of core.niches) {
+      const trios = new Set<string>();
+      for (const index of [0, 2, 4]) {
+        const inspiration = registry.records.find(
+          (record: any) => record.id === niche.referenceIds[index],
+        );
+        if (!inspiration) throw new Error(`Missing style seed reference ${niche.referenceIds[index]}.`);
+        const styleTerms = [
+          ...(inspiration.moods || []),
+          inspiration.navigation,
+          inspiration.heroGeometry,
+          inspiration.servicePresentation,
+          inspiration.typographyCategory,
+          inspiration.imageStrategy,
+        ].filter(Boolean);
+        const pack = buildInspirationPack({
+          ...baseRequest,
+          industry: niche.businessKind,
+          styleTerms,
+          seed: `production-style-${niche.id}-${index}`,
+          recentReferenceIds: [],
+          recentRouteSignatures: [],
+        }, registry, {
+          repositoryRoot,
+          requireDossiers: true,
+        });
+        assertReferenceDossierPack(pack, { repositoryRoot });
+        const selected = pack.routes.map((route: any) => route.referenceDossier.id);
+
+        expect(selected).toHaveLength(3);
+        expect(new Set(selected).size, niche.id).toBe(3);
+        expect(selected.every((id: string) => niche.referenceIds.includes(id)), niche.id).toBe(true);
+        expect(pack.request.selectionHistory.fitPoolCount, niche.id).toBeGreaterThanOrEqual(9);
+        expect(pack.request.selectionHistory.fitReferenceCoverage, niche.id).toBe(6);
+        trios.add([...selected].sort().join("|"));
+      }
+      expect(trios.size, `${niche.id} style-conditioned trios`).toBeGreaterThanOrEqual(2);
+    }
+  }, 120_000);
 
   it("compiles the selected core niche without requiring archived dossier assets", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "launchloom-core-only-checkout-"));

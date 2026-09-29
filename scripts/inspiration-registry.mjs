@@ -69,7 +69,7 @@ const BUSINESS_KIND_GROUPS = [
   ["automotive", "auto", "auto-services", "auto-dealership", "used-car-dealer", "vehicle-sales"],
   ["events", "event-venue", "wedding-venue", "wedding", "event-services"],
   ["real-estate", "realtor", "real-estate-agent", "property", "home-sales", "property-management"],
-  ["veterinary", "veterinarian", "vet", "vet-clinic", "animal-clinic", "animal-hospital", "pet-care", "pet-clinic"],
+  ["veterinary", "veterinarian", "vet", "vet-clinic", "animal-clinic", "animal-hospital", "pet-clinic"],
 ];
 
 function cleanText(value, limit = 180) {
@@ -335,7 +335,7 @@ function scoreRecord(record, request) {
   const industry = cleanText(request.industry, 80).toLowerCase();
   const terms = [
     ...new Set(
-      cleanList(request.styleTerms, 20)
+      cleanList(request.styleTerms, 48)
         .flatMap((term) => normalizedPhrase(term).split(" "))
         .filter(Boolean),
     ),
@@ -912,7 +912,7 @@ export function buildInspirationPack(
   const requestSummary = {
     seed,
     industry,
-    styleTerms: cleanList(request.styleTerms, 20),
+    styleTerms: cleanList(request.styleTerms, 48),
     styleText: cleanText(request.styleText, 1200),
     explicitReferenceIds: registry.records
       .filter((record) => explicitlyRequested(record, request))

@@ -363,7 +363,11 @@ jobs:
           cp /tmp/inspiration-pack.json .launchloom/inspiration-pack.json
           git add .
           if ! git diff --cached --quiet; then git commit -m "Create client site configuration"; fi
-          git_push_with_retry --set-upstream origin review/initial
+          if [ "$BOOTSTRAP" = "review" ]; then
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
+          else
+            git_push_with_retry --set-upstream origin review/initial
+          fi
           PR=$(gh pr list --repo "$CLIENT_REPO" --state open --head review/initial --json url --jq '.[0].url // ""')
           if [ -z "$PR" ]; then
             PR=$(gh pr create --repo "$CLIENT_REPO" --base main --head review/initial --title "Initial LaunchLoom site" --body "Private developer preview generated from the verified intake.\n\n<!-- launchloom-feedback-inbox:${{ steps.client.outputs.feedback_issue }} -->")
@@ -417,6 +421,7 @@ jobs:
               --failure-mode throw
           fi
       - name: Commit authored experience evidence
+        id: authored_evidence
         run: |
           cd "${{ steps.branch.outputs.dir }}"
           mkdir -p .launchloom
@@ -458,7 +463,7 @@ jobs:
           fi
       - name: Prepare private creative-recovery report
         id: creative_recovery
-        if: failure() && steps.creative_render.outcome == 'failure' && steps.branch.outputs.dir != ''
+        if: failure() && steps.branch.outputs.dir != '' && (steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
         continue-on-error: true
         run: |
           cd "${{ steps.branch.outputs.dir }}"
@@ -472,7 +477,17 @@ jobs:
           if [ -d .launchloom/creative-repair ]; then git add .launchloom/creative-repair; fi
           if ! git diff --cached --quiet; then
             git commit -m "Preserve failed creative review evidence"
-            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
+          fi
+          if ! node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial; then
+            EVIDENCE_BRANCH="launchloom/evidence-${GITHUB_RUN_ID}"
+            git switch -c "$EVIDENCE_BRANCH"
+            if git push origin "HEAD:refs/heads/$EVIDENCE_BRANCH"; then
+              echo "evidence_branch=$EVIDENCE_BRANCH" >> "$GITHUB_OUTPUT"
+              echo "Preserved generated evidence on private branch $EVIDENCE_BRANCH."
+            else
+              echo "Could not push private recovery evidence branch $EVIDENCE_BRANCH." >&2
+              exit 1
+            fi
           fi
           RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-recovery.mjs" \
             --site-dir "$PWD" \
@@ -579,6 +594,7 @@ jobs:
             git commit -m "Select reviewed experience candidate"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
+          FINAL_BUILD_SHA=$(git rev-parse HEAD)
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
           grep -I -F -q 'data-creative-host="true"' dist/index.html || { echo "Creative host marker missing from fresh build"; exit 1; }
           grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" dist/index.html || { echo "Fresh build does not contain selected creative candidate $CANDIDATE_ID"; exit 1; }
@@ -601,12 +617,17 @@ jobs:
             git commit -m "Record repaired creative candidate"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
+          git fetch --no-tags origin refs/heads/review/initial:refs/remotes/origin/review/initial
+          if ! git diff --quiet "$FINAL_BUILD_SHA" origin/review/initial -- . ':(exclude).launchloom/**'; then
+            echo "Review source changed during the final build; refusing to deploy stale preview output from $FINAL_BUILD_SHA." >&2
+            exit 1
+          fi
           # Scan rendered text assets only. Binary generated imagery can contain
           # the UTF-8 byte sequence by coincidence and is not page copy.
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
-          npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$(git rev-parse HEAD)" --commit-message "Initial LaunchLoom preview"
+          npx wrangler pages deploy dist --project-name "${{ steps.client.outputs.project }}" --branch review-initial --commit-hash "$FINAL_BUILD_SHA" --commit-message "Initial LaunchLoom preview"
           echo "preview=https://review-initial.${{ steps.client.outputs.project }}.pages.dev" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "sha=$FINAL_BUILD_SHA" >> "$GITHUB_OUTPUT"
       # Recording previews keeps rotation useful during internal testing. A
       # failure here must not block generation, preview deployment, or handoff.
       - name: Record launch signature for rotation
@@ -682,6 +703,8 @@ jobs:
           REPAIR_LINK: ${{ steps.creative_repair_link.outputs.link }}
           DIAGNOSTIC_PREVIEW: ${{ steps.creative_repair_link.outputs.preview }}
           SEND_ANYWAY_URL: ${{ steps.creative_repair_link.outputs.send_anyway_url }}
+          CLIENT_REPO: ${{ steps.client.outputs.repo }}
+          EVIDENCE_BRANCH: ${{ steps.creative_recovery.outputs.evidence_branch }}
         run: |
           NAME=$(gh issue view "$ISSUE" --repo WrazyAI/launchloom --json title --jq '.title | sub("^Intake: "; "")')
           if [ -n "$REPAIR_LINK" ]; then
@@ -691,6 +714,7 @@ jobs:
             node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "${DIAGNOSTIC_PREVIEW:-https://github.com/WrazyAI/launchloom/issues/$ISSUE}" --review "$REPAIR_LINK" --send-anyway-url "$SEND_ANYWAY_URL" --kind revision --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-repair-ready-$ISSUE-${{ github.run_id }}"
           else
             printf 'Intake #%s could not be completed automatically. No client site or completion email should be assumed.\n' "$ISSUE" > "$RUNNER_TEMP/generation-failure-feedback.txt"
+            if [ -n "$EVIDENCE_BRANCH" ]; then printf 'Private candidate evidence was preserved on: https://github.com/%s/tree/%s\n' "$CLIENT_REPO" "$EVIDENCE_BRANCH" >> "$RUNNER_TEMP/generation-failure-feedback.txt"; fi
             printf 'Inspect GitHub Actions run %s, correct the failure, then rerun this exact intake.\n' '${{ github.run_id }}' > "$RUNNER_TEMP/generation-failure-outcome.txt"
             node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "https://github.com/WrazyAI/launchloom/issues/$ISSUE" --review "https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}" --kind generation-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/generation-failure-feedback.txt" --outcome-file "$RUNNER_TEMP/generation-failure-outcome.txt" --idempotency-key "generation-failed-$ISSUE-${{ github.run_id }}"
           fi

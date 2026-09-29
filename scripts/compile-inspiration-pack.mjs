@@ -14,11 +14,15 @@ const STYLE_STOPWORDS = new Set([
   "are",
   "all",
   "business",
+  "but",
+  "however",
   "facts",
   "for",
   "from",
   "into",
+  "keep",
   "internal",
+  "instead",
   "not",
   "the",
   "this",
@@ -36,6 +40,8 @@ const STYLE_STOPWORDS = new Set([
   "credentials",
   "reviews",
   "prices",
+  "rather",
+  "still",
   "guarantees",
   "response",
   "times",
@@ -60,14 +66,25 @@ function words(value) {
 
 function positiveStyleTerms(value) {
   const terms = new Set();
-  // Keep positive visual cues, but stop each clause at its first negation so
-  // "avoid split hero" cannot increase a split-hero reference's match score.
-  for (const clause of String(value || "").split(/[.!?;\n]+/u)) {
+  // "Not only X but Y" is an additive construction, not a prohibition.
+  // For actual prohibitions, keep positive cues before the negation and cues
+  // explicitly reintroduced after a contrast marker ("avoid X, but keep Y").
+  const normalized = String(value || "").replace(/\bnot\s+only\b/giu, "");
+  for (const clause of normalized.split(/[.!?;\n]+/u)) {
     const negation = clause.search(STYLE_NEGATION);
-    const positiveClause = negation < 0 ? clause : clause.slice(0, negation);
-    for (const term of words(positiveClause)) terms.add(term);
+    const positiveClauses = [negation < 0 ? clause : clause.slice(0, negation)];
+    if (negation >= 0) {
+      const tail = clause.slice(negation);
+      const contrast = tail.match(/\b(?:but|however|instead|rather|yet|still)\b(?:\s+(?:keep|use|prefer|include|retain|choose))?/iu);
+      if (contrast?.index !== undefined) {
+        positiveClauses.push(tail.slice(contrast.index + contrast[0].length));
+      }
+    }
+    for (const positiveClause of positiveClauses) {
+      for (const term of words(positiveClause)) terms.add(term);
+    }
   }
-  return [...terms].slice(0, 20);
+  return [...terms].slice(0, 48);
 }
 
 function intakeFromMarkdown(value) {

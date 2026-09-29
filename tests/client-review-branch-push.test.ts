@@ -31,7 +31,10 @@ function configureGit(cwd: string, name: string): void {
   git(cwd, ["config", "user.email", `${name.toLowerCase().replaceAll(" ", "-")}@example.test`]);
 }
 
-function setupConcurrentBranchUpdate(conflicting: boolean) {
+function setupConcurrentBranchUpdate(
+  conflicting: boolean,
+  remoteContainsRunnerCommit = false,
+) {
   const root = mkdtempSync(path.join(tmpdir(), "launchloom-branch-push-"));
   temporaryRoots.push(root);
   const remote = path.join(root, "client.git");
@@ -71,6 +74,13 @@ function setupConcurrentBranchUpdate(conflicting: boolean) {
   git(runner, ["add", "."]);
   git(runner, ["commit", "-m", "Record authored candidate"]);
   const runnerCommit = git(runner, ["rev-parse", "HEAD"]);
+  if (remoteContainsRunnerCommit)
+    git(runner, ["push", "origin", "HEAD:review/initial"]);
+
+  if (remoteContainsRunnerCommit) {
+    git(developer, ["fetch", "origin", "review/initial"]);
+    git(developer, ["rebase", "origin/review/initial"]);
+  }
 
   const developerFile = conflicting ? candidateFile : "src/site.config.json";
   const developerPath = path.join(developer, developerFile);
@@ -111,6 +121,27 @@ describe("safe client review-branch pushes", () => {
       .toBe(git(scenario.runner, ["rev-parse", "HEAD"]));
   }, 30_000);
 
+  it("fast-forwards the checkout when the remote already contains local evidence", () => {
+    const scenario = setupConcurrentBranchUpdate(false, true);
+    const result = spawnSync(
+      process.execPath,
+      [pushScript, "--branch", "review/initial"],
+      { cwd: scenario.runner, encoding: "utf8" },
+    );
+
+    expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0);
+    expect(git(scenario.runner, ["rev-parse", "HEAD"])).toBe(
+      git(scenario.runner, ["ls-remote", "origin", "refs/heads/review/initial"]).split(/\s+/)[0],
+    );
+    expect(readFileSync(path.join(scenario.runner, "src/site.config.json"), "utf8")).toContain(
+      "developer feedback",
+    );
+    expect(readFileSync(
+      path.join(scenario.runner, ".launchloom/generated-experiences/candidate-a/content-manifest.json"),
+      "utf8",
+    )).toContain('"authored":true');
+  }, 30_000);
+
   it("fails on a same-file conflict and leaves the developer branch unchanged", () => {
     const scenario = setupConcurrentBranchUpdate(true);
     const remoteHeadBefore = git(scenario.runner, ["ls-remote", "origin", "refs/heads/review/initial"])
@@ -136,5 +167,10 @@ describe("safe client review-branch pushes", () => {
     expect(authoredEvidenceStart).toBeGreaterThanOrEqual(0);
     expect(laterReviewWrites).toContain("scripts/push-client-review-branch.mjs");
     expect(laterReviewWrites).not.toContain("git push origin review/initial");
+    expect(workflow).toMatch(/if \[ "\$BOOTSTRAP" = "review" \]; then[\s\S]*?push-client-review-branch\.mjs/su);
+    expect(workflow).toContain("FINAL_BUILD_SHA=$(git rev-parse HEAD)");
+    expect(workflow).toContain('git diff --quiet "$FINAL_BUILD_SHA" origin/review/initial');
+    expect(workflow).toContain('--commit-hash "$FINAL_BUILD_SHA"');
+    expect(workflow).toContain("steps.authored_evidence.outcome == 'failure'");
   });
 });

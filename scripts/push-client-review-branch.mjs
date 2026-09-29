@@ -49,7 +49,17 @@ for (let attempt = 1; attempt <= MAX_PUSH_ATTEMPTS; attempt += 1) {
 
   // The remote may already contain this commit if another retry completed it.
   if (isAncestor(localHead, remoteHead)) {
-    console.log(`Review branch already contains local HEAD (${remoteHead}).`);
+    const status = requireGit(["status", "--porcelain"]);
+    if (status)
+      fail(
+        `Refusing to fast-forward dirty ${branch}; local uncommitted work was left untouched.`,
+        status,
+      );
+    requireGit(["merge", "--ff-only", remoteRef]);
+    const synchronizedHead = requireGit(["rev-parse", "HEAD"]);
+    if (synchronizedHead !== remoteHead)
+      fail(`Could not synchronize local ${branch} to its remote head ${remoteHead}.`);
+    console.log(`Fast-forwarded local ${branch} to remote head (${remoteHead}).`);
     process.exit(0);
   }
 

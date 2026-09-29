@@ -27,8 +27,9 @@ it("supports a preview-only workflow-dispatch canary without a production-branch
   );
   expect(placeholderGuard).toBeGreaterThanOrEqual(0);
   expect(placeholderDeploy).toBeGreaterThan(placeholderGuard);
+  expect(workflow).toContain('FINAL_BUILD_SHA=$(git rev-parse HEAD)');
   expect(workflow).toContain(
-    '--branch review-initial --commit-hash "$(git rev-parse HEAD)"',
+    '--branch review-initial --commit-hash "$FINAL_BUILD_SHA"',
   );
   expect(workflow).toContain("CREATIVE_EXPERIENCE_MODE");
 });
