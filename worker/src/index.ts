@@ -1716,6 +1716,19 @@ async function creativeRepair(request: Request, env: Env) {
   }
 }
 
+function safeRevisionFailureSite(value: unknown) {
+  if (typeof value !== "string" || !value) return "";
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password) return "";
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 async function revisionCoordinator(request: Request, env: Env) {
   if (request.method !== "POST")
     return json({ error: "Method not allowed" }, 405);
@@ -1744,6 +1757,7 @@ async function revisionCoordinator(request: Request, env: Env) {
         await coordinator.fail(
           requestId,
           clean(body.reason, 500) || "Revision workflow failed.",
+          safeRevisionFailureSite(body.failureSiteUrl),
         ),
       );
     if (action === "resume") return json(await coordinator.resume(requestId));
