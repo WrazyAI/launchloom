@@ -273,8 +273,21 @@ export function assertIndependentRoutes(routes, expected = 3) {
   if (!Array.isArray(routes) || routes.length !== expected)
     throw new Error(`Creative compilation requires exactly ${expected} routes.`);
   const contracts = routes.map(buildRouteContract);
+  const referenceIds = routes.map(
+    (route) =>
+      clean(route?.referenceDossier?.id, 120) ||
+      clean(route?.referenceId, 120) ||
+      clean(route?.referenceFamilyId, 120),
+  );
+  if (referenceIds.some(Boolean)) {
+    if (referenceIds.some((referenceId) => !referenceId))
+      throw new Error("Creative route source identity is incomplete.");
+    if (new Set(referenceIds).size !== contracts.length)
+      throw new Error("Creative routes reuse the same reference source.");
+  }
   for (const field of [
-    "familyId",
+    // Family IDs are broad visual categories, not source identities. Several
+    // distinct references may share one while their structural contracts vary.
     "navigation",
     "heroGeometry",
     "servicePresentation",
