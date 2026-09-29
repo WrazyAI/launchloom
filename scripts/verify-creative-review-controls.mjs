@@ -224,7 +224,7 @@ try {
       "An accepted diagnostic baseline still allows the send-anyway action.",
     );
   if (
-    !(await acceptedPage.locator(".ll-field-preview-note").innerText()).includes(
+    !(await acceptedPage.locator(".ll-review__field-notice").innerText()).includes(
       "accepted as the working baseline",
     )
   )
@@ -247,7 +247,7 @@ try {
   );
   await runningPage.locator("#ll-review").waitFor({ state: "visible" });
   if (
-    !(await runningPage.locator(".ll-field-preview-note").innerText()).includes(
+    !(await runningPage.locator(".ll-review__field-notice").innerText()).includes(
       "final design repair is running",
     )
   )
@@ -278,7 +278,7 @@ try {
   );
   await queuedRevisionPage.locator("#ll-review").waitFor({ state: "visible" });
   const revisionNotice = await queuedRevisionPage
-    .locator(".ll-field-preview-note")
+    .locator(".ll-review__field-notice")
     .innerText();
   if (
     !revisionNotice.includes("A developer revision is in progress") ||
