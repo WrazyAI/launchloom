@@ -189,6 +189,18 @@ function cleanError(error: unknown) {
     .slice(0, 500);
 }
 
+function safeReviewedPage(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || url.username || url.password) return "";
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
 async function github(
   env: RevisionCoordinatorEnv,
   path: string,
@@ -223,15 +235,27 @@ async function notifyFailure(
     !env.LAUNCHLOOM_FEEDBACK_EMAIL
   )
     return true;
-  const target = row.pr
+  const diagnosticTarget = row.pr
     ? `https://github.com/${row.repo}/pull/${row.pr}`
     : `https://github.com/${row.repo}/issues/${row.feedback_issue}`;
+  const reviewedPage = safeReviewedPage(row.reviewed_page);
+  if (!reviewedPage) {
+    console.error(
+      JSON.stringify({
+        event: "revision.failure_email_missing_reviewed_page",
+        repo: row.repo,
+        requestId: row.request_id,
+      }),
+    );
+    return false;
+  }
   const rendered = renderLifecycleEmail({
     audience: "manual-attention",
     kind: "revision-failed",
     clientName: row.site_id,
-    previewUrl: target,
-    reviewUrl: target,
+    previewUrl: reviewedPage,
+    reviewUrl: reviewedPage,
+    diagnosticPrUrl: diagnosticTarget,
     clientFeedback: `${row.category ? `[${row.category}] ` : ""}${row.feedback}`,
     revisionOutcome: `${reason}\n\nRequest ID: ${row.request_id}`,
   });
