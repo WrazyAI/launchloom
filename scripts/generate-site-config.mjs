@@ -483,20 +483,118 @@ function processStepText(value) {
   return text(value, 120);
 }
 
-function industryFor(intake) {
-  const selected = text(intake.industry, 80).toLowerCase();
-  if (
-    [
-      "wellness",
-      "home-services",
-      "technology",
-      "professional-services",
-      "hospitality",
-      "real-estate",
-      "other",
-    ].includes(selected)
-  )
-    return selected;
+const BUSINESS_KIND_PROFILES = [
+  {
+    businessKind: "garage-door",
+    industry: "home-services",
+    aliases: ["garage-door", "garage-door-repair", "overhead-door"],
+    facts: /\b(?:garage door|overhead door|door opener|torsion spring)\b/iu,
+  },
+  {
+    businessKind: "auto-repair",
+    industry: "home-services",
+    aliases: ["auto-repair", "auto-repair-shop", "automotive-repair", "mechanic", "mechanic-shop"],
+    facts: /\b(?:auto repair|automotive repair|auto mechanic|mechanic shop|vehicle diagnostics|car repair|brake service|auto service)\b/iu,
+  },
+  {
+    businessKind: "hvac",
+    industry: "home-services",
+    aliases: ["hvac", "hvac-contractor", "heating-and-cooling", "heating-cooling", "air-conditioning"],
+    facts: /\b(?:hvac|heating(?: and)? cooling|air conditioning|furnace|heat pump|ac repair)\b/iu,
+  },
+  {
+    businessKind: "roofing",
+    industry: "home-services",
+    aliases: ["roofing", "roofer", "roofing-contractor"],
+    facts: /\b(?:roofing|roofer|roof repair|roof replacement)\b/iu,
+  },
+  {
+    businessKind: "painting",
+    industry: "home-services",
+    aliases: ["painting", "painter", "painting-contractor"],
+    facts: /\b(?:painting contractor|residential painting|commercial painting|house painting|painter)\b/iu,
+  },
+  {
+    businessKind: "dental",
+    industry: "wellness",
+    aliases: ["dental", "dentist", "dentistry", "dental-clinic"],
+    facts: /\b(?:dental|dentist|dentistry|oral health)\b/iu,
+  },
+  {
+    businessKind: "home-care",
+    industry: "wellness",
+    aliases: ["home-care", "homecare", "home-care-provider", "senior-care", "elder-care"],
+    facts: /\b(?:home care|home health|caregiver|senior care|elder care|personal care|respite care)\b/iu,
+  },
+  {
+    businessKind: "fitness",
+    industry: "wellness",
+    aliases: ["fitness", "gym", "fitness-studio", "personal-training"],
+    facts: /\b(?:athletic club|fitness|gym|strength training|personal training|sports performance|pilates|yoga)\b/iu,
+  },
+  {
+    businessKind: "restaurant",
+    industry: "hospitality",
+    aliases: ["restaurant", "cafe", "bakery", "catering", "fine-dining"],
+    facts: /\b(?:restaurant|dining|cafe|bakery|catering|food service)\b/iu,
+  },
+  {
+    businessKind: "hospitality",
+    industry: "hospitality",
+    aliases: ["hospitality", "hotel", "boutique-hotel", "resort", "lodging", "inn"],
+    facts: /\b(?:hotel|resort|guesthouse|lodging|boutique hotel|inn)\b/iu,
+  },
+  {
+    businessKind: "architecture",
+    industry: "professional-services",
+    aliases: ["architecture", "architect", "interior-design"],
+    facts: /\b(?:architecture|architect|interior design|architectural design)\b/iu,
+  },
+  {
+    businessKind: "legal-services",
+    industry: "professional-services",
+    aliases: ["legal-services", "legal", "law", "law-firm", "lawyer", "attorney"],
+    facts: /\b(?:law firm|legal services|attorney|lawyer|solicitor|legal practice)\b/iu,
+  },
+  {
+    businessKind: "beauty",
+    industry: "wellness",
+    aliases: ["beauty", "beauty-salon", "salon", "barber", "barbershop", "spa"],
+    facts: /\b(?:beauty salon|hair salon|barber|barbershop|hair stylist|hair colorist|skincare|cosmetology|medical spa)\b/iu,
+  },
+  {
+    businessKind: "accounting",
+    industry: "professional-services",
+    aliases: ["accounting", "accountant", "accountancy", "bookkeeping"],
+    facts: /\b(?:accounting|accountant|accountancy|bookkeeping|tax accounting)\b/iu,
+  },
+];
+
+const BROAD_INDUSTRIES = new Set([
+  "wellness",
+  "home-services",
+  "technology",
+  "professional-services",
+  "hospitality",
+  "real-estate",
+  "other",
+]);
+
+function industryKey(value) {
+  return text(value, 80)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/^-|-$/gu, "");
+}
+
+function explicitBusinessProfile(intake) {
+  const selected = industryKey(intake.industry);
+  return BUSINESS_KIND_PROFILES.find((profile) =>
+    profile.aliases.includes(selected),
+  );
+}
+
+function businessProfileFromFacts(intake) {
   const facts = [
     intake.businessName,
     intake.services,
@@ -505,50 +603,50 @@ function industryFor(intake) {
   ]
     .join(" ")
     .toLowerCase();
-  if (/\b(?:pet|dog|cat|groom\w*|veterinar\w*)\b/.test(facts)) return "other";
+  return BUSINESS_KIND_PROFILES.find((profile) => profile.facts.test(facts));
+}
+
+function intakeFacts(intake) {
+  return [
+    intake.businessName,
+    intake.services,
+    intake.differentiators,
+    intake.brandNotes,
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function industryFor(intake) {
+  const selected = industryKey(intake.industry);
+  const explicitProfile = explicitBusinessProfile(intake);
+  if (explicitProfile) return explicitProfile.industry;
+  if (BROAD_INDUSTRIES.has(selected) && selected !== "other") return selected;
+
+  const facts = intakeFacts(intake);
   if (
-    /health|care|wellness|clinic|therapy|dental|medspa|medical|beauty/.test(
+    /\b(?:pets?|veterinar\w*|vet clinic|animal hospital|(?:dog|cat)\s+(?:groom\w*|boarding|daycare|sitting|walking|training|care|food|treats|supplies))\b/iu.test(
       facts,
     )
   )
+    return "other";
+  const factProfile = businessProfileFromFacts(intake);
+  if (factProfile) return factProfile.industry;
+  if (selected === "other") return "other";
+  if (/\b(?:health|care|wellness|clinic|therapy|dental|medspa|medical|beauty)\b/u.test(facts))
     return "wellness";
-  if (
-    /repair|plumb|electric|roof|garage|cleaning|landscap|hvac|contractor/.test(
-      facts,
-    )
-  )
+  if (/\b(?:repair|plumb\w*|electric\w*|roof|garage|cleaning|landscap\w*|hvac|contractor)\b/u.test(facts))
     return "home-services";
-  if (/software|technology|tech|saas|app|digital|ai |automation/.test(facts))
+  if (/\b(?:software|technology|tech|saas|app|digital|automation)\b/u.test(facts))
     return "technology";
-  if (/law|legal|account|consult|financial|insurance|agency/.test(facts))
+  if (/\b(?:law|legal|account|consult|financial|insurance|agency)\b/u.test(facts))
     return "professional-services";
   return "other";
 }
 
 function businessKindFor(intake, industry) {
-  const facts = [
-    intake.businessName,
-    intake.services,
-    intake.differentiators,
-    intake.brandNotes,
-  ]
-    .join(" ")
-    .toLowerCase();
-  if (
-    /home care|home health|caregiver|senior care|elder care|personal care|respite/.test(
-      facts,
-    )
-  )
-    return "home-care";
-  if (/garage door|overhead door|door opener|torsion spring/.test(facts))
-    return "garage-door";
-  if (
-    /athletic club|fitness|gym|strength training|personal training|sports performance|recovery club/.test(
-      facts,
-    )
-  )
-    return "fitness";
-  return industry;
+  const profile = explicitBusinessProfile(intake) || businessProfileFromFacts(intake);
+  return profile?.industry === industry ? profile.businessKind : industry;
 }
 
 function stockImages(kind) {
@@ -1047,9 +1145,11 @@ export function evaluateDraft(config) {
 }
 
 function fallback(intake) {
-  const preset =
-    intake.preset === "home-services" ? "home-services" : "wellness";
   const industry = industryFor(intake);
+  const preset =
+    intake.preset === "home-services" || industry === "home-services"
+      ? "home-services"
+      : "wellness";
   const businessKind = businessKindFor(intake, industry);
   const areas = Array.isArray(intake.coverageAreas)
     ? [...new Set(intake.coverageAreas.map((area) => text(area, 160)).filter(Boolean))]
