@@ -1,5 +1,11 @@
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import {
+  openRouterApiError,
+  openRouterChatCompletion,
+  openRouterSessionId,
+  readOpenRouterResponseEnvelope,
+} from "./openrouter-client.mjs";
 
 const DEFAULT_MAX_TASKS = 16;
 const HARD_MAX_TASKS = 32;
@@ -327,17 +333,18 @@ export function createOpenRouterWebSearchClient({
   if (!apiKey) throw new Error("OpenRouter API key is required.");
   return {
     async search({ query, maxResults = FALLBACK_RESULTS_PER_QUERY }) {
-      const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const boundedQuery = text(query, 300);
+      const response = await openRouterChatCompletion({
+        apiKey,
+        title: "LaunchLoom SEO Web Search",
+        sessionId: openRouterSessionId("seo-web-search", boundedQuery),
+        fetchImpl,
+        signal: AbortSignal.timeout(20_000),
+        body: {
           model,
           messages: [{
             role: "user",
-            content: `Search the public web for this local-market query and return only a terse acknowledgement after searching: ${text(query, 300)}`,
+            content: `Search the public web for this local-market query and return only a terse acknowledgement after searching: ${boundedQuery}`,
           }],
           tools: [{
             type: "openrouter:web_search",
@@ -351,12 +358,15 @@ export function createOpenRouterWebSearchClient({
           max_tool_calls: 1,
           max_tokens: 32,
           temperature: 0,
-        }),
-        signal: AbortSignal.timeout(20_000),
+        },
       });
-      if (!response.ok)
-        throw new Error(`OpenRouter web search returned HTTP ${response.status}.`);
-      const body = await response.json();
+      const envelope = await readOpenRouterResponseEnvelope(response);
+      if (envelope.parseError)
+        throw new Error("OpenRouter web search returned an unreadable response.");
+      const apiError = openRouterApiError(envelope.payload, response.status);
+      if (!response.ok || apiError)
+        throw apiError || new Error(`OpenRouter web search returned HTTP ${response.status}.`);
+      const body = envelope.payload;
       const annotations = body?.choices?.[0]?.message?.annotations;
       const results = (Array.isArray(annotations) ? annotations : [])
         .filter((annotation) => annotation?.type === "url_citation" && annotation?.url_citation)
