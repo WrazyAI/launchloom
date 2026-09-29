@@ -436,7 +436,7 @@ export async function evaluateRenderedDiversity({
   const content = [
     {
       type: "text",
-      text: "Compare these candidate screenshots to each other, not to their business copy. Judge visual grammar: hero geometry, typography, image choreography, navigation, service presentation, section rhythm, spatial composition, and mobile recomposition. Different colors or words do not count as meaningful visual distance. Flag generic fallback grammar when candidates converge on familiar split heroes, card walls, repeated centered editorial sections, or near-identical page skeletons.",
+      text: "Compare these first-viewport desktop and mobile candidate screenshots to each other, not to their business copy. Judge hero composition first: image/text relationship, hierarchy, focal balance, CTA placement, image choreography, and mobile recomposition. Then consider navigation and the visible continuation into the next section. Metadata labels, different colors, or different words do not count as meaningful visual distance. Flag generic fallback grammar when candidates converge on familiar split heroes, card walls, repeated centered editorial openings, or near-identical first-view skeletons.",
     },
   ];
   for (const candidate of candidates) {

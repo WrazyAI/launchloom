@@ -36,9 +36,10 @@ const GENERIC_BUSINESS_KINDS = new Set([
   "local-services",
   "small-business",
 ]);
+// Hero composition is normalized separately so semantically equivalent
+// descriptions cannot masquerade as structurally distinct routes.
 const STRUCTURAL_FIELDS = [
   "navigation",
-  "heroGeometry",
   "servicePresentation",
   "typographyCategory",
 ];
@@ -233,7 +234,11 @@ function referenceIdsForBusinessKind(repositoryRoot, industry) {
 
 function signatureFor(record) {
   return STRUCTURAL_FIELDS.map((field) => record[field])
-    .concat(record.sectionRhythm, record.imageStrategy)
+    .concat(
+      normalizedHeroArchetype(record),
+      record.sectionRhythm,
+      record.imageStrategy,
+    )
     .join("|");
 }
 
@@ -386,6 +391,99 @@ function selectionReferenceDna(record) {
 }
 
 /**
+ * Coarse hero-composition vocabulary. This intentionally collapses prose
+ * variants such as "dark photo with a left promise" and "mountain image with
+ * overlaid repair copy" into the same image-overlay archetype. The selector
+ * can therefore prefer genuinely different first-view mechanics instead of
+ * rewarding wording differences in curated descriptions.
+ */
+export function normalizedHeroArchetype(record) {
+  const dna = selectionReferenceDna(record);
+  const hero = normalizedPhrase(
+    [record?.heroGeometry, dna?.heroGeometry?.mode].filter(Boolean).join(" "),
+  );
+  const composition = normalizedPhrase(
+    (Array.isArray(record?.referenceTags?.composition)
+      ? record.referenceTags.composition.slice(0, 2)
+      : []
+    ).join(" "),
+  );
+  const text = `${hero} ${composition}`.trim();
+  const hasImage =
+    /\b(?:image|photo|photograph|portrait|interior|scene|video|film|technician|house|roof|salon|dining|garage|mountain|skyline|equipment)\b/u.test(
+      text,
+    );
+
+  if (
+    /\b(?:form|quote form|enquiry|consultation|zip finder|finder)\b/u.test(text) &&
+    /\b(?:split|right|floating|beside|paired|alongside|embedded|integrated|panel|shares)\b/u.test(text)
+  )
+    return "split-form";
+  if (
+    /\b(?:contact ribbon|phone and quote ribbon|action ribbon|lower hero edge|three part phone|three-part phone)\b/u.test(
+      text,
+    )
+  )
+    return "contact-ribbon";
+  if (/\b(?:collage|mosaic|layered|offset product|multi window|multi-window)\b/u.test(text))
+    return "collage-mosaic";
+  if (
+    /\b(?:equipment montage|product equipment|product hero|isolated object|object stage|product still|product composition)\b/u.test(
+      text,
+    )
+  )
+    return "object-product-stage";
+  if (
+    /\b(?:translucent text panel|booking panel|message panel|floating booking|floating panel|inset manifesto)\b/u.test(
+      text,
+    )
+  )
+    return "image-panel";
+  if (
+    /\b(?:service symbol|service quartet|choice grid|symptom choice|service rail|program band|service tiles)\b/u.test(
+      text,
+    )
+  )
+    return "service-rail-hero";
+  if (
+    /\b(?:split|beside|paired|adjacent|two column|two-column|shares the first viewport|image and|image-and|portrait window|portrait proof)\b/u.test(
+      text,
+    ) &&
+    /\b(?:image|photo|portrait|interior|scene|photograph|form)\b/u.test(text)
+  )
+    return "split-media-copy";
+  if (
+    /\b(?:skyline banner|utility identity|utility header|dense logo phone header)\b/u.test(
+      text,
+    )
+  )
+    return "utility-banner";
+  if (
+    /\b(?:text led|text-led|editorial statement on white|performance statement on white|oversized black and red type on cream|white editorial repair statement|near black text led|graphic opening field|oversized accented practice promise)\b/u.test(
+      text,
+    )
+  )
+    return "text-led-editorial";
+  if (
+    /\b(?:full bleed|full-bleed|full screen|full-screen|edge to edge|edge-to-edge|immersive|cinematic|full width|full-width|photographic stage|photo statement|image led|image-led|photo carries|photograph carries|photo supports|photograph supports|photo frames|image frames|image under|photo under)\b/u.test(
+      text,
+    ) ||
+    (hasImage &&
+      /\b(?:poster|wordmark|headline|promise|statement|type overlay|outline type)\b/u.test(
+        text,
+      ))
+  )
+    return "image-overlay";
+  if (
+    !hasImage &&
+    /\b(?:typographic|poster|oversized type|wordmark|monument)\b/u.test(text)
+  )
+    return "text-led-editorial";
+  if (hasImage) return "image-led-editorial";
+  return "text-led-editorial";
+}
+
+/**
  * Compare the actual reference mechanics used by the author, not only the
  * registry labels. A higher score means the pair offers more structural
  * separation before any model call is made.
@@ -395,7 +493,7 @@ export function referenceStructuralDistance(left, right) {
   const rightDna = selectionReferenceDna(right);
   const categoricalPairs = [
     [left.familyId || left.referenceFamilyId, right.familyId || right.referenceFamilyId],
-    [leftDna.heroGeometry?.mode || left.heroGeometry, rightDna.heroGeometry?.mode || right.heroGeometry],
+    [normalizedHeroArchetype(left), normalizedHeroArchetype(right)],
     [leftDna.navigationGeometry?.mode || left.navigation, rightDna.navigationGeometry?.mode || right.navigation],
     [leftDna.servicePresentation?.pattern || left.servicePresentation, rightDna.servicePresentation?.pattern || right.servicePresentation],
     [leftDna.typography?.category || left.typographyCategory, rightDna.typography?.category || right.typographyCategory],
@@ -508,8 +606,11 @@ function independentAnchors(ranked, request, history) {
           referenceStructuralDistance(anchors[0], anchors[2]),
           referenceStructuralDistance(anchors[1], anchors[2]),
         ];
+        const heroArchetypes = anchors.map(normalizedHeroArchetype);
         candidates.push({
           anchors,
+          heroArchetypes,
+          heroArchetypeCount: new Set(heroArchetypes).size,
           explicitCount: trio.filter((candidate) => candidate.explicit).length,
           minimumDistance: Math.min(...distances),
           totalDistance: distances.reduce((sum, value) => sum + value, 0),
@@ -530,6 +631,7 @@ function independentAnchors(ranked, request, history) {
       sum + Number(history.recentFamilyIds.has(buildRouteContract(anchor).familyId.toLowerCase())) +
         Number(history.recentRouteSignatures.has(signatureFor(anchor))), 0);
     candidate.rankScore =
+      candidate.heroArchetypeCount * 45 +
       candidate.minimumDistance * 0.8 +
       candidate.totalDistance * 0.15 +
       candidate.fitScore +
@@ -542,6 +644,7 @@ function independentAnchors(ranked, request, history) {
       left.exposure - right.exposure ||
       left.latestTrioOverlap - right.latestTrioOverlap ||
       left.patternExposure - right.patternExposure ||
+      right.heroArchetypeCount - left.heroArchetypeCount ||
       right.rankScore - left.rankScore ||
       left.stableKey.localeCompare(right.stableKey),
   );
@@ -690,6 +793,28 @@ export function buildInspirationPack(
       `The inspiration registry cannot supply three structurally independent creative routes for '${industry}'.`,
     );
   const anchors = selection.chosen.anchors;
+  const selectedHeroArchetypes = anchors.map(normalizedHeroArchetype);
+  const heroArchetypeGroups = registry.records.reduce((groups, record) => {
+    const archetype = normalizedHeroArchetype(record);
+    const ids = groups.get(archetype) || [];
+    ids.push(record.id);
+    groups.set(archetype, ids);
+    return groups;
+  }, new Map());
+  const distinctHeroArchetypeCount = heroArchetypeGroups.size;
+  const heroInventory = {
+    targetDistinctArchetypes: Math.min(6, registry.records.length),
+    eligibleReferenceCount: registry.records.length,
+    distinctArchetypeCount: distinctHeroArchetypeCount,
+    shortageToSix: Math.max(0, 6 - distinctHeroArchetypeCount),
+    selectedDistinctArchetypeCount: new Set(selectedHeroArchetypes).size,
+    selectedHeroArchetypes,
+    byArchetype: Object.fromEntries(
+      [...heroArchetypeGroups.entries()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([archetype, ids]) => [archetype, [...ids].sort()]),
+    ),
+  };
 
   const routes = anchors.map((anchor, index) => {
     // One route gets one authoritative visual capsule. Supporting references
@@ -706,6 +831,7 @@ export function buildInspirationPack(
       intent: `Use ${anchor.heroGeometry} with ${anchor.servicePresentation}, guided by ${anchor.sectionRhythm}.`,
       navigation: anchor.navigation,
       heroGeometry: anchor.heroGeometry,
+      heroArchetype: normalizedHeroArchetype(anchor),
       servicePresentation: anchor.servicePresentation,
       sectionRhythm: anchor.sectionRhythm,
       typographyCategory: anchor.typographyCategory,
@@ -770,6 +896,8 @@ export function buildInspirationPack(
     recentRouteSignatures: [...recentRouteSignatures].sort(),
     recentReferenceSets: history.recentTrios.map((trio) => [...trio].sort()),
     selectedReferenceIds: anchors.map((anchor) => anchor.id),
+    selectedHeroArchetypes,
+    heroInventory,
     selectionHistory: {
       recentTrioCount: history.recentTrios.length,
       repeatedRecentTrio: selection.chosen.repeatedRecentTrio,
@@ -778,6 +906,9 @@ export function buildInspirationPack(
       selectedPatternExposure: selection.chosen.patternExposure,
       validTrioCount: selection.validTrioCount,
       minimumStructuralDistance: selection.chosen.minimumDistance,
+      selectedHeroArchetypeCount: selection.chosen.heroArchetypeCount,
+      availableHeroArchetypeCount: distinctHeroArchetypeCount,
+      heroArchetypeShortageToSix: heroInventory.shortageToSix,
       rationale: history.recentTrios.length
         ? `${selection.chosen.repeatedRecentTrio ? "Repeated" : "Avoided"} a recent trio; latest trio overlap ${selection.chosen.latestTrioOverlap} of 3; selected exposure ${selection.chosen.exposure} across ${selection.validTrioCount} structurally independent trios. Explicit reference intent ranks first, followed by history, prompt fit, and seeded rotation.`
         : recentReferenceIds.size
