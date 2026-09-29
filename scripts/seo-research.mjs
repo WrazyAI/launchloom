@@ -15,6 +15,8 @@ const MAX_CORE_SERVICES = 5;
 const MAX_SERVICE_VARIANTS = 6;
 const DEFAULT_FALLBACK_SEARCH_QUERIES = 3;
 const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
+const DEFAULT_FALLBACK_MAX_USD = 0.05;
+const HARD_MAX_FALLBACK_USD = 0.25;
 const FALLBACK_RESULTS_PER_QUERY = 4;
 const US_STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
@@ -374,6 +376,7 @@ export function createOpenRouterWebSearchClient({
       if (!response.ok || apiError)
         throw apiError || new Error(`OpenRouter web search returned HTTP ${response.status}.`);
       const body = envelope.payload;
+      const reportedCostUsd = finiteMetric(body?.usage?.cost);
       const annotations = body?.choices?.[0]?.message?.annotations;
       const results = (Array.isArray(annotations) ? annotations : [])
         .filter((annotation) => annotation?.type === "url_citation" && annotation?.url_citation)
@@ -389,7 +392,7 @@ export function createOpenRouterWebSearchClient({
         })
         .filter(Boolean)
         .slice(0, FALLBACK_RESULTS_PER_QUERY);
-      return { results };
+      return { results, costUsd: reportedCostUsd };
     },
   };
 }
@@ -397,6 +400,8 @@ export function createOpenRouterWebSearchClient({
 async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnings) {
   const requested = Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES);
   const maxQueries = Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number.isFinite(requested) ? requested : DEFAULT_FALLBACK_SEARCH_QUERIES));
+  const requestedUsd = Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD);
+  const maxUsd = Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number.isFinite(requestedUsd) ? requestedUsd : DEFAULT_FALLBACK_MAX_USD));
   const queries = [];
   for (const service of seo.services) {
     const city = seo.primaryCity ? ` ${seo.primaryCity}` : "";
@@ -407,9 +412,24 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
   const selected = queries.filter(Boolean).slice(0, maxQueries);
   const evidence = [];
   let failed = 0;
+  let queriesAttempted = 0;
+  let costUsd = 0;
+  let costComplete = true;
+  let budgetExhausted = maxUsd <= 0;
+  if (budgetExhausted)
+    warnings.push("Fallback web search budget is zero; no online fallback requests were attempted.");
   for (const query of selected) {
+    if (budgetExhausted) break;
     try {
       const observed = await webSearch.search({ query, maxResults: FALLBACK_RESULTS_PER_QUERY });
+      queriesAttempted += 1;
+      const reportedCost = finiteMetric(observed?.costUsd);
+      if (reportedCost === null) {
+        costComplete = false;
+        warnings.push("Fallback web search did not report request cost; additional fallback queries were stopped to preserve the configured spend bound.");
+      } else {
+        costUsd = roundCost(costUsd + Math.max(0, reportedCost));
+      }
       const retrievedAt = new Date().toISOString();
       for (const result of observed?.results || []) {
         const url = safeHttpsUrl(result?.url);
@@ -424,19 +444,40 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
           provenance: "external_search_observation",
         });
       }
+      if (!costComplete) break;
+      if (costUsd >= maxUsd && queriesAttempted < selected.length) {
+        budgetExhausted = true;
+        warnings.push(`Fallback web search stopped at the configured $${maxUsd.toFixed(3)} spend bound after ${queriesAttempted} query(s).`);
+      }
     } catch (error) {
+      queriesAttempted += 1;
       failed += 1;
       warnings.push(`Fallback web search unavailable for one bounded query: ${text(error instanceof Error ? error.message : error, 240)}`);
     }
   }
+  const incomplete =
+    failed > 0 ||
+    budgetExhausted ||
+    !costComplete ||
+    queriesAttempted < selected.length;
   return {
     evidence,
-    status: evidence.length ? (failed ? "partial" : "complete") : (failed ? "failed" : "empty"),
-    queriesAttempted: selected.length,
+    status: evidence.length
+      ? (incomplete ? "partial" : "complete")
+      : failed
+        ? "failed"
+        : budgetExhausted
+          ? "budget-exhausted"
+          : "empty",
+    queriesAttempted,
     failedQueries: failed,
     maxQueries,
     maxResultsPerQuery: FALLBACK_RESULTS_PER_QUERY,
     provider: "OpenRouter web search (Parallel)",
+    costUsd: roundCost(costUsd),
+    maxUsd,
+    costComplete,
+    budgetExhausted,
   };
 }
 
@@ -476,6 +517,10 @@ export async function researchSiteContext(intake = {}, options = {}) {
       failedQueries: 0,
       maxQueries: Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES) || DEFAULT_FALLBACK_SEARCH_QUERIES)),
       maxResultsPerQuery: FALLBACK_RESULTS_PER_QUERY,
+      costUsd: 0,
+      maxUsd: Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD) || DEFAULT_FALLBACK_MAX_USD)),
+      costComplete: true,
+      budgetExhausted: false,
     },
     completeness: { keywordOverview: false, searchIntent: false, keywordDifficulty: false, serviceMetrics: [], serviceSerps: 0, serviceSerpsRequired: seo.services.length, competitors: 0 },
     marketSnapshot: { primaryCity: seo.primaryCity, coverageAreas: seo.coverageAreas, confirmedServices: seo.services, metricLocation: seo.metricLocation, labsMetricLocation: seo.labsLocation, queriedKeywords: seeds.length, measuredKeywords: 0, competitorDomains: 0 },
@@ -1038,6 +1083,7 @@ async function main() {
     maxTasks: Number(process.env.SEO_RESEARCH_MAX_TASKS || DEFAULT_MAX_TASKS),
     maxUsd: Number(process.env.SEO_RESEARCH_MAX_USD || DEFAULT_MAX_USD),
     maxFallbackSearchQueries: Number(process.env.SEO_FALLBACK_MAX_QUERIES || DEFAULT_FALLBACK_SEARCH_QUERIES),
+    maxFallbackUsd: Number(process.env.SEO_FALLBACK_MAX_USD || DEFAULT_FALLBACK_MAX_USD),
   });
   await fs.writeFile(destination, `${JSON.stringify(dossier, null, 2)}\n`);
   if (markdownDestination) await fs.writeFile(markdownDestination, renderSeoMapMarkdown(dossier));
