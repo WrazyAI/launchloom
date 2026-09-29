@@ -12,6 +12,7 @@ import {
 } from "./creative-compiler.mjs";
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
+import { validateRenderedCompositionTopology } from "./rendered-composition-topology.mjs";
 import {
   evaluateRenderedDiversity,
   evaluateRenderedReferenceFidelity,
@@ -108,6 +109,45 @@ async function inspect(page) {
     const root = document.querySelector("[data-creative-candidate]");
     const hero = root?.querySelector("[data-hero]");
     const heroBounds = hero?.getBoundingClientRect();
+    const rect = (element) => {
+      const bounds = element.getBoundingClientRect();
+      return {
+        left: bounds.left,
+        top: bounds.top,
+        width: bounds.width,
+        height: bounds.height,
+      };
+    };
+    const visible = (element) => {
+      const style = window.getComputedStyle(element);
+      const bounds = element.getBoundingClientRect();
+      return style.display !== "none" && style.visibility !== "hidden" &&
+        bounds.width >= 16 && bounds.height >= 16;
+    };
+    const copyRegions = hero
+      ? [...hero.querySelectorAll("[data-hero-copy]")]
+          .filter(visible)
+          .map(rect)
+      : [];
+    const mediaRegions = hero
+      ? [...hero.querySelectorAll("[data-hero-media]")]
+          .filter(visible)
+          .map((element) => {
+            const visualNodes = [element, ...element.querySelectorAll("*")]
+              .filter((node) => {
+                if (!visible(node)) return false;
+                if (node instanceof HTMLImageElement)
+                  return node.complete && node.naturalWidth > 0;
+                if (node instanceof HTMLVideoElement)
+                  return node.readyState >= 2;
+                return window.getComputedStyle(node).backgroundImage !== "none";
+              });
+            return {
+              container: rect(element),
+              visuals: visualNodes.map(rect),
+            };
+          })
+      : [];
     const text = [document.title, document.body.innerText].join("\n");
     const anchors = [...document.querySelectorAll("nav a")];
     const requiredTargets = ["#services", "#faqs", "#contact"];
@@ -138,6 +178,12 @@ async function inspect(page) {
       mobileRecomposition: root?.querySelector("[data-mobile-recomposition]")?.getAttribute("data-mobile-recomposition") || "",
       motionPrimitive: root?.querySelector("[data-motion-primitive]")?.getAttribute("data-motion-primitive") || "",
       creativeRenderer: document.querySelector("[data-creative-renderer]")?.getAttribute("data-creative-renderer") || "",
+      compositionEvidence: {
+        hero: heroBounds ? rect(hero) : null,
+        copy: copyRegions,
+        media: mediaRegions,
+        utilityCount: hero?.querySelectorAll('form, input, select, textarea, [role="search"], [role="combobox"]').length || 0,
+      },
     };
   });
 }
@@ -315,8 +361,38 @@ export async function runCreativeBakeoff({
             await page.goto(origin, { waitUntil: "networkidle" });
             const evidence = await inspect(page);
             const failures = [...hardFailures(evidence, viewport), browserErrors.length > 0 && "browser error"].filter(Boolean);
+            const compositionTopology = candidate.manifest.version >= 2
+              ? candidate.manifest.referenceDna?.compositionTopology
+              : null;
+            const compositionGeometry = compositionTopology
+              ? validateRenderedCompositionTopology(
+                  compositionTopology,
+                  evidence.compositionEvidence,
+                )
+              : candidate.manifest.version >= 2
+                ? {
+                    pass: true,
+                    skipped: true,
+                    reason: "Reference DNA predates the normalized composition topology contract.",
+                  }
+                : null;
+            if (compositionGeometry && !compositionGeometry.pass)
+              failures.push(
+                ...compositionGeometry.findings.map((finding) =>
+                  `rendered composition: ${finding.message}`,
+                ),
+              );
             candidateResult.failures.push(...failures.map((failure) => `${viewport.name}: ${failure}`));
-            candidateResult.viewports.push({ ...viewport, ...evidence, browserErrors });
+            candidateResult.viewports.push({
+              ...viewport,
+              ...evidence,
+              compositionGeometry,
+              browserErrors,
+            });
+            candidateResult.compositionGeometryByViewport = {
+              ...(candidateResult.compositionGeometryByViewport || {}),
+              [viewport.name]: compositionGeometry,
+            };
             if (candidate.manifest.version >= 2) {
               const renderedFidelity = validateReferenceCandidate({
                 referenceDna: candidate.manifest.referenceDna,

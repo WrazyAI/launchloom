@@ -421,6 +421,17 @@ describe("production experience author", () => {
       hiddenAnchor,
       spreadOverridesFalse,
       dynamicSpreadAfterFalse,
+    ])
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+        }),
+      ).toThrow(
+        'Candidate route-hidden-navigation navigation must expose literal <a href="#services"> inside a visible native <nav>.',
+      );
+
+    for (const experience of [
       displayNoneNavigation,
       displayNoneAnchor,
       displayNoneSpread,
@@ -433,7 +444,7 @@ describe("production experience author", () => {
           route,
         }),
       ).toThrow(
-        'Candidate route-hidden-navigation navigation must expose literal <a href="#services"> inside a visible native <nav>.',
+        "Candidate route-hidden-navigation contains forbidden inline styles; visual rules belong in styles.css.",
       );
 
     expect(() =>
@@ -1100,6 +1111,35 @@ describe("production experience author", () => {
     ).rejects.toThrow(/unapproved import axios/i);
   });
 
+  it.each([
+    ["style elements", "<style></style>"],
+    ["inline style props", ""],
+  ])("keeps Experience.jsx free of %s", async (kind, prefix) => {
+    await expect(
+      authorExperienceCandidates({
+        site,
+        inspirationPack,
+        generate: async (request) => {
+          const value = safeStage(request);
+          if (request.stage !== "experience") return value;
+          if (kind === "style elements")
+            return {
+              content: String(value.content).replace(
+                "    <main>",
+                `    ${prefix}\n    <main>`,
+              ),
+            };
+          return {
+            content: String(value.content).replace(
+              '<div data-model-experience=',
+              '<div style="color:red" data-model-experience=',
+            ),
+          };
+        },
+      }),
+    ).rejects.toThrow(/inline styles; visual rules belong in styles\.css/iu);
+  });
+
   it("accepts sealed content aliases created by ordinary React destructuring", async () => {
     const result = await authorExperienceCandidates({
       site,
@@ -1639,6 +1679,9 @@ describe("production experience author", () => {
     expect(source).toContain("stagePromptDigest");
     expect(source).toContain("referenceDossierDigest");
     expect(source).toContain("evidenceManifest");
+    expect(source).toContain("compositionTopology: request.route.compositionTopology");
+    expect(source).toContain("data-hero-copy");
+    expect(source).toContain("data-hero-media");
   });
 
   it("persists generation inputs and authored candidates without success-run artifact duplication", () => {

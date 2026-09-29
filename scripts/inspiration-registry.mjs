@@ -4,6 +4,7 @@ import path from "node:path";
 import { buildRouteContract } from "./creative-compiler.mjs";
 import {
   buildReferenceDna,
+  inferCompositionTopology,
   validateReferenceDna,
 } from "./reference-dna.mjs";
 import {
@@ -390,6 +391,22 @@ function selectionReferenceDna(record) {
   return record.selectionReferenceDna || record.canonicalReferenceDna || record.referenceDna || {};
 }
 
+function compositionTopologyFor(record) {
+  if (record.selectionCompositionTopology)
+    return record.selectionCompositionTopology;
+  const dna = selectionReferenceDna(record);
+  return inferCompositionTopology(dna);
+}
+
+function sameStructuralField(left, right, field) {
+  if (field === "heroGeometry") {
+    const leftTopology = compositionTopologyFor(left).hero;
+    const rightTopology = compositionTopologyFor(right).hero;
+    return leftTopology !== "unclassified" && leftTopology === rightTopology;
+  }
+  return normalizedPhrase(left[field]) === normalizedPhrase(right[field]);
+}
+
 /**
  * Compare the actual reference mechanics used by the author, not only the
  * registry labels. A higher score means the pair offers more structural
@@ -398,9 +415,11 @@ function selectionReferenceDna(record) {
 export function referenceStructuralDistance(left, right) {
   const leftDna = selectionReferenceDna(left);
   const rightDna = selectionReferenceDna(right);
+  const leftTopology = compositionTopologyFor(left);
+  const rightTopology = compositionTopologyFor(right);
   const categoricalPairs = [
     [left.familyId || left.referenceFamilyId, right.familyId || right.referenceFamilyId],
-    [leftDna.heroGeometry?.mode || left.heroGeometry, rightDna.heroGeometry?.mode || right.heroGeometry],
+    [leftTopology.hero, rightTopology.hero],
     [leftDna.navigationGeometry?.mode || left.navigation, rightDna.navigationGeometry?.mode || right.navigation],
     [leftDna.servicePresentation?.pattern || left.servicePresentation, rightDna.servicePresentation?.pattern || right.servicePresentation],
     [leftDna.typography?.category || left.typographyCategory, rightDna.typography?.category || right.typographyCategory],
@@ -442,7 +461,7 @@ export function referenceStructuralDistance(left, right) {
 function structurallyIndependent(record, selected) {
   return selected.every((item) => {
     const sharedFields = STRUCTURAL_FIELDS.filter(
-      (field) => normalizedPhrase(item[field]) === normalizedPhrase(record[field]),
+      (field) => sameStructuralField(item, record, field),
     ).length;
     return (
       sharedFields <= MAX_SHARED_STRUCTURAL_FIELDS &&
@@ -499,12 +518,32 @@ function rankedRecords(registry, request) {
 
 function independentAnchors(ranked, request, history) {
   const candidates = [];
+  const topologyFrequency = new Map();
+  for (const candidate of ranked) {
+    const topology = compositionTopologyFor(candidate.record).hero;
+    if (topology === "unclassified") continue;
+    topologyFrequency.set(topology, (topologyFrequency.get(topology) || 0) + 1);
+  }
+  const recurringHeroTopologies = new Set(
+    [...topologyFrequency]
+      .filter(([, count]) => count >= 2)
+      .map(([topology]) => topology),
+  );
+  const requireHeroVariety = recurringHeroTopologies.size >= 2;
   for (let first = 0; first < ranked.length; first += 1) {
     for (let second = first + 1; second < ranked.length; second += 1) {
       for (let third = second + 1; third < ranked.length; third += 1) {
         const trio = [ranked[first], ranked[second], ranked[third]];
         const anchors = trio.map((candidate) => candidate.record);
+        const heroTopologies = anchors.map(
+          (anchor) => compositionTopologyFor(anchor).hero,
+        );
+        const selectedClassifiedTopologies = new Set(
+          heroTopologies.filter((topology) => recurringHeroTopologies.has(topology)),
+        );
         if (
+          (requireHeroVariety &&
+            selectedClassifiedTopologies.size < 2) ||
           !structurallyIndependent(anchors[0], []) ||
           !structurallyIndependent(anchors[1], [anchors[0]]) ||
           !structurallyIndependent(anchors[2], anchors.slice(0, 2))
@@ -562,7 +601,11 @@ function independentAnchors(ranked, request, history) {
     eligible.length - 1,
     Math.floor(stableFraction(seedContext) * eligible.length),
   );
-  return { chosen: eligible[selectedIndex], validTrioCount: candidates.length };
+  return {
+    chosen: eligible[selectedIndex],
+    validTrioCount: candidates.length,
+    heroVarietyEnforced: requireHeroVariety,
+  };
 }
 
 function selectionHistory(request, eligibleIds, eligibleSignatures, industry) {
@@ -654,6 +697,9 @@ export function buildInspirationPack(
           moods: [...new Set([...record.moods, ...tags.style])],
           referenceTags: tags,
           selectionReferenceDna: dossiersById.get(record.id).referenceDna,
+          selectionCompositionTopology: inferCompositionTopology(
+            dossiersById.get(record.id).referenceDna,
+          ),
         };
       });
     const businessMatchedRecords = eligibleRecords.filter((record) =>
@@ -664,6 +710,16 @@ export function buildInspirationPack(
         `The production library has ${businessMatchedRecords.length} eligible dossier(s) matched to '${industry}' out of ${eligibleRecords.length} eligible references; three structurally independent business-matched dossiers are required. Unrelated industries are not used as filler.`,
       );
     registry = { ...registry, records: businessMatchedRecords };
+  } else {
+    registry = {
+      ...registry,
+      records: registry.records.map((record) => ({
+        ...record,
+        selectionCompositionTopology: inferCompositionTopology(
+          selectionReferenceDna(record),
+        ),
+      })),
+    };
   }
   const eligibleSignatures = new Set(registry.records.map(signatureFor));
   const history = selectionHistory(
@@ -715,6 +771,7 @@ export function buildInspirationPack(
     const evidence = [evidenceFor(anchor)];
     const dossier = dossiersById.get(anchor.id);
     const rankedAnchor = ranked.find((candidate) => candidate.record.id === anchor.id);
+    const compositionTopology = compositionTopologyFor(anchor);
     const route = {
       id: `route-${String(index + 1).padStart(2, "0")}`,
       label: anchor.name,
@@ -727,6 +784,7 @@ export function buildInspirationPack(
       sectionRhythm: anchor.sectionRhythm,
       typographyCategory: anchor.typographyCategory,
       imageStrategy: anchor.imageStrategy,
+      compositionTopology,
       motionOpportunity:
         anchor.motionOpportunities[0] || "restrained-native-motion",
       familyId: anchor.familyId || undefined,
@@ -747,9 +805,13 @@ export function buildInspirationPack(
       evidence,
       signature: signatureFor(anchor),
     };
-    const referenceDna = validateReferenceDna(dossier?.referenceDna || buildReferenceDna(route), {
-      requireEvidence: true,
-    });
+    const referenceDna = {
+      ...validateReferenceDna(
+        dossier?.referenceDna || buildReferenceDna(route),
+        { requireEvidence: true },
+      ),
+      compositionTopology,
+    };
     const contract = buildRouteContract({ ...route, referenceDna }, index);
     return {
       ...route,
@@ -787,7 +849,11 @@ export function buildInspirationPack(
     recentRouteSignatures: [...recentRouteSignatures].sort(),
     recentReferenceSets: history.recentTrios.map((trio) => [...trio].sort()),
     selectedReferenceIds: anchors.map((anchor) => anchor.id),
+    selectedHeroTopologies: anchors.map(
+      (anchor) => compositionTopologyFor(anchor).hero,
+    ),
     selectionHistory: {
+      heroVarietyEnforced: selection.heroVarietyEnforced,
       recentTrioCount: history.recentTrios.length,
       repeatedRecentTrio: selection.chosen.repeatedRecentTrio,
       latestTrioOverlap: selection.chosen.latestTrioOverlap,

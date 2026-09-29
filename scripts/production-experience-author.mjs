@@ -1691,6 +1691,7 @@ function validateExperience(source, route, content) {
     [/\beval\s*\(|\bnew\s+Function\b/iu, "dynamic code"],
     [/<canvas\b|\bthree(?:\s*\.?\s*js)\b/iu, "unapproved rendering engine"],
     [/<script\b/iu, "script element"],
+    [/<style\b|\sstyle\s*=|\.\.\.\s*\{\s*(?:style\b|\[[^\]]*style[^\]]*\])\s*:/iu, "inline styles; visual rules belong in styles.css"],
     [/—/u, "em dash"],
   ];
   for (const [pattern, label] of forbidden)

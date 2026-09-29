@@ -75,6 +75,101 @@ export function normalizeSectionSequence(value, familyId) {
     : defaults;
 }
 
+const HERO_COMPOSITION_TOPOLOGIES = new Set([
+  "split-media",
+  "media-overlay",
+  "modular-image-field",
+  "image-led-stage",
+  "type-led-statement",
+  "utility-panel",
+  "centered-field",
+  "editorial-stack",
+]);
+
+/**
+ * Normalize curated hero observations into a small composition vocabulary.
+ * This is used for route diversity, not as a substitute for rendered geometry
+ * verification. The input fields are the dossier's screenshot-reviewed DNA.
+ */
+export function inferCompositionTopology(referenceDna) {
+  const declared = referenceDna?.compositionTopology;
+  const declaredHero = clean(
+    typeof declared === "string" ? declared : declared?.hero,
+    80,
+  ).toLowerCase();
+  if (HERO_COMPOSITION_TOPOLOGIES.has(declaredHero))
+    return {
+      hero: declaredHero,
+      mediaRelation: clean(declared?.mediaRelation, 80) || mediaRelationFor(declaredHero),
+      basis: "curated-dna",
+    };
+
+  const hero = referenceDna?.heroGeometry || {};
+  const image = referenceDna?.imageTreatment || {};
+  const descriptionLeads = [
+    referenceDna?.annotatedDescription,
+    referenceDna?.evidence?.annotatedDescription,
+    referenceDna?.evidence?.pixelAnalysisSummary,
+  ]
+    .map((value) => clean(value, 1400).split(/(?<=[.!?])\s+/u, 1)[0])
+    .filter(Boolean);
+  const heroSource = [
+    hero.mode,
+    hero.alignment,
+    hero.viewport,
+    ...descriptionLeads,
+  ]
+    .map((value) => clean(value, 1400).toLowerCase())
+    .filter(Boolean)
+    .join(" ");
+  const imageSource = [image.mode, image.crop, image.focalPoint]
+    .map((value) => clean(value, 1400).toLowerCase())
+    .filter(Boolean)
+    .join(" ");
+  let normalizedHero = "";
+  if (/\b(?:collage|mosaic|masked image|shared image windows|multiple image windows|layered image field|halftone (?:message )?circle interrupts)\b/iu.test(heroSource))
+    normalizedHero = "modular-image-field";
+  else if (/\b(?:split|two[- ]column|two[- ]field|side[- ]by[- ]side|opposite|adjacent|beside|paired with|left[- ]copy[^.]{0,80}right|copy[^.]{0,60}right[- ]image|balances? (?:a )?(?:large )?(?:portrait|clinic image)|left promise while[^.]{0,100}right|copy[- ]first[^.]{0,60}beside)\b/iu.test(heroSource))
+    normalizedHero = "split-media";
+  else if (/\b(?:full[- ]bleed|full[- ]width[^.]{0,60}(?:image|photo|photograph|scene)|overlaid|overlays|image[- ]backed|image[- ]background|photo[- ]backed|photograph frames|photo carries|photo supports|image carries|image supports|(?:darkened|cinematic|panoramic|waterfront|mountain|automotive|barber[- ]shop|clinic[- ]team)[^.]{0,60}(?:photo|image|scene|photograph)|(?:photo|photograph|image|scene)[^.]{0,80}(?:frames|carries|supports|anchors|sits under|under|behind|fills|is interrupted by)[^.]{0,100}(?:copy|promise|headline|text|statement|callout|booking|message)|background[^.]{0,60}(?:copy|promise|text|statement)|(?:copy|headline|statement)[^.]{0,60}(?:over|on top of|against)[^.]{0,40}(?:image|photo|field)|image[^.]{0,60}with very large[^.]{0,40}type)\b/iu.test(heroSource))
+    normalizedHero = "media-overlay";
+  else if (/\b(?:editorial[^.]{0,40}statement|repair statement|performance statement|serif care promise|text[- ]led opening|type[- ]led opening|oversized[^.]{0,45}(?:type|typography|statement)|typographic opening|statement field|negative[- ]space[^.]{0,45}(?:statement|type|copy)|text carries trust)\b/iu.test(heroSource))
+    normalizedHero = "type-led-statement";
+  else if (/\b(?:quote form|booking form|appointment form|location finder|clinic locator|search panel|finder panel|request form)\b/iu.test(heroSource))
+    normalizedHero = "utility-panel";
+  else if (/\b(?:centered|central|monument|typographic|text[- ]led|type[- ]led|negative[- ]space[^.]{0,60}(?:statement|type|copy)|oversized[^.]{0,50}(?:type|typography|statement)|statement field)\b/iu.test(heroSource))
+    normalizedHero = "type-led-statement";
+  else if (/\b(?:image[- ]first|image[- ]led|object[- ]led|object[- ]centered|product[- ]image|equipment composition|featured photograph leads)\b/iu.test(heroSource))
+    normalizedHero = "image-led-stage";
+  else if (/\b(?:stacked|single[- ]column|vertical stack|copy above image|image below copy)\b/iu.test(heroSource))
+    normalizedHero = "editorial-stack";
+  else if (/\bcentered\b/iu.test(clean(hero.alignment, 240)))
+    normalizedHero = "centered-field";
+  else if (/\b(?:object[- ]led|object[- ]centered|product[- ]image|equipment composition|photograph leads|image[- ]first)\b/iu.test(imageSource))
+    normalizedHero = "image-led-stage";
+
+  return {
+    hero: HERO_COMPOSITION_TOPOLOGIES.has(normalizedHero)
+      ? normalizedHero
+      : "unclassified",
+    mediaRelation: mediaRelationFor(normalizedHero),
+    basis: "curated-dna",
+  };
+}
+
+function mediaRelationFor(heroTopology) {
+  return ({
+    "split-media": "side-by-side-fields",
+    "media-overlay": "copy-over-media",
+    "modular-image-field": "coordinated-image-windows",
+    "image-led-stage": "media-leads-copy",
+    "type-led-statement": "copy-leads-opening",
+    "utility-panel": "task-panel-in-opening",
+    "centered-field": "centered-opening-field",
+    "editorial-stack": "vertical-copy-media-stack",
+  })[heroTopology] || "unclassified";
+}
+
 const routeText = (route) =>
   [
     route?.id,
@@ -521,7 +616,7 @@ export function buildReferenceDna(route, { requireEvidence = false } = {}) {
   };
   if (requireEvidence && !dna.complete)
     throw new Error(`Reference DNA for ${route.id || route.label || "route"} is incomplete: ${incompleteReasons.join("; ")}.`);
-  return dna;
+  return { ...dna, compositionTopology: inferCompositionTopology(dna) };
 }
 
 export function validateReferenceDna(value, { requireEvidence = true } = {}) {

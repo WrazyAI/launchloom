@@ -28,6 +28,8 @@ function validateAuthoredFiles(candidateId, files, candidateManifest, { preview 
     throw new Error(`Creative candidate ${candidateId} must use the shared LeadForm runtime.`);
   if (/https?:\/\/|\bfetch\s*\(|\b(?:XMLHttpRequest|WebSocket)\b|\beval\s*\(|<script\b|—/iu.test(experience))
     throw new Error(`Creative candidate ${candidateId} contains an unsafe Experience.jsx primitive.`);
+  if (/<style\b|\sstyle\s*=|\.\.\.\s*\{\s*(?:style\b|\[[^\]]*style[^\]]*\])\s*:/iu.test(experience))
+    throw new Error(`Creative candidate ${candidateId} contains inline styles; visual rules belong in styles.css.`);
   if (/url\s*\(\s*["']?(?:https?:)?\/\//iu.test(files.styles) || /—/u.test(files.styles))
     throw new Error(`Creative candidate ${candidateId} contains an unsafe styles.css value.`);
   if (/\b(?:fetch|XMLHttpRequest|WebSocket|eval)\s*\(/iu.test(files.motion) || !/reducedMotion|prefers-reduced-motion/u.test(files.motion))

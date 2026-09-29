@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
 import { applyMeasuredReferenceAnalysis } from "../scripts/analyze-reference-dna.mjs";
-import { buildReferenceDna, normalizeSectionSequence, validateReferenceDna } from "../scripts/reference-dna.mjs";
+import { buildReferenceDna, inferCompositionTopology, normalizeSectionSequence, validateReferenceDna } from "../scripts/reference-dna.mjs";
 
 const registry = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8"));
 const core = JSON.parse(fs.readFileSync("data/reference-library/core-collection.json", "utf8"));
@@ -14,6 +14,32 @@ const productionRegistry = {
 };
 
 describe("Reference DNA", () => {
+  it("collapses prose variants with the same screenshot-reviewed split topology", () => {
+    const dnaFor = (id: string) => {
+      const record = productionRegistry.records.find((item: any) => item.id === id);
+      if (!record) throw new Error(`Missing production reference ${id}.`);
+      return JSON.parse(
+        fs.readFileSync(path.join(record.dossierPath, "manifest.json"), "utf8"),
+      ).referenceDna;
+    };
+
+    const splitReferences = [
+      "web-veterinary-modern-animal",
+      "web-veterinary-veg-emergency",
+      "web-veterinary-lap-of-love",
+      "web-veterinary-perry-paws-mobile",
+    ];
+    expect(
+      new Set(splitReferences.map((id) => inferCompositionTopology(dnaFor(id)).hero)),
+    ).toEqual(new Set(["split-media"]));
+    expect(
+      inferCompositionTopology(dnaFor("web-veterinary-schwarzman-amc")).hero,
+    ).toBe("media-overlay");
+    expect(
+      inferCompositionTopology(dnaFor("web-veterinary-cat-clinic-edinburgh")).hero,
+    ).toBe("type-led-statement");
+  });
+
   it("keeps registry evidence in tracked repository paths", () => {
     for (const record of productionRegistry.records) {
       expect(record.screenshotPath).toBeTruthy();

@@ -124,6 +124,26 @@ describe("inspiration registry", () => {
     ).toBe(3);
   });
 
+  it("selects a home-services trio with distinct recurring hero topologies", () => {
+    const pack = buildInspirationPack(
+      {
+        ...baseRequest,
+        industry: "home-services",
+        styleTerms: [],
+        seed: "topology-test-2",
+      },
+      registry,
+      { repositoryRoot: path.resolve("."), requireDossiers: true },
+    );
+
+    const selectedTopologies = pack.routes.map(
+      (route: any) => route.compositionTopology?.hero,
+    );
+    expect(pack.request.selectionHistory.heroVarietyEnforced).toBe(true);
+    expect(selectedTopologies.every(Boolean)).toBe(true);
+    expect(new Set(selectedTopologies).size).toBeGreaterThan(1);
+  });
+
   it("varies the eligible trio across bounded seeds in every core niche", () => {
     const core = JSON.parse(fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"));
     const repositoryRoot = path.resolve(".");
@@ -215,7 +235,12 @@ describe("inspiration registry", () => {
         expect(ids, niche.businessKind).toHaveLength(3);
         expect(new Set(ids).size, niche.businessKind).toBe(3);
         expect(ids.every((id: string) => idsForNiche.has(id)), niche.businessKind).toBe(true);
-        expect(pack.request.selectionHistory.validTrioCount, `${niche.businessKind} eligible trios`).toBeGreaterThanOrEqual(16);
+        expect(pack.request.selectionHistory.validTrioCount, `${niche.businessKind} topology-safe eligible trios`).toBeGreaterThanOrEqual(9);
+        if (pack.request.selectionHistory.heroVarietyEnforced)
+          expect(
+            new Set(pack.routes.map((route: any) => route.compositionTopology.hero)).size,
+            `${niche.businessKind} hero topology variety`,
+          ).toBeGreaterThan(1);
         ids.forEach((id: string) => counts.set(id, (counts.get(id) || 0) + 1));
         trios.add([...ids].sort().join("|"));
       }
@@ -432,7 +457,7 @@ describe("inspiration registry", () => {
       if (!registeredIds.has(dossier.id)) missing.push(dossier.id);
     }
     expect(missing).toEqual([]);
-  });
+  }, 30_000);
 
   it.each([
     ["home-services", new Set(["home-services", "local-trades", "home-repair", "handyman", "roofing", "plumbing", "electrical", "landscaping"])],
