@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
+  applyCreativeRepairEdits,
   applyCreativeVisualSafetyRepairs,
   requestRepair,
   resolveReferenceEvidencePath,
@@ -30,6 +31,165 @@ afterEach(async () => {
 });
 
 describe("creative repair loop", () => {
+  it("applies only unique, bounded literal edits to candidate files", () => {
+    const files = {
+      experience: '<section data-reference-section="hero"><h1>Old</h1></section>',
+      styles: "[data-reference-section=\"hero\"] h1 { font-size: 4rem; }",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+    const result = applyCreativeRepairEdits(files, [
+      {
+        file: "experience",
+        find: "<h1>Old</h1>",
+        replace: "<h1>New</h1>",
+      },
+    ]);
+
+    expect(result.experience).toContain("<h1>New</h1>");
+    expect(result.styles).toBe(files.styles);
+    expect(result.motion).toBe(files.motion);
+    expect(() =>
+      applyCreativeRepairEdits(
+        { ...files, experience: `${files.experience}${files.experience}` },
+        [{ file: "experience", find: "<h1>Old</h1>", replace: "<h1>New</h1>" }],
+      ),
+    ).toThrow(/must match exactly once/iu);
+    expect(() =>
+      applyCreativeRepairEdits(files, [
+        { file: "styles", find: "font-size: 4rem;", replace: `data:image/webp;base64,${"a".repeat(40)}` },
+      ]),
+    ).toThrow(/inline image data/iu);
+  });
+
+  it("requires developer human repairs to return edits for a resolved scope", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-scoped-repair-prompt-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience: '<section data-reference-section="hero"><h1>Old</h1></section>',
+      styles: "[data-reference-section=\"hero\"] h1 { font-size: 4rem; }",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+    const edits = {
+      edits: [
+        { file: "experience", find: "<h1>Old</h1>", replace: "<h1>New</h1>" },
+      ],
+    };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(edits) },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        familyId: "editorial",
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        { category: "human-review-feedback", message: "Improve the hero layout." },
+      ],
+      files,
+      screenshots: [],
+      creativeRepairScope: {
+        version: 1,
+        sectionIds: ["hero"],
+        allowMotion: false,
+        requestText: "Improve the hero layout.",
+      },
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(body.response_format.json_schema.name).toContain("repair_edits");
+    expect(prompt).toContain('"sectionIds": [\n    "hero"');
+    expect(prompt).toContain("never complete files");
+    expect(prompt).toContain("Improve the hero layout.");
+    expect(result).toEqual(edits);
+  });
+
+  it("fails closed when a human repair has no resolved section scope", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(
+      requestRepair({
+        model: "test/model",
+        findings: [
+          { category: "human-review-feedback", message: "Improve the hero." },
+        ],
+        files: { experience: "", styles: "", motion: "" },
+      }),
+    ).rejects.toThrow(/resolved, non-empty section scope/iu);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects complete-file responses for a scoped human repair", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-reject-full-file-repair-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: {
+                  content: JSON.stringify({
+                    experience: "whole replacement",
+                    styles: "whole replacement",
+                    motion: "whole replacement",
+                  }),
+                },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [
+          { category: "human-review-feedback", message: "Improve the hero layout." },
+        ],
+        files: { experience: "before", styles: "before", motion: "before" },
+        screenshots: [],
+        creativeRepairScope: {
+          version: 1,
+          sectionIds: ["hero"],
+          allowMotion: false,
+          requestText: "Improve the hero layout.",
+        },
+      }),
+    ).rejects.toThrow(/must return bounded literal edits, not complete files/iu);
+  });
+
   it("uses a generous repair completion budget and reports bounded response diagnostics", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-budget-"),
@@ -37,6 +197,11 @@ describe("creative repair loop", () => {
     roots.push(root);
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience: "<section data-reference-section=\"hero\"><h1>Old</h1></section>",
+      styles: "[data-reference-section=\"hero\"] h1 { font-size: 4rem; }",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
     const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
     const fetchMock = vi.fn(
       async (_url: string, _options: RequestInit) =>
@@ -65,7 +230,7 @@ describe("creative repair loop", () => {
         evidence: { desktopScreenshot: { path: desktop } },
       },
       findings: [],
-      files: repaired,
+      files,
       screenshots: [],
       logger: (line: string) => diagnostics.push(line),
     });
@@ -620,7 +785,16 @@ describe("creative repair loop", () => {
     roots.push(root);
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
-    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const files = {
+      experience: '<section data-reference-section="hero"><h1>Old</h1></section>',
+      styles: "[data-reference-section=\"hero\"] h1 { font-size: 4rem; }",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+    const repaired = {
+      edits: [
+        { file: "experience", find: "<h1>Old</h1>", replace: "<h1>New</h1>" },
+      ],
+    };
     const fetchMock = vi.fn(
       async (_url: string, _options: RequestInit) =>
         new Response(
@@ -643,8 +817,14 @@ describe("creative repair loop", () => {
           message: "Move the CTA below the gallery.",
         },
       ],
-      files: repaired,
+      files,
       screenshots: [],
+      creativeRepairScope: {
+        version: 1,
+        sectionIds: ["hero"],
+        allowMotion: false,
+        requestText: "Move the CTA below the gallery.",
+      },
     });
 
     const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
@@ -652,12 +832,11 @@ describe("creative repair loop", () => {
       .filter((part: any) => part.type === "text")
       .map((part: any) => part.text)
       .join("\n");
-    expect(prompt).toContain(
-      "The reviewer is authorized to change composition",
-    );
+    expect(prompt).toContain("Make the smallest safe source edit");
+    expect(prompt).toContain('"sectionIds": [\n    "hero"');
     expect(prompt).toContain("Move the CTA below the gallery.");
     expect(prompt).not.toContain(
-      "Preserve its composition and sealed content bindings.",
+      "Return complete files required by the response schema",
     );
   });
 

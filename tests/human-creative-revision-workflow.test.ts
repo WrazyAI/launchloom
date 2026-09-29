@@ -63,7 +63,16 @@ describe("human creative revision lifecycle", () => {
             candidateId: "candidate-a",
           },
         },
-        revisionReport: { creativeSourceRepairRequired: true },
+        revisionReport: {
+          creativeSourceRepairRequired: true,
+          creativeRepairScope: {
+            version: 1,
+            requestText: "Improve the hero layout.",
+            feedbackItems: [
+              { feedbackIndex: 0, feedback: "Improve the hero layout." },
+            ],
+          },
+        },
       }),
     );
     await fs.writeFile(
@@ -91,7 +100,11 @@ describe("human creative revision lifecycle", () => {
       }),
     );
     for (const [name, original, selected] of [
-      ["Experience.jsx", "original experience", "current selected experience"],
+      [
+        "Experience.jsx",
+        "original experience",
+        `export default function Experience({ content }) { return <main><section data-reference-section="hero"><h1>{content.hero.heading}</h1></section><section data-reference-section="services"><h2>Services</h2></section></main>; }`,
+      ],
       ["styles.css", "original styles", "current selected styles"],
       ["motion.js", "original motion", "current selected motion"],
     ] as const) {
@@ -116,13 +129,11 @@ describe("human creative revision lifecycle", () => {
       creative: true,
       repairRequired: true,
       candidateId: "candidate-a",
+      creativeRepairScope: { sectionIds: ["hero"], allowMotion: false },
     });
     expect(
-      await fs.readFile(
-        path.join(outDir, "candidate-a/Experience.jsx"),
-        "utf8",
-      ),
-    ).toBe("current selected experience");
+      await fs.readFile(path.join(outDir, "candidate-a/Experience.jsx"), "utf8"),
+    ).toContain('data-reference-section="hero"');
     expect(
       await fs.readFile(path.join(outDir, "candidate-a/styles.css"), "utf8"),
     ).toBe("current selected styles");
@@ -138,6 +149,10 @@ describe("human creative revision lifecycle", () => {
     const refreshedContract = JSON.parse(
       await fs.readFile(path.join(outDir, "candidate-a/contract.json"), "utf8"),
     );
+    expect(refreshedMetadata.creativeRepairScope).toMatchObject({
+      sectionIds: ["hero"],
+      allowMotion: false,
+    });
     expect(refreshedManifest.values.hero.heading).toBe("Revised hero heading");
     expect(refreshedManifest.values.services[0].name).toBe("Current service");
     expect(refreshedManifest.digest).not.toBe("old-digest");

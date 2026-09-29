@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import {
   collectAvailableScreenshots,
+  defaultRepairCandidate,
   runRenderedCreativeRepair,
   runVisualGateProcess,
   writeCandidate,
@@ -157,6 +158,90 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("rejects full-file human repair output before changing candidate files", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-full-file-rejection-"),
+    );
+    roots.push(root);
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const desktop = path.join(root, "reference.png");
+    await fs.writeFile(desktop, "reference-evidence");
+    const candidateDir = path.join(root, "candidate-a");
+    await fs.mkdir(candidateDir);
+    const originalFiles = {
+      experience: `export default function Experience({ content }) { return <main><section data-reference-section="hero"><h1>{content.hero.heading}</h1></section><section id="services" data-reference-section="services">Services</section><section id="faqs" data-reference-section="faqs">FAQs</section><section id="contact" data-reference-section="contact">Contact</section></main>; }`,
+      styles: '[data-reference-section="hero"] h1 { font-size: 4rem; }',
+      motion: "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
+    };
+    await fs.writeFile(
+      path.join(candidateDir, "metadata.json"),
+      JSON.stringify({
+        candidateId: "candidate-a",
+        referenceDna: {
+          familyId: "test-editorial",
+          sectionSequence: ["hero", "services", "faqs", "contact"],
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        creativeRepairScope: {
+          version: 1,
+          sectionIds: ["hero"],
+          allowMotion: false,
+          requestText: "Improve the hero layout.",
+        },
+      }),
+    );
+    await fs.writeFile(
+      path.join(candidateDir, "content-manifest.json"),
+      JSON.stringify({ values: {}, tokens: [] }),
+    );
+    for (const [name, value] of Object.entries({
+      "Experience.jsx": originalFiles.experience,
+      "styles.css": originalFiles.styles,
+      "motion.js": originalFiles.motion,
+    }))
+      await fs.writeFile(path.join(candidateDir, name), value);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: {
+                  content: JSON.stringify({
+                    experience: "whole replacement",
+                    styles: "whole replacement",
+                    motion: "whole replacement",
+                  }),
+                },
+              },
+            ],
+          }),
+        ),
+      ),
+    );
+
+    await expect(
+      defaultRepairCandidate({
+        candidateDir,
+        findings: [
+          { category: "human-review-feedback", message: "Improve the hero layout." },
+        ],
+        screenshots: [],
+        model: "test/model",
+      }),
+    ).rejects.toThrow(/must return bounded literal edits, not complete files/iu);
+
+    for (const [name, value] of Object.entries({
+      "Experience.jsx": originalFiles.experience,
+      "styles.css": originalFiles.styles,
+      "motion.js": originalFiles.motion,
+    }))
+      expect(await fs.readFile(path.join(candidateDir, name), "utf8")).toBe(value);
+  });
+
   it("retries a source-rejected repair once within the candidate's cycle budget", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const repairFindings: any[][] = [];

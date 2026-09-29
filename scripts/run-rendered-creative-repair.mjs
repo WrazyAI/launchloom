@@ -2,7 +2,21 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
-import { requestRepair } from "./creative-repair-loop.mjs";
+import {
+  applyCreativeRepairEdits,
+  requestRepair,
+} from "./creative-repair-loop.mjs";
+import {
+  assertCreativeRevisionScope,
+  createCreativeRepairScopeDeclaration,
+  resolveCreativeRevisionScope,
+} from "./creative-revision-scope.mjs";
+
+export {
+  assertCreativeRevisionScope,
+  createCreativeRepairScopeDeclaration,
+  resolveCreativeRevisionScope,
+};
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import {
   restoreImageAltsFromOriginal,
@@ -420,7 +434,12 @@ async function validateCandidateReasoningBindings(
   return candidateCount;
 }
 
-async function defaultRepairCandidate({
+/**
+ * Validate and atomically persist one authored candidate repair.
+ * @param {{candidateDir: string, findings: any[], screenshots: string[], model: string, creativeSession?: Record<string, any> | null}} options
+ * @returns {Promise<{experience: string, styles: string, motion: string}>}
+ */
+export async function defaultRepairCandidate({
   candidateDir,
   findings,
   screenshots,
@@ -435,6 +454,19 @@ async function defaultRepairCandidate({
     throw new Error(
       `${metadata.candidateId || candidateDir} has no Reference DNA.`,
     );
+  const humanReview = (findings || []).some(
+    (finding) =>
+      finding &&
+      typeof finding === "object" &&
+      finding.category === "human-review-feedback",
+  );
+  const creativeRepairScope = humanReview
+    ? metadata.creativeRepairScope
+    : null;
+  if (humanReview && !creativeRepairScope)
+    throw repairOutputRejected(
+      new Error("Human repair candidate omitted its resolved section scope."),
+    );
   const repairResponse = await requestRepair({
     model,
     referenceDna,
@@ -445,10 +477,15 @@ async function defaultRepairCandidate({
     screenshots,
     contentManifest,
     creativeSession,
+    creativeRepairScope,
   });
   let validated;
   try {
-    const modelRepaired = normalizeRepair(repairResponse);
+    const modelRepaired = humanReview
+      ? applyCreativeRepairEdits(files, repairResponse?.edits)
+      : normalizeRepair(repairResponse);
+    if (humanReview)
+      assertCreativeRevisionScope(files, modelRepaired, creativeRepairScope);
     const repaired = {
       ...modelRepaired,
       experience: restoreImageAltsFromOriginal(
@@ -474,6 +511,8 @@ async function defaultRepairCandidate({
       },
       content,
     });
+    if (humanReview)
+      assertCreativeRevisionScope(files, validated.files, creativeRepairScope);
   } catch (error) {
     throw repairOutputRejected(error);
   }

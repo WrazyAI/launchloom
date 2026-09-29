@@ -176,8 +176,22 @@ if (action === "create-empty") {
     throw new Error(
       "Creative repair scope does not match the prepared revision state.",
     );
+  const selectedCandidateId = String(
+    config.design?.experience?.candidateId || "",
+  );
+  const repairVerification = config.revisionReport?.creativeSourceRepairVerified;
+  const repairVerified = Boolean(
+    repairRequired &&
+      repairVerification?.pass === true &&
+      selectedCandidateId &&
+      repairVerification.candidateId === selectedCandidateId,
+  );
+  if (repairRequired && !repairVerified)
+    throw new Error(
+      "Creative source repair is not verified for the selected candidate; authored files cannot enter the revision scope.",
+    );
   const candidates =
-    args["repair-required"] === "true"
+    repairVerified
       ? [
           "src/generated-experiences/selected/Experience.jsx",
           "src/generated-experiences/selected/styles.css",

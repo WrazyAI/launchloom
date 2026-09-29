@@ -59,7 +59,38 @@ const REPAIR_FILE_SCHEMA = {
     },
   },
 };
+const REPAIR_EDIT_SCHEMA = {
+  name: "launchloom_creative_repair_edits",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["edits"],
+    properties: {
+      edits: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["file", "find", "replace"],
+          properties: {
+            file: {
+              type: "string",
+              enum: REPAIR_FILE_ORDER,
+            },
+            find: { type: "string" },
+            replace: { type: "string" },
+          },
+        },
+      },
+    },
+  },
+};
 const REPAIR_SOURCE_SPLIT_THRESHOLD_CHARS = 20_000;
+const REPAIR_EDITABLE_FILES = new Set(REPAIR_FILE_ORDER);
+const MAX_REPAIR_EDITS = 12;
+const MAX_REPAIR_EDIT_FRAGMENT_CHARS = 6_000;
+const MAX_REPAIR_PATCH_TEXT_CHARS = 24_000;
 
 function clean(value, limit = 900) {
   return String(value || "")
@@ -105,6 +136,63 @@ function isCompleteRepair(value) {
       (key) => typeof value[key] === "string",
     ),
   );
+}
+
+function isRepairEditSet(value) {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Array.isArray(value.edits),
+  );
+}
+
+/** Apply exact, bounded source replacements; ambiguous edits fail closed. */
+export function applyCreativeRepairEdits(files, edits) {
+  if (!files || typeof files !== "object" || Array.isArray(files))
+    throw new Error("Creative repair edits require candidate files.");
+  if (!Array.isArray(edits) || edits.length < 1 || edits.length > MAX_REPAIR_EDITS)
+    throw new Error(
+      `Creative repair edits must contain 1 to ${MAX_REPAIR_EDITS} literal replacements.`,
+    );
+
+  const repaired = { ...files };
+  let patchTextChars = 0;
+  for (const [index, edit] of edits.entries()) {
+    const label = `Creative repair edit ${index + 1}`;
+    if (!edit || typeof edit !== "object" || !REPAIR_EDITABLE_FILES.has(edit.file))
+      throw new Error(`${label} targets an unsupported candidate file.`);
+    if (
+      typeof edit.find !== "string" ||
+      !edit.find.length ||
+      edit.find.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS ||
+      typeof edit.replace !== "string" ||
+      edit.replace.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS
+    )
+      throw new Error(`${label} exceeds the bounded literal replacement contract.`);
+    const replacement = edit.replace.replace(/[—–]/gu, "-");
+    if (edit.find === replacement)
+      throw new Error(`${label} does not change the candidate source.`);
+    if (/data:image\//iu.test(edit.find) || /data:image\//iu.test(edit.replace))
+      throw new Error(`${label} cannot contain inline image data.`);
+    patchTextChars += edit.find.length + edit.replace.length;
+    if (patchTextChars > MAX_REPAIR_PATCH_TEXT_CHARS)
+      throw new Error("Creative repair patch exceeds the bounded text budget.");
+
+    const source = repaired[edit.file];
+    if (typeof source !== "string")
+      throw new Error(`${label} targets a missing candidate file.`);
+    const start = source.indexOf(edit.find);
+    if (start < 0 || source.indexOf(edit.find, start + edit.find.length) >= 0)
+      throw new Error(
+        `${label} source fragment must match exactly once in ${edit.file}.`,
+      );
+    repaired[edit.file] =
+      source.slice(0, start) +
+      replacement +
+      source.slice(start + edit.find.length);
+  }
+  return repaired;
 }
 
 /**
@@ -438,6 +526,7 @@ export async function resolveReferenceEvidencePath(record) {
  *   screenshots?: string[],
  *   contentManifest?: Record<string, any>,
  *   creativeSession?: Record<string, any> | null,
+ *   creativeRepairScope?: Record<string, any> | null,
  *   logger?: (message: string) => void,
  * }} [options]
  * @returns {Promise<Record<string, any>>}
@@ -451,6 +540,7 @@ export async function requestRepair({
   screenshots,
   contentManifest = {},
   creativeSession = null,
+  creativeRepairScope = null,
   logger = console.log,
 }) {
   const humanReview = (findings || []).some(
@@ -459,6 +549,17 @@ export async function requestRepair({
       typeof finding === "object" &&
       finding.category === "human-review-feedback",
   );
+  if (
+    humanReview &&
+    (!creativeRepairScope ||
+      creativeRepairScope.version !== 1 ||
+      !Array.isArray(creativeRepairScope.sectionIds) ||
+      creativeRepairScope.sectionIds.length === 0)
+  )
+    throw new Error(
+      "Manual creative repair requires a resolved, non-empty section scope.",
+    );
+  const scopedHumanRepair = humanReview;
   const referenceMismatch = (findings || []).some((finding) => {
     const detail =
       typeof finding === "string"
@@ -476,8 +577,8 @@ export async function requestRepair({
       detail,
     );
   });
-  const repairInstruction = humanReview
-    ? "Refine this authored LaunchLoom candidate in place to satisfy the explicit human review request. The reviewer is authorized to change composition, presentation, hierarchy, imagery treatment, motion, and safe UI features described in that request. Preserve sealed content bindings, accessibility, factual integrity, and the assigned Reference DNA identity outside the requested change. Do not convert it into a legacy renderer."
+  const repairInstruction = scopedHumanRepair
+    ? "Make the smallest safe source edit that satisfies the explicit human review request only inside the resolved section scope. Do not change unrelated sections, section order, global CSS, sealed content, factual claims, contact behavior, or the assigned Reference DNA outside that scope. Do not convert this candidate into a legacy renderer."
     : referenceMismatch
       ? "Repair this authored LaunchLoom candidate to address the measured rendered-reference and visual findings. You may change composition, layout, hierarchy, section rhythm, image placement or crop, navigation geometry, and motion where needed to fix those findings. Do not preserve any composition or design mechanic explicitly identified as failing. Preserve verified business facts, sealed content bindings, accessibility, required functionality, and the assigned Reference DNA family and signature intent. Do not convert it into a legacy renderer."
       : "Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.";
@@ -576,6 +677,8 @@ Use these helpers instead of inventing network calls or duplicating platform beh
 
   const sourcePrompt = (currentFiles) => `${repairInstruction}
 
+${scopedHumanRepair ? `RESOLVED SECTION SCOPE\n${JSON.stringify(creativeRepairScope, null, 2)}\nOnly these section IDs may change.` : ""}
+
 FINDINGS
 ${JSON.stringify(findings, null, 2)}
 
@@ -595,7 +698,9 @@ Keep each required ID and section marker on its semantically matching visible se
 ALT-TEXT CONTRACT
 Every <img> must have a usable alt attribute. Use concise descriptive alt text for informative images. Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text. Preserve the reviewed description when reusing a known informative image, even if its crop or position changes. Do not replace an informative description with generic filler such as "Decorative image".
 
-Return complete files required by the response schema and no unrelated explanation. Keep required reference signatures and safety/content contracts unless the explicit human review request requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
+${scopedHumanRepair
+    ? `Return JSON with an "edits" array only, never complete files. Each edit must name one of experience, styles, or motion; its exact "find" fragment must occur once; its "replace" is the minimal correction. Return 1-12 edits, each fragment at most 6000 characters, total find-plus-replace text at most 24000 characters. An empty edit list means the request cannot be safely fulfilled and must fail closed.`
+    : "Return complete files required by the response schema and no unrelated explanation."} Keep required reference signatures and safety/content contracts unless the explicit repair requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
 
   const buildRepairContent = (currentFiles, target) => {
     const requestContent = [
@@ -647,7 +752,11 @@ Return only the complete ${target} source file in the JSON content field. Do not
         },
         response_format: {
           type: "json_schema",
-          json_schema: target ? REPAIR_FILE_SCHEMA : REPAIR_SCHEMA,
+          json_schema: target
+            ? REPAIR_FILE_SCHEMA
+            : scopedHumanRepair
+              ? REPAIR_EDIT_SCHEMA
+              : REPAIR_SCHEMA,
         },
         ...completionLimitRequestField(CREATIVE_REPAIR_MAX_COMPLETION_TOKENS),
         messages: [
@@ -704,6 +813,13 @@ Return only the complete ${target} source file in the JSON content field. Do not
         );
       return parsed;
     }
+    if (scopedHumanRepair) {
+      if (!isRepairEditSet(parsed))
+        throw new Error(
+          "Human creative repair must return bounded literal edits, not complete files.",
+        );
+      applyCreativeRepairEdits(files, parsed.edits);
+    }
     return parsed;
   };
 
@@ -711,6 +827,7 @@ Return only the complete ${target} source file in the JSON content field. Do not
     (total, file) => total + String(files?.[file] || "").length,
     0,
   );
+  if (scopedHumanRepair) return requestModelRepair(files);
   if (sourceChars <= REPAIR_SOURCE_SPLIT_THRESHOLD_CHARS)
     return requestModelRepair(files);
 
