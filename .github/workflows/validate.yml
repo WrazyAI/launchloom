@@ -38,3 +38,45 @@ jobs:
           npm ci
           npm run check
           npm run build
+      - name: Smoke no-DataForSEO online fallback
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          DATAFORSEO_LOGIN: ""
+          DATAFORSEO_USERNAME: ""
+          DATAFORSEO_PASSWORD: ""
+          SEO_FALLBACK_MAX_QUERIES: "1"
+        run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "seo_live_smoke=skipped_openrouter_secret_unavailable"
+            exit 0
+          fi
+          cat > "$RUNNER_TEMP/seo-smoke.md" <<'EOF'
+          ```json
+          {
+            "businessName": "LaunchLoom SEO Smoke Fixture",
+            "industry": "home-services",
+            "services": ["drain cleaning"],
+            "primaryCity": "Tacoma, WA",
+            "serviceAreas": ["Tacoma, WA"],
+            "serviceRadius": "20"
+          }
+          ```
+          EOF
+          node scripts/seo-research.mjs --source "$RUNNER_TEMP/seo-smoke.md" --out "$RUNNER_TEMP/seo-smoke.json"
+          node - <<'NODE'
+          const x = require(process.env.RUNNER_TEMP + "/seo-smoke.json");
+          const evidence = Array.isArray(x.externalSearchEvidence) ? x.externalSearchEvidence : [];
+          if (x.publishReady !== false) throw new Error("Fallback smoke unexpectedly marked production SEO ready.");
+          if (x.mode !== "context-only") throw new Error("Fallback smoke must remain context-only.");
+          if (!["complete", "partial"].includes(x.fallbackSearch?.status)) throw new Error("Fallback search did not return live evidence.");
+          if (x.fallbackSearch?.queriesAttempted !== 1) throw new Error("Fallback smoke exceeded or missed the one-query bound.");
+          if (!evidence.length) throw new Error("Fallback smoke returned no cited evidence.");
+          for (const item of evidence) {
+            if (!/^https:\/\//u.test(item.sourceUrl || "")) throw new Error("Fallback evidence is missing a safe source URL.");
+            if (item.provenance !== "external_search_observation") throw new Error("Fallback evidence provenance is not explicit.");
+            if (!item.retrievedAt || !item.provider) throw new Error("Fallback evidence is missing retrieval/provider provenance.");
+          }
+          console.log("seo_live_smoke=passed");
+          console.log("seo_live_smoke_evidence_count=" + evidence.length);
+          console.log("seo_live_smoke_status=" + x.fallbackSearch.status);
+          NODE
