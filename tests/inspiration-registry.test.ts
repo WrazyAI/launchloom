@@ -154,16 +154,16 @@ describe("inspiration registry", () => {
         expect(ids.every((id: string) => niche.referenceIds.includes(id)), niche.id).toBe(true);
         for (const field of ["navigation", "heroGeometry", "servicePresentation", "typographyCategory", "familyId"])
           expect(new Set(first.routes.map((route: any) => route[field])).size, `${niche.id}:${field}`).toBe(3);
+        expect(first.request.heroInventory.eligibleReferenceCount, niche.id).toBe(6);
+        expect(first.request.heroInventory.shortageToSix, niche.id).toBe(
+          Math.max(0, 6 - first.request.heroInventory.distinctArchetypeCount),
+        );
+        expect(
+          new Set(first.routes.map((route: any) => route.heroArchetype)).size,
+          niche.id,
+        ).toBe(first.request.heroInventory.selectedDistinctArchetypeCount);
         sets.add(ids.sort().join("|"));
       }
-      expect(first.request.heroInventory.eligibleReferenceCount, niche.id).toBe(6);
-      expect(first.request.heroInventory.shortageToSix, niche.id).toBe(
-        Math.max(0, 6 - first.request.heroInventory.distinctArchetypeCount),
-      );
-      expect(
-        new Set(first.routes.map((route: any) => route.heroArchetype)).size,
-        niche.id,
-      ).toBe(first.request.heroInventory.selectedDistinctArchetypeCount);
       expect(sets.size, niche.id).toBeGreaterThanOrEqual(2);
     }
   }, 120_000);

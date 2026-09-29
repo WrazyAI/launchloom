@@ -36,10 +36,11 @@ const GENERIC_BUSINESS_KINDS = new Set([
   "local-services",
   "small-business",
 ]);
-// Hero composition is normalized separately so semantically equivalent
-// descriptions cannot masquerade as structurally distinct routes.
+// Keep the legacy route-signature fields stable for stored launch history.
+// Normalized hero archetypes are an additional selection dimension below.
 const STRUCTURAL_FIELDS = [
   "navigation",
+  "heroGeometry",
   "servicePresentation",
   "typographyCategory",
 ];
@@ -234,11 +235,7 @@ function referenceIdsForBusinessKind(repositoryRoot, industry) {
 
 function signatureFor(record) {
   return STRUCTURAL_FIELDS.map((field) => record[field])
-    .concat(
-      normalizedHeroArchetype(record),
-      record.sectionRhythm,
-      record.imageStrategy,
-    )
+    .concat(record.sectionRhythm, record.imageStrategy)
     .join("|");
 }
 
