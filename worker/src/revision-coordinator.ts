@@ -77,7 +77,10 @@ export type EnqueueResult =
     }
   | {
       ok: false;
-      code: "revision_queue_full" | "creative_override_started";
+      code:
+        | "revision_queue_full"
+        | "creative_override_started"
+        | "revision_request_mismatch";
       error: string;
     };
 
@@ -1171,12 +1174,23 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         input.fingerprint,
       )
       .toArray()[0];
-    if (duplicate)
+    if (duplicate) {
+      if (
+        duplicate.request_id === input.requestId &&
+        duplicate.fingerprint !== input.fingerprint
+      )
+        return {
+          ok: false,
+          code: "revision_request_mismatch",
+          error:
+            "This feedback retry no longer matches the request already recorded. Refresh the review page before sending another version.",
+        };
       return {
         ok: true,
         requestId: duplicate.request_id,
         queueStatus: "duplicate",
       };
+    }
 
     const active = this.ctx.storage.sql
       .exec<RevisionRow>(
