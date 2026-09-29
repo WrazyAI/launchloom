@@ -32,3 +32,9 @@ jobs:
           npm run check:worker
       - name: Build production bundle
         run: npm run build
+      - name: Build client production template
+        working-directory: templates/client-site
+        run: |
+          npm ci
+          npm run check
+          npm run build
