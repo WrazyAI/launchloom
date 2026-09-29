@@ -1,11 +1,19 @@
 import fs from "node:fs/promises";
-import { nextClientFeedbackContext, pendingFeedbackFromComments } from "./feedback-utils.mjs";
+import path from "node:path";
+import { materializeFeedbackAssets } from "./feedback-assets.mjs";
 import { applyBoundedClientFeedback } from "./client-feedback-ops.mjs";
+import {
+  feedbackRequestSummary,
+  nextClientFeedbackContext,
+  pendingFeedbackFromComments,
+} from "./feedback-utils.mjs";
 import {
   expectedArtifacts,
   planRevision,
   removeEmDashes,
 } from "./revision-engine.mjs";
+
+const DEFAULT_ASSET_BASE_URL = "https://assets.launchloom.wrazyos.com";
 
 const [repo, pr, configPath] = [
   process.env.CLIENT_REPO,
@@ -39,26 +47,60 @@ if (!response.ok)
 const payload = await response.json();
 const comments = exactComment ? [payload] : payload;
 const stage = process.env.FEEDBACK_STAGE === "client" ? "client" : "developer";
-const feedback = pendingFeedbackFromComments(
+const requests = pendingFeedbackFromComments(
   comments,
   stage,
   Boolean(exactComment),
 );
-if (!feedback.length) {
+if (!requests.length) {
   console.log("No pending LaunchLoom feedback.");
   process.exit(0);
 }
 
 const config = JSON.parse(await fs.readFile(configPath, "utf8"));
-const planned = stage === "client"
-  ? applyBoundedClientFeedback(config, feedback)
-  : await planRevision(feedback, config);
-const revised = stage === "client" ? planned.config : removeEmDashes(planned.config);
+let summaries = requests
+  .map((item) => feedbackRequestSummary(item))
+  .filter(Boolean);
+let planned;
+if (stage === "client") {
+  // Client review stays bounded: verified small changes only, applied by the
+  // deterministic client-feedback operation set.
+  planned = applyBoundedClientFeedback(config, requests);
+} else {
+  // Developer review may replace imagery and choose colors. Replacements are
+  // materialized into the private client repository before planning so the
+  // rendered acceptance check can point at a committed local asset.
+  const assetBaseUrl = String(
+    process.env.ASSET_BASE_URL || DEFAULT_ASSET_BASE_URL,
+  ).replace(/\/$/u, "");
+  const feedbackAssetDir = path.resolve(
+    path.dirname(configPath),
+    "..",
+    "public",
+    "images",
+    "feedback",
+  );
+  const materialized = await materializeFeedbackAssets({
+    items: requests,
+    assetBaseUrl,
+    outputDir: feedbackAssetDir,
+  });
+  if (materialized.failures.length)
+    throw new Error(
+      `Requested images could not be prepared. ${materialized.failures.join(" ")}`,
+    );
+  summaries = materialized.items
+    .map((item) => feedbackRequestSummary(item))
+    .filter(Boolean);
+  planned = await planRevision(materialized.items, config);
+}
+const revised =
+  stage === "client" ? planned.config : removeEmDashes(planned.config);
 const previousRevisionReport = config.revisionReport || {};
 const clientFeedbackContext = nextClientFeedbackContext(
   previousRevisionReport,
   stage,
-  feedback,
+  summaries,
   pr,
 );
 const creativeRenderer =
@@ -75,7 +117,7 @@ const creativeIgnoredArtifactTypes = new Set([
 revised.revisionReport = {
   stage,
   revisionPr: String(pr),
-  feedback,
+  feedback: summaries,
   clientFeedbackContext,
   operations: planned.operations,
   results: planned.results,
@@ -102,7 +144,7 @@ revised.revisionReport = {
 if (process.env.FEEDBACK_SUMMARY_PATH)
   await fs.writeFile(
     process.env.FEEDBACK_SUMMARY_PATH,
-    feedback.join("\n\n").slice(0, 12_000),
+    summaries.join("\n\n").slice(0, 12_000),
     "utf8",
   );
 if (process.env.FEEDBACK_OUTCOME_PATH)
@@ -134,4 +176,4 @@ if (!planned.ok)
       .join("; ")}`,
   );
 await fs.writeFile(configPath, `${JSON.stringify(revised, null, 2)}\n`);
-console.log(`Applied ${feedback.length} feedback item(s) to ${configPath}.`);
+console.log(`Applied ${requests.length} feedback item(s) to ${configPath}.`);

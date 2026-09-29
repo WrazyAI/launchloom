@@ -51,13 +51,22 @@ function candidate(candidateId: string, score: number) {
 describe("creative recovery diagnostics", () => {
   it("uses a generic review-email hint instead of exposing the invited developer address", () => {
     const reviewPanel = readFileSync("src/components/ReviewPanel.tsx", "utf8");
+    const feedbackParts = readFileSync(
+      "src/components/FeedbackParts.tsx",
+      "utf8",
+    );
     expect(reviewPanel).toContain(
       'const reviewEmailPlaceholder = "your-email@domain.com";',
     );
     expect(
-      reviewPanel.split("placeholder={reviewEmailPlaceholder}"),
-    ).toHaveLength(4);
+      (reviewPanel.match(/placeholder=\{reviewEmailPlaceholder\}/g) || [])
+        .length,
+    ).toBe(1);
     expect(reviewPanel).not.toContain("placeholder={invitedEmail}");
+    expect(feedbackParts).toContain(
+      'placeholder="The email that received this review link"',
+    );
+    expect(feedbackParts).not.toContain("placeholder={invitedEmail}");
   });
 
   it("allows a rendered candidate to be previewed diagnostically when only visual quality missed", () => {

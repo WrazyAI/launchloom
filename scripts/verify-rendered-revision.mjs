@@ -380,6 +380,20 @@ try {
           : null,
         serviceOrdinals,
         assistantLabels,
+        feedbackImages: [...document.images]
+          .filter((image) => {
+            const source = image.getAttribute("src") || "";
+            return (
+              source.includes("/images/feedback/") ||
+              source.includes("/client-replacements/")
+            );
+          })
+          .map((image) => ({
+            src: image.getAttribute("src") || "",
+            naturalWidth: image.naturalWidth,
+            naturalHeight: image.naturalHeight,
+            visible: visible(image),
+          })),
       };
     });
     if (state.overflow > 1)
@@ -476,6 +490,15 @@ try {
         failures.push(
           `${viewport.name}: requested text is not visible: ${artifact.value.slice(0, 70)}.`,
         );
+      if (artifact.type === "image") {
+        const rendered = state.feedbackImages.find((image) =>
+          image.src.includes(artifact.path),
+        );
+        if (!rendered || rendered.naturalWidth < 1 || !rendered.visible)
+          failures.push(
+            `${viewport.name}: requested image is not rendered: ${artifact.path}.`,
+          );
+      }
       if (
         artifact.type === "class" &&
         !state.mainClasses.includes(artifact.marker)
@@ -543,10 +566,42 @@ try {
     }),
   ).toString("base64url");
   const submittedIds = [];
+  const submittedPayloads = [];
+  let uploadedFeedbackImage = false;
   let feedbackAttempt = 0;
+  await reviewPage.route("**/api/feedback-image", async (route) => {
+    const request = route.request();
+    if (
+      (request.headers()["content-type"] || "").includes("multipart/form-data")
+    ) {
+      uploadedFeedbackImage = true;
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          target: "hero",
+          url: `${new URL(url).origin}/images/feedback/hero-test.webp`,
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        model: "fal-ai/minimax/image-01",
+        images: [
+          { url: `${new URL(url).origin}/images/feedback-drafts/test.webp` },
+        ],
+      }),
+    });
+  });
   await reviewPage.route("**/api/feedback", async (route) => {
     const payload = JSON.parse(route.request().postData() || "{}");
     submittedIds.push(payload.submissionId);
+    submittedPayloads.push(payload);
     feedbackAttempt += 1;
     const rejected = feedbackAttempt === 1;
     await route.fulfill({
@@ -606,6 +661,35 @@ try {
     await reviewPage.screenshot({
       path: path.join(screenshotDir, "developer-feedback-draft.png"),
     });
+    // Select a structured part, attach a replacement image, and pick a brand
+    // color so the verification exercises the rich feedback payload.
+    await reviewRoot.locator('[data-part="hero"]').click();
+    await reviewRoot.locator('[data-part-file="hero"]').setInputFiles({
+      name: "hero.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+        "base64",
+      ),
+    });
+    await reviewRoot
+      .locator('[data-part-preview="hero"]')
+      .waitFor({ state: "visible", timeout: 5_000 })
+      .catch(() =>
+        failures.push("review: uploaded replacement image shows no preview."),
+      );
+    await reviewRoot.locator('[data-part="colors"]').click();
+    const primaryColor = reviewRoot.locator(".ll-color").first();
+    await primaryColor.locator('input[type="checkbox"]').check();
+    await primaryColor.locator('input[type="color"]').evaluate((input) => {
+      input.value = "#123456";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    if (!(await primaryColor.locator("code").textContent())?.includes("#123456"))
+      failures.push("review: color choice did not update its swatch value.");
+    await reviewPage.screenshot({
+      path: path.join(screenshotDir, "developer-feedback-structured.png"),
+    });
     await reviewRoot.locator(".ll-close").click();
     await reviewRoot.locator(".ll-feedback-open").click();
     if ((await comment.inputValue()) !== "Please refine the opening headline.")
@@ -634,8 +718,93 @@ try {
       failures.push(
         "review: queue-full retry did not retain its idempotent submission ID.",
       );
+    const structured = submittedPayloads[0] || {};
+    if (
+      !structured.details?.attachments?.some(
+        (attachment) =>
+          attachment.target === "hero" && attachment.kind === "upload",
+      )
+    )
+      failures.push("review: uploaded replacement was not submitted.");
+    if (
+      !structured.details?.colors?.some((color) => color.role === "primary")
+    )
+      failures.push("review: color choice was not submitted.");
+    if (!uploadedFeedbackImage)
+      failures.push("review: image upload endpoint was not called.");
   }
   await reviewPage.close();
+
+  // The signed client link uses the same banner with the bounded small-change
+  // form, including colour picking and generated replacement images.
+  const clientReviewPage = await browser.newPage({
+    viewport: { width: 1440, height: 1000 },
+    deviceScaleFactor: 1,
+  });
+  let clientGeneratedImage = false;
+  await clientReviewPage.route("**/api/feedback-image", async (route) => {
+    clientGeneratedImage = true;
+    await route.fulfill({
+      status: 201,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        model: "fal-ai/minimax/image-01",
+        images: [
+          { url: `${new URL(url).origin}/images/feedback-drafts/client.webp` },
+        ],
+      }),
+    });
+  });
+  const clientClaims = Buffer.from(
+    JSON.stringify({
+      stage: "client",
+      reviewerEmail: "client@example.com",
+    }),
+  ).toString("base64url");
+  await clientReviewPage.goto(`${url}?review=${clientClaims}.test-signature`, {
+    waitUntil: "networkidle",
+  });
+  const clientRoot = clientReviewPage.locator("#ll-review");
+  if (await clientRoot.isVisible()) {
+    await clientRoot.locator(".ll-feedback-open").click();
+    const categorySelect = clientRoot
+      .locator('.ll-client-fields select')
+      .first();
+    if (!(await categorySelect.isVisible()))
+      failures.push("review: client small-change categories are missing.");
+    await clientRoot
+      .locator('input[name="email"]')
+      .fill("client@example.com");
+    await categorySelect.selectOption("logo");
+    await clientRoot
+      .locator(".ll-client-fields textarea")
+      .first()
+      .fill("A minimal lighthouse mark in navy");
+    await clientRoot
+      .locator('.ll-client-fields button:has-text("Generate an image")')
+      .click();
+    await clientRoot
+      .locator(".ll-client-fields .ll-part-preview")
+      .waitFor({ state: "visible", timeout: 5_000 })
+      .catch(() =>
+        failures.push("review: client generated image shows no preview."),
+      );
+    await categorySelect.selectOption("color");
+    if (
+      !(await clientRoot
+        .locator('.ll-client-fields input[type="color"]')
+        .first()
+        .isVisible())
+    )
+      failures.push("review: client colour picker is missing.");
+    await clientReviewPage.screenshot({
+      path: path.join(screenshotDir, "client-feedback.png"),
+    });
+    if (!clientGeneratedImage)
+      failures.push("review: client generation endpoint was not called.");
+  }
+  await clientReviewPage.close();
 } finally {
   await browser.close();
   server.close();
