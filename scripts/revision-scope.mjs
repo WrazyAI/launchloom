@@ -127,6 +127,9 @@ if (action === "create-empty") {
     "src/generated-experiences/selected/Experience.jsx",
     "src/generated-experiences/selected/styles.css",
     "src/generated-experiences/selected/motion.js",
+    // Feedback replacements write content-hashed files here; validate the
+    // destination chain before the revision can materialize any image.
+    "public/images/feedback/preflight.webp",
     ...revisionTemplateWritePaths({
       business: { primaryCta: "get directions" },
       design: { experience: { packId: "preflight" } },
