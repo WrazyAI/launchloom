@@ -73,6 +73,22 @@ describe("RevisionCoordinator", () => {
     expect(dispatchCount).toBe(1);
   });
 
+  it("does not redispatch after GitHub accepted the request", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName("single-dispatch-test");
+    await coordinator.enqueue(request("request-single-dispatch", "Tighten the heading."));
+    expect(dispatchCount).toBe(1);
+
+    await runInDurableObject(coordinator, async (instance, state) => {
+      await instance.alarm();
+      const row = state.storage.sql.exec<{ status: string; dispatch_attempts: number }>(
+        "SELECT status, dispatch_attempts FROM revision_requests WHERE request_id = ?",
+        "request-single-dispatch",
+      ).toArray()[0];
+      expect(row).toEqual({ status: "dispatched", dispatch_attempts: 1 });
+    });
+    expect(dispatchCount).toBe(1);
+  });
+
   it("promotes exactly one queued request after completion", async () => {
     const coordinator = env.REVISION_COORDINATOR.getByName("promotion-test");
     await coordinator.enqueue(request("request-1001", "Refine the headline."));
