@@ -445,9 +445,12 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
         });
       }
       if (!costComplete) break;
-      if (costUsd >= maxUsd && queriesAttempted < selected.length) {
+      if (costUsd > maxUsd) {
         budgetExhausted = true;
-        warnings.push(`Fallback web search stopped at the configured $${maxUsd.toFixed(3)} spend bound after ${queriesAttempted} query(s).`);
+        warnings.push(`Fallback web search exceeded the configured ${maxUsd.toFixed(3)} spend bound on the final completed request; no additional fallback queries were issued.`);
+      } else if (costUsd >= maxUsd && queriesAttempted < selected.length) {
+        budgetExhausted = true;
+        warnings.push(`Fallback web search stopped at the configured ${maxUsd.toFixed(3)} spend bound after ${queriesAttempted} query(s).`);
       }
     } catch (error) {
       queriesAttempted += 1;
