@@ -819,6 +819,16 @@ describe("production experience author", () => {
     expect(css).not.toContain("--ink:");
   });
 
+  it("namespaces CSS variables when comments separate them from rule delimiters", () => {
+    const css = namespaceCreativeCss(
+      ".hero {\n  /* Candidate-local palette */\n  --primary: #123456;\n  color: var(--primary);\n}",
+    );
+
+    expect(css).toContain("--ll-creative-primary: #123456");
+    expect(css).toContain("color: var(--ll-creative-primary)");
+    expect(css).not.toContain("--primary:");
+  });
+
   it("authors three sealed and structurally independent candidate bundles", async () => {
     const result = await authorExperienceCandidates({
       site,
@@ -1172,6 +1182,27 @@ describe("production experience author", () => {
           "at validateProductionCandidateFiles (<workspace>/scripts/production-experience-author.mjs:1430:9)",
       },
     ]);
+  });
+
+  it("preserves sanitized candidate stacks when every authored route fails", async () => {
+    const routeError = new TypeError("Cannot read properties of undefined (reading 'kind')");
+    routeError.stack = [
+      "TypeError: Cannot read properties of undefined (reading 'kind')",
+      `    at inspectGeneratedNode (${process.cwd()}/scripts/production-experience-author.mjs:999:12)`,
+    ].join("\n");
+
+    await expect(
+      authorExperienceCandidates({
+        site,
+        inspirationPack,
+        generate: async (request) => {
+          if (request.stage === "experience") throw routeError;
+          return safeStage(request);
+        },
+      }),
+    ).rejects.toThrow(
+      /route-01:[\s\S]*inspectGeneratedNode \(<workspace>\/scripts\/production-experience-author\.mjs:999:12\)/u,
+    );
   });
 
   it("accepts sealed content destructured in the component parameter", async () => {

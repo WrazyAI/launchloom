@@ -1807,10 +1807,13 @@ function validateStyles(source, route) {
  * variables remain available when a candidate intentionally consumes them.
  */
 export function namespaceCreativeCss(source) {
+  const sourceWithoutComments = source.replace(/\/\*[\s\S]*?\*\//gu, "");
   const declared = new Set(
-    [...source.matchAll(/(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu)].map(
-      (match) => match[1],
-    ),
+    [
+      ...sourceWithoutComments.matchAll(
+        /(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu,
+      ),
+    ].map((match) => match[1]),
   );
   if (!declared.size) return source;
   return source.replace(/--[A-Za-z][\w-]*/gu, (token) =>
@@ -2368,10 +2371,17 @@ export async function authorExperienceCandidates({
     if (stack) failure.stack = stack;
     failures.push(failure);
   }
-  if (!candidates.length)
+  if (!candidates.length) {
+    const failureDetails = failures
+      .map(
+        ({ routeId, error, stack }) =>
+          `${routeId}: ${error}${stack ? `\n${stack}` : ""}`,
+      )
+      .join("\n\n");
     throw new Error(
-      `All creative candidates failed: ${failures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
+      `All creative candidates failed:\n${failureDetails}`,
     );
+  }
 
   return {
     version: 1,
