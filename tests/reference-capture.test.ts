@@ -268,6 +268,7 @@ describe("full-page reference screenshot stitching plan", () => {
         .toBuffer({ resolveWithObject: true });
       let redPixels = 0;
       let firstRedRow = info.height;
+      let firstRedColumn = info.width;
       for (let row = 0; row < info.height; row += 1)
         for (let column = 0; column < info.width; column += 1) {
           const index = (row * info.width + column) * 3;
@@ -277,7 +278,10 @@ describe("full-page reference screenshot stitching plan", () => {
             data[index + 2] < 90
           ) {
             redPixels += 1;
-            firstRedRow = Math.min(firstRedRow, row);
+            if (row < firstRedRow) {
+              firstRedRow = row;
+              firstRedColumn = column;
+            }
           }
         }
       if (firstRedRow < 1_200 || firstRedRow >= 1_300)
@@ -285,6 +289,13 @@ describe("full-page reference screenshot stitching plan", () => {
           "reference-capture-position-diagnostic",
           JSON.stringify({
             firstRedRow,
+            firstRedColumn,
+            redPixels,
+            rawInfo: info,
+            firstRedPixel:
+              firstRedRow < info.height
+                ? [...data.subarray((firstRedRow * info.width + firstRedColumn) * 3, (firstRedRow * info.width + firstRedColumn) * 3 + 12)]
+                : [],
             mobile: record.captures.mobile,
           }),
         );
