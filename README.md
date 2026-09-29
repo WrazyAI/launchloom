@@ -29,7 +29,7 @@ GitHub Actions secrets in `WrazyAI/launchloom`:
 | ------------------------------------------------ | ------------------------------------------------------------------- |
 | `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | Direct Pages deploys, Worker deploy, and R2 binding.                |
 | `LAUNCHLOOM_GITHUB_ORG_TOKEN`                    | Private client repositories, issues, pull requests, and dispatches. |
-| `OPENROUTER_API_KEY`                             | GLM 5.3 Flash generation in Actions only.                           |
+| `OPENROUTER_API_KEY`                             | Model generation plus bounded live SEO web-search fallback when DataForSEO is absent. |
 | `FAL_KEY`                                        | Optional server-only contextual image generation for missing client media. |
 | `GOOGLE_PLACES_API_KEY`                          | Places API (New) lookup and Geocoding API coverage enrichment.      |
 | `DATAFORSEO_LOGIN` / `DATAFORSEO_PASSWORD`       | Measured local SEO market research in generation Actions.            |
@@ -50,6 +50,8 @@ GitHub Actions variable:
 | `ONBOARDING_ACCESS_AUD`      | Audience ID of the Cloudflare Access application.                    |
 | `SEO_RESEARCH_MAX_TASKS`     | Optional DataForSEO task cap; defaults to `16`.                      |
 | `SEO_RESEARCH_MAX_USD`       | Optional DataForSEO spend cap; defaults to `0.25`.                    |
+| `SEO_FALLBACK_MAX_QUERIES`    | Optional live-search fallback cap; defaults to `3`, hard-capped at `5`. |
+| `SEO_FALLBACK_SEARCH_MODEL`   | OpenRouter model used only to invoke bounded server-side web search; defaults to `openai/gpt-6-luna`. |
 
 The Cloudflare token must be scoped to the account and permit Workers Scripts edit, Pages edit, and R2 edit. Because `wrangler.jsonc` attaches the ready API Worker to `api.launchloom.wrazyos.com`, it also needs Workers Routes edit and Zone DNS edit for `wrazyos.com` on the first deployment.
 
