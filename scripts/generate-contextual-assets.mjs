@@ -95,10 +95,31 @@ function clientAssetPath(site, placement) {
   return slot ? site.assets?.[slot] || "" : "";
 }
 
+function artDirectionPart(value) {
+  const candidate = text(value, 600);
+  if (!candidate) return "";
+  const labeledDirection = candidate.match(
+    /(?:design|visual|creative)\s+direction\s*:\s*(.+)$/iu,
+  )?.[1];
+  return (labeledDirection || candidate)
+    .split(/(?<=[.!?])\s+/u)
+    .map((sentence) => safePromptPart(sentence, 220))
+    .filter(Boolean)
+    .join(" ")
+    .slice(0, 500);
+}
+
 function visualDirection(site) {
   const style = site.style || {};
-  return [style.visualDirection, style.preference, style.tone]
-    .map((value) => safePromptPart(value, 180))
+  const design = site.design || {};
+  return [
+    safePromptPart(style.visualDirection, 180),
+    safePromptPart(style.preference, 120),
+    safePromptPart(style.tone, 120),
+    artDirectionPart(style.artDirection),
+    artDirectionPart(design.visualDirection),
+    artDirectionPart(design.artDirection),
+  ]
     .filter(Boolean)
     .join(", ");
 }

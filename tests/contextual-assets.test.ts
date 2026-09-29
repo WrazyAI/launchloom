@@ -106,6 +106,55 @@ describe("contextual image generation", () => {
     expect(reused.requests).toBe(0);
   });
 
+  it("does not reuse generated imagery after the client art direction changes", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-art-direction-"));
+    const manifestPath = join(outputDir, "generated-assets.json");
+    let requests = 0;
+    const prompts: string[] = [];
+    const falClient = {
+      config() {},
+      async subscribe(_model: string, options: { input: { prompt: string } }) {
+        requests += 1;
+        prompts.push(options.input.prompt);
+        return {
+          requestId: `art-direction-${requests}`,
+          data: { images: [{ url: `https://fal.example/art-${requests}.jpg` }] },
+        };
+      },
+    };
+    const inspiration = { routes: [{ id: "route-01", signature: "independent composition" }] };
+    const site = fixture();
+
+    await generate({
+      site,
+      inspiration,
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient,
+      fetchImpl: async () => fakeImageResponse(),
+      maxImages: 1,
+    });
+    site.style.artDirection =
+      "INTERNAL FICTIONAL CANARY ONLY. No public office. Do not claim emergency availability, certifications, reviews, warranty, prices, response times, staff, or outcomes. Design direction: a crisp technical identity using deep ink, warm white, and a small copper accent; favor a distinct diagrammatic or climate-map visual concept over a generic split hero.";
+
+    const revised = await generate({
+      site,
+      inspiration,
+      outputDir,
+      manifestPath,
+      key: "test-fal-key",
+      falClient,
+      fetchImpl: async () => fakeImageResponse(),
+      maxImages: 1,
+    });
+
+    expect(requests).toBe(2);
+    expect(revised.manifest.placements[0].reused).not.toBe(true);
+    expect(prompts[1]).toContain("diagrammatic or climate-map visual concept");
+    expect(prompts[1]).not.toContain("INTERNAL FICTIONAL CANARY ONLY");
+  });
+
   it("preserves client photos and only fills missing placements", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const site = fixture();
