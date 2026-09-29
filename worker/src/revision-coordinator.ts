@@ -80,7 +80,8 @@ export type EnqueueResult =
       code:
         | "revision_queue_full"
         | "creative_override_started"
-        | "revision_request_mismatch";
+        | "revision_request_mismatch"
+        | "revision_request_failed";
       error: string;
     };
 
@@ -1195,16 +1196,22 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       )
       .toArray()[0];
     if (duplicate) {
-      if (
-        duplicate.request_id === input.requestId &&
-        duplicate.fingerprint !== input.fingerprint
-      )
-        return {
-          ok: false,
-          code: "revision_request_mismatch",
-          error:
-            "This feedback retry no longer matches the request already recorded. Refresh the review page before sending another version.",
-        };
+      if (duplicate.request_id === input.requestId) {
+        if (duplicate.fingerprint !== input.fingerprint)
+          return {
+            ok: false,
+            code: "revision_request_mismatch",
+            error:
+              "This feedback retry no longer matches the request already recorded. Refresh the review page before sending another version.",
+          };
+        if (duplicate.status === "failed")
+          return {
+            ok: false,
+            code: "revision_request_failed",
+            error:
+              "This feedback was preserved, but its revision workflow could not start. The developer recovery queue must be cleared before it can continue.",
+          };
+      }
       return {
         ok: true,
         requestId: duplicate.request_id,
