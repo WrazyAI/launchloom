@@ -1,12 +1,99 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
 import {
   argumentValue,
   evaluateDraft,
+  generateSiteConfigWithModel,
   normalise,
   prepareGenerationIntake,
 } from "../scripts/generate-site-config.mjs";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+
+function repairOutcomeCandidate(heroHeading: string) {
+  return {
+    preset: "home-services",
+    business: {
+      name: "Riverview Mobile Auto Care",
+      tagline: "The shop comes to your driveway",
+      description:
+        "Appointment-based mobile vehicle care in Portland. Each visit starts with a documented inspection before recommendations.",
+    },
+    services: [
+      {
+        name: "Mobile vehicle diagnostics",
+        description:
+          "We scan warning lights and explain what the findings can and cannot tell you.",
+      },
+      {
+        name: "Brake inspection and repair",
+        description:
+          "We check brake wear and share a written estimate before any agreed work.",
+      },
+    ],
+    differentiators: [
+      "A documented inspection precedes recommendations.",
+      "An itemized estimate is shared before work begins.",
+    ],
+    copy: {
+      heroKicker: "Mobile auto care in Portland, OR",
+      heroHeading,
+      heroBody:
+        "Book mobile auto care for your vehicle and review inspection notes before any work is considered.",
+      servicesHeading: "Vehicle care, explained",
+      servicesIntro:
+        "Choose a confirmed service and review what it includes before booking.",
+      aboutHeading: "Clear steps before any work",
+      aboutBody:
+        "Appointment-based mobile service brings vehicle inspections to Portland drivers.",
+      contactHeading: "Request a service appointment",
+      formIntro:
+        "Share your vehicle and preferred appointment details so the team can confirm the next step.",
+    },
+    conversion: {
+      process: [
+        "Share the vehicle details and concern.",
+        "The team confirms whether the service and location are a fit.",
+        "Review findings and the estimate before approving work.",
+      ],
+      faqs: [
+        {
+          question: "What happens during the first appointment?",
+          answer:
+            "The visit begins with a documented inspection and a discussion of the next step before work is considered.",
+        },
+        {
+          question: "When do I approve repairs?",
+          answer:
+            "An itemized estimate is presented before work begins so you can review the scope and decide.",
+        },
+      ],
+    },
+  };
+}
+
+function stubCopyModelResponses(
+  candidates: ReturnType<typeof repairOutcomeCandidate>[],
+) {
+  vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+  const remaining = [...candidates];
+  const fetchMock = vi.fn(async () => {
+    const content = remaining.shift();
+    return new Response(
+      JSON.stringify({
+        choices: [{ message: { content: JSON.stringify(content) } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
 
 describe("site configuration", () => {
   it("keeps an explicit HVAC niche ahead of incidental care wording in intake notes", () => {
@@ -1027,6 +1114,74 @@ describe("site configuration", () => {
         expect.stringMatching(/visitor journey/i),
       ]),
     );
+  });
+
+  it("blocks repair-outcome copy when the client explicitly prohibited those claims", () => {
+    const intake = {
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      differentiators:
+        "Documented inspection before recommendations. Itemized estimate before work.",
+      brandNotes:
+        "Do not claim emergency availability, warranties, prices, or repair outcomes.",
+    };
+    const prohibited = normalise({}, intake);
+    prohibited.copy.heroHeading = "Your Car Gets Fixed Where It Sits";
+    expect(evaluateDraft(prohibited).issues).toContain(
+      "Generated copy includes a repair outcome prohibited by the client art direction.",
+    );
+
+    const cautious = normalise({}, intake);
+    cautious.copy.heroHeading = "Mobile auto care for Portland drivers";
+    expect(evaluateDraft(cautious).issues).not.toContain(
+      "Generated copy includes a repair outcome prohibited by the client art direction.",
+    );
+  });
+
+  it("selects a safe refined draft over the original prohibited claim", async () => {
+    const fetchMock = stubCopyModelResponses([
+      repairOutcomeCandidate("Your Car Gets Fixed Where It Sits"),
+      repairOutcomeCandidate("Mobile auto care for Portland drivers"),
+    ]);
+    const config = await generateSiteConfigWithModel({
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+      differentiators:
+        "Documented inspection before recommendations.\nItemized estimate before work.",
+      brandNotes:
+        "Do not claim emergency availability, warranties, prices, or repair outcomes.",
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(config.copy.heroHeading).toBe("Mobile auto care for Portland drivers");
+    expect(config.qualityReport.issues).not.toContain(
+      "Generated copy includes a repair outcome prohibited by the client art direction.",
+    );
+  });
+
+  it("fails closed if copy refinement keeps an explicitly prohibited repair outcome", async () => {
+    const prohibited = repairOutcomeCandidate("Your Car Gets Fixed Where It Sits");
+    const fetchMock = stubCopyModelResponses([prohibited, prohibited]);
+
+    await expect(
+      generateSiteConfigWithModel({
+        businessName: "Riverview Mobile Auto Care",
+        industry: "auto-repair",
+        services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+        serviceAreas: "Portland, OR",
+        phone: "(503) 555-0146",
+        differentiators:
+          "Documented inspection before recommendations.\nItemized estimate before work.",
+        brandNotes:
+          "Do not claim emergency availability, warranties, prices, or repair outcomes.",
+      }),
+    ).rejects.toThrow(/explicit repair-outcome prohibition/i);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("matches generated service copy by service identity instead of array position", () => {
