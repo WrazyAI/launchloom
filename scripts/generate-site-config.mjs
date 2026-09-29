@@ -586,7 +586,7 @@ const BUSINESS_KIND_PROFILES = [
   {
     businessKind: "veterinary",
     industry: "wellness",
-    aliases: ["veterinary", "veterinarian", "vet", "vet-clinic", "animal-clinic", "animal-hospital", "pet-care"],
+    aliases: ["veterinary", "veterinarian", "vet", "vet-clinic", "animal-clinic", "animal-hospital", "pet-clinic"],
     facts: /\b(?:veterinar\w*|vet clinic|animal clinic|animal hospital|animal medical center|pet clinic|pet hospital)\b/iu,
   },
 ];

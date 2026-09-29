@@ -32,4 +32,8 @@ it("supports a preview-only workflow-dispatch canary without a production-branch
     '--branch review-initial --commit-hash "$FINAL_BUILD_SHA"',
   );
   expect(workflow).toContain("CREATIVE_EXPERIENCE_MODE");
+  expect(workflow).toContain("id: authoring");
+  expect(workflow).toContain("steps.authoring.outcome == 'failure'");
+  expect(workflow).toContain('EVIDENCE_SOURCE="$RUNNER_TEMP/reusable-authored-candidates"');
+  expect(workflow).toContain('echo "evidence_branch=review/initial" >> "$GITHUB_OUTPUT"');
 });

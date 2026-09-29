@@ -309,6 +309,18 @@ describe("site configuration", () => {
     expect(config.copy.aboutBody).toContain("goal, constraints, and questions");
   });
 
+  it("keeps generic pet-care intake out of the veterinary reference niche", () => {
+    const config = normalise({}, {
+      businessName: "Moss and Mane Pet Care",
+      industry: "pet-care",
+      services: "Dog grooming\nCat boarding\nPet sitting",
+      serviceAreas: "Portland, Oregon",
+    });
+
+    expect(config.industry).toBe("other");
+    expect(config.businessKind).toBe("other");
+  });
+
   it("does not classify a barber as a pet business because of grooming language", () => {
     const config = normalise({}, {
       businessName: "Northline Barber Studio",

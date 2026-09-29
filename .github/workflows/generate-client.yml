@@ -393,6 +393,7 @@ jobs:
           fi
           node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
       - name: Author independent experience candidates
+        id: authoring
         # Luna authors three independent candidates in separate stages. Keep
         # the runner timeout above the author's internal fail-closed budget
         # so Actions cannot terminate a valid creative run early.
@@ -463,7 +464,7 @@ jobs:
           fi
       - name: Prepare private creative-recovery report
         id: creative_recovery
-        if: failure() && steps.branch.outputs.dir != '' && (steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
+        if: failure() && steps.branch.outputs.dir != '' && (steps.authoring.outcome == 'failure' || steps.creative_render.outcome == 'failure' || steps.authored_evidence.outcome == 'failure')
         continue-on-error: true
         run: |
           cd "${{ steps.branch.outputs.dir }}"
@@ -472,7 +473,15 @@ jobs:
           # Keep source, screenshots, and findings in the client's private repo.
           # They must not be uploaded as artifacts from this public repository.
           mkdir -p .launchloom/generated-experiences
-          cp -R /tmp/generated-experiences/. .launchloom/generated-experiences/
+          EVIDENCE_SOURCE=""
+          if [ -d /tmp/generated-experiences ]; then
+            EVIDENCE_SOURCE=/tmp/generated-experiences
+          elif [ -d "$RUNNER_TEMP/reusable-authored-candidates" ]; then
+            EVIDENCE_SOURCE="$RUNNER_TEMP/reusable-authored-candidates"
+          fi
+          if [ -n "$EVIDENCE_SOURCE" ]; then
+            cp -R "$EVIDENCE_SOURCE/." .launchloom/generated-experiences/
+          fi
           git add .launchloom/generated-experiences
           if [ -d .launchloom/creative-repair ]; then git add .launchloom/creative-repair; fi
           if ! git diff --cached --quiet; then
@@ -488,6 +497,8 @@ jobs:
               echo "Could not push private recovery evidence branch $EVIDENCE_BRANCH." >&2
               exit 1
             fi
+          elif [ -n "$EVIDENCE_SOURCE" ]; then
+            echo "evidence_branch=review/initial" >> "$GITHUB_OUTPUT"
           fi
           RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-recovery.mjs" \
             --site-dir "$PWD" \
