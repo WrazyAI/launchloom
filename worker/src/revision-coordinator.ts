@@ -1,5 +1,11 @@
 import { DurableObject } from "cloudflare:workers";
 import { renderLifecycleEmail } from "../../emails/render-email.mjs";
+import {
+  encodeFeedbackStructureMarker,
+  feedbackStructureIsEmpty,
+  feedbackStructureSummary,
+  parseFeedbackStructure,
+} from "./feedback-structure";
 
 export type RevisionStage = "developer" | "client";
 export type QueueStatus =
@@ -24,8 +30,12 @@ export interface RevisionRequestInput {
   reviewedPage: string;
   category: string;
   feedback: string;
+  structure?: string;
   creativeRepairSessionId?: string;
 }
+
+export const MAX_FEEDBACK_STRUCTURE_LENGTH = 6_000;
+export const FEEDBACK_IMAGE_DAILY_LIMIT = 12;
 
 type RevisionRow = {
   request_id: string;
@@ -39,6 +49,7 @@ type RevisionRow = {
   reviewed_page: string;
   category: string;
   feedback: string;
+  structure: string | null;
   comment_id: number | null;
   status: QueueStatus;
   created_at: number;
@@ -296,6 +307,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           reviewed_page TEXT NOT NULL,
           category TEXT NOT NULL,
           feedback TEXT NOT NULL,
+          structure TEXT,
           comment_id INTEGER,
           status TEXT NOT NULL CHECK(status IN ('dispatching','dispatched','running','queued','completed','failed')),
           created_at INTEGER NOT NULL,
@@ -311,6 +323,11 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           visitor_key TEXT PRIMARY KEY,
           window_started_at INTEGER NOT NULL,
           request_count INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS feedback_image_usage (
+          scope TEXT PRIMARY KEY,
+          window_started_at INTEGER NOT NULL,
+          image_count INTEGER NOT NULL
         );
         CREATE TABLE IF NOT EXISTS creative_repair_sessions (
           session_id TEXT PRIMARY KEY,
@@ -361,6 +378,16 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           updated_at INTEGER NOT NULL
         );
       `);
+      // Durable Objects created before structured feedback keep their original
+      // table. A duplicate-column failure is the expected no-op on current
+      // objects, so the migration is intentionally idempotent.
+      try {
+        this.ctx.storage.sql.exec(
+          "ALTER TABLE revision_requests ADD COLUMN structure TEXT",
+        );
+      } catch {
+        // The structure column already exists.
+      }
     });
   }
 
@@ -810,6 +837,47 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     return { allowed: true, retryAfterSeconds: 0 };
   }
 
+  async allowFeedbackImage(
+    count = 1,
+    now = Date.now(),
+  ): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
+    const windowMs = 24 * 60 * 60_000;
+    const limit = FEEDBACK_IMAGE_DAILY_LIMIT;
+    const scope = "feedback-image";
+    const existing = this.ctx.storage.sql
+      .exec<{
+        window_started_at: number;
+        image_count: number;
+      }>(
+        "SELECT window_started_at, image_count FROM feedback_image_usage WHERE scope = ?",
+        scope,
+      )
+      .toArray()[0];
+    if (!existing || now - existing.window_started_at >= windowMs) {
+      this.ctx.storage.sql.exec(
+        "INSERT INTO feedback_image_usage (scope, window_started_at, image_count) VALUES (?, ?, ?) ON CONFLICT(scope) DO UPDATE SET window_started_at = excluded.window_started_at, image_count = excluded.image_count",
+        scope,
+        now,
+        Math.max(1, count),
+      );
+      return { allowed: true, retryAfterSeconds: 0 };
+    }
+    if (existing.image_count + count > limit)
+      return {
+        allowed: false,
+        retryAfterSeconds: Math.max(
+          1,
+          Math.ceil((windowMs - (now - existing.window_started_at)) / 1000),
+        ),
+      };
+    this.ctx.storage.sql.exec(
+      "UPDATE feedback_image_usage SET image_count = image_count + ? WHERE scope = ?",
+      Math.max(1, count),
+      scope,
+    );
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
   private async promoteQueued(): Promise<RevisionRow | undefined> {
     const promoted = this.ctx.storage.sql
       .exec<RevisionRow>(
@@ -847,10 +915,18 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     );
     if (duplicate) return duplicate.id;
     const category = row.category ? ` · ${row.category}` : "";
+    const structure = parseFeedbackStructure(row.structure);
+    const structureMarker = feedbackStructureIsEmpty(structure)
+      ? ""
+      : `<!-- launchloom-feedback-structure:${encodeFeedbackStructureMarker(JSON.stringify(structure))} -->\n`;
+    const structureLines = feedbackStructureSummary(structure);
+    const structureSummary = structureLines.length
+      ? `\n\n_Requested changes:_\n${structureLines.join("\n")}`
+      : "";
     return github(this.env, `/repos/${row.repo}/issues/${issue}/comments`, {
       method: "POST",
       body: JSON.stringify({
-        body: `<!-- launchloom-feedback:${row.stage} -->\n${marker}\n**${row.stage === "developer" ? "Developer" : "Client"} feedback${category}**\n\n${row.feedback}\n\n_Page: ${row.reviewed_page}_`,
+        body: `<!-- launchloom-feedback:${row.stage} -->\n${structureMarker}${marker}\n**${row.stage === "developer" ? "Developer" : "Client"} feedback${category}**\n\n${row.feedback}${structureSummary}\n\n_Page: ${row.reviewed_page}_`,
       }),
     })
       .then((response) => response.json() as Promise<{ id: number }>)
@@ -989,8 +1065,9 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     this.ctx.storage.sql.exec(
       `INSERT INTO revision_requests (
         request_id, fingerprint, stage, repo, pr, feedback_issue, site_id,
-        client_email, reviewed_page, category, feedback, status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        client_email, reviewed_page, category, feedback, structure, status,
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       input.requestId,
       input.fingerprint,
       input.stage,
@@ -1002,6 +1079,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       input.reviewedPage,
       input.category,
       input.feedback,
+      input.structure || null,
       status,
       now,
     );
@@ -1102,7 +1180,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       }
     }
     this.ctx.storage.sql.exec(
-      "UPDATE revision_requests SET feedback = '', category = '' WHERE status = 'completed' AND completed_at < ?",
+      "UPDATE revision_requests SET feedback = '', category = '', structure = NULL WHERE status = 'completed' AND completed_at < ?",
       Date.now() - RETENTION_MS,
     );
     return {

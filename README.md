@@ -10,8 +10,8 @@ LaunchLoom creates private, config-driven Astro websites for local businesses. T
 ## Architecture
 
 - **Cloudflare Pages Direct Upload** serves the Astro platform and every generated static client site. Cloudflare never reads the private GitHub repositories.
-- **One Cloudflare Worker** at `api.launchloom.wrazyos.com` handles onboarding intake, Google Places lookup, R2 uploads, review feedback, exact-commit approval, and client lead forms.
-- **R2** stores customer-uploaded logos and photos under an opaque submission prefix. Generated sites use `assets.launchloom.wrazyos.com` URLs.
+- **One Cloudflare Worker** at `api.launchloom.wrazyos.com` handles onboarding intake, Google Places lookup, R2 uploads, target-based review feedback, review image uploads and draft generation, exact-commit approval, and client lead forms.
+- **R2** stores customer-uploaded logos and photos under an opaque submission prefix, plus review attachment uploads (`feedback/`) and generated image drafts (`feedback-drafts/`). Generated sites use `assets.launchloom.wrazyos.com` URLs.
 - **GitHub Actions** runs OpenRouter generation, creates a private WrazyAI repository and review pull request, uploads built files to Pages, processes feedback, and publishes after approval.
 - **Resend** sends initial and revised preview links only to the developer. Once the developer approves an exact commit, it sends the client a production review link from `LaunchLoom <info@wrazyos.com>`. Client-feedback notifications go to `david@maigreeks.com` with the client as Reply-To.
 
@@ -30,7 +30,7 @@ GitHub Actions secrets in `WrazyAI/launchloom`:
 | `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | Direct Pages deploys, Worker deploy, and R2 binding.                |
 | `LAUNCHLOOM_GITHUB_ORG_TOKEN`                    | Private client repositories, issues, pull requests, and dispatches. |
 | `OPENROUTER_API_KEY`                             | GLM 5.3 Flash generation in Actions only.                           |
-| `FAL_KEY`                                        | Optional server-only contextual image generation for missing client media. |
+| `FAL_KEY`                                        | Optional server-only image generation for missing client media and review-time image drafts. The deploy workflow also writes it to the Worker when set; without it, reviewers can still upload replacements. |
 | `GOOGLE_PLACES_API_KEY`                          | Places API (New) lookup and Geocoding API coverage enrichment.      |
 | `DATAFORSEO_LOGIN` / `DATAFORSEO_PASSWORD`       | Measured local SEO market research in generation Actions.            |
 | `ONBOARDING_INVITE_SIGNING_SECRET`               | Signed, one-use onboarding invitation links.                         |
@@ -55,7 +55,7 @@ The Cloudflare token must be scoped to the account and permit Workers Scripts ed
 
 ## Deploy order
 
-1. Confirm the Pages platform and R2 custom domains are active, and add the required application secrets above. Add `FAL_KEY` only when contextual image generation is enabled; it is optional and never blocks an intake.
+1. Confirm the Pages platform and R2 custom domains are active, and add the required application secrets above. Add `FAL_KEY` when contextual or review-time image generation is enabled; it is optional and never blocks an intake or review.
 2. Run **Deploy LaunchLoom platform**. It writes Worker secrets, deploys `launchloom-api`, attaches the API custom domain, then direct-uploads the platform to the existing `launchloom` Pages project.
 3. Configure the private Access application from [private onboarding setup](docs/private-onboarding.md). Confirm that `https://launchloom-onboarding.pages.dev/onboard/` can call `https://api.launchloom.wrazyos.com/api/places` with an invitation.
 4. Use a fictional intake first. The generation action creates a private client repository and a private-source / public-URL Pages project, deploys `review-initial.<project>.pages.dev`, then emails only the developer. Developer approval merges and publishes that exact commit before the client is invited. Client feedback creates another internal developer preview; only a further developer approval can update production.
@@ -64,7 +64,7 @@ Existing Netlify sites are intentionally untouched during this migration. Keep t
 
 ## Security model
 
-The Worker only accepts platform-origin intake/upload/Places calls. Review and lead requests use signed, expiring claims and must be sent from an origin embedded in the claim; review feedback additionally requires the exact invited email. Both forms include honeypots and strict request/data limits. Add a Turnstile site key and `TURNSTILE_SECRET_KEY` when ready—the Worker already verifies Turnstile when that secret is present. Use the single free-plan WAF rate rule for `/api/*` as an account-wide baseline.
+The Worker only accepts platform-origin intake/upload/Places calls. Review and lead requests use signed, expiring claims and must be sent from an origin embedded in the claim; review feedback and review image uploads or generation additionally require the exact invited email. Both forms include honeypots and strict request/data limits. Add a Turnstile site key and `TURNSTILE_SECRET_KEY` when ready—the Worker already verifies Turnstile when that secret is present. Use the single free-plan WAF rate rule for `/api/*` as an account-wide baseline.
 
 ## Local development
 

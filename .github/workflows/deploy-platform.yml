@@ -18,6 +18,7 @@ jobs:
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       LEAD_SIGNING_SECRET: ${{ secrets.LEAD_SIGNING_SECRET }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      FAL_KEY: ${{ secrets.FAL_KEY }}
       GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
@@ -45,6 +46,11 @@ jobs:
           for key in GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET OPENROUTER_API_KEY GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL REVISION_COORDINATOR_SECRET ONBOARDING_INVITE_SIGNING_SECRET; do
             printf '%s' "${!key}" | npx wrangler secret put "$key"
           done
+          # Optional: enables review-time image generation. Reviewers can still
+          # upload their own replacement images without it.
+          if [ -n "${FAL_KEY:-}" ]; then
+            printf '%s' "$FAL_KEY" | npx wrangler secret put FAL_KEY
+          fi
       - name: Build platform
         run: npm run build
       - name: Prepare invite-only onboarding Pages bundle

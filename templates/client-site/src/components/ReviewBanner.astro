@@ -3,6 +3,14 @@ import site from "../lib/site";
 
 const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$/, "");
 const publishReady = !site.seoResearch || site.seoResearch.publishReady;
+const palette = {
+  primary: site.style?.primaryColor || "",
+  surface: site.style?.surfaceColor || "",
+  hero: site.style?.heroColor || "",
+  ink: site.style?.inkColor || "",
+  muted: site.style?.mutedColor || "",
+  line: site.style?.lineColor || "",
+};
 const { diagnosticPreview = false } = Astro.props;
 ---
 
@@ -35,12 +43,12 @@ const { diagnosticPreview = false } = Astro.props;
       </div>
       <h2 id="ll-review-title">What would you like changed?</h2>
       <p class="ll-review__intro">Tap what applies, then leave a clear note.</p>
-      <div class="ll-categories" aria-label="Feedback category">
-        <button type="button" data-category="Logo" aria-pressed="false">Logo</button><button type="button" data-category="Phone number" aria-pressed="false">Phone number</button><button type="button" data-category="Hero image" aria-pressed="false">Hero image</button><button type="button" data-category="Wording" aria-pressed="false">Wording</button><button type="button" data-category="Colors" aria-pressed="false">Colors</button><button type="button" data-category="Services" aria-pressed="false">Services</button><button type="button" data-category="Photos" aria-pressed="false">Photos</button>
-      </div>
       <form class="ll-feedback-form">
         <label>Your review email<input type="email" name="email" required autocomplete="email" placeholder="The email we sent this link to" /></label>
-        <label>What should change?<textarea name="comment" required maxlength="5000" placeholder="For example: Make the main headline more direct and use a warmer hero photo."></textarea></label>
+        <div class="ll-parts" aria-label="Feedback part"></div>
+        <div class="ll-part-sections"></div>
+        <div class="ll-client-fields" hidden></div>
+        <label class="ll-general-note">Anything else?<textarea name="comment" maxlength="5000" placeholder="For example: Keep the overall direction, but make the service choices easier to scan."></textarea></label>
         <p class="ll-feedback-status" role="status"></p>
         <div class="ll-modal-actions"><button class="ll-cancel" type="button">Back</button><button class="ll-send" type="submit">Send feedback</button></div>
       </form>
@@ -100,7 +108,201 @@ const { diagnosticPreview = false } = Astro.props;
   }
 </style>
 
-<script is:inline define:vars={{ launchloomUrl, publishReady }}>
+<style is:global>
+  .ll-parts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 16px;
+  }
+
+  .ll-part-chip {
+    border: 1px solid #cfd8cf;
+    border-radius: 999px;
+    padding: 8px 13px;
+    background: transparent;
+    color: #40594e;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .ll-part-chip[aria-pressed="true"] {
+    border-color: #367a65;
+    background: #eff7ee;
+    color: #1e5b47;
+  }
+
+  .ll-part {
+    margin: 0 0 14px;
+    padding: 14px;
+    border: 1px solid #d9e2da;
+    border-radius: 12px;
+    background: #fbfdfb;
+  }
+
+  .ll-part h3 {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+  }
+
+  .ll-part label,
+  .ll-client-fields label {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.82rem;
+    font-weight: 650;
+    color: #304c43;
+  }
+
+  .ll-part textarea,
+  .ll-part input[type="file"],
+  .ll-part input[type="email"],
+  .ll-client-fields textarea,
+  .ll-client-fields input[type="file"],
+  .ll-client-fields input[type="email"],
+  .ll-client-fields select {
+    width: 100%;
+    margin-top: 5px;
+  }
+
+  .ll-part textarea,
+  .ll-client-fields textarea,
+  .ll-client-fields select {
+    font: inherit;
+    font-weight: 400;
+    padding: 8px 10px;
+    border: 1px solid #cfd8cf;
+    border-radius: 8px;
+    resize: vertical;
+  }
+
+  .ll-part textarea,
+  .ll-client-fields textarea {
+    min-height: 58px;
+  }
+
+  .ll-part-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 8px;
+    border: 1px solid #d9e2da;
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .ll-part-preview img {
+    width: 84px;
+    height: 62px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: #eef2ee;
+  }
+
+  .ll-part-preview strong {
+    display: block;
+    font-size: 0.8rem;
+  }
+
+  .ll-part-clear {
+    margin-top: 4px;
+    border: 0;
+    padding: 0;
+    background: none;
+    color: #8f2118;
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .ll-part-status {
+    margin: 8px 0 0;
+    font-size: 0.76rem;
+    font-weight: 550;
+    color: #52645b;
+  }
+
+  .ll-generate {
+    margin-top: 10px;
+    border: 1px solid #367a65;
+    border-radius: 8px;
+    padding: 8px 12px;
+    background: #eff7ee;
+    color: #1e5b47;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .ll-generate:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  .ll-toggle {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600 !important;
+  }
+
+  .ll-colors {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .ll-part .ll-color,
+  .ll-client-fields .ll-color {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 9px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #304c43;
+  }
+
+  .ll-color code {
+    font-size: 0.72rem;
+    color: #68766f;
+  }
+
+  .ll-advanced {
+    margin-top: 10px;
+    border: 0;
+    padding: 0;
+    background: none;
+    color: #1e5b47;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .ll-client-fields {
+    display: grid;
+    gap: 4px;
+  }
+
+  .ll-parts[hidden],
+  .ll-part-sections[hidden],
+  .ll-client-fields[hidden],
+  .ll-part[hidden],
+  .ll-part-preview[hidden],
+  .ll-client-fields [hidden] {
+    display: none !important;
+  }
+</style>
+
+<script is:inline define:vars={{ launchloomUrl, publishReady, palette }}>
   const root = document.querySelector("#ll-review");
   const diagnosticPreview = root?.getAttribute("data-diagnostic-preview") === "true";
   const token = new URLSearchParams(window.location.search).get("review");
@@ -115,6 +317,28 @@ const { diagnosticPreview = false } = Astro.props;
   if (!root || !token || !launchloomUrl || !["developer", "client"].includes(claims?.stage) || (diagnosticPreview && !diagnosticReview)) {
     root?.setAttribute("hidden", "");
   } else {
+    const labelFor = (id) =>
+      IMAGE_PARTS.find((part) => part.id === id)?.label ||
+      TEXT_PARTS.find((part) => part.id === id)?.label ||
+      (id === "colors" ? "Colors" : id);
+    const compressFeedbackImage = async (file) => {
+      if (!file.type.startsWith("image/") || file.size < 900_000) return file;
+      try {
+        const bitmap = await createImageBitmap(file);
+        const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        bitmap.close();
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/webp", 0.82));
+        return blob
+          ? new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), { type: "image/webp" })
+          : file;
+      } catch {
+        return file;
+      }
+    };
     if (!diagnosticPreview) root.removeAttribute("hidden");
     const modal = root.querySelector(".ll-review__modal");
     const open = root.querySelector(".ll-feedback-open");
@@ -133,19 +357,816 @@ const { diagnosticPreview = false } = Astro.props;
     const emailInput = form.querySelector('input[name="email"]');
     const commentInput = form.querySelector('textarea[name="comment"]');
     const send = form.querySelector(".ll-send");
-    const selectedCategories = new Set();
+    const partsHost = root.querySelector(".ll-parts");
+    const sectionsHost = root.querySelector(".ll-part-sections");
+    const clientFields = root.querySelector(".ll-client-fields");
     let feedbackSubmissionId = "";
+
+    const setStatusText = (text) => { status.textContent = text; };
     const updateDraftHint = () => {
       const hasDraft = Boolean(
-        selectedCategories.size ||
-        commentInput.value.trim()
+        commentInput.value.trim() ||
+        (developer && selectedParts.size) ||
+        (developer && Object.values(notes).some((value) => String(value || "").trim())) ||
+        (developer && Object.values(colorChoices).some((choice) => choice.enabled)) ||
+        (!developer && (clientFile || clientGenerated || clientColors.some((choice) => choice.enabled)))
       );
       closeTip.toggleAttribute("hidden", !hasDraft);
       if (hasDraft) close.setAttribute("aria-describedby", "ll-close-draft-tip");
       else close.removeAttribute("aria-describedby");
     };
+
+    // ---------------------------------------------------------------- client
+    const CLIENT_COLORS = [
+      { id: "primary", label: "Brand or accent color", fallback: "#205d51" },
+      { id: "surface", label: "Page background", fallback: "#f8f6f0" },
+    ];
+    const CLIENT_PHOTO_TARGETS = [
+      { id: "hero", label: "Opening or hero image" },
+      { id: "secondary", label: "About or story image" },
+      { id: "tertiary", label: "Gallery image" },
+      { id: "team", label: "Team photo" },
+    ];
+    let clientCategory = "text";
+    let clientTarget = "hero";
+    let clientFile = null;
+    let clientGenerated = null;
+    const clientColors = CLIENT_COLORS.map((role) => ({
+      ...role,
+      enabled: false,
+      hex: /^#[0-9a-f]{6}$/i.test(palette[role.id] || "") ? palette[role.id] : role.fallback,
+    }));
+    let clientCategorySelect = null;
+    let clientTargetSelect = null;
+    let clientImageHost = null;
+    let clientColorHost = null;
+    let clientFileInput = null;
+    let clientPrompt = null;
+    let clientGenerateButton = null;
+    let clientPreview = null;
+    let clientPreviewImage = null;
+    let clientPreviewLabel = null;
+    let clientStatus = null;
+    let clientPreviewUrl = "";
+    let clientColorSection = null;
+
+    function setClientImageVisibility() {
+      const imageCategory = clientCategory === "logo" || clientCategory === "photos";
+      if (clientImageHost) clientImageHost.hidden = !imageCategory;
+      if (clientColorSection) clientColorSection.hidden = clientCategory !== "color";
+    }
+
+    function renderClientColors() {
+      if (!clientColorHost) return;
+      clientColorHost.innerHTML = "";
+      for (const role of clientColors) {
+        const row = document.createElement("label");
+        row.className = "ll-color";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = role.enabled;
+        const picker = document.createElement("input");
+        picker.type = "color";
+        picker.value = role.hex;
+        picker.disabled = !role.enabled;
+        const code = document.createElement("code");
+        code.textContent = role.hex.toUpperCase();
+        const sync = () => {
+          picker.value = role.hex;
+          picker.disabled = !role.enabled;
+          code.textContent = role.hex.toUpperCase();
+        };
+        checkbox.addEventListener("change", () => {
+          role.enabled = checkbox.checked;
+          sync();
+          updateDraftHint();
+        });
+        picker.addEventListener("input", () => {
+          role.hex = picker.value;
+          role.enabled = true;
+          checkbox.checked = true;
+          sync();
+          updateDraftHint();
+        });
+        const label = document.createElement("span");
+        label.textContent = role.label;
+        row.append(checkbox, label, picker, code);
+        clientColorHost.append(row);
+      }
+    }
+
+    function renderClientTargets() {
+      if (!clientTargetSelect) return;
+      const options = clientCategory === "logo"
+        ? [{ id: "logo", label: "Logo or brand mark" }]
+        : CLIENT_PHOTO_TARGETS;
+      clientTargetSelect.innerHTML = "";
+      for (const option of options) {
+        const element = document.createElement("option");
+        element.value = option.id;
+        element.textContent = option.label;
+        clientTargetSelect.append(element);
+      }
+      clientTarget = options[0].id;
+      clientTargetSelect.value = clientTarget;
+    }
+
+    function renderClientPreview() {
+      if (!clientPreview) return;
+      const chosen = Boolean(clientGenerated || clientFile);
+      clientPreview.hidden = !chosen;
+      if (clientPreviewUrl) {
+        URL.revokeObjectURL(clientPreviewUrl);
+        clientPreviewUrl = "";
+      }
+      if (!chosen) return;
+      if (clientGenerated) {
+        clientPreviewImage.src = clientGenerated.url;
+        clientPreviewLabel.textContent = "Generated image selected";
+        return;
+      }
+      clientPreviewUrl = URL.createObjectURL(clientFile);
+      clientPreviewImage.src = clientPreviewUrl;
+      clientPreviewLabel.textContent = `Uploaded image selected (${clientFile?.name || "file"})`;
+    }
+
+    function buildClientForm() {
+      clientCategorySelect = document.createElement("select");
+      for (const [value, label] of [
+        ["logo", "Logo"],
+        ["photos", "Business photos"],
+        ["style", "Font or styling"],
+        ["color", "Colour"],
+        ["text", "Text or factual correction"],
+        ["contact", "Contact details"],
+        ["other-small", "Other small change"],
+      ]) {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = label;
+        clientCategorySelect.append(option);
+      }
+      const categoryLabel = document.createElement("label");
+      categoryLabel.textContent = "What kind of change is this?";
+      categoryLabel.append(clientCategorySelect);
+
+      clientImageHost = document.createElement("div");
+      clientImageHost.hidden = true;
+      const targetLabel = document.createElement("label");
+      targetLabel.textContent = "Which image?";
+      clientTargetSelect = document.createElement("select");
+      targetLabel.append(clientTargetSelect);
+      const fileLabel = document.createElement("label");
+      fileLabel.textContent = "Upload your own image";
+      clientFileInput = document.createElement("input");
+      clientFileInput.type = "file";
+      clientFileInput.accept = "image/png,image/jpeg,image/webp";
+      fileLabel.append(clientFileInput);
+      const fileNote = document.createElement("small");
+      fileNote.textContent = "PNG, JPEG, or WebP under 8 MB.";
+      const promptLabel = document.createElement("label");
+      promptLabel.textContent = "Or describe an image to generate";
+      clientPrompt = document.createElement("textarea");
+      clientPrompt.maxLength = 500;
+      clientPrompt.placeholder = "For example: a warm photo of the finished work, no text.";
+      promptLabel.append(clientPrompt);
+      clientGenerateButton = document.createElement("button");
+      clientGenerateButton.type = "button";
+      clientGenerateButton.className = "ll-generate";
+      clientGenerateButton.textContent = "Generate an image";
+      clientPreview = document.createElement("div");
+      clientPreview.className = "ll-part-preview";
+      clientPreview.hidden = true;
+      clientPreviewImage = document.createElement("img");
+      clientPreviewImage.alt = "Selected replacement image";
+      const previewCopy = document.createElement("div");
+      clientPreviewLabel = document.createElement("strong");
+      const removePreview = document.createElement("button");
+      removePreview.type = "button";
+      removePreview.className = "ll-part-clear";
+      removePreview.textContent = "Remove image";
+      previewCopy.append(clientPreviewLabel, removePreview);
+      clientPreview.append(clientPreviewImage, previewCopy);
+      clientStatus = document.createElement("p");
+      clientStatus.className = "ll-part-status";
+      clientStatus.setAttribute("role", "status");
+      clientImageHost.append(
+        targetLabel,
+        fileLabel,
+        fileNote,
+        promptLabel,
+        clientGenerateButton,
+        clientPreview,
+        clientStatus,
+      );
+
+      clientColorHost = document.createElement("div");
+      clientColorHost.className = "ll-colors";
+      clientColorSection = document.createElement("section");
+      clientColorSection.className = "ll-part";
+      clientColorSection.hidden = true;
+      const colorHeading = document.createElement("h3");
+      colorHeading.textContent = "Colours";
+      const colorHint = document.createElement("p");
+      colorHint.className = "ll-part-status";
+      colorHint.textContent = "Pick the colours you prefer. The rest of the palette is derived with readable contrast.";
+      clientColorSection.append(colorHeading, colorHint, clientColorHost);
+
+      clientFields.hidden = false;
+      clientFields.append(categoryLabel, clientImageHost, clientColorSection);
+      clientCategorySelect.addEventListener("change", () => {
+        clientCategory = clientCategorySelect.value;
+        clientFile = null;
+        clientGenerated = null;
+        clientPrompt.value = "";
+        if (clientFileInput) clientFileInput.value = "";
+        clientStatus.textContent = "";
+        commentInput.placeholder =
+          clientCategory === "text"
+            ? 'Quote the exact text and replacement, for example: Replace text "Same day service" with "Prompt scheduling".'
+            : "Describe the small change. Requests that change the page layout are reviewed separately.";
+        renderClientTargets();
+        renderClientPreview();
+        setClientImageVisibility();
+        updateDraftHint();
+      });
+      clientTargetSelect.addEventListener("change", () => {
+        clientTarget = clientTargetSelect.value;
+        clientGenerated = null;
+        clientStatus.textContent = "";
+        renderClientPreview();
+        updateDraftHint();
+      });
+      clientFileInput.addEventListener("change", () => {
+        clientFile = clientFileInput.files?.[0] || null;
+        if (clientFile) clientGenerated = null;
+        clientStatus.textContent = "";
+        renderClientPreview();
+        updateDraftHint();
+      });
+      clientGenerateButton.addEventListener("click", async () => {
+        const submittedEmail = String(emailInput.value || "").trim().toLowerCase();
+        if (!submittedEmail) {
+          emailInput.setCustomValidity("Enter the review email before generating an image.");
+          emailInput.reportValidity();
+          clientStatus.textContent = "Enter the review email before generating an image.";
+          return;
+        }
+        emailInput.setCustomValidity("");
+        const prompt = String(clientPrompt.value || "").trim();
+        if (prompt.length < 3) {
+          clientStatus.textContent = "Describe the image you want first.";
+          return;
+        }
+        clientGenerateButton.disabled = true;
+        clientStatus.textContent = "Generating an image…";
+        try {
+          const response = await fetch(`${launchloomUrl}/api/feedback-image`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, email: submittedEmail, pageUrl: window.location.href, target: clientTarget, prompt }),
+          });
+          const result = await response.json().catch(() => ({}));
+          const url = result.images?.[0]?.url;
+          if (!response.ok || !url) throw new Error(result.error || "Image generation failed.");
+          clientGenerated = { url, prompt, model: result.model || "" };
+          clientFile = null;
+          if (clientFileInput) clientFileInput.value = "";
+          clientStatus.textContent = "Generated. Choose it as your replacement, or generate another.";
+        } catch (error) {
+          clientStatus.textContent = error instanceof Error ? error.message : "Image generation failed.";
+        } finally {
+          clientGenerateButton.disabled = false;
+          renderClientPreview();
+          updateDraftHint();
+        }
+      });
+      removePreview.addEventListener("click", () => {
+        clientGenerated = null;
+        clientFile = null;
+        if (clientFileInput) clientFileInput.value = "";
+        clientStatus.textContent = "";
+        renderClientPreview();
+        updateDraftHint();
+      });
+      renderClientTargets();
+      renderClientColors();
+      setClientImageVisibility();
+    }
+
+    async function submitClientFeedback(submittedEmail) {
+      const imageCategory = clientCategory === "logo" || clientCategory === "photos";
+      if (imageCategory && !clientFile && !clientGenerated) {
+        setStatusText("Upload or generate a replacement image.");
+        return false;
+      }
+      if (["text", "contact", "style", "other-small"].includes(clientCategory) && !commentInput.value.trim()) {
+        setStatusText("Describe the small change.");
+        return false;
+      }
+      const colorSelections = clientColors
+        .filter((role) => role.enabled)
+        .map((role) => ({ role: role.id, hex: role.hex.toLowerCase() }));
+      if (clientCategory === "color" && !colorSelections.length && !/#[0-9a-f]{6}/i.test(commentInput.value)) {
+        setStatusText("Pick a colour or state a six-digit hex code in the note.");
+        return false;
+      }
+      const attachments = clientGenerated
+        ? [{ target: clientTarget, kind: "generated", url: clientGenerated.url, prompt: clientGenerated.prompt, model: clientGenerated.model }]
+        : [];
+      const details = { attachments, colors: colorSelections };
+      try {
+        let response;
+        if (clientFile) {
+          const body = new FormData();
+          body.set("token", token);
+          body.set("comment", commentInput.value.trim() || "Replace this image with the uploaded file.");
+          body.set("category", clientCategory);
+          body.set("email", submittedEmail);
+          body.set("pageUrl", window.location.href);
+          body.set("submissionId", feedbackSubmissionId);
+          body.set("replacementTarget", clientTarget);
+          body.set("replacementAsset", clientFile);
+          if (colorSelections.length) body.set("details", JSON.stringify(details));
+          response = await fetch(`${launchloomUrl}/api/feedback`, { method: "POST", body });
+        } else {
+          response = await fetch(`${launchloomUrl}/api/feedback`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              token,
+              comment: commentInput.value,
+              category: clientCategory,
+              email: submittedEmail,
+              pageUrl: window.location.href,
+              submissionId: feedbackSubmissionId,
+              details,
+            }),
+          });
+        }
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          setStatusText(result.error || "Feedback could not be sent.");
+          return false;
+        }
+        setStatusText(
+          result.queueStatus === "queued"
+            ? "Queued. Your request will start after the current revision."
+            : "Received. We will review your request before publishing an update.",
+        );
+        feedbackSubmissionId = "";
+        clientCategorySelect.value = "text";
+        clientCategory = "text";
+        clientFile = null;
+        clientGenerated = null;
+        clientPrompt.value = "";
+        if (clientFileInput) clientFileInput.value = "";
+        for (const role of clientColors) role.enabled = false;
+        renderClientTargets();
+        renderClientColors();
+        renderClientPreview();
+        setClientImageVisibility();
+        return true;
+      } catch {
+        setStatusText("Feedback could not be sent.");
+        return false;
+      }
+    }
+
+    // ------------------------------------------------------------- developer
+    const IMAGE_PARTS = [
+      { id: "logo", label: "Logo", prompt: "Describe the logo or brand mark you want" },
+      { id: "hero", label: "Hero image", prompt: "Describe the opening image you want" },
+      { id: "secondary", label: "About or story image", prompt: "Describe the story or about image you want" },
+      { id: "tertiary", label: "Gallery photos", prompt: "Describe the gallery image you want" },
+      { id: "team", label: "Team photo", prompt: "Describe the team photo you want" },
+    ];
+    const TEXT_PARTS = [
+      { id: "navigation", label: "Navigation", hint: "For example: keep the menu short and put Contact last." },
+      { id: "wording", label: "Wording", hint: "For example: make the headline more direct." },
+      { id: "services", label: "Services", hint: "For example: rename a service or clarify what it covers." },
+      { id: "phone", label: "Phone number", hint: "For example: make the phone number easier to find." },
+      { id: "faq", label: "FAQ", hint: "For example: add a question about coverage." },
+    ];
+    const COLOR_ROLES = [
+      { id: "primary", label: "Brand or accent color", fallback: "#1f3a5f" },
+      { id: "surface", label: "Page background", fallback: "#faf7f2" },
+      { id: "hero", label: "Hero surface", fallback: "#e8f0f1", advanced: true },
+      { id: "ink", label: "Body text", fallback: "#17242b", advanced: true },
+      { id: "muted", label: "Muted text", fallback: "#5b6b72", advanced: true },
+      { id: "line", label: "Divider lines", fallback: "#d7e0e2", advanced: true },
+    ];
+    const selectedParts = new Set();
+    const notes = {};
+    const drafts = {};
+    const colorChoices = {};
+    let showBrandName = false;
+    let showAdvancedColors = false;
+    let renderColorRoles = () => {};
+
+    for (const role of COLOR_ROLES)
+      colorChoices[role.id] = {
+        enabled: false,
+        hex: /^#[0-9a-f]{6}$/i.test(palette[role.id] || "")
+          ? palette[role.id]
+          : role.fallback,
+      };
+    for (const id of [...IMAGE_PARTS.map((part) => part.id), ...TEXT_PARTS.map((part) => part.id)])
+      drafts[id] = { status: "", busy: false };
+
+    const statusFor = (id) => root.querySelector(`[data-part-status="${id}"]`);
+    const sectionFor = (id) => root.querySelector(`[data-part-section="${id}"]`);
+    const setStatus = (id, text) => {
+      const target = statusFor(id);
+      if (target) target.textContent = text;
+    };
+    const renderPreview = (id) => {
+      const preview = root.querySelector(`[data-part-preview="${id}"]`);
+      if (!preview) return;
+      const draft = drafts[id];
+      const chosen = draft.generated || draft.upload;
+      preview.toggleAttribute("hidden", !chosen);
+      if (!chosen) return;
+      preview.querySelector("img").src = chosen.url;
+      preview.querySelector("[data-part-preview-label]").textContent = draft.generated
+        ? "Generated image selected"
+        : "Uploaded image selected";
+    };
+
+    function buildDeveloperForm() {
+      partsHost.hidden = false;
+      sectionsHost.hidden = false;
+      const chip = (id, label) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "ll-part-chip";
+        button.dataset.part = id;
+        button.setAttribute("aria-pressed", "false");
+        button.textContent = label;
+        button.addEventListener("click", () => {
+          if (selectedParts.has(id)) {
+            selectedParts.delete(id);
+            button.setAttribute("aria-pressed", "false");
+            button.classList.remove("is-active");
+          } else {
+            selectedParts.add(id);
+            button.setAttribute("aria-pressed", "true");
+            button.classList.add("is-active");
+          }
+          const section = sectionFor(id);
+          if (section) section.hidden = !selectedParts.has(id);
+          updateDraftHint();
+        });
+        return button;
+      };
+      for (const part of IMAGE_PARTS) partsHost.append(chip(part.id, part.label));
+      for (const part of TEXT_PARTS) partsHost.append(chip(part.id, part.label));
+      partsHost.append(chip("colors", "Colors"));
+
+      const noteField = (id, label, placeholder) => {
+        const wrapper = document.createElement("label");
+        wrapper.textContent = label;
+        const textarea = document.createElement("textarea");
+        textarea.dataset.partNote = id;
+        textarea.maxLength = 2000;
+        textarea.placeholder = placeholder;
+        textarea.addEventListener("input", () => {
+          notes[id] = textarea.value;
+          updateDraftHint();
+        });
+        wrapper.append(textarea);
+        return wrapper;
+      };
+
+      const uploadImage = async (id, file) => {
+        const reviewerEmail = String(emailInput.value || "").trim().toLowerCase();
+        if (!reviewerEmail) {
+          emailInput.setCustomValidity("Enter the review email before adding an image.");
+          emailInput.reportValidity();
+          status.textContent = "Enter the review email before adding an image.";
+          return;
+        }
+        emailInput.setCustomValidity("");
+        drafts[id].busy = true;
+        drafts[id].status = "Uploading the image…";
+        setStatus(id, drafts[id].status);
+        try {
+          const prepared = await compressFeedbackImage(file);
+          const body = new FormData();
+          body.set("token", token);
+          body.set("email", reviewerEmail);
+          body.set("pageUrl", window.location.href);
+          body.set("target", id);
+          body.set("file", prepared);
+          const response = await fetch(`${launchloomUrl}/api/feedback-image`, { method: "POST", body });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || !result.url) throw new Error(result.error || "The image upload failed.");
+          drafts[id].upload = { url: result.url, name: file.name };
+          drafts[id].generated = undefined;
+          drafts[id].status = "Uploaded. It replaces this image in the next revision.";
+        } catch (error) {
+          drafts[id].status = error instanceof Error ? error.message : "The image upload failed.";
+        } finally {
+          drafts[id].busy = false;
+          setStatus(id, drafts[id].status);
+          renderPreview(id);
+          updateDraftHint();
+        }
+      };
+
+      const generateImage = async (id) => {
+        const reviewerEmail = String(emailInput.value || "").trim().toLowerCase();
+        if (!reviewerEmail) {
+          emailInput.setCustomValidity("Enter the review email before generating an image.");
+          emailInput.reportValidity();
+          status.textContent = "Enter the review email before generating an image.";
+          return;
+        }
+        emailInput.setCustomValidity("");
+        const promptInput = root.querySelector(`[data-part-prompt="${id}"]`);
+        const prompt = String(promptInput?.value || "").trim();
+        if (prompt.length < 3) {
+          drafts[id].status = "Describe the image you want first.";
+          setStatus(id, drafts[id].status);
+          return;
+        }
+        drafts[id].busy = true;
+        drafts[id].status = "Generating an image…";
+        setStatus(id, drafts[id].status);
+        try {
+          const response = await fetch(`${launchloomUrl}/api/feedback-image`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, email: reviewerEmail, pageUrl: window.location.href, target: id, prompt }),
+          });
+          const result = await response.json().catch(() => ({}));
+          const url = result.images?.[0]?.url;
+          if (!response.ok || !url) throw new Error(result.error || "Image generation failed.");
+          drafts[id].generated = { url, prompt, model: result.model || "" };
+          drafts[id].upload = undefined;
+          drafts[id].status = "Generated. Choose it as your replacement, or generate another.";
+        } catch (error) {
+          drafts[id].status = error instanceof Error ? error.message : "Image generation failed.";
+        } finally {
+          drafts[id].busy = false;
+          setStatus(id, drafts[id].status);
+          renderPreview(id);
+          updateDraftHint();
+        }
+      };
+
+      const imageSection = (part) => {
+        const section = document.createElement("section");
+        section.className = "ll-part";
+        section.dataset.partSection = part.id;
+        section.hidden = true;
+        section.innerHTML = `<h3>${part.label}</h3>
+<label>Note (optional)<textarea data-part-note="${part.id}" maxlength="2000" placeholder="Anything else about this image?"></textarea></label>
+<label>Upload your own image<input type="file" accept="image/png,image/jpeg,image/webp" data-part-file="${part.id}"></label>
+<label>${part.prompt}<textarea data-part-prompt="${part.id}" maxlength="500" placeholder="For example: a calm, warm photo of the work in progress, no text."></textarea></label>
+<button type="button" class="ll-generate" data-part-generate="${part.id}">Generate an image</button>
+<div class="ll-part-preview" data-part-preview="${part.id}" hidden><img alt="" /><div><strong data-part-preview-label></strong><button type="button" class="ll-part-clear" data-part-clear="${part.id}">Remove image</button></div></div>
+<p class="ll-part-status" data-part-status="${part.id}" role="status"></p>`;
+        const note = section.querySelector(`[data-part-note="${part.id}"]`);
+        note.addEventListener("input", () => {
+          notes[part.id] = note.value;
+          updateDraftHint();
+        });
+        section.querySelector(`[data-part-file="${part.id}"]`).addEventListener("change", (event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) void uploadImage(part.id, file);
+        });
+        const promptInput = section.querySelector(`[data-part-prompt="${part.id}"]`);
+        promptInput.addEventListener("input", () => {
+          drafts[part.id].prompt = promptInput.value;
+        });
+        section.querySelector(`[data-part-generate="${part.id}"]`).addEventListener("click", () => {
+          void generateImage(part.id);
+        });
+        section.querySelector(`[data-part-clear="${part.id}"]`).addEventListener("click", () => {
+          drafts[part.id].upload = undefined;
+          drafts[part.id].generated = undefined;
+          drafts[part.id].status = "";
+          setStatus(part.id, "");
+          renderPreview(part.id);
+          updateDraftHint();
+        });
+        return section;
+      };
+      for (const part of IMAGE_PARTS) sectionsHost.append(imageSection(part));
+
+      const textSection = (part) => {
+        const section = document.createElement("section");
+        section.className = "ll-part";
+        section.dataset.partSection = part.id;
+        section.hidden = true;
+        section.innerHTML = `<h3>${part.label}</h3>`;
+        if (part.id === "navigation") {
+          const toggle = document.createElement("label");
+          toggle.className = "ll-toggle";
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.addEventListener("change", () => {
+            showBrandName = checkbox.checked;
+            updateDraftHint();
+          });
+          toggle.append(checkbox, "Show the business name in the header");
+          section.append(toggle);
+        }
+        section.append(
+          noteField(
+            part.id,
+            part.id === "navigation" ? "Note (optional)" : "What should change?",
+            part.hint,
+          ),
+        );
+        return section;
+      };
+      for (const part of TEXT_PARTS) sectionsHost.append(textSection(part));
+
+      const colorsSection = () => {
+        const section = document.createElement("section");
+        section.className = "ll-part";
+        section.dataset.partSection = "colors";
+        section.hidden = true;
+        section.innerHTML = `<h3>Colors</h3><p class="ll-part-status">Pick the colors you prefer. The rest of the palette is derived with readable contrast.</p><div class="ll-colors"></div><button type="button" class="ll-advanced">Advanced colors</button>`;
+        const host = section.querySelector(".ll-colors");
+        const renderRoles = () => {
+          host.innerHTML = "";
+          for (const role of COLOR_ROLES.filter((candidate) => showAdvancedColors || !candidate.advanced)) {
+            const row = document.createElement("label");
+            row.className = "ll-color";
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = colorChoices[role.id].enabled;
+            const picker = document.createElement("input");
+            picker.type = "color";
+            picker.value = colorChoices[role.id].hex;
+            picker.disabled = !colorChoices[role.id].enabled;
+            const code = document.createElement("code");
+            code.textContent = colorChoices[role.id].hex.toUpperCase();
+            const sync = () => {
+              picker.value = colorChoices[role.id].hex;
+              picker.disabled = !colorChoices[role.id].enabled;
+              code.textContent = colorChoices[role.id].hex.toUpperCase();
+            };
+            checkbox.addEventListener("change", () => {
+              colorChoices[role.id].enabled = checkbox.checked;
+              sync();
+              updateDraftHint();
+            });
+            picker.addEventListener("input", () => {
+              colorChoices[role.id].hex = picker.value;
+              colorChoices[role.id].enabled = true;
+              checkbox.checked = true;
+              sync();
+              updateDraftHint();
+            });
+            const label = document.createElement("span");
+            label.textContent = role.label;
+            row.append(checkbox, label, picker, code);
+            host.append(row);
+          }
+        };
+        section.querySelector(".ll-advanced").addEventListener("click", (event) => {
+          showAdvancedColors = !showAdvancedColors;
+          event.currentTarget.textContent = showAdvancedColors ? "Hide advanced colors" : "Advanced colors";
+          renderRoles();
+        });
+        renderColorRoles = renderRoles;
+        renderRoles();
+        return section;
+      };
+      sectionsHost.append(colorsSection());
+    }
+
+    async function submitDeveloperFeedback(submittedEmail) {
+      const attachments = [];
+      const colorSelections = [];
+      const textLines = [];
+      for (const id of selectedParts) {
+        const imagePart = IMAGE_PARTS.find((part) => part.id === id);
+        if (imagePart) {
+          const draft = drafts[id];
+          const chosen = draft.generated || draft.upload;
+          if (chosen) {
+            attachments.push({
+              target: id,
+              kind: draft.generated ? "generated" : "upload",
+              url: chosen.url,
+              ...(draft.generated ? { prompt: draft.generated.prompt, model: draft.generated.model } : {}),
+            });
+          }
+          const note = String(notes[id] || "").trim();
+          if (note) textLines.push(`${imagePart.label}: ${note}`);
+          if (!chosen && !note) {
+            setStatusText(`Add an image or a note for ${imagePart.label}, or turn it off.`);
+            return false;
+          }
+          continue;
+        }
+        if (id === "colors") continue;
+        const textPart = TEXT_PARTS.find((part) => part.id === id);
+        const note = String(notes[id] || "").trim();
+        if (id === "navigation" && showBrandName) textLines.push("Show the business name in the header.");
+        if (note) textLines.push(`${textPart.label}: ${note}`);
+        if (!note && !(id === "navigation" && showBrandName)) {
+          setStatusText(`Add a note for ${textPart.label}, or turn it off.`);
+          return false;
+        }
+      }
+      for (const role of COLOR_ROLES) {
+        const choice = colorChoices[role.id];
+        if (choice.enabled) colorSelections.push({ role: role.id, hex: choice.hex.toLowerCase() });
+      }
+      if (selectedParts.has("colors") && !colorSelections.length) {
+        setStatusText("Choose at least one color, or turn the Colors part off.");
+        return false;
+      }
+      const generalNote = String(commentInput.value || "").trim();
+      const comment = [textLines.join("\n"), generalNote].filter(Boolean).join("\n\n");
+      if (!comment && !attachments.length && !colorSelections.length) {
+        setStatusText("Add a note, an image, or a color first.");
+        return false;
+      }
+      try {
+        const endpoint = diagnosticReview ? "/api/creative-repair" : "/api/feedback";
+        const payload = {
+          token,
+          ...(diagnosticReview ? { action: "feedback" } : {}),
+          email: submittedEmail,
+          comment,
+          category: [...selectedParts].map(labelFor).join(", ").slice(0, 80),
+          pageUrl: window.location.href,
+          submissionId: feedbackSubmissionId,
+          details: { attachments, colors: colorSelections },
+        };
+        const response = await fetch(`${launchloomUrl}${endpoint}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          setStatusText(result.error || "Feedback could not be sent.");
+          return false;
+        }
+        setStatusText(
+          diagnosticReview
+            ? result.queueStatus === "queued"
+              ? "Accepted as the working baseline. Your feedback is queued; the client has not received this version."
+              : "Accepted as the working baseline. A developer revision is underway; the client has not received this version."
+            : result.queueStatus === "queued"
+              ? "Queued. Your request will start after the current revision."
+              : "Received. A revised developer preview will be sent shortly.",
+        );
+        if (diagnosticReview) {
+          fieldNotice.hidden = false;
+          fieldNotice.textContent = "Feedback saved as the working baseline. The client has not received this preview.";
+          open.disabled = true;
+          sendAnyway.disabled = true;
+          sendAnyway.textContent = "Revision in progress";
+        }
+        feedbackSubmissionId = "";
+        form.reset();
+        selectedParts.clear();
+        for (const id of Object.keys(notes)) notes[id] = "";
+        root.querySelectorAll("[data-part-note]").forEach((textarea) => { textarea.value = ""; });
+        root.querySelectorAll("[data-part-prompt]").forEach((textarea) => { textarea.value = ""; });
+        root.querySelectorAll('input[type="file"]').forEach((input) => { input.value = ""; });
+        for (const id of Object.keys(drafts)) {
+          drafts[id] = { status: "", busy: false };
+          setStatus(id, "");
+          renderPreview(id);
+        }
+        for (const role of COLOR_ROLES) colorChoices[role.id].enabled = false;
+        showBrandName = false;
+        root.querySelectorAll(".ll-part-chip").forEach((button) => {
+          button.classList.remove("is-active");
+          button.setAttribute("aria-pressed", "false");
+        });
+        root.querySelectorAll("[data-part-section]").forEach((section) => { section.hidden = true; });
+        root.querySelectorAll(".ll-toggle input").forEach((input) => { input.checked = false; });
+        showAdvancedColors = false;
+        const advancedButton = sectionsHost.querySelector(".ll-advanced");
+        if (advancedButton) advancedButton.textContent = "Advanced colors";
+        renderColorRoles();
+        updateDraftHint();
+        return true;
+      } catch {
+        setStatusText("Feedback could not be sent.");
+        return false;
+      }
+    }
+
+    // ------------------------------------------------------------ shared UI
+    if (developer) {
+      buildDeveloperForm();
+    } else {
+      partsHost.hidden = true;
+      sectionsHost.hidden = true;
+      buildClientForm();
+    }
+
     root.querySelector(".ll-review__summary").innerHTML = diagnosticReview
-      ? "<span aria-hidden=\"true\">▣</span> This is still a work in progress. This is a field preview only."
+      ? "<span aria-hidden=\"true\">▣</span> This is still a work. This is just a field preview."
       : developer
       ? "<span aria-hidden=\"true\">▣</span> Internal developer review. Approve before the client sees this."
       : "<span aria-hidden=\"true\">▣</span> Your website is live. Tell us what you would like changed.";
@@ -153,7 +1174,15 @@ const { diagnosticPreview = false } = Astro.props;
       ? diagnosticReview
         ? "The automated visual checks did not all pass. Send feedback for another revision, or choose to send this exact preview anyway."
         : "Leave clear internal notes, or approve this exact version to publish and invite the client."
-      : "Tap what applies, then leave a clear note. We will review it before publishing an update.";
+      : "Request a small correction such as a logo, photo, colour, contact detail, or wording change. You can upload a replacement image or generate one.";
+    root.querySelector(".ll-general-note").firstChild.textContent = developer
+      ? "Anything else?"
+      : "Describe the small change";
+    commentInput.placeholder = developer
+      ? "For example: Keep the overall direction, but make the service choices easier to scan."
+      : clientCategory === "text"
+        ? 'Quote the exact text and replacement, for example: Replace text "Same day service" with "Prompt scheduling".'
+        : "Describe the small change. Requests that change the page layout are reviewed separately.";
     approve.toggleAttribute("hidden", !developer);
     if (diagnosticReview) {
       approve.setAttribute("hidden", "");
@@ -173,21 +1202,11 @@ const { diagnosticPreview = false } = Astro.props;
             sendAnyway.disabled = true;
             sendAnyway.title = "SEO research is incomplete. Publishing remains blocked.";
             fieldNotice.textContent = "This preview missed the visual checks. SEO research is incomplete, so client release remains blocked.";
-          } else if (result.humanDisposition === "accepted-with-feedback") {
-            sendAnyway.disabled = true;
-            sendAnyway.textContent = "Accepted as baseline";
-            fieldNotice.textContent = "This version is accepted as the working baseline. The client has not received this preview.";
-            if (result.reviewQueue && result.reviewQueue !== "clear") open.disabled = true;
-          } else if (["dispatching", "queued", "running"].includes(result.status)) {
-            open.disabled = true;
-            sendAnyway.disabled = true;
-            sendAnyway.textContent = "Final repair in progress";
-            fieldNotice.textContent = "The final design repair is running. The client has not received this preview.";
-          } else if (result.reviewQueue && result.reviewQueue !== "clear") {
+          } else if (["dispatching", "queued", "running"].includes(result.status) || (result.reviewQueue && result.reviewQueue !== "clear")) {
             open.disabled = true;
             sendAnyway.disabled = true;
             sendAnyway.textContent = "Revision in progress";
-            fieldNotice.textContent = "A developer revision is in progress. The client has not received this preview.";
+            fieldNotice.textContent = "This version is accepted as the working baseline. A developer revision is in progress; the client has not received this preview.";
           } else if (["dispatching", "published"].includes(result.overrideStatus)) {
             sendAnyway.disabled = true;
             sendAnyway.textContent = result.overrideStatus === "published" ? "Client release already queued" : "Client release request is processing";
@@ -238,13 +1257,6 @@ const { diagnosticPreview = false } = Astro.props;
     window.addEventListener("launchloom:overlay-open", (event) => {
       if (event.detail?.id !== "review") setModal(false);
     });
-    root.querySelectorAll("[data-category]").forEach((button) => button.addEventListener("click", () => {
-      const value = button.dataset.category || "";
-      if (selectedCategories.has(value)) selectedCategories.delete(value); else selectedCategories.add(value);
-      button.classList.toggle("is-active", selectedCategories.has(value));
-      button.setAttribute("aria-pressed", String(selectedCategories.has(value)));
-      updateDraftHint();
-    }));
     emailInput.addEventListener("input", () => { emailInput.setCustomValidity(""); updateDraftHint(); });
     commentInput.addEventListener("input", updateDraftHint);
     const verifyEmail = (submittedEmail) => {
@@ -254,36 +1266,21 @@ const { diagnosticPreview = false } = Astro.props;
     };
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const data = new FormData(form); const submittedEmail = String(data.get("email") || "").trim().toLowerCase();
+      const data = new FormData(form);
+      const submittedEmail = String(data.get("email") || "").trim().toLowerCase();
       if (!verifyEmail(submittedEmail)) return;
       feedbackSubmissionId ||= crypto.randomUUID();
       send.disabled = true;
       status.textContent = "Sending…";
       try {
-        const endpoint = diagnosticReview ? "/api/creative-repair" : "/api/feedback";
-        const payload = diagnosticReview
-          ? { token, action: "feedback", email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href, submissionId: feedbackSubmissionId }
-          : { token, email: submittedEmail, comment: data.get("comment"), category: [...selectedCategories].join(", "), pageUrl: window.location.href, submissionId: feedbackSubmissionId };
-        const response = await fetch(`${launchloomUrl}${endpoint}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        const result = await response.json(); if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");
-        status.textContent = diagnosticReview
-          ? result.queueStatus === "queued"
-            ? "Accepted as the working baseline. Your feedback is queued; the client has not received this version."
-            : "Accepted as the working baseline. A developer revision is underway; the client has not received this version."
-          : result.queueStatus === "queued"
-          ? "Queued. Your request will start after the current revision."
-          : developer ? "Received. A revised developer preview will be sent shortly." : "Received. We will review your request before publishing an update.";
-        if (diagnosticReview) {
-          fieldNotice.hidden = false;
-          fieldNotice.textContent = "Feedback saved as the working baseline. The client has not received this preview.";
-          open.disabled = true;
-          sendAnyway.disabled = true;
-          sendAnyway.textContent = "Revision in progress";
-        }
-        feedbackSubmissionId = "";
-        form.reset(); selectedCategories.clear(); root.querySelectorAll("[data-category]").forEach((button) => { button.classList.remove("is-active"); button.setAttribute("aria-pressed", "false"); }); updateDraftHint();
-      } catch (error) { status.textContent = error instanceof Error ? error.message : "Feedback could not be sent."; }
-      finally { send.disabled = false; }
+        const ok = developer
+          ? await submitDeveloperFeedback(submittedEmail)
+          : await submitClientFeedback(submittedEmail);
+        if (!ok) status.textContent = status.textContent || "Feedback could not be sent.";
+      } finally {
+        if (!status.textContent || status.textContent === "Sending…") status.textContent = "Feedback could not be sent.";
+        send.disabled = false;
+      }
     });
     approve.addEventListener("click", async () => {
       if (!window.confirm("Approve this exact version, publish it, and send the client their review link?")) return;
