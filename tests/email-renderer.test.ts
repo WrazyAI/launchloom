@@ -29,6 +29,7 @@ describe("LaunchLoom lifecycle emails", () => {
     ["client", "published", "Review your website"],
     ["delivery-failure", "published", "Open production website"],
     ["manual-attention", "revision-failed", "Open reviewed website"],
+    ["manual-attention", "generation-failed", "Review failed request"],
   ] as const)(
     "renders the %s %s stage with HTML and text",
     (audience, kind, label) => {
@@ -76,6 +77,26 @@ describe("LaunchLoom lifecycle emails", () => {
     expect(primaryHref).toBe("https://review.example.pages.dev/services/");
     expect(email.html).toContain("Diagnostics:");
     expect(email.html).not.toContain("—");
+  });
+
+  it("does not label a GitHub generation-failure destination as a reviewed website", () => {
+    const email = renderLifecycleEmail({
+      audience: "manual-attention",
+      kind: "generation-failed",
+      clientName: "North Shore Care",
+      previewUrl: "https://github.com/WrazyAI/launchloom/issues/3",
+      reviewUrl: "https://github.com/WrazyAI/launchloom/actions/runs/4",
+    });
+
+    expect(email.html).toContain("Review failed request");
+    expect(email.html).not.toContain("Open reviewed website");
+    const primaryHref = email.html.match(/href="([^"]+)"/)?.[1];
+    expect(primaryHref).toBe(
+      "https://github.com/WrazyAI/launchloom/actions/runs/4",
+    );
+    expect(email.text).toContain(
+      "Review failed request: https://github.com/WrazyAI/launchloom/actions/runs/4",
+    );
   });
 
   it("offers a warned, explicit send-anyway destination only for eligible previews", () => {
