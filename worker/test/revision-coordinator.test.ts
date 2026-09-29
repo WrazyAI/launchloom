@@ -357,6 +357,7 @@ describe("RevisionCoordinator", () => {
       "request-preview-failure",
       "Email delivery failed after deploy.",
       "https://review-revision-123.example.pages.dev/services/?review=signed-secret#section",
+      "https://github.com/WrazyAI/launchloom/actions/runs/123456?check_suite_focus=true#logs",
     );
 
     expect(failureEmails).toHaveLength(1);
@@ -365,6 +366,10 @@ describe("RevisionCoordinator", () => {
       "Open reviewed website: https://review-revision-123.example.pages.dev/services/",
     );
     expect(text).not.toContain("signed-secret");
+    expect(text).toContain(
+      "Actions run: https://github.com/WrazyAI/launchloom/actions/runs/123456",
+    );
+    expect(text).not.toContain("check_suite_focus");
     const primaryHref = String(failureEmails[0].html).match(/href="([^"]+)"/)?.[1];
     expect(primaryHref).toBe(
       "https://review-revision-123.example.pages.dev/services/",
