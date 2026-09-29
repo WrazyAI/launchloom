@@ -116,6 +116,8 @@ export function renderLifecycleEmail(input) {
   const reviewUrl = cleanEmailText(input.reviewUrl || input.previewUrl, 4_000);
   const previewUrl = cleanEmailText(input.previewUrl, 4_000);
   const sendAnywayUrl = cleanEmailText(input.sendAnywayUrl, 4_000);
+  const diagnosticPrUrl = cleanEmailText(input.diagnosticPrUrl, 4_000);
+  const diagnosticRunUrl = cleanEmailText(input.diagnosticRunUrl, 4_000);
   const feedback = cleanEmailText(input.clientFeedback, 12_000);
   const outcome = cleanEmailText(input.revisionOutcome, 1_000);
   const queuedFeedback = cleanEmailText(input.queuedFeedback, 12_000);
@@ -170,11 +172,25 @@ export function renderLifecycleEmail(input) {
   }
 
   if (audience === "manual-attention") {
+    const siteUrl = previewUrl || reviewUrl;
     rows += action(
-      reviewUrl || previewUrl,
-      "Review failed request",
-      "The feedback remains preserved. Resolve it, then use the revision queue recovery workflow.",
+      siteUrl,
+      "Open reviewed website",
+      "The feedback remains preserved. Review the website state first, then use the revision queue recovery workflow.",
     );
+    const diagnostics = [
+      diagnosticPrUrl ? labelledLink(diagnosticPrUrl, "Pull request") : "",
+      diagnosticRunUrl ? labelledLink(diagnosticRunUrl, "Actions run") : "",
+    ].filter(Boolean);
+    if (diagnostics.length) {
+      rows += `<tr><td style="padding:0 32px 24px" class="mobile-pad"><p style="margin:0;color:${COLORS.muted};font-size:13px;line-height:1.6">Diagnostics: ${diagnostics.join(" · ")}</p></td></tr>`;
+      textSections.push(
+        `DIAGNOSTICS\n${[
+          diagnosticPrUrl ? `Pull request: ${diagnosticPrUrl}` : "",
+          diagnosticRunUrl ? `Actions run: ${diagnosticRunUrl}` : "",
+        ].filter(Boolean).join("\n")}`,
+      );
+    }
     if (sendAnywayUrl) {
       rows += action(
         sendAnywayUrl,
@@ -216,13 +232,17 @@ export function renderLifecycleEmail(input) {
 
   const actionLabel =
     audience === "manual-attention"
-      ? "Review failed request"
+      ? "Open reviewed website"
       : audience === "delivery-failure"
         ? "Open production website"
         : audience === "developer"
           ? "Review developer preview"
           : "Review your website";
-  const text = `${copy.eyebrow.toUpperCase()}\n\n${copy.title}\n\n${copy.intro}${textSections.length ? `\n\n${textSections.join("\n\n")}` : ""}\n\n${actionLabel}: ${audience === "delivery-failure" ? previewUrl || reviewUrl : reviewUrl || previewUrl}\n\nSent by LaunchLoom for this website project.`;
+  const primaryUrl =
+    audience === "manual-attention" || audience === "delivery-failure"
+      ? previewUrl || reviewUrl
+      : reviewUrl || previewUrl;
+  const text = `${copy.eyebrow.toUpperCase()}\n\n${copy.title}\n\n${copy.intro}${textSections.length ? `\n\n${textSections.join("\n\n")}` : ""}\n\n${actionLabel}: ${primaryUrl}\n\nSent by LaunchLoom for this website project.`;
   return {
     subject: copy.subject,
     html: shell({ ...copy, rows }),
