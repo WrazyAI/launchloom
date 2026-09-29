@@ -823,12 +823,19 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     );
     const next = this.row(promoted.request_id)!;
     try {
-      await this.dispatchRow(next);
-      return this.row(promoted.request_id)!;
+      await this.prepareAndDispatchRow(next);
     } catch (error) {
-      await this.markFailed(next, error);
-      return undefined;
+      await this.ctx.storage.setAlarm(Date.now() + DISPATCH_RETRY_MS);
+      console.error(
+        JSON.stringify({
+          event: "revision.promoted_dispatch_failed",
+          repo: next.repo,
+          requestId: next.request_id,
+          reason: cleanError(error),
+        }),
+      );
     }
+    return this.row(promoted.request_id)!;
   }
 
   private async createFeedbackComment(row: RevisionRow) {
@@ -857,6 +864,24 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       .then((comment) => comment.id);
   }
 
+  private async prepareAndDispatchRow(row: RevisionRow) {
+    this.ctx.storage.sql.exec(
+      "UPDATE revision_requests SET dispatch_attempts = dispatch_attempts + 1 WHERE request_id = ?",
+      row.request_id,
+    );
+    let pending = this.row(row.request_id)!;
+    if (!pending.comment_id) {
+      const commentId = await this.createFeedbackComment(pending);
+      this.ctx.storage.sql.exec(
+        "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
+        commentId,
+        pending.request_id,
+      );
+      pending = this.row(pending.request_id)!;
+    }
+    await this.dispatchRow(pending);
+  }
+
   private async dispatchRow(row: RevisionRow) {
     if (!row.comment_id) throw new Error("Feedback comment was not persisted.");
     await github(this.env, "/repos/WrazyAI/launchloom/dispatches", {
@@ -874,12 +899,13 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
           feedbackIssue: row.feedback_issue,
           siteId: row.site_id,
           clientEmail: row.client_email,
+          reviewedPage: row.reviewed_page,
         },
       }),
     });
     const now = Date.now();
     this.ctx.storage.sql.exec(
-      "UPDATE revision_requests SET status = 'dispatched', started_at = ?, dispatch_attempts = dispatch_attempts + 1, failure = NULL WHERE request_id = ?",
+      "UPDATE revision_requests SET status = 'dispatched', started_at = ?, failure = NULL WHERE request_id = ?",
       now,
       row.request_id,
     );
@@ -1005,19 +1031,28 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       status,
       now,
     );
-    let row = this.row(input.requestId)!;
+    const row = this.row(input.requestId)!;
     try {
-      const commentId = await this.createFeedbackComment(row);
-      this.ctx.storage.sql.exec(
-        "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
-        commentId,
-        input.requestId,
-      );
-      row = this.row(input.requestId)!;
-      if (status === "dispatching") await this.dispatchRow(row);
+      if (status === "dispatching") await this.prepareAndDispatchRow(row);
+      else {
+        const commentId = await this.createFeedbackComment(row);
+        this.ctx.storage.sql.exec(
+          "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
+          commentId,
+          input.requestId,
+        );
+      }
     } catch (error) {
-      await this.markFailed(row, error);
-      throw error;
+      console.error(
+        JSON.stringify({
+          event: "revision.initial_dispatch_failed",
+          repo: input.repo,
+          requestId: input.requestId,
+          reason: cleanError(error),
+        }),
+      );
+      if (status === "dispatching")
+        await this.ctx.storage.setAlarm(Date.now() + DISPATCH_RETRY_MS);
     }
     console.log(
       JSON.stringify({
@@ -1094,10 +1129,17 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       if (promoted) {
         promoted = this.row(promoted.request_id)!;
         try {
-          await this.dispatchRow(promoted);
+          await this.prepareAndDispatchRow(promoted);
         } catch (error) {
-          await this.markFailed(promoted, error);
-          promoted = undefined;
+          await this.ctx.storage.setAlarm(Date.now() + DISPATCH_RETRY_MS);
+          console.error(
+            JSON.stringify({
+              event: "revision.promoted_dispatch_failed",
+              repo: promoted.repo,
+              requestId: promoted.request_id,
+              reason: cleanError(error),
+            }),
+          );
         }
       }
     }
@@ -1189,16 +1231,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       failed.request_id,
     );
     try {
-      if (!failed.comment_id) {
-        const commentId = await this.createFeedbackComment(failed);
-        this.ctx.storage.sql.exec(
-          "UPDATE revision_requests SET comment_id = ? WHERE request_id = ?",
-          commentId,
-          failed.request_id,
-        );
-        failed = this.row(failed.request_id)!;
-      }
-      await this.dispatchRow(this.row(failed.request_id)!);
+      await this.prepareAndDispatchRow(failed);
     } catch (error) {
       await this.markFailed(failed, error);
       throw error;
@@ -1264,7 +1297,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       return;
     }
     try {
-      await this.dispatchRow(active);
+      await this.prepareAndDispatchRow(active);
     } catch (error) {
       await this.ctx.storage.setAlarm(Date.now() + DISPATCH_RETRY_MS);
       console.error(
