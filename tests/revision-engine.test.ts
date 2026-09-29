@@ -1168,3 +1168,78 @@ describe("client replacement artifacts", () => {
     ]);
   });
 });
+
+describe("structured image replacements on creative candidates", () => {
+  const creative = () =>
+    ({
+      ...config(),
+      design: {
+        recipe: "general-editorial",
+        sections: [],
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-c",
+        },
+      },
+    }) as any;
+  const item = (text: string) => ({
+    text,
+    assets: [
+      {
+        target: "hero",
+        kind: "generated",
+        path: "/images/feedback/hero-abc123def456.webp",
+        source: "fal-generated",
+      },
+    ],
+    colors: [],
+  });
+
+  it("treats a plain image replacement as a structural change", async () => {
+    const planned = await planRevision(
+      [item("replace the opening image with the selected generated photo")],
+      creative(),
+      async () => [],
+    );
+    expect(planned.results[0].intents).toEqual(["image"]);
+    expect(planned.results[0].status).toBe("fulfilled");
+    expect(planned.ok).toBe(true);
+  });
+
+  it("still routes composition requests to the creative lane", async () => {
+    const planned = await planRevision(
+      [item("replace the hero image and make the layout bolder")],
+      creative(),
+      async () => [],
+    );
+    expect(planned.results[0].intents).toContain("layout");
+    expect(planned.results[0].status).toBe("creative");
+  });
+
+  it("still routes image sizing requests to the creative lane", async () => {
+    const planned = await planRevision(
+      [item("use a larger hero image")],
+      creative(),
+      async () => [],
+    );
+    expect(planned.results[0].intents).toContain("layout");
+  });
+
+  it("still routes non-image replacement asks to the creative lane", async () => {
+    const planned = await planRevision(
+      [item("replace the hero with a video instead")],
+      creative(),
+      async () => [],
+    );
+    expect(planned.results[0].intents).toContain("layout");
+  });
+
+  it("keeps image-free visual requests unchanged", async () => {
+    const planned = await planRevision(
+      [{ text: "give the page a more premium feel", assets: [], colors: [] }],
+      creative(),
+      async () => [],
+    );
+    expect(planned.results[0].intents).toContain("layout");
+  });
+});
