@@ -1838,7 +1838,7 @@ function validateMotion(source, route) {
       `Candidate ${route.id} motion lacks a reduced-motion path.`,
     );
   if (
-    /\.(?:textContent|innerHTML|outerHTML)\s*=|\.insertAdjacentHTML\s*\(/u.test(
+    /\.(?:textContent|innerHTML|outerHTML)\s*(?:=(?!=)|[+*/%&|^\-]=|\?\?=|\|\|=|&&=)|\.insertAdjacentHTML\s*\(/u.test(
       source,
     )
   )

@@ -1,6 +1,7 @@
 const DEFAULT_TEXT_BUDGET = 400_000;
 const INLINE_IMAGE_DATA_URI = /^data:image\/[^,]*,/iu;
-const INLINE_IMAGE_DATA_URI_IN_TEXT = /data:image\/[^,\s"'`]+,[^\s"'`]*/iu;
+const INLINE_IMAGE_DATA_URI_IN_TEXT =
+  /data:image\/[^,\s"'`]+;base64,[a-z0-9+/=]{256,}/iu;
 
 /**
  * Remove sealed image payloads and bound unusually large strings before they

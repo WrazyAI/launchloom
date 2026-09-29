@@ -1338,6 +1338,34 @@ describe("production experience author", () => {
           styles,
           motion: baseMotion.replace(
             "/* MUTATION */",
+            'if (node.textContent === "ready") node.classList.add("ready");',
+          ),
+        },
+        route,
+      }),
+    ).not.toThrow();
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles,
+          motion: baseMotion.replace(
+            "/* MUTATION */",
+            'node.textContent += "rewritten";',
+          ),
+        },
+        route,
+      }),
+    ).toThrow(/must not rewrite visitor-facing content/iu);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles,
+          motion: baseMotion.replace(
+            "/* MUTATION */",
             'node.style.setProperty("--accent", "1");',
           ),
         },

@@ -38,7 +38,7 @@ describe("model-bound author prompt budget", () => {
   it("rejects image data in textual prompt parts but permits multimodal image parts", () => {
     expect(() =>
       assertModelPromptTextBudget([
-        { type: "text", text: "data:image/png;base64,AAAA" },
+        { type: "text", text: `data:image/png;base64,${"A".repeat(512)}` },
       ]),
     ).toThrow(/image data URI leaked into text/iu);
 
@@ -46,6 +46,17 @@ describe("model-bound author prompt budget", () => {
       assertModelPromptTextBudget([
         { type: "text", text: "Use supplied evidence." },
         { type: "image_url", image_url: { url: "data:image/png;base64,AAAA" } },
+      ]),
+    ).not.toThrow();
+  });
+
+  it("allows compact inline SVG CSS without treating it as leaked binary image data", () => {
+    expect(() =>
+      assertModelPromptTextBudget([
+        {
+          type: "text",
+          text: 'background-image: url("data:image/svg+xml,%3Csvg%20viewBox=%220%200%201%201%22%3E%3C/svg%3E")',
+        },
       ]),
     ).not.toThrow();
   });
