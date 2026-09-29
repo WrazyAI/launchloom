@@ -72,7 +72,7 @@ describe("bounded client review uploads", () => {
     expect(asset ? Array.from(new Uint8Array(await asset.arrayBuffer())) : []).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
   });
 
-  it("reproduces a transient dispatch error as a browser-visible failure after feedback was recorded", async () => {
+  it("accepts durably recorded feedback when the first dispatch fails and retries it idempotently", async () => {
     const token = await reviewToken();
     const comments: Array<{ body: string }> = [];
     let dispatchAttempts = 0;
@@ -85,43 +85,74 @@ describe("bounded client review uploads", () => {
       }),
       http.post("https://api.github.com/repos/WrazyAI/launchloom/dispatches", () => {
         dispatchAttempts += 1;
-        return HttpResponse.json({ message: "temporary dispatch failure" }, { status: 503 });
+        return dispatchAttempts === 1
+          ? HttpResponse.json({ message: "temporary dispatch failure" }, { status: 503 })
+          : new HttpResponse(null, { status: 204 });
       }),
-      http.post("https://api.resend.com/emails", () => HttpResponse.json({ id: "failure-email" })),
     );
 
     const submissionId = "client-feedback-dispatch-001";
+    const requestBody = {
+      token,
+      comment: "Please tighten this wording.",
+      category: "text",
+      email: "client@example.com",
+      pageUrl: `${origin}/services/?review=${token}`,
+      submissionId,
+    };
     const response = await SELF.fetch("https://api.launchloom.test/api/feedback", {
       method: "POST",
       headers: { Origin: origin, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token,
-        comment: "Please tighten this wording.",
-        category: "text",
-        email: "client@example.com",
-        pageUrl: `${origin}/services/?review=${token}`,
-        submissionId,
-      }),
+      body: JSON.stringify(requestBody),
     });
-    const body = await response.json() as { error?: string };
 
-    expect(response.status).toBe(403);
-    expect(body.error).toContain("GitHub 503");
+    expect(response.status).toBe(202);
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      stage: "client",
+      requestId: submissionId,
+      queueStatus: "started",
+    });
+    expect(comments).toHaveLength(1);
+    expect(dispatchAttempts).toBe(1);
+
+    const duplicate = await SELF.fetch("https://api.launchloom.test/api/feedback", {
+      method: "POST",
+      headers: { Origin: origin, "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    expect(duplicate.status).toBe(200);
+    expect(await duplicate.json()).toMatchObject({
+      ok: true,
+      requestId: submissionId,
+      queueStatus: "duplicate",
+    });
     expect(comments).toHaveLength(1);
     expect(dispatchAttempts).toBe(1);
 
     const coordinator = env.REVISION_COORDINATOR.getByName("wrazyai/example-client");
-    await runInDurableObject(coordinator, async (_instance, state) => {
-      const row = state.storage.sql.exec<{ request_id: string; status: string; reviewed_page: string }>(
-        "SELECT request_id, status, reviewed_page FROM revision_requests WHERE request_id = ?",
+    await runInDurableObject(coordinator, async (instance, state) => {
+      let row = state.storage.sql.exec<{ request_id: string; status: string; reviewed_page: string; dispatch_attempts: number }>(
+        "SELECT request_id, status, reviewed_page, dispatch_attempts FROM revision_requests WHERE request_id = ?",
         submissionId,
       ).toArray()[0];
       expect(row).toEqual({
         request_id: submissionId,
-        status: "failed",
+        status: "dispatching",
         reviewed_page: `${origin}/services/`,
+        dispatch_attempts: 1,
       });
+
+      await instance.alarm();
+      row = state.storage.sql.exec<{ request_id: string; status: string; reviewed_page: string; dispatch_attempts: number }>(
+        "SELECT request_id, status, reviewed_page, dispatch_attempts FROM revision_requests WHERE request_id = ?",
+        submissionId,
+      ).toArray()[0];
+      expect(row.status).toBe("dispatched");
+      expect(row.dispatch_attempts).toBe(2);
     });
+    expect(comments).toHaveLength(1);
+    expect(dispatchAttempts).toBe(2);
   });
 
   it("rejects unsupported client categories and malformed image bytes", async () => {
