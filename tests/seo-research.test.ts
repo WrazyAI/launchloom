@@ -366,6 +366,7 @@ describe("SEO market map", () => {
             snippet: "Extracted search evidence from the public page.",
           },
         ],
+        costUsd: 0.002,
       })),
     };
     const dossier = await researchSiteContext(intake, {
@@ -373,6 +374,7 @@ describe("SEO market map", () => {
       maxTasks: 16,
       maxUsd: 0.25,
       maxFallbackSearchQueries: 2,
+      maxFallbackUsd: 0.05,
     });
 
     expect(webSearch.search).toHaveBeenCalledTimes(2);
@@ -384,6 +386,10 @@ describe("SEO market map", () => {
       maxQueries: 2,
       maxResultsPerQuery: 4,
       provider: "OpenRouter web search (Parallel)",
+      costUsd: 0.004,
+      maxUsd: 0.05,
+      costComplete: true,
+      budgetExhausted: false,
     });
     expect(dossier.externalSearchEvidence).toHaveLength(2);
     expect(dossier.externalSearchEvidence[0]).toMatchObject({
@@ -432,6 +438,7 @@ describe("SEO market map", () => {
           ],
         },
       }],
+      usage: { cost: 0.003 },
     }), { status: 200 }));
     const search = createOpenRouterWebSearchClient({
       apiKey: "test-key",
@@ -440,6 +447,7 @@ describe("SEO market map", () => {
     });
     const observed = await search.search({ query: "drain cleaning Tacoma", maxResults: 4 });
 
+    expect(observed.costUsd).toBe(0.003);
     expect(observed.results).toEqual([{
       url: "https://source.example/plumbing",
       title: "Plumbing source",
@@ -458,6 +466,65 @@ describe("SEO market map", () => {
       },
     }]);
     expect(request.max_tool_calls).toBe(1);
+  });
+
+  it("stops fallback research when the provider-reported spend bound is reached", async () => {
+    const webSearch = {
+      search: vi.fn(async () => ({
+        results: [{
+          url: "https://example.test/budget",
+          title: "Budgeted result",
+          snippet: "Observed evidence.",
+        }],
+        costUsd: 0.006,
+      })),
+    };
+    const dossier = await researchSiteContext(intake, {
+      webSearch,
+      maxFallbackSearchQueries: 3,
+      maxFallbackUsd: 0.005,
+    });
+
+    expect(webSearch.search).toHaveBeenCalledTimes(1);
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "partial",
+      queriesAttempted: 1,
+      costUsd: 0.006,
+      maxUsd: 0.005,
+      costComplete: true,
+      budgetExhausted: true,
+    });
+    expect(dossier.publishReady).toBe(false);
+    expect(dossier.warnings.join(" ")).toContain("configured $0.005 spend bound");
+  });
+
+  it("stops after one fallback query when provider spend is unreported", async () => {
+    const webSearch = {
+      search: vi.fn(async () => ({
+        results: [{
+          url: "https://example.test/unreported",
+          title: "Unreported-cost result",
+          snippet: "Observed evidence.",
+        }],
+      })),
+    };
+    const dossier = await researchSiteContext(intake, {
+      webSearch,
+      maxFallbackSearchQueries: 3,
+      maxFallbackUsd: 0.05,
+    });
+
+    expect(webSearch.search).toHaveBeenCalledTimes(1);
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "partial",
+      queriesAttempted: 1,
+      costComplete: false,
+      budgetExhausted: false,
+    });
+    expect(dossier.warnings.join(" ")).toContain(
+      "did not report request cost",
+    );
+    expect(dossier.publishReady).toBe(false);
   });
 
   it("degrades honestly when the bounded online fallback is unreachable", async () => {
