@@ -74,6 +74,16 @@ function safePromptPart(value, limit = 180) {
   return candidate.replace(/[{}<>]/gu, "");
 }
 
+function imageOnlyDirection(value, limit = 180) {
+  return safePromptPart(value, limit)
+    .replace(
+      /\b(?:websites?|webpages?|page layout|layout|typography|typographic|fonts?|headlines?|headings?|copy|text|letters?|glyphs?|posters?|mockups?|interfaces?|screenshots?|banners?)\b/giu,
+      " ",
+    )
+    .replace(/[,:;\s]+/gu, " ")
+    .trim();
+}
+
 function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
@@ -113,12 +123,12 @@ function visualDirection(site) {
   const style = site.style || {};
   const design = site.design || {};
   return [
-    safePromptPart(style.visualDirection, 180),
-    safePromptPart(style.preference, 120),
-    safePromptPart(style.tone, 120),
-    artDirectionPart(style.artDirection),
-    artDirectionPart(design.visualDirection),
-    artDirectionPart(design.artDirection),
+    imageOnlyDirection(style.visualDirection, 180),
+    imageOnlyDirection(style.preference, 120),
+    imageOnlyDirection(style.tone, 120),
+    imageOnlyDirection(artDirectionPart(style.artDirection), 500),
+    imageOnlyDirection(artDirectionPart(design.visualDirection), 500),
+    imageOnlyDirection(artDirectionPart(design.artDirection), 500),
   ]
     .filter(Boolean)
     .join(", ");
@@ -131,15 +141,6 @@ function promptFor(site, route, placement) {
   const areas = list(business.serviceAreas, 3);
   const vocabulary = list(seo.copyVocabulary, 5);
   const problems = list(seo.customerQuestions, 3);
-  const routeLanguage = [
-    route?.familyId,
-    route?.heroGeometry,
-    route?.typographyCategory,
-    route?.signature,
-  ]
-    .map((value) => safePromptPart(value, 120))
-    .filter(Boolean)
-    .join(", ");
   const direction = visualDirection(site);
   const dna = route?.referenceDna || {};
   const familyImageDirection = {
@@ -219,9 +220,8 @@ function promptFor(site, route, placement) {
   const problemContext = problems.length
     ? `Customer concerns to understand visually, without adding claims: ${problems.join("; ")}.`
     : "";
-  const routeContext = routeLanguage ? `Creative route: ${routeLanguage}.` : "";
   const dnaContext = dna.familyId
-    ? `Reference DNA family: ${safePromptPart(dna.familyId, 100)}. Hero geometry: ${safePromptPart(dna.heroGeometry?.mode, 100)}. Image treatment: ${safePromptPart(dna.imageTreatment?.mode, 120)}. Crop strategy: ${safePromptPart(dna.imageTreatment?.crop, 140)}. Palette intent: ${safePromptPart(dna.palette?.contrastIntent, 140)}. ${familyImageDirection[dna.familyId] || "Follow the assigned reference mechanics without copying a brand."}`
+    ? `Image art direction: ${familyImageDirection[dna.familyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${imageOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
     : "";
   const directionContext = direction ? `Visual direction: ${direction}.` : "";
   const placementBrief =
@@ -232,17 +232,16 @@ function promptFor(site, route, placement) {
         : familyBrief.tertiary;
   const prompt = [
     `Visual medium: ${familyBrief.medium}.`,
-    `Asset type: ${placement.id} image for a local-business website.`,
+    `Asset type: one standalone visual image asset, specifically a ${placement.id} photo or illustration.`,
+    "Hard rule: output only a single image, never a website or webpage screenshot, browser frame, UI, interface, wireframe, mockup, poster, brochure, menu, book cover, sign, or text collage. No readable text or text-like marks, words, letters, glyphs, logos, watermarks, branded products, people, faces, credentials, medical claims, or copied campaign. Reference is visual mood only, not image content.",
     `Primary request: ${placementBrief}.`,
     `Business context: ${subject}.`,
     areaContext,
-    routeContext,
     dnaContext,
     directionContext,
     vocabularyContext,
     problemContext,
     `Style: follow the assigned family mechanics and crop strategy. Preserve believable materials and production polish appropriate to ${familyBrief.medium}; do not normalize every family into the same editorial photograph.`,
-    "Constraints: no readable text, no logos, no watermark, no signage, no invented credentials, no branded products, no medical claims, no identifiable people, no faces, no customer or staff implication, and no copied real-world campaign.",
     "Keep the image useful at the requested crop and avoid tiny details that disappear on mobile.",
     placement.focal,
   ]
