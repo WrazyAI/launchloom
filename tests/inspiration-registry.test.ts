@@ -257,6 +257,11 @@ describe("inspiration registry", () => {
         expect(ids, niche.businessKind).toHaveLength(3);
         expect(new Set(ids).size, niche.businessKind).toBe(3);
         expect(ids.every((id: string) => idsForNiche.has(id)), niche.businessKind).toBe(true);
+        if (pack.request.selectionHistory.familyVarietyEnforced)
+          expect(
+            new Set(pack.routes.map((route: any) => route.familyId)).size,
+            `${niche.businessKind} design-family variety`,
+          ).toBe(3);
         expect(pack.request.selectionHistory.validTrioCount, `${niche.businessKind} topology-safe eligible trios`).toBeGreaterThanOrEqual(9);
         if (availableHeroTopologies.size > 1) {
           expect(pack.request.selectionHistory.heroVarietyEnforced, niche.businessKind).toBe(true);
@@ -275,6 +280,22 @@ describe("inspiration registry", () => {
       expect(trios.size, `${niche.businessKind} unique trios`).toBeGreaterThanOrEqual(9);
     }
   }, 120_000);
+
+  it("uses three design families when at least nine structurally valid family trios remain", () => {
+    const pack = buildInspirationPack({
+      ...baseRequest,
+      industry: "veterinary",
+      styleTerms: [],
+      seed: "family-variety-pool",
+    }, registry, {
+      repositoryRoot: path.resolve("."),
+      requireDossiers: true,
+    });
+
+    expect(pack.request.selectionHistory.familyVarietyEnforced).toBe(true);
+    expect(pack.request.selectionHistory.familyDiverseTrioCount).toBeGreaterThanOrEqual(9);
+    expect(new Set(pack.routes.map((route: any) => route.familyId)).size).toBe(3);
+  });
 
   it("uses persisted recent trios to avoid an exact repeat and report the choice", () => {
     const options = { repositoryRoot: path.resolve("."), requireDossiers: true };

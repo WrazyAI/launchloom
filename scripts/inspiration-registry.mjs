@@ -555,6 +555,11 @@ function independentAnchors(ranked, request, history) {
         ];
         candidates.push({
           anchors,
+          distinctFamilyCount: new Set(
+            anchors
+              .map((anchor) => String(anchor.familyId || anchor.referenceFamilyId || "").toLowerCase())
+              .filter(Boolean),
+          ).size,
           explicitCount: trio.filter((candidate) => candidate.explicit).length,
           minimumDistance: Math.min(...distances),
           totalDistance: distances.reduce((sum, value) => sum + value, 0),
@@ -578,6 +583,15 @@ function independentAnchors(ranked, request, history) {
   let eligible = candidates.filter(
     (candidate) => candidate.explicitCount === Math.max(...candidates.map((item) => item.explicitCount)),
   );
+  const familyDiverseTrios = eligible.filter(
+    (candidate) => candidate.distinctFamilyCount === 3,
+  );
+  // Require three visual families only when the quality-valid pool still has
+  // at least nine choices. Smaller pools can otherwise pin a singleton family
+  // into every intake and break the selector's exposure balancing.
+  const familyVarietyEnforced = familyDiverseTrios.length >= 9;
+  if (familyVarietyEnforced)
+    eligible = familyDiverseTrios;
   if (eligible.some((candidate) => !candidate.repeatedRecentTrio))
     eligible = eligible.filter((candidate) => !candidate.repeatedRecentTrio);
   const minimumExposure = Math.min(...eligible.map((candidate) => candidate.exposure));
@@ -603,7 +617,9 @@ function independentAnchors(ranked, request, history) {
   return {
     chosen: eligible[selectedIndex],
     validTrioCount: candidates.length,
+    familyDiverseTrioCount: familyDiverseTrios.length,
     heroVarietyEnforced: requireHeroVariety,
+    familyVarietyEnforced,
   };
 }
 
@@ -853,6 +869,8 @@ export function buildInspirationPack(
     ),
     selectionHistory: {
       heroVarietyEnforced: selection.heroVarietyEnforced,
+      familyVarietyEnforced: selection.familyVarietyEnforced,
+      familyDiverseTrioCount: selection.familyDiverseTrioCount,
       recentTrioCount: history.recentTrios.length,
       repeatedRecentTrio: selection.chosen.repeatedRecentTrio,
       latestTrioOverlap: selection.chosen.latestTrioOverlap,

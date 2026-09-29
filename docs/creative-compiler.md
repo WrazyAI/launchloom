@@ -17,6 +17,13 @@ selector draws three pairwise-distinct references from the matching niche; a
 niche without three eligible dossiers above the structural-distance floor
 fails closed. Unrelated designs are never used as filler.
 
+When at least nine structurally valid trios can each use three different
+visual families, the selector requires that family spread. Smaller pools keep
+their full seeded exposure-balanced choice set so a one-off family is not
+pinned into every generation. Style-matching tokens come only from affirmative
+visual-direction clauses; negative instructions and factual disclaimers remain
+in author context but are never scored as positive inspiration terms.
+
 `reference-dossier.mjs` verifies the screenshots, capture dimensions, prompt,
 rights evidence, registered paths, and content digest. Production packs bind
 exactly one authoritative dossier to each route. The Reference DNA analyzer

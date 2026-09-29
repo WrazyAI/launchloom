@@ -12,9 +12,13 @@ function parseArgs(values) {
 const STYLE_STOPWORDS = new Set([
   "and",
   "are",
+  "all",
+  "business",
+  "facts",
   "for",
   "from",
   "into",
+  "internal",
   "not",
   "the",
   "this",
@@ -23,7 +27,28 @@ const STYLE_STOPWORDS = new Set([
   "use",
   "with",
   "your",
+  "fictional",
+  "canary",
+  "only",
+  "verified",
+  "street",
+  "address",
+  "credentials",
+  "reviews",
+  "prices",
+  "guarantees",
+  "response",
+  "times",
+  "named",
+  "staff",
+  "patient",
+  "outcomes",
+  "design",
+  "direction",
 ]);
+
+const STYLE_NEGATION =
+  /\b(?:avoid|avoids|avoiding|no|not|never|without|do\s+not|don't|exclude|excluding|prohibit|prohibited)\b/iu;
 
 function words(value) {
   return String(value || "")
@@ -31,6 +56,18 @@ function words(value) {
     .replace(/[^a-z0-9]+/gu, " ")
     .split(/\s+/u)
     .filter((word) => word.length > 2 && !STYLE_STOPWORDS.has(word));
+}
+
+function positiveStyleTerms(value) {
+  const terms = new Set();
+  // Keep positive visual cues, but stop each clause at its first negation so
+  // "avoid split hero" cannot increase a split-hero reference's match score.
+  for (const clause of String(value || "").split(/[.!?;\n]+/u)) {
+    const negation = clause.search(STYLE_NEGATION);
+    const positiveClause = negation < 0 ? clause : clause.slice(0, negation);
+    for (const term of words(positiveClause)) terms.add(term);
+  }
+  return [...terms].slice(0, 20);
 }
 
 function intakeFromMarkdown(value) {
@@ -90,8 +127,8 @@ const styleText = [
   config.design?.recipe,
 ]
   .filter(Boolean)
-  .join(" ");
-const styleTerms = words(styleText);
+  .join(". ");
+const styleTerms = positiveStyleTerms(styleText);
 const pack = buildInspirationPack(
   {
     seed:

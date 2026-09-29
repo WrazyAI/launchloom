@@ -10,6 +10,46 @@ const registry = JSON.parse(fs.readFileSync(path.resolve("data/inspiration-regis
 const roots: string[] = [];
 
 describe("inspiration compilation history", () => {
+  it("scores positive visual direction without promoting negated patterns or factual disclaimers", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "inspiration-style-signals-"));
+    roots.push(root);
+    const config = {
+      business: { name: "Fieldnotes Veterinary Studio" },
+      businessKind: "veterinary",
+      style: { visualDirection: "Editorial field notes with plum and citrus accents." },
+    };
+    const intake = {
+      stylePreference: [
+        "INTERNAL FICTIONAL CANARY ONLY. This business and all facts are fictional.",
+        "No verified street address, emergency availability, credentials, reviews, prices, guarantees, response times, named staff, or patient outcomes.",
+        "Design direction: an independent animal-care studio with art-directed veterinary field notes, calm but expressive plum, chalk, and citrus accents, close-cropped pet portraits, and clear care navigation.",
+        "Use an unexpected image-and-type composition and one purposeful interactive care guide.",
+        "Avoid generic split hero, rounded card grids, blue medical stock photography, and copied brand assets.",
+      ].join(" "),
+    };
+    const configPath = path.join(root, "config.json");
+    const intakePath = path.join(root, "intake.json");
+    const historyPath = path.join(root, "history.json");
+    const outputPath = path.join(root, "pack.json");
+    fs.writeFileSync(configPath, JSON.stringify(config));
+    fs.writeFileSync(intakePath, JSON.stringify(intake));
+    fs.writeFileSync(historyPath, JSON.stringify({ version: 1, launches: [] }));
+
+    execFileSync(
+      "node",
+      ["scripts/compile-inspiration-pack.mjs", "--config", configPath, "--intake", intakePath, "--history", historyPath, "--out", outputPath],
+      { cwd: path.resolve("."), env: { ...process.env, LAUNCHLOOM_INTAKE_ID: "style-signal-regression" } },
+    );
+    const pack = JSON.parse(fs.readFileSync(outputPath, "utf8"));
+
+    expect(pack.request.styleTerms).toEqual(expect.arrayContaining(["plum", "citrus"]));
+    expect(pack.request.styleTerms).not.toEqual(
+      expect.arrayContaining(["fictional", "verified", "credentials", "prices", "generic", "split", "hero"]),
+    );
+    expect(pack.request.selectionHistory.familyVarietyEnforced).toBe(true);
+    expect(new Set(pack.routes.map((route: any) => route.familyId)).size).toBe(3);
+  }, 30_000);
+
   it("scopes mixed no-kind legacy signatures without leaking global families", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "inspiration-no-kind-history-"));
     roots.push(root);
