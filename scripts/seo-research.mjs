@@ -948,15 +948,23 @@ export function renderSeoMapMarkdown(dossier) {
     `Confirmed services: ${(dossier.marketSnapshot?.confirmedServices || []).join(", ") || "none"}`,
     `Coverage communities (facts, not automatic pages): ${(dossier.marketSnapshot?.coverageAreas || []).join(", ") || "primary city only"}`,
     `Keyword metrics measured: ${dossier.marketSnapshot?.measuredKeywords || 0}/${dossier.marketSnapshot?.queriedKeywords || 0}`,
-    `DataForSEO provider-reported spend: ${spendSummary} (cap $${Number(dossier.cost?.limitUsd || 0).toFixed(2)}).`,
+    `DataForSEO provider-reported spend: ${spendSummary} (cap ${Number(dossier.cost?.limitUsd || 0).toFixed(2)}).`,
+    dossier.fallbackSearch?.status && dossier.fallbackSearch.status !== "unavailable"
+      ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s). These observations do not satisfy measured SEO publication requirements.`
+      : "Fallback web search: unavailable.",
     "",
     "## B. Competitors and structural observations",
     "",
   ];
-  if (!dossier.competitors?.length) lines.push("No ranking competitor evidence was available.");
+  if (!dossier.competitors?.length) lines.push("No measured ranking competitor evidence was available.");
   for (const competitor of dossier.competitors || []) {
     lines.push(`- **${competitor.domain}**${competitor.pagePatterns?.length ? `: ${competitor.pagePatterns.join("; ")}` : ""}`);
     for (const result of competitor.results.slice(0, 3)) lines.push(`  - ${result.query}: position ${result.position}, [${result.title}](${result.url})`);
+  }
+  if (dossier.externalSearchEvidence?.length) {
+    lines.push("", "### External web observations (not verified business facts or ranking data)", "");
+    for (const observation of dossier.externalSearchEvidence)
+      lines.push(`- ${observation.query}: [${observation.title || observation.sourceUrl}](${observation.sourceUrl}) - ${observation.snippet || "No extract returned."} (retrieved ${observation.retrievedAt}; ${observation.provider})`);
   }
   lines.push("", "## C. Keyword-to-page map", "");
   for (const page of pages) {
