@@ -281,10 +281,10 @@ describe("inspiration registry", () => {
     }
   }, 120_000);
 
-  it("uses three design families when at least nine structurally valid family trios remain", () => {
+  it("uses three design families when the family pool is sufficiently broad and balanced", () => {
     const pack = buildInspirationPack({
       ...baseRequest,
-      industry: "veterinary",
+      industry: "home-care",
       styleTerms: [],
       seed: "family-variety-pool",
     }, registry, {
@@ -294,8 +294,38 @@ describe("inspiration registry", () => {
 
     expect(pack.request.selectionHistory.familyVarietyEnforced).toBe(true);
     expect(pack.request.selectionHistory.familyDiverseTrioCount).toBeGreaterThanOrEqual(9);
+    expect(pack.request.selectionHistory.familyDiverseMaximumReferenceShare).toBeLessThanOrEqual(0.7);
     expect(new Set(pack.routes.map((route: any) => route.familyId)).size).toBe(3);
   });
+
+  it("keeps affirmative brand direction from collapsing seeded reference rotation", () => {
+    const styleTerms = [
+      "independent", "animal", "care", "studio", "art", "directed", "veterinary",
+      "field", "notes", "calm", "but", "expressive", "plum", "chalk", "citrus",
+      "accents", "close", "cropped", "pet", "portraits",
+    ];
+    const trios = new Set<string>();
+    const exposure = new Map<string, number>();
+
+    for (let index = 0; index < 30; index += 1) {
+      const pack = buildInspirationPack({
+        ...baseRequest,
+        industry: "veterinary",
+        styleTerms,
+        seed: `fieldnotes-style-rotation-${index}`,
+      }, registry);
+      const ids = pack.routes.map((route: any) => route.referenceIds[0]);
+      trios.add([...ids].sort().join("|"));
+      expect(pack.request.selectionHistory.fitPoolCount).toBeGreaterThanOrEqual(9);
+      expect(pack.request.selectionHistory.fitReferenceCoverage).toBe(6);
+      expect(pack.request.selectionHistory.fitMaximumReferenceShare).toBeLessThan(1);
+      ids.forEach((id: string) => exposure.set(id, (exposure.get(id) || 0) + 1));
+    }
+
+    expect(trios.size).toBeGreaterThanOrEqual(9);
+    expect(Math.min(...exposure.values())).toBeGreaterThanOrEqual(5);
+    expect(Math.max(...exposure.values())).toBeLessThanOrEqual(25);
+  }, 120_000);
 
   it("uses persisted recent trios to avoid an exact repeat and report the choice", () => {
     const options = { repositoryRoot: path.resolve("."), requireDossiers: true };

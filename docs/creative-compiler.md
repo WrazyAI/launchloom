@@ -18,11 +18,16 @@ niche without three eligible dossiers above the structural-distance floor
 fails closed. Unrelated designs are never used as filler.
 
 When at least nine structurally valid trios can each use three different
-visual families, the selector requires that family spread. Smaller pools keep
-their full seeded exposure-balanced choice set so a one-off family is not
-pinned into every generation. Style-matching tokens come only from affirmative
-visual-direction clauses; negative instructions and factual disclaimers remain
-in author context but are never scored as positive inspiration terms.
+visual families, cover every eligible dossier, and keep any one dossier at or
+below 70% of that choice pool, the selector requires that family spread.
+Otherwise it keeps the broader seeded exposure-balanced pool so a one-off
+family is not pinned into every generation. Style-matching tokens come only
+from affirmative visual-direction clauses; negative instructions and factual
+disclaimers remain in author context but are never scored as positive
+inspiration terms. The selector widens a lexical style-fit band as needed to
+preserve at least nine seeded choices while covering every structurally
+eligible dossier in the niche; brand vocabulary must not starve other valid
+references.
 
 `reference-dossier.mjs` verifies the screenshots, capture dimensions, prompt,
 rights evidence, registered paths, and content digest. Production packs bind

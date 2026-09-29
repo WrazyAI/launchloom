@@ -47,6 +47,9 @@ const STRUCTURAL_FIELDS = [
 // it too heavily made a few high-distance references dominate every seed.
 const MAX_SHARED_STRUCTURAL_FIELDS = 2;
 const MIN_PAIRWISE_STRUCTURAL_DISTANCE = 65;
+const MIN_SEEDED_ROTATION_POOL_SIZE = 9;
+const MAX_FAMILY_POOL_REFERENCE_SHARE = 0.7;
+const INITIAL_STYLE_FIT_SLACK = 8;
 const BUSINESS_KIND_GROUPS = [
   ["auto-repair", "auto-repair-shop", "auto-mechanic", "mechanic", "mechanic-shop", "garage", "independent-garage", "local-auto-repair", "independent-auto-service", "vehicle-diagnostics", "vehicle-servicing", "vehicle-maintenance", "brake-service", "car-repair", "automotive-repair"],
   ["hvac", "hvac-contractor", "heating-and-cooling", "heating-cooling", "heating-and-cooling-contractor", "air-conditioning", "air-conditioning-and-heating", "heating-contractor", "cooling-contractor", "furnace-repair", "ac-repair"],
@@ -580,16 +583,68 @@ function independentAnchors(ranked, request, history) {
       sum + Number(history.recentFamilyIds.has(buildRouteContract(anchor).familyId.toLowerCase())) +
         Number(history.recentRouteSignatures.has(signatureFor(anchor))), 0);
   }
-  let eligible = candidates.filter(
+  const explicitPool = candidates.filter(
     (candidate) => candidate.explicitCount === Math.max(...candidates.map((item) => item.explicitCount)),
   );
+  const referenceCoverage = (pool) =>
+    new Set(pool.flatMap((candidate) => candidate.anchors.map((anchor) => anchor.id.toLowerCase()))).size;
+  const explicitlySelectedIds = new Set(
+    ranked
+      .filter((candidate) => candidate.explicit)
+      .map((candidate) => candidate.record.id.toLowerCase()),
+  );
+  const maximumReferenceShare = (pool) => {
+    if (!pool.length) return 0;
+    const counts = new Map();
+    for (const candidate of pool)
+      for (const id of new Set(candidate.anchors.map((anchor) => anchor.id.toLowerCase())))
+        counts.set(id, (counts.get(id) || 0) + 1);
+    const optionalCounts = [...counts]
+      .filter(([id]) => !explicitlySelectedIds.has(id))
+      .map(([, count]) => count / pool.length);
+    return optionalCounts.length ? Math.max(...optionalCounts) : 0;
+  };
+  const strongestFit = Math.max(...explicitPool.map((candidate) => candidate.fitScore));
+  const referenceCoverageTarget = referenceCoverage(explicitPool);
+  const maximumAllowedReferenceShare = Math.max(
+    0.8,
+    maximumReferenceShare(explicitPool),
+  );
+  const minimumFitPoolSize = Math.min(
+    MIN_SEEDED_ROTATION_POOL_SIZE,
+    explicitPool.length,
+  );
+  let fitScoreSlack = INITIAL_STYLE_FIT_SLACK;
+  let eligible = explicitPool.filter(
+    (candidate) => candidate.fitScore >= strongestFit - fitScoreSlack,
+  );
+  const fitPoolIsBroadEnough = () =>
+    eligible.length >= minimumFitPoolSize &&
+    referenceCoverage(eligible) >= referenceCoverageTarget &&
+    maximumReferenceShare(eligible) <= maximumAllowedReferenceShare;
+  while (!fitPoolIsBroadEnough() && eligible.length < explicitPool.length) {
+    fitScoreSlack *= 2;
+    eligible = explicitPool.filter(
+      (candidate) => candidate.fitScore >= strongestFit - fitScoreSlack,
+    );
+  }
+  const fitPoolCount = eligible.length;
+  const fitReferenceCoverage = referenceCoverage(eligible);
+  const fitMaximumReferenceShare = maximumReferenceShare(eligible);
   const familyDiverseTrios = eligible.filter(
     (candidate) => candidate.distinctFamilyCount === 3,
   );
+  const familyDiverseReferenceCoverage = referenceCoverage(familyDiverseTrios);
+  const familyDiverseMaximumReferenceShare =
+    maximumReferenceShare(familyDiverseTrios);
   // Require three visual families only when the quality-valid pool still has
   // at least nine choices. Smaller pools can otherwise pin a singleton family
   // into every intake and break the selector's exposure balancing.
-  const familyVarietyEnforced = familyDiverseTrios.length >= 9;
+  const familyVarietyEnforced =
+    familyDiverseTrios.length >= MIN_SEEDED_ROTATION_POOL_SIZE &&
+    familyDiverseReferenceCoverage >= referenceCoverageTarget &&
+    familyDiverseMaximumReferenceShare <=
+      Math.min(maximumAllowedReferenceShare, MAX_FAMILY_POOL_REFERENCE_SHARE);
   if (familyVarietyEnforced)
     eligible = familyDiverseTrios;
   if (eligible.some((candidate) => !candidate.repeatedRecentTrio))
@@ -600,8 +655,6 @@ function independentAnchors(ranked, request, history) {
   eligible = eligible.filter((candidate) => candidate.latestTrioOverlap === minimumLatestOverlap);
   const minimumPatternExposure = Math.min(...eligible.map((candidate) => candidate.patternExposure));
   eligible = eligible.filter((candidate) => candidate.patternExposure === minimumPatternExposure);
-  const strongestFit = Math.max(...eligible.map((candidate) => candidate.fitScore));
-  eligible = eligible.filter((candidate) => candidate.fitScore >= strongestFit - 8);
   eligible.sort((left, right) => left.stableKey.localeCompare(right.stableKey));
   const seedContext = [
     request.seed,
@@ -617,7 +670,13 @@ function independentAnchors(ranked, request, history) {
   return {
     chosen: eligible[selectedIndex],
     validTrioCount: candidates.length,
+    fitPoolCount,
+    fitReferenceCoverage,
+    fitMaximumReferenceShare,
+    fitScoreSlack,
     familyDiverseTrioCount: familyDiverseTrios.length,
+    familyDiverseReferenceCoverage,
+    familyDiverseMaximumReferenceShare,
     heroVarietyEnforced: requireHeroVariety,
     familyVarietyEnforced,
   };
@@ -869,8 +928,14 @@ export function buildInspirationPack(
     ),
     selectionHistory: {
       heroVarietyEnforced: selection.heroVarietyEnforced,
+      fitPoolCount: selection.fitPoolCount,
+      fitReferenceCoverage: selection.fitReferenceCoverage,
+      fitMaximumReferenceShare: selection.fitMaximumReferenceShare,
+      fitScoreSlack: selection.fitScoreSlack,
       familyVarietyEnforced: selection.familyVarietyEnforced,
       familyDiverseTrioCount: selection.familyDiverseTrioCount,
+      familyDiverseReferenceCoverage: selection.familyDiverseReferenceCoverage,
+      familyDiverseMaximumReferenceShare: selection.familyDiverseMaximumReferenceShare,
       recentTrioCount: history.recentTrios.length,
       repeatedRecentTrio: selection.chosen.repeatedRecentTrio,
       latestTrioOverlap: selection.chosen.latestTrioOverlap,

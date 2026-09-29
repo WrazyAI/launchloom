@@ -46,8 +46,10 @@ describe("inspiration compilation history", () => {
     expect(pack.request.styleTerms).not.toEqual(
       expect.arrayContaining(["fictional", "verified", "credentials", "prices", "generic", "split", "hero"]),
     );
-    expect(pack.request.selectionHistory.familyVarietyEnforced).toBe(true);
-    expect(new Set(pack.routes.map((route: any) => route.familyId)).size).toBe(3);
+    expect(pack.request.selectionHistory.fitPoolCount).toBeGreaterThanOrEqual(9);
+    expect(pack.request.selectionHistory.fitReferenceCoverage).toBe(6);
+    expect(pack.request.selectionHistory.fitMaximumReferenceShare).toBeLessThan(1);
+    expect(new Set(pack.routes.map((route: any) => route.familyId)).size).toBeGreaterThanOrEqual(2);
   }, 30_000);
 
   it("scopes mixed no-kind legacy signatures without leaking global families", () => {
