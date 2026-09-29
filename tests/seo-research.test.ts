@@ -466,6 +466,7 @@ describe("SEO market map", () => {
       },
     }]);
     expect(request.max_tool_calls).toBe(1);
+    expect(request.tool_choice).toBe("required");
   });
 
   it("stops fallback research when the provider-reported spend bound is reached", async () => {
