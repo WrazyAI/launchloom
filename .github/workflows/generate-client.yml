@@ -385,7 +385,7 @@ jobs:
           git add src/site.config.json public/images/generated .launchloom/generated-assets.json
           if ! git diff --cached --quiet; then
             git commit -m "Add contextual image assets"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
       - name: Author independent experience candidates
@@ -429,7 +429,7 @@ jobs:
           fi
           if ! git diff --cached --quiet; then
             git commit -m "Record authored experience candidates"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
       - name: Render and repair creative candidates in the production shell
         id: creative_render
@@ -454,7 +454,7 @@ jobs:
           git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Render and repair creative experience candidates"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
       - name: Prepare private creative-recovery report
         id: creative_recovery
@@ -472,7 +472,7 @@ jobs:
           if [ -d .launchloom/creative-repair ]; then git add .launchloom/creative-repair; fi
           if ! git diff --cached --quiet; then
             git commit -m "Preserve failed creative review evidence"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           RESULT=$(node "$GITHUB_WORKSPACE/scripts/prepare-creative-recovery.mjs" \
             --site-dir "$PWD" \
@@ -484,7 +484,7 @@ jobs:
           git add .launchloom/creative-recovery.json src/site.config.json src/generated-experiences/selected
           if ! git diff --cached --quiet; then
             git commit -m "Prepare private creative recovery review"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
       - name: Build and deploy noindex diagnostic preview
         id: diagnostic_preview
@@ -500,7 +500,7 @@ jobs:
           git add .launchloom/creative-repair/diagnostic
           if ! git diff --cached --quiet; then
             git commit -m "Record noindex diagnostic preview checks"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           PROJECT="${{ steps.client.outputs.project }}"
           npx wrangler pages deploy dist --project-name "$PROJECT" --branch creative-diagnostic --commit-hash "$(git rev-parse HEAD)" --commit-message "Private diagnostic design preview"
@@ -577,7 +577,7 @@ jobs:
           git add src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Select reviewed experience candidate"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL="$LAUNCHLOOM_API_URL" npm run build
           grep -I -F -q 'data-creative-host="true"' dist/index.html || { echo "Creative host marker missing from fresh build"; exit 1; }
@@ -599,7 +599,7 @@ jobs:
           git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
           if ! git diff --cached --quiet; then
             git commit -m "Record repaired creative candidate"
-            git push origin review/initial
+            node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial
           fi
           # Scan rendered text assets only. Binary generated imagery can contain
           # the UTF-8 byte sequence by coincidence and is not page copy.
