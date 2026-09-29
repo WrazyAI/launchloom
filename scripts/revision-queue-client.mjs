@@ -24,6 +24,7 @@ const response = await fetch(`${api}/api/internal/revisions`, {
     repo,
     requestId,
     reason: process.env.REVISION_FAILURE_REASON || undefined,
+    failureSiteUrl: process.env.REVISION_FAILURE_SITE_URL || undefined,
   }),
   signal: AbortSignal.timeout(20_000),
 });
