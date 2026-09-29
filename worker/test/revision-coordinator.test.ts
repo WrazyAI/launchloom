@@ -302,6 +302,34 @@ describe("RevisionCoordinator", () => {
     });
   });
 
+  it("migrates a pending legacy failure-email notice without dropping it", async () => {
+    const coordinator = env.REVISION_COORDINATOR.getByName(
+      "legacy-failure-notice-test",
+    );
+    await coordinator.enqueue(
+      request("request-legacy-notice", "Preserve this request."),
+    );
+    await coordinator.claim("request-legacy-notice");
+    await coordinator.fail("request-legacy-notice", "Build failed.");
+    expect(failureEmails).toHaveLength(1);
+
+    await runInDurableObject(coordinator, async (instance, state) => {
+      await state.storage.put("pending-failure-notice", {
+        requestId: "request-legacy-notice",
+        reason: "Retry the original failure notification.",
+        attempts: 1,
+      });
+      await instance.alarm!();
+      expect(
+        await state.storage.get("pending-failure-notice"),
+      ).toBeUndefined();
+      expect(
+        (await state.storage.list({ prefix: "pending-failure-notice:" })).size,
+      ).toBe(0);
+    });
+    expect(failureEmails).toHaveLength(2);
+  });
+
   it("keeps the promoted revision alarm while retrying a failed failure-email notice", async () => {
     const coordinator = env.REVISION_COORDINATOR.getByName(
       "failure-notice-and-promotion-test",
