@@ -1318,6 +1318,8 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       await this.prepareAndDispatchRow(failed);
     } catch (error) {
       await this.markFailed(failed, error);
+      await this.promoteQueued();
+      await this.scheduleCoordinatorAlarm();
       throw error;
     }
     await this.scheduleCoordinatorAlarm();
