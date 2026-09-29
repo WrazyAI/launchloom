@@ -7,6 +7,9 @@ const DEFAULT_MAX_USD = 0.25;
 const HARD_MAX_USD = 2;
 const MAX_CORE_SERVICES = 5;
 const MAX_SERVICE_VARIANTS = 6;
+const DEFAULT_FALLBACK_SEARCH_QUERIES = 3;
+const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
+const FALLBACK_RESULTS_PER_QUERY = 4;
 const US_STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
 };
@@ -316,6 +319,110 @@ function boundedOptions(options) {
   };
 }
 
+export function createOpenRouterWebSearchClient({
+  apiKey,
+  fetchImpl = fetch,
+  model = process.env.SEO_FALLBACK_SEARCH_MODEL || "openai/gpt-5.6-luna",
+} = {}) {
+  if (!apiKey) throw new Error("OpenRouter API key is required.");
+  return {
+    async search({ query, maxResults = FALLBACK_RESULTS_PER_QUERY }) {
+      const response = await fetchImpl("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{
+            role: "user",
+            content: `Search the public web for this local-market query and return only a terse acknowledgement after searching: ${text(query, 300)}`,
+          }],
+          tools: [{
+            type: "openrouter:web_search",
+            parameters: {
+              engine: "parallel",
+              max_results: Math.max(1, Math.min(FALLBACK_RESULTS_PER_QUERY, Number(maxResults) || FALLBACK_RESULTS_PER_QUERY)),
+              max_total_results: Math.max(1, Math.min(FALLBACK_RESULTS_PER_QUERY, Number(maxResults) || FALLBACK_RESULTS_PER_QUERY)),
+              max_characters: 1200,
+            },
+          }],
+          max_tool_calls: 1,
+          max_tokens: 32,
+          temperature: 0,
+        }),
+        signal: AbortSignal.timeout(20_000),
+      });
+      if (!response.ok)
+        throw new Error(`OpenRouter web search returned HTTP ${response.status}.`);
+      const body = await response.json();
+      const annotations = body?.choices?.[0]?.message?.annotations;
+      const results = (Array.isArray(annotations) ? annotations : [])
+        .filter((annotation) => annotation?.type === "url_citation" && annotation?.url_citation)
+        .map((annotation) => annotation.url_citation)
+        .map((citation) => {
+          const url = safeHttpsUrl(citation?.url);
+          if (!url) return null;
+          return {
+            url,
+            title: text(citation?.title, 300),
+            snippet: text(citation?.content, 1_200),
+          };
+        })
+        .filter(Boolean)
+        .slice(0, FALLBACK_RESULTS_PER_QUERY);
+      return { results };
+    },
+  };
+}
+
+async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnings) {
+  const requested = Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES);
+  const maxQueries = Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number.isFinite(requested) ? requested : DEFAULT_FALLBACK_SEARCH_QUERIES));
+  const queries = [];
+  for (const service of seo.services) {
+    const city = seo.primaryCity ? ` ${seo.primaryCity}` : "";
+    queries.push(`${service}${city}`.trim());
+  }
+  if (seo.businessName && seo.primaryCity) queries.push(`${seo.businessName} ${seo.primaryCity}`);
+  for (const seed of seeds) if (!queries.includes(seed)) queries.push(seed);
+  const selected = queries.filter(Boolean).slice(0, maxQueries);
+  const evidence = [];
+  let failed = 0;
+  for (const query of selected) {
+    try {
+      const observed = await webSearch.search({ query, maxResults: FALLBACK_RESULTS_PER_QUERY });
+      const retrievedAt = new Date().toISOString();
+      for (const result of observed?.results || []) {
+        const url = safeHttpsUrl(result?.url);
+        if (!url) continue;
+        evidence.push({
+          query,
+          sourceUrl: url,
+          title: text(result?.title, 300),
+          snippet: text(result?.snippet, 1_200),
+          retrievedAt,
+          provider: "OpenRouter web search (Parallel)",
+          provenance: "external_search_observation",
+        });
+      }
+    } catch (error) {
+      failed += 1;
+      warnings.push(`Fallback web search unavailable for one bounded query: ${text(error instanceof Error ? error.message : error, 240)}`);
+    }
+  }
+  return {
+    evidence,
+    status: evidence.length ? (failed ? "partial" : "complete") : (failed ? "failed" : "empty"),
+    queriesAttempted: selected.length,
+    failedQueries: failed,
+    maxQueries,
+    maxResultsPerQuery: FALLBACK_RESULTS_PER_QUERY,
+    provider: "OpenRouter web search (Parallel)",
+  };
+}
+
 export async function researchSiteContext(intake = {}, options = {}) {
   const seo = normaliseSeoIntake(intake);
   const limits = boundedOptions(options);
@@ -344,6 +451,15 @@ export async function researchSiteContext(intake = {}, options = {}) {
     blogOpportunities: [],
     quickWins: [],
     evidence: [],
+    externalSearchEvidence: [],
+    fallbackSearch: {
+      status: options.webSearch ? "pending" : "unavailable",
+      provider: options.webSearch ? "OpenRouter web search (Parallel)" : null,
+      queriesAttempted: 0,
+      failedQueries: 0,
+      maxQueries: Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES) || DEFAULT_FALLBACK_SEARCH_QUERIES)),
+      maxResultsPerQuery: FALLBACK_RESULTS_PER_QUERY,
+    },
     completeness: { keywordOverview: false, searchIntent: false, keywordDifficulty: false, serviceMetrics: [], serviceSerps: 0, serviceSerpsRequired: seo.services.length, competitors: 0 },
     marketSnapshot: { primaryCity: seo.primaryCity, coverageAreas: seo.coverageAreas, confirmedServices: seo.services, metricLocation: seo.metricLocation, labsMetricLocation: seo.labsLocation, queriedKeywords: seeds.length, measuredKeywords: 0, competitorDomains: 0 },
     cost: { tasks: 0, usd: 0, limitUsd: limits.maxUsd, overBudget: false, complete: true, unreportedTasks: 0, stageCosts },
@@ -355,7 +471,31 @@ export async function researchSiteContext(intake = {}, options = {}) {
   }
   if (!seo.primaryCity) warnings.push("No confirmed primary city was supplied; city-specific queries were not generated.");
   if (!options.dataForSeo) {
-    warnings.push("DataForSEO is unavailable; provider metrics and competitor evidence are recorded as unavailable.");
+    warnings.push("DataForSEO is unavailable; measured keyword volume, difficulty, intent, ranking, and competitor-position evidence remain unavailable.");
+    if (!options.webSearch) {
+      base.fallbackSearch.status = "unavailable";
+      warnings.push("No supported online-search fallback is configured; SEO research remains context-only and production approval stays blocked.");
+      base.warnings = [...new Set(warnings)];
+      return base;
+    }
+    const fallback = await collectFallbackWebEvidence(seo, seeds, options.webSearch, options, warnings);
+    base.externalSearchEvidence = fallback.evidence;
+    base.fallbackSearch = { ...fallback };
+    base.evidence.push(...fallback.evidence.map((item) => ({
+      type: "external_web_search",
+      query: item.query,
+      sourceUrl: item.sourceUrl,
+      title: item.title,
+      snippet: item.snippet,
+      retrievedAt: item.retrievedAt,
+      provider: item.provider,
+      provenance: item.provenance,
+    })));
+    if (fallback.evidence.length)
+      warnings.push("Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts or production SEO readiness.");
+    else
+      warnings.push("The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.");
+    base.warnings = [...new Set(warnings)];
     return base;
   }
 
@@ -865,10 +1005,14 @@ async function main() {
   const login = process.env.DATAFORSEO_LOGIN || process.env.DATAFORSEO_USERNAME;
   const password = process.env.DATAFORSEO_PASSWORD;
   const dataForSeo = login && password ? createDataForSeoClient({ login, password }) : undefined;
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  const webSearch = !dataForSeo && openRouterKey ? createOpenRouterWebSearchClient({ apiKey: openRouterKey }) : undefined;
   const dossier = await researchSiteContext(intake, {
     dataForSeo,
+    webSearch,
     maxTasks: Number(process.env.SEO_RESEARCH_MAX_TASKS || DEFAULT_MAX_TASKS),
     maxUsd: Number(process.env.SEO_RESEARCH_MAX_USD || DEFAULT_MAX_USD),
+    maxFallbackSearchQueries: Number(process.env.SEO_FALLBACK_MAX_QUERIES || DEFAULT_FALLBACK_SEARCH_QUERIES),
   });
   await fs.writeFile(destination, `${JSON.stringify(dossier, null, 2)}\n`);
   if (markdownDestination) await fs.writeFile(markdownDestination, renderSeoMapMarkdown(dossier));
