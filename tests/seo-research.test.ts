@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createDataForSeoClient,
+  createOpenRouterWebSearchClient,
   normaliseSeoIntake,
   researchSiteContext,
 } from "../scripts/seo-research.mjs";
@@ -163,6 +164,7 @@ describe("SEO market map", () => {
           DATAFORSEO_LOGIN: "",
           DATAFORSEO_USERNAME: "",
           DATAFORSEO_PASSWORD: "",
+          OPENROUTER_API_KEY: "",
         },
       });
 
@@ -354,14 +356,120 @@ describe("SEO market map", () => {
     expect(dossier.warnings.join(" ")).toContain("without provider-reported spend");
   });
 
-  it("degrades without DataForSEO and does not fabricate metrics, competitors, or locations", async () => {
+  it("collects bounded cited web evidence without DataForSEO but keeps production SEO blocked", async () => {
+    const webSearch = {
+      search: vi.fn(async ({ query }: { query: string }) => ({
+        results: [
+          {
+            url: "https://example.test/service",
+            title: `Observed result for ${query}`,
+            snippet: "Extracted search evidence from the public page.",
+          },
+        ],
+      })),
+    };
+    const dossier = await researchSiteContext(intake, {
+      webSearch,
+      maxTasks: 16,
+      maxUsd: 0.25,
+      maxFallbackSearchQueries: 2,
+    });
+
+    expect(webSearch.search).toHaveBeenCalledTimes(2);
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.publishReady).toBe(false);
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "complete",
+      queriesAttempted: 2,
+      maxQueries: 2,
+      maxResultsPerQuery: 4,
+      provider: "OpenRouter web search (Parallel)",
+    });
+    expect(dossier.externalSearchEvidence).toHaveLength(2);
+    expect(dossier.externalSearchEvidence[0]).toMatchObject({
+      query: expect.any(String),
+      sourceUrl: "https://example.test/service",
+      title: expect.stringContaining("Observed result"),
+      snippet: "Extracted search evidence from the public page.",
+      retrievedAt: expect.any(String),
+      provider: "OpenRouter web search (Parallel)",
+      provenance: "external_search_observation",
+    });
+    expect(dossier.validatedQueries.every((item) => item.volume === null && item.kd === null && item.cpc === null && item.competition === null && item.intent === null)).toBe(true);
+    expect(dossier.competitors).toEqual([]);
+    expect(dossier.pageMap.some((page) => page.pageType === "location")).toBe(false);
+    expect(dossier.warnings.join(" ")).toContain("external observations only");
+  });
+
+  it("keeps an explicit degraded context-only result when no online search provider is configured", async () => {
     const dossier = await researchSiteContext(intake, { maxTasks: 16, maxUsd: 0.25 });
     expect(dossier.mode).toBe("context-only");
     expect(dossier.publishReady).toBe(false);
+    expect(dossier.fallbackSearch.status).toBe("unavailable");
+    expect(dossier.externalSearchEvidence).toEqual([]);
+    expect(dossier.warnings.join(" ")).toContain("No supported online-search fallback is configured");
     expect(dossier.validatedQueries.every((item) => item.volume === null && item.kd === null && item.cpc === null && item.competition === null && item.intent === null)).toBe(true);
     expect(dossier.competitors).toEqual([]);
     expect(dossier.pageMap.some((page) => page.pageType === "location")).toBe(false);
     expect(dossier.fanOutQuestionGroups.map((group) => group.pageId)).toEqual(expect.arrayContaining(["home", "services-hub", "about", "contact"]));
     expect(dossier.fanOutQuestionGroups.flatMap((group) => group.questions).every((item) => item.provenance === "reasoned_gap")).toBe(true);
+  });
+
+  it("extracts only OpenRouter url citations and ignores model-authored search claims", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({
+      choices: [{
+        message: {
+          content: "Fabricated claim: Harbor Plumbing ranks #1 and gets 900 searches.",
+          annotations: [
+            {
+              type: "url_citation",
+              url_citation: {
+                url: "https://source.example/plumbing",
+                title: "Plumbing source",
+                content: "A directly extracted snippet from the source page.",
+              },
+            },
+          ],
+        },
+      }],
+    }), { status: 200 }));
+    const search = createOpenRouterWebSearchClient({
+      apiKey: "test-key",
+      fetchImpl,
+      model: "test/model",
+    });
+    const observed = await search.search({ query: "drain cleaning Tacoma", maxResults: 4 });
+
+    expect(observed.results).toEqual([{
+      url: "https://source.example/plumbing",
+      title: "Plumbing source",
+      snippet: "A directly extracted snippet from the source page.",
+    }]);
+    expect(JSON.stringify(observed)).not.toContain("ranks #1");
+    expect(JSON.stringify(observed)).not.toContain("900 searches");
+    const request = JSON.parse(String(fetchImpl.mock.calls[0][1]?.body));
+    expect(request.tools).toEqual([{
+      type: "openrouter:web_search",
+      parameters: {
+        engine: "parallel",
+        max_results: 4,
+        max_total_results: 4,
+        max_characters: 1200,
+      },
+    }]);
+    expect(request.max_tool_calls).toBe(1);
+  });
+
+  it("degrades honestly when the bounded online fallback is unreachable", async () => {
+    const dossier = await researchSiteContext(intake, {
+      webSearch: { search: vi.fn(async () => { throw new Error("search unavailable"); }) },
+      maxFallbackSearchQueries: 1,
+    });
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.publishReady).toBe(false);
+    expect(dossier.fallbackSearch).toMatchObject({ status: "failed", queriesAttempted: 1, failedQueries: 1 });
+    expect(dossier.externalSearchEvidence).toEqual([]);
+    expect(dossier.warnings.join(" ")).toContain("search unavailable");
+    expect(dossier.warnings.join(" ")).toContain("returned no usable cited evidence");
   });
 });
