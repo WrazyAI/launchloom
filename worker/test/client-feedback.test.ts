@@ -27,6 +27,24 @@ async function reviewToken() {
 }
 
 describe("bounded client review uploads", () => {
+  it("allows review Pages preflight without trusting an unrelated origin", async () => {
+    const allowed = await SELF.fetch("https://api.launchloom.test/api/feedback", {
+      method: "OPTIONS",
+      headers: { Origin: origin },
+    });
+    expect(allowed.status).toBe(204);
+    expect(allowed.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+    expect(allowed.headers.get("Access-Control-Allow-Methods")).toContain("POST");
+
+    const rejected = await SELF.fetch("https://api.launchloom.test/api/feedback", {
+      method: "OPTIONS",
+      headers: { Origin: "https://evil.example" },
+    });
+    expect(rejected.status).toBe(204);
+    expect(rejected.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+
+
   it("accepts a signed PNG replacement, stores a generated asset URL, and excludes the review token from GitHub", async () => {
     const token = await reviewToken();
     const comments: Array<{ body: string }> = [];
