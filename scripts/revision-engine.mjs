@@ -147,6 +147,76 @@ const layoutRequest =
   /\b(layout|reorder|move|above|below|before|after|hide|remove|show|add|section|spacing|spacious|compact|density|typography|font|modern|editorial|bold|immersive|center(?:ed)?)\b/i;
 const contentRequest =
   /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten|simplify|condense).{0,50}\b(faq|question|answer|process|step|hero|opening)\b|\b(faq|question|answer|process|step|hero|opening)\b.{0,50}(?:say|read|explain|mention|shorter|simpler|concise|bloated|too long)\b/i;
+const COPY_FIELD_TARGETS = [
+  [
+    "heroHeading",
+    /\b(?:hero|opening)(?:\s+(?:section|main))?\s+(?:heading|headline|title|h1)\b|\b(?:heading|headline|title|h1)\s+(?:for|in|of)\s+(?:the\s+)?(?:hero|opening)\b/i,
+  ],
+  [
+    "heroBody",
+    /\b(?:hero|opening)(?:\s+section)?\s+(?:body|paragraph|description|intro)\b|\b(?:body|paragraph|description|intro)\s+(?:for|in|of)\s+(?:the\s+)?(?:hero|opening)\b/i,
+  ],
+  [
+    "heroKicker",
+    /\b(?:hero|opening)(?:\s+section)?\s+(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?(?:hero|opening)\b/i,
+  ],
+  [
+    "servicesHeading",
+    /\bservices?\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?services?\b/i,
+  ],
+  [
+    "servicesIntro",
+    /\bservices?\s+(?:section\s+)?(?:intro|introduction|description|paragraph)\b|\b(?:intro|introduction|description|paragraph)\s+(?:for|in|of)\s+(?:the\s+)?services?\b/i,
+  ],
+  [
+    "aboutHeading",
+    /\babout(?:\s+us)?\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?about(?:\s+us)?\b/i,
+  ],
+  [
+    "aboutBody",
+    /\babout(?:\s+us)?\s+(?:section\s+)?(?:body|paragraph|description|copy)\b|\b(?:body|paragraph|description|copy)\s+(?:for|in|of)\s+(?:the\s+)?about(?:\s+us)?\b/i,
+  ],
+  [
+    "aboutKicker",
+    /\babout(?:\s+us)?\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?about(?:\s+us)?\b/i,
+  ],
+  [
+    "contactHeading",
+    /\bcontact\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?contact\b/i,
+  ],
+  [
+    "contactKicker",
+    /\bcontact\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?contact\b/i,
+  ],
+  [
+    "processHeading",
+    /\bprocess\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?process\b/i,
+  ],
+  [
+    "processKicker",
+    /\bprocess\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?process\b/i,
+  ],
+  [
+    "faqHeading",
+    /\b(?:faqs?|questions?)\s+(?:section\s+)?(?:heading|headline|title)\b|\b(?:heading|headline|title)\s+(?:for|in|of)\s+(?:the\s+)?(?:faqs?|questions?)\b/i,
+  ],
+  [
+    "faqKicker",
+    /\b(?:faqs?|questions?)\s+(?:section\s+)?(?:kicker|eyebrow|label)\b|\b(?:kicker|eyebrow|label)\s+(?:for|in|of)\s+(?:the\s+)?(?:faqs?|questions?)\b/i,
+  ],
+  [
+    "formIntro",
+    /\b(?:contact |request )?form\s+(?:intro|introduction|description|prompt)\b|\b(?:intro|introduction|description|prompt)\s+(?:for|in|of)\s+(?:the\s+)?(?:contact |request )?form\b/i,
+  ],
+];
+const COPY_SECTION_FIELDS = {
+  hero: ["heroKicker", "heroHeading", "heroBody"],
+  services: ["servicesHeading", "servicesIntro"],
+  about: ["aboutKicker", "aboutHeading", "aboutBody"],
+  contact: ["contactKicker", "contactHeading", "formIntro"],
+  process: ["processKicker", "processHeading"],
+  faq: ["faqKicker", "faqHeading"],
+};
 const conversionFeatureRequest =
   /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant|chat)|ai (?:faq )?(?:chat|assistant|chatbot)|chatbot|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
 const creativeVisualRequest =
@@ -622,6 +692,89 @@ function intentsFor(feedback, config) {
     intents.push("layout");
   return intents.length ? [...new Set(intents)] : ["unknown"];
 }
+function explicitContentTargets(feedback, config) {
+  const text = feedback.replace(/^\s*\[[^\]]+\]\s*/, "");
+  const exactFields = COPY_FIELD_TARGETS.filter(([, pattern]) =>
+    pattern.test(text),
+  ).map(([field]) => field);
+  const targets = exactFields.map((field) => ({ kind: "copy-field", field }));
+
+  const namedServices = (config.services || []).filter((service) =>
+    [service.name, service.slug]
+      .filter(Boolean)
+      .some((value) =>
+        text.toLowerCase().includes(String(value).toLowerCase()),
+      ),
+  );
+  for (const service of namedServices)
+    targets.push({
+      kind: "service",
+      slug: service.slug,
+    });
+
+  const exactFaqCopyField = exactFields.some(
+    (field) => field === "faqHeading" || field === "faqKicker",
+  );
+  if (
+    /\banswers?\b|\bfaq (?:questions|entries|content)\b/i.test(text) ||
+    (/\b(?:faqs?|frequently asked questions?)\b/i.test(text) &&
+      !exactFaqCopyField)
+  )
+    targets.push({ kind: "operation", operation: "set_faqs" });
+  const exactProcessCopyField = exactFields.some(
+    (field) => field === "processHeading" || field === "processKicker",
+  );
+  if (
+    /\b(?:steps?|how it works)\b/i.test(text) ||
+    (/\bprocess\b/i.test(text) && !exactProcessCopyField)
+  )
+    targets.push({ kind: "operation", operation: "set_process" });
+
+  for (const [section, fields] of Object.entries(COPY_SECTION_FIELDS)) {
+    if (
+      section === "faq" ||
+      section === "process" ||
+      exactFields.some((field) => fields.includes(field))
+    )
+      continue;
+    const sectionPattern =
+      section === "hero"
+        ? /\b(hero|opening)\b/i
+        : new RegExp(`\\b${section}\\b`, "i");
+    if (sectionPattern.test(text) && contentRequest.test(text))
+      targets.push({ kind: "copy-section", section, fields });
+  }
+  if (/\bservice (?:copy|wording|description|card)\b/i.test(text))
+    targets.push({ kind: "service-copy" });
+  return targets;
+}
+function contentOperationMatchesTarget(operation, target) {
+  if (target.kind === "copy-field")
+    return operation.kind === "set_copy" && operation.field === target.field;
+  if (target.kind === "copy-section")
+    return (
+      (operation.kind === "set_copy" &&
+        target.fields.includes(operation.field)) ||
+      (target.section === "services" && operation.kind === "set_service_copy")
+    );
+  if (target.kind === "service")
+    return (
+      operation.kind === "set_service_copy" &&
+      operation.serviceSlug === target.slug
+    );
+  if (target.kind === "service-copy")
+    return operation.kind === "set_service_copy";
+  if (target.kind === "operation") return operation.kind === target.operation;
+  return false;
+}
+function contentTargetsSatisfied(targets, operations) {
+  if (!targets.length) return intentSatisfied("content", operations);
+  return targets.every((target) =>
+    operations.some((operation) =>
+      contentOperationMatchesTarget(operation, target),
+    ),
+  );
+}
 export async function modelOperations(
   feedbackItems,
   config,
@@ -642,21 +795,21 @@ export async function modelOperations(
       responseCache: true,
       responseCacheTtlSeconds: 900,
       body: {
-          model,
-          reasoning_effort: reasoningEffort,
-          temperature: 0.1,
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
-            },
-            {
-              role: "user",
-              content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
-            },
-          ],
-        },
+        model,
+        reasoning_effort: reasoningEffort,
+        temperature: 0.1,
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
+          },
+          {
+            role: "user",
+            content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
+          },
+        ],
+      },
     });
     if (!response.ok) continue;
     try {
@@ -1068,6 +1221,9 @@ export async function planRevision(
       feedbackIndex,
     })),
   );
+  const contentTargets = items.map((feedback) =>
+    explicitContentTargets(feedback, config),
+  );
   const modeled = (await planner(items, config)).filter((operation) => {
     if (!MODEL_OPERATION_KINDS.has(operation.kind)) return false;
     const feedback = items[operation.feedbackIndex];
@@ -1120,7 +1276,12 @@ export async function planRevision(
       } else return false;
     if (operation.kind === "set_conversion_feature")
       return intents.includes("conversion-feature");
-    return intents.includes("content");
+    if (!intents.includes("content")) return false;
+    const targets = contentTargets[operation.feedbackIndex];
+    return (
+      !targets.length ||
+      targets.some((target) => contentOperationMatchesTarget(operation, target))
+    );
   });
   const candidates = [...deterministic, ...modeled]
     .filter(
@@ -1160,11 +1321,11 @@ export async function planRevision(
       (operation) => operation.feedbackIndex === feedbackIndex,
     );
     const fulfilled = intents.filter((intent) =>
-      intentSatisfied(intent, operations),
+      intent === "content"
+        ? contentTargetsSatisfied(contentTargets[feedbackIndex], operations)
+        : intentSatisfied(intent, operations),
     );
-    const unresolved = intents.filter(
-      (intent) => !fulfilled.includes(intent),
-    );
+    const unresolved = intents.filter((intent) => !fulfilled.includes(intent));
     const creativeDeferred =
       config.design?.experience?.renderer === "creative-candidate"
         ? unresolved.filter((intent) => intent === "layout")
@@ -1234,44 +1395,100 @@ export function ensureLegacySocialProofMarkup(source) {
 export function expectedArtifacts(operations, config) {
   return operations.flatMap((operation) => {
     if (operation.kind === "replace_asset") {
-      const placement = {
-        logo: "header",
-        photoOne: "hero",
-        photoTwo: "about",
-        photoThree: "gallery",
-      }[operation.slot] || "page";
-      return [{ type: "asset", url: clean(operation.url), route: "/", placement, slot: operation.slot }];
+      const placement =
+        {
+          logo: "header",
+          photoOne: "hero",
+          photoTwo: "about",
+          photoThree: "gallery",
+        }[operation.slot] || "page";
+      return [
+        {
+          type: "asset",
+          url: clean(operation.url),
+          route: "/",
+          placement,
+          slot: operation.slot,
+        },
+      ];
     }
     if (operation.kind === "replace_copy_fragment") {
-      const serviceMatch = operation.path?.match(/^services\[(\d+)\]\.description$/u);
+      const serviceMatch = operation.path?.match(
+        /^services\[(\d+)\]\.description$/u,
+      );
       const serviceSlug = serviceMatch
         ? config.services?.[Number(serviceMatch[1])]?.slug
         : "";
-      const route = serviceSlug ? `/services/${serviceSlug}/` :
-        operation.path?.startsWith("copy.about") ? "/about/" :
-          operation.path === "copy.contactHeading" ? "/contact/" :
-            operation.path?.startsWith("copy.services") ? "/services/" : "/";
-      const placement = serviceMatch ? "service-description" :
-        operation.path === "copy.heroHeading" ? "hero-heading" :
-          ["copy.contactHeading", "copy.servicesHeading"].includes(operation.path) ? "heading" :
-          operation.path === "copy.heroKicker" ? "hero-eyebrow" :
-            operation.path === "copy.heroBody" ? "hero-copy" :
-              operation.path?.startsWith("conversion.process[") ? "process-step" :
-                operation.path?.endsWith(".question") && operation.path?.startsWith("conversion.faqs[") ? "faq-question" :
-                  operation.path?.endsWith(".answer") && operation.path?.startsWith("conversion.faqs[") ? "faq-answer" :
-                    operation.path?.startsWith("differentiators[") ? "proof-point" : "page-copy";
-      return [{ type: "text", value: clean(operation.to), path: operation.path, route, placement }];
+      const route = serviceSlug
+        ? `/services/${serviceSlug}/`
+        : operation.path?.startsWith("copy.about")
+          ? "/about/"
+          : operation.path === "copy.contactHeading"
+            ? "/contact/"
+            : operation.path?.startsWith("copy.services")
+              ? "/services/"
+              : "/";
+      const placement = serviceMatch
+        ? "service-description"
+        : operation.path === "copy.heroHeading"
+          ? "hero-heading"
+          : ["copy.contactHeading", "copy.servicesHeading"].includes(
+                operation.path,
+              )
+            ? "heading"
+            : operation.path === "copy.heroKicker"
+              ? "hero-eyebrow"
+              : operation.path === "copy.heroBody"
+                ? "hero-copy"
+                : operation.path?.startsWith("conversion.process[")
+                  ? "process-step"
+                  : operation.path?.endsWith(".question") &&
+                      operation.path?.startsWith("conversion.faqs[")
+                    ? "faq-question"
+                    : operation.path?.endsWith(".answer") &&
+                        operation.path?.startsWith("conversion.faqs[")
+                      ? "faq-answer"
+                      : operation.path?.startsWith("differentiators[")
+                        ? "proof-point"
+                        : "page-copy";
+      return [
+        {
+          type: "text",
+          value: clean(operation.to),
+          path: operation.path,
+          route,
+          placement,
+        },
+      ];
     }
     if (operation.kind === "update_business_fact")
-      return [{ type: "text", value: clean(operation.value), path: `business.${operation.field}`, route: "/", placement: "business-fact" }];
+      return [
+        {
+          type: "text",
+          value: clean(operation.value),
+          path: `business.${operation.field}`,
+          route: "/",
+          placement: "business-fact",
+        },
+      ];
     if (operation.kind === "update_design_token") {
       const artifacts = [];
       if (operation.value)
-        artifacts.push({ type: "style", field: "primaryColor", value: clean(operation.value).toLowerCase() });
+        artifacts.push({
+          type: "style",
+          field: "primaryColor",
+          value: clean(operation.value).toLowerCase(),
+        });
       if (operation.density)
-        artifacts.push({ type: "class", marker: `density-${operation.density}` });
+        artifacts.push({
+          type: "class",
+          marker: `density-${operation.density}`,
+        });
       if (operation.typography)
-        artifacts.push({ type: "class", marker: `type-${operation.typography}` });
+        artifacts.push({
+          type: "class",
+          marker: `type-${operation.typography}`,
+        });
       return artifacts;
     }
     if (operation.kind === "set_social_proof")
@@ -1369,67 +1586,108 @@ function sectionIdFor(config, type) {
 function renderedTextVariants(value) {
   const ampersands = String(value).replace(/&/gu, "&amp;");
   const markup = ampersands.replace(/</gu, "&lt;").replace(/>/gu, "&gt;");
-  return [...new Set([
-    markup,
-    markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#39;"),
-    markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#x27;"),
-    ...(!/[<>]/u.test(value) ? [ampersands] : []),
-  ])];
+  return [
+    ...new Set([
+      markup,
+      markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#39;"),
+      markup.replace(/"/gu, "&quot;").replace(/'/gu, "&#x27;"),
+      ...(!/[<>]/u.test(value) ? [ampersands] : []),
+    ]),
+  ];
 }
 function elementBodies(html, tag) {
-  return [...html.matchAll(new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "giu"))]
-    .map((match) => match[1]);
+  return [
+    ...html.matchAll(
+      new RegExp(`<${tag}\\b[^>]*>([\\s\\S]*?)<\\/${tag}>`, "giu"),
+    ),
+  ].map((match) => match[1]);
 }
 function containsRenderedText(html, value) {
   return renderedTextVariants(value).some((variant) => html.includes(variant));
 }
 function containsTextInElement(html, tag, value) {
-  return elementBodies(html, tag).some((body) => containsRenderedText(body, value));
+  return elementBodies(html, tag).some((body) =>
+    containsRenderedText(body, value),
+  );
 }
 function containsTextInHero(html, tag, value) {
-  const sections = [...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/giu)];
+  const sections = [
+    ...html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/giu),
+  ];
   const heroSections = sections
     .filter((match) => /hero/iu.test(match[1]))
     .map((match) => match[2]);
-  return heroSections.some((section) => containsTextInElement(section, tag, value));
+  return heroSections.some((section) =>
+    containsTextInElement(section, tag, value),
+  );
 }
 function containsArtifactText(html, artifact) {
   if (!html) return false;
   if (artifact.placement === "hero-heading")
     return containsTextInHero(html, "h1", artifact.value);
   if (artifact.placement === "heading")
-    return ["h1", "h2", "h3"].some((tag) => containsTextInElement(html, tag, artifact.value));
+    return ["h1", "h2", "h3"].some((tag) =>
+      containsTextInElement(html, tag, artifact.value),
+    );
   if (artifact.placement === "hero-eyebrow")
-    return ["span", "p"].some((tag) => containsTextInHero(html, tag, artifact.value));
+    return ["span", "p"].some((tag) =>
+      containsTextInHero(html, tag, artifact.value),
+    );
   if (artifact.placement === "hero-copy")
     return containsTextInHero(html, "p", artifact.value);
-  if (artifact.placement === "service-description" || artifact.placement === "faq-answer" || artifact.placement === "proof-point")
+  if (
+    artifact.placement === "service-description" ||
+    artifact.placement === "faq-answer" ||
+    artifact.placement === "proof-point"
+  )
     return containsTextInElement(html, "p", artifact.value);
   if (artifact.placement === "process-step")
-    return containsTextInElement(html, "li", artifact.value) || containsTextInElement(html, "p", artifact.value);
+    return (
+      containsTextInElement(html, "li", artifact.value) ||
+      containsTextInElement(html, "p", artifact.value)
+    );
   if (artifact.placement === "faq-question")
     return containsTextInElement(html, "summary", artifact.value);
   return containsRenderedText(html, artifact.value);
 }
 function imageSourceMarkup(url) {
   const ampersands = String(url).replace(/&/gu, "&amp;");
-  return [`src=\"${url}\"`, `src='${url}'`, `src=\"${ampersands}\"`, `src='${ampersands}'`];
+  return [
+    `src=\"${url}\"`,
+    `src='${url}'`,
+    `src=\"${ampersands}\"`,
+    `src='${ampersands}'`,
+  ];
 }
 function assetPlacementHtml(html, placement) {
   if (placement === "header")
     return html.match(/<header\b[\s\S]*?<\/header>/iu)?.[0] || "";
   if (["hero", "about", "gallery"].includes(placement)) {
-    const sections = [...html.matchAll(/<section\b([^>]*)>[\s\S]*?<\/section>/giu)];
-    return sections.find((match) => match[1].toLocaleLowerCase().includes(placement))?.[0] || "";
+    const sections = [
+      ...html.matchAll(/<section\b([^>]*)>[\s\S]*?<\/section>/giu),
+    ];
+    return (
+      sections.find((match) =>
+        match[1].toLocaleLowerCase().includes(placement),
+      )?.[0] || ""
+    );
   }
   return html;
 }
 function containsAsset(html, artifact) {
   const region = assetPlacementHtml(html, artifact.placement);
-  return imageSourceMarkup(artifact.url).some((marker) => region.includes(marker));
+  return imageSourceMarkup(artifact.url).some((marker) =>
+    region.includes(marker),
+  );
 }
 /** @param {Record<string, string> | null} [htmlPages=null] */
-export function verifyRevision(config, report, html = "", allHtml = html, htmlPages = null) {
+export function verifyRevision(
+  config,
+  report,
+  html = "",
+  allHtml = html,
+  htmlPages = null,
+) {
   const failures = [];
   const selectedCandidateId = String(
     config.design?.experience?.candidateId || "",
@@ -1443,10 +1701,7 @@ export function verifyRevision(config, report, html = "", allHtml = html, htmlPa
     (!selectedCandidateId || verifiedCandidateId === selectedCandidateId);
   if (!Array.isArray(report.results) || !report.results.length)
     failures.push("Revision has no per-feedback results.");
-  if (
-    report.creativeSourceRepairRequired === true &&
-    !creativeSourceVerified
-  )
+  if (report.creativeSourceRepairRequired === true && !creativeSourceVerified)
     failures.push(
       "Creative source repair was required but did not pass rendered human verification.",
     );
@@ -1488,12 +1743,21 @@ export function verifyRevision(config, report, html = "", allHtml = html, htmlPa
     const renderedPage = artifact.route
       ? htmlPages
         ? htmlPages[artifact.route] || ""
-        : artifact.route === "/" ? html : allHtml
+        : artifact.route === "/"
+          ? html
+          : allHtml
       : allHtml;
-    if (artifact.type === "text" && !containsArtifactText(renderedPage, artifact))
-      failures.push(`Missing rendered text at ${artifact.path || "the expected page"}: ${artifact.value.slice(0, 80)}`);
+    if (
+      artifact.type === "text" &&
+      !containsArtifactText(renderedPage, artifact)
+    )
+      failures.push(
+        `Missing rendered text at ${artifact.path || "the expected page"}: ${artifact.value.slice(0, 80)}`,
+      );
     if (artifact.type === "asset" && !containsAsset(renderedPage, artifact))
-      failures.push(`Missing rendered replacement asset at ${artifact.placement || "the expected page"}: ${artifact.url}`);
+      failures.push(
+        `Missing rendered replacement asset at ${artifact.placement || "the expected page"}: ${artifact.url}`,
+      );
     if (
       artifact.type === "style" &&
       !html.toLowerCase().includes(artifact.value)
