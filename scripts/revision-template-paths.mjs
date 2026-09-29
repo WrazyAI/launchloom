@@ -114,6 +114,19 @@ export function revisionTemplatePaths(config) {
 // Besides copied template files, the synchronizer may migrate the existing
 // canonical expression in SiteLayout and insert legacy social-proof markup.
 // Keep those exact secondary destinations in the machine-enforced write set.
+// Feedback replacements are committed beside generated imagery. Only the exact
+// files named by this revision's set_image operations are writable.
+export function revisionAssetWritePaths(config) {
+  return (config.revisionReport?.operations || [])
+    .filter(
+      (operation) =>
+        operation.kind === "set_image" &&
+        typeof operation.path === "string" &&
+        /^\/images\/feedback\/[a-z0-9-]+\.webp$/u.test(operation.path),
+    )
+    .map((operation) => `public${operation.path}`);
+}
+
 export function revisionTemplateWritePaths(config) {
   const files = new Set(revisionTemplatePaths(config));
   files.add("src/layouts/SiteLayout.astro");
@@ -123,5 +136,6 @@ export function revisionTemplateWritePaths(config) {
     )
   )
     files.add("src/pages/index.astro");
+  for (const asset of revisionAssetWritePaths(config)) files.add(asset);
   return [...files].sort();
 }
