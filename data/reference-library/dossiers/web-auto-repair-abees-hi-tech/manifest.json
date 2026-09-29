@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "id": "web-auto-repair-abees-hi-tech",
+  "productionEligible": true,
+  "referenceName": "Abee's Hi-Tech Auto Service: ruled promise ledger with review source cards",
+  "familyId": "web-auto-repair-abees-hi-tech-family",
+  "businessKinds": [
+    "auto repair shop",
+    "independent garage",
+    "vehicle servicing",
+    "auto-repair"
+  ],
+  "source": {
+    "name": "Abee's Hi-Tech Auto Service official website",
+    "url": "https://www.abeesautomotive.com/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "auto repair",
+      "local garage",
+      "vehicle maintenance",
+      "auto-repair"
+    ],
+    "style": [
+      "heavy condensed-feeling sans with small utility labels",
+      "warm cream and black surfaces",
+      "red accent"
+    ],
+    "composition": [
+      "oversized black-and-red type on cream with the appointment route immediately below",
+      "ruled promise ledger",
+      "review source cards",
+      "cream-red type hero"
+    ],
+    "conversion": [
+      "service booking",
+      "garage contact"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "selective repair and workshop photos, while text carries trust",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Abee's Hi-Tech Auto Service website in Austin, Texas uses oversized black-and-red type on cream with the appointment route immediately below. Navigation is lean utility navigation for services, expertise and booking. Its page moves through typographic opening, four service ground rules, expertise routes, booking band, review-source ledger, family shop story, FAQ, address close, with broad service choices separated from specialist and fleet work. selective repair and workshop photos, while text carries trust. Transferable mechanics are ruled promise ledger, review source cards, cream-red type hero. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "oversized black-and-red type on cream with the appointment route immediately below",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "lean utility navigation for services, expertise and booking",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "heavy condensed-feeling sans with small utility labels",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "warm cream",
+        "black",
+        "white"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "red"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "selective repair and workshop photos, while text carries trust",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "typographic opening",
+      "four service ground rules",
+      "expertise routes",
+      "booking band",
+      "review-source ledger",
+      "family shop story",
+      "FAQ",
+      "address close"
+    ],
+    "servicePresentation": {
+      "pattern": "broad service choices separated from specialist and fleet work",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "book online",
+      "secondary": "then call or text",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "keep service promises and reviews as short ruled rows",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Abee's Hi-Tech Auto Service identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "ruled-promise-ledger",
+        "selector": "[data-reference-signature=ruled-promise-ledger]",
+        "description": "Translate the observed ruled promise ledger mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "review-source-cards",
+        "selector": "[data-reference-signature=review-source-cards]",
+        "description": "Translate the observed review source cards mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "cream-red-type-hero",
+        "selector": "[data-reference-signature=cream-red-type-hero]",
+        "description": "Translate the observed cream-red type hero mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses ruled promise ledger with client-cleared content.",
+      "Page sequence retains review source cards and cream-red type hero as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

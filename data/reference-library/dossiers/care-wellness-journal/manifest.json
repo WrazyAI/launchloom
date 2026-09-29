@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "id": "care-wellness-journal",
+  "productionEligible": false,
+  "referenceName": "Care wellness journal study",
+  "familyId": "care-wellness-journal",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/care-wellness-journal",
+    "rights": "owned",
+    "rightsEvidence": "The inspiration registry records this as a LaunchLoom-owned original visual study. Exact original capture paths and matching screenshot hashes are documented in rights/provenance.md. Ownership is registry-recorded, not an independently audited asset-by-asset license.",
+    "sourceType": "LaunchLoom-owned original visual study, rendered in-house",
+    "rightsEvidencePath": "rights/provenance.md"
+  },
+  "businessKinds": [
+    "healthcare",
+    "home-care",
+    "elder-care",
+    "wellness"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Care wellness journal study",
+    "heroGeometry": {
+      "mode": "framed editorial statement beside a multi-window image mosaic",
+      "alignment": "asymmetric text panel and image windows",
+      "viewport": "compact editorial opening"
+    },
+    "navigationGeometry": {
+      "mode": "small wordmark with restrained utility links",
+      "placement": "top edge",
+      "mobile": "inline compact links"
+    },
+    "typography": {
+      "display": "editorial serif",
+      "body": "quiet neutral sans",
+      "scale": "large italic statement with compact captions"
+    },
+    "palette": {
+      "surfaces": [
+        "near-black",
+        "soft ivory",
+        "care green"
+      ],
+      "ink": "soft ivory",
+      "accents": [
+        "muted mint"
+      ],
+      "contrastIntent": "dark-light chapters with readable inversion"
+    },
+    "imageTreatment": {
+      "mode": "repeated landscape and care-image windows",
+      "crop": "asymmetric rectangular mosaic",
+      "focalPoint": "wide landscape and people"
+    },
+    "sectionSequence": [
+      "hero",
+      "image-mosaic",
+      "editorial-intro",
+      "services",
+      "image-chapter",
+      "process",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "compact editorial service panels",
+      "interaction": "simple row links"
+    },
+    "ctaPlacement": {
+      "primary": "conversation action in hero panel",
+      "secondary": "service-row link",
+      "early": "within the opening panel"
+    },
+    "motion": {
+      "primitive": "gentle image-window reveal",
+      "library": "css",
+      "reducedMotion": "static image mosaic"
+    },
+    "mobileRecomposition": {
+      "strategy": "editorial single column with image stack",
+      "rules": [
+        "unframe the headline when space is narrow",
+        "stack the crops",
+        "keep body copy short and actions visible"
+      ]
+    },
+    "prohibitedPatterns": [
+      "unrelated card wall",
+      "centered generic split hero",
+      "decorative marquee",
+      "dense long-form why-us copy"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "journal-opening",
+        "selector": "[data-reference-signature=journal-opening]",
+        "description": "framed editorial copy and image-window mosaic"
+      },
+      {
+        "id": "care-chapter",
+        "selector": "[data-reference-signature=care-chapter]",
+        "description": "clear surface transition into a care story"
+      }
+    ],
+    "acceptanceChecks": [
+      "opening keeps the editorial frame and mosaic relationship",
+      "large dark and light sections remain distinct",
+      "the service list does not become a generic grid"
+    ],
+    "annotatedDescription": "Archived LaunchLoom-owned visual study: Care wellness journal study. The registry describes it as Owned rendered wellness and home-care study. The screenshot shows an editorial frame, offset image windows, and alternating dark, green, and light chapters. It is not a studio column or marquee reference.. The opening uses framed editorial statement beside a multi-window image mosaic, with small wordmark with restrained utility links. The page rhythm is hero, image-mosaic, editorial-intro, services, image-chapter, process, faq, contact. Mobile translation: editorial single column with image stack. This dossier records transferable mechanics and original screenshot evidence for historical traceability only; it is not a production reference or a source of client facts, assets, or claims."
+  },
+  "review": {
+    "status": "owned-archive-not-for-production",
+    "curator": "Codex archival materialization",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical traceability of a registry-recorded LaunchLoom-owned study and its exact paired screenshots",
+    "notes": "productionEligible=false. Never add this dossier to the core collection or randomized production selection. Screenshot copies match the registered originals by SHA-256. Original capture date is not established by this materialization."
+  },
+  "tags": {
+    "business": [
+      "healthcare",
+      "home-care",
+      "elder-care",
+      "wellness"
+    ],
+    "style": [
+      "editorial serif",
+      "surfaces: near-black, soft ivory, care green",
+      "accents: muted mint"
+    ],
+    "composition": [
+      "framed editorial statement beside a multi-window image mosaic",
+      "small wordmark with restrained utility links",
+      "compact editorial service panels"
+    ],
+    "conversion": [
+      "conversation action in hero panel",
+      "service-row link",
+      "within the opening panel"
+    ],
+    "motion": [
+      "gentle image-window reveal",
+      "static image mosaic"
+    ],
+    "imagery": [
+      "repeated landscape and care-image windows",
+      "asymmetric rectangular mosaic"
+    ]
+  }
+}

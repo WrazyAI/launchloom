@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "id": "web-accounting-taxace",
+  "productionEligible": true,
+  "referenceName": "TaxAce audience-led accounting",
+  "familyId": "accounting-navy-landmark-opening",
+  "source": {
+    "name": "TaxAce audience-led accounting official website",
+    "url": "https://www.taxace.co.uk/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 10669
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 18730
+    },
+    "diagnostics": "Observed city landmark promise, trust detail ribbon, three-audience photo gateway, relationship chapter, tax/MTD explainer. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "TaxAce audience-led accounting official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "accounting",
+    "accountant",
+    "bookkeeping",
+    "tax-adviser"
+  ],
+  "tags": {
+    "business": [
+      "accounting",
+      "accountant",
+      "bookkeeping",
+      "tax-adviser"
+    ],
+    "style": [
+      "navy-ivory-gold",
+      "serif-advisory",
+      "long-form-trust"
+    ],
+    "composition": [
+      "photo-hero",
+      "three-audience-gateway",
+      "alternating-full-width-bands"
+    ],
+    "conversion": [
+      "consultation",
+      "audience-routing",
+      "enquiry-form"
+    ],
+    "motion": [
+      "quiet-scroll-reveal",
+      "static-essential-proof"
+    ],
+    "imagery": [
+      "city-landmark",
+      "audience-portraits",
+      "actual-team"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A blue-hour Westminster photograph frames a short serif assurance statement, practical audience routes and a gold consultation action. Small light wordmark and thin audience/service links overlay the opening; a persistent action is reserved for contact. Classic serif display over concise sans service copy; numbered editorial chapter labels and small trust details. The page sequence runs from city landmark promise to trust detail ribbon to three-audience photo gateway toward team, consultation form, footer. Three real-life audience portraits follow the hero; team portraits, icons and restrained case/proof cards appear much later. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A blue-hour Westminster photograph frames a short serif assurance statement, practical audience routes and a gold consultation action.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Small light wordmark and thin audience/service links overlay the opening; a persistent action is reserved for contact.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Classic serif display over concise sans service copy; numbered editorial chapter labels and small trust details.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Deep navy",
+        "warm ivory",
+        "gold and muted blue photography."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "navy-ivory-gold",
+        "serif-advisory"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Three real-life audience portraits follow the hero; team portraits, icons and restrained case/proof cards appear much later.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "city landmark promise",
+      "trust detail ribbon",
+      "three-audience photo gateway",
+      "relationship chapter",
+      "tax/MTD explainer",
+      "finance function band",
+      "sector map",
+      "selected outcomes",
+      "proof cards",
+      "service process",
+      "team",
+      "consultation form",
+      "footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Separate business, individual and private-client questions, then explain each verified accounting service through distinct decision chapters.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "One consultation route in the opening, specific audience actions in the gateway, and a final enquiry form after the explanation.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "quiet-scroll-reveal; static-essential-proof",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack audience portraits and service chapters, shorten long comparison bands into readable cards and put form fields in a single column.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not transfer source reviews, ratings, tax outcomes, professional licenses, named staff, Westminster image or regulatory claims.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "navy-landmark-opening",
+        "selector": "[data-reference-signature=navy-landmark-opening]",
+        "description": "A new-client interpretation of the observed navy landmark opening relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "three-audience-photo-gateway",
+        "selector": "[data-reference-signature=three-audience-photo-gateway]",
+        "description": "A new-client interpretation of the observed three-audience photo gateway relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "dark-light-advisory-chapter-rhythm",
+        "selector": "[data-reference-signature=dark-light-advisory-chapter-rhythm]",
+        "description": "A new-client interpretation of the observed dark-light advisory chapter rhythm relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

@@ -420,6 +420,8 @@ async function defaultRepairCandidate({
   const repairResponse = await requestRepair({
     model,
     referenceDna,
+    referenceDossier:
+      metadata.creativeManifest?.referenceDossier || metadata.referenceDossier,
     findings,
     files,
     screenshots,
@@ -526,6 +528,7 @@ async function persistRepairEvidence({
   cyclesUsed,
   status = "repaired",
   error,
+  attempts = [],
 }) {
   const directory = path.join(
     outDir,
@@ -543,6 +546,7 @@ async function persistRepairEvidence({
         cycle: cyclesUsed,
         status,
         ...(error ? { error } : {}),
+        ...(attempts.length ? { attempts } : {}),
         findings,
       },
       null,
@@ -682,50 +686,76 @@ export async function runRenderedCreativeRepair({
     // A build failure can legitimately leave an ENOENT screenshot, but
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);
-    const nextCycle = used + 1;
-    try {
-      await repairCandidateImpl({
-        candidateDir,
-        candidateId,
-        findings,
-        screenshots: availableScreenshots,
-        model: resolvedModel,
-        creativeSession: frozenCreativeSession,
-        cycle: nextCycle,
-        maxCycles: cycleLimit,
-      });
-    } catch (error) {
-      const mayIsolate =
-        requestedMode === "preview" &&
-        !humanFeedback &&
-        error?.code === "CREATIVE_REPAIR_OUTPUT_REJECTED";
-      if (!mayIsolate) throw error;
-      const message = safeRepairRejectionMessage(error);
-      cycleUse.set(candidateId, nextCycle);
-      excludedCandidateIds.add(candidateId);
-      rejectedCandidates[candidateId] = message;
-      await persistRepairEvidence({
-        outDir: evidenceRoot,
-        round,
-        candidateId,
-        reason,
-        findings,
-        cyclesUsed: nextCycle,
-        status: "rejected",
-        error: message,
-      });
-      return { status: "rejected", error: message };
+    let attempt = used;
+    let activeFindings = findings;
+    const attempts = [];
+    while (attempt < cycleLimit) {
+      attempt += 1;
+      try {
+        await repairCandidateImpl({
+          candidateDir,
+          candidateId,
+          findings: activeFindings,
+          screenshots: availableScreenshots,
+          model: resolvedModel,
+          creativeSession: frozenCreativeSession,
+          cycle: attempt,
+          maxCycles: cycleLimit,
+        });
+        cycleUse.set(candidateId, attempt);
+        await persistRepairEvidence({
+          outDir: evidenceRoot,
+          round,
+          candidateId,
+          reason,
+          findings: activeFindings,
+          cyclesUsed: attempt,
+          attempts,
+        });
+        return { status: "repaired", attempts };
+      } catch (error) {
+        const mayRetrySourceRejection =
+          requestedMode === "preview" &&
+          !humanFeedback &&
+          error?.code === "CREATIVE_REPAIR_OUTPUT_REJECTED";
+        if (!mayRetrySourceRejection) throw error;
+
+        const message = safeRepairRejectionMessage(error);
+        const status = attempt < cycleLimit ? "retrying" : "rejected";
+        attempts.push({ cycle: attempt, status, error: message });
+        cycleUse.set(candidateId, attempt);
+        if (attempt >= cycleLimit) {
+          excludedCandidateIds.add(candidateId);
+          rejectedCandidates[candidateId] = message;
+          await persistRepairEvidence({
+            outDir: evidenceRoot,
+            round,
+            candidateId,
+            reason,
+            findings: activeFindings,
+            cyclesUsed: attempt,
+            status: "rejected",
+            error: message,
+            attempts,
+          });
+          return { status: "rejected", error: message, attempts };
+        }
+
+        activeFindings = [
+          ...activeFindings,
+          {
+            category: "source-validation-repair",
+            severity: "major",
+            message:
+              "The previous repair output was rejected by deterministic source validation.",
+            evidence: message,
+            recommendation:
+              "Fix the reported source-validation error in this bounded retry. Preserve sealed content bindings, the contact-bound early-conversion anchor, required Reference DNA markers, and verified content. Do not remove required semantics or weaken safety checks to make validation pass.",
+          },
+        ];
+      }
     }
-    cycleUse.set(candidateId, nextCycle);
-    await persistRepairEvidence({
-      outDir: evidenceRoot,
-      round,
-      candidateId,
-      reason,
-      findings,
-      cyclesUsed: nextCycle,
-    });
-    return { status: "repaired" };
+    return { status: "exhausted" };
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
@@ -1034,6 +1064,7 @@ export async function runRenderedCreativeRepair({
           visualScore: selected.visualScore,
           distinctivenessScore: selected.distinctivenessScore,
           selectionMode: "creative-preview",
+          preserveSelectedManifest: Boolean(humanFeedback),
         });
       }
     } catch (error) {

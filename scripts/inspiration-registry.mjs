@@ -1,9 +1,15 @@
 import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import { buildRouteContract } from "./creative-compiler.mjs";
 import {
   buildReferenceDna,
   validateReferenceDna,
 } from "./reference-dna.mjs";
+import {
+  assertReferenceDossierMatchesRecord,
+  loadReferenceDossier,
+} from "./reference-dossier.mjs";
 
 const REQUIRED_FIELDS = [
   "id",
@@ -21,12 +27,40 @@ const REQUIRED_FIELDS = [
   "imageStrategy",
   "motionOpportunities",
 ];
-const RIGHTS = new Set(["reference-only", "licensed", "owned"]);
+const RIGHTS = new Set(["reference-only", "licensed", "owned", "permission-cleared"]);
+const GENERIC_BUSINESS_KINDS = new Set([
+  "all",
+  "general",
+  "local-business",
+  "local-service",
+  "local-services",
+  "small-business",
+]);
 const STRUCTURAL_FIELDS = [
   "navigation",
   "heroGeometry",
   "servicePresentation",
   "typographyCategory",
+];
+const BUSINESS_KIND_GROUPS = [
+  ["auto-repair", "auto-repair-shop", "auto-mechanic", "mechanic", "mechanic-shop", "garage", "independent-garage", "local-auto-repair", "independent-auto-service", "vehicle-diagnostics", "vehicle-servicing", "vehicle-maintenance", "brake-service", "car-repair", "automotive-repair"],
+  ["hvac", "hvac-contractor", "heating-and-cooling", "heating-cooling", "heating-and-cooling-contractor", "air-conditioning", "air-conditioning-and-heating", "heating-contractor", "cooling-contractor", "furnace-repair", "ac-repair"],
+  ["roofing", "roofer", "roofers", "roofing-contractor", "roofing-contractors", "commercial-roofing", "residential-roofing", "roof-repair", "roof-replacement"],
+  ["painting", "painter", "painters", "painting-contractor", "painting-contractors", "residential-painting", "commercial-painting", "residential-painter", "commercial-painter", "house-painter", "house-painting"],
+  ["home-services", "local-trades", "home-repair", "handyman", "plumbing", "electrical", "landscaping", "garage-door", "garage-door-repair", "construction", "civil-engineering", "groundworks", "storm-repair", "contractor"],
+  ["dental", "dentist", "dentistry", "dental-clinic", "dental-practice", "oral-health", "preventive-and-restorative-care"],
+  ["home-care", "homecare", "home-care-provider", "care-at-home", "home-support", "care", "caregiving", "elder-care", "senior-care", "elder-companionship", "companionship", "non-medical-home-support", "family-support", "specialized-homecare", "private-duty-care", "home-health-services", "nursing-and-care-coordination", "aging-in-place"],
+  ["fitness", "gym", "strength-training", "personal-training", "sports-performance", "fitness-studio", "sports-club", "pilates", "yoga"],
+  ["restaurant", "dining", "food", "food-and-drink", "indian-restaurant", "greek-restaurant", "mediterranean-restaurant", "fine-dining", "multi-location-dining", "catering", "cafe", "bakery"],
+  ["hospitality", "hotel", "boutique-hotel", "resort", "motel", "lodging", "inn", "guesthouse", "destination-stay"],
+  ["architecture", "architectural-design", "architect", "interior-design", "residential-architecture", "luxury-home-design", "design-studio", "hospitality-design", "restaurant-interiors"],
+  ["legal-services", "legal", "law", "law-firm", "lawyer", "attorney", "solicitor", "legal-practice"],
+  ["accounting", "accountant", "accountancy", "tax-accounting", "bookkeeping"],
+  ["jewelry", "jewellery", "jewelery", "jeweler", "jeweller", "fine-jewelry", "fine-jewellery", "independent-jewelry", "designer-jewelry", "luxury-retail", "sculptural-accessories", "wearable-product"],
+  ["beauty", "beauty-salon", "salon", "hair-salon", "hair-stylist", "hair-colorist", "cosmetology", "independent-beauty", "barber", "barbershop", "mens-grooming", "medical-spa", "med-spa", "clinical-beauty", "cosmetic-treatment", "spa", "skincare", "aesthetics", "aesthetic-clinic", "cosmetics"],
+  ["automotive", "auto", "auto-services", "auto-dealership", "used-car-dealer", "vehicle-sales"],
+  ["events", "event-venue", "wedding-venue", "wedding", "event-services"],
+  ["real-estate", "realtor", "real-estate-agent", "property", "home-sales", "property-management"],
 ];
 
 function cleanText(value, limit = 180) {
@@ -45,6 +79,26 @@ function cleanList(value, limit = 12) {
         .filter(Boolean),
     ),
   ].slice(0, limit);
+}
+
+function normalizeBusinessKind(value) {
+  return cleanText(value, 120)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/^-|-$/gu, "");
+}
+
+export function businessKindMatches(record, industry) {
+  const target = normalizeBusinessKind(industry);
+  if (!target || GENERIC_BUSINESS_KINDS.has(target)) return false;
+  const compatibleKinds = BUSINESS_KIND_GROUPS.find((group) => group.includes(target)) || [target];
+  const recordKinds = [
+    ...(Array.isArray(record?.industries) ? record.industries : []),
+    ...(Array.isArray(record?.referenceTags?.business)
+      ? record.referenceTags.business
+      : []),
+  ].map(normalizeBusinessKind);
+  return recordKinds.some((kind) => compatibleKinds.includes(kind));
 }
 
 function digest(value) {
@@ -70,6 +124,9 @@ function normalizeRecord(record, index) {
     rights,
     industries: cleanList(record.industries),
     moods: cleanList(record.moods),
+    tags: cleanList(record.tags, 24),
+    sourceCategory: cleanText(record.sourceCategory, 80),
+    evidenceTier: cleanText(record.evidenceTier, 40),
     navigation: cleanText(record.navigation, 80),
     heroGeometry: cleanText(record.heroGeometry, 80),
     servicePresentation: cleanText(record.servicePresentation, 80),
@@ -78,6 +135,9 @@ function normalizeRecord(record, index) {
     imageStrategy: cleanText(record.imageStrategy, 80),
     motionOpportunities: cleanList(record.motionOpportunities, 8),
     familyId: cleanText(record.familyId, 60),
+    referenceFamilyId: cleanText(record.referenceFamilyId, 80),
+    aliases: cleanList(record.aliases, 12),
+    dossierPath: cleanText(record.dossierPath, 400),
     mobileBehavior: cleanText(record.mobileBehavior, 180),
     prohibitedPatterns: cleanList(record.prohibitedPatterns, 12),
     screenshotPath: cleanText(record.screenshotPath, 300),
@@ -93,6 +153,24 @@ function normalizeRecord(record, index) {
         : undefined,
     sourceStyles: cleanList(record.sourceStyles, 20),
     sourceFonts: cleanList(record.sourceFonts, 12),
+    referenceTags:
+      record.referenceTags && typeof record.referenceTags === "object"
+        ? structuredClone(record.referenceTags)
+        : undefined,
+    designTemplate:
+      record.designTemplate && typeof record.designTemplate === "object"
+        ? structuredClone(record.designTemplate)
+        : undefined,
+    canonicalReferenceDna:
+      record.canonicalReferenceDna &&
+      typeof record.canonicalReferenceDna === "object"
+        ? structuredClone(record.canonicalReferenceDna)
+        : undefined,
+    provenance:
+      record.provenance && typeof record.provenance === "object"
+        ? structuredClone(record.provenance)
+        : undefined,
+    calibrationProfile: cleanText(record.calibrationProfile, 40),
   };
   if (!normalized.id || !normalized.sourceUrl || !normalized.industries.length)
     throw new Error(`Inspiration record ${index + 1} is incomplete.`);
@@ -110,6 +188,47 @@ function normalizeRegistry(registry) {
     updatedAt: cleanText(registry.updatedAt, 40),
     records,
   };
+}
+
+function referenceIdsForBusinessKind(repositoryRoot, industry) {
+  const collectionPath = path.join(
+    repositoryRoot,
+    "data/reference-library/core-collection.json",
+  );
+  let collection;
+  try {
+    collection = JSON.parse(fs.readFileSync(collectionPath, "utf8"));
+  } catch (error) {
+    throw new Error(
+      `Could not load the canonical reference collection at ${collectionPath}: ${error.message}`,
+    );
+  }
+  if (!Array.isArray(collection?.niches) || !collection.niches.length)
+    throw new Error("The canonical reference collection must define at least one niche.");
+
+  const target = normalizeBusinessKind(industry);
+  if (GENERIC_BUSINESS_KINDS.has(target))
+    throw new Error(
+      `A specific business kind is required to select production references; '${industry}' is too broad.`,
+    );
+  const exactNiches = collection.niches.filter((niche) =>
+    [niche.id, niche.businessKind].map(normalizeBusinessKind).includes(target),
+  );
+  const matchingNiches = exactNiches.length
+    ? exactNiches
+    : collection.niches.filter((niche) =>
+        businessKindMatches({ industries: [niche.businessKind] }, industry),
+      );
+  const referenceIds = matchingNiches.flatMap((niche) => {
+    if (!Array.isArray(niche.referenceIds) || niche.referenceIds.length < 3)
+      throw new Error(
+        `Canonical niche '${niche.id}' must list at least three reference dossiers.`,
+      );
+    return niche.referenceIds;
+  });
+  if (new Set(referenceIds).size !== referenceIds.length)
+    throw new Error("The canonical reference collection contains duplicate dossier IDs.");
+  return new Set(referenceIds);
 }
 
 function signatureFor(record) {
@@ -219,6 +338,7 @@ function scoreRecord(record, request) {
     record.familyId,
     ...record.industries,
     ...record.moods,
+    ...record.tags,
     ...record.sourceStyles,
     record.navigation,
     record.heroGeometry,
@@ -241,7 +361,77 @@ function scoreRecord(record, request) {
       })
     )
       score += 8;
-  return score + stableFraction(`${request.seed}|${record.id}`);
+  return score;
+}
+
+function structuralTokenSet(values) {
+  return new Set(
+    (Array.isArray(values) ? values : [values])
+      .flatMap((value) => normalizedPhrase(value).split(" "))
+      .filter((token) => token.length >= 4),
+  );
+}
+
+function tokenSetDistance(left, right) {
+  if (!left.size && !right.size) return 0;
+  let overlap = 0;
+  for (const token of left)
+    if (right.has(token)) overlap += 1;
+  const union = left.size + right.size - overlap;
+  return union ? 1 - overlap / union : 0;
+}
+
+function selectionReferenceDna(record) {
+  return record.selectionReferenceDna || record.canonicalReferenceDna || {};
+}
+
+/**
+ * Compare the actual reference mechanics used by the author, not only the
+ * registry labels. A higher score means the pair offers more structural
+ * separation before any model call is made.
+ */
+export function referenceStructuralDistance(left, right) {
+  const leftDna = selectionReferenceDna(left);
+  const rightDna = selectionReferenceDna(right);
+  const categoricalPairs = [
+    [left.familyId || left.referenceFamilyId, right.familyId || right.referenceFamilyId],
+    [leftDna.heroGeometry?.mode || left.heroGeometry, rightDna.heroGeometry?.mode || right.heroGeometry],
+    [leftDna.navigationGeometry?.mode || left.navigation, rightDna.navigationGeometry?.mode || right.navigation],
+    [leftDna.servicePresentation?.pattern || left.servicePresentation, rightDna.servicePresentation?.pattern || right.servicePresentation],
+    [leftDna.typography?.category || left.typographyCategory, rightDna.typography?.category || right.typographyCategory],
+    [leftDna.imageTreatment?.mode || left.imageStrategy, rightDna.imageTreatment?.mode || right.imageStrategy],
+    [leftDna.mobileRecomposition?.strategy || left.mobileBehavior, rightDna.mobileRecomposition?.strategy || right.mobileBehavior],
+    [leftDna.ctaPlacement?.early, rightDna.ctaPlacement?.early],
+    [leftDna.motion?.primitive || left.motionOpportunities?.[0], rightDna.motion?.primitive || right.motionOpportunities?.[0]],
+  ].filter(([a, b]) => a || b);
+  const categoricalDistance = categoricalPairs.length
+    ? categoricalPairs.filter(([a, b]) => normalizedPhrase(a) !== normalizedPhrase(b)).length /
+      categoricalPairs.length
+    : 0;
+  const sectionDistance = tokenSetDistance(
+    structuralTokenSet(leftDna.sectionSequence || left.sectionRhythm),
+    structuralTokenSet(rightDna.sectionSequence || right.sectionRhythm),
+  );
+  const signatureDistance = tokenSetDistance(
+    structuralTokenSet(
+      (leftDna.requiredSignatureElements || []).flatMap((item) => [
+        item?.id,
+        item?.description,
+      ]),
+    ),
+    structuralTokenSet(
+      (rightDna.requiredSignatureElements || []).flatMap((item) => [
+        item?.id,
+        item?.description,
+      ]),
+    ),
+  );
+  return Math.round(
+    (categoricalDistance * 0.55 +
+      sectionDistance * 0.3 +
+      signatureDistance * 0.15) *
+      100,
+  );
 }
 
 function structurallyIndependent(record, selected) {
@@ -266,7 +456,7 @@ function evidenceFor(record) {
     referenceName: record.referenceName || record.name,
     referenceNotes: record.referenceNotes || record.notes,
     familyId: record.familyId || undefined,
-    referenceFamilyId: record.familyId || undefined,
+    referenceFamilyId: record.referenceFamilyId || record.familyId || undefined,
     mobileBehavior: record.mobileBehavior || undefined,
     prohibitedPatterns: record.prohibitedPatterns?.length
       ? record.prohibitedPatterns
@@ -274,41 +464,24 @@ function evidenceFor(record) {
     measuredDesignTokens: record.measuredDesignTokens,
     sourceStyles: record.sourceStyles?.length ? record.sourceStyles : undefined,
     sourceFonts: record.sourceFonts?.length ? record.sourceFonts : undefined,
+    tags: record.tags?.length ? record.tags : undefined,
+    sourceCategory: record.sourceCategory || undefined,
+    evidenceTier: record.evidenceTier || undefined,
+    designTemplate: record.designTemplate,
+    canonicalReferenceDna: record.canonicalReferenceDna,
+    provenance: record.provenance,
+    calibrationProfile: record.calibrationProfile || undefined,
     notes: record.notes || undefined,
     evidenceKind: record.evidenceKind || undefined,
   };
 }
 
-function rankedRecords(
-  registry,
-  request,
-  recentReferenceIds,
-  recentFamilyIds,
-  recentRouteSignatures,
-  mode,
-) {
+function rankedRecords(registry, request) {
   return registry.records
-    .filter((record) => {
-      const explicit = explicitlyRequested(record, request);
-      const familyId = cleanText(
-        record.familyId || buildRouteContract(record).familyId,
-        80,
-      ).toLowerCase();
-      return (
-        (!mode.excludeReferences ||
-          !recentReferenceIds.has(record.id.toLowerCase()) ||
-          explicit) &&
-        (!mode.excludeFamilies ||
-          !recentFamilyIds.has(familyId) ||
-          explicit) &&
-        (!mode.excludeRouteSignatures ||
-          !recentRouteSignatures.has(signatureFor(record)) ||
-          explicit)
-      );
-    })
     .map((record) => ({
       record,
       score: scoreRecord(record, request),
+      explicit: explicitlyRequested(record, request),
     }))
     .sort(
       (left, right) =>
@@ -317,91 +490,219 @@ function rankedRecords(
     );
 }
 
-function independentAnchors(ranked) {
-  const anchors = [];
-  for (const candidate of ranked) {
-    if (!structurallyIndependent(candidate.record, anchors)) continue;
-    anchors.push(candidate.record);
-    if (anchors.length === 3) break;
+function independentAnchors(ranked, request, history) {
+  const candidates = [];
+  for (let first = 0; first < ranked.length; first += 1) {
+    for (let second = first + 1; second < ranked.length; second += 1) {
+      for (let third = second + 1; third < ranked.length; third += 1) {
+        const trio = [ranked[first], ranked[second], ranked[third]];
+        const anchors = trio.map((candidate) => candidate.record);
+        if (
+          !structurallyIndependent(anchors[0], []) ||
+          !structurallyIndependent(anchors[1], [anchors[0]]) ||
+          !structurallyIndependent(anchors[2], anchors.slice(0, 2))
+        )
+          continue;
+        const distances = [
+          referenceStructuralDistance(anchors[0], anchors[1]),
+          referenceStructuralDistance(anchors[0], anchors[2]),
+          referenceStructuralDistance(anchors[1], anchors[2]),
+        ];
+        candidates.push({
+          anchors,
+          explicitCount: trio.filter((candidate) => candidate.explicit).length,
+          minimumDistance: Math.min(...distances),
+          totalDistance: distances.reduce((sum, value) => sum + value, 0),
+          fitScore: trio.reduce((sum, candidate) => sum + candidate.score, 0),
+          stableKey: anchors.map((anchor) => anchor.id).sort().join("|"),
+        });
+      }
+    }
   }
-  return anchors;
+  const latestTrio = history.recentTrios.at(-1) || new Set();
+  for (const candidate of candidates) {
+    const ids = candidate.anchors.map((anchor) => anchor.id.toLowerCase());
+    candidate.repeatedRecentTrio = history.recentTrios.some((trio) =>
+      ids.every((id) => trio.has(id)));
+    candidate.latestTrioOverlap = ids.filter((id) => latestTrio.has(id)).length;
+    candidate.exposure = ids.reduce((sum, id) => sum + (history.exposure.get(id) || 0), 0);
+    candidate.patternExposure = candidate.anchors.reduce((sum, anchor) =>
+      sum + Number(history.recentFamilyIds.has(buildRouteContract(anchor).familyId.toLowerCase())) +
+        Number(history.recentRouteSignatures.has(signatureFor(anchor))), 0);
+    candidate.rankScore =
+      candidate.minimumDistance * 0.8 +
+      candidate.totalDistance * 0.15 +
+      candidate.fitScore +
+      stableFraction(`${request.seed}|${candidate.stableKey}`) * 90;
+  }
+  candidates.sort(
+    (left, right) =>
+      right.explicitCount - left.explicitCount ||
+      Number(left.repeatedRecentTrio) - Number(right.repeatedRecentTrio) ||
+      left.exposure - right.exposure ||
+      left.latestTrioOverlap - right.latestTrioOverlap ||
+      left.patternExposure - right.patternExposure ||
+      right.rankScore - left.rankScore ||
+      left.stableKey.localeCompare(right.stableKey),
+  );
+  return { chosen: candidates[0], validTrioCount: candidates.length };
 }
 
-export function buildInspirationPack(request, rawRegistry) {
-  const registry = normalizeRegistry(rawRegistry);
+function selectionHistory(request, eligibleIds, eligibleSignatures, industry) {
+  const recentReferenceIds = new Set(
+    (Array.isArray(request.recentLaunches) ? [] : cleanList(request.recentReferenceIds, 200))
+      .filter((id) => eligibleIds.has(id)),
+  );
+  const recentTrios = [];
+  const exposure = new Map();
+  const relevantLaunches = [];
+  const launches = Array.isArray(request.recentLaunches)
+    ? request.recentLaunches.slice(-30)
+    : [];
+  for (const launch of launches) {
+    if (launch?.businessKind && !businessKindMatches({ industries: [launch.businessKind] }, industry))
+      continue;
+    const ids = cleanList(launch?.referenceIds, 20);
+    if (!ids.length) {
+      // Older launches may lack both IDs and business kind. In that case an
+      // exact eligible route signature is the only safe niche evidence.
+      const matchingSignatures = (Array.isArray(launch?.routeSignatures)
+        ? launch.routeSignatures
+        : []).map((value) => cleanText(value, 600))
+        .filter((signature) => eligibleSignatures.has(signature));
+      if (launch?.businessKind || matchingSignatures.length)
+        relevantLaunches.push({
+          ...launch,
+          routeSignatures: matchingSignatures,
+          // A kind-less record can mix niches. Its global family IDs cannot
+          // be assigned to the matched signatures without route-level links.
+          ...(!launch?.businessKind ? {
+            routeFamilyIds: [],
+            creativeFamilyId: "",
+            referenceFamilyId: "",
+          } : {}),
+        });
+      continue;
+    }
+    if (!ids.every((id) => eligibleIds.has(id))) continue;
+    relevantLaunches.push(launch);
+    for (const id of ids) {
+      recentReferenceIds.add(id);
+      exposure.set(id, (exposure.get(id) || 0) + 1);
+    }
+    if (ids.length === 3) recentTrios.push(new Set(ids));
+  }
+  for (const id of recentReferenceIds)
+    if (!exposure.has(id)) exposure.set(id, 1);
+  if (!recentTrios.length && recentReferenceIds.size === 3)
+    recentTrios.push(new Set(recentReferenceIds));
+  return { recentReferenceIds, recentTrios, exposure, relevantLaunches };
+}
+
+export function buildInspirationPack(
+  request,
+  rawRegistry,
+  { repositoryRoot = process.cwd(), requireDossiers = true } = {},
+) {
+  let registry = normalizeRegistry(rawRegistry);
   const seed = cleanText(request?.seed, 180);
   const industry = cleanText(request?.industry, 80).toLowerCase();
   if (!seed || !industry)
     throw new Error("Inspiration selection requires a seed and industry.");
-  const recentReferenceIds = new Set(
-    cleanList(request.recentReferenceIds, 200),
+  const canonicalReferenceIds = referenceIdsForBusinessKind(repositoryRoot, industry);
+  registry = {
+    ...registry,
+    records: registry.records.filter((record) => canonicalReferenceIds.has(record.id)),
+  };
+  const dossiersById = new Map();
+  if (requireDossiers) {
+    for (const record of registry.records.filter((item) => item.dossierPath)) {
+      const dossier = loadReferenceDossier(record.dossierPath, { repositoryRoot });
+      if (dossier.id !== record.id)
+        throw new Error(`Inspiration record '${record.id}' points to dossier '${dossier.id}'.`);
+      if (dossier.familyId !== (record.referenceFamilyId || record.familyId))
+        throw new Error(`Inspiration record '${record.id}' and its dossier disagree on familyId.`);
+      if (dossier.source.rights !== record.rights)
+        throw new Error(`Inspiration record '${record.id}' and its dossier disagree on rights.`);
+      assertReferenceDossierMatchesRecord(dossier, record, { repositoryRoot });
+      dossiersById.set(record.id, dossier);
+    }
+    const eligibleRecords = registry.records
+      .filter((record) => dossiersById.get(record.id)?.productionEligible === true)
+      .map((record) => {
+        const tags = dossiersById.get(record.id).tags;
+        return {
+          ...record,
+          industries: [...new Set([...record.industries, ...tags.business])],
+          moods: [...new Set([...record.moods, ...tags.style])],
+          referenceTags: tags,
+          selectionReferenceDna: dossiersById.get(record.id).referenceDna,
+        };
+      });
+    const businessMatchedRecords = eligibleRecords.filter((record) =>
+      businessKindMatches(record, industry),
+    );
+    if (businessMatchedRecords.length < 3)
+      throw new Error(
+        `The production library has ${businessMatchedRecords.length} eligible dossier(s) matched to '${industry}' out of ${eligibleRecords.length} eligible references; three structurally independent business-matched dossiers are required. Unrelated industries are not used as filler.`,
+      );
+    registry = { ...registry, records: businessMatchedRecords };
+  }
+  const eligibleSignatures = new Set(registry.records.map(signatureFor));
+  const history = selectionHistory(
+    request,
+    new Set(registry.records.map((record) => record.id.toLowerCase())),
+    eligibleSignatures,
+    industry,
   );
+  const recentReferenceIds = history.recentReferenceIds;
+  const eligibleFamilyIds = new Set(registry.records.flatMap((record) => [
+    record.familyId,
+    record.referenceFamilyId,
+    buildRouteContract(record).familyId,
+  ].filter(Boolean).map((value) => value.toLowerCase())));
+  const recentFamilyInput = Array.isArray(request.recentLaunches)
+    ? history.relevantLaunches.flatMap((launch) => [
+        ...(Array.isArray(launch.routeFamilyIds) ? launch.routeFamilyIds : []),
+        launch.creativeFamilyId,
+        launch.referenceFamilyId,
+      ])
+    : request.recentFamilyIds;
+  const recentSignatureInput = Array.isArray(request.recentLaunches)
+    ? history.relevantLaunches.flatMap((launch) =>
+        Array.isArray(launch.routeSignatures) ? launch.routeSignatures : [])
+    : request.recentRouteSignatures;
   const recentFamilyIds = new Set(
-    cleanList(request.recentFamilyIds, 200),
+    cleanList(recentFamilyInput, 200).filter((id) => eligibleFamilyIds.has(id)),
   );
   const recentRouteSignatures = new Set(
-    (Array.isArray(request.recentRouteSignatures)
-      ? request.recentRouteSignatures
+    (Array.isArray(recentSignatureInput)
+      ? recentSignatureInput
       : []
-    ).map((value) => cleanText(value, 600)),
+    ).map((value) => cleanText(value, 600)).filter((value) => eligibleSignatures.has(value)),
   );
-  const selectionModes = [
-    {
-      id: "fresh",
-      excludeReferences: true,
-      excludeFamilies: true,
-      excludeRouteSignatures: true,
-    },
-    {
-      id: "route-signatures-relaxed",
-      excludeReferences: true,
-      excludeFamilies: true,
-      excludeRouteSignatures: false,
-    },
-    {
-      id: "families-relaxed",
-      excludeReferences: true,
-      excludeFamilies: false,
-      excludeRouteSignatures: false,
-    },
-    {
-      id: "history-relaxed",
-      excludeReferences: false,
-      excludeFamilies: false,
-      excludeRouteSignatures: false,
-    },
-  ];
-  let selection;
-  for (const mode of selectionModes) {
-    const ranked = rankedRecords(
-      registry,
-      { ...request, seed, industry },
-      recentReferenceIds,
-      recentFamilyIds,
-      recentRouteSignatures,
-      mode,
-    );
-    const anchors = independentAnchors(ranked);
-    if (anchors.length === 3) {
-      selection = { mode, ranked, anchors };
-      break;
-    }
-  }
-  if (!selection)
+  history.recentFamilyIds = recentFamilyIds;
+  history.recentRouteSignatures = recentRouteSignatures;
+  const ranked = rankedRecords(registry, { ...request, seed, industry });
+  const selection = independentAnchors(ranked, { ...request, seed, industry }, history);
+  if (!selection.chosen)
     throw new Error(
-      "The inspiration registry cannot supply three structurally independent creative routes, even after relaxing recent-history exclusions.",
+      `The inspiration registry cannot supply three structurally independent creative routes for '${industry}'.`,
     );
-  const { anchors, ranked } = selection;
+  const anchors = selection.chosen.anchors;
 
   const routes = anchors.map((anchor, index) => {
     // One route gets one authoritative visual capsule. Supporting references
     // must never be mixed into the authoring evidence where they can be
     // averaged into a generic composition.
     const evidence = [evidenceFor(anchor)];
+    const dossier = dossiersById.get(anchor.id);
     const rankedAnchor = ranked.find((candidate) => candidate.record.id === anchor.id);
     const route = {
       id: `route-${String(index + 1).padStart(2, "0")}`,
       label: anchor.name,
+      referenceName: anchor.referenceName || anchor.name,
+      referenceNotes: anchor.referenceNotes || anchor.notes,
       intent: `Use ${anchor.heroGeometry} with ${anchor.servicePresentation}, guided by ${anchor.sectionRhythm}.`,
       navigation: anchor.navigation,
       heroGeometry: anchor.heroGeometry,
@@ -412,16 +713,24 @@ export function buildInspirationPack(request, rawRegistry) {
       motionOpportunity:
         anchor.motionOpportunities[0] || "restrained-native-motion",
       familyId: anchor.familyId || undefined,
-      referenceFamilyId: anchor.familyId || undefined,
+      referenceFamilyId: anchor.referenceFamilyId || anchor.familyId || undefined,
       mobileBehavior: anchor.mobileBehavior || undefined,
       prohibitedPatterns: anchor.prohibitedPatterns || [],
+      tags: anchor.tags || [],
+      designTemplate: anchor.designTemplate,
+      canonicalReferenceDna: anchor.canonicalReferenceDna,
+      referenceCalibration: request.referenceCalibration || undefined,
+      calibrationProfile: anchor.calibrationProfile || undefined,
+      sourceCategory: anchor.sourceCategory || undefined,
+      evidenceTier: anchor.evidenceTier || undefined,
+      provenance: anchor.provenance,
       referenceIds: evidence.map((item) => item.id),
       intakeFitScore: Number(rankedAnchor?.score || 0),
       explicitReferenceMatch: explicitlyRequested(anchor, request),
       evidence,
       signature: signatureFor(anchor),
     };
-    const referenceDna = validateReferenceDna(buildReferenceDna(route), {
+    const referenceDna = validateReferenceDna(dossier?.referenceDna || buildReferenceDna(route), {
       requireEvidence: true,
     });
     const contract = buildRouteContract({ ...route, referenceDna }, index);
@@ -431,6 +740,18 @@ export function buildInspirationPack(request, rawRegistry) {
       mobileBehavior: contract.mobileBehavior,
       prohibitedPatterns: contract.prohibitedPatterns,
       referenceDna,
+      referenceDossier: dossier
+        ? {
+            id: dossier.id,
+            referenceName: dossier.referenceName,
+            familyId: dossier.familyId,
+            source: dossier.source,
+            path: dossier.path,
+            digest: dossier.digest,
+            tags: dossier.tags,
+            designPrompt: dossier.designPrompt,
+          }
+        : undefined,
       fingerprint: contract.fingerprint,
     };
   });
@@ -447,14 +768,42 @@ export function buildInspirationPack(request, rawRegistry) {
     recentReferenceIds: [...recentReferenceIds].sort(),
     recentFamilyIds: [...recentFamilyIds].sort(),
     recentRouteSignatures: [...recentRouteSignatures].sort(),
-    freshnessFallback: selection.mode.id,
+    recentReferenceSets: history.recentTrios.map((trio) => [...trio].sort()),
+    selectedReferenceIds: anchors.map((anchor) => anchor.id),
+    selectionHistory: {
+      recentTrioCount: history.recentTrios.length,
+      repeatedRecentTrio: selection.chosen.repeatedRecentTrio,
+      latestTrioOverlap: selection.chosen.latestTrioOverlap,
+      selectedExposure: selection.chosen.exposure,
+      selectedPatternExposure: selection.chosen.patternExposure,
+      validTrioCount: selection.validTrioCount,
+      minimumStructuralDistance: selection.chosen.minimumDistance,
+      rationale: history.recentTrios.length
+        ? `${selection.chosen.repeatedRecentTrio ? "Repeated" : "Avoided"} a recent trio; latest trio overlap ${selection.chosen.latestTrioOverlap} of 3; selected exposure ${selection.chosen.exposure} across ${selection.validTrioCount} structurally independent trios. Explicit reference intent ranks first, followed by history, prompt fit, and seeded rotation.`
+        : recentReferenceIds.size
+          ? `${recentReferenceIds.size} recent reference IDs influenced exposure ranking across ${selection.validTrioCount} structurally independent trios; ${recentRouteSignatures.size} matched route signatures and ${recentFamilyIds.size} matched families were also considered. Explicit reference intent ranks first, followed by prompt fit and seeded rotation.`
+        : recentRouteSignatures.size || recentFamilyIds.size
+          ? `${recentRouteSignatures.size} matched route signatures and ${recentFamilyIds.size} matched families influenced history ranking across ${selection.validTrioCount} structurally independent trios. Explicit reference intent ranks first, followed by prompt fit and seeded rotation.`
+          : `No recent matching trio or pattern; selected across ${selection.validTrioCount} structurally independent trios using prompt fit and seeded rotation.`,
+    },
+    freshnessFallback: anchors.every((anchor) => recentReferenceIds.has(anchor.id.toLowerCase()))
+      ? "history-relaxed"
+      : anchors.some((anchor) => recentReferenceIds.has(anchor.id.toLowerCase()))
+        ? "history-balanced"
+        : "fresh",
   };
   return {
     version: 2,
     referenceEvidenceRequired: true,
+    referenceDossiersRequired: Boolean(requireDossiers),
     registryVersion: registry.version,
     registryUpdatedAt: registry.updatedAt || undefined,
-    registryDigest: digest(JSON.stringify(registry)),
+    registryDigest: digest(JSON.stringify({
+      registry,
+      dossierDigests: [...dossiersById.entries()]
+        .map(([id, dossier]) => [id, dossier.digest])
+        .sort(([left], [right]) => String(left).localeCompare(String(right))),
+    })),
     selectionKey: digest(JSON.stringify(requestSummary)),
     request: requestSummary,
     routes,

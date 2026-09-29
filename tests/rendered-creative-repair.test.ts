@@ -10,7 +10,7 @@ import {
   writeCandidate,
 } from "../scripts/run-rendered-creative-repair.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
-import { buildReferenceDna } from "../scripts/reference-dna.mjs";
+import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 
 const roots: string[] = [];
 const originalOpenRouterKey = process.env.OPENROUTER_API_KEY;
@@ -157,6 +157,71 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("retries a source-rejected repair once within the candidate's cycle budget", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const repairFindings: any[][] = [];
+    const excludedCandidates: string[][] = [];
+    let bakeoffCalls = 0;
+    const rejection = new Error(
+      "Creative repair output rejected by source validation: the early conversion anchor was removed.",
+    );
+    Object.assign(rejection, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        excludedCandidates.push(options.excludedCandidateIds || []);
+        if (options.excludedCandidateIds?.includes("candidate-a"))
+          throw new Error(
+            "No creative candidates remain after exclusions: candidate-a.",
+          );
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: ["Rendered candidate needs repair."],
+                  }),
+                ],
+              })
+            : report({
+                selectedCandidateId: "candidate-a",
+                candidates: [candidate("candidate-a")],
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ findings }: any) => {
+        repairFindings.push(findings);
+        if (repairFindings.length === 1) throw rejection;
+      },
+      promoteImpl: async ({ candidateDir }: any) => ({
+        candidateId: path.basename(candidateDir),
+      }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(repairFindings).toHaveLength(2);
+    expect(repairFindings[1]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          category: "source-validation-repair",
+          evidence: expect.stringContaining("early conversion anchor was removed"),
+        }),
+      ]),
+    );
+    expect(excludedCandidates).toEqual([[], []]);
+  });
+
   it("keeps preview available when one candidate repair violates its sealed-content contract", async () => {
     const { root, candidates } = await fixture([
       "candidate-a",
@@ -339,6 +404,7 @@ export default function Experience({ content, runtime }) {
   it("preserves candidate rejection reasons when every preview candidate is excluded", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     let bakeoffCalls = 0;
+    let repairCalls = 0;
     const rejection = new Error(
       "Creative repair output rejected by source validation: FAQList must receive sealed content through content={content}.",
     );
@@ -350,7 +416,7 @@ export default function Experience({ content, runtime }) {
         candidatesDir: candidates,
         outDir: path.join(root, "evidence"),
         mode: "preview",
-        maxCycles: 1,
+        maxCycles: 2,
         runBakeoffImpl: async (options: any) => {
           bakeoffCalls += 1;
           if (bakeoffCalls > 1)
@@ -372,12 +438,14 @@ export default function Experience({ content, runtime }) {
           );
         },
         repairCandidateImpl: async () => {
+          repairCalls += 1;
           throw rejection;
         },
       }),
     ).rejects.toThrow(/candidate-a.*FAQList.*content=\{content\}/iu);
 
     expect(bakeoffCalls).toBe(2);
+    expect(repairCalls).toBe(2);
     expect(
       JSON.parse(
         await fs.readFile(
@@ -549,9 +617,11 @@ export default function Experience({ content, runtime }) {
         "utf8",
       ),
     );
-    const referenceDna = buildReferenceDna(registry.records[1], {
-      requireEvidence: true,
-    });
+    const architectureReference = registry.records.find(
+      (record: any) => record.id === "lapa-mcalpine-sanctuary",
+    );
+    if (!architectureReference) throw new Error("The canonical architecture dossier is missing.");
+    const referenceDna = loadReferenceDossier(architectureReference.dossierPath).referenceDna;
     const content = {
       brand: {
         name: "Test Studio",

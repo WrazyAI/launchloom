@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
 import {
   argumentValue,
   evaluateDraft,
@@ -7,6 +9,102 @@ import {
 } from "../scripts/generate-site-config.mjs";
 
 describe("site configuration", () => {
+  it("keeps an explicit HVAC niche ahead of incidental care wording in intake notes", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Copperline Climate Workshop",
+        industry: "hvac",
+        services: "AC repair\nFurnace repair\nHeat pump installation",
+        differentiators: "Appointment-led diagnosis before recommendations",
+        brandNotes: "Careful protection of occupied homes.",
+      },
+    );
+
+    expect(config.industry).toBe("home-services");
+    expect(config.businessKind).toBe("hvac");
+    expect(config.preset).toBe("home-services");
+  });
+
+  it.each([
+    ["home-services", "home-services", "home-services"],
+    ["dental", "wellness", "dental"],
+    ["home-care", "wellness", "home-care"],
+    ["fitness", "wellness", "fitness"],
+    ["restaurant", "hospitality", "restaurant"],
+    ["hospitality", "hospitality", "hospitality"],
+    ["architecture", "professional-services", "architecture"],
+    ["legal-services", "professional-services", "legal-services"],
+    ["beauty", "wellness", "beauty"],
+    ["accounting", "professional-services", "accounting"],
+    ["auto-repair", "home-services", "auto-repair"],
+    ["garage-door", "home-services", "garage-door"],
+    ["hvac", "home-services", "hvac"],
+    ["roofing", "home-services", "roofing"],
+    ["painting", "home-services", "painting"],
+  ])(
+    "maps the %s intake niche to the %s site recipe and %s reference niche",
+    (selectedIndustry, expectedIndustry, expectedBusinessKind) => {
+      const config = normalise(
+        {},
+        {
+          businessName: "Example Local Business",
+          industry: selectedIndustry,
+          services: "Confirmed service",
+        },
+      );
+
+      expect(config.industry).toBe(expectedIndustry);
+      expect(config.businessKind).toBe(expectedBusinessKind);
+    },
+  );
+
+  it("infers an HVAC reference niche from broad home-services intake facts", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Copperline Climate Workshop",
+        industry: "home-services",
+        services: "AC repair\nFurnace repair\nHeat pump installation",
+        differentiators: "Appointment-led diagnosis before recommendations",
+        brandNotes: "Careful protection of occupied homes.",
+      },
+    );
+
+    expect(config.industry).toBe("home-services");
+    expect(config.businessKind).toBe("hvac");
+  });
+
+  it("selects only HVAC reference dossiers after generating an HVAC config", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Copperline Climate Workshop",
+        industry: "hvac",
+        services: "AC repair\nFurnace repair\nHeat pump installation",
+        differentiators: "Appointment-led diagnosis before recommendations",
+        brandNotes: "Careful protection of occupied homes.",
+      },
+    );
+    const registry = JSON.parse(
+      readFileSync(
+        new URL("../data/inspiration-registry.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const pack = buildInspirationPack(
+      { seed: "hvac-niche-regression", industry: config.businessKind, styleTerms: [] },
+      registry,
+      { repositoryRoot: process.cwd(), requireDossiers: true },
+    );
+
+    expect(pack.request.industry).toBe("hvac");
+    expect(pack.routes).toHaveLength(3);
+    expect(
+      pack.routes.every((route: any) => route.referenceDossier.tags.business.includes("hvac")),
+    ).toBe(true);
+  });
+
   it("uses only client-confirmed services in home-service enquiry options", () => {
     const config = normalise({}, {
       businessName: "Harbor Plumbing",
@@ -120,6 +218,29 @@ describe("site configuration", () => {
     );
     expect(config.copy.aboutBody).not.toMatch(/\p{Script=Han}/u);
     expect(config.copy.aboutBody).toContain("goal, constraints, and questions");
+  });
+
+  it("does not classify a barber as a pet business because of grooming language", () => {
+    const config = normalise({}, {
+      businessName: "Northline Barber Studio",
+      industry: "other",
+      services: "Haircuts\nBeard grooming",
+      differentiators: "Appointment-led barber services.",
+    });
+
+    expect(config.industry).toBe("wellness");
+    expect(config.businessKind).toBe("beauty");
+  });
+
+  it("does not classify a hot-dog cafe as a pet business", () => {
+    const config = normalise({}, {
+      businessName: "Northline Hot Dog Cafe",
+      industry: "other",
+      services: "Hot dogs\nLunch service",
+    });
+
+    expect(config.industry).toBe("hospitality");
+    expect(config.businessKind).toBe("restaurant");
   });
 
   it("preserves a non-Latin script when the client supplied that script", () => {
@@ -434,6 +555,32 @@ describe("site configuration", () => {
     expect(config.conversion.exitOffer.enabled).toBe(false);
     expect(config.design.experience.packId).toMatch(
       /^(cinematic-narrative|bold-utility|kinetic-poster)$/,
+    );
+  });
+
+  it("keeps the accounting reference niche while using its reviewed advisory image", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Oak & Ledger Tax",
+        industry: "accounting",
+        services: "Tax preparation\nBookkeeping\nPayroll processing",
+        preset: "wellness",
+      },
+    );
+
+    expect(config.businessKind).toBe("accounting");
+    expect(config.images.hero).toBe(
+      "/images/packs/professional-services-advisory-v1.png",
+    );
+    expect(config.assetReport.used).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          asset: "hero",
+          source: "stock-pack",
+          license: "LaunchLoom-owned generated fallback",
+        }),
+      ]),
     );
   });
 

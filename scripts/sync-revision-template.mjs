@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { syncClientGuidelines } from "./sync-client-guidelines.mjs";
 import { ensureLegacySocialProofMarkup } from "./revision-engine.mjs";
+import { revisionTemplatePaths } from "./revision-template-paths.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -19,110 +20,28 @@ if (!client) throw new Error("--client is required.");
 const config = JSON.parse(
   await fs.readFile(path.join(client, "src/site.config.json"), "utf8"),
 );
-await syncClientGuidelines(client);
+const guidelinesWritten = await syncClientGuidelines(client);
+if (args["guidelines-written"]) {
+  const evidencePath = path.resolve(args["guidelines-written"]);
+  const previous = JSON.parse(
+    await fs.readFile(evidencePath, "utf8").catch((error) => {
+      if (error.code === "ENOENT") return "[]";
+      throw error;
+    }),
+  );
+  await fs.writeFile(
+    evidencePath,
+    `${JSON.stringify([...new Set([...previous, ...guidelinesWritten])])}\n`,
+  );
+}
 const operations = config.revisionReport?.operations || [];
 const kinds = new Set(operations.map((operation) => operation.kind));
 const repository = path.resolve(new URL("..", import.meta.url).pathname);
 const template = path.join(repository, "templates/client-site/src");
-// These two components carry globally enforced visitor-facing wording. They
-// are safe to refresh on every revision and keep legacy client repositories
-// inside the no-em-dash content gate.
-const files = new Set([
-  "components/LeadForm.astro",
-  "components/ReviewBanner.astro",
-  // SEO metadata is a shared release contract, not a bounded visual revision.
-  // Refresh it for older client repositories before rendering their previews.
-  "pages/robots.txt.ts",
-  "pages/sitemap.xml.ts",
-]);
-if (config.design?.experience?.packId) {
-  for (const relative of [
-    "components/ExperiencePage.astro",
-    "components/experiences/EditorialFolioExperience.astro",
-    "components/experiences/ExperienceMediaRail.astro",
-    "components/experiences/GuidedConversationExperience.astro",
-    "components/experiences/ServiceLedExperience.astro",
-    "components/Header.astro",
-    "components/Footer.astro",
-    "components/LocationMap.astro",
-    "components/SocialProof.astro",
-    "pages/index.astro",
-    "pages/services/[slug].astro",
-    "pages/locations/[slug].astro",
-    "lib/experience-pack.ts",
-    "lib/site.ts",
-    "styles/experience-packs.css",
-  ]) files.add(relative);
-}
-if (
-  String(config.business?.primaryCta || "")
-    .trim()
-    .toLowerCase() === "get directions"
-) {
-  files.add("components/LocationMap.astro");
-  files.add("components/PageSections.astro");
-  files.add("components/QuickAnswers.astro");
-  files.add("components/ExitOffer.astro");
-  files.add("components/Footer.astro");
-  files.add("lib/site.ts");
-  files.add("styles/site.css");
-}
-if (kinds.has("set_social_proof")) {
-  files.add("components/SocialProof.astro");
-  files.add("styles/site.css");
-  files.add("lib/site.ts");
-}
-if (kinds.has("show_brand_name")) {
-  files.add("components/Header.astro");
-  files.add("components/Footer.astro");
-  files.add("styles/site.css");
-  files.add("lib/site.ts");
-}
-if (kinds.has("set_color_palette")) {
-  files.add("layouts/SiteLayout.astro");
-  files.add("styles/site.css");
-  files.add("lib/site.ts");
-}
-if (kinds.has("set_conversion_feature")) {
-  files.add("components/QuickAnswers.astro");
-  files.add("components/ExitOffer.astro");
-  files.add("layouts/SiteLayout.astro");
-  files.add("lib/page-recipe.ts");
-  files.add("lib/design-variants.ts");
-  files.add("lib/site.ts");
-  files.add("styles/site.css");
-}
-if (
-  operations.some(
-    (operation) =>
-      operation.kind === "set_copy" &&
-      ["heroHeading", "heroBody"].includes(operation.field),
-  )
-) {
-  files.add("components/PageSections.astro");
-  files.add("lib/site.ts");
-}
-if (
-  [...kinds].some((kind) =>
-    [
-      "set_section_enabled",
-      "reorder_section",
-      "set_section_variant",
-      "set_design_treatment",
-    ].includes(kind),
-  )
-) {
-  files.add("components/PageSections.astro");
-  files.add("components/SocialProof.astro");
-  files.add("pages/index.astro");
-  files.add("lib/page-recipe.ts");
-  files.add("lib/design-variants.ts");
-  files.add("lib/site.ts");
-  files.add("styles/site.css");
-}
+const files = revisionTemplatePaths(config);
 for (const relative of files) {
-  const source = path.join(template, relative);
-  const destination = path.join(client, "src", relative);
+  const source = path.join(repository, "templates/client-site", relative);
+  const destination = path.join(client, relative);
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(source, destination);
 }
@@ -165,4 +84,4 @@ if (kinds.has("set_social_proof")) {
   const revised = ensureLegacySocialProofMarkup(source);
   if (revised !== source) await fs.writeFile(homepage, revised, "utf8");
 }
-console.log(`revision_template_files=${[...files].join(",") || "none"}`);
+console.log(`revision_template_files=${files.join(",") || "none"}`);

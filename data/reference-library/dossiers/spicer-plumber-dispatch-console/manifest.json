@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "id": "spicer-plumber-dispatch-console",
+  "productionEligible": false,
+  "referenceName": "Emergency plumber dispatch console",
+  "familyId": "spicer-plumber-dispatch-console",
+  "source": {
+    "name": "Spicer Designs CC BY 4.0 template",
+    "url": "https://www.spicerdesigns.com/templates/plumber",
+    "rights": "licensed",
+    "rightsEvidence": "Spicer Designs template page states CC BY 4.0; the local license and placeholder-art provenance describe attribution and asset limits.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": [
+      "rights/asset-provenance.md"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Linked Spicer Designs first-party live preview https://www.spicerdesigns.com/preview/plumber was rendered in headless Chromium; registry source URL is its template information page. Scrolled the full document, returned to top and captured paired viewport images.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 8571
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 13699
+    },
+    "diagnostics": "A dark navy plumbing-workshop image underlies an urgent condensed headline while a bordered dispatch-status console occupies the opposite side. three-way emergency triage, flat-rate service table, billing explanation. Template response time, van identity, price, reviews, coverage, phone and emergency promises are fictional.",
+    "attribution": "Spicer Designs CC BY 4.0 template; archive capture uses https://www.spicerdesigns.com/preview/plumber. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "plumbing",
+    "home-services",
+    "local-trades",
+    "emergency-repair"
+  ],
+  "tags": {
+    "business": [
+      "plumbing",
+      "home-services",
+      "local-trades",
+      "emergency-repair"
+    ],
+    "style": [
+      "technical-utility",
+      "deep-navy",
+      "cyan-signal"
+    ],
+    "composition": [
+      "emergency-promise-beside-dispatch-console",
+      "dispatch-hero-to-triage-to-rates-to-coverage-to-request",
+      "status-console-hero",
+      "three-path-emergency-triage",
+      "flat-rate-service-ledger"
+    ],
+    "conversion": [
+      "three-path-triage-and-filterable-flat-rate-table",
+      "Put a real phone/request action beside the urgent problem and repeat it after the rate explanation and FAQ."
+    ],
+    "motion": [
+      "service-category-filter",
+      "dispatch-console-state"
+    ],
+    "imagery": [
+      "ai-generated-plumbing-scene-with-service-console",
+      "One atmospheric pipe image supports the hero; later sections rely on tables, cards and a coverage diagram rather than more lifestyle photography."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dark navy plumbing-workshop image underlies an urgent condensed headline while a bordered dispatch-status console occupies the opposite side. A thin yellow dispatch strip and compact service, rates, coverage and booking links lead the opening. Dense technical sans labels, bold condensed promises and small data-like service captions. Midnight navy, signal yellow, cyan and off-white. One atmospheric pipe image supports the hero; later sections rely on tables, cards and a coverage diagram rather than more lifestyle photography. The full sequence runs from dispatch hero to three-way emergency triage to flat-rate service table toward FAQ, damage-prevention list, request form. Template response time, van identity, price, reviews, coverage, phone and emergency promises are fictional.",
+    "heroGeometry": {
+      "mode": "A dark navy plumbing-workshop image underlies an urgent condensed headline while a bordered dispatch-status console occupies the opposite side.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "A thin yellow dispatch strip and compact service, rates, coverage and booking links lead the opening.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "Dense technical sans labels, bold condensed promises and small data-like service captions.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "Midnight navy",
+        "signal yellow",
+        "cyan and off-white"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "technical-utility",
+        "deep-navy"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "One atmospheric pipe image supports the hero; later sections rely on tables, cards and a coverage diagram rather than more lifestyle photography.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "dispatch hero",
+      "three-way emergency triage",
+      "flat-rate service table",
+      "billing explanation",
+      "review row",
+      "coverage diagram",
+      "FAQ",
+      "damage-prevention list",
+      "request form"
+    ],
+    "servicePresentation": {
+      "pattern": "The triage choices and pricing ledger are structural inspiration only; a real plumbing client needs verified service categories, prices and available booking workflow.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Put a real phone/request action beside the urgent problem and repeat it after the rate explanation and FAQ.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "service-category-filter; dispatch-console-state",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Place the dispatch console after the opening copy, stack triage choices, and turn the wide price table into readable rows without fake response timing.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Template response time, van identity, price, reviews, coverage, phone and emergency promises are fictional.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "status-console-hero",
+        "selector": "[data-reference-signature=status-console-hero]",
+        "description": "Original client interpretation of the observed status-console hero mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "three-path-emergency-triage",
+        "selector": "[data-reference-signature=three-path-emergency-triage]",
+        "description": "Original client interpretation of the observed three-path emergency triage mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "flat-rate-service-ledger",
+        "selector": "[data-reference-signature=flat-rate-service-ledger]",
+        "description": "Original client interpretation of the observed flat-rate service ledger mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. Template response time, van identity, price, reviews, coverage, phone and emergency promises are fictional. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-khufus-giza-restaurant",
+  "productionEligible": false,
+  "referenceName": "Khufu's cinematic place-led dining story",
+  "familyId": "direct-khufus-cinematic-place-led",
+  "source": {
+    "name": "Khufu's official restaurant website",
+    "url": "https://khufus.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The requester attested that internal full-page desktop/mobile capture and derived prompt retention are cleared, and explicitly confirmed screenshot use as a pipeline visual reference. No restaurant-owner grant or written license was uploaded. Production selection remains held because the portrait mobile render is not a sufficiently clean, complete responsive reference.",
+    "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md"
+  },
+  "provenance": {
+    "officialPage": "https://khufus.com/",
+    "capturedAt": "2026-09-25",
+    "capture": {
+      "method": "Rendered the official website directly in an isolated agent-browser Chromium session; full-page screenshots were captured from the live source page, not from a gallery or third-party screenshot.",
+      "desktopViewport": {
+        "width": 1536,
+        "height": 864,
+        "deviceScaleFactor": 1,
+        "fullPage": true,
+        "screenshotHeight": 8131
+      },
+      "mobileViewport": {
+        "width": 390,
+        "height": 844,
+        "deviceScaleFactor": 1,
+        "fullPage": true,
+        "screenshotHeight": 8580
+      },
+      "diagnostics": "No horizontal document overflow at either viewport. Two background videos were ready with 1788 by 1156 frames. No image requests failed; the full-page captures show the currently visible carousel frames, not every hidden slide. The portrait screenshot has major small-type and spacing problems and source content contains a rotate-device advisory. Keep this dossier ineligible for production selection until mobile is re-reviewed."
+    },
+    "attribution": "Official source page: Khufu's, https://khufus.com/. Full-page captures retained under the requester-attested internal scope recorded in rights/REQUESTER-ATTESTATION.md."
+  },
+  "businessKinds": [
+    "fine-dining",
+    "restaurant",
+    "destination-restaurant",
+    "hospitality",
+    "bistro"
+  ],
+  "tags": {
+    "business": [
+      "fine-dining",
+      "restaurant",
+      "destination-restaurant",
+      "hospitality",
+      "bistro"
+    ],
+    "style": [
+      "cinematic-editorial",
+      "place-led-luxury",
+      "warm-sandstone",
+      "quiet-contrast",
+      "serif-display"
+    ],
+    "composition": [
+      "atmospheric-poster-hero",
+      "three-part-editorial-story",
+      "offset-recognition-stack",
+      "visual-essay-gallery",
+      "portrait-chapter",
+      "spacious-closing-scene"
+    ],
+    "conversion": [
+      "reservation-first",
+      "menu-discovery",
+      "visit-planning",
+      "secondary-experience-branch"
+    ],
+    "motion": [
+      "scroll-narrative",
+      "manual-gallery-controls",
+      "video-poster-fallback",
+      "reduced-motion-static"
+    ],
+    "imagery": [
+      "cinematic-landscape",
+      "place-and-food-stills",
+      "monochrome-kitchen-detail",
+      "portrait-editorial",
+      "still-image-fallback"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1536,
+        "height": 864
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official site opens with a sparse navigation over a softly toned, cinematic desert scene and a centered typographic statement. Rather than using repeated service cards, it moves through distinct editorial episodes: a restrained image triptych, a layered recognition panel with an offset award-like object, a concise place narrative, a controlled photography sequence, portrait-led creative profiles, a day-to-evening visual chapter, a final centered invitation, and a dark footer with a small collection of practical links. The overall effect is atmospheric and place-led, using alternating warm sand and white surfaces, black-and-white preparation scenes, overlapping image panels, and unusually large negative-space intervals. The source restaurant's logo, claims, award information, menu, location, founder and chef identities, copy, and photographs are not transferable. The 390px capture is preserved as evidence but shows small-scale typography, sparse/blank-feeling intervals, and source orientation guidance; it is not approved as a positive mobile pattern.",
+    "heroGeometry": {
+      "mode": "cinematic landscape poster with a sparse centered headline and reservation action",
+      "alignment": "centered typography over a broad atmospheric image field",
+      "viewport": "large desktop image and short promise establish one distinct opening scene; avoid adding copy over every image"
+    },
+    "navigationGeometry": {
+      "mode": "minimal utility navigation with reservation and a secondary experience branch",
+      "placement": "small top-edge links over the hero with a centered brand mark",
+      "mobile": "must be redesigned as a compact accessible menu; the source portrait view is not an approved navigation model"
+    },
+    "typography": {
+      "display": "refined high-contrast serif for short editorial statements",
+      "body": "small neutral sans in the source, but generated work must increase practical copy to comfortably readable sizes",
+      "scale": "large sparse chapter titles, concise uppercase labels, short supporting paragraphs; do not copy the source's tiny portrait-mobile type"
+    },
+    "palette": {
+      "surfaces": [
+        "warm desert sand",
+        "soft white",
+        "deep espresso",
+        "pale stone"
+      ],
+      "ink": "charcoal or near-black with warm neutral secondary text",
+      "accents": [
+        "muted bronze",
+        "sandstone",
+        "subtle warm gray"
+      ],
+      "contrastIntent": "soft cinematic tone while keeping action, navigation, and practical details sharply legible"
+    },
+    "imageTreatment": {
+      "mode": "wide landscape opener, staggered triptych, offset recognition stack, monochrome kitchen/portrait details, and a closing image field",
+      "crop": "mix of wide cinematic stills, portrait crops, small stacked photographs, and inset cards",
+      "focalPoint": "let place and light carry the emotional opening; use only approved client imagery or independently licensed atmosphere"
+    },
+    "sectionSequence": [
+      "cinematic-reservation-hero",
+      "place-led-triptych",
+      "recognition-or-proof-scene",
+      "restaurant-point-of-view",
+      "photographic-essay",
+      "verified-people-or-craft-chapter",
+      "day-to-evening-scene",
+      "centered-reservation-close",
+      "dark-practical-footer"
+    ],
+    "servicePresentation": {
+      "pattern": "restaurant services are woven into image-led editorial chapters; reservation is repeated at distinct decision points and the menu/visit paths live in practical links",
+      "interaction": "use explicit reservation and gallery controls; any image slider must expose current state and keyboard/touch controls",
+      "adaptation": "for a client restaurant, replace story episodes with verified cuisine, menu, private dining, service hours, or visit details; do not invent awards or staff profiles"
+    },
+    "ctaPlacement": {
+      "primary": "reservation action within hero, repeated after proof and in the final invitation",
+      "secondary": "menu discovery and visit planning",
+      "early": "reservation is the clearest first action; branch to a separate experience only when a real second service exists"
+    },
+    "motion": {
+      "primitive": "cinematic scroll-paced reveals and image scene changes with user-controlled gallery navigation",
+      "library": "CSS for transitions; GSAP/ScrollTrigger only for one measured scene reveal if genuinely required",
+      "reducedMotion": "replace video and scroll effects with still imagery and visible text; no horizontal lock or autoplay-dependent content"
+    },
+    "mobileRecomposition": {
+      "strategy": "portrait-first editorial stack that keeps the landscape mood but recomposes every scene into readable, ordered chapters",
+      "rules": [
+        "retain a short readable headline and reservation action without an orientation gate",
+        "stack triptych and recognition imagery into intentional subject-led panels",
+        "eliminate excess blank intervals while preserving deliberate section breathing room",
+        "use comfortable body and label sizes instead of copying source microtype",
+        "make gallery state and navigation understandable without dragging or landscape rotation"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying Khufu's identity, pyramids/premises claims, slogans, award claims, awards, menu, brand, staff, founder identity, photos, or recognition statistics",
+      "implying a client's restaurant is located at a landmark or archaeological site without verified facts",
+      "reproducing source mobile tiny type, empty-looking gaps, or rotate-device gate",
+      "inventing awards, rankings, chef biographies, cuisine heritage, opening times, or reservation availability",
+      "autoplaying a gallery, forcing horizontal orientation, or requiring scroll motion to read practical information",
+      "making the site a generic card grid or copying layered source artwork"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "cinematic-place-hero",
+        "selector": "[data-reference-signature=cinematic-place-hero]",
+        "description": "one atmospheric place-led opening with short centered type and reservation action"
+      },
+      {
+        "id": "editorial-triptych",
+        "selector": "[data-reference-signature=editorial-triptych]",
+        "description": "a controlled sequence of varied imagery rather than uniform cards"
+      },
+      {
+        "id": "layered-proof-scene",
+        "selector": "[data-reference-signature=layered-proof-scene]",
+        "description": "offset proof or craft composition using only verified client material"
+      },
+      {
+        "id": "final-invitation",
+        "selector": "[data-reference-signature=final-invitation]",
+        "description": "distinct spacious conversion scene before practical footer details"
+      }
+    ],
+    "acceptanceChecks": [
+      "desktop retains a sparse cinematic hierarchy with clear reservation and menu paths",
+      "mobile fits portrait orientation with readable body text and no rotate-device interstitial",
+      "all awards, people, menu, location, cultural, and ranking claims are verified and token-bound",
+      "video and scroll motion have still-image and reduced-motion fallbacks",
+      "the source's photos, logo, copy, and award artwork are not shipped to a client site"
+    ]
+  },
+  "review": {
+    "status": "held-mobile-reference-caveat",
+    "reviewer": "LaunchLoom repository owner",
+    "reviewedAt": "2026-09-25",
+    "scope": "Official page captured at desktop and portrait-mobile viewports under requester attestation. Mobile capture is retained for comparison but is not a positive production-selection reference due to small type, excessive gaps, and orientation guidance. No owner grant file was uploaded."
+  }
+}

@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-grlica-law",
+  "productionEligible": false,
+  "referenceName": "Grlica Law digital legal-services page",
+  "familyId": "direct-grlica-law",
+  "businessKinds": [
+    "law firm",
+    "international legal services",
+    "boutique legal practice"
+  ],
+  "source": {
+    "name": "Grlica Law official website",
+    "url": "https://grlicalaw.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-25 permits internal retention of the full-page captures and their use as visual input to the LaunchLoom pipeline model. No source-owner grant or license was uploaded. See rights/requester-attestation.md.",
+    "rightsEvidencePath": "rights/requester-attestation.md"
+  },
+  "tags": {
+    "business": [
+      "law firm",
+      "international legal services",
+      "corporate counsel",
+      "professional services"
+    ],
+    "style": [
+      "dark digital legal identity",
+      "neon accent",
+      "long-form scrolling page",
+      "low-contrast light chapters requiring caution"
+    ],
+    "composition": [
+      "dark image-led hero",
+      "fixed or side-index navigation",
+      "numbered chapter rhythm",
+      "practice-area list",
+      "team and contact close"
+    ],
+    "conversion": [
+      "contact action in hero",
+      "practice area exploration",
+      "contact form and office details at close"
+    ],
+    "motion": [
+      "scroll-linked chapter treatment",
+      "floating portrait details",
+      "preserve native scroll",
+      "reduced-motion static fallback"
+    ],
+    "imagery": [
+      "neon justice figure in hero",
+      "small team portraits",
+      "decorative numbered panels",
+      "source testimonials in page capture"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 375,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official page begins with a black hero, a centered white legal promise, a luminous blue-green justice figure, and a small contact control. A slim side index and oversized numbered chapter markers organize a long scroll through practice areas, a firm vision, testimonials, values, team profiles, legal careers, contact, and office details. The captured desktop and mobile pages show that most pale chapters have white or near-white headings and body copy on light backgrounds, leaving large portions extremely faint and difficult to read. The hero offers a recognizable composition study, but the paired screenshots fail legibility review as a production reference. Keep the dossier ineligible until clearer evidence replaces or resolves the low-contrast chapters. Do not reproduce the source mark, figure, numbers, wording, portraits, testimonials, legal claims, offices, or visual trade dress.",
+    "heroGeometry": {
+      "mode": "dark centered promise with a neon justice illustration",
+      "alignment": "headline and contact control centered beside the image focal point",
+      "viewport": "hero is visually distinct, while the next light chapters currently lose text contrast"
+    },
+    "navigationGeometry": {
+      "mode": "compact top menu with a vertical section index",
+      "placement": "menu at the top edge and chapter cues along the page margin",
+      "mobile": "small logo and menu icon above a narrow hero"
+    },
+    "typography": {
+      "display": "large geometric sans",
+      "body": "neutral sans",
+      "scale": "oversized chapter numbering and short labels; body contrast is inadequate in the supplied captures"
+    },
+    "palette": {
+      "surfaces": [
+        "black hero",
+        "white or near-white chapters"
+      ],
+      "ink": "white in the dark hero and near-white on light sections",
+      "accents": [
+        "electric blue",
+        "green",
+        "violet"
+      ],
+      "contrastIntent": "strong in the opening, visibly deficient through much of the light-page content"
+    },
+    "imageTreatment": {
+      "mode": "illustrative justice figure with luminous edge color and small portrait crops",
+      "crop": "central hero illustration followed by small circular team portraits",
+      "focalPoint": "source focal image is highly branded and must not be reused"
+    },
+    "sectionSequence": [
+      "dark hero and contact",
+      "chapter index",
+      "practice areas",
+      "firm vision",
+      "testimonials",
+      "values",
+      "team",
+      "careers",
+      "contact form and office footer"
+    ],
+    "servicePresentation": {
+      "pattern": "long practice-area list with sequential chapter framing",
+      "interaction": "direct anchors and simple contact form"
+    },
+    "ctaPlacement": {
+      "primary": "small contact control in the hero",
+      "secondary": "practice-area links",
+      "early": "contact form appears at the end of the full page"
+    },
+    "motion": {
+      "primitive": "scroll-linked chapter and portrait movement suggested by the page",
+      "library": "not verified and not reusable",
+      "reducedMotion": "keep all section content visible in normal document flow"
+    },
+    "mobileRecomposition": {
+      "strategy": "narrow chapter stack under a compact menu",
+      "rules": [
+        "do not preserve oversized numerals when they displace readable copy",
+        "use dark readable text on light panels",
+        "keep all sections visible without animation",
+        "place the contact action in the opening flow",
+        "prevent width overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "low-contrast white or near-white text on light backgrounds",
+      "copying the justice figure, Grlica mark, chapter numbers, exact page text, team portraits, testimonials, office details, or claims",
+      "neon legal cliches",
+      "unverified legal credentials, results, jurisdictions, guarantees, or response promises",
+      "hidden content that depends on scroll animation"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "legal-promise-stage",
+        "selector": "[data-reference-signature=legal-promise-stage]",
+        "description": "a clear professional positioning statement with an early contact route"
+      },
+      {
+        "id": "practice-area-index",
+        "selector": "[data-reference-signature=practice-area-index]",
+        "description": "scannable practice links in a deliberate chapter sequence"
+      },
+      {
+        "id": "contact-close",
+        "selector": "[data-reference-signature=contact-close]",
+        "description": "accessible contact form or verified contact details at the page close"
+      }
+    ],
+    "acceptanceChecks": [
+      "This dossier remains excluded from production while the supplied full-page evidence has unresolved low contrast.",
+      "A future replacement must show readable section titles and body text across desktop and mobile without relying on animation.",
+      "Any manually authored descendant uses high-contrast professional typography, concise practice explanations, and an early contact path.",
+      "Legal specialties, jurisdiction, credentials, outcomes, testimonials, contact details, and office locations are bound only to verified client facts.",
+      "No source illustration, identity, exact copy, team image, or testimonial is used in another site."
+    ]
+  },
+  "review": {
+    "status": "reviewed-not-eligible",
+    "reviewer": "Codex dossier completion",
+    "reviewedAt": "2026-09-25",
+    "scope": "official-source match, full-page capture dimensions, prompt, requester attestation, and rendered visual review",
+    "visualQuality": "fail",
+    "notes": "The desktop screenshot captured directly today measures 1440x12680. The supplied mobile PNG measures 375x11040. Both show the official page through its footer, but large light sections use white or near-white text on white, making the reference visually incomplete and unsuitable for production selection. productionEligible stays false pending a legible replacement capture or a separately approved quality review."
+  }
+}

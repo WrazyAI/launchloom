@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "id": "web-painting-southern",
+  "productionEligible": true,
+  "referenceName": "Southern Painting house-painting network homepage",
+  "familyId": "web-painting-southern",
+  "businessKinds": [
+    "painting contractor",
+    "residential painting",
+    "painting"
+  ],
+  "source": {
+    "name": "Southern Painting house-painting network official website",
+    "url": "https://southernpainting.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "painting contractor",
+      "residential painting",
+      "painting"
+    ],
+    "style": [
+      "firm sans service headings with white-over-photo hero copy",
+      "white and pale blue and navy surfaces",
+      "paint red and light blue accents"
+    ],
+    "composition": [
+      "a full-width painted-house lifestyle scene with a navy estimate form floating at the upper right",
+      "painted-house-form-hero",
+      "room-service-selector",
+      "color-choice-chapter"
+    ],
+    "conversion": [
+      "request a painting estimate",
+      "find a local location",
+      "early contact action"
+    ],
+    "motion": [
+      "service tabs, testimonial slider, and video posters; include static service summaries",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "finished homes, room interiors, paint swatches, and homeowner scenes",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official Southern Painting house-painting network homepage was inspected in paired desktop and mobile full-page captures. The page opens with a full-width painted-house lifestyle scene with a navy estimate form floating at the upper right. It uses navy utility row with location and phone controls, then a service menu. The visual system relies on firm sans service headings with white-over-photo hero copy; surfaces include white, pale blue, navy and accents include paint red, light blue. Imagery is finished homes, room interiors, paint swatches, and homeowner scenes. The page then runs through painted-house estimate hero, intro and location action, service selection over room image, color-selection education, homeowner review, offer panel, video examples, resource cards, location map and footer. Its service presentation is vertical service menu that changes the featured room image and explanation. Mobile changes to keep the estimate path visible after the opening image, stack service choices, and avoid a tiny swatch or map interface. Transfer only the layout rhythm and decision path. Do not copy Southern Painting marks, exact roller motif, lifestyle photos, reviews, offers, warranties, ratings, or supplier logos.",
+    "heroGeometry": {
+      "mode": "a full-width painted-house lifestyle scene with a navy estimate form floating at the upper right",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "navy utility row with location and phone controls, then a service menu",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "firm sans service headings with white-over-photo hero copy",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "pale blue",
+        "navy"
+      ],
+      "ink": "dark navy",
+      "accents": [
+        "paint red",
+        "light blue"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "finished homes, room interiors, paint swatches, and homeowner scenes",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "painted-house estimate hero",
+      "intro and location action",
+      "service selection over room image",
+      "color-selection education",
+      "homeowner review",
+      "offer panel",
+      "video examples",
+      "resource cards",
+      "location map and footer"
+    ],
+    "servicePresentation": {
+      "pattern": "vertical service menu that changes the featured room image and explanation",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "request a painting estimate",
+      "secondary": "find a local location",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "service tabs, testimonial slider, and video posters; include static service summaries",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "keep the estimate path visible after the opening image, stack service choices, and avoid a tiny swatch or map interface",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy Southern Painting marks, exact roller motif, lifestyle photos, reviews, offers, warranties, ratings, or supplier logos.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "painted-house-form-hero",
+        "selector": "[data-reference-signature=painted-house-form-hero]",
+        "description": "painted house form hero translated with client-specific content"
+      },
+      {
+        "id": "room-service-selector",
+        "selector": "[data-reference-signature=room-service-selector]",
+        "description": "room service selector translated with client-specific content"
+      },
+      {
+        "id": "color-choice-chapter",
+        "selector": "[data-reference-signature=color-choice-chapter]",
+        "description": "color choice chapter translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified painting contractor scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x7565; mobile 390x8212. Visible page sequence and mobile layout were reviewed. "
+  }
+}

@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 // Called by both initial generation and revision workflows. Keep client
 // instructions beside their source, never inside the public asset directory.
 export async function syncClientGuidelines(client) {
+  const written = ["docs/site-generation-guidelines.md"];
   const repository = fileURLToPath(new URL("../", import.meta.url));
   await fs.mkdir(path.join(client, "docs"), { recursive: true });
   await fs.copyFile(
@@ -18,9 +19,11 @@ export async function syncClientGuidelines(client) {
     await fs.writeFile(path.join(client, "AGENTS.md"), instructions, {
       flag: "wx",
     });
+    written.push("AGENTS.md");
   } catch (error) {
     if (error.code !== "EEXIST") throw error;
   }
+  return written;
 }
 
 if (

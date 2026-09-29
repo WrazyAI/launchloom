@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "web-accounting-whitestone",
+  "productionEligible": true,
+  "referenceName": "Whitestone Accounting consultation desk",
+  "familyId": "accounting-form-over-photo-opening",
+  "source": {
+    "name": "Whitestone Accounting consultation desk official website",
+    "url": "https://www.whitestoneaccounting.co.uk/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Playwright Chromium full-page capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, waited, and returned to top. No page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 4736
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 8256
+    },
+    "diagnostics": "Observed calculator hero with enquiry form, practice rationale, service pictogram strip, how-accountants-help explainer, testimonial band. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Whitestone Accounting consultation desk official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "accounting",
+    "accountant",
+    "bookkeeping",
+    "chartered-accountant"
+  ],
+  "tags": {
+    "business": [
+      "accounting",
+      "accountant",
+      "bookkeeping",
+      "chartered-accountant"
+    ],
+    "style": [
+      "teal-blue-accounting",
+      "form-led-practical",
+      "soft-green-service-band"
+    ],
+    "composition": [
+      "split-hero-form",
+      "icon-service-rail",
+      "testimonial-band"
+    ],
+    "conversion": [
+      "consultation-form",
+      "service-route",
+      "contact"
+    ],
+    "motion": [
+      "simple-form-states",
+      "static-sections"
+    ],
+    "imagery": [
+      "accounting-work-surface",
+      "document-detail"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A wide calculator photograph sits under a dark scrim; white left copy shares the first viewport with a compact light consultation form at right. White horizontal row with square blue mark, simple pages and small phone/contact affordances. Plain sans headings and dense practical paragraphs, with uppercase blue actions and readable form labels. The page sequence runs from calculator hero with enquiry form to practice rationale to service pictogram strip toward how-accountants-help explainer, testimonial band, footer contact and form. Business paperwork photograph anchors the opening, followed by a document detail and a testimonial background. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "A wide calculator photograph sits under a dark scrim; white left copy shares the first viewport with a compact light consultation form at right.",
+      "alignment": "source-specific editorial alignment",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "White horizontal row with square blue mark, simple pages and small phone/contact affordances.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Plain sans headings and dense practical paragraphs, with uppercase blue actions and readable form labels.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "White",
+        "slate",
+        "teal blue",
+        "pale green and charcoal overlay."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "teal-blue-accounting",
+        "form-led-practical"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Business paperwork photograph anchors the opening, followed by a document detail and a testimonial background.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "calculator hero with enquiry form",
+      "practice rationale",
+      "service pictogram strip",
+      "how-accountants-help explainer",
+      "testimonial band",
+      "footer contact and form"
+    ],
+    "servicePresentation": {
+      "pattern": "Give each confirmed accounting category a simple pictogram and direct route, then answer the visitor's practical decision questions.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Provide a consultation form beside the opening, a mid-page contact action and a footer contact form only if the real workflow can receive submissions.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "simple-form-states; static-sections",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Put the hero promise ahead of the form, stack service pictograms in comfortable rows and keep form labels and validation visible.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not repeat two forms without reason, copy source partner badges, customer quote, free-consultation promise, or location details.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "form-over-photo-opening",
+        "selector": "[data-reference-signature=form-over-photo-opening]",
+        "description": "A new-client interpretation of the observed form-over-photo opening relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "pale-green-service-pictogram-band",
+        "selector": "[data-reference-signature=pale-green-service-pictogram-band]",
+        "description": "A new-client interpretation of the observed pale-green service pictogram band relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "paired-footer-enquiry",
+        "selector": "[data-reference-signature=paired-footer-enquiry]",
+        "description": "A new-client interpretation of the observed paired footer enquiry relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

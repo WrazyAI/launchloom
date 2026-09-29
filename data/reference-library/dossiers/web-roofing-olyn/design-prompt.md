@@ -1,0 +1,23 @@
+# Visual hierarchy
+
+Use the paired O'LYN screenshots to understand how a roofing page can move from a property-scale image to a practical service decision. The reference starts with a thin utility strip, a compact navigation line, and a broad house photograph carrying a short, high-contrast promise. A dark enquiry surface gives the desktop visitor an immediate action without making the service catalogue the hero. For a new client, write one specific roofing promise grounded in its actual work and coverage, then give one primary contact action and one secondary service or phone route. Translate the contrast between light service chapters and dark reassurance chapters into the client's own palette and type system. Do not reproduce the source's green-and-black identity, mark, wording, image selection or exact composition.
+
+# Page sequence
+
+The observed rhythm is a photographic opening and early enquiry; a narrow image-led row of roof and gutter choices; an explanation of what a visitor can expect; a darker trust or process pause; a large property photograph with a smaller editorial inset; a documented-work comparison; another enquiry point; and a place-context close. Keep those as distinct information jobs. Explain the problem each service solves, how a visitor can describe the issue, what the company will confirm, and the next step. Source testimonials, numeric proof, accreditations and before-and-after projects are not transferable facts. If the new client has no approved project pair, use a clear inspection or quotation process chapter in the comparison position. Keep a truthful form and contact path, with no promise of a free consultation, immediate response or specific warranty unless supplied by the client.
+
+# Responsive translation
+
+At 1440 px, let the house image establish the scene while the promise and first action remain legible at normal zoom. The desktop form can sit below or beside the first image as a separate dark surface. At 390 px, stack the opening, service choices, process, evidence and contact in a direct reading order; keep the primary action reachable even if the large desktop form is moved to the contact chapter. Turn the narrow service-photo ribbon into full-width touch targets. Keep before-and-after labels attached to their own images and give any comparison control a keyboard and touch equivalent. Protect roof and worker subjects from overlaid text. Check that the footer, contact route and every action fit without horizontal scrolling. All content must remain visible when motion is reduced or JavaScript is unavailable.
+
+# Signature elements
+
+Carry forward four mechanics: a roof-photo opening, a small photographic service ribbon, an inset project comparison, and a concise place-context close. The mid-page overlapping circular images can add scale contrast when there are suitable client-owned or reviewed assets; they are not a reason to invent staff, properties or completed work. Alternate broad imagery with useful explanatory text rather than repeating identical cards. Use a second enquiry prompt only after the visitor has learned something material. The original page's long footer inventory is an observed source detail, not a model for the new site.
+
+# Prohibited patterns
+
+Do not copy O'LYN's name, logo, pages, CSS, photography, roof projects, team imagery, reviews, awards, numbers, credentials, financing, warranties, prices, addresses, opening hours, or claims. Do not present a stock roof or person as the client's actual project or employee. Do not manufacture before-and-after evidence or imply results from an image that does not document the same property. Do not create a bulk list of cities or thin interchangeable location pages to chase search traffic. A location page needs a verified service area and useful local context; a service area must never be described as an office. Avoid a generic card wall, unreadable text over busy roof photography, overlapping mobile controls, and em dashes in generated page copy.
+
+# Local content and verification
+
+Use only the new client's confirmed services, phone, enquiry route, property imagery, project evidence and service areas. Keep one H1 that states the verified roofing offer and geography, then use service pages and FAQs to answer real visitor questions about scope, preparation, inspection and quoting. Only show a map for a confirmed street-level location. Render and inspect desktop and mobile output, including the first action, service links, comparison labels, form submission state, contrast and overflow. The reference screenshots are internal visual evidence, not client-site assets.

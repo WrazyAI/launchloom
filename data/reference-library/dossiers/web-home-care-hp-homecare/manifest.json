@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "id": "web-home-care-hp-homecare",
+  "productionEligible": true,
+  "referenceName": "HP Homecare: sage editorial typography with continuity story",
+  "familyId": "web-home-care-hp-homecare-family",
+  "businessKinds": [
+    "home care",
+    "domiciliary care",
+    "in-home care",
+    "home-care"
+  ],
+  "source": {
+    "name": "HP Homecare official website",
+    "url": "https://www.hphomecare.co.uk/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "home care",
+      "local care provider",
+      "family care planning",
+      "home-care"
+    ],
+    "style": [
+      "classic serif display paired with readable neutral body",
+      "white and sage green surfaces",
+      "deep green accent"
+    ],
+    "composition": [
+      "quiet photo and serif care promise above a long editorial journey",
+      "sage editorial typography",
+      "continuity story",
+      "specialist care chapters"
+    ],
+    "conversion": [
+      "care enquiry",
+      "phone consultation"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "few generous photos and long white breathing spaces",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct HP Homecare website in London, England uses quiet photo and serif care promise above a long editorial journey. Navigation is slim phone-first header with specialist service routes. Its page moves through care promise, caregiver expertise, provider introduction, relationship and continuity, reasons to choose, specialist services, consultation prompt, contact, with care needs introduced through explanations rather than a dense icon wall. few generous photos and long white breathing spaces. Transferable mechanics are sage editorial typography, continuity story, specialist care chapters. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "quiet photo and serif care promise above a long editorial journey",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "slim phone-first header with specialist service routes",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "classic serif display paired with readable neutral body",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "sage green",
+        "light gray"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "deep green"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "few generous photos and long white breathing spaces",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "care promise",
+      "caregiver expertise",
+      "provider introduction",
+      "relationship and continuity",
+      "reasons to choose",
+      "specialist services",
+      "consultation prompt",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "care needs introduced through explanations rather than a dense icon wall",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "request a care consultation",
+      "secondary": "then call",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "preserve long-form readability with one paragraph column and deliberate section breaks",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing HP Homecare identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "sage-editorial-typography",
+        "selector": "[data-reference-signature=sage-editorial-typography]",
+        "description": "Translate the observed sage editorial typography mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "continuity-story",
+        "selector": "[data-reference-signature=continuity-story]",
+        "description": "Translate the observed continuity story mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "specialist-care-chapters",
+        "selector": "[data-reference-signature=specialist-care-chapters]",
+        "description": "Translate the observed specialist care chapters mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses sage editorial typography with client-cleared content.",
+      "Page sequence retains continuity story and specialist care chapters as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

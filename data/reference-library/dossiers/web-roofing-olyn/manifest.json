@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "id": "web-roofing-olyn",
+  "productionEligible": true,
+  "referenceName": "O'LYN Roofing: image-led roof service and project journey",
+  "familyId": "web-roofing-olyn-image-led",
+  "businessKinds": [
+    "roofing contractor",
+    "residential roofing",
+    "roof replacement",
+    "gutter service",
+    "roofing"
+  ],
+  "source": {
+    "name": "O'LYN Roofing official website",
+    "url": "https://www.olynroofing.com/",
+    "sourceType": "official direct business website captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal full-page screenshot retention, derived design prompts, and pipeline-model visual-reference use. No written source-owner grant was supplied or claimed.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "roofing contractor",
+      "residential roofing",
+      "gutter work",
+      "local trades",
+      "roofing"
+    ],
+    "style": [
+      "high-contrast trade utility",
+      "bold uppercase opening",
+      "light and dark chapter alternation"
+    ],
+    "composition": [
+      "house-photo hero with a separate enquiry surface",
+      "photographic service ribbon",
+      "overlapping circular roof images",
+      "inset project comparison",
+      "place-context closing band"
+    ],
+    "conversion": [
+      "early roof enquiry route",
+      "service-choice links",
+      "project evidence before second enquiry",
+      "direct phone and contact paths"
+    ],
+    "motion": [
+      "optional image and project transitions",
+      "complete static fallback",
+      "reduced-motion readable"
+    ],
+    "imagery": [
+      "real roof and house photography in the reference",
+      "contextual service crops",
+      "before and after project composition",
+      "direct full-page screenshot evidence"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct O'LYN Roofing homepage opens with a compact dark utility strip, a narrow brand and service navigation row, and a full-width house photograph with a bold uppercase message. A dark consultation form occupies a separate block beneath the desktop opening. A white service surface presents narrow roof-photo choices with short accent labels. Later chapters alternate an overlapping circular roof and worker image, a dark reassurance checklist, a recognition strip, a dark review-image band, a house image with an inset editorial panel, an image-backed before-and-after project comparison, another enquiry surface, and a place-context close. On mobile, the service choices form a vertical path and the contact route remains reachable while imagery and copy stack. The long list of places in the source footer is not a pattern for generated location pages. All source identity, copy, projects, photos, reviews, numbers, credentials, warranty and availability claims are reference-only.",
+    "heroGeometry": {
+      "mode": "full-width house photograph with a bold type overlay and adjacent dark enquiry surface",
+      "alignment": "left-set promise over subject-safe house imagery",
+      "viewport": "one clear roofing promise and an early enquiry route before the service index"
+    },
+    "navigationGeometry": {
+      "mode": "thin utility strip above a compact service navigation",
+      "placement": "top edge before photographic opening",
+      "mobile": "condensed navigation with a direct contact route and no overlapping sticky controls"
+    },
+    "typography": {
+      "display": "strong uppercase sans hierarchy",
+      "body": "plain, readable sans for practical detail",
+      "scale": "large opening statement, compact service labels, short explanatory chapters"
+    },
+    "palette": {
+      "surfaces": [
+        "light page field",
+        "near-black reassurance bands",
+        "photographic roof fields"
+      ],
+      "ink": "high-contrast dark or light text according to surface",
+      "accents": [
+        "one clear action accent selected for the new client"
+      ],
+      "contrastIntent": "visible enquiry controls and legible text against roofs, houses and dark bands"
+    },
+    "imageTreatment": {
+      "mode": "contextual roof and house photographs used for services, project comparison and local context",
+      "crop": "broad opening image, narrow service images, circular mid-page accents and an inset comparison panel",
+      "focalPoint": "keep the roof, property or work detail identifiable without text covering the subject"
+    },
+    "sectionSequence": [
+      "house photo opening",
+      "early enquiry surface",
+      "photographic service choices",
+      "what to expect image and checklist",
+      "verified proof or process pause",
+      "image-backed roofing explanation",
+      "project comparison",
+      "second enquiry point",
+      "why choose and place context",
+      "contact close"
+    ],
+    "servicePresentation": {
+      "pattern": "small set of photograph-led roof and gutter choices with direct detail routes",
+      "interaction": "each choice links to a useful service explanation; no carousel is required to reveal scope"
+    },
+    "ctaPlacement": {
+      "primary": "early enquiry action near the roof promise",
+      "secondary": "service choice or direct phone route",
+      "early": "opening and service decision points, then again after project/process evidence"
+    },
+    "motion": {
+      "primitive": "restrained transitions on imagery or comparison only",
+      "library": "source scripts are not transferred",
+      "reducedMotion": "show the full image and comparison content without autoplay, animation or scroll dependence"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack house image, concise promise, service choices, proof and contact in reading order",
+      "rules": [
+        "keep a real enquiry path reachable when a large desktop form is not used",
+        "turn narrow service photos into touch-safe rows",
+        "keep before-and-after labels attached to the correct images",
+        "shorten the service-area close to verified useful context",
+        "prevent horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying O'LYN name, logo, copy, photography, projects, people, reviews or complete trade dress",
+      "reusing source figures, credentials, warranties, financing, hours, office addresses or service-area claims as client facts",
+      "bulk city lists or interchangeable city-swap pages created for SEO doorway coverage",
+      "fabricated before-and-after projects or roof outcomes",
+      "generic card wall that removes the observed image and enquiry rhythm"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "roof-photo-opening",
+        "selector": "[data-reference-signature=roof-photo-opening]",
+        "description": "a new-client roof or property image gives context to a concise roofing promise and early action"
+      },
+      {
+        "id": "photographic-service-ribbon",
+        "selector": "[data-reference-signature=photographic-service-ribbon]",
+        "description": "a small number of contextual image-led service choices with useful detail routes"
+      },
+      {
+        "id": "inset-project-comparison",
+        "selector": "[data-reference-signature=inset-project-comparison]",
+        "description": "an accessible before-and-after or documented-work comparison only when the client has approved real project evidence"
+      },
+      {
+        "id": "place-context-close",
+        "selector": "[data-reference-signature=place-context-close]",
+        "description": "a concise verified coverage and contact close instead of a doorway-style area list"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening names the new client's verified roofing scope, relevant coverage and working contact route without borrowing source claims.",
+      "Service choices, process, documented work and contact form a coherent decision path rather than a repeated card wall.",
+      "Any project comparison uses client-approved images with truthful labels; otherwise a practical process explanation fills that position.",
+      "At 390 px, service choices, comparison labels and contact controls remain readable, reachable and free of horizontal overflow.",
+      "No source identity, review, photograph, warranty, statistic, credential, address or doorway-style city list enters the generated page."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Direct source returned HTTP 200 at desktop and mobile widths. Full-page PNGs inspected at 1440 and 390 px with no document-width overflow. Browser capture retained a small source cookie notice; no source-owner grant is claimed."
+  }
+}

@@ -9,9 +9,9 @@ const roots: string[] = [];
 
 afterEach(async () => {
   await Promise.all(
-    roots.splice(0).map((root) =>
-      fs.rm(root, { recursive: true, force: true }),
-    ),
+    roots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
   );
 });
 
@@ -25,10 +25,7 @@ describe("human creative revision lifecycle", () => {
       root,
       ".launchloom/generated-experiences/original-candidate",
     );
-    const selectedDir = path.join(
-      root,
-      "src/generated-experiences/selected",
-    );
+    const selectedDir = path.join(root, "src/generated-experiences/selected");
     const outDir = path.join(root, "prepared");
     await fs.mkdir(evidenceDir, { recursive: true });
     await fs.mkdir(selectedDir, { recursive: true });
@@ -136,23 +133,13 @@ describe("human creative revision lifecycle", () => {
       ),
     );
     const refreshedMetadata = JSON.parse(
-      await fs.readFile(
-        path.join(outDir, "candidate-a/metadata.json"),
-        "utf8",
-      ),
+      await fs.readFile(path.join(outDir, "candidate-a/metadata.json"), "utf8"),
     );
     const refreshedContract = JSON.parse(
-      await fs.readFile(
-        path.join(outDir, "candidate-a/contract.json"),
-        "utf8",
-      ),
+      await fs.readFile(path.join(outDir, "candidate-a/contract.json"), "utf8"),
     );
-    expect(refreshedManifest.values.hero.heading).toBe(
-      "Revised hero heading",
-    );
-    expect(refreshedManifest.values.services[0].name).toBe(
-      "Current service",
-    );
+    expect(refreshedManifest.values.hero.heading).toBe("Revised hero heading");
+    expect(refreshedManifest.values.services[0].name).toBe("Current service");
     expect(refreshedManifest.digest).not.toBe("old-digest");
     expect(refreshedMetadata.contentManifestDigest).toBe(
       refreshedManifest.digest,
@@ -247,7 +234,9 @@ describe("human creative revision lifecycle", () => {
     expect(developer).toContain("--require-diversity false");
     expect(developer).toContain("humanRevisionPass == true");
     expect(client).toContain("scripts/apply-feedback.mjs");
-    expect(client).not.toContain("scripts/prepare-creative-revision-candidate.mjs");
+    expect(client).not.toContain(
+      "scripts/prepare-creative-revision-candidate.mjs",
+    );
     expect(client).not.toContain("scripts/run-rendered-creative-repair.mjs");
     expect(client).not.toContain("--require-diversity false");
     expect(client).toContain("--mode verify");
@@ -278,7 +267,9 @@ describe("human creative revision lifecycle", () => {
     expect(publish).toContain('--commit-hash "$APPROVED_SHA"');
     expect(publish).toContain('--to "$CLIENT_EMAIL"');
     expect(publish).toContain("client-approved-feedback.txt");
-    expect(publish).toContain('--feedback-file "$RUNNER_TEMP/client-approved-feedback.txt"');
+    expect(publish).toContain(
+      '--feedback-file "$RUNNER_TEMP/client-approved-feedback.txt"',
+    );
   });
 
   it("does not complete a revision queue item until the developer email is delivered", () => {
@@ -300,12 +291,8 @@ describe("human creative revision lifecycle", () => {
       );
       expect(emailIndex).toBeGreaterThan(-1);
       expect(completeIndex).toBeGreaterThan(emailIndex);
-      expect(workflow).toContain(
-        "steps.review_delivery.outcome == 'success'",
-      );
-      expect(workflow).toContain(
-        "steps.review_delivery.outcome != 'success'",
-      );
+      expect(workflow).toContain("steps.review_delivery.outcome == 'success'");
+      expect(workflow).toContain("steps.review_delivery.outcome != 'success'");
     }
   });
 
@@ -315,12 +302,10 @@ describe("human creative revision lifecycle", () => {
       "utf8",
     );
     expect(workflow).toContain("Client-feedback developer preview");
-    expect(workflow).toContain('--audience developer');
+    expect(workflow).toContain("--audience developer");
     expect(workflow).toContain(
       '--feedback-file "$RUNNER_TEMP/client-feedback.txt"',
     );
-    expect(workflow).toContain(
-      "Nothing was sent back to the client.",
-    );
+    expect(workflow).toContain("Nothing was sent back to the client.");
   });
 });

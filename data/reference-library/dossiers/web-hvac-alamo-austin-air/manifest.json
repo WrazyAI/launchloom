@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "id": "web-hvac-alamo-austin-air",
+  "productionEligible": true,
+  "referenceName": "Alamo Austin Air local comfort service",
+  "familyId": "hvac-local-aerial-hero",
+  "source": {
+    "name": "Alamo Austin Air local comfort service official website",
+    "url": "https://www.alamoaustinair.com/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 to clearance for full-page screenshot retention, derived design prompts, and LaunchLoom model visual-reference use. No source-owner grant was supplied or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Official-site Chromium capture at the recorded viewports. Scrolled in 80 percent viewport increments to trigger lazy content, then returned to top. A CDP beyond-viewport clip kept the full document length at the exact viewport width; no page content or styling was altered.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 7859
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 14098
+    },
+    "diagnostics": "Observed local photo hero and service quartet, crew introduction split, customer proof, offer banner, latest advice cards. The mobile capture was taken at 390 px. Source-specific omissions and non-transferable claims are noted in the prompt.",
+    "attribution": "Alamo Austin Air local comfort service official website. The requester attested to screenshot and prompt clearance; no source-owner grant was uploaded."
+  },
+  "businessKinds": [
+    "hvac",
+    "heating-and-cooling",
+    "air-conditioning",
+    "home-services"
+  ],
+  "tags": {
+    "business": [
+      "hvac",
+      "heating-and-cooling",
+      "air-conditioning",
+      "home-services"
+    ],
+    "style": [
+      "orange-navy-trades",
+      "condensed-utility",
+      "community-forward"
+    ],
+    "composition": [
+      "photo-led-service-opening",
+      "four-service-row",
+      "map-and-contact"
+    ],
+    "conversion": [
+      "request-service",
+      "call",
+      "coverage-confirmation"
+    ],
+    "motion": [
+      "light-icon-hover",
+      "static-photo-fallback"
+    ],
+    "imagery": [
+      "local-aerial",
+      "actual-crew",
+      "coverage-map"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "An aerial Austin bridge photograph supports a centered white condensed service promise; orange service action sits above four outline service symbols. Small company mark, phone number and practical service/product links share the dark photo header. Tall condensed uppercase display for section headings, short sans support copy and bright rectangular actions. The page sequence runs from local photo hero and service quartet to crew introduction split to customer proof toward community field, service-area map, brand/recognition footer. Local aerial imagery, technician group portrait, customer home scenes and a mapped coverage illustration lead separate chapters. Only transferable composition, hierarchy and service-routing mechanics are retained.",
+    "heroGeometry": {
+      "mode": "An aerial Austin bridge photograph supports a centered white condensed service promise; orange service action sits above four outline service symbols.",
+      "alignment": "centered",
+      "viewport": "first-view promise, image and actionable route"
+    },
+    "navigationGeometry": {
+      "mode": "Small company mark, phone number and practical service/product links share the dark photo header.",
+      "placement": "top of page",
+      "mobile": "compact accessible navigation and visible contact path"
+    },
+    "typography": {
+      "display": "Tall condensed uppercase display for section headings, short sans support copy and bright rectangular actions.",
+      "body": "readable supporting text with visible heading hierarchy",
+      "scale": "one dominant opening statement, clear section headings and compact service labels"
+    },
+    "palette": {
+      "surfaces": [
+        "Deep blue",
+        "orange",
+        "cyan and white",
+        "with climate and crew photography."
+      ],
+      "ink": "high-contrast dark text on light surfaces or light text on dark surfaces",
+      "accents": [
+        "orange-navy-trades",
+        "condensed-utility"
+      ],
+      "contrastIntent": "preserve readable contrast; source colors are inspiration, not a copied brand palette"
+    },
+    "imageTreatment": {
+      "mode": "Local aerial imagery, technician group portrait, customer home scenes and a mapped coverage illustration lead separate chapters.",
+      "crop": "site-specific focal crops at desktop and mobile",
+      "focalPoint": "client-owned or reviewed licensed imagery only; preserve the role of each source image rather than its subject identity"
+    },
+    "sectionSequence": [
+      "local photo hero and service quartet",
+      "crew introduction split",
+      "customer proof",
+      "offer banner",
+      "latest advice cards",
+      "maintenance club",
+      "community field",
+      "service-area map",
+      "brand/recognition footer"
+    ],
+    "servicePresentation": {
+      "pattern": "Lead with heating, cooling, maintenance and air quality as distinct confirmed service routes, then explain coverage before inviting a call.",
+      "interaction": "direct, functional routes for verified services only"
+    },
+    "ctaPlacement": {
+      "primary": "Request service in the opening, after service scope and next to the verified coverage map.",
+      "secondary": "a useful service, portfolio or preparation path near the opening",
+      "early": "primary and secondary actions should be visible near the first promise"
+    },
+    "motion": {
+      "primitive": "light-icon-hover; static-photo-fallback",
+      "library": "CSS or a small purposeful transition only if needed",
+      "reducedMotion": "all copy, imagery and actions visible statically"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack the service quartet into readable two-column or single-column routes, keep phone/action visible and crop the aerial photo without obscuring the heading.",
+      "rules": [
+        "keep source-specific hierarchy and decision sequence",
+        "use a 390 px single-column or deliberate two-column layout without overflow",
+        "keep touch actions and form labels visible",
+        "remove motion dependence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy employee group photo, map boundaries, discount, customer reviews, brands, awards, license or response-time claims.",
+      "Source identity, exact wording, logos, people, photographs, fonts, badges, testimonials, numerical claims or locations as client assets.",
+      "Invented reviews, credentials, prices, guarantees, service areas, outcomes, response times or staff.",
+      "Generic SaaS cards that replace the observed composition, and decorative motion that hides service or contact information."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "local-aerial-hero",
+        "selector": "[data-reference-signature=local-aerial-hero]",
+        "description": "A new-client interpretation of the observed local aerial hero relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "four-service-symbol-row",
+        "selector": "[data-reference-signature=four-service-symbol-row]",
+        "description": "A new-client interpretation of the observed four-service symbol row relationship, with source identity and assets excluded."
+      },
+      {
+        "id": "coverage-map-chapter",
+        "selector": "[data-reference-signature=coverage-map-chapter]",
+        "description": "A new-client interpretation of the observed coverage-map chapter relationship, with source identity and assets excluded."
+      }
+    ],
+    "acceptanceChecks": [
+      "The business kind, service and coverage claims come from verified client facts.",
+      "The first viewport has a legible promise, primary action and useful secondary route.",
+      "All signature relationships are visible in rendered desktop and mobile screenshots.",
+      "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
+      "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
+    ]
+  },
+  "review": {
+    "status": "curated-permission-attested",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "First-party page and responsive capture reviewed; requester clearance recorded without claiming source-owner grant."
+  }
+}

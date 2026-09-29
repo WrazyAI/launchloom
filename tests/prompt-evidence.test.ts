@@ -31,7 +31,7 @@ describe("prompt evidence", () => {
 
   it("transcodes A1 AVIF reference screenshots into actual JPEG evidence", async () => {
     const source = path.resolve(
-      "data/inspiration-evidence/a1-gallery/craft-2025/desktop.avif",
+      "data/reference-library/dossiers/a1-craft-collage-field/screenshots/gallery-preview.avif",
     );
 
     const part = await promptImagePart(source);
@@ -52,7 +52,7 @@ describe("prompt evidence", () => {
     ]);
   });
 
-  it("keeps both reference screenshots on first pass and only desktop bitmap on retries", () => {
+  it("keeps both reference screenshots on initial authoring and repairs", () => {
     const reference = {
       desktop: "/tmp/reference-desktop.png",
       mobile: "/tmp/reference-mobile.png",
@@ -64,6 +64,7 @@ describe("prompt evidence", () => {
     ]);
     expect(selectAuthorReferenceScreenshots(reference, { retry: true })).toEqual([
       reference.desktop,
+      reference.mobile,
     ]);
   });
 });

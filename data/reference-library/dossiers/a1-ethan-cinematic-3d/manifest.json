@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 1,
+  "id": "a1-ethan-cinematic-3d",
+  "productionEligible": false,
+  "archiveOnlyReason": "Curated cross-industry design mechanics. Not one of the six business-verified production references in a Local SEO Core niche.",
+  "referenceName": "Ethan Suero dark studio and work rail",
+  "familyId": "a1-cinematic-3d",
+  "source": {
+    "name": "Ethan Suero digital studio website",
+    "url": "https://www.ethansuero.com/",
+    "discoverySource": "A1 Gallery MCP / curated reference research",
+    "discoveryUrl": "https://www.a1.gallery/website/ethan-suero",
+    "rights": "permission-cleared",
+    "rightsEvidence": "The LaunchLoom requester attested on 2026-09-26 that the exact Ethan Suero digital studio website desktop/mobile captures and derived mechanics prompt may be retained internally and supplied to the pipeline model as visual reference. This is requester-attested clearance; no source-owner grant was attached or independently verified.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "capture-record.json",
+      "rights/gallery-preview-provenance.md"
+    ]
+  },
+  "businessKinds": [
+    "design-studio",
+    "web-design",
+    "creative-services"
+  ],
+  "tags": {
+    "business": [
+      "design-studio",
+      "web-design",
+      "creative-services"
+    ],
+    "style": [
+      "dark-studio-editorial",
+      "restrained-motion",
+      "cinematic-photography",
+      "modern-grotesk"
+    ],
+    "composition": [
+      "studio-proof-opening",
+      "offset-statement-copy",
+      "horizontal-work-rail",
+      "service-stage-list",
+      "image-led-process-close"
+    ],
+    "conversion": [
+      "project-inquiry",
+      "work-gallery",
+      "service-selection",
+      "process-faq"
+    ],
+    "motion": [
+      "horizontal-work-rail",
+      "scroll-reveal",
+      "video-poster-transition",
+      "reduced-motion-static"
+    ],
+    "imagery": [
+      "curated-case-study-stills",
+      "dark-editorial-photography",
+      "short-loop-posters",
+      "client-approved-project-evidence"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "screenshotHeight": 10169
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "screenshotHeight": 7902
+    }
+  },
+  "provenance": {
+    "retrievedAt": "2026-09-26",
+    "captureMethod": "playwright-native-full-page-v1",
+    "discoveryPage": "https://www.a1.gallery/website/ethan-suero",
+    "desktopCapture": {
+      "url": "https://www.ethansuero.com/",
+      "finalUrl": "https://www.ethansuero.com/",
+      "httpStatus": 200,
+      "title": "Ethan Suero — Webflow Websites & Branding for B2B Marketing Teams",
+      "capturedAt": "2026-09-26T10:24:02.991Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": true,
+      "image": {
+        "width": 1440,
+        "height": 10169,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 10169,
+      "documentWidth": 1440,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "mobileCapture": {
+      "url": "https://www.ethansuero.com/",
+      "finalUrl": "https://www.ethansuero.com/",
+      "httpStatus": 200,
+      "title": "Ethan Suero — Webflow Websites & Branding for B2B Marketing Teams",
+      "capturedAt": "2026-09-26T10:24:13.555Z",
+      "captureMethod": "playwright-native-full-page-v1",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "image": {
+        "width": 390,
+        "height": 7902,
+        "format": "png"
+      },
+      "scrollRoot": "document.scrollingElement",
+      "customScrollRoot": false,
+      "scrollHeight": 7902,
+      "documentWidth": 390,
+      "brokenImages": [],
+      "pageErrors": [],
+      "frames": 1
+    },
+    "desktopScreenshotSha256": "d6187f44aa096f16fd26509a4727b918dab4a40411dd8faff57f3072b36b7347",
+    "mobileScreenshotSha256": "f28833f7ad0730e22c709fba92b35efe5b47a0405cfd9f5610e46d2dff840200",
+    "notes": "Screenshots are direct official-source page captures at declared desktop and mobile viewports. Custom scrolling surfaces are recorded and captured as scroll-position sequences. A1 metadata informed taxonomy and visual annotation only. Original source material is not copied into client deliverables."
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dark creative-studio page opens with a tiny wordmark/utility header, a huge compressed promise and a sparse project/work widget. It alternates left and right text statements with quiet explanatory copy, a restrained client-mark strip, a metric/quote proof block, and a horizontally browsable work gallery. Lower sections make the engagement model legible through service and process stages, then use an editorial image-led close, process FAQs, contact links, and a typographic studio footer. Black surfaces and gentle motion keep the portfolio evidence primary.",
+    "heroGeometry": {
+      "mode": "dark full-width studio field with a large condensed statement, small work preview, and short supporting copy",
+      "alignment": "wordmark and utility nav above; promise left-weighted with a project visual or work entry nearby",
+      "viewport": "studio category, point of view, and a project inquiry or work action fit within the opening screen"
+    },
+    "navigationGeometry": {
+      "mode": "minimal wordmark, small section menu, and compact project/contact action",
+      "placement": "thin top header on a near-black field",
+      "mobile": "retain the brand and one action; move work links into a simple menu"
+    },
+    "typography": {
+      "display": "bold condensed grotesk",
+      "body": "neutral modern sans",
+      "scale": "large condensed studio statement, readable offset narrative blocks, small mono/uppercase labels"
+    },
+    "palette": {
+      "surfaces": [
+        "near black",
+        "charcoal",
+        "deep gray"
+      ],
+      "ink": "white with muted silver copy",
+      "accents": [
+        "occasional muted project color"
+      ],
+      "contrastIntent": "reserve white type for primary statements and keep secondary captions above comfortable contrast"
+    },
+    "imageTreatment": {
+      "mode": "curated project stills, poster frames, and a restrained cinematic texture",
+      "crop": "horizontal project rail with selective wide film-like closing image",
+      "focalPoint": "real client-approved project work, not abstract decorative imagery"
+    },
+    "sectionSequence": [
+      "minimal studio header",
+      "oversized studio proposition",
+      "brief studio statement",
+      "client proof strip",
+      "metric and attributed quote",
+      "offset point-of-view statements",
+      "horizontal selected-work rail",
+      "service/engagement stages",
+      "image-led project invitation",
+      "process FAQs",
+      "contact and work links",
+      "oversized studio wordmark close"
+    ],
+    "servicePresentation": {
+      "pattern": "services are explained as stages or clear project capabilities within the studio narrative",
+      "interaction": "a horizontal work rail plus simple linked service/process stages; ensure controls have accessible keyboard/touch paths"
+    },
+    "ctaPlacement": {
+      "primary": "Start a project conversation",
+      "secondary": "View selected work",
+      "early": "in the header or hero without obscuring the project preview"
+    },
+    "motion": {
+      "primitive": "horizontal work gallery movement and low-amplitude scroll reveal",
+      "library": "native overflow scrolling or GSAP for a single controlled rail",
+      "reducedMotion": "show a static, keyboard-scrollable project list and poster frames"
+    },
+    "mobileRecomposition": {
+      "strategy": "vertical studio story with a touch-scrollable project rail",
+      "rules": [
+        "keep title inside the mobile width",
+        "stack offset copy blocks in reading order",
+        "make projects swipe-safe with a visible progress hint",
+        "use video posters instead of autoplay on mobile",
+        "keep all contact/service links reachable without hover",
+        "avoid image strips that force page-level horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "copying Ethan Suero's logo, copy, project images, client list, metrics, testimonials, or exact page style",
+      "invented client outcomes, awards, or percentage improvements",
+      "autoplay video without poster/pause or heavy media on mobile",
+      "unlabeled carousel controls or inaccessible drag-only work rail",
+      "uniform portfolio card grid",
+      "unverified project-inquiry response promises"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "studio-statement",
+        "selector": "[data-reference-signature=studio-statement]",
+        "description": "one oversized studio proposition supported by concise explanation"
+      },
+      {
+        "id": "selected-work-rail",
+        "selector": "[data-reference-signature=selected-work-rail]",
+        "description": "a distinct browseable sequence of verified work or service scenes"
+      },
+      {
+        "id": "process-and-inquiry-close",
+        "selector": "[data-reference-signature=process-and-inquiry-close]",
+        "description": "a clear project process followed by a direct inquiry route"
+      }
+    ],
+    "acceptanceChecks": [
+      "the opening explains what the studio/service actually does",
+      "projects and client evidence are verified and permissioned",
+      "carousel works by keyboard, pointer, and touch",
+      "reduced-motion mode shows all essential work",
+      "mobile does not crop giant headings or hide navigation",
+      "inquiry links and process details are accurate"
+    ]
+  },
+  "review": {
+    "status": "requester-attested-internal-archive-only",
+    "curator": "LaunchLoom reference curation",
+    "reviewedAt": "2026-09-26",
+    "scope": "Visual mechanics archive. productionEligible=false and excluded from every current production niche."
+  }
+}

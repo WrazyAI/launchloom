@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "id": "direct-brixton-cycles-community-workshop",
+  "productionEligible": false,
+  "referenceName": "Brixton Cycles community-led urban bicycle workshop",
+  "familyId": "direct-cycles-community-workshop",
+  "source": {
+    "name": "Brixton Cycles official website",
+    "url": "https://www.brixtoncycles.co.uk/",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attested on 2026-09-26 that full-page screenshot retention, derived prompts and LaunchLoom pipeline-model visual-reference use are cleared. No source-owner grant was uploaded.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "First-party homepage https://www.brixtoncycles.co.uk/ was rendered in headless Chromium; scrolled the full document to trigger lazy content, returned to top and captured paired viewport images.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 12688
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 20315
+    },
+    "diagnostics": "A dark bicycle-shop photograph supports a high-contrast yellow-and-white compressed poster headline and clear shop/workshop routes. shop-service-community gateway, shop inventory teaser, bike servicing imagery. Do not reuse co-op history, mechanic identities, bike inventory, prices, testimonials, neighborhood details or shop photographs.",
+    "attribution": "Brixton Cycles official website; archive capture uses https://www.brixtoncycles.co.uk/. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "bicycle-repair",
+    "bike-workshop",
+    "independent-bike-shop",
+    "cycling-retail",
+    "urban-mobility"
+  ],
+  "tags": {
+    "business": [
+      "bicycle-repair",
+      "bike-workshop",
+      "independent-bike-shop",
+      "cycling-retail",
+      "urban-mobility"
+    ],
+    "style": [
+      "community-workshop-editorial",
+      "charcoal-and-signal-yellow",
+      "documentary-repair-photography",
+      "urban-collective"
+    ],
+    "composition": [
+      "typographic-urban-workshop-poster",
+      "poster-to-service-pricing-to-community-to-workshop-visit",
+      "yellow-workshop-poster",
+      "repair-price-ledger",
+      "community-ownership-chapter"
+    ],
+    "conversion": [
+      "service-retail-community-directory-and-repair-ledger",
+      "Shop or book service near the opening, then request a callback after prices and visit information."
+    ],
+    "motion": [
+      "repeating-marquee",
+      "native-section-navigation"
+    ],
+    "imagery": [
+      "documentary-workshop-and-repair-process-photography",
+      "Authentic bike shop shelves, mechanics at work, bikes for sale and community portraits alternate with utility lists."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A dark bicycle-shop photograph supports a high-contrast yellow-and-white compressed poster headline and clear shop/workshop routes. Narrow utility bar and bright yellow service ticker precede direct shop, workshop, community and visit links. Bold condensed caps for workshop declarations, small practical service prices and monochrome body text. Near-black, charcoal, signal yellow and documentary workshop-photo color. Authentic bike shop shelves, mechanics at work, bikes for sale and community portraits alternate with utility lists. The full sequence runs from urban workshop poster to shop-service-community gateway to shop inventory teaser toward shop gallery, street proof, visit/contact form. Do not reuse co-op history, mechanic identities, bike inventory, prices, testimonials, neighborhood details or shop photographs.",
+    "heroGeometry": {
+      "mode": "A dark bicycle-shop photograph supports a high-contrast yellow-and-white compressed poster headline and clear shop/workshop routes.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "Narrow utility bar and bright yellow service ticker precede direct shop, workshop, community and visit links.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "Bold condensed caps for workshop declarations, small practical service prices and monochrome body text.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "Near-black",
+        "charcoal",
+        "signal yellow and documentary workshop-photo color"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "community-workshop-editorial",
+        "charcoal-and-signal-yellow"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "Authentic bike shop shelves, mechanics at work, bikes for sale and community portraits alternate with utility lists.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "urban workshop poster",
+      "shop-service-community gateway",
+      "shop inventory teaser",
+      "bike servicing imagery",
+      "service price ledger",
+      "worker-owned story",
+      "independent brands",
+      "history chapter",
+      "shop gallery",
+      "street proof",
+      "visit/contact form"
+    ],
+    "servicePresentation": {
+      "pattern": "Give actual bike service options and price ranges a readable ledger; retain the community ownership story only when verified for the client.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Shop or book service near the opening, then request a callback after prices and visit information.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "repeating-marquee; native-section-navigation",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Stack the gateway and service photo mosaic, preserve price-list readability, and keep callback fields clear at the long-page end.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not reuse co-op history, mechanic identities, bike inventory, prices, testimonials, neighborhood details or shop photographs.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "yellow-workshop-poster",
+        "selector": "[data-reference-signature=yellow-workshop-poster]",
+        "description": "Original client interpretation of the observed yellow workshop poster mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "repair-price-ledger",
+        "selector": "[data-reference-signature=repair-price-ledger]",
+        "description": "Original client interpretation of the observed repair-price ledger mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "community-ownership-chapter",
+        "selector": "[data-reference-signature=community-ownership-chapter]",
+        "description": "Original client interpretation of the observed community ownership chapter mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. Do not reuse co-op history, mechanic identities, bike inventory, prices, testimonials, neighborhood details or shop photographs. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

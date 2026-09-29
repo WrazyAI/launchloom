@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "id": "trades-field-report",
+  "productionEligible": false,
+  "referenceName": "Trades field-report study",
+  "familyId": "trades-field-report",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/trades-field-report",
+    "rights": "owned",
+    "rightsEvidence": "The inspiration registry records this as a LaunchLoom-owned original visual study. Exact original capture paths and matching screenshot hashes are documented in rights/provenance.md. Ownership is registry-recorded, not an independently audited asset-by-asset license.",
+    "sourceType": "LaunchLoom-owned original visual study, rendered in-house",
+    "rightsEvidencePath": "rights/provenance.md"
+  },
+  "businessKinds": [
+    "local-trades",
+    "home-services",
+    "garage-door-repair",
+    "contractors"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "Trades field-report study",
+    "heroGeometry": {
+      "mode": "centered narrow service statement above an offset photo mosaic",
+      "alignment": "compact editorial column with image tiles",
+      "viewport": "headline, summary, and primary action fit the opening"
+    },
+    "navigationGeometry": {
+      "mode": "simple text navigation",
+      "placement": "top edge",
+      "mobile": "inline links or compact menu"
+    },
+    "typography": {
+      "display": "neutral geometric sans",
+      "body": "neutral sans",
+      "scale": "moderate display size with tight field notes"
+    },
+    "palette": {
+      "surfaces": [
+        "warm white",
+        "deep green",
+        "service orange"
+      ],
+      "ink": "deep green",
+      "accents": [
+        "service orange"
+      ],
+      "contrastIntent": "clear utility contrast with restrained trade accent"
+    },
+    "imageTreatment": {
+      "mode": "two horizontal project crops with staggered alignment",
+      "crop": "wide rectangles with one supporting tile",
+      "focalPoint": "finished project detail"
+    },
+    "sectionSequence": [
+      "hero",
+      "image-mosaic",
+      "services",
+      "image-chapter",
+      "process",
+      "coverage",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "plain diagnostic service index",
+      "interaction": "direct expandable rows"
+    },
+    "ctaPlacement": {
+      "primary": "primary service request in hero",
+      "secondary": "phone call as secondary action",
+      "early": "immediately under hero summary"
+    },
+    "motion": {
+      "primitive": "subtle tile reveal",
+      "library": "css",
+      "reducedMotion": "leave all project tiles visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "centered narrow column with stacked work",
+      "rules": [
+        "avoid oversized line breaks",
+        "put image tiles after the opening copy",
+        "keep service descriptions to one sentence"
+      ]
+    },
+    "prohibitedPatterns": [
+      "dark cinematic overlay",
+      "oversized wordmark poster",
+      "generic rounded card wall",
+      "service process hidden below long copy"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "field-report-intro",
+        "selector": "[data-reference-signature=field-report-intro]",
+        "description": "compact centered service statement"
+      },
+      {
+        "id": "diagnostic-index",
+        "selector": "[data-reference-signature=diagnostic-index]",
+        "description": "direct list of service or repair options"
+      }
+    ],
+    "acceptanceChecks": [
+      "headline remains balanced at desktop and mobile widths",
+      "photos sit directly after the promise",
+      "the service list is plain and easy to scan"
+    ],
+    "annotatedDescription": "Archived LaunchLoom-owned visual study: Trades field-report study. The registry describes it as Owned rendered garage-door service study. The screenshot shows a centered field-service promise, project photo tiles, and a plain repair index. It is not a liquid-glass or digital-studio reference.. The opening uses centered narrow service statement above an offset photo mosaic, with simple text navigation. The page rhythm is hero, image-mosaic, services, image-chapter, process, coverage, faq, contact. Mobile translation: centered narrow column with stacked work. This dossier records transferable mechanics and original screenshot evidence for historical traceability only; it is not a production reference or a source of client facts, assets, or claims."
+  },
+  "review": {
+    "status": "owned-archive-not-for-production",
+    "curator": "Codex archival materialization",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical traceability of a registry-recorded LaunchLoom-owned study and its exact paired screenshots",
+    "notes": "productionEligible=false. Never add this dossier to the core collection or randomized production selection. Screenshot copies match the registered originals by SHA-256. Original capture date is not established by this materialization."
+  },
+  "tags": {
+    "business": [
+      "local-trades",
+      "home-services",
+      "garage-door-repair",
+      "contractors"
+    ],
+    "style": [
+      "neutral geometric sans",
+      "surfaces: warm white, deep green, service orange",
+      "accents: service orange"
+    ],
+    "composition": [
+      "centered narrow service statement above an offset photo mosaic",
+      "simple text navigation",
+      "plain diagnostic service index"
+    ],
+    "conversion": [
+      "primary service request in hero",
+      "phone call as secondary action",
+      "immediately under hero summary"
+    ],
+    "motion": [
+      "subtle tile reveal",
+      "leave all project tiles visible"
+    ],
+    "imagery": [
+      "two horizontal project crops with staggered alignment",
+      "wide rectangles with one supporting tile"
+    ]
+  }
+}

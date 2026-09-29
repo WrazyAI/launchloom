@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 1,
+  "id": "web-homeservices-morris-jenkins",
+  "productionEligible": true,
+  "referenceName": "Morris-Jenkins home services homepage",
+  "familyId": "web-homeservices-morris-jenkins",
+  "businessKinds": [
+    "HVAC",
+    "plumbing",
+    "electrical services",
+    "home services",
+    "home-services"
+  ],
+  "source": {
+    "name": "Morris-Jenkins home services official website",
+    "url": "https://morrisjenkins.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "HVAC",
+      "plumbing",
+      "electrical services",
+      "home services",
+      "home-services"
+    ],
+    "style": [
+      "heavy rounded sans statements with compact explanatory sans",
+      "deep blue and pale blue gray and white surfaces",
+      "bright yellow and sky blue accents"
+    ],
+    "composition": [
+      "a deep-blue campaign poster places a uniformed technician beside a bold home-comfort promise and yellow schedule control",
+      "technician-campaign-poster",
+      "yellow-framed-service-tiles",
+      "home-ease-benefit-band"
+    ],
+    "conversion": [
+      "schedule a home-service visit",
+      "call for help",
+      "early contact action"
+    ],
+    "motion": [
+      "carousel controls for service choices and reviews; static cards remain complete",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "friendly uniformed technician photography and household-service scenes",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official Morris-Jenkins home services homepage was inspected in paired desktop and mobile full-page captures. The page opens with a deep-blue campaign poster places a uniformed technician beside a bold home-comfort promise and yellow schedule control. It uses compact two-tier blue-and-white navigation with service categories and a high-contrast schedule pill. The visual system relies on heavy rounded sans statements with compact explanatory sans; surfaces include deep blue, pale blue gray, white and accents include bright yellow, sky blue. Imagery is friendly uniformed technician photography and household-service scenes. The page then runs through service navigation, technician campaign hero, three service category tiles, person-led reassurance, practical benefit cards, customer reviews, articles and contact footer. Its service presentation is large blue service tiles with yellow borders and unmistakable pictograms. Mobile changes to keep the technician and promise together, stack service tiles, and place schedule and phone actions before longer benefits. Transfer only the layout rhythm and decision path. Do not copy the mascot, uniform, slogan, exact color blocking, employee identity, review text, or service promises.",
+    "heroGeometry": {
+      "mode": "a deep-blue campaign poster places a uniformed technician beside a bold home-comfort promise and yellow schedule control",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "compact two-tier blue-and-white navigation with service categories and a high-contrast schedule pill",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "heavy rounded sans statements with compact explanatory sans",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "deep blue",
+        "pale blue gray",
+        "white"
+      ],
+      "ink": "navy",
+      "accents": [
+        "bright yellow",
+        "sky blue"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "friendly uniformed technician photography and household-service scenes",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "service navigation",
+      "technician campaign hero",
+      "three service category tiles",
+      "person-led reassurance",
+      "practical benefit cards",
+      "customer reviews",
+      "articles and contact footer"
+    ],
+    "servicePresentation": {
+      "pattern": "large blue service tiles with yellow borders and unmistakable pictograms",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "schedule a home-service visit",
+      "secondary": "call for help",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "carousel controls for service choices and reviews; static cards remain complete",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "keep the technician and promise together, stack service tiles, and place schedule and phone actions before longer benefits",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy the mascot, uniform, slogan, exact color blocking, employee identity, review text, or service promises.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "technician-campaign-poster",
+        "selector": "[data-reference-signature=technician-campaign-poster]",
+        "description": "technician campaign poster translated with client-specific content"
+      },
+      {
+        "id": "yellow-framed-service-tiles",
+        "selector": "[data-reference-signature=yellow-framed-service-tiles]",
+        "description": "yellow framed service tiles translated with client-specific content"
+      },
+      {
+        "id": "home-ease-benefit-band",
+        "selector": "[data-reference-signature=home-ease-benefit-band]",
+        "description": "home ease benefit band translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified home-service trades scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x6090; mobile 390x7160. Visible page sequence and mobile layout were reviewed. "
+  }
+}

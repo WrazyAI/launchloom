@@ -114,6 +114,7 @@ export function launchRecordFrom({
     launchedAt,
     stage: normalizedStage,
     businessName: String(config?.business?.name || "").trim(),
+    businessKind: String(config?.businessKind || config?.industry || "").trim().toLowerCase(),
     recipe: String(config?.design?.recipe || "").trim(),
     packId,
     variantId,
@@ -131,6 +132,7 @@ export function launchRecordFrom({
       routes.flatMap((route) => [
         ...(Array.isArray(route.referenceIds) ? route.referenceIds : []),
         route.referenceId,
+        route.referenceDossier?.id,
       ]),
     ),
     routeSignatures: cleanList(routes.map((route) => route.signature)),

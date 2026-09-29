@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "id": "web-homeservices-mister-sparky",
+  "productionEligible": true,
+  "referenceName": "Mister Sparky electrical services homepage",
+  "familyId": "web-homeservices-mister-sparky",
+  "businessKinds": [
+    "electrical contractor",
+    "electrician",
+    "home services",
+    "home-services"
+  ],
+  "source": {
+    "name": "Mister Sparky electrical services official website",
+    "url": "https://www.mistersparky.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "electrical contractor",
+      "electrician",
+      "home services",
+      "home-services"
+    ],
+    "style": [
+      "bold compact sans headings and short neutral supporting copy",
+      "black and white and service red surfaces",
+      "electric yellow and red accents"
+    ],
+    "composition": [
+      "a garage and electrician photograph is interrupted by a red halftone message circle and ZIP finder",
+      "red-halftone-hero",
+      "black-electric-service-grid",
+      "circular-technician-reassurance"
+    ],
+    "conversion": [
+      "find local electrical service by ZIP",
+      "book or call",
+      "early contact action"
+    ],
+    "motion": [
+      "review carousel and optional video poster; all service paths remain visible without motion",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "uniformed electrician photographs in large circular crops plus household electrical context",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official Mister Sparky electrical services homepage was inspected in paired desktop and mobile full-page captures. The page opens with a garage and electrician photograph is interrupted by a red halftone message circle and ZIP finder. It uses thin red availability strip over a white service bar with a yellow booking control. The visual system relies on bold compact sans headings and short neutral supporting copy; surfaces include black, white, service red and accents include electric yellow, red. Imagery is uniformed electrician photographs in large circular crops plus household electrical context. The page then runs through service navigation, photo and halftone opening, black electrical service grid, customer review rail, human reassurance chapter, four benefit statements, local electrician explanation, expert articles and footer. Its service presentation is dark squared tiles with yellow line icons and short task labels. Mobile changes to reduce the hero to one readable photo and message, stack the service tiles, and keep booking and ZIP input touch sized. Transfer only the layout rhythm and decision path. Do not copy brand character, exact halftone shape, uniforms, reviews, guarantees, or emergency availability claims.",
+    "heroGeometry": {
+      "mode": "a garage and electrician photograph is interrupted by a red halftone message circle and ZIP finder",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "thin red availability strip over a white service bar with a yellow booking control",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "bold compact sans headings and short neutral supporting copy",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "black",
+        "white",
+        "service red"
+      ],
+      "ink": "near-black",
+      "accents": [
+        "electric yellow",
+        "red"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "uniformed electrician photographs in large circular crops plus household electrical context",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "service navigation",
+      "photo and halftone opening",
+      "black electrical service grid",
+      "customer review rail",
+      "human reassurance chapter",
+      "four benefit statements",
+      "local electrician explanation",
+      "expert articles and footer"
+    ],
+    "servicePresentation": {
+      "pattern": "dark squared tiles with yellow line icons and short task labels",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "find local electrical service by ZIP",
+      "secondary": "book or call",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "review carousel and optional video poster; all service paths remain visible without motion",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "reduce the hero to one readable photo and message, stack the service tiles, and keep booking and ZIP input touch sized",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy brand character, exact halftone shape, uniforms, reviews, guarantees, or emergency availability claims.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "red-halftone-hero",
+        "selector": "[data-reference-signature=red-halftone-hero]",
+        "description": "red halftone hero translated with client-specific content"
+      },
+      {
+        "id": "black-electric-service-grid",
+        "selector": "[data-reference-signature=black-electric-service-grid]",
+        "description": "black electric service grid translated with client-specific content"
+      },
+      {
+        "id": "circular-technician-reassurance",
+        "selector": "[data-reference-signature=circular-technician-reassurance]",
+        "description": "circular technician reassurance translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified home-service trades scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x5303; mobile 390x7633. Visible page sequence and mobile layout were reviewed. "
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "id": "colorlib-forecourt-showroom",
+  "productionEligible": false,
+  "referenceName": "Forecourt price-led automotive showroom",
+  "familyId": "colorlib-forecourt-showroom",
+  "source": {
+    "name": "Colorlib Bootstrap Templates MIT and CC0 template",
+    "url": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/forecourt",
+    "rights": "licensed",
+    "rightsEvidence": "Pinned Colorlib MIT template; its CREDITS.txt lists the CC0/Public Domain placeholder photographs. License and credits are retained locally.",
+    "rightsEvidencePath": "rights/LICENSE",
+    "assetEvidencePaths": [
+      "rights/CREDITS.txt"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "provenance": {
+    "capture": "Pinned ColorlibHQ/bootstrap-templates revision f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf, forecourt/index.html, rendered through a temporary local HTTP server in headless Chromium. Scrolled the entire document for lazy media, returned to top and captured at the exact viewport widths. Temporary source files were not retained in this dossier.",
+    "retrievedAt": "2026-09-26",
+    "desktopViewport": {
+      "width": 1440,
+      "height": 1000,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 3883
+    },
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 1,
+      "fullPage": true,
+      "screenshotHeight": 7651
+    },
+    "diagnostics": "A pale showroom photograph supports a very large price assurance statement and an inline stock search bar. six-vehicle inventory grid, payment explainer and slider, part-exchange form. All vehicles, stock counts, prices, APR examples, branch addresses and regulatory claims are fictional.",
+    "attribution": "Colorlib Bootstrap Templates MIT and CC0 template; archive capture uses http://127.0.0.1:8765/forecourt/index.html. Rights status follows the local evidence and does not authorize copying source identity or business claims."
+  },
+  "businessKinds": [
+    "automotive",
+    "auto-dealership",
+    "used-car-dealer",
+    "vehicle-sales"
+  ],
+  "tags": {
+    "business": [
+      "automotive",
+      "auto-dealership",
+      "used-car-dealer",
+      "vehicle-sales"
+    ],
+    "style": [
+      "light-showroom",
+      "price-led",
+      "clean-retail",
+      "orange-signal"
+    ],
+    "composition": [
+      "search-led-showroom-opening",
+      "showroom-search-to-inventory-to-finance-to-trade-in",
+      "search-led-showroom-hero",
+      "vehicle-inventory-comparison",
+      "payment-explainer-sidecar"
+    ],
+    "conversion": [
+      "inventory-comparison-and-payment-explainer",
+      "Search stock at the opening, inspect a real vehicle from each card, then request part exchange information."
+    ],
+    "motion": [
+      "vehicle-filtering",
+      "payment-slider",
+      "progressive-form"
+    ],
+    "imagery": [
+      "wide-showroom-and-vehicle-record-crops",
+      "Vehicle photograph cards carry make, mileage, price and payment information; one wide showroom image starts the page."
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "A pale showroom photograph supports a very large price assurance statement and an inline stock search bar. Compact white retail bar shows inventory, finance, part exchange, branches and a contrasting phone action. Bold neutral grotesk for direct retail headings and restrained data labels in the inventory cards. White, pale gray, charcoal and bright orange. Vehicle photograph cards carry make, mileage, price and payment information; one wide showroom image starts the page. The full sequence runs from stock-search hero to six-vehicle inventory grid to payment explainer and slider toward part-exchange form, branch cards, regulatory footer. All vehicles, stock counts, prices, APR examples, branch addresses and regulatory claims are fictional.",
+    "heroGeometry": {
+      "mode": "A pale showroom photograph supports a very large price assurance statement and an inline stock search bar.",
+      "alignment": "source-specific focal balance",
+      "viewport": "opening hierarchy and first action visible"
+    },
+    "navigationGeometry": {
+      "mode": "Compact white retail bar shows inventory, finance, part exchange, branches and a contrasting phone action.",
+      "placement": "top edge or top overlay",
+      "mobile": "compact accessible navigation with clear primary route"
+    },
+    "typography": {
+      "display": "Bold neutral grotesk for direct retail headings and restrained data labels in the inventory cards.",
+      "body": "readable supporting text and clear functional labels",
+      "scale": "dominant opening statement, distinct chapters and compact utility copy"
+    },
+    "palette": {
+      "surfaces": [
+        "White",
+        "pale gray",
+        "charcoal and bright orange"
+      ],
+      "ink": "readable dark or light text matched to each surface",
+      "accents": [
+        "light-showroom",
+        "price-led"
+      ],
+      "contrastIntent": "strong text and action contrast without copying source trade dress"
+    },
+    "imageTreatment": {
+      "mode": "Vehicle photograph cards carry make, mileage, price and payment information; one wide showroom image starts the page.",
+      "crop": "focal subject remains legible at 1440 and 390 pixel widths",
+      "focalPoint": "only client-owned or separately licensed subject imagery can be used in a new site"
+    },
+    "sectionSequence": [
+      "stock-search hero",
+      "six-vehicle inventory grid",
+      "payment explainer and slider",
+      "part-exchange form",
+      "branch cards",
+      "regulatory footer"
+    ],
+    "servicePresentation": {
+      "pattern": "A structured inventory grid and pricing comparison are useful only for a dealership with real stock and compliant financing information.",
+      "interaction": "route to real client services or products only"
+    },
+    "ctaPlacement": {
+      "primary": "Search stock at the opening, inspect a real vehicle from each card, then request part exchange information.",
+      "secondary": "useful source-specific browsing or information action",
+      "early": "first action appears near the opening promise"
+    },
+    "motion": {
+      "primitive": "vehicle-filtering; payment-slider; progressive-form",
+      "library": "source behavior is reference only, no scripts copied",
+      "reducedMotion": "equivalent static content and controls immediately visible"
+    },
+    "mobileRecomposition": {
+      "strategy": "Keep search controls full-width, stack vehicle cards with complete data, and turn calculator and exchange forms into single-column interactions.",
+      "rules": [
+        "stack the information in reading order",
+        "keep controls operable without hover",
+        "avoid horizontal overflow",
+        "show media fallback and visible actions"
+      ]
+    },
+    "prohibitedPatterns": [
+      "All vehicles, stock counts, prices, APR examples, branch addresses and regulatory claims are fictional.",
+      "Source identity, code, photographs, logos, fonts, product silhouettes and exact wording must not become client assets.",
+      "No invented reviews, professional credentials, prices, locations, people, response times, outcomes or guarantees.",
+      "Archive-only status: do not register or select this dossier for a current production niche."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "search-led-showroom-hero",
+        "selector": "[data-reference-signature=search-led-showroom-hero]",
+        "description": "Original client interpretation of the observed search-led showroom hero mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "vehicle-inventory-comparison",
+        "selector": "[data-reference-signature=vehicle-inventory-comparison]",
+        "description": "Original client interpretation of the observed vehicle inventory comparison mechanic without source identity or asset reuse."
+      },
+      {
+        "id": "payment-explainer-sidecar",
+        "selector": "[data-reference-signature=payment-explainer-sidecar]",
+        "description": "Original client interpretation of the observed payment explainer sidecar mechanic without source identity or asset reuse."
+      }
+    ],
+    "acceptanceChecks": [
+      "Archive status remains productionEligible false and review status archived-not-in-core.",
+      "Source screenshots and code are not copied into any client output.",
+      "Only verified client facts, imagery and offers appear in any future adaptation.",
+      "Desktop and mobile views preserve useful action and clear hierarchy.",
+      "No fabricated claims, source pricing, awards, people or testimonials are used."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "curator": "Codex",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical registry materialization only. All vehicles, stock counts, prices, APR examples, branch addresses and regulatory claims are fictional. Requires separate niche-fit review and explicit promotion before production selection."
+  }
+}

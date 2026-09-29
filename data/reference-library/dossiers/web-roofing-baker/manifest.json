@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "id": "web-roofing-baker",
+  "productionEligible": true,
+  "referenceName": "Baker Roofing commercial contractor homepage",
+  "familyId": "web-roofing-baker",
+  "businessKinds": [
+    "roofing contractor",
+    "commercial roofing",
+    "roofing"
+  ],
+  "source": {
+    "name": "Baker Roofing commercial contractor official website",
+    "url": "https://bakerroofing.com/",
+    "sourceType": "official direct website",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester attestation recorded 2026-09-26 authorizes internal full-page screenshot retention, derived design prompts, and LaunchLoom pipeline-model reference use. No source-owner written permission was supplied; see local attestation.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "roofing contractor",
+      "commercial roofing",
+      "roofing"
+    ],
+    "style": [
+      "extra-condensed industrial caps against measured sans copy",
+      "white and warm gray and charcoal and dark teal surfaces",
+      "vivid orange red and teal accents"
+    ],
+    "composition": [
+      "an overlaid fleet-truck photograph with tightly stacked condensed white display text and a red contact action",
+      "fleet-truck-commercial-hero",
+      "industrial-service-mosaic",
+      "national-accounts-map"
+    ],
+    "conversion": [
+      "talk to the roofing team or request service",
+      "review commercial service options",
+      "early contact action"
+    ],
+    "motion": [
+      "simple image reveal and linked service cells; every cell has a static readable state",
+      "complete static fallback"
+    ],
+    "imagery": [
+      "working crews, service fleet, roof surfaces, archival photographs, and finished commercial projects",
+      "contextual full-page photography"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official Baker Roofing commercial contractor homepage was inspected in paired desktop and mobile full-page captures. The page opens with an overlaid fleet-truck photograph with tightly stacked condensed white display text and a red contact action. It uses white two-tier commercial navigation with an immediate service control. The visual system relies on extra-condensed industrial caps against measured sans copy; surfaces include white, warm gray, charcoal, dark teal and accents include vivid orange red, teal. Imagery is working crews, service fleet, roof surfaces, archival photographs, and finished commercial projects. The page then runs through commercial navigation, fleet-truck hero, history and employee ownership chapter, photographic service matrix, team story, national accounts map, featured projects, roofing insights, contact footer. Its service presentation is asymmetric photo mosaic for repair, replacement, restoration, academy, construction, and accounts. Mobile changes to stack service mosaic cells in one column, preserve the large headings, and move request service before long company history. Transfer only the layout rhythm and decision path. Do not copy Baker marks, vehicle graphics, historical photographs, ownership claim, project names, account coverage, or staff photographs.",
+    "heroGeometry": {
+      "mode": "an overlaid fleet-truck photograph with tightly stacked condensed white display text and a red contact action",
+      "alignment": "opening message and action balanced with the source image",
+      "viewport": "headline and first action appear in the first viewport"
+    },
+    "navigationGeometry": {
+      "mode": "white two-tier commercial navigation with an immediate service control",
+      "placement": "top edge before opening message",
+      "mobile": "condensed navigation with accessible service and contact actions"
+    },
+    "typography": {
+      "display": "extra-condensed industrial caps against measured sans copy",
+      "body": "readable supporting sans text",
+      "scale": "prominent service opening, clear section headings, compact practical details"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "warm gray",
+        "charcoal",
+        "dark teal"
+      ],
+      "ink": "charcoal",
+      "accents": [
+        "vivid orange red",
+        "teal"
+      ],
+      "contrastIntent": "high-contrast action and legible body copy across light and dark fields"
+    },
+    "imageTreatment": {
+      "mode": "working crews, service fleet, roof surfaces, archival photographs, and finished commercial projects",
+      "crop": "contextual wide opening followed by contained service and proof images",
+      "focalPoint": "protect roof, property, technician, or finished-work subject from text overlap"
+    },
+    "sectionSequence": [
+      "commercial navigation",
+      "fleet-truck hero",
+      "history and employee ownership chapter",
+      "photographic service matrix",
+      "team story",
+      "national accounts map",
+      "featured projects",
+      "roofing insights",
+      "contact footer"
+    ],
+    "servicePresentation": {
+      "pattern": "asymmetric photo mosaic for repair, replacement, restoration, academy, construction, and accounts",
+      "interaction": "direct service links or controls with complete static fallback"
+    },
+    "ctaPlacement": {
+      "primary": "talk to the roofing team or request service",
+      "secondary": "review commercial service options",
+      "early": "primary and secondary actions appear close to the opening promise"
+    },
+    "motion": {
+      "primitive": "simple image reveal and linked service cells; every cell has a static readable state",
+      "library": "source implementation not imported",
+      "reducedMotion": "show all service, proof, and contact content without animation"
+    },
+    "mobileRecomposition": {
+      "strategy": "stack service mosaic cells in one column, preserve the large headings, and move request service before long company history",
+      "rules": [
+        "keep first action and service promise early",
+        "stack image and service chapters in reading order",
+        "make controls touch sized and maintain readable contrast",
+        "avoid horizontal overflow"
+      ]
+    },
+    "prohibitedPatterns": [
+      "Do not copy Baker marks, vehicle graphics, historical photographs, ownership claim, project names, account coverage, or staff photographs.",
+      "Do not reuse source wording, marks, photographs, staff images, reviews, or exact trade dress.",
+      "Do not invent client credentials, prices, response times, service areas, guarantees, or outcomes.",
+      "Do not flatten the observed sequence into a generic card wall."
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "fleet-truck-commercial-hero",
+        "selector": "[data-reference-signature=fleet-truck-commercial-hero]",
+        "description": "fleet truck commercial hero translated with client-specific content"
+      },
+      {
+        "id": "industrial-service-mosaic",
+        "selector": "[data-reference-signature=industrial-service-mosaic]",
+        "description": "industrial service mosaic translated with client-specific content"
+      },
+      {
+        "id": "national-accounts-map",
+        "selector": "[data-reference-signature=national-accounts-map]",
+        "description": "national accounts map translated with client-specific content"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening accurately names the client's verified roofing contractor scope and presents an immediate next action.",
+      "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
+      "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
+      "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex dossier capture",
+    "reviewedAt": "2026-09-26",
+    "scope": "first-party business and niche match, full-page desktop/mobile captures, source-specific design brief, requester attestation, and visual review",
+    "visualQuality": "pass",
+    "notes": "Direct first-party homepage returned HTTP 200. Capture PNG dimensions: desktop 1440x8045; mobile 390x10826. Visible page sequence and mobile layout were reviewed. "
+  }
+}

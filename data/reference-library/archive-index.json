@@ -1,0 +1,1014 @@
+{
+  "schemaVersion": 1,
+  "id": "launchloom-reference-archive",
+  "updatedAt": "2026-09-29",
+  "policy": "permission-cleared-only; requester-attested archive material remains non-production until explicitly reviewed for niche fit",
+  "productionCore": "data/reference-library/core-collection.json",
+  "productionEligible": false,
+  "entries": [
+    {
+      "id": "a1-craft-collage-field",
+      "dossierPath": "data/reference-library/dossiers/a1-craft-collage-field",
+      "referenceName": "Craft illustrated product-systems narrative",
+      "sourceUrl": "https://www.craft.do/",
+      "rights": "permission-cleared",
+      "status": "requester-attested-internal-archive-only",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "cross-industry-study"
+        ],
+        "summary": "Requester-attested visual-mechanics study outside the current production niches.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a1-ethan-cinematic-3d",
+      "dossierPath": "data/reference-library/dossiers/a1-ethan-cinematic-3d",
+      "referenceName": "Ethan Suero dark studio and work rail",
+      "sourceUrl": "https://www.ethansuero.com/",
+      "rights": "permission-cleared",
+      "status": "requester-attested-internal-archive-only",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "cross-industry-study"
+        ],
+        "summary": "Requester-attested visual-mechanics study outside the current production niches.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a1-mckp-object-stage",
+      "dossierPath": "data/reference-library/dossiers/a1-mckp-object-stage",
+      "referenceName": "MCKP interactive object stage",
+      "sourceUrl": "https://mckp.live/",
+      "rights": "permission-cleared",
+      "status": "requester-attested-internal-archive-only",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "cross-industry-study"
+        ],
+        "summary": "Requester-attested visual-mechanics study outside the current production niches.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a1-scs-kinetic-command",
+      "dossierPath": "data/reference-library/dossiers/a1-scs-kinetic-command",
+      "referenceName": "SCS kinetic global command field",
+      "sourceUrl": "https://o-scs.com/",
+      "rights": "permission-cleared",
+      "status": "requester-attested-internal-archive-only",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "cross-industry-study"
+        ],
+        "summary": "Requester-attested visual-mechanics study outside the current production niches.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "a1-uncommon-founder-atlas",
+      "dossierPath": "data/reference-library/dossiers/a1-uncommon-founder-atlas",
+      "referenceName": "The Uncommon Founder principles atlas",
+      "sourceUrl": "https://www.theuncommonfounder.com/",
+      "rights": "permission-cleared",
+      "status": "requester-attested-internal-archive-only",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "cross-industry-study"
+        ],
+        "summary": "Requester-attested visual-mechanics study outside the current production niches.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "attested-future-fitness",
+      "dossierPath": "data/reference-library/dossiers/attested-future-fitness",
+      "referenceName": "Future: product-led personal training story",
+      "sourceUrl": "https://future.co/",
+      "rights": "permission-cleared",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "core-adjacent",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "digital-coaching-not-local-gym",
+          "niche-fit-review-required"
+        ],
+        "summary": "Digital personal coaching platform, not a physical neighborhood gym; separate niche-fit review required.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "care-concierge-cinematic",
+      "dossierPath": "data/reference-library/dossiers/care-concierge-cinematic",
+      "referenceName": "Care concierge cinematic study",
+      "sourceUrl": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/care-concierge-cinematic",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "care-image-mosaic",
+      "dossierPath": "data/reference-library/dossiers/care-image-mosaic",
+      "referenceName": "Care modern-clinic image mosaic study",
+      "sourceUrl": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/care-image-mosaic",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "care-wellness-journal",
+      "dossierPath": "data/reference-library/dossiers/care-wellness-journal",
+      "referenceName": "Care wellness journal study",
+      "sourceUrl": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/care-wellness-journal",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "clear-counsel-ledger",
+      "dossierPath": "data/reference-library/dossiers/clear-counsel-ledger",
+      "referenceName": "LaunchLoom clear-counsel study",
+      "sourceUrl": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/clear-counsel-ledger",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-adjacent",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "colorlib-bedrock-industrial-contractor",
+      "dossierPath": "data/reference-library/dossiers/colorlib-bedrock-industrial-contractor",
+      "referenceName": "Bedrock industrial contractor fieldbook",
+      "sourceUrl": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/bedrock",
+      "rights": "licensed",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "licensed-template",
+      "rightsBasis": {
+        "kind": "local-license",
+        "evidencePath": "rights/LICENSE"
+      },
+      "exclusion": {
+        "codes": [
+          "outside-core-subject",
+          "fictional-template-facts"
+        ],
+        "summary": "Industrial contractor template outside the local home-service core; company, projects and metrics are fictional.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "colorlib-forecourt-showroom",
+      "dossierPath": "data/reference-library/dossiers/colorlib-forecourt-showroom",
+      "referenceName": "Forecourt price-led automotive showroom",
+      "sourceUrl": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/forecourt",
+      "rights": "licensed",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "licensed-template",
+      "rightsBasis": {
+        "kind": "local-license",
+        "evidencePath": "rights/LICENSE"
+      },
+      "exclusion": {
+        "codes": [
+          "outside-core-subject",
+          "fictional-template-facts"
+        ],
+        "summary": "Vehicle-sales showroom template, not auto repair; stock and financing claims are fictional.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "colorlib-marigold-event-venue",
+      "dossierPath": "data/reference-library/dossiers/colorlib-marigold-event-venue",
+      "referenceName": "Marigold centered invitation and event timeline",
+      "sourceUrl": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/marigold",
+      "rights": "licensed",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "licensed-template",
+      "rightsBasis": {
+        "kind": "local-license",
+        "evidencePath": "rights/LICENSE"
+      },
+      "exclusion": {
+        "codes": [
+          "outside-core-subject",
+          "template-not-real-business",
+          "fictional-template-facts"
+        ],
+        "summary": "Wedding invitation template, not a venue booking site; event and guest details are fictional.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "source.name"
+          }
+        ]
+      }
+    },
+    {
+      "id": "colorlib-meridian-clinic",
+      "dossierPath": "data/reference-library/dossiers/colorlib-meridian-clinic",
+      "referenceName": "Meridian clinical utility and embedded booking",
+      "sourceUrl": "https://github.com/ColorlibHQ/bootstrap-templates/tree/f8b7fffcbee91bd8c24d4d57337c5cdb3435e1bf/meridian",
+      "rights": "licensed",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "licensed-template",
+      "rightsBasis": {
+        "kind": "local-license",
+        "evidencePath": "rights/LICENSE"
+      },
+      "exclusion": {
+        "codes": [
+          "outside-core-subject",
+          "fictional-template-facts"
+        ],
+        "summary": "Medical-clinic booking template outside dental and home-care pools; provider and booking claims are fictional.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "direct-brixton-cycles-community-workshop",
+      "dossierPath": "data/reference-library/dossiers/direct-brixton-cycles-community-workshop",
+      "referenceName": "Brixton Cycles community-led urban bicycle workshop",
+      "sourceUrl": "https://www.brixtoncycles.co.uk/",
+      "rights": "permission-cleared",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "outside-core-subject",
+          "niche-fit-review-required"
+        ],
+        "summary": "Bicycle workshop and retail site has no production reference pool; niche-fit review required.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "independent-retail-beepy-bella-art-world",
+      "dossierPath": "data/reference-library/dossiers/independent-retail-beepy-bella-art-world",
+      "referenceName": "Beepy Bella artist-led independent retail world",
+      "sourceUrl": "https://beepybella.world/",
+      "rights": "permission-cleared",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "outside-core-subject",
+          "niche-fit-review-required"
+        ],
+        "summary": "Artist-led retail site has no production reference pool; niche-fit review required.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "jewelry-panconesi-sculptural-luxury",
+      "dossierPath": "data/reference-library/dossiers/jewelry-panconesi-sculptural-luxury",
+      "referenceName": "Panconesi sculptural luxury editorial commerce",
+      "sourceUrl": "https://marcopanconesi.com/",
+      "rights": "permission-cleared",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "outside-core-subject",
+          "niche-fit-review-required"
+        ],
+        "summary": "Fine-jewelry retail site has no production reference pool; niche-fit review required.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "jewelry-taya-memory-wearable",
+      "dossierPath": "data/reference-library/dossiers/jewelry-taya-memory-wearable",
+      "referenceName": "Taya wearable jewelry product story",
+      "sourceUrl": "https://tayanecklace.com/",
+      "rights": "permission-cleared",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "outside-core-niche",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "outside-core-subject",
+          "niche-fit-review-required"
+        ],
+        "summary": "Jewelry and wearable-product site has no production reference pool; niche-fit review required.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "kinetic-club-program-bands",
+      "dossierPath": "data/reference-library/dossiers/kinetic-club-program-bands",
+      "referenceName": "LaunchLoom kinetic club study",
+      "sourceUrl": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/kinetic-club-program-bands",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "kokoro-spatial-editorial",
+      "dossierPath": "data/reference-library/dossiers/kokoro-spatial-editorial",
+      "referenceName": "Kokoro spatial architecture editorial",
+      "sourceUrl": "https://kokoro.framer.website/",
+      "rights": "permission-cleared",
+      "status": "requester-attested-internal-archive-only",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "template-not-real-business",
+          "niche-fit-review-required"
+        ],
+        "summary": "Architecture website template demo retained only as an internal visual-mechanics archive.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "source.name"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lapa-groth-hospitality-studio",
+      "dossierPath": "data/reference-library/dossiers/lapa-groth-hospitality-studio",
+      "referenceName": "Groth hospitality research rail and project archive",
+      "sourceUrl": "https://www.groth.studio/",
+      "rights": "permission-cleared",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "niche-fit-review-required"
+        ],
+        "summary": "Hospitality-focused interior design studio is archive-only pending separate niche-fit review.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "neighborhood-table-collage",
+      "dossierPath": "data/reference-library/dossiers/neighborhood-table-collage",
+      "referenceName": "Neighborhood collage market study",
+      "sourceUrl": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/neighborhood-table-collage",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-adjacent",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "nightjar-cinematic-salon",
+      "dossierPath": "data/reference-library/dossiers/nightjar-cinematic-salon",
+      "referenceName": "LaunchLoom nocturnal salon study",
+      "sourceUrl": "https://nightjar-cinematic-prototype.pages.dev/",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-adjacent",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "quiet-care-consultation",
+      "dossierPath": "data/reference-library/dossiers/quiet-care-consultation",
+      "referenceName": "Quiet care consultation study",
+      "sourceUrl": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/quiet-care-consultation",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "spicer-auto-repair-digital-inspection",
+      "dossierPath": "data/reference-library/dossiers/spicer-auto-repair-digital-inspection",
+      "referenceName": "Spicer local auto-repair symptom triage and inspection",
+      "sourceUrl": "https://www.spicerdesigns.com/templates/auto-repair",
+      "rights": "licensed",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "licensed-template",
+      "rightsBasis": {
+        "kind": "local-license",
+        "evidencePath": "rights/LICENSE"
+      },
+      "exclusion": {
+        "codes": [
+          "fictional-template-facts",
+          "niche-fit-review-required"
+        ],
+        "summary": "Auto-repair template contains fictional rates, reviews and warranty terms; niche-fit review required.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "spicer-plumber-dispatch-console",
+      "dossierPath": "data/reference-library/dossiers/spicer-plumber-dispatch-console",
+      "referenceName": "Emergency plumber dispatch console",
+      "sourceUrl": "https://www.spicerdesigns.com/templates/plumber",
+      "rights": "licensed",
+      "status": "archived-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "licensed-template",
+      "rightsBasis": {
+        "kind": "local-license",
+        "evidencePath": "rights/LICENSE"
+      },
+      "exclusion": {
+        "codes": [
+          "fictional-template-facts",
+          "niche-fit-review-required"
+        ],
+        "summary": "Plumbing template contains fictional response, price and coverage claims; niche-fit review required.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "spicer-roofing-storm-response",
+      "dossierPath": "data/reference-library/dossiers/spicer-roofing-storm-response",
+      "referenceName": "Storm-response roofing inspection",
+      "sourceUrl": "https://www.spicerdesigns.com/templates/roofing",
+      "rights": "licensed",
+      "status": "licensed-archive-not-in-core",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "licensed-template",
+      "rightsBasis": {
+        "kind": "local-license",
+        "evidencePath": "rights/LICENSE"
+      },
+      "exclusion": {
+        "codes": [
+          "excluded-from-real-business-core"
+        ],
+        "summary": "Licensed roofing template is explicitly excluded from the six real roofing-business core references.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "trade-project-showcase",
+      "dossierPath": "data/reference-library/dossiers/trade-project-showcase",
+      "referenceName": "Trades project-led study",
+      "sourceUrl": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/trade-project-showcase",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "trades-field-report",
+      "dossierPath": "data/reference-library/dossiers/trades-field-report",
+      "referenceName": "Trades field-report study",
+      "sourceUrl": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/trades-field-report",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "urgent-trade-service-poster",
+      "dossierPath": "data/reference-library/dossiers/urgent-trade-service-poster",
+      "referenceName": "LaunchLoom urgent trade poster",
+      "sourceUrl": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/urgent-trade-service-poster",
+      "rights": "owned",
+      "status": "owned-archive-not-for-production",
+      "productionEligible": false,
+      "coreNicheFit": "core-subject",
+      "sourceKind": "owned-study",
+      "rightsBasis": {
+        "kind": "registry-recorded-owned",
+        "evidencePath": "rights/provenance.md"
+      },
+      "exclusion": {
+        "codes": [
+          "historical-owned-study"
+        ],
+        "summary": "LaunchLoom-owned design study retained for historical traceability, not production randomization.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    },
+    {
+      "id": "spicer-med-spa-treatment-menu",
+      "dossierPath": "data/reference-library/dossiers/spicer-med-spa-treatment-menu",
+      "referenceName": "Spicer med spa treatment and downtime menu",
+      "sourceUrl": "https://www.spicerdesigns.com/templates/med-spa",
+      "rights": "licensed",
+      "status": "licensed-archive-not-in-beauty-core",
+      "productionEligible": false,
+      "coreNicheFit": "core-adjacent",
+      "sourceKind": "licensed-template",
+      "rightsBasis": {
+        "kind": "local-license",
+        "evidencePath": "rights/LICENSE"
+      },
+      "exclusion": {
+        "codes": [
+          "template-not-real-business"
+        ],
+        "summary": "Licensed medical-spa template retained for reference, but its treatment-specific context is not a real hair, barber, or grooming business for the production core.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "archiveOnlyReason"
+          },
+          {
+            "path": "manifest.json",
+            "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "direct-grlica-law",
+      "dossierPath": "data/reference-library/dossiers/direct-grlica-law",
+      "referenceName": "Grlica Law digital legal-services page",
+      "sourceUrl": "https://grlicalaw.com/",
+      "rights": "permission-cleared",
+      "status": "held-visual-quality",
+      "productionEligible": false,
+      "coreNicheFit": "core-adjacent",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "visual-quality-failed"
+        ],
+        "summary": "Both retained captures include low-contrast sections; the dossier review marks the reference unsuitable for production selection.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.visualQuality"
+          },
+          {
+            "path": "manifest.json",
+            "field": "review.notes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "direct-khufus-giza-restaurant",
+      "dossierPath": "data/reference-library/dossiers/direct-khufus-giza-restaurant",
+      "referenceName": "Khufu's cinematic place-led dining story",
+      "sourceUrl": "https://khufus.com/",
+      "rights": "permission-cleared",
+      "status": "held-mobile-reference-caveat",
+      "productionEligible": false,
+      "coreNicheFit": "core-adjacent",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/REQUESTER-ATTESTATION.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "mobile-reference-quality"
+        ],
+        "summary": "The retained portrait mobile capture is unsuitable as a positive responsive reference; the dossier remains archive-only.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
+          }
+        ]
+      }
+    }
+  ]
+}

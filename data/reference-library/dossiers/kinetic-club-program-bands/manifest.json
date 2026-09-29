@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "id": "kinetic-club-program-bands",
+  "productionEligible": false,
+  "referenceName": "LaunchLoom kinetic club study",
+  "familyId": "launchloom-kinetic-club",
+  "source": {
+    "name": "LaunchLoom owned design study",
+    "url": "https://github.com/WrazyAI/launchloom/tree/main/data/reference-library/dossiers/kinetic-club-program-bands",
+    "rights": "owned",
+    "rightsEvidence": "The inspiration registry records this as a LaunchLoom-owned original visual study. Exact original capture paths and matching screenshot hashes are documented in rights/provenance.md. Ownership is registry-recorded, not an independently audited asset-by-asset license.",
+    "sourceType": "LaunchLoom-owned original visual study, rendered in-house",
+    "rightsEvidencePath": "rights/provenance.md"
+  },
+  "businessKinds": [
+    "fitness",
+    "sports",
+    "automotive",
+    "performance"
+  ],
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "referenceName": "LaunchLoom kinetic club study",
+    "heroGeometry": {
+      "mode": "large action poster with a strong typographic block",
+      "alignment": "edge-led copy over energetic color field",
+      "viewport": "one-screen statement and action"
+    },
+    "navigationGeometry": {
+      "mode": "compact utility links",
+      "placement": "top edge",
+      "mobile": "collapsed or short inline navigation"
+    },
+    "typography": {
+      "display": "heavy condensed sans",
+      "body": "neutral sans",
+      "scale": "oversized poster scale with small program labels"
+    },
+    "palette": {
+      "surfaces": [
+        "ink",
+        "acid lime",
+        "signal orange"
+      ],
+      "ink": "off-white",
+      "accents": [
+        "acid lime",
+        "signal orange"
+      ],
+      "contrastIntent": "high-energy contrast"
+    },
+    "imageTreatment": {
+      "mode": "documentary action stills",
+      "crop": "full-bleed crop with subject-safe framing",
+      "focalPoint": "athlete or movement subject"
+    },
+    "sectionSequence": [
+      "hero",
+      "conversion-band",
+      "program-bands",
+      "image-chapter",
+      "proof",
+      "faq",
+      "contact"
+    ],
+    "servicePresentation": {
+      "pattern": "horizontal class or program bands",
+      "interaction": "directional row reveal"
+    },
+    "ctaPlacement": {
+      "primary": "primary class action in hero",
+      "secondary": "program-band action",
+      "early": "inside the poster"
+    },
+    "motion": {
+      "primitive": "velocity-linked type and band reveal",
+      "library": "gsap-scrolltrigger",
+      "reducedMotion": "freeze poster and show bands"
+    },
+    "mobileRecomposition": {
+      "strategy": "stacked action poster",
+      "rules": [
+        "replace horizontal scrub with touch-safe rows",
+        "protect action buttons from headline overlap",
+        "reduce motion when requested"
+      ]
+    },
+    "prohibitedPatterns": [
+      "soft editorial card grid",
+      "decorative numbered services",
+      "long about section before classes"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "club-poster",
+        "selector": "[data-reference-signature=club-poster]",
+        "description": "oversized performance headline"
+      },
+      {
+        "id": "program-bands",
+        "selector": "[data-reference-signature=program-bands]",
+        "description": "horizontal class or program bands"
+      }
+    ],
+    "acceptanceChecks": [
+      "the opening has athletic energy without copying a brand",
+      "program options are not generic cards",
+      "mobile remains usable without scroll-jacking"
+    ],
+    "annotatedDescription": "Archived LaunchLoom-owned visual study: LaunchLoom kinetic club study. The registry describes it as Owned LaunchLoom design study used as visual evidence. Original LaunchLoom study for high-energy businesses.. The opening uses large action poster with a strong typographic block, with compact utility links. The page rhythm is hero, conversion-band, program-bands, image-chapter, proof, faq, contact. Mobile translation: stacked action poster. This dossier records transferable mechanics and original screenshot evidence for historical traceability only; it is not a production reference or a source of client facts, assets, or claims."
+  },
+  "review": {
+    "status": "owned-archive-not-for-production",
+    "curator": "Codex archival materialization",
+    "reviewedAt": "2026-09-26",
+    "scope": "Historical traceability of a registry-recorded LaunchLoom-owned study and its exact paired screenshots",
+    "notes": "productionEligible=false. Never add this dossier to the core collection or randomized production selection. Screenshot copies match the registered originals by SHA-256. Original capture date is not established by this materialization."
+  },
+  "tags": {
+    "business": [
+      "fitness",
+      "sports",
+      "automotive",
+      "performance"
+    ],
+    "style": [
+      "heavy condensed sans",
+      "surfaces: ink, acid lime, signal orange",
+      "accents: acid lime, signal orange"
+    ],
+    "composition": [
+      "large action poster with a strong typographic block",
+      "compact utility links",
+      "horizontal class or program bands"
+    ],
+    "conversion": [
+      "primary class action in hero",
+      "program-band action",
+      "inside the poster"
+    ],
+    "motion": [
+      "velocity-linked type and band reveal",
+      "freeze poster and show bands"
+    ],
+    "imagery": [
+      "documentary action stills",
+      "full-bleed crop with subject-safe framing"
+    ]
+  }
+}

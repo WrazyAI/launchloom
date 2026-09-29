@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "id": "web-auto-repair-fallsbrook-motors",
+  "productionEligible": true,
+  "referenceName": "Fallsbrook Motors: yellow booking accent with service-and-form pairing",
+  "familyId": "web-auto-repair-fallsbrook-motors-family",
+  "businessKinds": [
+    "auto repair shop",
+    "independent garage",
+    "vehicle servicing",
+    "auto-repair"
+  ],
+  "source": {
+    "name": "Fallsbrook Motors official website",
+    "url": "https://fallsbrookmotors.co.uk/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-26 covers internal desktop/mobile screenshot retention, derived design prompts and pipeline-model visual-reference use. No source-owner written grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ],
+    "assetEvidencePaths": [
+      "rights/requester-attestation.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "auto repair",
+      "local garage",
+      "vehicle maintenance",
+      "auto-repair"
+    ],
+    "style": [
+      "practical rounded sans with bold navy section titles",
+      "white and navy surfaces",
+      "yellow accent"
+    ],
+    "composition": [
+      "garage and service imagery beneath a strong navy-and-yellow booking header",
+      "yellow booking accent",
+      "service-and-form pairing",
+      "navy reassurance band"
+    ],
+    "conversion": [
+      "service booking",
+      "garage contact"
+    ],
+    "motion": [
+      "static-first composition",
+      "restrained optional transitions",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "garage and vehicle imagery in functional rectangular crops",
+      "direct-source full-page evidence",
+      "no source assets for generated client"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The direct Fallsbrook Motors website in London, England uses garage and service imagery beneath a strong navy-and-yellow booking header. Navigation is phone and email utility with a prominent online-booking control. Its page moves through service opening, booking form, service grid, shop capability explanation, trust and accreditation panel, testimonials, contact close, with named maintenance and repair jobs with clear detail links. garage and vehicle imagery in functional rectangular crops. Transferable mechanics are yellow booking accent, service-and-form pairing, navy reassurance band. The brand identity, people, photographs, reviews, wording and business claims remain source-only.",
+    "heroGeometry": {
+      "mode": "garage and service imagery beneath a strong navy-and-yellow booking header",
+      "alignment": "composition-led with a readable first action",
+      "viewport": "opening shows the business kind, context and next step"
+    },
+    "navigationGeometry": {
+      "mode": "phone and email utility with a prominent online-booking control",
+      "placement": "top of opening",
+      "mobile": "condensed menu and reachable main action"
+    },
+    "typography": {
+      "display": "practical rounded sans with bold navy section titles",
+      "body": "readable body with short explanatory paragraphs",
+      "scale": "high-impact opening, clear chapter titles and comfortable mobile measure"
+    },
+    "palette": {
+      "surfaces": [
+        "white",
+        "navy",
+        "light gray"
+      ],
+      "ink": "high-contrast text",
+      "accents": [
+        "yellow"
+      ],
+      "contrastIntent": "legible actions and body text across flat color and imagery"
+    },
+    "imageTreatment": {
+      "mode": "garage and vehicle imagery in functional rectangular crops",
+      "crop": "wide desktop stage and subject-safe mobile crop",
+      "focalPoint": "preserve contextual subjects and keep text clear of faces"
+    },
+    "sectionSequence": [
+      "service opening",
+      "booking form",
+      "service grid",
+      "shop capability explanation",
+      "trust and accreditation panel",
+      "testimonials",
+      "contact close"
+    ],
+    "servicePresentation": {
+      "pattern": "named maintenance and repair jobs with clear detail links",
+      "interaction": "each route explains the choice and leads to a real detail or contact destination"
+    },
+    "ctaPlacement": {
+      "primary": "book online",
+      "secondary": "then call",
+      "early": "primary and secondary routes near opening promise"
+    },
+    "motion": {
+      "primitive": "modest optional image or section transitions",
+      "library": "no source scripts transferred",
+      "reducedMotion": "all content visible immediately without scroll-dependent reveal"
+    },
+    "mobileRecomposition": {
+      "strategy": "bring the enquiry form after a short promise and stack service entries cleanly",
+      "rules": [
+        "keep the first action visible and touch-safe",
+        "use subject-safe image crops",
+        "avoid horizontal overflow and collapsed hierarchy"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing Fallsbrook Motors identity, words, logos, photographs, people, reviews or trade dress",
+      "inventing outcomes, credentials, prices, locations, guarantees or staff",
+      "copying a source section or source code",
+      "generic repeated cards that erase the observed composition",
+      "low contrast or inaccessible mobile actions"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "yellow-booking-accent",
+        "selector": "[data-reference-signature=yellow-booking-accent]",
+        "description": "Translate the observed yellow booking accent mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "service-and-form-pairing",
+        "selector": "[data-reference-signature=service-and-form-pairing]",
+        "description": "Translate the observed service-and-form pairing mechanic with new-client content and original presentation."
+      },
+      {
+        "id": "navy-reassurance-band",
+        "selector": "[data-reference-signature=navy-reassurance-band]",
+        "description": "Translate the observed navy reassurance band mechanic with new-client content and original presentation."
+      }
+    ],
+    "acceptanceChecks": [
+      "New page visibly expresses yellow booking accent with client-cleared content.",
+      "Page sequence retains service-and-form pairing and navy reassurance band as composition mechanics.",
+      "Opening has a working primary action and a useful secondary route.",
+      "At 390 px, all sections and controls fit without horizontal overflow.",
+      "No source brand, photograph, review, staff identity or unsupported claim is reused."
+    ]
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-26",
+    "notes": "Official business page rendered with HTTP 200 at both viewports. Full-page desktop and mobile captures inspected for major structure and width. Internal screenshot permission is requester-attested; no source-owner grant is claimed."
+  }
+}

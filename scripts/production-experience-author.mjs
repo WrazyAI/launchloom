@@ -1,10 +1,14 @@
 import crypto from "node:crypto";
+import { redactPromptValue } from "./author-prompt-budget.mjs";
 import ts from "typescript";
 import {
   assertIndependentRoutes,
   buildCandidateManifest,
-  buildRouteContract,
 } from "./creative-compiler.mjs";
+import {
+  EARLY_CONVERSION_OUTPUT_CONTRACT,
+  REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+} from "./creative-authoring-output.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 
@@ -123,6 +127,39 @@ function stableJson(value) {
   return JSON.stringify(value);
 }
 
+/** Keep a route's canonical design template from being serialized redundantly. */
+export function omitDuplicateRouteDesignTemplates(
+  routeDesignTemplate,
+  referenceDna,
+  evidence = [],
+) {
+  const routeTemplate = stableJson(routeDesignTemplate);
+  const matchesRouteTemplate = (value) => stableJson(value) === routeTemplate;
+  let normalizedReferenceDna = referenceDna;
+  if (referenceDna && typeof referenceDna === "object") {
+    normalizedReferenceDna = { ...referenceDna };
+    if (referenceDna.evidence && typeof referenceDna.evidence === "object") {
+      const { designTemplate, ...remainingEvidence } = referenceDna.evidence;
+      normalizedReferenceDna.evidence = matchesRouteTemplate(designTemplate)
+        ? remainingEvidence
+        : { ...referenceDna.evidence };
+    }
+  }
+  const normalizedEvidence = Array.isArray(evidence)
+    ? evidence.map((item) => {
+        if (!item || typeof item !== "object") return item;
+        const { designTemplate, ...remainingEvidence } = item;
+        return matchesRouteTemplate(designTemplate)
+          ? remainingEvidence
+          : { ...item };
+      })
+    : evidence;
+  return {
+    referenceDna: normalizedReferenceDna,
+    evidence: normalizedEvidence,
+  };
+}
+
 function digest(value) {
   return crypto.createHash("sha256").update(stableJson(value)).digest("hex");
 }
@@ -135,24 +172,7 @@ function digest(value) {
  * @param {unknown} value
  * @returns {unknown}
  */
-export function redactPromptValue(value) {
-  if (typeof value === "string") {
-    if (/^data:image\/[\w.+-]+;base64,/iu.test(value))
-      return "[sealed client image asset]";
-    if (value.length > 12_000)
-      return `${value.slice(0, 256)}...[sealed value truncated]`;
-    return value;
-  }
-  if (Array.isArray(value)) return value.map(redactPromptValue);
-  if (value && typeof value === "object")
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [
-        key,
-        redactPromptValue(item),
-      ]),
-    );
-  return value;
-}
+export { redactPromptValue };
 
 function visualBrief(site) {
   const style = site.style || {};
@@ -288,7 +308,10 @@ function assertInspirationPack(pack) {
     for (const route of contracts)
       validateReferenceDna(route.referenceDna, { requireEvidence: true });
   }
-  return contracts;
+  return contracts.map((contract, index) => {
+    const referenceDossier = pack.routes[index]?.referenceDossier;
+    return referenceDossier ? { ...contract, referenceDossier } : contract;
+  });
 }
 
 function asText(value, label) {
@@ -1080,6 +1103,11 @@ export function restoreRequiredExperienceMarkers(
   const markerSpecs = [
     {
       name: "data-hero",
+      targetAttributes: [
+        "data-reference-section",
+        "data-reference-signature",
+        "data-hero-geometry",
+      ],
       targets: () => {
         const matches = repaired.elements.filter((element) => {
           if (jsxOpeningName(element.opening) !== "section") return false;
@@ -1090,7 +1118,7 @@ export function restoreRequiredExperienceMarkers(
             repaired.file,
           );
         });
-        return matches.filter(
+        const semanticMatches = matches.filter(
           (candidate) =>
             !matches.some(
               (other) =>
@@ -1098,6 +1126,40 @@ export function restoreRequiredExperienceMarkers(
                 other.node.getStart(repaired.file) >
                   candidate.node.getStart(repaired.file) &&
                 other.node.end < candidate.node.end,
+            ),
+        );
+        if (semanticMatches.length > 1)
+          throw new Error(
+            `Candidate ${route.id} cannot safely restore data-hero: found ${semanticMatches.length} semantic targets.`,
+          );
+        if (semanticMatches.length > 0) return semanticMatches;
+
+        const originalHero = original.elements.find(({ opening }) =>
+          jsxAttribute(opening, "data-hero"),
+        );
+        const identityAttributes = [
+          "data-reference-section",
+          "data-reference-signature",
+          "data-hero-geometry",
+        ]
+          .map((name) => ({
+            name,
+            value: jsxAttributeValue(
+              jsxAttribute(originalHero?.opening, name),
+              original.file,
+            ).trim(),
+          }))
+          .filter(({ value }) => value);
+        if (identityAttributes.length === 0) return [];
+        return repaired.elements.filter(
+          ({ opening }) =>
+            jsxOpeningName(opening) === "section" &&
+            identityAttributes.every(
+              ({ name, value }) =>
+                jsxAttributeValue(
+                  jsxAttribute(opening, name),
+                  repaired.file,
+                ).trim() === value,
             ),
         );
       },
@@ -1337,9 +1399,9 @@ function hasPotentiallyHiddenJsxAttribute(opening) {
       const initializer = attribute.initializer;
       hidden = Boolean(
         !initializer ||
-          !ts.isJsxExpression(initializer) ||
-          !initializer.expression ||
-          !isBooleanLiteral(initializer.expression, false),
+        !ts.isJsxExpression(initializer) ||
+        !initializer.expression ||
+        !isBooleanLiteral(initializer.expression, false),
       );
       continue;
     }
@@ -1374,10 +1436,7 @@ function styleObjectDisplayNone(expression) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "display") continue;
     } else if (
@@ -1412,10 +1471,7 @@ function staticSpreadDisplayNone(attribute) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "style") continue;
     } else if (
@@ -1447,10 +1503,7 @@ function staticSpreadHiddenValue(attribute) {
     const name = property.name;
     if (name && ts.isComputedPropertyName(name)) {
       const key = name.expression;
-      if (
-        !ts.isStringLiteral(key) &&
-        !ts.isNoSubstitutionTemplateLiteral(key)
-      )
+      if (!ts.isStringLiteral(key) && !ts.isNoSubstitutionTemplateLiteral(key))
         return undefined;
       if (key.text !== "hidden") continue;
     } else if (
@@ -1691,15 +1744,22 @@ function validateExperience(source, route, content) {
   const navigations = elements.filter(
     ({ opening }) => jsxOpeningName(opening) === "nav",
   );
-  for (const target of ["services", "faqs", "contact"])
-    if (
-      !navigations.some((navigation) =>
-        hasLiteralNavigationAnchor(elements, navigation, target),
-      )
-    )
+  if (route.referenceDna?.complete) {
+    if (!navigations.length)
       throw new Error(
-        `Candidate ${route.id} navigation must expose literal <a href="#${target}"> inside a visible native <nav>.`,
+        `Candidate ${route.id} must expose a visible native <nav> while preserving its assigned reference navigation geometry.`,
       );
+  } else {
+    for (const target of ["services", "faqs", "contact"])
+      if (
+        !navigations.some((navigation) =>
+          hasLiteralNavigationAnchor(elements, navigation, target),
+        )
+      )
+        throw new Error(
+          `Candidate ${route.id} navigation must expose literal <a href="#${target}"> inside a visible native <nav>.`,
+        );
+  }
   for (const binding of requiredExperienceBindings)
     if (
       !helperSealedBindings.has(binding.token) &&
@@ -1778,6 +1838,29 @@ function validateMotion(source, route) {
       `Candidate ${route.id} motion lacks a reduced-motion path.`,
     );
   if (
+    /\.(?:textContent|innerHTML|outerHTML)\s*(?:=(?!=)|[+*/%&|^\-]=|\?\?=|\|\|=|&&=)|\.insertAdjacentHTML\s*\(/u.test(
+      source,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} motion must not rewrite visitor-facing content or HTML.`,
+    );
+  if (
+    /\.setAttribute\s*\(\s*["'](?:href|src|action|value|name|id|role)["']/iu.test(
+      source,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} motion must not rewrite URLs, form values, or semantic identity.`,
+    );
+  for (const match of source.matchAll(
+    /\.style\.setProperty\s*\(\s*["']([^"']+)["']/gu,
+  ))
+    if (!match[1].startsWith("--ll-creative-"))
+      throw new Error(
+        `Candidate ${route.id} motion may only set isolated --ll-creative-* CSS variables.`,
+      );
+  if (
     /gsap\.set\(\s*(?:children|sections|sectionElements)\s*,\s*\{[^}]*opacity\s*:\s*0/isu.test(
       source,
     )
@@ -1843,8 +1926,10 @@ function authorRules() {
     "Do not hardcode business facts or marketing copy. Render all visitor-facing business content through the supplied content tokens.",
     "Use only React, @launchloom/runtime, GSAP, and GSAP ScrollTrigger in Experience.jsx. The deterministic host imports and mounts motion.js; do not import or invoke ./motion.js from Experience.jsx.",
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
-    "Expose Services, FAQs, and Contact navigation. Put conversion in the hero or immediately after it.",
-    "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; use a compact anchor CTA for early conversion and do not fake a form or create a second lead endpoint.",
+    "Keep literal Services, FAQs, and Contact section anchors in the page. For dossier-backed routes, let the primary navigation follow the assigned reference geometry instead of forcing all three anchors into one conventional menu. Put conversion in the hero or immediately after it.",
+    "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; do not fake a form or create a second lead endpoint.",
+    EARLY_CONVERSION_OUTPUT_CONTRACT,
+    REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
@@ -1979,6 +2064,16 @@ function createGenerationLimiter(generate, maxConcurrency = 2) {
     });
 }
 
+function safeAuthorFailureStack(error) {
+  if (!(error instanceof Error) || typeof error.stack !== "string")
+    return undefined;
+  const frames = error.stack
+    .split("\n")
+    .slice(1, 13)
+    .map((frame) => frame.trim().replaceAll(process.cwd(), "<workspace>"));
+  return frames.length ? frames.join("\n").slice(0, 2400) : undefined;
+}
+
 /**
  * Deep module interface for Phase 2 production authorship.
  *
@@ -2002,9 +2097,7 @@ export async function authorExperienceCandidates({
   const contentManifest = buildCreativeContentManifest(site);
   const rules = authorRules();
 
-  const routes = assertInspirationPack(inspirationPack).map((route) =>
-    buildRouteContract(route),
-  );
+  const routes = assertInspirationPack(inspirationPack);
   // OpenRouter's in-flight budget is shared across the account. Keep the
   // independent candidates, but never put more than two model stages in
   // flight at once. This protects the creative lane without falling back to a
@@ -2084,6 +2177,49 @@ export async function authorExperienceCandidates({
           validateExperience(experience, route, content);
         }
       }
+      let referenceRepairCycles = 0;
+      if (route.referenceDna?.complete) {
+        let fidelity = validateReferenceCandidate({
+          referenceDna: route.referenceDna,
+          experienceSource: experience,
+          // The pre-style repair pass validates Experience-owned reference
+          // mechanics. Neutral placeholders satisfy only the cross-stage
+          // presence checks; the real CSS/motion are fully validated below.
+          stylesSource: "@media (max-width: 1px) {}",
+          motionSource: "export function mountExperienceMotion() {}",
+        });
+        while (
+          (!fidelity.pass || !fidelity.visualPass) &&
+          referenceRepairCycles < 2
+        ) {
+          referenceRepairCycles += 1;
+          const repaired = await generateStageValue(
+            limitedGenerate,
+            {
+              ...base,
+              stage: "experience",
+              designContract,
+              previousSource: experience,
+              validationError: `Reference fidelity repair cycle ${referenceRepairCycles}/2. Fix every source-level finding without simplifying the assigned composition. CSS and motion will be authored only after this structure is stable: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
+            },
+            "content",
+            "experience",
+          );
+          experience = normalizeAuthoredSource(repaired.value);
+          complianceRepaired = true;
+          validateExperience(experience, route, content);
+          fidelity = validateReferenceCandidate({
+            referenceDna: route.referenceDna,
+            experienceSource: experience,
+            stylesSource: "@media (max-width: 1px) {}",
+            motionSource: "export function mountExperienceMotion() {}",
+          });
+        }
+        if (!fidelity.pass || !fidelity.visualPass)
+          throw new Error(
+            `Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
+          );
+      }
       const [stylesOutput, motionOutput] = await Promise.all([
         generateValidatedSource({
           generate: limitedGenerate,
@@ -2110,44 +2246,16 @@ export async function authorExperienceCandidates({
       const styles = stylesOutput.source;
       const motion = motionOutput.source;
       complianceRepaired ||= stylesOutput.repaired || motionOutput.repaired;
-      let referenceRepairCycles = 0;
       if (route.referenceDna?.complete) {
-        let fidelity = validateReferenceCandidate({
+        const finalFidelity = validateReferenceCandidate({
           referenceDna: route.referenceDna,
           experienceSource: experience,
           stylesSource: styles,
           motionSource: motion,
         });
-        while (
-          (!fidelity.pass || !fidelity.visualPass) &&
-          referenceRepairCycles < 2
-        ) {
-          referenceRepairCycles += 1;
-          const repaired = await generateStageValue(
-            limitedGenerate,
-            {
-              ...base,
-              stage: "experience",
-              designContract,
-              previousSource: experience,
-              validationError: `Reference fidelity repair cycle ${referenceRepairCycles}/2. Fix every finding without simplifying the assigned composition: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
-            },
-            "content",
-            "experience",
-          );
-          experience = normalizeAuthoredSource(repaired.value);
-          complianceRepaired = true;
-          validateExperience(experience, route, content);
-          fidelity = validateReferenceCandidate({
-            referenceDna: route.referenceDna,
-            experienceSource: experience,
-            stylesSource: styles,
-            motionSource: motion,
-          });
-        }
-        if (!fidelity.pass || !fidelity.visualPass)
+        if (!finalFidelity.pass || !finalFidelity.visualPass)
           throw new Error(
-            `Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
+            `Reference fidelity failed for ${route.id}: ${finalFidelity.findings.map((item) => item.message).join(" | ")}`,
           );
       }
       const creativeManifest = buildCandidateManifest({
@@ -2248,14 +2356,17 @@ export async function authorExperienceCandidates({
       candidates.push(result.value);
       continue;
     }
-    failures.push({
+    const failure = {
       routeId: routes[index].id,
       candidateId: `candidate-${String.fromCharCode(97 + index)}`,
       error:
         result.reason instanceof Error
           ? result.reason.message
           : String(result.reason),
-    });
+    };
+    const stack = safeAuthorFailureStack(result.reason);
+    if (stack) failure.stack = stack;
+    failures.push(failure);
   }
   if (!candidates.length)
     throw new Error(
