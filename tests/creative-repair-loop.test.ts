@@ -893,6 +893,145 @@ describe("creative repair loop", () => {
     );
   });
 
+  it("constrains motion repairs to existing behavior hooks and requires reduced-motion support", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-motion-repair-prompt-contract-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience: `<main>${"existing visitor copy ".repeat(1_000)}<button>Request care</button></main>`,
+      styles: ".care-guide { opacity: 1; }",
+      motion: "export function mountExperienceMotion(runtime) { return () => {}; }",
+    };
+    const fetchMock = vi.fn(async (_url: string, options: RequestInit) => {
+      const body = JSON.parse(String(options.body));
+      const prompt = body.messages[1].content
+        .filter((part: { type: string; text?: string }) => part.type === "text")
+        .map((part: { text?: string }) => part.text || "")
+        .join("\n");
+      const target = prompt.match(/REPAIR TARGET: (experience|styles|motion)/u)?.[1];
+      return new Response(
+        JSON.stringify({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: {
+                content: JSON.stringify({
+                  file: target,
+                  content: target === "motion" ? "export function mountExperienceMotion(runtime) { return () => {}; }" : files[target as keyof typeof files],
+                }),
+              },
+            },
+          ],
+        }),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        {
+          category: "motion-primitive",
+          message: "The motion primitive does not match Reference DNA.",
+        },
+      ],
+      files,
+      screenshots: [],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const bodies = fetchMock.mock.calls.map((call) =>
+      JSON.parse(call[1].body as string),
+    );
+    const motionPrompt = bodies[2].messages[1].content
+      .filter((part: { type: string; text?: string }) => part.type === "text")
+      .map((part: { text?: string }) => part.text || "")
+      .join("\n");
+    expect(motionPrompt).toContain("REPAIR TARGET: motion");
+    expect(motionPrompt).toContain("MOTION REPAIR CONTRACT");
+    expect(motionPrompt).toContain("Treat motion.js as behavior-only");
+    expect(motionPrompt).toContain(
+      "Keep CURRENT EXPERIENCE.JSX byte-for-byte unchanged",
+    );
+    expect(motionPrompt).toContain("runtime?.reducedMotion");
+    expect(motionPrompt).toContain(
+      'matchMedia("(prefers-reduced-motion: reduce)")',
+    );
+    expect(motionPrompt).toContain("keep a still equivalent");
+    expect(motionPrompt).toContain("Clean up listeners, observers, timelines, and timers");
+  });
+
+  it("treats sealed visitor-facing values as data and forbids hardcoding them in repairs", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-sealed-copy-repair-prompt-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(repaired) },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [{ category: "visual", message: "Adjust the appointment action." }],
+      files: {
+        experience:
+          '<a href="#contact">{content.copy.appointmentPreparation}</a>',
+        styles: "",
+        motion: "",
+      },
+      screenshots: [],
+      contentManifest: {
+        values: {
+          copy: { appointmentPreparation: "Leave with written notes" },
+        },
+        tokens: [{ token: "content.copy.appointmentPreparation" }],
+      },
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const prompt = body.messages[1].content
+      .filter((part: { type: string; text?: string }) => part.type === "text")
+      .map((part: { text?: string }) => part.text || "")
+      .join("\n");
+    expect(prompt).toContain('"Leave with written notes"');
+    expect(prompt).toContain("SEALED CONTENT BINDING CONTRACT");
+    expect(prompt).toContain(
+      "Treat every business-specific string and fact shown in CURRENT SEALED CONTENT SHAPE as sealed data, not source copy.",
+    );
+    expect(prompt).toContain(
+      "Do not copy, paraphrase, or hardcode those values into JSX/HTML",
+    );
+    expect(prompt).toContain(
+      "Preserve existing content-token expressions and render business content through the existing content bindings",
+    );
+    expect(prompt).toContain("content.copy.appointmentPreparation");
+  });
+
   it("rejects empty file-scoped repair output with completion diagnostics", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-empty-file-repair-"),

@@ -560,6 +560,10 @@ export async function requestRepair({
       "Manual creative repair requires a resolved, non-empty section scope.",
     );
   const scopedHumanRepair = humanReview;
+  const motionRepair = hasFinding(
+    findings || [],
+    /\b(?:motion|animation|animated|scrolltrigger|scroll-linked|parallax)\b/iu,
+  );
   const referenceMismatch = (findings || []).some((finding) => {
     const detail =
       typeof finding === "string"
@@ -675,7 +679,7 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     candidateEvidence.push(await imagePart(screenshot));
   }
 
-  const sourcePrompt = (currentFiles) => `${repairInstruction}
+  const sourcePrompt = (currentFiles, target = null) => `${repairInstruction}
 
 ${scopedHumanRepair ? `RESOLVED SECTION SCOPE\n${JSON.stringify(creativeRepairScope, null, 2)}\nOnly these section IDs may change.` : ""}
 
@@ -698,6 +702,14 @@ Keep each required ID and section marker on its semantically matching visible se
 ALT-TEXT CONTRACT
 Every <img> must have a usable alt attribute. Use concise descriptive alt text for informative images. Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text. Preserve the reviewed description when reusing a known informative image, even if its crop or position changes. Do not replace an informative description with generic filler such as "Decorative image".
 
+SEALED CONTENT BINDING CONTRACT
+Treat every business-specific string and fact shown in CURRENT SEALED CONTENT SHAPE as sealed data, not source copy. Do not copy, paraphrase, or hardcode those values into JSX/HTML, CSS generated content, accessibility attributes, or motion code. Preserve existing content-token expressions and render business content through the existing content bindings or the supplied content-bound runtime helpers. Never replace a content binding with a literal value from the sealed shape. If a requested repair cannot be made while preserving those bindings, leave the binding intact and report the repair as unresolved rather than inventing or embedding copy.
+
+${motionRepair || target === "motion" ? `MOTION REPAIR CONTRACT
+Treat motion.js as behavior-only. Never use motion code to add, remove, or change visitor-facing text, JSX/HTML, DOM structure, headings, labels, buttons, links, or accessibility copy. Use only existing selectors and DOM hooks. Do not use innerHTML, textContent, insertAdjacentHTML, or create new content nodes. If the motion needs a missing structural hook, leave the motion repair unresolved instead of changing the page markup. Changes to markup for a separate, explicit non-motion finding must stay in Experience.jsx and must not be implemented by motion code.
+${target === "motion" ? "Keep CURRENT EXPERIENCE.JSX byte-for-byte unchanged for this motion-only repair." : "When the findings request only a motion change, keep CURRENT EXPERIENCE.JSX byte-for-byte unchanged."}
+Every motion sequence must respect reduced-motion preferences: check runtime?.reducedMotion and matchMedia("(prefers-reduced-motion: reduce)") before starting, keep a still equivalent with all content and controls usable when reduced motion is active, and cancel/revert active timelines or scroll effects when the preference changes. Clean up listeners, observers, timelines, and timers when the experience unmounts.` : ""}
+
 ${scopedHumanRepair
     ? `Return JSON with an "edits" array only, never complete files. Each edit must name one of experience, styles, or motion; its exact "find" fragment must occur once; its "replace" is the minimal correction. Return 1-12 edits, each fragment at most 6000 characters, total find-plus-replace text at most 24000 characters. An empty edit list means the request cannot be safely fulfilled and must fail closed.`
     : "Return complete files required by the response schema and no unrelated explanation."} Keep required reference signatures and safety/content contracts unless the explicit repair requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
@@ -706,13 +718,13 @@ ${scopedHumanRepair
     const requestContent = [
       ...referenceContext,
       ...candidateEvidence,
-      { type: "text", text: sourcePrompt(currentFiles) },
+      { type: "text", text: sourcePrompt(currentFiles, target) },
     ];
     if (target)
       requestContent.push({
         type: "text",
         text: `REPAIR TARGET: ${target}
-Return only the complete ${target} source file in the JSON content field. Do not return or modify other files. Keep the other current files as context only. Use the exact target name "${target}" in the file field. Make focused changes for the supplied findings while preserving the assigned reference, sealed content bindings, required markers, and safety contract.`,
+Return only the complete ${target} source file in the JSON content field. Do not return or modify other files. Keep the other current files as context only. Use the exact target name "${target}" in the file field. Make focused changes for the supplied findings while preserving the assigned reference, sealed content bindings, required markers, and safety contract.${target === "motion" ? " The motion-only constraints are mandatory: do not change or regenerate any visitor-facing copy, JSX/HTML, or DOM structure, and implement the required reduced-motion behavior." : ""}`,
       });
     assertModelPromptTextBudget(requestContent);
     return requestContent;
