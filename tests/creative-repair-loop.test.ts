@@ -893,6 +893,50 @@ describe("creative repair loop", () => {
     );
   });
 
+  it("rejects empty file-scoped repair output with completion diagnostics", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-empty-file-repair-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience: "x".repeat(21_000),
+      styles: ".hero { color: black; }",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: {
+                  content: JSON.stringify({ file: "experience", content: "  " }),
+                },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [{ category: "visual", message: "Fix the hero layout." }],
+        files,
+        screenshots: [],
+      }),
+    ).rejects.toThrow(/returned an empty experience file.*finish_reason=stop/iu);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps reference provenance out of client copy and preserves the contact-bound early action", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-reference-safety-repair-prompt-"),

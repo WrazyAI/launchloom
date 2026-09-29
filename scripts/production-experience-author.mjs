@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { redactPromptValue } from "./author-prompt-budget.mjs";
+import postcss from "postcss";
 import ts from "typescript";
 import {
   assertIndependentRoutes,
@@ -1807,11 +1808,12 @@ function validateStyles(source, route) {
  * variables remain available when a candidate intentionally consumes them.
  */
 export function namespaceCreativeCss(source) {
-  const declared = new Set(
-    [...source.matchAll(/(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu)].map(
-      (match) => match[1],
-    ),
-  );
+  const root = postcss.parse(source);
+  const declared = new Set();
+  root.walkDecls((declaration) => {
+    if (/^--[A-Za-z][\w-]*$/u.test(declaration.prop))
+      declared.add(declaration.prop);
+  });
   if (!declared.size) return source;
   return source.replace(/--[A-Za-z][\w-]*/gu, (token) =>
     declared.has(token) && !token.startsWith("--ll-creative-")

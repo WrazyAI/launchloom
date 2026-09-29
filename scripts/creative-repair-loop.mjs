@@ -811,6 +811,10 @@ Return only the complete ${target} source file in the JSON content field. Do not
         throw new Error(
           `Creative repair response did not contain the requested ${target} file.`,
         );
+      if (!parsed.content.trim())
+        throw new Error(
+          `Creative repair returned an empty ${target} file (${diagnosticText}).`,
+        );
       return parsed;
     }
     if (scopedHumanRepair) {

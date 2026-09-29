@@ -819,6 +819,25 @@ describe("production experience author", () => {
     expect(css).not.toContain("--ink:");
   });
 
+  it("namespaces candidate variables when comments precede their declarations", () => {
+    const css = namespaceCreativeCss(`
+      :root {
+        /* Palette chosen for this reference family. */
+        --primary: #14221d;
+        --accent: var(--primary);
+        /* --comment-only: #fff; */
+      }
+      .hero { color: var(--primary); background: var(--host-token); }
+    `);
+
+    expect(css).toContain("--ll-creative-primary: #14221d");
+    expect(css).toContain("--ll-creative-accent: var(--ll-creative-primary)");
+    expect(css).toContain("color: var(--ll-creative-primary)");
+    expect(css).toContain("background: var(--host-token)");
+    expect(css).toContain("--comment-only: #fff;");
+    expect(css).not.toContain("--primary:");
+  });
+
   it("authors three sealed and structurally independent candidate bundles", async () => {
     const result = await authorExperienceCandidates({
       site,
