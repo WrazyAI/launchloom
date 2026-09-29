@@ -416,7 +416,7 @@ describe("SEO market map", () => {
   });
 
   it("extracts only OpenRouter url citations and ignores model-authored search claims", async () => {
-    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({
+    const fetchImpl = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({
       choices: [{
         message: {
           content: "Fabricated claim: Harbor Plumbing ranks #1 and gets 900 searches.",
