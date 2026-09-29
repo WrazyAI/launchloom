@@ -343,6 +343,27 @@ describe("human creative revision lifecycle", () => {
     );
     expect(developerReject).toBeGreaterThan(-1);
     expect(developerClear).toBeGreaterThan(developerReject);
+
+    expect(clientForm).toContain('const submissionId = useRef("");');
+    expect(clientForm).toContain(
+      "submissionId.current ||= crypto.randomUUID();",
+    );
+    expect(clientForm).toContain(
+      'form.set("submissionId", submissionId.current);',
+    );
+    expect(clientForm).toContain("submissionId: submissionId.current");
+    expect(clientForm).not.toContain(
+      "submissionId: crypto.randomUUID()",
+    );
+
+    expect(developerForm).toContain('const submissionId = useRef("");');
+    expect(developerForm).toContain(
+      "submissionId.current ||= crypto.randomUUID();",
+    );
+    expect(developerForm).toContain("submissionId: submissionId.current");
+    expect(developerForm).not.toContain(
+      "submissionId: crypto.randomUUID()",
+    );
   });
 
   it("uses the reviewed site or deployed revision as the failed-revision primary destination", () => {
