@@ -45,9 +45,10 @@ The new real-estate and veterinary pools each contain six permission-cleared
 direct-business captures with paired full-page desktop/mobile evidence and
 their own source-specific design prompts. The licensed Spicer roofing template
 remains in the dossier library but is not counted as one of the six real
-roofing businesses or selected for that niche. The remaining 33 complete
-cross-industry, legacy, and A1/Kokoro design studies are listed in
-`archive-index.json`. They have full-page captures and prompts, but remain
+roofing businesses or selected for that niche. The archive index contains 35
+complete non-core dossiers: 33 cross-industry, legacy, and A1/Kokoro studies,
+plus two permission-cleared dental alternatives retained outside the fixed
+six-reference dental pool. They have full-page captures and prompts, but remain
 archive-only and cannot enter production selection. Screenshot-only fragments
 must be completed as a dossier or explicitly catalogued as incomplete; they are
 not valid model references.
