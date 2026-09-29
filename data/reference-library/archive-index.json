@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "launchloom-reference-archive",
-  "updatedAt": "2026-09-26",
+  "updatedAt": "2026-09-29",
   "policy": "permission-cleared-only; requester-attested archive material remains non-production until explicitly reviewed for niche fit",
   "productionCore": "data/reference-library/core-collection.json",
   "productionEligible": false,
@@ -944,6 +944,68 @@
           {
             "path": "manifest.json",
             "field": "businessKinds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "direct-grlica-law",
+      "dossierPath": "data/reference-library/dossiers/direct-grlica-law",
+      "referenceName": "Grlica Law digital legal-services page",
+      "sourceUrl": "https://grlicalaw.com/",
+      "rights": "permission-cleared",
+      "status": "held-visual-quality",
+      "productionEligible": false,
+      "coreNicheFit": "core-adjacent",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/requester-attestation.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "visual-quality-failed"
+        ],
+        "summary": "Both retained captures include low-contrast sections; the dossier review marks the reference unsuitable for production selection.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.visualQuality"
+          },
+          {
+            "path": "manifest.json",
+            "field": "review.notes"
+          }
+        ]
+      }
+    },
+    {
+      "id": "direct-khufus-giza-restaurant",
+      "dossierPath": "data/reference-library/dossiers/direct-khufus-giza-restaurant",
+      "referenceName": "Khufu's cinematic place-led dining story",
+      "sourceUrl": "https://khufus.com/",
+      "rights": "permission-cleared",
+      "status": "held-mobile-reference-caveat",
+      "productionEligible": false,
+      "coreNicheFit": "core-adjacent",
+      "sourceKind": "direct-site",
+      "rightsBasis": {
+        "kind": "requester-attestation",
+        "evidencePath": "rights/REQUESTER-ATTESTATION.md",
+        "sourceOwnerGrantAttached": false,
+        "independentlyVerified": false
+      },
+      "exclusion": {
+        "codes": [
+          "mobile-reference-quality"
+        ],
+        "summary": "The retained portrait mobile capture is unsuitable as a positive responsive reference; the dossier remains archive-only.",
+        "evidence": [
+          {
+            "path": "manifest.json",
+            "field": "review.scope"
           }
         ]
       }

@@ -42,7 +42,7 @@ home services, dental, home care, fitness, restaurants, lodging,
 architecture/interior design, law firms, beauty/grooming, accounting, auto
 repair, HVAC, roofing, and painting. The licensed Spicer roofing template
 remains in the dossier library but is not counted as one of the six real
-roofing businesses or selected for that niche. The remaining 31 complete
+roofing businesses or selected for that niche. The remaining 33 complete
 cross-industry, legacy, and A1/Kokoro design studies are listed in
 `archive-index.json`. They have full-page captures and prompts, but remain
 archive-only and cannot enter production selection. Screenshot-only fragments
@@ -54,8 +54,10 @@ Each archive-index entry explicitly records `productionEligible: false`, its
 a short explanation, and the manifest fields supporting that explanation.
 `coreNicheFit` describes subject overlap only; it does not grant selection.
 The reason codes describe recorded curation or subject facts, not inferred
-quality rankings. The index does not assert that any archived dossier is a
-duplicate or failed visual quality review. `requester-attestation` identifies
+quality rankings. Grlica Law and Khufu's are retained as archive-only studies
+because their own reviews record visual or mobile-reference quality holds; the
+index does not infer defects for other archived dossiers.
+`requester-attestation` identifies
 the requester's stated clearance for internal screenshot and prompt use; its
 `sourceOwnerGrantAttached: false` and `independentlyVerified: false` are explicit.
 `local-license` points to a retained license; `registry-recorded-owned` points
