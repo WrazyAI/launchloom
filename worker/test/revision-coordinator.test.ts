@@ -248,6 +248,15 @@ describe("RevisionCoordinator", () => {
     expect(failureEmails).toHaveLength(1);
     expect(String(failureEmails[0].text)).toContain("Revision workflow could not be started.");
     expect(String(failureEmails[0].text)).toContain("Open reviewed website: https://review.example.pages.dev/");
+    await expect(
+      coordinator.enqueue(
+        request("request-dispatch-fail", "Keep this draft safe."),
+      ),
+    ).resolves.toMatchObject({
+      ok: false,
+      code: "revision_request_failed",
+      error: expect.stringContaining("feedback was preserved"),
+    });
   });
 
   it("promotes the waiting request when dispatch retries are exhausted", async () => {
