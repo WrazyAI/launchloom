@@ -15,9 +15,6 @@
       "rights/business-verification.md",
       "rights/capture-record.md",
       "screenshots/capture-record.json"
-    ],
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
     ]
   },
   "businessKinds": [

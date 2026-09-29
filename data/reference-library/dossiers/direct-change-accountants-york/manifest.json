@@ -10,9 +10,6 @@
     "rights": "permission-cleared",
     "rightsEvidence": "The requester attested on 2026-09-26 that clearance covers full-page screenshot retention, derived prompts, and pipeline-model visual-reference use. No source-owner grant file was uploaded.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
-    ],
     "provenanceEvidencePaths": [
       "rights/provenance.md"
     ]

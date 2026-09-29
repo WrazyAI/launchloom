@@ -389,7 +389,9 @@ export function buildCandidateManifest(input) {
               rights: clean(route.referenceDossier.source?.rights, 40),
               rightsEvidence: clean(route.referenceDossier.source?.rightsEvidence, 600),
               rightsEvidencePath: clean(route.referenceDossier.source?.rightsEvidencePath, 260),
-              assetEvidencePaths: list(route.referenceDossier.source?.assetEvidencePaths, 12),
+              ...(list(route.referenceDossier.source?.assetEvidencePaths, 12).length
+                ? { assetEvidencePaths: list(route.referenceDossier.source?.assetEvidencePaths, 12) }
+                : {}),
             },
             tags: route.referenceDossier.tags || {},
             designPrompt: String(route.referenceDossier.designPrompt || ""),
