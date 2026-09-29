@@ -301,21 +301,48 @@ describe("human creative revision lifecycle", () => {
       "templates/client-site/src/components/ReviewBanner.astro",
       "utf8",
     );
-    const panel = readFileSync("src/components/ReviewPanel.tsx", "utf8");
-
-    const bannerReject = banner.indexOf(
-      'if (!response.ok) throw new Error(result.error || "Feedback could not be sent.");',
+    const clientForm = readFileSync(
+      "src/components/ClientFeedbackForm.tsx",
+      "utf8",
     );
-    const bannerReset = banner.indexOf('feedbackSubmissionId = "";', bannerReject);
-    const formReset = banner.indexOf("form.reset();", bannerReject);
-    expect(bannerReject).toBeGreaterThan(-1);
-    expect(bannerReset).toBeGreaterThan(bannerReject);
-    expect(formReset).toBeGreaterThan(bannerReject);
+    const developerForm = readFileSync(
+      "src/components/FeedbackParts.tsx",
+      "utf8",
+    );
 
-    const panelResponse = panel.indexOf("if (response.ok) {");
-    const panelClear = panel.indexOf('setComment("");', panelResponse);
-    expect(panelResponse).toBeGreaterThan(-1);
-    expect(panelClear).toBeGreaterThan(panelResponse);
+    const bannerClientReject = banner.indexOf(
+      'if (!response.ok) {\n          setStatusText(result.error || "Feedback could not be sent.");\n          return false;',
+    );
+    const bannerClientClear = banner.indexOf(
+      'feedbackSubmissionId = "";',
+      bannerClientReject,
+    );
+    expect(bannerClientReject).toBeGreaterThan(-1);
+    expect(bannerClientClear).toBeGreaterThan(bannerClientReject);
+
+    const bannerDeveloperReject = banner.indexOf(
+      'if (!response.ok) {\n          setStatusText(result.error || "Feedback could not be sent.");\n          return false;',
+      bannerClientClear,
+    );
+    const bannerDeveloperReset = banner.indexOf(
+      "form.reset();",
+      bannerDeveloperReject,
+    );
+    expect(bannerDeveloperReject).toBeGreaterThan(-1);
+    expect(bannerDeveloperReset).toBeGreaterThan(bannerDeveloperReject);
+
+    const clientReject = clientForm.indexOf("if (!response.ok) {");
+    const clientClear = clientForm.indexOf('setComment("");', clientReject);
+    expect(clientReject).toBeGreaterThan(-1);
+    expect(clientClear).toBeGreaterThan(clientReject);
+
+    const developerReject = developerForm.indexOf("if (!response.ok) {");
+    const developerClear = developerForm.indexOf(
+      "setNotes({});",
+      developerReject,
+    );
+    expect(developerReject).toBeGreaterThan(-1);
+    expect(developerClear).toBeGreaterThan(developerReject);
   });
 
   it("uses the reviewed site or deployed revision as the failed-revision primary destination", () => {
