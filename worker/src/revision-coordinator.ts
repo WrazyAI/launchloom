@@ -54,6 +54,7 @@ type FailureNotice = {
   reason: string;
   attempts: number;
   siteUrl?: string;
+  nextAttemptAt: number;
 };
 
 export type EnqueueResult =
@@ -180,7 +181,11 @@ const DISPATCH_RETRY_MS = 15 * 60_000;
 const RUN_TIMEOUT_MS = 50 * 60_000;
 const CREATIVE_OVERRIDE_STALE_MS = 2 * 60_000;
 const RETENTION_MS = 30 * 24 * 60 * 60_000;
-const FAILURE_NOTICE_KEY = "pending-failure-notice";
+const FAILURE_NOTICE_PREFIX = "pending-failure-notice:";
+
+function failureNoticeKey(requestId: string) {
+  return `${FAILURE_NOTICE_PREFIX}${requestId}`;
+}
 
 function cleanError(error: unknown) {
   return (
@@ -836,6 +841,46 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     return { allowed: true, retryAfterSeconds: 0 };
   }
 
+  private activeRevisionRow() {
+    return this.ctx.storage.sql
+      .exec<RevisionRow>(
+        `SELECT * FROM revision_requests WHERE status IN ${ACTIVE} ORDER BY created_at LIMIT 1`,
+      )
+      .toArray()[0];
+  }
+
+  private async scheduleCoordinatorAlarm() {
+    const now = Date.now();
+    const due: number[] = [];
+    const notices = await this.ctx.storage.list<FailureNotice>({
+      prefix: FAILURE_NOTICE_PREFIX,
+    });
+    for (const notice of notices.values())
+      due.push(Number(notice.nextAttemptAt) || now + 5 * 60_000);
+
+    const active = this.activeRevisionRow();
+    if (active) {
+      if (active.status === "dispatching")
+        due.push(
+          active.dispatch_attempts >= 3
+            ? now + 1_000
+            : now + DISPATCH_RETRY_MS,
+        );
+      else
+        due.push(
+          (active.started_at || active.created_at) + RUN_TIMEOUT_MS,
+        );
+    }
+
+    if (!due.length) {
+      await this.ctx.storage.deleteAlarm();
+      return;
+    }
+    await this.ctx.storage.setAlarm(
+      Math.max(now + 1_000, Math.min(...due)),
+    );
+  }
+
   private async promoteQueued(): Promise<RevisionRow | undefined> {
     const promoted = this.ctx.storage.sql
       .exec<RevisionRow>(
@@ -966,18 +1011,18 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         reason,
       }),
     );
-    if (await notifyFailure(this.env, row, reason, failureSiteUrl)) {
-      await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
-      await this.ctx.storage.deleteAlarm();
-    } else {
-      await this.ctx.storage.put<FailureNotice>(FAILURE_NOTICE_KEY, {
+    const noticeKey = failureNoticeKey(row.request_id);
+    if (await notifyFailure(this.env, row, reason, failureSiteUrl))
+      await this.ctx.storage.delete(noticeKey);
+    else
+      await this.ctx.storage.put<FailureNotice>(noticeKey, {
         requestId: row.request_id,
         reason,
         attempts: 1,
         ...(failureSiteUrl ? { siteUrl: safeReviewedPage(failureSiteUrl) } : {}),
+        nextAttemptAt: Date.now() + 5 * 60_000,
       });
-      await this.ctx.storage.setAlarm(Date.now() + 5 * 60_000);
-    }
+    await this.scheduleCoordinatorAlarm();
   }
 
   async enqueue(input: RevisionRequestInput): Promise<EnqueueResult> {
@@ -1111,7 +1156,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       now,
       requestId,
     );
-    await this.ctx.storage.setAlarm(now + RUN_TIMEOUT_MS);
+    await this.scheduleCoordinatorAlarm();
     console.log(
       JSON.stringify({ event: "revision.claimed", repo: row.repo, requestId }),
     );
@@ -1149,7 +1194,6 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
             promoted.request_id,
           );
       });
-      await this.ctx.storage.deleteAlarm();
       console.log(
         JSON.stringify({
           event: "revision.completed",
@@ -1178,6 +1222,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       "UPDATE revision_requests SET feedback = '', category = '' WHERE status = 'completed' AND completed_at < ?",
       Date.now() - RETENTION_MS,
     );
+    await this.scheduleCoordinatorAlarm();
     return {
       ok: true,
       promoted: promoted
@@ -1205,6 +1250,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       failureSiteUrl,
     );
     await this.promoteQueued();
+    await this.scheduleCoordinatorAlarm();
     return { ok: true };
   }
 
@@ -1213,10 +1259,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
     if (!row || row.status === "completed") return { ok: true };
     if (row.status !== "failed")
       throw new Error("Only a failed revision request can be dismissed.");
-    const notice =
-      await this.ctx.storage.get<FailureNotice>(FAILURE_NOTICE_KEY);
-    if (notice?.requestId === requestId)
-      await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
+    await this.ctx.storage.delete(failureNoticeKey(requestId));
     this.ctx.storage.sql.exec(
       "UPDATE revision_requests SET status = 'completed', completed_at = ?, failure = ? WHERE request_id = ?",
       Date.now(),
@@ -1229,6 +1272,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       )
       .toArray()[0];
     if (!active) await this.promoteQueued();
+    await this.scheduleCoordinatorAlarm();
     console.log(
       JSON.stringify({
         event: "revision.dismissed",
@@ -1262,9 +1306,10 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         "UPDATE revision_requests SET status = 'queued', failure = NULL, completed_at = NULL WHERE request_id = ?",
         failed.request_id,
       );
+      await this.scheduleCoordinatorAlarm();
       return { ok: true, requestId: failed.request_id };
     }
-    await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
+    await this.ctx.storage.delete(failureNoticeKey(requestId));
     this.ctx.storage.sql.exec(
       "UPDATE revision_requests SET status = 'dispatching', failure = NULL WHERE request_id = ?",
       failed.request_id,
@@ -1275,6 +1320,7 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
       await this.markFailed(failed, error);
       throw error;
     }
+    await this.scheduleCoordinatorAlarm();
     return { ok: true, requestId: failed.request_id };
   }
 
@@ -1299,55 +1345,69 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
   }
 
   async alarm() {
-    const notice =
-      await this.ctx.storage.get<FailureNotice>(FAILURE_NOTICE_KEY);
-    if (notice) {
+    const now = Date.now();
+    const notices = await this.ctx.storage.list<FailureNotice>({
+      prefix: FAILURE_NOTICE_PREFIX,
+    });
+    for (const [key, notice] of notices) {
+      if ((Number(notice.nextAttemptAt) || 0) > now) continue;
       const failed = this.row(notice.requestId);
       if (
         !failed ||
-        (await notifyFailure(this.env, failed, notice.reason, notice.siteUrl || ""))
+        (await notifyFailure(
+          this.env,
+          failed,
+          notice.reason,
+          notice.siteUrl || "",
+        ))
       ) {
-        await this.ctx.storage.delete(FAILURE_NOTICE_KEY);
-        await this.ctx.storage.deleteAlarm();
-      } else {
-        const attempts = notice.attempts + 1;
-        await this.ctx.storage.put<FailureNotice>(FAILURE_NOTICE_KEY, {
-          ...notice,
-          attempts,
-        });
-        await this.ctx.storage.setAlarm(
-          Date.now() + Math.min(60, 5 * 2 ** (attempts - 1)) * 60_000,
-        );
+        await this.ctx.storage.delete(key);
+        continue;
       }
+      const attempts = notice.attempts + 1;
+      await this.ctx.storage.put<FailureNotice>(key, {
+        ...notice,
+        attempts,
+        nextAttemptAt:
+          now + Math.min(60, 5 * 2 ** (attempts - 1)) * 60_000,
+      });
+    }
+
+    const active = this.activeRevisionRow();
+    if (!active) {
+      await this.scheduleCoordinatorAlarm();
       return;
     }
-    const active = this.ctx.storage.sql
-      .exec<RevisionRow>(
-        `SELECT * FROM revision_requests WHERE status IN ${ACTIVE} ORDER BY created_at LIMIT 1`,
-      )
-      .toArray()[0];
-    if (!active) return;
-    const age = Date.now() - (active.started_at || active.created_at);
+
+    const age = now - (active.started_at || active.created_at);
     if (active.status === "running") {
-      if (age >= RUN_TIMEOUT_MS)
+      if (age >= RUN_TIMEOUT_MS) {
         await this.markFailed(active, "Revision workflow timed out.");
-      else await this.ctx.storage.setAlarm(Date.now() + (RUN_TIMEOUT_MS - age));
+        await this.promoteQueued();
+      }
+      await this.scheduleCoordinatorAlarm();
       return;
     }
     if (active.status === "dispatched") {
-      if (age >= RUN_TIMEOUT_MS)
-        await this.markFailed(active, "Revision workflow did not claim the dispatched request.");
-      else await this.ctx.storage.setAlarm(Date.now() + (RUN_TIMEOUT_MS - age));
+      if (age >= RUN_TIMEOUT_MS) {
+        await this.markFailed(
+          active,
+          "Revision workflow did not claim the dispatched request.",
+        );
+        await this.promoteQueued();
+      }
+      await this.scheduleCoordinatorAlarm();
       return;
     }
     if (active.dispatch_attempts >= 3) {
       await this.markFailed(active, "Revision workflow could not be started.");
+      await this.promoteQueued();
+      await this.scheduleCoordinatorAlarm();
       return;
     }
     try {
       await this.prepareAndDispatchRow(active);
     } catch (error) {
-      await this.ctx.storage.setAlarm(Date.now() + DISPATCH_RETRY_MS);
       console.error(
         JSON.stringify({
           event: "revision.dispatch_retry_failed",
@@ -1357,5 +1417,6 @@ export class RevisionCoordinator extends DurableObject<RevisionCoordinatorEnv> {
         }),
       );
     }
+    await this.scheduleCoordinatorAlarm();
   }
 }
