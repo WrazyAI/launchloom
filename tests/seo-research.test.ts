@@ -495,7 +495,7 @@ describe("SEO market map", () => {
       budgetExhausted: true,
     });
     expect(dossier.publishReady).toBe(false);
-    expect(dossier.warnings.join(" ")).toContain("configured $0.005 spend bound");
+    expect(dossier.warnings.join(" ")).toContain("configured USD 0.005 spend bound");
   });
 
   it("stops after one fallback query when provider spend is unreported", async () => {
