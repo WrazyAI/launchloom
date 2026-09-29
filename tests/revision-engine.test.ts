@@ -689,6 +689,128 @@ describe("revision operations", () => {
     ).toBe(true);
   });
 
+  it("does not widen a section-specific density request to the whole page", async () => {
+    const draft = config();
+    const planned = await planRevision(
+      ["Make the FAQ section more compact."],
+      draft,
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "set_design_treatment",
+          density: "compact",
+        },
+      ],
+    );
+
+    expect(planned.ok).toBe(false);
+    expect(planned.operations).toEqual([]);
+    expect(planned.config.design?.treatment).toBeUndefined();
+    expect(planned.results[0]).toMatchObject({
+      status: "manual",
+      fulfilled: [],
+      unresolved: ["layout"],
+    });
+  });
+
+  it("does not fulfill a section-specific request with an unrelated section edit", async () => {
+    const planned = await planRevision(
+      ["Use a more practical layout for the FAQ section."],
+      config(),
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "set_section_variant",
+          sectionType: "services",
+          variant: "featured",
+        },
+      ],
+    );
+
+    expect(planned.ok).toBe(false);
+    expect(planned.operations).toEqual([]);
+    expect(planned.results[0]).toMatchObject({
+      status: "manual",
+      fulfilled: [],
+      unresolved: ["layout"],
+    });
+  });
+
+  it("applies a supported section variant to the explicitly named section", async () => {
+    const planned = await planRevision(
+      ["Make the contact section more compact."],
+      config(),
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "set_section_variant",
+          sectionType: "contact",
+          variant: "compact",
+        },
+      ],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      status: "fulfilled",
+      fulfilled: ["layout"],
+    });
+    expect(
+      planned.config.design.sections.find(
+        (section: any) => section.type === "contact",
+      ).variant,
+    ).toBe("compact");
+  });
+
+  it("rejects a modeled section move that contradicts the requested order", async () => {
+    const planned = await planRevision(
+      ["Move the FAQ below Services."],
+      config(),
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "reorder_section",
+          sectionType: "faq",
+          relativeTo: "services",
+          position: "before",
+        },
+      ],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.operations).toEqual([
+      expect.objectContaining({
+        kind: "reorder_section",
+        sectionType: "faq",
+        relativeTo: "services",
+        position: "after",
+      }),
+    ]);
+  });
+
+  it("rejects a modeled page treatment that contradicts a deterministic density request", async () => {
+    const planned = await planRevision(
+      ["Make the page more compact."],
+      config(),
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "set_design_treatment",
+          density: "spacious",
+        },
+      ],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.operations).toEqual([
+      expect.objectContaining({
+        kind: "set_design_treatment",
+        density: "compact",
+      }),
+    ]);
+    expect(planned.config.design.treatment.density).toBe("compact");
+  });
+
   it("does not count unchanged structural operations as applied work", () => {
     const draft = {
       ...config(),
@@ -944,7 +1066,7 @@ describe("revision operations", () => {
     expect(planned.ok).toBe(false);
     expect(planned.results[0]).toMatchObject({
       status: "manual",
-      unresolved: ["unknown"],
+      unresolved: ["layout"],
     });
   });
 
@@ -1027,8 +1149,10 @@ describe("revision operations", () => {
       }),
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(fetchMock.mock.calls[1][1].body).reasoning_effort).toBe(
-      "high",
+    const retriedRequest = JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(retriedRequest.reasoning_effort).toBe("high");
+    expect(retriedRequest.messages[0].content).toContain(
+      "When feedback names specific section(s), only edit those sections",
     );
   });
 
