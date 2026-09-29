@@ -172,24 +172,31 @@ export function renderLifecycleEmail(input) {
   }
 
   if (audience === "manual-attention") {
-    const siteUrl = previewUrl || reviewUrl;
+    const revisionFailure = kind === "revision-failed";
+    const primaryAttentionUrl = revisionFailure
+      ? previewUrl || reviewUrl
+      : reviewUrl || previewUrl;
     rows += action(
-      siteUrl,
-      "Open reviewed website",
-      "The feedback remains preserved. Review the website state first, then use the revision queue recovery workflow.",
+      primaryAttentionUrl,
+      revisionFailure ? "Open reviewed website" : "Review failed request",
+      revisionFailure
+        ? "The feedback remains preserved. Review the website state first, then use the revision queue recovery workflow."
+        : "Inspect the preserved request and diagnostics before deciding the next safe action.",
     );
-    const diagnostics = [
-      diagnosticPrUrl ? labelledLink(diagnosticPrUrl, "Pull request") : "",
-      diagnosticRunUrl ? labelledLink(diagnosticRunUrl, "Actions run") : "",
-    ].filter(Boolean);
-    if (diagnostics.length) {
-      rows += `<tr><td style="padding:0 32px 24px" class="mobile-pad"><p style="margin:0;color:${COLORS.muted};font-size:13px;line-height:1.6">Diagnostics: ${diagnostics.join(" · ")}</p></td></tr>`;
-      textSections.push(
-        `DIAGNOSTICS\n${[
-          diagnosticPrUrl ? `Pull request: ${diagnosticPrUrl}` : "",
-          diagnosticRunUrl ? `Actions run: ${diagnosticRunUrl}` : "",
-        ].filter(Boolean).join("\n")}`,
-      );
+    if (revisionFailure) {
+      const diagnostics = [
+        diagnosticPrUrl ? labelledLink(diagnosticPrUrl, "Pull request") : "",
+        diagnosticRunUrl ? labelledLink(diagnosticRunUrl, "Actions run") : "",
+      ].filter(Boolean);
+      if (diagnostics.length) {
+        rows += `<tr><td style="padding:0 32px 24px" class="mobile-pad"><p style="margin:0;color:${COLORS.muted};font-size:13px;line-height:1.6">Diagnostics: ${diagnostics.join(" · ")}</p></td></tr>`;
+        textSections.push(
+          `DIAGNOSTICS\n${[
+            diagnosticPrUrl ? `Pull request: ${diagnosticPrUrl}` : "",
+            diagnosticRunUrl ? `Actions run: ${diagnosticRunUrl}` : "",
+          ].filter(Boolean).join("\n")}`,
+        );
+      }
     }
     if (sendAnywayUrl) {
       rows += action(
@@ -232,14 +239,17 @@ export function renderLifecycleEmail(input) {
 
   const actionLabel =
     audience === "manual-attention"
-      ? "Open reviewed website"
+      ? kind === "revision-failed"
+        ? "Open reviewed website"
+        : "Review failed request"
       : audience === "delivery-failure"
         ? "Open production website"
         : audience === "developer"
           ? "Review developer preview"
           : "Review your website";
   const primaryUrl =
-    audience === "manual-attention" || audience === "delivery-failure"
+    audience === "delivery-failure" ||
+    (audience === "manual-attention" && kind === "revision-failed")
       ? previewUrl || reviewUrl
       : reviewUrl || previewUrl;
   const text = `${copy.eyebrow.toUpperCase()}\n\n${copy.title}\n\n${copy.intro}${textSections.length ? `\n\n${textSections.join("\n\n")}` : ""}\n\n${actionLabel}: ${primaryUrl}\n\nSent by LaunchLoom for this website project.`;
