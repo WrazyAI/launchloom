@@ -336,8 +336,9 @@ describe("human creative revision lifecycle", () => {
         'SITE_URL=$(REVIEWED_PAGE="$REVIEWED_PAGE" node -e',
       );
       expect(workflow).toContain(
-        'SITE_URL="${{ steps.deploy.outputs.preview }}"',
+        'REVISION_DEPLOYED_PREVIEW: ${{ steps.deploy.outputs.preview }}',
       );
+      expect(workflow).toContain('SITE_URL="$REVISION_DEPLOYED_PREVIEW"');
       expect(workflow).toContain(
         'if [ -z "$SITE_URL" ]; then SITE_URL="$REVIEWED_PAGE"; fi',
       );
