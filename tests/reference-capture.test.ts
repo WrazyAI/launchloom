@@ -280,6 +280,14 @@ describe("full-page reference screenshot stitching plan", () => {
             firstRedRow = Math.min(firstRedRow, row);
           }
         }
+      if (firstRedRow < 1_200 || firstRedRow >= 1_300)
+        console.error(
+          "reference-capture-position-diagnostic",
+          JSON.stringify({
+            firstRedRow,
+            mobile: record.captures.mobile,
+          }),
+        );
       expect(redPixels).toBeGreaterThan(100);
       expect(firstRedRow).toBeGreaterThanOrEqual(1_200);
       expect(firstRedRow).toBeLessThan(1_300);
