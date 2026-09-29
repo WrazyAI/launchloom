@@ -365,6 +365,7 @@ export function createOpenRouterWebSearchClient({
             },
           }],
           max_tool_calls: 1,
+          tool_choice: "required",
           max_tokens: 32,
           temperature: 0,
         },
