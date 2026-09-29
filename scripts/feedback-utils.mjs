@@ -1,6 +1,27 @@
+const STRUCTURE_MARKER =
+  /<!--\s*launchloom-feedback-structure:([A-Za-z0-9_-]+)\s*-->/i;
+
+const ATTACHMENT_LABELS = {
+  logo: "logo",
+  hero: "hero image",
+  secondary: "about or story image",
+  tertiary: "gallery image",
+  team: "team photo",
+};
+
+const COLOR_LABELS = {
+  primary: "brand or accent color",
+  surface: "page background",
+  hero: "hero surface color",
+  ink: "body text color",
+  muted: "muted text color",
+  line: "divider and line color",
+};
+
 export function feedbackTextFromComment(body) {
   const withoutMetadata = String(body || "")
     .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/\n+_Requested changes:_[\s\S]*?(?=\n+_?Page:\s*https?:\/\/|$)/i, "")
     .replace(/\n+_?Page:\s*https?:\/\/\S+\s*$/i, "")
     .trim();
   const match = withoutMetadata.match(
@@ -10,7 +31,84 @@ export function feedbackTextFromComment(body) {
     match ? withoutMetadata.slice(match[0].length) : withoutMetadata
   ).trim();
   const category = match?.[2]?.trim();
-  return category ? `[${category}] ${note}` : note;
+  return (category ? `[${category}] ${note}` : note).trim();
+}
+
+function safeStructure(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return { attachments: [], colors: [] };
+  const attachments = (Array.isArray(value.attachments)
+    ? value.attachments
+    : []
+  )
+    .slice(0, 4)
+    .flatMap((entry) => {
+      if (!entry || typeof entry !== "object") return [];
+      const target = String(entry.target || "").trim();
+      const url = String(entry.url || "").trim();
+      if (!target || !/^https:\/\//u.test(url)) return [];
+      const kind = entry.kind === "generated" ? "generated" : "upload";
+      const prompt =
+        kind === "generated" ? String(entry.prompt || "").trim().slice(0, 500) : "";
+      const model =
+        kind === "generated" ? String(entry.model || "").trim().slice(0, 80) : "";
+      return [
+        {
+          target,
+          kind,
+          url,
+          ...(prompt ? { prompt } : {}),
+          ...(model ? { model } : {}),
+        },
+      ];
+    });
+  const colors = (Array.isArray(value.colors) ? value.colors : [])
+    .slice(0, 6)
+    .flatMap((entry) => {
+      if (!entry || typeof entry !== "object") return [];
+      const role = String(entry.role || "").trim();
+      const hex = String(entry.hex || "").trim().toLowerCase();
+      if (!role || !/^#[0-9a-f]{6}$/u.test(hex)) return [];
+      return [{ role, hex }];
+    });
+  return { attachments, colors };
+}
+
+export function feedbackStructureFromComment(body) {
+  const match = STRUCTURE_MARKER.exec(String(body || ""));
+  if (!match) return { attachments: [], colors: [] };
+  try {
+    const decoded = Buffer.from(match[1], "base64url").toString("utf8");
+    return safeStructure(JSON.parse(decoded));
+  } catch {
+    return { attachments: [], colors: [] };
+  }
+}
+
+export function feedbackRequestFromComment(body) {
+  const feedback = feedbackTextFromComment(body);
+  return {
+    text: feedback,
+    structure: feedbackStructureFromComment(body),
+  };
+}
+
+export function feedbackRequestSummary(request) {
+  const lines = [];
+  if (request?.text) lines.push(request.text);
+  for (const attachment of request?.structure?.attachments || []) {
+    const label = ATTACHMENT_LABELS[attachment.target] || "image";
+    if (attachment.kind === "generated")
+      lines.push(
+        `Replace the ${label} with a generated image: "${attachment.prompt}".`,
+      );
+    else lines.push(`Replace the ${label} with the uploaded image.`);
+  }
+  const colors = (request?.structure?.colors || []).map(
+    (color) => `${COLOR_LABELS[color.role] || color.role} ${color.hex}`,
+  );
+  if (colors.length) lines.push(`Set ${colors.join(", ")}.`);
+  return lines.join("\n");
 }
 
 export function pendingFeedbackFromComments(comments, stage, exact = false) {
@@ -32,8 +130,13 @@ export function pendingFeedbackFromComments(comments, stage, exact = false) {
           !latestRevision ||
           new Date(comment.created_at) > new Date(latestRevision)),
     )
-    .map((comment) => feedbackTextFromComment(comment.body))
-    .filter(Boolean);
+    .map((comment) => feedbackRequestFromComment(comment.body))
+    .filter(
+      (request) =>
+        request.text ||
+        request.structure.attachments.length ||
+        request.structure.colors.length,
+    );
 }
 
 export function nextClientFeedbackContext(

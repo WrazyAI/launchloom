@@ -12,6 +12,7 @@ import {
   modelOperations,
   planRevision,
   removeEmDashes,
+  structuredOperations,
   verifyRevision,
 } from "../scripts/revision-engine.mjs";
 import { applyBoundedClientFeedback } from "../scripts/client-feedback-ops.mjs";
@@ -930,5 +931,240 @@ describe("revision operations", () => {
     expect(planned.ok).toBe(false);
     expect(planned.config.design).toBeUndefined();
     expect(planned.config.style.primaryColor).toBe("#205d51");
+  });
+});
+
+describe("structured image and color feedback", () => {
+  const heroAsset = {
+    target: "hero",
+    kind: "generated",
+    path: "/images/feedback/hero-abc123def456.webp",
+    source: "fal-generated",
+    prompt: "A warm workshop scene",
+    model: "fal-ai/minimax/image-01",
+    promptHash: "abcdef1234567890",
+    sha256: "a".repeat(64),
+    width: 1600,
+    height: 900,
+  };
+
+  it("replaces a placement image and records provenance", async () => {
+    const draft = config();
+    draft.images = { hero: "/images/generated/hero-old.webp" };
+    draft.assets = { photoOne: "/images/generated/hero-old.webp" };
+    draft.assetReport = {
+      used: [
+        {
+          asset: "photoOne",
+          placement: "hero",
+          source: "fal-generated",
+        },
+        { asset: "photoTwo", placement: "story", source: "stock-pack" },
+      ],
+      skipped: [],
+    };
+    const operations = structuredOperations(
+      { text: "", assets: [heroAsset], colors: [] },
+      draft,
+    );
+    expect(operations).toEqual([
+      expect.objectContaining({ kind: "set_image", target: "hero" }),
+    ]);
+    expect(applyOperation(draft, operations[0])).toBe(true);
+    expect(draft.images.hero).toBe(heroAsset.path);
+    expect(draft.assets.photoOne).toBe(heroAsset.path);
+    expect(draft.assetReport.used).toEqual([
+      { asset: "photoTwo", placement: "story", source: "stock-pack" },
+      expect.objectContaining({
+        asset: "photoOne",
+        placement: "hero",
+        source: "fal-generated",
+        model: "fal-ai/minimax/image-01",
+        promptHash: "abcdef1234567890",
+        sha256: "a".repeat(64),
+        width: 1600,
+        height: 900,
+      }),
+    ]);
+  });
+
+  it("replaces the logo, story image, gallery, and team photo in place", () => {
+    const draft = config();
+    for (const target of ["logo", "secondary", "tertiary", "team"] as const) {
+      expect(
+        applyOperation(draft, {
+          kind: "set_image",
+          target,
+          path: `/images/feedback/${target}-0123456789ab.webp`,
+          source: "client",
+        }),
+      ).toBe(true);
+    }
+    expect(draft.assets.logo).toBe("/images/feedback/logo-0123456789ab.webp");
+    expect(draft.images.secondary).toBe(
+      "/images/feedback/secondary-0123456789ab.webp",
+    );
+    expect(draft.assets.photoTwo).toBe(
+      "/images/feedback/secondary-0123456789ab.webp",
+    );
+    expect(draft.images.tertiary).toBe(
+      "/images/feedback/tertiary-0123456789ab.webp",
+    );
+    expect(draft.assets.photoThree).toBe(
+      "/images/feedback/tertiary-0123456789ab.webp",
+    );
+    expect(draft.assets.teamPhoto).toBe(
+      "/images/feedback/team-0123456789ab.webp",
+    );
+  });
+
+  it("never accepts a replacement image outside the materialized path", () => {
+    const draft = config();
+    expect(
+      applyOperation(draft, {
+        kind: "set_image",
+        target: "hero",
+        path: "https://evil.example.test/hero.webp",
+        source: "client",
+      }),
+    ).toBe(false);
+    expect(
+      applyOperation(draft, {
+        kind: "set_image",
+        target: "hero",
+        path: "/images/generated/hero-old.webp",
+        source: "client",
+      }),
+    ).toBe(false);
+    expect(
+      applyOperation(draft, {
+        kind: "set_image",
+        target: "banner",
+        path: "/images/feedback/hero-abc.webp",
+        source: "client",
+      }),
+    ).toBe(false);
+    expect(draft.images).toBeUndefined();
+  });
+
+  it("fulfills structure-only feedback and emits a rendered image artifact", async () => {
+    const planned = await planRevision(
+      [{ text: "", assets: [heroAsset], colors: [] }],
+      config(),
+      async () => [],
+    );
+    expect(planned.ok).toBe(true);
+    expect(planned.results[0]).toMatchObject({
+      intents: ["image"],
+      status: "fulfilled",
+    });
+    const artifacts = expectedArtifacts(planned.operations, planned.config);
+    expect(artifacts).toEqual([
+      { type: "image", path: heroAsset.path, target: "hero" },
+    ]);
+    const report = {
+      results: planned.results,
+      expectedArtifacts: artifacts,
+      creativeSourceRepairRequired: false,
+    };
+    expect(
+      verifyRevision(
+        planned.config,
+        report,
+        `<img src="${heroAsset.path}" alt="" />`,
+      ).ok,
+    ).toBe(true);
+    const missing = verifyRevision(planned.config, report, "<main></main>");
+    expect(missing.ok).toBe(false);
+    expect(missing.failures.join(" ")).toContain("Missing rendered image");
+  });
+
+  it("fails manual attention when an image path cannot be applied", async () => {
+    const planned = await planRevision(
+      [
+        {
+          text: "",
+          assets: [{ ...heroAsset, path: "https://evil.example.test/x.webp" }],
+          colors: [],
+        },
+      ],
+      config(),
+      async () => [],
+    );
+    expect(planned.ok).toBe(false);
+    expect(planned.results[0].status).toBe("manual");
+    expect(planned.config.images?.hero).toBeUndefined();
+  });
+
+  it("lets explicit color choices override color words in the note", async () => {
+    const planned = await planRevision(
+      [
+        {
+          text: "Use a teal palette with a soft background.",
+          assets: [],
+          colors: [
+            { role: "primary", hex: "#123456" },
+            { role: "surface", hex: "#f0f0f0" },
+          ],
+        },
+      ],
+      config(),
+      async () => [],
+    );
+    expect(planned.ok).toBe(true);
+    expect(planned.config.style.primaryColor).toBe("#123456");
+    expect(planned.config.style.surfaceColor).toBe("#f0f0f0");
+    expect(planned.config.style.contrastColor).toMatch(/^#[0-9a-f]{6}$/u);
+    expect(planned.results[0]).toMatchObject({ status: "fulfilled" });
+    expect(planned.results[0].intents).toContain("color");
+  });
+
+  it("keeps string feedback backward compatible", async () => {
+    const planned = await planRevision(
+      ["Make the headline shorter and simpler."],
+      config(),
+      async () => [
+        {
+          feedbackIndex: 0,
+          kind: "set_copy",
+          field: "heroHeading",
+          value: "Care that starts with you",
+        },
+      ],
+    );
+    expect(planned.ok).toBe(true);
+    expect(planned.config.copy.heroHeading).toBe("Care that starts with you");
+  });
+});
+
+describe("client replacement artifacts", () => {
+  it("maps bounded client operations to rendered artifacts", () => {
+    const artifacts = expectedArtifacts(
+      [
+        {
+          kind: "replace_asset",
+          slot: "photoOne",
+          url: "https://assets.launchloom.wrazyos.com/client-replacements/site/1/a/hero.webp",
+        },
+        {
+          kind: "update_design_token",
+          token: "palette",
+          requested: [
+            { role: "primary", field: "primaryColor", value: "#123456" },
+          ],
+        },
+      ],
+      config(),
+    );
+    expect(artifacts).toEqual([
+      {
+        type: "asset",
+        url: "https://assets.launchloom.wrazyos.com/client-replacements/site/1/a/hero.webp",
+        route: "/",
+        placement: "hero",
+        slot: "photoOne",
+      },
+      { type: "style", field: "primaryColor", value: "#123456" },
+    ]);
   });
 });

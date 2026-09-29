@@ -3,12 +3,29 @@ import {
 } from "../../emails/render-email.mjs";
 import { sendEmail } from "./transactional-email";
 import {
+  MAX_FEEDBACK_STRUCTURE_LENGTH,
   RevisionCoordinator,
   type CreativeRepairFinding,
   type CreativeRepairSessionInput,
   type RevisionRequestInput,
 } from "./revision-coordinator";
 import {
+  buildFeedbackImagePrompt,
+  DEFAULT_FAL_IMAGE_MODEL,
+  downloadFalImage,
+  FEEDBACK_IMAGE_PLACEMENTS,
+  feedbackImageRequestIsSafe,
+  requestFalImage,
+} from "./feedback-image";
+import {
+  FEEDBACK_ATTACHMENT_TARGETS,
+  feedbackStructureIsEmpty,
+  MAX_FEEDBACK_PROMPT,
+  sanitizeFeedbackStructure,
+  type FeedbackAttachmentTarget,
+} from "./feedback-structure";
+import {
+  isAffirmativeConfirmation,
   seoResearchReadiness,
 } from "./seo-readiness";
 import { OnboardingInvites } from "./onboarding-invites";
@@ -27,6 +44,10 @@ export interface Env {
       value: ArrayBuffer | ReadableStream,
       options: { httpMetadata: { contentType: string; cacheControl: string } },
     ): Promise<unknown>;
+    get?(key: string): Promise<{
+      arrayBuffer(): Promise<ArrayBuffer>;
+      httpMetadata?: { contentType?: string };
+    } | null>;
   };
   ASSET_BASE_URL: string;
   PLATFORM_ORIGINS: string;
@@ -46,6 +67,8 @@ export interface Env {
   ONBOARDING_ACCESS_AUD?: string;
   ONBOARDING_INVITES: DurableObjectNamespace<OnboardingInvites>;
   TURNSTILE_SECRET_KEY?: string;
+  FAL_KEY?: string;
+  FAL_IMAGE_MODEL?: string;
 }
 
 type ReviewClaims = {
@@ -806,6 +829,341 @@ async function upload(request: Request, env: Env) {
   }
 }
 
+class ReviewRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status = 403,
+  ) {
+    super(message);
+    this.name = "ReviewRequestError";
+  }
+}
+
+type ReviewedClaims = ReviewClaims & { allowedOrigins: string[] };
+
+function feedbackImageKeySegment(repo: string) {
+  return (
+    repo
+      .split("/")[1]
+      ?.toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .slice(0, 60) || "client"
+  );
+}
+
+async function reviewClaimsForRequest(
+  request: Request,
+  env: Env,
+  token: unknown,
+  email: unknown,
+  pageUrl: unknown,
+): Promise<ReviewedClaims> {
+  let claims: ReviewClaims;
+  try {
+    claims = await verifyHmac<ReviewClaims>(
+      String(token || ""),
+      env.REVIEW_SIGNING_SECRET,
+    );
+  } catch {
+    throw new ReviewRequestError("Invalid review link.");
+  }
+  const allowedOrigins = claims.allowedOrigins;
+  if (
+    !claims.stage ||
+    !claims.repo.startsWith("WrazyAI/") ||
+    !claims.reviewerEmail ||
+    !claims.clientEmail ||
+    claims.expiresAt < Date.now() ||
+    !allowedOrigins?.length
+  )
+    throw new ReviewRequestError("Invalid review link.");
+  try {
+    assertClaimOrigin(request, allowedOrigins, String(pageUrl || ""));
+  } catch {
+    throw new ReviewRequestError("Invalid request origin.");
+  }
+  if (clean(email, 240).toLowerCase() !== claims.reviewerEmail.toLowerCase())
+    throw new ReviewRequestError(
+      "Use the email address that received this review link.",
+    );
+  return { ...claims, allowedOrigins };
+}
+
+async function reviewedSiteConfig(env: Env, claims: ReviewedClaims) {
+  const ref =
+    claims.stage === "developer" && claims.headSha ? claims.headSha : "main";
+  const response = await github(
+    env,
+    `/repos/${claims.repo}/contents/src/site.config.json?ref=${encodeURIComponent(ref)}`,
+  );
+  const payload = (await response.json()) as {
+    content?: string;
+    encoding?: string;
+  };
+  if (payload.encoding !== "base64" || !payload.content)
+    throw new ReviewRequestError(
+      "Could not load the reviewed site configuration.",
+      502,
+    );
+  return JSON.parse(
+    atob(payload.content.replace(/\s/gu, "")),
+  ) as Record<string, unknown>;
+}
+
+async function feedbackImageUpload(
+  request: Request,
+  env: Env,
+  claims: ReviewedClaims,
+  form: FormData,
+) {
+  const headers = cors(request, claims.allowedOrigins);
+  const target = clean(form.get("target"), 20) as FeedbackAttachmentTarget;
+  const file = form.get("file");
+  if (
+    !FEEDBACK_ATTACHMENT_TARGETS.includes(target) ||
+    !(file instanceof File) ||
+    !file.size ||
+    file.size > 3_000_000 ||
+    !/^image\/(png|jpe?g|webp)$/i.test(file.type)
+  )
+    return json(
+      { error: "Upload a PNG, JPG, or WebP image under 3 MB." },
+      400,
+      headers,
+    );
+  const extension =
+    file.type === "image/png"
+      ? "png"
+      : file.type === "image/webp"
+        ? "webp"
+        : "jpg";
+  const key = `feedback/${feedbackImageKeySegment(claims.repo)}/${crypto.randomUUID()}-${target}.${extension}`;
+  await env.ASSETS.put(key, file.stream(), {
+    httpMetadata: {
+      contentType: file.type,
+      cacheControl: "public, max-age=31536000, immutable",
+    },
+  });
+  return json(
+    { ok: true, target, url: assetUrl(env, key) },
+    201,
+    headers,
+  );
+}
+
+async function feedbackImageGeneration(
+  request: Request,
+  env: Env,
+  claims: ReviewedClaims,
+  body: Record<string, unknown>,
+) {
+  const headers = cors(request, claims.allowedOrigins);
+  if (!env.FAL_KEY)
+    return json(
+      {
+        error:
+          "Image generation is not available right now. Upload an image instead.",
+      },
+      503,
+      headers,
+    );
+  const target = clean(body.target, 20) as FeedbackAttachmentTarget;
+  if (!FEEDBACK_ATTACHMENT_TARGETS.includes(target))
+    return json(
+      { error: "Choose which part of the site this image is for." },
+      400,
+      headers,
+    );
+  const prompt = clean(body.prompt, MAX_FEEDBACK_PROMPT);
+  if (prompt.length < 3)
+    return json(
+      { error: "Describe the image you would like generated." },
+      400,
+      headers,
+    );
+  if (!feedbackImageRequestIsSafe(prompt))
+    return json(
+      {
+        error:
+          "Keep phone numbers, email addresses, links, and street addresses out of the image description.",
+      },
+      400,
+      headers,
+    );
+  const coordinator = env.REVISION_COORDINATOR.getByName(
+    claims.repo.toLowerCase(),
+  );
+  const quota = await coordinator.allowFeedbackImage(1);
+  if (!quota.allowed) {
+    const hours = Math.max(1, Math.ceil(quota.retryAfterSeconds / 3_600));
+    return json(
+      {
+        error: `The daily generated-image limit for this site was reached. Try again in about ${hours} hour${hours === 1 ? "" : "s"}, or upload your own image.`,
+      },
+      429,
+      headers,
+    );
+  }
+  const site = await reviewedSiteConfig(env, claims);
+  const model = env.FAL_IMAGE_MODEL || DEFAULT_FAL_IMAGE_MODEL;
+  const placement = FEEDBACK_IMAGE_PLACEMENTS[target];
+  let image: Awaited<ReturnType<typeof downloadFalImage>>;
+  try {
+    const generated = await requestFalImage({
+      key: env.FAL_KEY,
+      model,
+      prompt: buildFeedbackImagePrompt({ site, target, request: prompt }),
+      aspectRatio: placement.aspectRatio,
+    });
+    image = await downloadFalImage(generated.url);
+  } catch (error) {
+    console.error("Feedback image generation failed", error);
+    throw new ReviewRequestError(
+      error instanceof Error && /timed out/u.test(error.message)
+        ? "Image generation timed out. Please try again."
+        : "Image generation failed. Please try again or upload your own image.",
+      502,
+    );
+  }
+  const key = `feedback-drafts/${feedbackImageKeySegment(claims.repo)}/${crypto.randomUUID()}.${image.extension}`;
+  const stream = new Response(image.data).body;
+  if (!stream)
+    throw new ReviewRequestError("Image generation failed. Please try again.", 502);
+  await env.ASSETS.put(key, stream, {
+    httpMetadata: {
+      contentType: image.contentType,
+      cacheControl: "public, max-age=86400",
+    },
+  });
+  return json(
+    {
+      ok: true,
+      target,
+      model,
+      images: [{ url: assetUrl(env, key) }],
+    },
+    201,
+    headers,
+  );
+}
+
+async function copyFeedbackDraftForClient(
+  env: Env,
+  claims: ReviewClaims,
+  requestId: string,
+  url: string,
+) {
+  const base = env.ASSET_BASE_URL.replace(/\/$/u, "");
+  if (!String(url || "").startsWith(`${base}/feedback-drafts/`))
+    throw new ReviewRequestError(
+      "The generated image is not a LaunchLoom draft.",
+      400,
+    );
+  let objectKey: string;
+  try {
+    objectKey = decodeURIComponent(
+      new URL(String(url)).pathname.replace(/^\//u, ""),
+    );
+  } catch {
+    throw new ReviewRequestError("The generated image URL is invalid.", 400);
+  }
+  const object = env.ASSETS.get ? await env.ASSETS.get(objectKey) : null;
+  if (!object)
+    throw new ReviewRequestError(
+      "The generated image expired. Please generate it again.",
+      409,
+    );
+  const bytes = new Uint8Array(await object.arrayBuffer());
+  if (!bytes.length)
+    throw new ReviewRequestError("The generated image was empty.", 409);
+  const digest = Array.from(
+    new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)),
+  )
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+  const contentType = (
+    object.httpMetadata?.contentType || "image/webp"
+  ).toLowerCase();
+  const extension =
+    contentType === "image/png"
+      ? "png"
+      : contentType === "image/webp"
+        ? "webp"
+        : "jpg";
+  const safeSite = clean(claims.siteId, 100)
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/gu, "-")
+    .replace(/-+/gu, "-")
+    .replace(/^-|-$/gu, "");
+  const safePr = Number.isInteger(Number(claims.pr))
+    ? String(claims.pr)
+    : "review";
+  const safeRequestId = clean(requestId, 100)
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/gu, "-");
+  const key = `client-replacements/${safeSite}/${safePr}/${safeRequestId}/${digest}.${extension}`;
+  const stream = new Response(bytes).body;
+  if (!stream)
+    throw new ReviewRequestError(
+      "The generated replacement image could not be saved.",
+      500,
+    );
+  await env.ASSETS.put(key, stream, {
+    httpMetadata: {
+      contentType,
+      cacheControl: "public, max-age=31536000, immutable",
+    },
+  });
+  return `${base}/${key}`;
+}
+
+async function feedbackImage(request: Request, env: Env) {
+  const headers = cors(request, platformOrigins(env));
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers });
+  if (request.method !== "POST")
+    return new Response("Method not allowed", { status: 405, headers });
+  try {
+    const contentType = request.headers.get("Content-Type") || "";
+    if (/multipart\/form-data/iu.test(contentType)) {
+      const form = await request.formData();
+      const claims = await reviewClaimsForRequest(
+        request,
+        env,
+        form.get("token"),
+        form.get("email"),
+        form.get("pageUrl"),
+      );
+      return await feedbackImageUpload(request, env, claims, form);
+    }
+    const body = (await request.json().catch(() => ({}))) as Record<
+      string,
+      unknown
+    >;
+    const claims = await reviewClaimsForRequest(
+      request,
+      env,
+      body.token,
+      body.email,
+      body.pageUrl,
+    );
+    return await feedbackImageGeneration(request, env, claims, body);
+  } catch (error) {
+    console.error("Feedback image request failed", error);
+    const status = error instanceof ReviewRequestError ? error.status : 500;
+    return json(
+      {
+        error:
+          error instanceof ReviewRequestError
+            ? error.message
+            : "The image request failed. Please try again.",
+      },
+      status,
+      headers,
+    );
+  }
+}
+
 async function places(request: Request, env: Env) {
   const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
   const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
@@ -1061,6 +1419,8 @@ async function feedback(request: Request, env: Env) {
     let email: unknown;
     let category: unknown;
     let submissionId: unknown;
+    let details: unknown;
+    let replacementTarget: unknown;
     let replacementFile: File | null = null;
     if (contentType.toLowerCase().startsWith("multipart/form-data")) {
       const form = await request.formData();
@@ -1070,10 +1430,12 @@ async function feedback(request: Request, env: Env) {
       email = form.get("email");
       category = form.get("category");
       submissionId = form.get("submissionId");
+      details = form.get("details");
+      replacementTarget = form.get("replacementTarget");
       const file = form.get("replacementAsset");
       if (file instanceof File && file.size > 0) replacementFile = file;
     } else {
-      ({ token, comment, pageUrl, email, category, submissionId } =
+      ({ token, comment, pageUrl, email, category, submissionId, details } =
         (await request.json()) as Record<string, unknown>);
     }
     const claims = await verifyHmac<ReviewClaims>(
@@ -1100,13 +1462,29 @@ async function feedback(request: Request, env: Env) {
       );
     assertClaimOrigin(request, claims.allowedOrigins, String(pageUrl || ""));
     const note = clean(comment, 5000);
-    const submittedEmail = clean(email, 240).toLowerCase();
-    if (!note)
+    const structure = sanitizeFeedbackStructure(details, env.ASSET_BASE_URL);
+    if (!structure.ok)
+      return json(
+        { error: structure.error },
+        400,
+        cors(request, claims.allowedOrigins),
+      );
+    if (!note && feedbackStructureIsEmpty(structure.structure))
       return json(
         { error: "Please enter feedback first." },
         400,
         cors(request, claims.allowedOrigins),
       );
+    let structureJson = feedbackStructureIsEmpty(structure.structure)
+      ? ""
+      : JSON.stringify(structure.structure);
+    if (structureJson.length > MAX_FEEDBACK_STRUCTURE_LENGTH)
+      return json(
+        { error: "That feedback is too large. Try one part at a time." },
+        400,
+        cors(request, claims.allowedOrigins),
+      );
+    const submittedEmail = clean(email, 240).toLowerCase();
     if (
       !submittedEmail ||
       submittedEmail !== claims.reviewerEmail.toLowerCase()
@@ -1189,6 +1567,77 @@ async function feedback(request: Request, env: Env) {
       if (base.protocol !== "https:") throw new Error("Replacement asset storage is not configured safely.");
       replacementAssetUrl = new URL(key, `${base.href.replace(/\/$/u, "")}/`).href;
     }
+
+    // An explicit target lets the signed client form name the exact placement
+    // for an uploaded replacement. Legacy submissions without a target keep
+    // the historical "Replacement asset:" note and its bounded hero mapping.
+    if (
+      replacementAssetUrl &&
+      claims.stage === "client" &&
+      String(replacementTarget || "").trim()
+    ) {
+      const requestedTarget = clean(replacementTarget, 20).toLowerCase();
+      const allowedTargets =
+        feedbackCategory === "logo"
+          ? new Set(["logo"])
+          : new Set(["hero", "secondary", "tertiary", "team"]);
+      if (!allowedTargets.has(requestedTarget))
+        return json(
+          { error: "Choose the image this replacement belongs to." },
+          400,
+          cors(request, claims.allowedOrigins),
+        );
+      structure.structure.attachments.push({
+        target: requestedTarget as FeedbackAttachmentTarget,
+        kind: "upload",
+        url: replacementAssetUrl,
+      });
+      structureJson = JSON.stringify(structure.structure);
+      replacementAssetUrl = "";
+    }
+
+    if (claims.stage === "client" && structure.structure.attachments.length) {
+      if (!["logo", "photos"].includes(feedbackCategory))
+        return json(
+          {
+            error:
+              "Generated replacement images are for logo or business photo updates.",
+          },
+          400,
+          cors(request, claims.allowedOrigins),
+        );
+      const rewritten = [];
+      for (const attachment of structure.structure.attachments) {
+        if (attachment.kind !== "generated") {
+          rewritten.push(attachment);
+          continue;
+        }
+        try {
+          rewritten.push({
+            ...attachment,
+            url: await copyFeedbackDraftForClient(
+              env,
+              claims,
+              requestId,
+              attachment.url,
+            ),
+          });
+        } catch (error) {
+          return json(
+            {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "The generated replacement image could not be saved.",
+            },
+            error instanceof ReviewRequestError ? error.status : 500,
+            cors(request, claims.allowedOrigins),
+          );
+        }
+      }
+      structure.structure.attachments = rewritten;
+      structureJson = JSON.stringify(structure.structure);
+    }
     const fingerprint = await digest([
       suppliedId ? requestId : "",
       claims.stage,
@@ -1197,6 +1646,7 @@ async function feedback(request: Request, env: Env) {
       safeCategory,
       reviewedPage,
       replacementAssetUrl,
+      structureJson,
     ].join("\n"));
     const queued = await env.REVISION_COORDINATOR.getByName(
       claims.repo.toLowerCase(),
@@ -1211,7 +1661,10 @@ async function feedback(request: Request, env: Env) {
       clientEmail: claims.clientEmail,
       reviewedPage: clean(reviewedPage, 1000),
       category: safeCategory,
-      feedback: replacementAssetUrl ? `Replacement asset: ${replacementAssetUrl}\n\n${note}` : note,
+      feedback: replacementAssetUrl
+        ? `Replacement asset: ${replacementAssetUrl}\n\n${note}`
+        : note,
+      ...(structureJson ? { structure: structureJson } : {}),
     } satisfies RevisionRequestInput);
     if (!queued.ok)
       return json(
@@ -1402,9 +1855,28 @@ async function creativeRepair(request: Request, env: Env) {
           cors(request, claims.allowedOrigins),
         );
       const note = clean(body.comment, 5_000);
-      if (!note)
+      const structure = sanitizeFeedbackStructure(
+        body.details,
+        env.ASSET_BASE_URL,
+      );
+      if (!structure.ok)
+        return json(
+          { error: structure.error },
+          400,
+          cors(request, claims.allowedOrigins),
+        );
+      if (!note && feedbackStructureIsEmpty(structure.structure))
         return json(
           { error: "Please enter feedback first." },
+          400,
+          cors(request, claims.allowedOrigins),
+        );
+      const structureJson = feedbackStructureIsEmpty(structure.structure)
+        ? ""
+        : JSON.stringify(structure.structure);
+      if (structureJson.length > MAX_FEEDBACK_STRUCTURE_LENGTH)
+        return json(
+          { error: "That feedback is too large. Try one part at a time." },
           400,
           cors(request, claims.allowedOrigins),
         );
@@ -1433,9 +1905,14 @@ async function creativeRepair(request: Request, env: Env) {
       const fingerprint = await digest(
         suppliedId
           ? `creative-feedback:${requestId}`
-          : [claims.repo, reviewedHeadSha, note, category, reviewedPage].join(
-              "\n",
-            ),
+          : [
+              claims.repo,
+              reviewedHeadSha,
+              note,
+              category,
+              reviewedPage,
+              structureJson,
+            ].join("\n"),
       );
       const queued = await coordinator.enqueue({
         requestId,
@@ -1449,6 +1926,7 @@ async function creativeRepair(request: Request, env: Env) {
         reviewedPage: clean(reviewedPage, 1_000),
         category,
         feedback: note,
+        ...(structureJson ? { structure: structureJson } : {}),
         creativeRepairSessionId: sessionId,
       } satisfies RevisionRequestInput);
       if (!queued.ok)
@@ -2211,6 +2689,7 @@ export default {
     if (path === "/api/service-suggestions") return serviceSuggestions(request, env);
     if (path === "/api/google-reviews") return googleReviews(request, env);
     if (path === "/api/feedback") return feedback(request, env);
+    if (path === "/api/feedback-image") return feedbackImage(request, env);
     if (path === "/api/creative-repair") return creativeRepair(request, env);
     if (path === "/api/internal/revisions")
       return revisionCoordinator(request, env);

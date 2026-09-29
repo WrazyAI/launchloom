@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  feedbackRequestSummary,
+  feedbackStructureFromComment,
   feedbackTextFromComment,
   nextClientFeedbackContext,
   pendingFeedbackFromComments,
   revisionIntakeFromConfig,
 } from "../scripts/feedback-utils.mjs";
+
+const structureMarker = (value: unknown) =>
+  `<!-- launchloom-feedback-structure:${Buffer.from(
+    JSON.stringify(value),
+  ).toString("base64url")} -->`;
 
 describe("revision feedback", () => {
   it("removes review metadata and signed page URLs from feedback", () => {
@@ -101,6 +108,94 @@ describe("revision feedback", () => {
     expect(pendingFeedbackFromComments(comments, "developer")).toEqual([]);
     expect(
       pendingFeedbackFromComments([comments[1]], "developer", true),
-    ).toEqual(["Older note"]);
+    ).toEqual([{ text: "Older note", structure: { attachments: [], colors: [] } }]);
+  });
+
+  it("parses structured attachments and colors from a feedback comment", () => {
+    const body = [
+      "<!-- launchloom-feedback:client -->",
+      structureMarker({
+        attachments: [
+          {
+            target: "hero",
+            kind: "upload",
+            url: "https://assets.example.test/feedback/acme/hero-a.webp",
+          },
+          {
+            target: "logo",
+            kind: "generated",
+            url: "https://assets.example.test/feedback-drafts/acme/logo-b.webp",
+            prompt: "A minimal lighthouse mark",
+            model: "fal-ai/minimax/image-01",
+          },
+        ],
+        colors: [{ role: "primary", hex: "#1f3a5f" }],
+      }),
+      "**Client feedback · Hero image**",
+      "",
+      "Please swap the opening image.",
+      "",
+      "_Requested changes:_",
+      "- Replace the hero image with the uploaded image.",
+      "",
+      "_Page: https://review.example.pages.dev/_",
+    ].join("\n");
+
+    expect(feedbackTextFromComment(body)).toBe(
+      "[Hero image] Please swap the opening image.",
+    );
+    const structure = feedbackStructureFromComment(body);
+    expect(structure.attachments).toHaveLength(2);
+    expect(structure.attachments[0]).toMatchObject({
+      target: "hero",
+      kind: "upload",
+    });
+    expect(structure.attachments[1]).toMatchObject({
+      target: "logo",
+      kind: "generated",
+      prompt: "A minimal lighthouse mark",
+    });
+    expect(structure.colors).toEqual([{ role: "primary", hex: "#1f3a5f" }]);
+    const [request] = pendingFeedbackFromComments(
+      [{ created_at: "2026-09-08T09:00:00Z", body }],
+      "client",
+      true,
+    );
+    expect(feedbackRequestSummary(request)).toContain(
+      "Replace the hero image with the uploaded image.",
+    );
+    expect(feedbackRequestSummary(request)).toContain("generated image");
+  });
+
+  it("keeps a structure-only feedback request with an empty note", () => {
+    const body = [
+      "<!-- launchloom-feedback:developer -->",
+      structureMarker({
+        attachments: [],
+        colors: [{ role: "surface", hex: "#faf7f2" }],
+      }),
+      "**Developer feedback · Colors**",
+      "",
+      "_Page: https://review.example.pages.dev/_",
+    ].join("\n");
+    const requests = pendingFeedbackFromComments(
+      [{ created_at: "2026-09-08T09:00:00Z", body }],
+      "developer",
+      true,
+    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].text).toBe("[Colors]");
+    expect(requests[0].structure.colors).toEqual([
+      { role: "surface", hex: "#faf7f2" },
+    ]);
+  });
+
+  it("ignores malformed structure markers", () => {
+    const body =
+      "<!-- launchloom-feedback:developer -->\n<!-- launchloom-feedback-structure:not-base64!! -->\n**Developer feedback**\n\nNote\n\n_Page: https://review.example.pages.dev/_";
+    expect(feedbackStructureFromComment(body)).toEqual({
+      attachments: [],
+      colors: [],
+    });
   });
 });

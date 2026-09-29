@@ -246,6 +246,34 @@ screenshots as workflow evidence. Major aesthetic recommendations that cannot be
 safely expressed by the operation set remain visible in the report rather than
 being converted into invented content or unrestricted code changes.
 
+## Structured feedback and replacement imagery
+
+The review form is part-targeted. A reviewer can name the logo, navigation,
+opening image, story image, gallery, team photo, colors, or a copy area, and
+attach an image, a generation request, or a color choice to that part. The
+request is carried as a machine-readable structure beside the human note so the
+revision pipeline can apply it without reinterpreting prose.
+
+Replacement images are reviewer-supplied assets:
+
+- An uploaded image is treated as client media for its placement. Generated
+  drafts are generated from the reviewer's description plus verified business
+  context, and only the selected draft is used.
+- The revision workflow downloads the chosen image, normalizes it to the
+  placement size, stores it under `public/images/feedback/`, and records
+  provenance (`source`, model, prompt hash, dimensions, checksum) in
+  `assetReport`. Provider URLs are never written to the site config.
+- Generated drafts follow the same imagery rules as initial generation: no
+  readable text, logos, watermarks, identifiable people presented as staff or
+  customers, invented storefronts, or private contact details.
+- A selected color palette replaces the requested tokens and derives the
+  remaining tokens through the contrast policy. Explicit choices take
+  precedence over color words in the note.
+- Replacement is accepted only when the new image renders in the built page and
+  the requested colors appear in the rendered output. A failed or missing
+  artifact blocks deployment and the completion email instead of reporting
+  success.
+
 ## Acceptance checklist
 
 - The opening identifies the service, intended customer, location when
