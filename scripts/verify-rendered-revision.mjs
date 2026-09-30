@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
+import sharp from "sharp";
 import { chromium } from "playwright";
 import { contrast, parseCssColor } from "./color-contrast.mjs";
 
@@ -96,6 +97,27 @@ if (!/^User-agent: \*/mu.test(robotsTxt))
 
 try {
   await fs.mkdir(screenshotDir, { recursive: true });
+  // The mocked review-image responses point at these files so the attachment
+  // thumbnails render with real bytes during the browser flow.
+  const mockedThumbnail = await sharp({
+    create: {
+      width: 160,
+      height: 120,
+      channels: 3,
+      background: { r: 46, g: 89, b: 71 },
+    },
+  })
+    .png()
+    .toBuffer();
+  for (const relative of [
+    "images/feedback/hero-test.png",
+    "images/feedback-drafts/test.png",
+    "images/feedback-drafts/client.png",
+  ]) {
+    const file = path.join(dist, relative);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, mockedThumbnail);
+  }
   for (const viewport of [
     { name: "desktop", width: 1440, height: 1000 },
     { name: "mobile", width: 390, height: 844 },
@@ -581,7 +603,7 @@ try {
         body: JSON.stringify({
           ok: true,
           target: "hero",
-          url: `${new URL(url).origin}/images/feedback/hero-test.webp`,
+          url: `${new URL(url).origin}/images/feedback/hero-test.png`,
         }),
       });
       return;
@@ -593,7 +615,7 @@ try {
         ok: true,
         model: "fal-ai/minimax/image-01",
         images: [
-          { url: `${new URL(url).origin}/images/feedback-drafts/test.webp` },
+          { url: `${new URL(url).origin}/images/feedback-drafts/test.png` },
         ],
       }),
     });
@@ -678,6 +700,12 @@ try {
       .catch(() =>
         failures.push("review: uploaded replacement image shows no preview."),
       );
+    const heroThumbWidth = await reviewRoot
+      .locator('[data-part-preview="hero"] .ll-attachment__thumb img')
+      .evaluate((image) => image.naturalWidth)
+      .catch(() => 0);
+    if (!heroThumbWidth)
+      failures.push("review: uploaded replacement thumbnail did not load.");
     await reviewRoot.locator('[data-part="colors"]').click();
     const primaryColor = reviewRoot.locator(".ll-color").first();
     await primaryColor.locator('input[type="checkbox"]').check();
@@ -751,7 +779,7 @@ try {
         ok: true,
         model: "fal-ai/minimax/image-01",
         images: [
-          { url: `${new URL(url).origin}/images/feedback-drafts/client.webp` },
+          { url: `${new URL(url).origin}/images/feedback-drafts/client.png` },
         ],
       }),
     });
@@ -785,11 +813,20 @@ try {
       .locator('.ll-client-fields button:has-text("Create an image")')
       .click();
     await clientRoot
-      .locator(".ll-client-fields .ll-part-preview")
+      .locator(".ll-client-fields .ll-attachment__thumb img")
       .waitFor({ state: "visible", timeout: 5_000 })
       .catch(() =>
         failures.push("review: client generated image shows no preview."),
       );
+    const clientThumbWidth = await clientRoot
+      .locator(".ll-client-fields .ll-attachment__thumb img")
+      .evaluate((image) => image.naturalWidth)
+      .catch(() => 0);
+    if (!clientThumbWidth)
+      failures.push("review: client generated thumbnail did not load.");
+    await clientReviewPage.screenshot({
+      path: path.join(screenshotDir, "client-feedback-image.png"),
+    });
     await categorySelect.selectOption("color");
     if (
       !(await clientRoot
