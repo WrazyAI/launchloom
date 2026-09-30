@@ -532,7 +532,7 @@ const BUSINESS_KIND_PROFILES = [
     businessKind: "painting",
     industry: "home-services",
     aliases: ["painting", "painter", "painting-contractor"],
-    facts: /\b(?:painting contractor|residential painting|commercial painting|house painting|painter)\b/iu,
+    facts: /\b(?:painting contractor|painter|(?:interior|exterior|residential|commercial|house|home|cabinet|wall|fence|trim) painting)\b/iu,
   },
   {
     businessKind: "dental",

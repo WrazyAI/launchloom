@@ -164,6 +164,36 @@ describe("site configuration", () => {
     expect(config.businessKind).toBe("hvac");
   });
 
+  it("routes painting services from broad home-services intake to painting references", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Coastal Brush Painting Co.",
+        industry: "home-services",
+        services: "Interior painting\nCabinet refinishing\nExterior painting and trim",
+      },
+    );
+    const registry = JSON.parse(
+      readFileSync(
+        new URL("../data/inspiration-registry.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const pack = buildInspirationPack(
+      { seed: "coastal-brush-painting-regression", industry: config.businessKind, styleTerms: [] },
+      registry,
+      { repositoryRoot: process.cwd(), requireDossiers: true },
+    );
+
+    expect(config.industry).toBe("home-services");
+    expect(config.businessKind).toBe("painting");
+    expect(pack.request.industry).toBe("painting");
+    expect(pack.routes).toHaveLength(3);
+    expect(
+      pack.routes.every((route: any) => route.referenceDossier.tags.business.includes("painting")),
+    ).toBe(true);
+  });
+
   it("selects only HVAC reference dossiers after generating an HVAC config", () => {
     const config = normalise(
       {},
