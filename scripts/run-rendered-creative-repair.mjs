@@ -331,15 +331,25 @@ function verifiedHumanFeedbackResults(audit, expectedItems, candidateId) {
 }
 
 async function readCandidate(candidateDir) {
-  const [metadata, contentManifest, experience, styles, motion, servicePage] =
-    await Promise.all([
-      readJson(path.join(candidateDir, "metadata.json")),
-      readJson(path.join(candidateDir, "content-manifest.json")),
-      fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
-      fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
-      fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
-      fs.readFile(path.join(candidateDir, "ServicePage.jsx"), "utf8").catch(() => ""),
-    ]);
+  const [
+    metadata,
+    contentManifest,
+    experience,
+    styles,
+    motion,
+    servicePage,
+    locationPage,
+    servicesIndexPage,
+  ] = await Promise.all([
+    readJson(path.join(candidateDir, "metadata.json")),
+    readJson(path.join(candidateDir, "content-manifest.json")),
+    fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
+    fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
+    fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
+    fs.readFile(path.join(candidateDir, "ServicePage.jsx"), "utf8").catch(() => ""),
+    fs.readFile(path.join(candidateDir, "LocationPage.jsx"), "utf8").catch(() => ""),
+    fs.readFile(path.join(candidateDir, "ServicesIndexPage.jsx"), "utf8").catch(() => ""),
+  ]);
   return {
     metadata,
     contentManifest,
@@ -349,6 +359,8 @@ async function readCandidate(candidateDir) {
       styles,
       motion,
       ...(servicePage.trim() ? { servicePage } : {}),
+      ...(locationPage.trim() ? { locationPage } : {}),
+      ...(servicesIndexPage.trim() ? { servicesIndexPage } : {}),
     },
   };
 }
@@ -371,7 +383,7 @@ function normalizeRepair(value) {
 
 /**
  * @param {string} candidateDir
- * @param {{experience?: string, styles?: string, motion?: string, servicePage?: string}} files
+ * @param {{experience?: string, styles?: string, motion?: string, servicePage?: string, locationPage?: string, servicesIndexPage?: string}} files
  * @param {{fsImpl?: RepairFs}} [options]
  * @returns {Promise<void>}
  */
@@ -396,6 +408,13 @@ export async function writeCandidate(
   };
   if (typeof files.servicePage === "string" && files.servicePage.trim())
     map["ServicePage.jsx"] = files.servicePage;
+  if (typeof files.locationPage === "string" && files.locationPage.trim())
+    map["LocationPage.jsx"] = files.locationPage;
+  if (
+    typeof files.servicesIndexPage === "string" &&
+    files.servicesIndexPage.trim()
+  )
+    map["ServicesIndexPage.jsx"] = files.servicesIndexPage;
   const transactionFiles = Object.keys(map);
   const backedUp = [];
   const installed = [];

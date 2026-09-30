@@ -1,17 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
-  servicePageFailures,
-  servicePageIdentityFindings,
+  authoredPageFailures,
+  authoredPageIdentityFindings,
 } from "../scripts/run-creative-bakeoff.mjs";
 
 const baseEvidence = {
   hasHost: true,
   creativeRenderer: "creative-candidate",
-  hasServicePageMarker: true,
+  hasAuthoredMarker: true,
+  markers: [
+    "data-service-page",
+    "data-service-hero",
+    "data-service-support",
+    "data-service-related",
+  ],
   h1Count: 1,
-  hasServiceHero: true,
-  hasServiceSupport: true,
-  hasServiceRelated: true,
   hasContactSection: true,
   hasLeadForm: true,
   missingAlt: 0,
@@ -21,25 +24,59 @@ const baseEvidence = {
   emDashes: 0,
 };
 
-describe("creative service page gate", () => {
-  it("accepts a complete authored service page render", () => {
-    expect(servicePageFailures(baseEvidence)).toEqual([]);
+const locationEvidence = {
+  ...baseEvidence,
+  markers: [
+    "data-location-page",
+    "data-location-hero",
+    "data-location-coverage",
+    "data-location-related",
+  ],
+};
+
+const servicesIndexEvidence = {
+  ...baseEvidence,
+  markers: [
+    "data-services-index",
+    "data-services-index-hero",
+    "data-services-index-list",
+  ],
+};
+
+describe("creative authored page gate", () => {
+  it("accepts complete service, location, and services-index renders", () => {
+    expect(authoredPageFailures(baseEvidence, "service")).toEqual([]);
+    expect(authoredPageFailures(locationEvidence, "location")).toEqual([]);
+    expect(
+      authoredPageFailures(servicesIndexEvidence, "services-index"),
+    ).toEqual([]);
   });
 
-  it("reports missing service regions and unsafe render states", () => {
+  it("reports missing page regions and unsafe render states", () => {
     expect(
-      servicePageFailures({
-        ...baseEvidence,
-        hasServicePageMarker: false,
-        hasServiceSupport: false,
-        overflow: true,
-        emDashes: 1,
-      }),
+      authoredPageFailures(
+        {
+          ...baseEvidence,
+          hasAuthoredMarker: false,
+          markers: ["data-service-page", "data-service-hero"],
+          overflow: true,
+          emDashes: 1,
+        },
+        "service",
+      ),
     ).toEqual([
       "missing authored service page marker",
-      "missing service decision-support region",
+      "missing data-service-support region",
+      "missing data-service-related region",
       "horizontal overflow",
       "em dash found",
+    ]);
+    expect(
+      authoredPageFailures({ ...locationEvidence, markers: ["data-location-page"] }, "location"),
+    ).toEqual([
+      "missing data-location-hero region",
+      "missing data-location-coverage region",
+      "missing data-location-related region",
     ]);
   });
 
@@ -51,23 +88,33 @@ describe("creative service page gate", () => {
       headingFontWeight: "700",
     };
     expect(
-      servicePageIdentityFindings(home, {
-        ...home,
-        bodyBackground: "rgb(248, 246, 240)",
-      }),
+      authoredPageIdentityFindings(
+        home,
+        {
+          ...home,
+          bodyBackground: "rgb(248, 246, 240)",
+        },
+        "location page",
+      ),
     ).toEqual([
-      "service page canvas background drifts from the homepage (rgb(16,18,20) to rgb(248,246,240))",
+      "location page canvas background drifts from the homepage (rgb(16,18,20) to rgb(248,246,240))",
     ]);
     expect(
-      servicePageIdentityFindings(home, {
-        ...home,
-        headingFontFamily: "Arial, sans-serif",
-        headingFontWeight: "400",
-      }),
+      authoredPageIdentityFindings(
+        home,
+        {
+          ...home,
+          headingFontFamily: "Arial, sans-serif",
+          headingFontWeight: "400",
+        },
+        "services index",
+      ),
     ).toEqual([
-      "service page heading typeface drifts from the homepage typeface",
-      "service page heading weight drifts from the homepage weight",
+      "services index heading typeface drifts from the homepage typeface",
+      "services index heading weight drifts from the homepage weight",
     ]);
-    expect(servicePageIdentityFindings(home, home)).toEqual([]);
+    expect(authoredPageIdentityFindings(home, home, "service page")).toEqual(
+      [],
+    );
   });
 });

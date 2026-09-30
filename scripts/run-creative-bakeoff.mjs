@@ -240,15 +240,51 @@ function hardFailures(evidence, viewport) {
   ].filter(Boolean);
 }
 
-async function inspectServicePage(page) {
+const AUTHORED_PAGE_MARKERS = {
+  service: ["data-service-hero", "data-service-support", "data-service-related"],
+  location: ["data-location-hero", "data-location-coverage", "data-location-related"],
+  "services-index": ["data-services-index-hero", "data-services-index-list"],
+};
+
+const AUTHORED_PAGE_LABELS = {
+  service: "service page",
+  location: "location page",
+  "services-index": "services index",
+};
+
+const AUTHORED_PAGE_EVIDENCE_KEYS = {
+  service: "servicePage",
+  location: "locationPage",
+  "services-index": "servicesIndexPage",
+};
+
+async function inspectAuthoredPage(page) {
   return page.evaluate(() => {
-    const host = document.querySelector("[data-service-page-host]");
-    const authored = host?.querySelector("[data-service-page]") || null;
+    const host = document.querySelector("[data-authored-page-host]");
+    const kind = host?.getAttribute("data-authored-page-kind") || "";
+    const rootMarker =
+      kind === "service"
+        ? "data-service-page"
+        : kind === "location"
+          ? "data-location-page"
+          : kind === "services-index"
+            ? "data-services-index"
+            : "";
+    const authored = rootMarker
+      ? host?.querySelector(`[${rootMarker}]`) || null
+      : null;
     const pageRoot = authored || host;
     const text = [document.title, document.body.innerText].join("\n");
     const heading = document.querySelector("h1");
     const headingStyle = heading ? window.getComputedStyle(heading) : null;
+    const markerNames = new Set();
+    for (const element of pageRoot?.querySelectorAll("*") || [])
+      for (const attribute of element.attributes || [])
+        if (attribute.name.startsWith("data-")) markerNames.add(attribute.name);
+    for (const attribute of pageRoot?.attributes || [])
+      if (attribute.name.startsWith("data-")) markerNames.add(attribute.name);
     return {
+      kind,
       identity: {
         bodyBackground: window.getComputedStyle(document.body).backgroundColor,
         htmlBackground: window.getComputedStyle(document.documentElement).backgroundColor,
@@ -258,11 +294,9 @@ async function inspectServicePage(page) {
       },
       hasHost: Boolean(host),
       creativeRenderer: host?.getAttribute("data-creative-renderer") || "",
-      hasServicePageMarker: Boolean(authored),
+      hasAuthoredMarker: Boolean(authored),
+      markers: [...markerNames],
       h1Count: pageRoot ? pageRoot.querySelectorAll("h1").length : 0,
-      hasServiceHero: Boolean(pageRoot?.querySelector("[data-service-hero]")),
-      hasServiceSupport: Boolean(pageRoot?.querySelector("[data-service-support]")),
-      hasServiceRelated: Boolean(pageRoot?.querySelector("[data-service-related]")),
       hasContactSection: Boolean(pageRoot?.querySelector("#contact")),
       hasLeadForm: Boolean(pageRoot?.querySelector('[data-runtime="lead-form"]')),
       missingAlt: [...document.images].filter((image) => !image.getAttribute("alt")?.trim()).length,
@@ -279,54 +313,57 @@ function normalizeColor(value) {
 }
 
 /**
- * Compare a rendered service page against the same candidate's homepage. The
- * service page may recompose freely, but the canvas, heading typeface, and
- * heading weight are identity anchors that must not drift to the generic
+ * Compare a rendered authored inner page against the same candidate's
+ * homepage. The page may recompose freely, but the canvas, heading typeface,
+ * and heading weight are identity anchors that must not drift to the generic
  * inner-page template.
  */
-export function servicePageIdentityFindings(home, service) {
+export function authoredPageIdentityFindings(home, page, label = "authored page") {
   const findings = [];
-  if (!home || !service) return findings;
+  if (!home || !page) return findings;
   const homeCanvas =
     normalizeColor(home.bodyBackground) || normalizeColor(home.htmlBackground);
-  const serviceCanvas =
-    normalizeColor(service.bodyBackground) || normalizeColor(service.htmlBackground);
-  if (homeCanvas && serviceCanvas && homeCanvas !== serviceCanvas)
+  const pageCanvas =
+    normalizeColor(page.bodyBackground) || normalizeColor(page.htmlBackground);
+  if (homeCanvas && pageCanvas && homeCanvas !== pageCanvas)
     findings.push(
-      `service page canvas background drifts from the homepage (${homeCanvas} to ${serviceCanvas})`,
+      `${label} canvas background drifts from the homepage (${homeCanvas} to ${pageCanvas})`,
     );
   if (
     home.headingFontFamily &&
-    service.headingFontFamily &&
-    home.headingFontFamily !== service.headingFontFamily
+    page.headingFontFamily &&
+    home.headingFontFamily !== page.headingFontFamily
   )
     findings.push(
-      "service page heading typeface drifts from the homepage typeface",
+      `${label} heading typeface drifts from the homepage typeface`,
     );
   if (
     home.headingFontWeight &&
-    service.headingFontWeight &&
-    home.headingFontWeight !== service.headingFontWeight
+    page.headingFontWeight &&
+    home.headingFontWeight !== page.headingFontWeight
   )
     findings.push(
-      "service page heading weight drifts from the homepage weight",
+      `${label} heading weight drifts from the homepage weight`,
     );
   return findings;
 }
 
 /**
- * Deterministic rendered failures for one authored service page viewport.
+ * Deterministic rendered failures for one authored inner-page viewport.
  */
-export function servicePageFailures(evidence) {
+export function authoredPageFailures(evidence, kind) {
+  const label = AUTHORED_PAGE_LABELS[kind] || "authored page";
+  const expectedMarkers = AUTHORED_PAGE_MARKERS[kind] || [];
+  const missingMarkers = expectedMarkers.filter(
+    (marker) => !(evidence.markers || []).includes(marker),
+  );
   return [
-    !evidence.hasHost && "missing service page host",
+    !evidence.hasHost && `missing ${label} host`,
     evidence.creativeRenderer !== "creative-candidate" &&
       "creative renderer marker missing",
-    !evidence.hasServicePageMarker && "missing authored service page marker",
-    evidence.h1Count !== 1 && "expected one service H1",
-    !evidence.hasServiceHero && "missing service hero region",
-    !evidence.hasServiceSupport && "missing service decision-support region",
-    !evidence.hasServiceRelated && "missing related-services region",
+    !evidence.hasAuthoredMarker && `missing authored ${label} marker`,
+    evidence.h1Count !== 1 && "expected one page H1",
+    ...missingMarkers.map((marker) => `missing ${marker} region`),
     !evidence.hasContactSection && "missing contact section",
     !evidence.hasLeadForm && "missing shared lead form runtime",
     evidence.missingAlt > 0 && "image is missing alt text",
@@ -496,6 +533,15 @@ export async function runCreativeBakeoff({
       (service) => service?.slug,
     )?.slug || "",
   );
+  const locationSlug =
+    bakeoffConfig.industry === "home-services"
+      ? String(
+          (Array.isArray(bakeoffConfig.locations)
+            ? bakeoffConfig.locations
+            : []
+          ).find((location) => location?.slug)?.slug || "",
+        )
+      : "";
   const results = [];
   await fs.mkdir(evidenceDir, { recursive: true });
 
@@ -633,25 +679,44 @@ export async function runCreativeBakeoff({
             await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}.png`), fullPage: true });
             await page.close();
           }
-          const servicePagePath = path.join(
-            candidateRoot,
-            candidate.directory,
-            "ServicePage.jsx",
-          );
-          const hasServicePage = await fs
-            .access(servicePagePath)
-            .then(() => true)
-            .catch(() => false);
-          if (hasServicePage && serviceSlug) {
-            const serviceResult = {
-              slug: serviceSlug,
+          const authoredPages = [
+            {
+              kind: "service",
+              file: "ServicePage.jsx",
+              route: serviceSlug ? `/services/${serviceSlug}/` : "",
+            },
+            {
+              kind: "location",
+              file: "LocationPage.jsx",
+              route: locationSlug ? `/locations/${locationSlug}/` : "",
+            },
+            {
+              kind: "services-index",
+              file: "ServicesIndexPage.jsx",
+              route: "/services/",
+            },
+          ].filter((authoredPage) => authoredPage.route);
+          const homepageIdentity =
+            candidateResult.viewports.find(
+              (viewport) => viewport.name === "desktop",
+            )?.identity || null;
+          for (const authoredPage of authoredPages) {
+            const authoredPagePath = path.join(
+              candidateRoot,
+              candidate.directory,
+              authoredPage.file,
+            );
+            const hasAuthoredPage = await fs
+              .access(authoredPagePath)
+              .then(() => true)
+              .catch(() => false);
+            if (!hasAuthoredPage) continue;
+            const pageResult = {
+              kind: authoredPage.kind,
+              route: authoredPage.route,
               viewports: [],
               failures: [],
             };
-            const homepageIdentity =
-              candidateResult.viewports.find(
-                (viewport) => viewport.name === "desktop",
-              )?.identity || null;
             for (const viewport of [
               { name: "desktop", width: 1536, height: 864 },
               { name: "mobile", width: 390, height: 844 },
@@ -659,50 +724,59 @@ export async function runCreativeBakeoff({
               const page = await browser.newPage({ viewport });
               const browserErrors = [];
               page.on("pageerror", (error) => browserErrors.push(error.message));
-              await page.goto(`${origin}/services/${serviceSlug}/`, {
-                waitUntil: "networkidle",
-              });
-              await page.waitForTimeout(900);
-              const evidence = await inspectServicePage(page);
-              const identityFindings = servicePageIdentityFindings(
-                homepageIdentity,
-                evidence.identity,
-              );
-              const failures = [
-                ...servicePageFailures(evidence),
-                ...identityFindings,
-                browserErrors.length > 0 && "browser error",
-              ].filter(Boolean);
-              serviceResult.viewports.push({
-                ...viewport,
-                ...evidence,
-                identityFindings,
-                browserErrors,
-              });
-              serviceResult.failures.push(
-                ...failures.map((failure) => `${viewport.name}: ${failure}`),
-              );
-              await page.screenshot({
-                path: path.join(
-                  evidenceDir,
-                  `${candidate.manifest.candidateId}-service-${viewport.name}-viewport.png`,
-                ),
-              });
-              await page.screenshot({
-                path: path.join(
-                  evidenceDir,
-                  `${candidate.manifest.candidateId}-service-${viewport.name}.png`,
-                ),
-                fullPage: true,
-              });
-              await page.close();
+              try {
+                await page.goto(`${origin}${authoredPage.route}`, {
+                  waitUntil: "networkidle",
+                });
+                await page.waitForTimeout(900);
+                const evidence = await inspectAuthoredPage(page);
+                const identityFindings = authoredPageIdentityFindings(
+                  homepageIdentity,
+                  evidence.identity,
+                  AUTHORED_PAGE_LABELS[authoredPage.kind] || "authored page",
+                );
+                const failures = [
+                  ...authoredPageFailures(evidence, authoredPage.kind),
+                  ...identityFindings,
+                  browserErrors.length > 0 && "browser error",
+                ].filter(Boolean);
+                pageResult.viewports.push({
+                  ...viewport,
+                  ...evidence,
+                  identityFindings,
+                  browserErrors,
+                });
+                pageResult.failures.push(
+                  ...failures.map((failure) => `${viewport.name}: ${failure}`),
+                );
+                await page.screenshot({
+                  path: path.join(
+                    evidenceDir,
+                    `${candidate.manifest.candidateId}-${authoredPage.kind}-${viewport.name}-viewport.png`,
+                  ),
+                });
+                await page.screenshot({
+                  path: path.join(
+                    evidenceDir,
+                    `${candidate.manifest.candidateId}-${authoredPage.kind}-${viewport.name}.png`,
+                  ),
+                  fullPage: true,
+                });
+              } catch (error) {
+                pageResult.failures.push(
+                  `${viewport.name}: ${error instanceof Error ? error.message : String(error)}`,
+                );
+              } finally {
+                await page.close();
+              }
             }
-            serviceResult.failures = [...new Set(serviceResult.failures)];
-            serviceResult.pass = serviceResult.failures.length === 0;
-            candidateResult.servicePage = serviceResult;
+            pageResult.failures = [...new Set(pageResult.failures)];
+            pageResult.pass = pageResult.failures.length === 0;
+            candidateResult[AUTHORED_PAGE_EVIDENCE_KEYS[authoredPage.kind]] =
+              pageResult;
             candidateResult.failures.push(
-              ...serviceResult.failures.map(
-                (failure) => `service-page ${failure}`,
+              ...pageResult.failures.map(
+                (failure) => `${authoredPage.kind}-page ${failure}`,
               ),
             );
           }

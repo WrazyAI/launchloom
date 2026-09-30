@@ -105,13 +105,19 @@ for (const file of ["Experience.jsx", "styles.css", "motion.js"])
     path.join(selectedDir, file),
     path.join(candidateDir, file),
   );
-if (experience.servicePage === true) {
-  await fs.copyFile(
-    path.join(selectedDir, "ServicePage.jsx"),
-    path.join(candidateDir, "ServicePage.jsx"),
-  );
-} else {
-  await fs.rm(path.join(candidateDir, "ServicePage.jsx"), { force: true });
+for (const [flag, file] of [
+  ["servicePage", "ServicePage.jsx"],
+  ["locationPage", "LocationPage.jsx"],
+  ["servicesIndex", "ServicesIndexPage.jsx"],
+]) {
+  if (experience[flag] === true) {
+    await fs.copyFile(
+      path.join(selectedDir, file),
+      path.join(candidateDir, file),
+    );
+  } else {
+    await fs.rm(path.join(candidateDir, file), { force: true });
+  }
 }
 
 const contractPath = path.join(candidateDir, "contract.json");
