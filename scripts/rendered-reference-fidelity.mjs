@@ -244,10 +244,14 @@ async function requestJson({
       "OPENROUTER_API_KEY is required for rendered reference evaluation.",
     );
   const maxAttempts = 3;
+  const maxTransientCreditRetries = 2;
+  const maxTotalAttempts = maxAttempts + maxTransientCreditRetries;
   let activeReasoningEffort = reasoningEffort;
   let truncatedRetryUsed = false;
   let affordabilityRetryUsed = false;
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+  let ordinaryRetryCount = 0;
+  let transientCreditRetryCount = 0;
+  for (let attempt = 0; attempt < maxTotalAttempts; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 180_000);
     let retryDelayMs = 500 * (attempt + 1);
@@ -324,17 +328,31 @@ async function requestJson({
       const retryable =
         response.status === 408 ||
         response.status === 429 ||
-        (response.status >= 500 && response.status < 600) ||
-        transientCreditConflict;
-      if (!retryable || attempt === maxAttempts - 1)
+        (response.status >= 500 && response.status < 600);
+      if (transientCreditConflict) {
+        if (
+          transientCreditRetryCount >= maxTransientCreditRetries ||
+          attempt === maxTotalAttempts - 1
+        )
+          throw new Error(
+            `${label} failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
+          );
+        transientCreditRetryCount += 1;
+        retryDelayMs = 2_000 * transientCreditRetryCount;
+        console.info(
+          `rendered_judge_retry reason=transient-inflight-credit label=${label} retry_in_ms=${retryDelayMs} retry=${transientCreditRetryCount}/${maxTransientCreditRetries}`,
+        );
+      } else if (
+        !retryable ||
+        ordinaryRetryCount >= maxAttempts - 1 ||
+        attempt === maxTotalAttempts - 1
+      )
         throw new Error(
           `${label} failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
         );
-      if (transientCreditConflict) {
-        retryDelayMs = 2_000 * (attempt + 1);
-        console.info(
-          `rendered_judge_retry reason=transient-inflight-credit label=${label} retry_in_ms=${retryDelayMs} attempt=${attempt + 1}`,
-        );
+      else {
+        ordinaryRetryCount += 1;
+        retryDelayMs = 500 * ordinaryRetryCount;
       }
     } finally {
       clearTimeout(timeout);

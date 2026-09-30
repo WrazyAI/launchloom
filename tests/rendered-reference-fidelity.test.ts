@@ -313,20 +313,68 @@ describe("rendered reference request retries", () => {
       .mockResolvedValueOnce(
         failure(
           402,
+          "This request requires more credits, or fewer max_tokens. You requested up to 12000 tokens, but can only afford 6670.",
+        ),
+      )
+      .mockResolvedValueOnce(
+        failure(
+          402,
           "This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.",
         ),
       )
-      .mockResolvedValueOnce(response(audit));
+      .mockResolvedValueOnce(
+        failure(
+          402,
+          "This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.",
+        ),
+      )
+      .mockResolvedValueOnce(
+        response({
+          overallDistinctiveness: 88,
+          genericFallbackDetected: false,
+          pairs: [
+            {
+              left: "candidate-a",
+              right: "candidate-b",
+              distance: 84,
+              reason: "Their rendered compositions differ.",
+            },
+          ],
+          summary: "The two visual systems are distinct.",
+        }),
+      );
 
-    const pending = evaluate(fetchImpl);
+    const pending = evaluateRenderedDiversity({
+      candidates: [
+        {
+          candidateId: "candidate-a",
+          desktop: files.candidateDesktop,
+          mobile: files.candidateMobile,
+        },
+        {
+          candidateId: "candidate-b",
+          desktop: files.secondDesktop,
+          mobile: files.secondMobile,
+        },
+      ],
+      fetchImpl,
+    });
     await vi.advanceTimersByTimeAsync(0);
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(vi.getTimerCount()).toBe(1);
-    await vi.advanceTimersByTimeAsync(1_999);
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    await vi.advanceTimersByTimeAsync(3_999);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
     await vi.advanceTimersByTimeAsync(1);
     expect((await pending).pass).toBe(true);
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+    const requestBodies = fetchImpl.mock.calls.map((call) =>
+      JSON.parse(String(call[1]?.body || "{}")),
+    );
+    expect(requestBodies.map((request) => request.max_tokens)).toEqual([
+      12_000, 5_646, 5_646, 5_646,
+    ]);
   });
 
   it("stops after three attempts and preserves the final HTTP error", async () => {
