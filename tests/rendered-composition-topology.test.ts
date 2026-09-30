@@ -63,6 +63,45 @@ describe("rendered composition topology", () => {
     expect(result.measured?.visibleMediaImageCount).toBe(1);
   });
 
+  it("rejects a substantial adjacent image that turns a type-led statement into split-media", () => {
+    const result = validateRenderedCompositionTopology(
+      { hero: "type-led-statement" },
+      {
+        hero: box(0, 0, 1536, 420),
+        copy: [box(128, 92, 620, 260)],
+        media: [
+          {
+            container: box(960, 30, 460, 360),
+            visuals: [box(960, 30, 460, 360)],
+          },
+        ],
+      },
+    );
+
+    expect(result.pass).toBe(false);
+    expect(result.findings.map((finding) => finding.code)).toContain(
+      "type-led-split-media",
+    );
+  });
+
+  it("allows a small non-dominant accent image in a type-led statement", () => {
+    const result = validateRenderedCompositionTopology(
+      { hero: "type-led-statement" },
+      {
+        hero: box(0, 0, 1000, 600),
+        copy: [box(80, 110, 610, 280)],
+        media: [
+          {
+            container: box(800, 90, 120, 120),
+            visuals: [box(800, 90, 120, 120)],
+          },
+        ],
+      },
+    );
+
+    expect(result.pass).toBe(true);
+  });
+
   it("validates the mobile-specific composition instead of reusing desktop topology", () => {
     const result = validateRenderedCompositionTopology(
       { hero: "split-media", mobileHero: "editorial-stack" },

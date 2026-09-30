@@ -131,6 +131,16 @@ export function validateRenderedCompositionTopology(
     } else if (expectedHero === "type-led-statement") {
       if (mediaCoverage > 0.35)
         add("type-led-media-dominance", "Type-led topology is dominated by a hero image instead of the statement.");
+      if (
+        visualRects.length &&
+        mediaCoverage >= 0.2 &&
+        overlapRatio < 0.15 &&
+        horizontalCenterDistance >= hero.width * 0.18
+      )
+        add(
+          "type-led-split-media",
+          "Type-led topology resolved into a substantial adjacent image field. Keep the statement dominant and move or reduce media instead of converting the opening to split-media.",
+        );
     } else if (expectedHero === "utility-panel") {
       if (Number(evidence?.utilityCount) < 1)
         add("utility-panel-missing", "Utility-panel topology requires a visible search, booking, or enquiry control in the hero.");

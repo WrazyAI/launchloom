@@ -34,6 +34,17 @@ export function referenceImplementationChecklist(referenceDna) {
     ? referenceDna.sectionSequence
     : [];
   const topology = referenceDna?.compositionTopology || {};
+  const topologyGuardrails = [];
+  if (topology.hero === "type-led-statement") {
+    topologyGuardrails.push(
+      "Desktop type-led-statement guardrail: keep one dominant statement field. A substantial adjacent image panel is split-media and is not allowed. If imagery is needed, use a small non-adjacent accent or move the image to the next chapter; never leave an empty media placeholder.",
+      "During authoring and repair, do not satisfy an imagery finding by changing the assigned desktop hero topology.",
+    );
+    if (topology.mobileHero && topology.mobileHero !== topology.hero)
+      topologyGuardrails.push(
+        `Responsive translation guardrail: mobile may use ${topology.mobileHero}, but do not mirror that mobile image treatment into a desktop side-by-side media field.`,
+      );
+  }
   const viewportTopology = topology.hero || topology.mobileHero
     ? [
         `Desktop hero topology: ${topology.hero || "unclassified"}`,
@@ -41,6 +52,7 @@ export function referenceImplementationChecklist(referenceDna) {
         `Mobile hero topology: ${topology.mobileHero || "unclassified"}`,
         `Mobile media relation: ${topology.mobileMediaRelation || "unclassified"}`,
         "Implement desktop and mobile hero topology as separate responsive layout contracts. When they differ, do not carry desktop image occupancy into mobile or force the desktop overlay onto the mobile opening.",
+        ...topologyGuardrails,
       ].join("\n")
     : "";
   const sectionIds = sections.map((section) => {

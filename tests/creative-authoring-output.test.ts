@@ -89,6 +89,28 @@ describe("creative authoring output budgets", () => {
     expect(checklist).toContain("do not carry desktop image occupancy into mobile");
   });
 
+  it("keeps type-led desktop repairs from drifting into split-media", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+      compositionTopology: {
+        hero: "type-led-statement",
+        mobileHero: "media-overlay",
+        mediaRelation: "copy-leads-opening",
+        mobileMediaRelation: "copy-over-media",
+      },
+    });
+
+    expect(checklist).toContain(
+      "A substantial adjacent image panel is split-media and is not allowed",
+    );
+    expect(checklist).toContain(
+      "do not satisfy an imagery finding by changing the assigned desktop hero topology",
+    );
+    expect(checklist).toContain(
+      "do not mirror that mobile image treatment into a desktop side-by-side media field",
+    );
+  });
+
   it("gives the author exact Reference DNA marker values consumed by the hard validator", () => {
     const checklist = referenceImplementationChecklist({
       sectionSequence: ["hero", "services", "faqs", "contact"],
