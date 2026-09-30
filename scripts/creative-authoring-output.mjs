@@ -1,11 +1,12 @@
 export const AUTHORING_STAGE_BUDGETS = Object.freeze({
   contract: Object.freeze({ maxTokens: 24_000, timeoutMs: 5 * 60_000 }),
   experience: Object.freeze({ maxTokens: 48_000, timeoutMs: 8 * 60_000 }),
-  // Service pages are authored as a second page of the same visual system, so
-  // they get a real composition budget instead of reusing the generic inner
-  // template. The ceiling stays below the experience stage because the page
-  // carries one service chapter rather than the full homepage narrative.
+  // Service, location, and services-index pages are authored as additional
+  // pages of the same visual system, so they get real composition budgets
+  // instead of reusing the generic inner template.
   service: Object.freeze({ maxTokens: 32_000, timeoutMs: 6 * 60_000 }),
+  location: Object.freeze({ maxTokens: 32_000, timeoutMs: 6 * 60_000 }),
+  "service-index": Object.freeze({ maxTokens: 24_000, timeoutMs: 5 * 60_000 }),
   styles: Object.freeze({ maxTokens: 40_000, timeoutMs: 8 * 60_000 }),
   motion: Object.freeze({ maxTokens: 24_000, timeoutMs: 5 * 60_000 }),
 });

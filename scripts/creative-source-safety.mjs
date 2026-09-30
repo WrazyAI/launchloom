@@ -21,24 +21,31 @@ export function normalizeCreativeExperienceLinks(source) {
 }
 
 /**
- * Deterministic, dependency-free safety checks for an authored ServicePage.jsx.
- *
- * The service page renders the same sealed content as the homepage plus one
- * service record, so it must obey the same promotion contract: no remote code
- * or network primitives, exactly one shared LeadForm bound to sealed content,
- * the real /services/ router contract, and the provenance markers that the
- * rendered bakeoff asserts. These checks stay intentionally lighter than the
- * authoring validator so reused or previously authored candidates can still be
- * promoted when they pass the security surface.
+ * Deterministic, dependency-free safety checks for an authored inner page
+ * (service detail, location, or services index). These pages render sealed
+ * content plus their own record, so they must obey the same promotion
+ * contract: no remote code or network primitives, exactly one shared LeadForm
+ * bound to sealed content, real /services/ router links, and the provenance
+ * marker that the rendered bakeoff asserts. These checks stay intentionally
+ * lighter than the authoring validators so reused or previously authored
+ * candidates can still be promoted when they pass the security surface.
  *
  * @param {string} source
- * @param {{candidateId?: string}} [options]
+ * @param {{candidateId?: string, pageLabel?: string, rootMarker?: string, requireServiceRoute?: boolean}} [options]
  * @returns {true}
  */
-export function assertCreativeServicePageSource(source, { candidateId = "candidate" } = {}) {
+export function assertCreativeInnerPageSource(
+  source,
+  {
+    candidateId = "candidate",
+    pageLabel = "authored page",
+    rootMarker = "",
+    requireServiceRoute = true,
+  } = {},
+) {
   const value = String(source || "");
   const fail = (message) => {
-    throw new Error(`Creative candidate ${candidateId} ServicePage.jsx ${message}.`);
+    throw new Error(`Creative candidate ${candidateId} ${pageLabel} ${message}.`);
   };
   if (!value.trim()) fail("is empty");
   const forbidden = [
@@ -63,10 +70,25 @@ export function assertCreativeServicePageSource(source, { candidateId = "candida
   if (leadFormCount !== 1) fail("must render exactly one shared LeadForm");
   if (!/<LeadForm\b[^>]*\bcontent\s*=\s*\{\s*content\s*\}/u.test(value))
     fail("must pass sealed content to LeadForm");
-  if (!/\bdata-service-page\b/u.test(value))
-    fail("must expose data-service-page on the page root");
-  if (!/<h1\b/u.test(value)) fail("must render a service H1 heading");
-  if (!/\/services\//u.test(value))
-    fail("must link related services through the /services/ route");
+  if (rootMarker && !new RegExp(`\\b${rootMarker}\\b`, "u").test(value))
+    fail(`must expose ${rootMarker} on the page root`);
+  if (!/<h1\b/u.test(value)) fail("must render a page H1 heading");
+  if (requireServiceRoute && !/\/services\//u.test(value))
+    fail("must link services through the /services/ route");
   return true;
+}
+
+/**
+ * Service detail page promotion contract.
+ * @param {string} source
+ * @param {{candidateId?: string}} [options]
+ * @returns {true}
+ */
+export function assertCreativeServicePageSource(source, options = {}) {
+  return assertCreativeInnerPageSource(source, {
+    ...options,
+    pageLabel: "ServicePage.jsx",
+    rootMarker: "data-service-page",
+    requireServiceRoute: true,
+  });
 }
