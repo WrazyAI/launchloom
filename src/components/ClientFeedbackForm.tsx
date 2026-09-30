@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
+import AttachmentThumb from "./AttachmentThumb";
 import { compressImage } from "../lib/compress-image";
 
 export type ClientSubmitResult = {
@@ -42,6 +43,7 @@ export default function ClientFeedbackForm({
   const [category, setCategory] = useState("text");
   const [comment, setComment] = useState("");
   const [replacement, setReplacement] = useState<File | null>(null);
+  const [replacementUrl, setReplacementUrl] = useState("");
   const [generated, setGenerated] = useState<{
     url: string;
     prompt: string;
@@ -52,6 +54,7 @@ export default function ClientFeedbackForm({
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
+  const [error, setError] = useState(false);
   const [colors, setColors] = useState<
     Record<ColorRole, { enabled: boolean; hex: string }>
   >(() =>
@@ -68,12 +71,24 @@ export default function ClientFeedbackForm({
   const imageCategory = category === "logo" || category === "photos";
   const targetOptions = category === "logo" ? [LOGO_TARGET] : PHOTO_TARGETS;
 
+  function chooseReplacement(file: File | null) {
+    setReplacementUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return file ? URL.createObjectURL(file) : "";
+    });
+    setReplacement(file);
+    if (file) setGenerated(null);
+    setStatus("");
+    setError(false);
+  }
+
   function changeCategory(value: string) {
     setCategory(value);
-    setReplacement(null);
+    chooseReplacement(null);
     setGenerated(null);
     setPrompt("");
     setStatus("");
+    setError(false);
     if (fileInput.current) fileInput.current.value = "";
     setTarget(value === "logo" ? "logo" : "hero");
   }
@@ -82,6 +97,7 @@ export default function ClientFeedbackForm({
     const value = email.trim().toLowerCase();
     if (!value) {
       setStatus("Enter the review email that received this link.");
+      setError(true);
       return "";
     }
     return value;
@@ -92,10 +108,12 @@ export default function ClientFeedbackForm({
     if (!submittedEmail) return;
     if (prompt.trim().length < 3) {
       setStatus("Describe the image first.");
+      setError(true);
       return;
     }
     setBusy(true);
     setStatus("Creating an image…");
+    setError(false);
     try {
       const response = await fetch(`${apiBase}/api/feedback-image`, {
         method: "POST",
@@ -122,13 +140,15 @@ export default function ClientFeedbackForm({
         model: data.model || "",
         target,
       });
-      setReplacement(null);
+      chooseReplacement(null);
       if (fileInput.current) fileInput.current.value = "";
       setStatus("Created. Use this image, or create another.");
-    } catch (error) {
+      setError(false);
+    } catch (caught) {
       setStatus(
-        error instanceof Error ? error.message : "We could not create the image.",
+        caught instanceof Error ? caught.message : "We could not create the image.",
       );
+      setError(true);
     } finally {
       setBusy(false);
     }
@@ -141,6 +161,7 @@ export default function ClientFeedbackForm({
     if (!submittedEmail) return;
     if (imageCategory && !replacement && !generated) {
       setStatus("Add a photo or create one.");
+      setError(true);
       return;
     }
     if (
@@ -148,6 +169,7 @@ export default function ClientFeedbackForm({
       !comment.trim()
     ) {
       setStatus("Describe the small change.");
+      setError(true);
       return;
     }
     const colorSelections = COLOR_ROLES.filter(
@@ -159,6 +181,7 @@ export default function ClientFeedbackForm({
       !/#[0-9a-f]{6}/iu.test(comment)
     ) {
       setStatus("Pick a color, or type a color code like #205d51 in the note.");
+      setError(true);
       return;
     }
     const attachments = generated
@@ -176,6 +199,7 @@ export default function ClientFeedbackForm({
     submissionId.current ||= crypto.randomUUID();
     setBusy(true);
     setStatus("Sending…");
+    setError(false);
     try {
       let response: Response;
       if (replacement) {
@@ -218,11 +242,12 @@ export default function ClientFeedbackForm({
       };
       if (!response.ok) {
         setStatus(data.error || "The request could not be sent.");
+        setError(true);
         onSubmitted({ ok: false, error: data.error });
         return;
       }
       setComment("");
-      setReplacement(null);
+      chooseReplacement(null);
       setGenerated(null);
       setPrompt("");
       setColors(
@@ -234,15 +259,19 @@ export default function ClientFeedbackForm({
         ) as Record<ColorRole, { enabled: boolean; hex: string }>,
       );
       setStatus("");
+      setError(false);
       submissionId.current = "";
       onSubmitted({ ok: true, queueStatus: data.queueStatus });
     } catch {
       setStatus("The request could not be sent. Please try again.");
+      setError(true);
       onSubmitted({ ok: false });
     } finally {
       setBusy(false);
     }
   }
+
+  const chosenUpload = replacement && replacementUrl ? replacementUrl : "";
 
   return (
     <form className="client-feedback-form" onSubmit={submit}>
@@ -273,14 +302,18 @@ export default function ClientFeedbackForm({
       </label>
       {imageCategory && (
         <section className="feedback-part" aria-label="Replacement image">
+          <header className="feedback-part__head">
+            <h3>Which image?</h3>
+          </header>
           <label className="field">
-            Which image?
+            <span className="visually-hidden">Choose the image to replace</span>
             <select
               value={target}
               onChange={(event) => {
                 setTarget(event.target.value);
                 setGenerated(null);
                 setStatus("");
+                setError(false);
               }}
             >
               {targetOptions.map((option) => (
@@ -290,58 +323,99 @@ export default function ClientFeedbackForm({
               ))}
             </select>
           </label>
-          <label className="feedback-upload">
-            Upload your own image
-            <input
-              ref={fileInput}
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              disabled={busy}
-              onChange={(event) => {
-                const file = event.currentTarget.files?.[0] || null;
-                setReplacement(file);
-                if (file) setGenerated(null);
-                setStatus("");
-              }}
-            />
-            <small>PNG, JPEG, or WebP under 8 MB.</small>
-          </label>
-          <label className="field">
-            Or describe an image to generate
-            <textarea
-              value={prompt}
-              onChange={(event) => setPrompt(event.target.value)}
-              placeholder="For example: a warm photo of the finished work, no text."
-            />
-          </label>
-          <button
-            type="button"
-            className="button secondary"
-            disabled={busy}
-            onClick={() => void generateImage()}
-          >
-            {busy ? "Working…" : "Create an image"}
-          </button>
-          {generated && (
-            <div className="feedback-part__preview">
-              <img src={generated.url} alt="Your new image" />
-              <div>
-                <strong>Your new image is selected</strong>
-                <button
-                  type="button"
-                  className="feedback-part__remove"
-                  onClick={() => setGenerated(null)}
-                >
-                  Remove image
-                </button>
+          <div className="feedback-part__choices">
+            <div className="feedback-choice">
+              <span className="feedback-choice__title">Use your own photo</span>
+              <span className="feedback-choice__hint">
+                PNG, JPG, or WebP up to 8 MB
+              </span>
+              <label className="feedback-choice__file">
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  disabled={busy}
+                  onChange={(event) =>
+                    chooseReplacement(event.currentTarget.files?.[0] || null)
+                  }
+                />
+                <span>
+                  {replacement ? "Choose a different photo" : "Choose a file"}
+                </span>
+              </label>
+            </div>
+            <div className="feedback-choice feedback-choice--generate">
+              <span className="feedback-choice__title">Or create one for me</span>
+              <label className="field">
+                <span className="visually-hidden">Describe the image</span>
+                <textarea
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  placeholder="For example: a warm photo of the finished work, no text."
+                />
+              </label>
+              <button
+                type="button"
+                className="button secondary feedback-choice__button"
+                disabled={busy}
+                onClick={() => void generateImage()}
+              >
+                {busy ? "Working…" : "Create an image"}
+              </button>
+            </div>
+          </div>
+          {busy && !generated && !chosenUpload && (
+            <div className="feedback-attachment feedback-attachment--busy">
+              <span className="feedback-attachment__thumb feedback-attachment__thumb--skeleton" />
+              <div className="feedback-attachment__meta">
+                <span className="feedback-attachment__badge">
+                  {status || "Working…"}
+                </span>
+                <span className="feedback-attachment__name">
+                  This can take a moment.
+                </span>
               </div>
             </div>
+          )}
+          {!busy && (generated || chosenUpload) && (
+            <figure className="feedback-attachment">
+              <span className="feedback-attachment__thumb">
+                <AttachmentThumb
+                  key={generated?.url || chosenUpload}
+                  src={generated?.url || chosenUpload}
+                  alt="Your selected image"
+                />
+              </span>
+              <figcaption className="feedback-attachment__meta">
+                <span className="feedback-attachment__badge">
+                  {generated ? "Created for you" : "Your photo"}
+                </span>
+                <span className="feedback-attachment__name">
+                  {generated ? generated.prompt : replacement?.name}
+                </span>
+                <button
+                  type="button"
+                  className="feedback-attachment__remove"
+                  onClick={() => {
+                    if (generated) setGenerated(null);
+                    else chooseReplacement(null);
+                    if (fileInput.current) fileInput.current.value = "";
+                    setStatus("");
+                    setError(false);
+                  }}
+                >
+                  Remove
+                </button>
+              </figcaption>
+            </figure>
           )}
         </section>
       )}
       {category === "color" && (
         <section className="feedback-part" aria-label="Color choice">
-          <h3>Colors</h3>
+          <header className="feedback-part__head">
+            <h3>Colors</h3>
+          </header>
           <p className="feedback-part__hint">
             Pick the colors you like. We will adjust the rest so text stays
             easy to read.
@@ -362,7 +436,7 @@ export default function ClientFeedbackForm({
                     }))
                   }
                 />
-                <span>{role.label}</span>
+                <span className="feedback-color__label">{role.label}</span>
                 <input
                   type="color"
                   aria-label={`Choose ${role.label}`}
@@ -405,12 +479,15 @@ export default function ClientFeedbackForm({
         />
       </label>
       {status && (
-        <p className="feedback-parts__message" role="status">
+        <p
+          className={`feedback-parts__message ${error ? "is-error" : "is-success"}`}
+          role="status"
+        >
           {status}
         </p>
       )}
       <button className="button" type="submit" disabled={busy}>
-        {busy ? "Sending…" : "Send feedback"}
+        {busy ? "Sending…" : "Send these changes"}
       </button>
     </form>
   );

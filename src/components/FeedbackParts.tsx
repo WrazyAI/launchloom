@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
+import AttachmentThumb from "./AttachmentThumb";
 import { compressImage } from "../lib/compress-image";
 
 export type FeedbackSubmitResult = {
@@ -81,10 +82,25 @@ const COLOR_ROLES: Array<{
 }> = [
   { id: "primary", label: "Main brand color", defaultHex: "#1f3a5f" },
   { id: "surface", label: "Page background", defaultHex: "#faf7f2" },
-  { id: "hero", label: "Top section background", defaultHex: "#e8f0f1", advanced: true },
+  {
+    id: "hero",
+    label: "Top section background",
+    defaultHex: "#e8f0f1",
+    advanced: true,
+  },
   { id: "ink", label: "Main text", defaultHex: "#17242b", advanced: true },
-  { id: "muted", label: "Smaller, lighter text", defaultHex: "#5b6b72", advanced: true },
-  { id: "line", label: "Lines and borders", defaultHex: "#d7e0e2", advanced: true },
+  {
+    id: "muted",
+    label: "Smaller, lighter text",
+    defaultHex: "#5b6b72",
+    advanced: true,
+  },
+  {
+    id: "line",
+    label: "Lines and borders",
+    defaultHex: "#d7e0e2",
+    advanced: true,
+  },
 ];
 
 type ImageDraft = {
@@ -92,6 +108,7 @@ type ImageDraft = {
   generated?: { url: string; prompt: string; model: string };
   prompt: string;
   status: string;
+  error?: boolean;
   busy: boolean;
 };
 
@@ -212,12 +229,16 @@ export default function FeedbackParts({
         status: "Uploaded. It will replace this image in the next update.",
         upload: { url: data.url, name: file.name },
         generated: undefined,
+        error: false,
       });
     } catch (error) {
       updateDraft(id, {
         busy: false,
+        error: true,
         status:
-          error instanceof Error ? error.message : "We could not upload the image.",
+          error instanceof Error
+            ? error.message
+            : "We could not upload the image.",
       });
     }
   }
@@ -227,7 +248,7 @@ export default function FeedbackParts({
     if (!reviewerEmail) return;
     const prompt = drafts[id]?.prompt.trim() || "";
     if (prompt.length < 3) {
-      updateDraft(id, { status: "Describe the image first." });
+      updateDraft(id, { status: "Describe the image first.", error: true });
       return;
     }
     updateDraft(id, { busy: true, status: "Creating an image…" });
@@ -253,16 +274,19 @@ export default function FeedbackParts({
         throw new Error(data.error || "We could not create the image.");
       updateDraft(id, {
         busy: false,
-        status:
-          "Created. Use this image, or create another.",
+        status: "Created. Use this image, or create another.",
         generated: { url, prompt, model: data.model || "" },
         upload: undefined,
+        error: false,
       });
     } catch (error) {
       updateDraft(id, {
         busy: false,
+        error: true,
         status:
-          error instanceof Error ? error.message : "We could not create the image.",
+          error instanceof Error
+            ? error.message
+            : "We could not create the image.",
       });
     }
   }
@@ -310,19 +334,14 @@ export default function FeedbackParts({
         textLines.push("Show the business name in the header.");
       if (note) textLines.push(`${textPart.label}: ${note}`);
       if (!note && !(id === "navigation" && showName)) {
-        setMessage(
-          `Add a note for ${textPart.label}, or turn it off.`,
-        );
+        setMessage(`Add a note for ${textPart.label}, or turn it off.`);
         return;
       }
     }
     const selectedColors = COLOR_ROLES.filter(
       (role) => colors[role.id].enabled,
     ).map((role) => ({ role: role.id, hex: colors[role.id].hex }));
-    if (
-      active.includes("colors") &&
-      !selectedColors.length
-    ) {
+    if (active.includes("colors") && !selectedColors.length) {
       setMessage("Pick at least one color, or turn off Colors.");
       return;
     }
@@ -391,6 +410,9 @@ export default function FeedbackParts({
       </label>
       <fieldset className="feedback-parts__picker">
         <legend>What should change?</legend>
+        <p className="feedback-parts__lead">
+          Tap a part of the site, then tell us what you want there.
+        </p>
         <div className="feedback-parts__grid">
           {IMAGE_PARTS.map((part) => (
             <button
@@ -400,6 +422,7 @@ export default function FeedbackParts({
               aria-pressed={active.includes(part.id)}
               onClick={() => togglePart(part.id)}
             >
+              <span aria-hidden="true" className="feedback-part-chip__mark" />
               {part.label}
             </button>
           ))}
@@ -411,6 +434,7 @@ export default function FeedbackParts({
               aria-pressed={active.includes(part.id)}
               onClick={() => togglePart(part.id)}
             >
+              <span aria-hidden="true" className="feedback-part-chip__mark" />
               {part.label}
             </button>
           ))}
@@ -420,6 +444,7 @@ export default function FeedbackParts({
             aria-pressed={active.includes("colors")}
             onClick={() => togglePart("colors")}
           >
+            <span aria-hidden="true" className="feedback-part-chip__mark" />
             Colors
           </button>
         </div>
@@ -434,7 +459,116 @@ export default function FeedbackParts({
             className="feedback-part"
             aria-label={`${part.label} feedback`}
           >
-            <h3>{part.label}</h3>
+            <header className="feedback-part__head">
+              <h3>{part.label}</h3>
+              <button
+                type="button"
+                className="feedback-part__off"
+                onClick={() => togglePart(part.id)}
+              >
+                Turn off
+              </button>
+            </header>
+            <div className="feedback-part__choices">
+              <div className="feedback-choice">
+                <span className="feedback-choice__title">Use your own image</span>
+                <span className="feedback-choice__hint">
+                  PNG, JPG, or WebP up to 3 MB
+                </span>
+                <label className="feedback-choice__file">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    disabled={draft.busy || disabled}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      event.target.value = "";
+                      if (file) void uploadImage(part.id, file);
+                    }}
+                  />
+                  <span>
+                    {draft.upload ? "Choose a different image" : "Choose a file"}
+                  </span>
+                </label>
+              </div>
+              <div className="feedback-choice feedback-choice--generate">
+                <span className="feedback-choice__title">
+                  Or create one for me
+                </span>
+                <label className="field">
+                  <span className="visually-hidden">{part.promptLabel}</span>
+                  <textarea
+                    value={draft.prompt}
+                    onChange={(event) =>
+                      updateDraft(part.id, { prompt: event.target.value })
+                    }
+                    placeholder="For example: a calm, warm photo of the team at work, no text."
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="button secondary feedback-choice__button"
+                  disabled={draft.busy || disabled}
+                  onClick={() => void generateImage(part.id)}
+                >
+                  {draft.busy ? "Working…" : "Create an image"}
+                </button>
+              </div>
+            </div>
+            {draft.busy && !chosen && (
+              <div className="feedback-attachment feedback-attachment--busy">
+                <span className="feedback-attachment__thumb feedback-attachment__thumb--skeleton" />
+                <div className="feedback-attachment__meta">
+                  <span className="feedback-attachment__badge">
+                    {draft.status || "Working…"}
+                  </span>
+                  <span className="feedback-attachment__name">
+                    This can take a moment.
+                  </span>
+                </div>
+              </div>
+            )}
+            {chosen && !draft.busy && (
+              <figure className="feedback-attachment">
+                <span className="feedback-attachment__thumb">
+                  <AttachmentThumb
+                    key={chosen.url}
+                    src={chosen.url}
+                    alt={`${part.label} preview`}
+                  />
+                </span>
+                <figcaption className="feedback-attachment__meta">
+                  <span className="feedback-attachment__badge">
+                    {draft.generated ? "Created for you" : "Your image"}
+                  </span>
+                  <span className="feedback-attachment__name">
+                    {draft.generated ? draft.generated?.prompt : draft.upload?.name}
+                  </span>
+                  <button
+                    type="button"
+                    className="feedback-attachment__remove"
+                    onClick={() =>
+                      updateDraft(part.id, {
+                        upload: undefined,
+                        generated: undefined,
+                        status: "",
+                        error: false,
+                      })
+                    }
+                  >
+                    Remove
+                  </button>
+                </figcaption>
+              </figure>
+            )}
+            {!draft.busy && draft.status && (
+              <p
+                className={`feedback-part__status ${draft.error ? "is-error" : "is-success"}`}
+                role="status"
+              >
+                {draft.status}
+              </p>
+            )}
             <label className="field">
               Note (optional)
               <textarea
@@ -443,81 +577,22 @@ export default function FeedbackParts({
                 placeholder={`Anything else about the ${part.label.toLowerCase()}?`}
               />
             </label>
-            <div className="feedback-part__images">
-              <label className="feedback-upload">
-                Upload your own image
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  disabled={draft.busy || disabled}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    event.target.value = "";
-                    if (file) void uploadImage(part.id, file);
-                  }}
-                />
-              </label>
-              <div className="feedback-generate">
-                <label className="field">
-                  {part.promptLabel}
-                  <textarea
-                    value={draft.prompt}
-                    onChange={(event) =>
-                      updateDraft(part.id, { prompt: event.target.value })
-                    }
-                    placeholder="For example: a calm, warm photo of the team workspace, no text."
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="button secondary"
-                  disabled={draft.busy || disabled}
-                  onClick={() => void generateImage(part.id)}
-                >
-                  {draft.busy ? "Working…" : "Create an image"}
-                </button>
-              </div>
-              {chosen && (
-                <div className="feedback-part__preview">
-                  <img
-                    src={chosen.url}
-                    alt={`Selected ${part.label} replacement`}
-                  />
-                  <div>
-                    <strong>
-                      {draft.generated
-                        ? "Your new image is selected"
-                        : "Your uploaded image is selected"}
-                    </strong>
-                    <button
-                      type="button"
-                      className="feedback-part__remove"
-                      onClick={() =>
-                        updateDraft(part.id, {
-                          upload: undefined,
-                          generated: undefined,
-                          status: "",
-                        })
-                      }
-                    >
-                      Remove image
-                    </button>
-                  </div>
-                </div>
-              )}
-              {draft.status && (
-                <p className="feedback-part__status" role="status">
-                  {draft.status}
-                </p>
-              )}
-            </div>
           </section>
         );
       })}
 
       {active.includes("navigation") && (
         <section className="feedback-part" aria-label="Navigation feedback">
-          <h3>Menu</h3>
+          <header className="feedback-part__head">
+            <h3>Menu</h3>
+            <button
+              type="button"
+              className="feedback-part__off"
+              onClick={() => togglePart("navigation")}
+            >
+              Turn off
+            </button>
+          </header>
           <label className="feedback-toggle">
             <input
               type="checkbox"
@@ -539,7 +614,16 @@ export default function FeedbackParts({
 
       {active.includes("colors") && (
         <section className="feedback-part" aria-label="Color feedback">
-          <h3>Colors</h3>
+          <header className="feedback-part__head">
+            <h3>Colors</h3>
+            <button
+              type="button"
+              className="feedback-part__off"
+              onClick={() => togglePart("colors")}
+            >
+              Turn off
+            </button>
+          </header>
           <p className="feedback-part__hint">
             Pick the colors you like. We will adjust the rest so text stays
             easy to read.
@@ -554,7 +638,7 @@ export default function FeedbackParts({
                     updateColor(role.id, { enabled: event.target.checked })
                   }
                 />
-                <span>{role.label}</span>
+                <span className="feedback-color__label">{role.label}</span>
                 <input
                   type="color"
                   aria-label={`Choose ${role.label}`}
@@ -590,7 +674,16 @@ export default function FeedbackParts({
           className="feedback-part"
           aria-label={`${part.label} feedback`}
         >
-          <h3>{part.label}</h3>
+          <header className="feedback-part__head">
+            <h3>{part.label}</h3>
+            <button
+              type="button"
+              className="feedback-part__off"
+              onClick={() => togglePart(part.id)}
+            >
+              Turn off
+            </button>
+          </header>
           <label className="field">
             What should change?
             <textarea
@@ -607,9 +700,20 @@ export default function FeedbackParts({
           {message}
         </p>
       )}
-      <button className="button" type="submit" disabled={submitting || disabled}>
-        {submitting ? "Sending…" : submitLabel}
-      </button>
+      <div className="feedback-parts__actions">
+        <p className="feedback-parts__summary" aria-live="polite">
+          {active.length
+            ? `${active.length} change${active.length === 1 ? "" : "s"} selected`
+            : "Nothing selected yet"}
+        </p>
+        <button
+          className="button"
+          type="submit"
+          disabled={submitting || disabled}
+        >
+          {submitting ? "Sending…" : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }
