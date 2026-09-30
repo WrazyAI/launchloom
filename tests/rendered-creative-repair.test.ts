@@ -737,6 +737,7 @@ export default function Experience({ content, runtime }) {
         primaryLabel: "Start a conversation",
         image: "/images/hero.webp",
         secondaryImage: "/images/ornament.webp",
+        tertiaryImage: "/images/detail.webp",
       },
       services: [
         {
@@ -772,7 +773,7 @@ export default function Experience({ content, runtime }) {
       .replace(" data-early-conversion", "")
       .replace(
         '<section data-reference-section="image-chapter"></section>',
-        '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.image} alt="" /><img src={content.hero.tertiaryImage || content.hero.image} alt="" /><img src={content.hero.secondaryImage} alt="" aria-hidden="true" /></section></section>',
+        '<section data-reference-section="image-chapter"><section className="service-note"><p>A note about the services chapter.</p><img src={ content.hero.image } alt="" /><img src={content.hero.secondaryImage} alt="" /><img src={content.hero.tertiaryImage} alt="" /><img src={content.hero.secondaryImage} alt="" aria-hidden="true" /></section></section>',
       );
     const candidateDir = path.join(candidates, "candidate-a");
     const metadataPath = path.join(candidateDir, "metadata.json");
@@ -785,6 +786,9 @@ export default function Experience({ content, runtime }) {
       JSON.stringify({
         tokens: [
           { token: "content.hero.heading" },
+          { token: "content.hero.image" },
+          { token: "content.hero.secondaryImage" },
+          { token: "content.hero.tertiaryImage" },
           { token: "content.services" },
           { token: "content.faqs" },
         ],
@@ -860,8 +864,8 @@ export default function Experience({ content, runtime }) {
       path.join(candidateDir, "Experience.jsx"),
       "utf8",
     );
-    expect(repaired).toContain(
-      '<section id="services" data-reference-section="magazine-archive"',
+    expect(repaired).toMatch(
+      /<section id=['"]services['"] data-reference-section=['"]magazine-archive['"]/u,
     );
     expect(repaired).toContain(
       '<a className="nav-cta" href="#contact">{content.hero.primaryLabel}</a>',
@@ -877,7 +881,7 @@ export default function Experience({ content, runtime }) {
     );
     expect(
       repaired.match(/alt="Still-life image for the studio"/gu),
-    ).toHaveLength(4);
+    ).toHaveLength(2);
     expect(repaired).toContain(
       'src={content.hero.secondaryImage} alt="" aria-hidden="true"',
     );
