@@ -634,6 +634,12 @@ describe("rendered reference fidelity", () => {
     expect(textBlocks).toContain("CLIENT VISUAL BRIEF");
     expect(textBlocks).toContain("#f5f0e4");
     expect(textBlocks).toContain("Light tactile craft collage");
+    expect(textBlocks).toContain(
+      "Keep overallScore limited to the assigned reference mechanics",
+    );
+    expect(requests[0].messages[0].content).toContain(
+      "overallScore must measure assigned-reference mechanics only",
+    );
   });
 
   it("passes only from pixel-level reference scores, not DOM markers", async () => {

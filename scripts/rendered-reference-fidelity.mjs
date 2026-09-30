@@ -274,7 +274,7 @@ async function requestJson({
             {
               role: "system",
               content:
-                "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. Return JSON only.",
+                "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. overallScore must measure assigned-reference mechanics only; do not lower it for client-only palette or art-direction misses. Score paletteAdherence and artDirection separately, and still return blocking findings for client-brief failures. Return JSON only.",
             },
             { role: "user", content },
           ],
@@ -469,7 +469,7 @@ ${candidateOverview ? `The candidate desktop page overview is ${overviewSize}. U
       type: "text",
       text: `CLIENT VISUAL BRIEF
 ${JSON.stringify(visualBrief || {}, null, 2)}
-Treat this as binding client art direction layered onto the reference mechanics. Score paletteAdherence and artDirection independently and strictly. A candidate that substitutes an unrelated house palette, reverses an explicit light/dark surface direction, ignores a named composition request, or visibly collapses into a generic LaunchLoom treatment must score below the corresponding hard threshold and receive a palette-adherence or client-art-direction finding. Do not hide client-intent failures inside otherwise strong reference-mechanics scores.`,
+Treat this as binding client art direction layered onto the reference mechanics. Score paletteAdherence and artDirection independently and strictly. Keep overallScore limited to the assigned reference mechanics so it remains interpretable as reference fidelity; client-only palette and art-direction misses belong in their dedicated scores and findings. They still block pass through the existing per-dimension thresholds and major-finding rule. A candidate that substitutes an unrelated house palette, reverses an explicit light/dark surface direction, ignores a named composition request, or visibly collapses into a generic LaunchLoom treatment must score below the corresponding hard threshold and receive a palette-adherence or client-art-direction finding. Do not hide client-intent failures inside otherwise strong reference-mechanics scores.`,
     },
     { type: "text", text: "Candidate desktop first viewport 1536x864:" },
     await imagePart(candidateDesktop),

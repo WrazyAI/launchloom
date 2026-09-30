@@ -159,6 +159,86 @@ describe("production experience author", () => {
     });
     expect(manifest.values).not.toHaveProperty("style");
   });
+
+  it("rejects silent hero-image reuse across distinct image roles", () => {
+    const route = { id: "route-image-role-reuse" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace(
+      "<section data-hero>",
+      '<section data-hero><img src={content.hero.image} alt="Primary" /><img src={content.hero.image} alt="Repeated one" /><img src={content.hero.image} alt="Repeated two" />',
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: {
+            image: "/images/hero.webp",
+            secondaryImage: "",
+            tertiaryImage: "",
+          },
+        },
+      }),
+    ).toThrow(/reuses the primary hero image across distinct image roles/iu);
+  });
+
+  it("requires a dedicated stateful interaction when the client brief asks for one", () => {
+    const route = { id: "route-purposeful-interaction" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const visualBrief = {
+      artDirection:
+        "Use one purposeful interactive care guide to help visitors choose a next step.",
+    };
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        visualBrief,
+      }),
+    ).toThrow(/must implement the purposeful interaction requested/iu);
+
+    const guided = experience.replace(
+      '<section id="services">',
+      '<section id="services" data-purposeful-interaction><details><summary>{content.services[0].name}</summary><p>{content.services[0].description}</p></details>',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: guided, styles, motion },
+        route,
+        visualBrief,
+      }),
+    ).not.toThrow();
+  });
+
   it("accepts decorative empty alts but rejects missing or nullish alt values", () => {
     const route = { id: "route-decorative-alt" };
     const request = {

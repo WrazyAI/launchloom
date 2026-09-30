@@ -857,6 +857,12 @@ describe("creative repair loop", () => {
     expect(prompt).toContain(
       "Do not repair toward a generic LaunchLoom house style",
     );
+    expect(prompt).toContain("IMAGE ROLE DIVERSITY CONTRACT");
+    expect(prompt).toContain(
+      "Do not manufacture a feature pair, gallery, strip, or triptych by cropping the same source repeatedly",
+    );
+    expect(prompt).toContain("CLIENT-REQUESTED INTERACTION CONTRACT");
+    expect(prompt).toContain("data-purposeful-interaction");
   });
 
   it("labels sibling screenshots as comparison-only evidence in diversity repairs", async () => {

@@ -684,6 +684,7 @@ export async function defaultRepairCandidate({
         referenceDna,
       },
       content,
+      visualBrief: contentManifest.visualBrief || {},
     });
     if (humanReview)
       assertCreativeRevisionScope(files, validated.files, creativeRepairScope);

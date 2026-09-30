@@ -771,6 +771,12 @@ Keep each required ID and section marker on its semantically matching visible se
 ALT-TEXT CONTRACT
 Every <img> must have a usable alt attribute. Use concise descriptive alt text for informative images. Use alt="" only when the image is purely decorative or its relevant information is fully conveyed by adjacent text. Preserve the reviewed description when reusing a known informative image, even if its crop or position changes. Do not replace an informative description with generic filler such as "Decorative image".
 
+IMAGE ROLE DIVERSITY CONTRACT
+Do not silently reuse the primary hero image to fill missing secondary or tertiary image roles. If supporting image tokens are unavailable, keep the hero unique and adapt those chapters to a non-duplicative text-led or graphic treatment that still preserves the assigned Reference DNA. Do not manufacture a feature pair, gallery, strip, or triptych by cropping the same source repeatedly.
+
+CLIENT-REQUESTED INTERACTION CONTRACT
+If the CLIENT VISUAL BRIEF explicitly asks for a purposeful interaction, guide, selector, chooser, or navigator, preserve or add a clearly labeled stateful native interaction marked with data-purposeful-interaction. Its useful default state and controls must be visible in static render evidence. FAQ disclosure, LeadForm, ChatLauncher, ordinary navigation, or an image carousel alone do not satisfy that request. Use only sealed service and decision-support content and never invent advice.
+
 SEALED CONTENT BINDING CONTRACT
 Treat every business-specific string and fact shown in CURRENT SEALED CONTENT SHAPE as sealed data, not source copy. Do not copy, paraphrase, or hardcode those values into JSX/HTML, CSS generated content, accessibility attributes, or motion code. Preserve existing content-token expressions and render business content through the existing content bindings or the supplied content-bound runtime helpers. Never replace a content binding with a literal value from the sealed shape. If a requested repair cannot be made while preserving those bindings, leave the binding intact and report the repair as unresolved rather than inventing or embedding copy.
 

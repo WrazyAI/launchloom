@@ -986,6 +986,88 @@ function resolvedImageValue(attribute, content) {
   return undefined;
 }
 
+function validateImageRoleReuse(source, route, content) {
+  const heroImage = String(content?.hero?.image || "").trim();
+  if (!heroImage) return;
+
+  const { elements } = collectJsxElements(source);
+  const primaryImageUses = elements.filter(({ opening }) => {
+    if (jsxOpeningName(opening).toLowerCase() !== "img") return false;
+    return resolvedImageValue(jsxAttribute(opening, "src"), content) === heroImage;
+  }).length;
+
+  const missingSupportingFallbacks = ["secondaryImage", "tertiaryImage"].filter(
+    (slot) => {
+      if (String(content?.hero?.[slot] || "").trim()) return false;
+      return new RegExp(
+        `content\\.hero\\.${slot}\\s*(?:\\|\\||\\?\\?)\\s*content\\.hero\\.image`,
+        "u",
+      ).test(source);
+    },
+  );
+
+  if (primaryImageUses < 3 && missingSupportingFallbacks.length < 2) return;
+  throw new Error(
+    `Candidate ${route.id} reuses the primary hero image across distinct image roles. Do not silently fill missing secondary or tertiary media with the hero asset; keep the hero unique and adapt unsupported image chapters to a non-duplicative treatment.`,
+  );
+}
+
+function visualBriefText(visualBrief) {
+  return [
+    visualBrief?.artDirection,
+    visualBrief?.visualDirection,
+    visualBrief?.preference,
+  ]
+    .map((value) => String(value || ""))
+    .filter(Boolean)
+    .join(" ");
+}
+
+function requiresPurposefulInteraction(visualBrief) {
+  return /\b(?:purposeful\s+interactive|interactive\s+(?:care\s+)?(?:guide|selector|chooser|navigator|flow)|(?:guide|selector|chooser|navigator)\s+interaction)\b/iu.test(
+    visualBriefText(visualBrief),
+  );
+}
+
+function validatePurposefulInteraction(source, route, visualBrief) {
+  if (!requiresPurposefulInteraction(visualBrief)) return;
+  const marker = /data-purposeful-interaction(?:\s|=|>)/iu.exec(source);
+  if (!marker)
+    throw new Error(
+      `Candidate ${route.id} must implement the purposeful interaction requested by the client visual brief and mark its dedicated guide or selector with data-purposeful-interaction.`,
+    );
+
+  const close = source.indexOf("</section>", marker.index);
+  const interactionSource = source.slice(
+    marker.index,
+    close >= 0 ? close + "</section>".length : marker.index + 5000,
+  );
+  if (
+    /\bid\s*=\s*["']faqs["']|\bclassName\s*=\s*["'][^"']*(?:faq|social)[^"']*["']|<LeadForm\b|<ChatLauncher\b/iu.test(
+      interactionSource,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} cannot satisfy a purposeful interaction request with FAQ disclosure, the lead form, chat, or an image carousel alone.`,
+    );
+  if (
+    !/<details\b|<select\b|<button\b|\brole\s*=\s*["'](?:tab|radiogroup|listbox)["']/iu.test(
+      interactionSource,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} purposeful interaction must expose visible native stateful controls.`,
+    );
+  if (
+    !/<details\b|\baria-(?:selected|pressed|expanded)\s*=|\bon(?:Click|Change)\s*=/u.test(
+      interactionSource,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} purposeful interaction must expose a visible state change or native disclosure state.`,
+    );
+}
+
 /**
  * Restore reviewed alt text from the exact original src binding, or from an
  * unambiguous image URL resolved through sealed content tokens. New and
@@ -1705,7 +1787,7 @@ function referencesContentPath(source, token) {
   return memberBinding.test(source);
 }
 
-function validateExperience(source, route, content) {
+function validateExperience(source, route, content, visualBrief = {}) {
   syntaxErrorFor(source, route, "Experience.jsx", true);
   const scopeError = scopeErrorFor(source, route);
   if (scopeError) throw new Error(scopeError);
@@ -1756,6 +1838,8 @@ function validateExperience(source, route, content) {
     source,
     route,
   );
+  validateImageRoleReuse(source, route, content);
+  validatePurposefulInteraction(source, route, visualBrief);
   for (const { opening } of collectJsxElements(source).elements) {
     if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
     const altAttribute = jsxAttribute(opening, "alt");
@@ -1918,13 +2002,14 @@ function validateMotion(source, route) {
 }
 
 /**
- * @param {{files?: {experience?: string, styles?: string, motion?: string}, route?: Record<string, any>, content?: Record<string, any>}} [options]
+ * @param {{files?: {experience?: string, styles?: string, motion?: string}, route?: Record<string, any>, content?: Record<string, any>, visualBrief?: Record<string, any>}} [options]
  * @returns {{files: {experience: string, styles: string, motion: string}, referenceFidelity: Record<string, any> | null}}
  */
 export function validateProductionCandidateFiles({
   files,
   route = {},
   content = {},
+  visualBrief = {},
 } = {}) {
   const experience = normalizeAuthoredSource(String(files?.experience || ""));
   const styles = normalizeAuthoredSource(String(files?.styles || ""));
@@ -1934,7 +2019,7 @@ export function validateProductionCandidateFiles({
   const referenceDna = route.referenceDna
     ? validateReferenceDna(route.referenceDna, { requireEvidence: true })
     : null;
-  validateExperience(experience, route, content);
+  validateExperience(experience, route, content, visualBrief);
   validateStyles(styles, route);
   validateMotion(motion, route);
   const isolatedStyles = namespaceCreativeCss(styles);
@@ -1969,6 +2054,8 @@ function authorRules() {
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
+    "Do not silently reuse the primary hero image to fill missing secondary or tertiary image roles. When supporting image tokens are unavailable, keep the hero unique and adapt that chapter to a non-duplicative text-led or graphic treatment that still preserves the assigned reference mechanics.",
+    "When the client visual brief explicitly requests a purposeful interaction, guide, selector, chooser, or navigator, implement a clearly labeled stateful native interaction marked with data-purposeful-interaction. Keep a useful visible default/static state. FAQ disclosure, LeadForm, ChatLauncher, ordinary navigation, or an image carousel alone do not satisfy that request; use only sealed service and decision-support content and never invent advice.",
     "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",
     "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact and preserve the assigned composition; a reference-required utility-panel form may appear in the first fold but must remain concise and usable.",
     "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
@@ -2172,7 +2259,12 @@ export async function authorExperienceCandidates({
       let complianceRepaired =
         contractResult.repaired || experienceResult.repaired;
       try {
-        validateExperience(experience, route, content);
+        validateExperience(
+          experience,
+          route,
+          content,
+          routeContentManifest.visualBrief,
+        );
       } catch (error) {
         complianceRepaired = true;
         let repairedExperience;
@@ -2191,7 +2283,12 @@ export async function authorExperienceCandidates({
             "experience",
           );
           experience = normalizeAuthoredSource(repairedExperience.value);
-          validateExperience(experience, route, content);
+          validateExperience(
+          experience,
+          route,
+          content,
+          routeContentManifest.visualBrief,
+        );
         } catch (repairError) {
           const repairMessage =
             repairError instanceof Error
@@ -2210,7 +2307,12 @@ export async function authorExperienceCandidates({
             "experience",
           );
           experience = normalizeAuthoredSource(finalRepair.value);
-          validateExperience(experience, route, content);
+          validateExperience(
+          experience,
+          route,
+          content,
+          routeContentManifest.visualBrief,
+        );
         }
       }
       let referenceRepairCycles = 0;
@@ -2243,7 +2345,12 @@ export async function authorExperienceCandidates({
           );
           experience = normalizeAuthoredSource(repaired.value);
           complianceRepaired = true;
-          validateExperience(experience, route, content);
+          validateExperience(
+          experience,
+          route,
+          content,
+          routeContentManifest.visualBrief,
+        );
           fidelity = validateReferenceCandidate({
             referenceDna: route.referenceDna,
             experienceSource: experience,
