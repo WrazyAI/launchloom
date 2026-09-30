@@ -6,6 +6,7 @@ import path from "node:path";
 import {
   collectAvailableScreenshots,
   defaultRepairCandidate,
+  normalizeRepair,
   runRenderedCreativeRepair,
   runVisualGateProcess,
   writeCandidate,
@@ -158,6 +159,35 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("keeps authored inner pages when a repair response omits or empties them", () => {
+    const current = {
+      experience: "experience",
+      styles: "styles",
+      motion: "motion",
+      servicePage: '<main data-service-page><h1>Service</h1></main>',
+      locationPage: '<main data-location-page><h1>Location</h1></main>',
+    };
+    const repaired = normalizeRepair(
+      {
+        experience: "experience-fixed",
+        styles: "styles-fixed",
+        motion: "motion-fixed",
+        servicePage: '<main data-service-page><h1>Service fixed</h1></main>',
+        locationPage: "",
+      },
+      current,
+    );
+    expect(repaired.servicePage).toContain("Service fixed");
+    expect(repaired.locationPage).toBe(current.locationPage);
+
+    const unchanged = normalizeRepair(
+      { experience: "a", styles: "b", motion: "c" },
+      current,
+    );
+    expect(unchanged.servicePage).toBe(current.servicePage);
+    expect(unchanged.locationPage).toBe(current.locationPage);
+    expect(unchanged).not.toHaveProperty("servicesIndexPage");
+  });
   it("rejects full-file human repair output before changing candidate files", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-full-file-rejection-"),
