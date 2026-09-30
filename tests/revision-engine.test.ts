@@ -1039,6 +1039,145 @@ describe("revision operations", () => {
     expect(planned.operations).toEqual([]);
   });
 
+  it("defers section-scoped color changes without mutating the site-wide palette", async () => {
+    const draft = {
+      ...config(),
+      style: {
+        primaryColor: "#205d51",
+        surfaceColor: "#fbf6ed",
+        inkColor: "#17332b",
+        mutedColor: "#526760",
+        lineColor: "#d4ddd6",
+      },
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+        sections: [{ id: "opening", type: "hero", variant: "editorial" }],
+      },
+    };
+    const originalStyle = structuredClone(draft.style);
+    const planned = await planRevision(
+      ["Use teal in the hero."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.config.style).toEqual(originalStyle);
+    expect(planned.operations).toEqual([]);
+    expect(planned.results[0]).toMatchObject({
+      status: "creative",
+      intents: ["color"],
+      deferred: ["color"],
+      unresolved: [],
+    });
+  });
+
+  it("does not claim a creative section reorder was fulfilled when it cannot be applied", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+        sections: [
+          { id: "opening", type: "hero", variant: "editorial" },
+          { id: "service-list", type: "services", variant: "editorial" },
+          { id: "questions", type: "faq", variant: "editorial" },
+          { id: "contact", type: "contact", variant: "consultation" },
+        ],
+      },
+    };
+    const originalSections = structuredClone(draft.design.sections);
+    const planned = await planRevision(
+      ["Move the FAQ section above the services section."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(false);
+    expect(planned.config.design.sections).toEqual(originalSections);
+    expect(planned.operations).toEqual([]);
+    expect(planned.results[0]).toMatchObject({
+      status: "manual",
+      intents: ["layout"],
+      fulfilled: [],
+      deferred: [],
+      unresolved: ["layout"],
+      reason: expect.stringContaining("section structure"),
+    });
+  });
+
+  it("does not claim a creative section hide when only the legacy section config changes", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+        sections: [
+          { id: "opening", type: "hero", variant: "editorial" },
+          { id: "service-list", type: "services", variant: "editorial" },
+          { id: "questions", type: "faq", variant: "editorial" },
+          { id: "contact", type: "contact", variant: "consultation" },
+        ],
+      },
+    };
+    const originalSections = structuredClone(draft.design.sections);
+    const planned = await planRevision(
+      ["Hide the FAQ section."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(false);
+    expect(planned.config.design.sections).toEqual(originalSections);
+    expect(planned.operations).toEqual([]);
+    expect(planned.results[0]).toMatchObject({
+      status: "manual",
+      unresolved: ["layout"],
+      reason: expect.stringContaining("section structure"),
+    });
+  });
+
+  it("routes creative variant requests to authored repair instead of changing legacy config", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+        sections: [
+          { id: "opening", type: "hero", variant: "editorial" },
+          { id: "service-list", type: "services", variant: "editorial" },
+          { id: "questions", type: "faq", variant: "editorial" },
+          { id: "contact", type: "contact", variant: "consultation" },
+        ],
+      },
+    };
+    const originalSections = structuredClone(draft.design.sections);
+    const planned = await planRevision(
+      ["Use the centered variant for the hero."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.config.design.sections).toEqual(originalSections);
+    expect(planned.operations).toEqual([]);
+    expect(planned.results[0]).toMatchObject({
+      status: "creative",
+      intents: ["layout"],
+      deferred: ["layout"],
+      unresolved: [],
+    });
+  });
+
   it("routes explicit creative feature changes to authored source refinement", async () => {
     const draft = {
       ...config(),

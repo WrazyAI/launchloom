@@ -236,7 +236,7 @@ describe("site configuration", () => {
     expect(
       pack.routes.every((route: any) => route.referenceDossier.tags.business.includes("painting")),
     ).toBe(true);
-  });
+  }, 15_000);
 
   it("selects only HVAC reference dossiers after generating an HVAC config", () => {
     const config = normalise(

@@ -113,7 +113,7 @@ export default function Experience({ content, runtime }) {
     <main><section data-hero><h1>{content.hero.heading}</h1><p>{content.hero.body}</p><button data-early-conversion>{content.hero.primaryLabel}</button></section>
     <section id="services">{content.services.map((service) => <article key={service.name}><h2>{service.name}</h2><p>{service.description}</p></article>)}</section>
     <section id="faqs">{content.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
-    <section id="contact"><LeadForm content={content} runtime={runtime} /><a href={content.brand.phone}>{content.brand.phone}</a></section></main>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /><a href={"tel:" + content.brand.phone}>{content.brand.phone}</a></section></main>
   </div>;
 }`,
     };
@@ -129,6 +129,128 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("rejects unsealed or non-navigation URL attributes", () => {
+    const route = { id: "route-url-safety" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const unsafeSources = [
+      base.replace(
+        "<section data-hero>",
+        '<section data-hero><svg><image href="/images/unsealed.svg" /></svg>',
+      ),
+      base.replace(
+        "<section data-hero>",
+        '<section data-hero><object data="data:text/html,hello" />',
+      ),
+      base.replace(
+        '<a href={"tel:" + content.brand.phone}>',
+        "<a href={content.brand.phone}>",
+      ),
+      base.replace(
+        "<section data-hero>",
+        '<section data-hero><img src="/images/unsealed.webp" alt="Unsealed" />',
+      ),
+    ];
+
+    for (const experience of unsafeSources)
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+          content: {
+            hero: { image: "/images/hero.webp" },
+            brand: { phone: "+12125550186" },
+          },
+        }),
+      ).toThrow(/unsafe URL attribute|image source must use a sealed image content token/iu);
+  });
+
+  it("allows local navigation, sealed image tokens, and prefixed contact tokens", () => {
+    const route = { id: "route-safe-url" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace(
+      '<section data-hero>',
+      '<section data-hero><img src={content.hero.image} alt="A reviewed image" /><a href="/services/repair/">Service details</a>',
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).not.toThrow();
+
+    const serviceDetail = experience.replace(
+      "<article key={service.name}>",
+      '<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>',
+    );
+    expect(serviceDetail).not.toBe(experience);
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: serviceDetail, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).not.toThrow();
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles: `${styles}\n.hero { background-image: url('/images/unsealed.webp'); }`,
+          motion,
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).toThrow(/CSS must use sealed image content tokens/iu);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience: experience.replace(
+            '<a href="/services/repair/">',
+            '<a href={`tel:${content.brand.phone}`}>',
+          ),
+          styles,
+          motion,
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).not.toThrow();
+  });
+
   it("keeps the client visual brief alongside sealed content", () => {
     const manifest = buildCreativeContentManifest({
       ...site,
@@ -265,6 +387,10 @@ describe("production experience author", () => {
       validateProductionCandidateFiles({
         files: { experience: decorativeImage, styles, motion },
         route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
       }),
     ).not.toThrow();
 
@@ -1671,7 +1797,10 @@ describe("production experience author", () => {
 
   it("repairs malformed CSS wrappers while retaining decorative empty alts", async () => {
     const result = await authorExperienceCandidates({
-      site,
+      site: {
+        ...site,
+        assets: { ...site.assets, photoOne: site.assets.hero },
+      },
       inspirationPack,
       generate: async (request) => {
         const value = safeStage(request);

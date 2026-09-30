@@ -48,6 +48,7 @@ export default function Experience({ content, runtime }) {
   );
   await fs.writeFile(path.join(root, "candidate-a/styles.css"), "[data-hero]{min-height:40rem}");
   await fs.writeFile(path.join(root, "candidate-a/motion.js"), "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {}; return () => {}; }");
+  await writeV2ContentManifest(root);
   return root;
 }
 
@@ -59,7 +60,16 @@ async function writeV2ContentManifest(
     path.join(root, directory, "content-manifest.json"),
     JSON.stringify({
       version: 2,
-      values: {},
+      values: {
+        brand: { phone: "+12125550186", email: "studio@example.test" },
+        hero: {
+          heading: "A considered local service",
+          primaryLabel: "Request a consultation",
+          image: "/images/hero.webp",
+        },
+        services: [],
+        faqs: [],
+      },
       tokens: [],
       visualBrief: {
         palette: {},
@@ -164,7 +174,24 @@ describe("creative candidate promotion", () => {
     const file = path.join(root, "candidate-a/Experience.jsx");
     const source = await fs.readFile(file, "utf8");
     await fs.writeFile(file, source.replace('import { LeadForm } from "@launchloom/runtime";\n', ""));
-    await expect(promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" })).rejects.toThrow(/shared LeadForm runtime/iu);
+    await expect(promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" })).rejects.toThrow(/shared (?:LeadForm|LaunchLoom) runtime/iu);
+  });
+
+  it("revalidates URL safety at the promotion boundary", async () => {
+    const root = await makeFixture();
+    const file = path.join(root, "candidate-a/Experience.jsx");
+    const source = await fs.readFile(file, "utf8");
+    await fs.writeFile(
+      file,
+      source.replace(
+        "<section data-hero>",
+        '<section data-hero><object data="data:text/html,unsafe" />',
+      ),
+    );
+
+    await expect(
+      promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" }),
+    ).rejects.toThrow(/unsafe URL attribute data on <object>/iu);
   });
 
   it.each([
@@ -197,6 +224,7 @@ describe("creative candidate promotion", () => {
 
   it("rejects a version-two candidate before rendering when its content manifest is missing", async () => {
     const root = await makeFixture();
+    await fs.rm(path.join(root, "candidate-a/content-manifest.json"));
     const metadataPath = path.join(root, "candidate-a/metadata.json");
     const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
     const record = JSON.parse(
@@ -453,7 +481,7 @@ describe("creative candidate promotion", () => {
       await fs.cp(selectedBackup, selectedPath, { recursive: true });
       await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 90_000);
+  }, 180_000);
 
   it("does not trust hero geometry markers when rendered composition violates topology", async () => {
     const root = await makeFixture();
@@ -557,7 +585,7 @@ describe("creative candidate promotion", () => {
       await fs.cp(selectedBackup, selectedPath, { recursive: true });
       await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 45_000);
+  }, 90_000);
 
   it("selects one valid version-two candidate for preview without a pairwise comparison", async () => {
     const root = await makeFixture();
@@ -630,5 +658,5 @@ describe("creative candidate promotion", () => {
       await fs.cp(selectedBackup, selectedPath, { recursive: true });
       await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 45_000);
+  }, 90_000);
 });

@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { launchesForBusinessKind } from "./launch-history.mjs";
 import { buildInspirationPack } from "./inspiration-registry.mjs";
 
 function parseArgs(values) {
@@ -126,13 +127,11 @@ const [config, baseRegistry, history, intake] = await Promise.all([
     : {},
 ]);
 const registry = baseRegistry;
-const recent = Array.isArray(history.launches)
-  ? history.launches.slice(-30)
-  : [];
 const normalizedIndustry = String(config.businessKind || config.industry || "").toLowerCase();
 const industry = ["", "all", "general", "other"].includes(normalizedIndustry)
   ? intake.industry || config.businessKind || config.preset || "all"
   : normalizedIndustry;
+const recent = launchesForBusinessKind(history, industry);
 const styleText = [
   intake.stylePreference,
   intake.brandNotes,

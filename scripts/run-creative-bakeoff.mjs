@@ -22,6 +22,7 @@ import {
 } from "./rendered-reference-fidelity.mjs";
 import {
   countRecentCreativeFamilyUses,
+  launchesForSiteConfig,
   readLaunchHistory,
 } from "./launch-history.mjs";
 
@@ -368,14 +369,18 @@ export async function runCreativeBakeoff({
     );
   }
   const diversity = diversityReport(candidates.map(({ metadata }) => metadata));
+  const originalConfigPath = path.join(root, "src/site.config.json");
+  const originalConfig = await fs.readFile(originalConfigPath, "utf8");
   let recentHistory = { launches: [] };
   try {
-    recentHistory = await readLaunchHistory();
+    const history = await readLaunchHistory();
+    recentHistory = {
+      ...history,
+      launches: launchesForSiteConfig(history, originalConfig),
+    };
   } catch {
     // Rotation history is advisory; missing history must not block a bakeoff.
   }
-  const originalConfigPath = path.join(root, "src/site.config.json");
-  const originalConfig = await fs.readFile(originalConfigPath, "utf8");
   const selectedDir = path.join(root, "src/generated-experiences/selected");
   const selectedBackup = `${selectedDir}.bakeoff-${process.pid}`;
   await fs.rm(selectedBackup, { recursive: true, force: true });
@@ -422,6 +427,7 @@ export async function runCreativeBakeoff({
         await promoteCreativeCandidate({
           siteDir: root,
           candidateDir: path.relative(root, path.join(candidateRoot, candidate.directory)),
+          contentManifest: candidate.contentManifest,
           // Rendering a candidate for the bakeoff must remain available even
           // when source-level visual findings are present. Production
           // publication is enforced by the final promotion call below.
@@ -972,6 +978,9 @@ export async function runCreativeBakeoff({
         root,
         path.join(candidateRoot, winner.directory),
       ),
+      contentManifest: candidates.find(
+        (candidate) => candidate.directory === winner.directory,
+      )?.contentManifest,
       visualScore: winner.visualScore,
       distinctivenessScore: winner.distinctivenessScore,
       selectionMode: promote ? "creative-bakeoff" : "creative-preview",

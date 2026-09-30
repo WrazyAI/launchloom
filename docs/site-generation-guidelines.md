@@ -217,6 +217,14 @@ a new page recipe. Explicit requested colors take precedence over a generic
 preset palette, with readable action text selected for the resulting brand
 color.
 
+For `creative-candidate` pages, section-scoped color, spacing, typography, and
+variant requests belong to the authored-source repair lane; do not treat a
+page-wide legacy palette or section-variant config change as proof that the
+creative page changed. Adding, hiding, or reordering sections is not supported
+by the current creative-source scope contract, so classify those requests for
+manual attention without mutating the section configuration. Extend this only
+alongside a scoped source operation and rendered acceptance test.
+
 Revision acceptance checks both the built HTML and a real browser render at
 desktop and mobile widths. The requested section, order, variant, treatment,
 copy, and colors must be visible; calls and fragment links must work; primary

@@ -13,6 +13,7 @@ import { resolvePalette } from "./palette-policy.mjs";
 import { fictionalPipelineDemoNotice } from "./synthetic-demo-notice.mjs";
 import {
   defaultHistoryPath,
+  launchesForBusinessKind,
   recentLayoutFingerprints,
 } from "./launch-history.mjs";
 import { selectDesignVariant } from "../templates/client-site/src/lib/design-variants.ts";
@@ -36,11 +37,12 @@ const unsupportedBusinessKinds = new Set(
 
 export { parseModelJson } from "./model-json.mjs";
 
-function recentFingerprintsForSelection() {
+function recentFingerprintsForSelection(businessKind) {
   try {
-    return recentLayoutFingerprints(
-      JSON.parse(readFileSync(defaultHistoryPath(), "utf8")),
-    );
+    const history = JSON.parse(readFileSync(defaultHistoryPath(), "utf8"));
+    return recentLayoutFingerprints({
+      launches: launchesForBusinessKind(history, businessKind),
+    });
   } catch {
     return [];
   }
@@ -825,7 +827,7 @@ function designFor(kind, industry, intake = {}) {
     recipe,
     seed,
     requested: requestedPack,
-    recentFingerprints: recentFingerprintsForSelection(),
+    recentFingerprints: recentFingerprintsForSelection(kind),
     hasImage: Boolean(intake.heroImage || intake.photoOne || intake.photoTwo || intake.logo),
     avoidPackIds,
   });

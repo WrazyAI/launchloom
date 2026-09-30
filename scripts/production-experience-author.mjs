@@ -117,6 +117,38 @@ const requiredExperienceBindings = [
   { token: "content.services", aliases: ["content.services"] },
   { token: "content.faqs", aliases: ["content.faqs"] },
 ];
+const sealedImageSourcePaths = new Set([
+  "content.brand.logo",
+  "content.hero.image",
+  "content.hero.secondaryImage",
+  "content.hero.tertiaryImage",
+]);
+const urlBearingJsxAttributes = new Set([
+  "action",
+  "archive",
+  "background",
+  "cite",
+  "codebase",
+  "data",
+  "form",
+  "formaction",
+  "href",
+  "icon",
+  "itemid",
+  "longdesc",
+  "manifest",
+  "ping",
+  "poster",
+  "profile",
+  "resource",
+  "src",
+  "srcdoc",
+  "srcset",
+  "usemap",
+  "vocab",
+  "xlinkhref",
+  "xmlbase",
+]);
 
 function stableJson(value) {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
@@ -984,6 +1016,261 @@ function resolvedImageValue(attribute, content) {
       : undefined;
   }
   return undefined;
+}
+
+function expressionPath(expression, file) {
+  if (!expression) return "";
+  if (ts.isParenthesizedExpression(expression))
+    return expressionPath(expression.expression, file);
+  if (ts.isPropertyAccessExpression(expression))
+    return expression
+      .getText(file)
+      .replace(/\s+/gu, "")
+      .replace(/\?\./gu, ".");
+  return "";
+}
+
+function isSealedImageExpression(expression, file) {
+  if (!expression) return false;
+  if (ts.isParenthesizedExpression(expression))
+    return isSealedImageExpression(expression.expression, file);
+  if (sealedImageSourcePaths.has(expressionPath(expression, file))) return true;
+  if (
+    ts.isBinaryExpression(expression) &&
+    (expression.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
+      expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+  )
+    return (
+      isSealedImageExpression(expression.left, file) &&
+      isSealedImageExpression(expression.right, file)
+    );
+  return false;
+}
+
+function isSafeSealedImageUrl(value) {
+  const url = String(value || "").trim();
+  if (/^\/(?:images|assets|_astro)\/[A-Za-z0-9._~!$&'()*+,;=@%-]+(?:\/[A-Za-z0-9._~!$&'()*+,;=@%-]+)*(?:\?[^\s#]*)?(?:#[^\s]*)?$/u.test(url)) {
+    const pathname = url.split(/[?#]/u, 1)[0];
+    try {
+      return pathname.split("/").every((segment) => {
+        const decoded = decodeURIComponent(segment);
+        return decoded !== "." && decoded !== ".." && !/[\\/\u0000-\u001f]/u.test(decoded);
+      });
+    } catch {
+      return false;
+    }
+  }
+  if (/^data:image\/(?:png|jpeg|webp|avif);base64,[A-Za-z0-9+/]+={0,2}$/iu.test(url))
+    return true;
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname === "assets.launchloom.wrazyos.com" &&
+      parsed.username === "" &&
+      parsed.password === "" &&
+      parsed.port === "" &&
+      parsed.pathname.startsWith("/") &&
+      !parsed.pathname.split("/").some((part) => part === "." || part === "..")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isSafeLocalHref(value) {
+  const href = String(value || "").trim();
+  if (!href || /[\u0000-\u0020\\]/u.test(href)) return false;
+  if (href.startsWith("#")) return href.length > 1;
+  return href.startsWith("/") && !href.startsWith("//");
+}
+
+function unwrapUrlExpression(expression) {
+  let current = expression;
+  while (current && ts.isParenthesizedExpression(current))
+    current = current.expression;
+  return current;
+}
+
+function contentGroupAliases(source, group) {
+  const aliases = new Set();
+  const patterns = [
+    /\bcontent\s*:\s*\{([^}]*)\}/gu,
+    /\b(?:const|let)\s*\{([^}]*)\}\s*=\s*content\b/gu,
+  ];
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) {
+      const property = new RegExp(
+        `(?:^|,)\\s*${group}(?:\\s*:\\s*([A-Za-z_$][\\w$]*))?\\s*(?=,|$)`,
+        "u",
+      ).exec(match[1]);
+      if (property) aliases.add(property[1] || group);
+    }
+  }
+  return aliases;
+}
+
+function isSealedContactPath(expression, tokenPath, file, source) {
+  const path = expressionPath(expression, file);
+  if (path === tokenPath) return true;
+  const parts = tokenPath.split(".");
+  const group = parts.at(-2);
+  const member = parts.at(-1);
+  if (parts.length !== 3 || parts[0] !== "content") return false;
+  const aliases = contentGroupAliases(source, group);
+  return [...aliases].some((alias) => path === `${alias}.${member}`);
+}
+
+function isPrefixedContactExpression(expression, prefix, tokenPath, file, source) {
+  const node = unwrapUrlExpression(expression);
+  if (!node) return false;
+  if (
+    ts.isBinaryExpression(node) &&
+    node.operatorToken.kind === ts.SyntaxKind.PlusToken
+  )
+    return (
+      ts.isStringLiteral(node.left) &&
+      node.left.text === prefix &&
+      isSealedContactPath(node.right, tokenPath, file, source)
+    );
+  return (
+    ts.isTemplateExpression(node) &&
+    node.head.text === prefix &&
+    node.templateSpans.length === 1 &&
+    isSealedContactPath(
+      node.templateSpans[0].expression,
+      tokenPath,
+      file,
+      source,
+    ) &&
+    node.templateSpans[0].literal.text === ""
+  );
+}
+
+function isServiceRouteExpression(expression, file, source) {
+  const node = unwrapUrlExpression(expression);
+  if (!node) return false;
+  let valid = false;
+  if (ts.isTemplateExpression(node))
+    valid =
+      node.head.text === "/services/" &&
+      node.templateSpans.length === 1 &&
+      expressionPath(node.templateSpans[0].expression, file) ===
+        "service.slug" &&
+      node.templateSpans[0].literal.text === "/";
+  if (
+    ts.isBinaryExpression(node) &&
+    node.operatorToken.kind === ts.SyntaxKind.PlusToken &&
+    ts.isBinaryExpression(node.left) &&
+    node.left.operatorToken.kind === ts.SyntaxKind.PlusToken
+  )
+    valid =
+      ts.isStringLiteral(node.left.left) &&
+      node.left.left.text === "/services/" &&
+      expressionPath(node.left.right, file) === "service.slug" &&
+      ts.isStringLiteral(node.right) &&
+      node.right.text === "/";
+  return valid && /content\.services\s*\.\s*map\s*\(\s*\(\s*service\s*\)/u.test(source);
+}
+
+function staticSpreadUrlKey(property) {
+  if (!property.name) return "";
+  if (ts.isComputedPropertyName(property.name)) {
+    const expression = property.name.expression;
+    if (
+      ts.isStringLiteral(expression) ||
+      ts.isNoSubstitutionTemplateLiteral(expression)
+    )
+      return expression.text.toLowerCase();
+    return "*";
+  }
+  if (
+    ts.isIdentifier(property.name) ||
+    ts.isStringLiteral(property.name) ||
+    ts.isNoSubstitutionTemplateLiteral(property.name)
+  )
+    return property.name.text.toLowerCase();
+  return "*";
+}
+
+function validateAuthoredUrlAttributes(source, route, content) {
+  const { file, elements } = collectJsxElements(source);
+  for (const { opening } of elements) {
+    const tag = jsxOpeningName(opening).toLowerCase();
+    for (const property of jsxAttributes(opening)) {
+      if (ts.isJsxSpreadAttribute(property)) {
+        if (!ts.isObjectLiteralExpression(property.expression))
+          throw new Error(
+            `Candidate ${route.id} contains an unsafe URL attribute spread; use explicit allowlisted attributes.`,
+          );
+        for (const spreadProperty of property.expression.properties) {
+          const key = staticSpreadUrlKey(spreadProperty);
+          if (
+            key === "*" ||
+            urlBearingJsxAttributes.has(key) ||
+            ts.isSpreadAssignment(spreadProperty)
+          )
+            throw new Error(
+              `Candidate ${route.id} contains an unsafe URL attribute in a JSX spread.`,
+            );
+        }
+        continue;
+      }
+      if (!ts.isJsxAttribute(property)) continue;
+      const attributeName = property.name.getText(file).toLowerCase();
+      if (!urlBearingJsxAttributes.has(attributeName)) continue;
+      const initializer = property.initializer;
+      const expression =
+        initializer && ts.isJsxExpression(initializer)
+          ? initializer.expression
+          : null;
+      const literalValue =
+        initializer &&
+        (ts.isStringLiteral(initializer) ||
+          ts.isNoSubstitutionTemplateLiteral(initializer))
+          ? initializer.text
+          : null;
+
+      if (attributeName === "src" && tag === "img") {
+        if (!isSealedImageExpression(expression, file))
+          throw new Error(
+            `Candidate ${route.id} image source must use a sealed image content token.`,
+          );
+        const value = resolvedImageValue(property, content);
+        if (!isSafeSealedImageUrl(value))
+          throw new Error(
+            `Candidate ${route.id} image source must resolve to a safe local or LaunchLoom-hosted image asset.`,
+          );
+        continue;
+      }
+
+      if (attributeName === "href" && (tag === "a" || tag === "area")) {
+        if (literalValue !== null && isSafeLocalHref(literalValue)) continue;
+        if (
+          isPrefixedContactExpression(
+            expression,
+            "tel:",
+            "content.brand.phone",
+            file,
+            source,
+          ) ||
+          isPrefixedContactExpression(
+            expression,
+            "mailto:",
+            "content.brand.email",
+            file,
+            source,
+          ) ||
+          isServiceRouteExpression(expression, file, source)
+        )
+          continue;
+      }
+
+      throw new Error(
+        `Candidate ${route.id} contains an unsafe URL attribute ${property.name.getText(file)} on <${tag}> (${initializer?.getText(file) || "missing value"}).`,
+      );
+    }
+  }
 }
 
 function validateImageRoleReuse(source, route, content) {
@@ -1879,6 +2166,7 @@ function validateExperience(source, route, content, visualBrief = {}) {
           `Candidate ${route.id} navigation must expose literal <a href="#${target}"> inside a visible native <nav>.`,
         );
   }
+  validateAuthoredUrlAttributes(source, route, content);
   for (const binding of requiredExperienceBindings)
     if (
       !helperSealedBindings.has(binding.token) &&
@@ -1908,8 +2196,10 @@ function validateStyles(source, route) {
     throw new Error(
       `Candidate ${route.id} styles must contain CSS only, not an HTML document.`,
     );
-  if (/url\s*\(\s*["']?(?:https?:)?\/\//iu.test(source))
-    throw new Error(`Candidate ${route.id} CSS contains a remote URL.`);
+  if (/url\s*\(/iu.test(source) || /@import\b/iu.test(source))
+    throw new Error(
+      `Candidate ${route.id} CSS must use sealed image content tokens instead of CSS URL resources.`,
+    );
   if (/—/u.test(source))
     throw new Error(`Candidate ${route.id} CSS contains an em dash.`);
   if (/(?:^|\n)\s*["']\s*\n?\}\s*$/u.test(source))
@@ -2437,7 +2727,8 @@ export async function authorExperienceCandidates({
         referenceIds: Array.isArray(route.referenceIds)
           ? [...route.referenceIds]
           : [],
-        referenceDossierId: route.referenceDossier?.id || "",
+        referenceDossierId:
+          "referenceDossier" in route ? route.referenceDossier?.id || "" : "",
         servicePresentation: route.servicePresentation,
         sectionRhythm: route.sectionRhythm,
         typographyCategory: route.typographyCategory,

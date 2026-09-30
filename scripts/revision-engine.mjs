@@ -1610,9 +1610,23 @@ export async function planRevision(
         assets: Array.isArray(item?.assets) ? item.assets : [],
         colors: Array.isArray(item?.colors) ? item.colors : [],
       };
-    })
-    .filter((item) => item.text || item.assets.length || item.colors.length);
+  })
+  .filter((item) => item.text || item.assets.length || item.colors.length);
   const textItems = items.map((item) => item.text);
+  const creativeCandidate =
+    config.design?.experience?.renderer === "creative-candidate";
+  const sectionScopedCreativeColor = items.map(
+    (item) => {
+      if (!creativeCandidate || globalLayoutScope.test(item.text))
+        return false;
+      return item.text
+        .split(/[.!?;]|\band\b/iu)
+        .some(
+          (clause) =>
+            requestsColorChange(clause) && mentionedSection(clause),
+        );
+    },
+  );
   const deterministic = items.flatMap((item, feedbackIndex) =>
     [
       ...deterministicOperations(item.text, config),
@@ -1620,6 +1634,12 @@ export async function planRevision(
       // operations so the reviewer's selection always wins.
       ...structuredOperations(item, config),
     ].map((operation) => ({ ...operation, feedbackIndex })),
+  ).filter(
+    (operation) =>
+      !(
+        sectionScopedCreativeColor[operation.feedbackIndex] &&
+        operation.kind === "set_color_palette"
+      ),
   );
   const contentTargets = items.map((feedback) =>
     explicitContentTargets(feedback.text, config),
@@ -1704,7 +1724,7 @@ export async function planRevision(
       targets.some((target) => contentOperationMatchesTarget(operation, target))
     );
   });
-  const candidates = [...deterministic, ...modeled]
+  const proposedCandidates = [...deterministic, ...modeled]
     .filter(
       (operation) =>
         Number.isInteger(operation.feedbackIndex) &&
@@ -1732,6 +1752,36 @@ export async function planRevision(
         )
       );
     });
+  const unsupportedCreativeStructureFeedback = new Set(
+    creativeCandidate
+      ? proposedCandidates
+          .filter((operation) =>
+            ["set_section_enabled", "reorder_section"].includes(
+              operation.kind,
+            ),
+          )
+          .map((operation) => operation.feedbackIndex)
+      : [],
+  );
+  const candidates = proposedCandidates.filter(
+    (operation) => {
+      if (!creativeCandidate) return true;
+      if (
+        ["set_section_enabled", "reorder_section"].includes(operation.kind)
+      )
+        return false;
+      if (
+        ["set_section_variant", "set_design_treatment"].includes(
+          operation.kind,
+        )
+      )
+        return false;
+      return !(
+        sectionScopedCreativeColor[operation.feedbackIndex] &&
+        operation.kind === "set_color_palette"
+      );
+    },
+  );
   const draft = structuredClone(config);
   const applied = [];
   for (const operation of candidates)
@@ -1739,6 +1789,8 @@ export async function planRevision(
   const results = items.map((item, feedbackIndex) => {
     const feedback = item.text;
     const intents = intentsFor(item, config);
+    const unsupportedCreativeStructure =
+      unsupportedCreativeStructureFeedback.has(feedbackIndex);
     const operations = applied.filter(
       (operation) => operation.feedbackIndex === feedbackIndex,
     );
@@ -1756,10 +1808,14 @@ export async function planRevision(
           : intentSatisfied(intent, operations),
     );
     const unresolved = intents.filter((intent) => !fulfilled.includes(intent));
-    const creativeDeferred =
-      config.design?.experience?.renderer === "creative-candidate"
-        ? unresolved.filter((intent) => intent === "layout")
-        : [];
+    const creativeDeferred = creativeCandidate
+      ? unresolved.filter(
+          (intent) =>
+            (intent === "layout" && !unsupportedCreativeStructure) ||
+            (intent === "color" &&
+              sectionScopedCreativeColor[feedbackIndex]),
+        )
+      : [];
     const hardUnresolved = unresolved.filter(
       (intent) => !creativeDeferred.includes(intent),
     );
@@ -1780,6 +1836,12 @@ export async function planRevision(
       deferred: creativeDeferred,
       unresolved: hardUnresolved,
       operationKinds: operations.map((operation) => operation.kind),
+      ...(unsupportedCreativeStructure
+        ? {
+            reason:
+              "Creative section structure changes (adding, hiding, or reordering sections) are not supported by the source-edit lane and were not applied.",
+          }
+        : {}),
     };
   });
   return {
