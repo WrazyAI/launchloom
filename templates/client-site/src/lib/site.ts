@@ -245,6 +245,8 @@ export type SiteConfig = {
       selectionMode?: "internal-bakeoff" | "requested" | "legacy" | "creative-bakeoff";
       fingerprint?: string;
       servicePage?: boolean;
+      locationPage?: boolean;
+      servicesIndex?: boolean;
     };
   };
   assetReport?: {
