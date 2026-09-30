@@ -512,6 +512,16 @@ describe("SEO market map", () => {
     }]);
     expect(request.max_tool_calls).toBe(1);
     expect(request.tool_choice).toBe("required");
+    expect(request.messages[0].content).toContain(
+      "Include a direct citation for each observation",
+    );
+    expect(request.messages[0].content).toContain(
+      "Do not claim keyword volume, rankings, difficulty, or CPC",
+    );
+    expect(request.messages[0].content).not.toContain(
+      "only a terse acknowledgement",
+    );
+    expect(request.max_tokens).toBeGreaterThanOrEqual(256);
   });
 
   it("stops fallback research when the provider-reported spend bound is reached", async () => {

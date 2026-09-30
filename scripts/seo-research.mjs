@@ -353,7 +353,7 @@ export function createOpenRouterWebSearchClient({
           model,
           messages: [{
             role: "user",
-            content: `Search the public web for this local-market query and return only a terse acknowledgement after searching: ${boundedQuery}`,
+            content: `Search the public web for this local-market query and return at most four concise source-backed observations. Include a direct citation for each observation using only a source returned by the search. If no relevant result is found, say no relevant source was returned. Do not claim keyword volume, rankings, difficulty, or CPC; this fallback collects qualitative source observations only. Query: ${boundedQuery}`,
           }],
           tools: [{
             type: "openrouter:web_search",
@@ -366,7 +366,7 @@ export function createOpenRouterWebSearchClient({
           }],
           max_tool_calls: 1,
           tool_choice: "required",
-          max_tokens: 32,
+          max_tokens: 256,
           temperature: 0,
         },
       });
