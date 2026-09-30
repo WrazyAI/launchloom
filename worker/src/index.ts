@@ -962,7 +962,7 @@ async function feedbackImageGeneration(
     return json(
       {
         error:
-          "Image generation is not available right now. Upload an image instead.",
+          "Image creation is not available right now. You can upload an image instead.",
       },
       503,
       headers,
@@ -970,14 +970,14 @@ async function feedbackImageGeneration(
   const target = clean(body.target, 20) as FeedbackAttachmentTarget;
   if (!FEEDBACK_ATTACHMENT_TARGETS.includes(target))
     return json(
-      { error: "Choose which part of the site this image is for." },
+      { error: "Choose which image you are replacing." },
       400,
       headers,
     );
   const prompt = clean(body.prompt, MAX_FEEDBACK_PROMPT);
   if (prompt.length < 3)
     return json(
-      { error: "Describe the image you would like generated." },
+      { error: "Describe the image you want." },
       400,
       headers,
     );
@@ -985,7 +985,7 @@ async function feedbackImageGeneration(
     return json(
       {
         error:
-          "Keep phone numbers, email addresses, links, and street addresses out of the image description.",
+          "Please leave phone numbers, email addresses, links, and street addresses out of the image description.",
       },
       400,
       headers,
@@ -998,7 +998,7 @@ async function feedbackImageGeneration(
     const hours = Math.max(1, Math.ceil(quota.retryAfterSeconds / 3_600));
     return json(
       {
-        error: `The daily generated-image limit for this site was reached. Try again in about ${hours} hour${hours === 1 ? "" : "s"}, or upload your own image.`,
+        error: `You have reached today's limit for created images. Try again in about ${hours} hour${hours === 1 ? "" : "s"}, or upload your own image.`,
       },
       429,
       headers,
@@ -1020,15 +1020,15 @@ async function feedbackImageGeneration(
     console.error("Feedback image generation failed", error);
     throw new ReviewRequestError(
       error instanceof Error && /timed out/u.test(error.message)
-        ? "Image generation timed out. Please try again."
-        : "Image generation failed. Please try again or upload your own image.",
+        ? "Image creation timed out. Please try again."
+        : "We could not create the image. Please try again or upload your own image.",
       502,
     );
   }
   const key = `feedback-drafts/${feedbackImageKeySegment(claims.repo)}/${crypto.randomUUID()}.${image.extension}`;
   const stream = new Response(image.data).body;
   if (!stream)
-    throw new ReviewRequestError("Image generation failed. Please try again.", 502);
+    throw new ReviewRequestError("We could not create the image. Please try again.", 502);
   await env.ASSETS.put(key, stream, {
     httpMetadata: {
       contentType: image.contentType,
@@ -1070,7 +1070,7 @@ async function copyFeedbackDraftForClient(
   const object = env.ASSETS.get ? await env.ASSETS.get(objectKey) : null;
   if (!object)
     throw new ReviewRequestError(
-      "The generated image expired. Please generate it again.",
+      "That image has expired. Please create it again.",
       409,
     );
   const bytes = new Uint8Array(await object.arrayBuffer());
@@ -1471,7 +1471,7 @@ async function feedback(request: Request, env: Env) {
       );
     if (!note && feedbackStructureIsEmpty(structure.structure))
       return json(
-        { error: "Please enter feedback first." },
+        { error: "Please tell us what you would like changed." },
         400,
         cors(request, claims.allowedOrigins),
       );
@@ -1522,9 +1522,9 @@ async function feedback(request: Request, env: Env) {
         "logo", "photos", "style", "color", "text", "contact", "other-small",
       ]);
       if (!allowedCategories.has(feedbackCategory))
-        return json({ error: "Choose one of the listed small-change categories." }, 400, cors(request, claims.allowedOrigins));
+        return json({ error: "Pick the kind of change you would like to make." }, 400, cors(request, claims.allowedOrigins));
       if (replacementFile && !["logo", "photos"].includes(feedbackCategory))
-        return json({ error: "Replacement images are for logo or business photo updates." }, 400, cors(request, claims.allowedOrigins));
+        return json({ error: "You can replace the logo or a business photo." }, 400, cors(request, claims.allowedOrigins));
     } else {
       safeCategory = "developer";
       if (replacementFile)
@@ -1601,7 +1601,7 @@ async function feedback(request: Request, env: Env) {
         return json(
           {
             error:
-              "Generated replacement images are for logo or business photo updates.",
+              "A new image can replace the logo or a business photo.",
           },
           400,
           cors(request, claims.allowedOrigins),
@@ -1867,7 +1867,7 @@ async function creativeRepair(request: Request, env: Env) {
         );
       if (!note && feedbackStructureIsEmpty(structure.structure))
         return json(
-          { error: "Please enter feedback first." },
+          { error: "Please tell us what you would like changed." },
           400,
           cors(request, claims.allowedOrigins),
         );

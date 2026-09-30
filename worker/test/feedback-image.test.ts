@@ -304,10 +304,10 @@ describe("feedback images", () => {
     expect(commentBody).toContain("<!-- launchloom-feedback-structure:");
     expect(commentBody).toContain("_Requested changes:_");
     expect(commentBody).toContain(
-      "Replace the hero image with the uploaded image.",
+      "Replace the main image with the uploaded image.",
     );
     expect(commentBody).toContain(
-      "Set brand or accent color #123456.",
+      "Set main brand color #123456.",
     );
   });
 });
@@ -387,7 +387,7 @@ describe("bounded client image feedback", () => {
     expect(response.status).toBe(202);
     expect(comment.body).toContain("_Requested changes:_");
     expect(comment.body).toContain(
-      "Replace the about or story image with the uploaded image.",
+      "Replace the about image with the uploaded image.",
     );
     expect(comment.body).not.toContain("Replacement asset: ");
     const marker = comment.body.match(

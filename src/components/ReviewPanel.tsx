@@ -88,7 +88,7 @@ export default function ReviewPanel() {
       error?: string;
     };
     if (!response.ok)
-      throw new Error(data.error || "Repair status is unavailable.");
+      throw new Error(data.error || "The quality check status is unavailable.");
     setRepair(data);
   }
 
@@ -102,7 +102,7 @@ export default function ReviewPanel() {
           setState(
             error instanceof Error
               ? error.message
-              : "Repair status is unavailable.",
+              : "The quality check status is unavailable.",
           );
       })
       .finally(() => {
@@ -124,7 +124,7 @@ export default function ReviewPanel() {
         setState(
           error instanceof Error
             ? error.message
-            : "Could not refresh repair status.",
+            : "We could not refresh the quality check.",
         ),
       );
     }, 5_000);
@@ -138,7 +138,7 @@ export default function ReviewPanel() {
       return;
     }
     setSending(true);
-    setState("Sending the one final repair request…");
+    setState("Asking for the final fix…");
     try {
       const response = await fetch(`${apiBase}/api/creative-repair`, {
         method: "POST",
@@ -156,7 +156,7 @@ export default function ReviewPanel() {
         attemptConsumed?: boolean;
       };
       if (!response.ok)
-        throw new Error(data.error || "The final repair could not be queued.");
+        throw new Error(data.error || "The final fix could not be started.");
       setRepair({
         ...repair,
         status: data.status || "queued",
@@ -170,7 +170,7 @@ export default function ReviewPanel() {
       setState(
         error instanceof Error
           ? error.message
-          : "The final repair could not be queued.",
+          : "The final fix could not be started.",
       );
       void refreshCreativeRepair().catch(() => undefined);
     } finally {
@@ -185,9 +185,9 @@ export default function ReviewPanel() {
     }
     setState(
       result.queueStatus === "queued"
-        ? "Queued. Your request will start after the current revision."
+        ? "Queued. Your request will start after the current update."
         : hasCreativeRepair
-          ? "Accepted as the working baseline. Your feedback is in revision; the client has not received this version."
+          ? "Saved as the starting point. Your changes are being applied; the client has not received this version."
           : isDeveloper
             ? "Feedback sent. A fresh internal preview will follow."
             : "Feedback received. We’ll review it before publishing an update.",
@@ -208,7 +208,7 @@ export default function ReviewPanel() {
     }
     setState(
       result.queueStatus === "queued"
-        ? "Queued. Your request will start after the current revision."
+        ? "Queued. Your request will start after the current update."
         : "Feedback received. We’ll review it before publishing an update.",
     );
   }
@@ -259,8 +259,8 @@ export default function ReviewPanel() {
         </h1>
         <p>
           {isDeveloper
-            ? "Approve this exact preview to publish it and invite the client. Or leave feedback for another internal revision."
-            : "Request a small correction such as a logo, photo, colour, contact detail, or wording change. You can upload a replacement image or generate one."}
+            ? "Approve this exact preview to publish it and invite the client. Or send changes for another internal update."
+            : "Request a small correction such as a logo, photo, color, contact detail, or wording change. You can upload a new image or create one."}
         </p>
         {hasCreativeRepair && (
           <section
@@ -268,14 +268,14 @@ export default function ReviewPanel() {
             aria-labelledby="creative-repair-title"
           >
             <div className="review-divider" />
-            <h2 id="creative-repair-title">Creative quality review</h2>
+            <h2 id="creative-repair-title">Quality check</h2>
             <p>
-              This preview did not clear every automated visual check. Review
-              the findings, accept it as the working baseline with feedback, or
-              request its one final repair. Nothing is sent to the client
-              without a separate confirmed release.
+              This preview did not pass all of our automatic quality checks.
+              Review the notes and send your changes, or ask for one final
+              automatic fix. Nothing is sent to the client without your
+              separate approval.
             </p>
-            {repairLoading && <p role="status">Loading the rendered findings…</p>}
+            {repairLoading && <p role="status">Loading the quality notes…</p>}
             {repair && (
               <>
                 {repair.previewUrl && (
@@ -286,7 +286,7 @@ export default function ReviewPanel() {
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Open the diagnostics-only preview
+                      Open the internal preview
                       <svg
                         aria-hidden="true"
                         focusable="false"
@@ -296,7 +296,7 @@ export default function ReviewPanel() {
                         <path d="M7 17 17 7M8 7h9v9" />
                       </svg>
                     </a>
-                    <span> (not approved for publication)</span>
+                    <span> (not for the client)</span>
                   </p>
                 )}
                 {repair.findings.length > 0 ? (
@@ -318,8 +318,8 @@ export default function ReviewPanel() {
                   </ul>
                 ) : (
                   <p>
-                    No detailed rendered findings were available. The repair
-                    still uses the captured candidate report.
+                    No detailed notes were available. The fix will use the
+                    saved report.
                   </p>
                 )}
                 {isDeveloper && repair.previewUrl && (
@@ -331,7 +331,7 @@ export default function ReviewPanel() {
                     email={email}
                     onEmailChange={setEmail}
                     pageUrl={pageUrl}
-                    submitLabel="Accept as baseline and send feedback"
+                    submitLabel="Send these changes"
                     onSubmitted={feedbackSubmitted}
                   />
                 )}
@@ -360,24 +360,24 @@ export default function ReviewPanel() {
                     }
                     onClick={startFinalRepair}
                   >
-                    Fix the listed issues (one final attempt)
+                    Fix the listed issues (one last try)
                   </button>
                 )}
                 {["dispatching", "queued", "running"].includes(
                   repair.status,
                 ) && (
                   <p role="status">
-                    The final repair is{" "}
+                    The final fix is{" "}
                     {repair.status === "running" ? "running" : "queued"}. This
-                    page will update when the new checks finish.
+                    page will update when the checks finish.
                   </p>
                 )}
                 {repair.status === "completed" && (
                   <div role="status">
                     <p>
                       {repair.outcome === "passed"
-                        ? "The final repair passed its review checks. It is ready for developer review, not client publication."
-                        : "The final repair finished, but one or more quality checks still need attention. No further automatic repair will run."}
+                        ? "The final fix passed our checks. It is ready for you to review, not for the client yet."
+                        : "The final fix finished, but some checks still need attention. We will not run another automatic fix."}
                     </p>
                     {repair.resultPreviewUrl && (
                       <p>
@@ -388,14 +388,14 @@ export default function ReviewPanel() {
                         >
                           {repair.outcome === "passed"
                             ? "Open the updated preview"
-                            : "Open the final diagnostic-only preview"}
+                            : "Open the final internal preview"}
                         </a>
                       </p>
                     )}
                     {repair.resultReviewUrl && (
                       <p>
                         <a href={repair.resultReviewUrl}>
-                          Open the updated developer review
+                          Open the updated review
                         </a>
                       </p>
                     )}
@@ -403,10 +403,10 @@ export default function ReviewPanel() {
                 )}
                 {repair.status === "failed" && (
                   <p role="status">
-                    The final repair did not complete:{" "}
+                    The final fix did not finish:{" "}
                     {repair.failure ||
-                      "The pipeline stopped before it could produce a reviewed result."}{" "}
-                    No second attempt is available from this link.
+                      "It stopped before producing a result."}{" "}
+                    You cannot retry it from this link.
                   </p>
                 )}
               </>
