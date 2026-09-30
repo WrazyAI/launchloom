@@ -261,7 +261,7 @@ const AUTHORED_PAGE_EVIDENCE_KEYS = {
   "services-index": "servicesIndexPage",
 };
 
-async function inspectAuthoredPage(page) {
+export async function inspectAuthoredPage(page) {
   return page.evaluate(() => {
     const host = document.querySelector("[data-authored-page-host]");
     const kind = host?.getAttribute("data-authored-page-kind") || "";
@@ -302,7 +302,7 @@ async function inspectAuthoredPage(page) {
       h1Count: pageRoot ? pageRoot.querySelectorAll("h1").length : 0,
       hasContactSection: Boolean(pageRoot?.querySelector("#contact")),
       hasLeadForm: Boolean(pageRoot?.querySelector('[data-runtime="lead-form"]')),
-      missingAlt: [...document.images].filter((image) => !image.getAttribute("alt")?.trim()).length,
+      missingAlt: [...document.images].filter((image) => !image.hasAttribute("alt")).length,
       unnamedControls: [...(pageRoot?.querySelectorAll("button, a") || [])].filter((element) => !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,

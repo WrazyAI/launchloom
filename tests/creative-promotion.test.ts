@@ -245,7 +245,7 @@ describe("creative candidate promotion", () => {
     const root = await makeFixture();
     await fs.writeFile(
       path.join(root, "candidate-a/ServicePage.jsx"),
-      validServicePage,
+      "```jsx\n" + validServicePage + "\n```",
     );
 
     await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
@@ -255,6 +255,7 @@ describe("creative candidate promotion", () => {
       "utf8",
     );
     expect(selected).toContain("data-service-page");
+    expect(selected).not.toContain("```");
     expect(selected).toContain("/services/${item.slug}/");
     const config = JSON.parse(
       await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),

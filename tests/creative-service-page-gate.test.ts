@@ -1,7 +1,9 @@
+import { chromium } from "playwright";
 import { describe, expect, it } from "vitest";
 import {
   authoredPageFailures,
   authoredPageIdentityFindings,
+  inspectAuthoredPage,
 } from "../scripts/run-creative-bakeoff.mjs";
 
 const baseEvidence = {
@@ -44,6 +46,19 @@ const servicesIndexEvidence = {
 };
 
 describe("creative authored page gate", () => {
+  it("accepts decorative empty alt attributes and flags missing attributes in the real DOM", async () => {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const page = await browser.newPage();
+      await page.setContent('<main data-service-page><img alt=""><img alt="A detail"><img id="missing-alt"></main>');
+      expect((await inspectAuthoredPage(page)).missingAlt).toBe(1);
+      await page.locator("#missing-alt").evaluate((element) => element.remove());
+      expect((await inspectAuthoredPage(page)).missingAlt).toBe(0);
+    } finally {
+      await browser.close();
+    }
+  });
+
   it("accepts complete service, location, and services-index renders", () => {
     expect(authoredPageFailures(baseEvidence, "service")).toEqual([]);
     expect(authoredPageFailures(locationEvidence, "location")).toEqual([]);

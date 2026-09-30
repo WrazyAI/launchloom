@@ -76,6 +76,7 @@ function dossierBinding(dossier) {
 
 const ALL_CANDIDATE_NAMES = ["candidate-a", "candidate-b", "candidate-c"];
 const REQUIRED_AUTHORING_STAGES = ["contract", "experience", "styles", "motion"];
+const ALLOWED_AUTHORING_STAGES = [...REQUIRED_AUTHORING_STAGES, "service", "service-index", "location"];
 
 function candidateRouteIndex(candidateName) {
   return ALL_CANDIDATE_NAMES.indexOf(candidateName);
@@ -152,7 +153,7 @@ export function assertReusablePromptEvidence(
     assert(
       record.sessionId === creativeSession.sessionId &&
         record.effort === creativeSession.reasoningEffort &&
-        REQUIRED_AUTHORING_STAGES.includes(record.stage),
+        ALLOWED_AUTHORING_STAGES.includes(record.stage),
       `Prompt evidence for ${record.routeId} has an unexpected stage or frozen-session binding.`,
     );
     const suppliedEvidence = Array.isArray(record.evidence) ? record.evidence : [];

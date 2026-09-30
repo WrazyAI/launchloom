@@ -169,16 +169,16 @@ export async function promoteCreativeCandidate({
     fs.copyFile(path.join(source, "motion.js"), path.join(selected, "motion.js")),
     fs.writeFile(
       path.join(selected, "ServicePage.jsx"),
-      files.servicePage ? `${files.servicePage.trim()}\n` : SERVICE_PAGE_FALLBACK,
+      validatedFiles.servicePage ? `${validatedFiles.servicePage.trim()}\n` : SERVICE_PAGE_FALLBACK,
     ),
     fs.writeFile(
       path.join(selected, "LocationPage.jsx"),
-      files.locationPage ? `${files.locationPage.trim()}\n` : LOCATION_PAGE_FALLBACK,
+      validatedFiles.locationPage ? `${validatedFiles.locationPage.trim()}\n` : LOCATION_PAGE_FALLBACK,
     ),
     fs.writeFile(
       path.join(selected, "ServicesIndexPage.jsx"),
-      files.servicesIndexPage
-        ? `${files.servicesIndexPage.trim()}\n`
+      validatedFiles.servicesIndexPage
+        ? `${validatedFiles.servicesIndexPage.trim()}\n`
         : SERVICES_INDEX_FALLBACK,
     ),
   ]);
