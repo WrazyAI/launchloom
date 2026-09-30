@@ -259,6 +259,77 @@ describe("creative repair loop", () => {
     expect(diagnostics.join(" ")).not.toContain('"experience":"fixed"');
   });
 
+  it("retries one affordability-limited repair with provider headroom", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-affordability-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience:
+        '<section data-reference-section="hero"><h1>Old</h1></section>',
+      styles: '[data-reference-section="hero"] h1 { font-size: 4rem; }',
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "This request requires more credits, or fewer max_tokens. You requested up to 48000 tokens, but can only afford 46992.",
+            },
+          }),
+          { status: 402 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(repaired) },
+              },
+            ],
+            usage: {
+              completion_tokens: 3456,
+              completion_tokens_details: { reasoning_tokens: 321 },
+            },
+          }),
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const diagnostics: string[] = [];
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [],
+      files,
+      screenshots: [],
+      logger: (line: string) => diagnostics.push(line),
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const firstBody = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const retryBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
+    expect(firstBody.max_completion_tokens).toBe(48000);
+    expect(retryBody.max_completion_tokens).toBe(45968);
+    expect(diagnostics.join(" ")).toContain(
+      "creative_repair_retry reason=provider-affordability requested_max_completion_tokens=48000 retry_max_completion_tokens=45968",
+    );
+    expect(diagnostics.join(" ")).toContain(
+      "creative_completion stage=creative-repair finish_reason=stop max_completion_tokens=45968 completion_tokens=3456 reasoning_tokens=321",
+    );
+  });
+
   it("redacts sealed client image data from repair text before provider transport", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-image-redaction-"),

@@ -87,6 +87,8 @@ const REPAIR_EDIT_SCHEMA = {
   },
 };
 const REPAIR_SOURCE_SPLIT_THRESHOLD_CHARS = 20_000;
+const REPAIR_AFFORDABILITY_RETRY_MIN_TOKENS = 32_000;
+const REPAIR_AFFORDABILITY_RETRY_HEADROOM_TOKENS = 1_024;
 const REPAIR_EDITABLE_FILES = new Set(REPAIR_FILE_ORDER);
 const MAX_REPAIR_EDITS = 12;
 const MAX_REPAIR_EDIT_FRAGMENT_CHARS = 6_000;
@@ -114,6 +116,26 @@ function findingText(finding) {
 
 function hasFinding(findings, pattern) {
   return findings.some((finding) => pattern.test(findingText(finding)));
+}
+
+function affordableRepairRetryLimit(status, payload, requestedTokens) {
+  if (status !== 402) return null;
+  const message = String(payload?.error?.message || "");
+  const match = message.match(/can only afford\s+([\d,]+)\b/iu);
+  if (!match) return null;
+  const affordableTokens = Number(match[1].replace(/,/gu, ""));
+  if (
+    !Number.isSafeInteger(affordableTokens) ||
+    affordableTokens >= requestedTokens
+  )
+    return null;
+  const retryTokens = Math.min(
+    requestedTokens - 1,
+    affordableTokens - REPAIR_AFFORDABILITY_RETRY_HEADROOM_TOKENS,
+  );
+  return retryTokens >= REPAIR_AFFORDABILITY_RETRY_MIN_TOKENS
+    ? retryTokens
+    : null;
 }
 
 function mergeFindings(...sources) {
@@ -800,37 +822,57 @@ Return only the complete ${target} source file in the JSON content field. Do not
     stableReferenceDna,
   );
   const requestModelRepair = async (currentFiles, target = null) => {
-    const response = await openRouterChatCompletion({
-      title: "LaunchLoom creative repair",
-      sessionId,
-      body: {
-        model,
-        ...promptCacheRequestFields(model, promptCacheKey),
-        temperature: 0.35,
-        reasoning: {
-          effort: reasoningEffort,
-          exclude: true,
-        },
-        response_format: {
-          type: "json_schema",
-          json_schema: target
-            ? REPAIR_FILE_SCHEMA
-            : scopedHumanRepair
-              ? REPAIR_EDIT_SCHEMA
-              : REPAIR_SCHEMA,
-        },
-        ...completionLimitRequestField(CREATIVE_REPAIR_MAX_COMPLETION_TOKENS),
-        messages: [
-          {
-            role: "system",
-            content:
-              "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
+    const requestContent = buildRepairContent(currentFiles, target);
+    const sendRepairRequest = (maxCompletionTokens) =>
+      openRouterChatCompletion({
+        title: "LaunchLoom creative repair",
+        sessionId,
+        body: {
+          model,
+          ...promptCacheRequestFields(model, promptCacheKey),
+          temperature: 0.35,
+          reasoning: {
+            effort: reasoningEffort,
+            exclude: true,
           },
-          { role: "user", content: buildRepairContent(currentFiles, target) },
-        ],
-      },
-    });
-    const payload = await response.json().catch(() => ({}));
+          response_format: {
+            type: "json_schema",
+            json_schema: target
+              ? REPAIR_FILE_SCHEMA
+              : scopedHumanRepair
+                ? REPAIR_EDIT_SCHEMA
+                : REPAIR_SCHEMA,
+          },
+          ...completionLimitRequestField(maxCompletionTokens),
+          messages: [
+            {
+              role: "system",
+              content:
+                "Return JSON only. You are repairing your own production frontend against screenshot-level evidence.",
+            },
+            { role: "user", content: requestContent },
+          ],
+        },
+      });
+
+    let maxCompletionTokens = CREATIVE_REPAIR_MAX_COMPLETION_TOKENS;
+    let response = await sendRepairRequest(maxCompletionTokens);
+    let payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const retryLimit = affordableRepairRetryLimit(
+        response.status,
+        payload,
+        maxCompletionTokens,
+      );
+      if (retryLimit) {
+        logger(
+          `creative_repair_retry reason=provider-affordability requested_max_completion_tokens=${maxCompletionTokens} retry_max_completion_tokens=${retryLimit}`,
+        );
+        maxCompletionTokens = retryLimit;
+        response = await sendRepairRequest(maxCompletionTokens);
+        payload = await response.json().catch(() => ({}));
+      }
+    }
     if (!response.ok)
       throw new Error(
         `OpenRouter creative repair failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
@@ -840,7 +882,7 @@ Return only the complete ${target} source file in the JSON content field. Do not
     const diagnostics = authoringCompletionDiagnostics({
       stage: "creative-repair",
       routeId: "repair",
-      maxTokens: CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
+      maxTokens: maxCompletionTokens,
       payload,
       content: responseContent,
     });
