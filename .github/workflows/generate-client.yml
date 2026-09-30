@@ -34,7 +34,7 @@ concurrency:
 
 jobs:
   intake_handoff_check:
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     outputs:
       completed: ${{ steps.marker.outputs.completed }}
     steps:
@@ -57,7 +57,7 @@ jobs:
   generate:
     needs: intake_handoff_check
     if: ${{ needs.intake_handoff_check.outputs.completed != 'true' || (github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates) }}
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04
     env:
       GH_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
       GITHUB_ORG_TOKEN: ${{ secrets.LAUNCHLOOM_GITHUB_ORG_TOKEN }}
