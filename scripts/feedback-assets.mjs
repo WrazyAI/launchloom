@@ -5,9 +5,9 @@ import sharp from "sharp";
 
 export const FEEDBACK_IMAGE_SPECS = {
   logo: { label: "logo", maxWidth: 512, minWidth: 48, minHeight: 48 },
-  hero: { label: "hero image", maxWidth: 1600, minWidth: 640, minHeight: 360 },
+  hero: { label: "main image", maxWidth: 1600, minWidth: 640, minHeight: 360 },
   secondary: {
-    label: "about or story image",
+    label: "about image",
     maxWidth: 1200,
     minWidth: 480,
     minHeight: 360,

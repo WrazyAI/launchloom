@@ -704,7 +704,7 @@ try {
     await reviewRoot.locator(".ll-send").click();
     await reviewRoot
       .locator(".ll-feedback-status")
-      .getByText("Queued. Your request will start after the current revision.")
+      .getByText("Queued. Your request will start after the current update.")
       .waitFor();
     if ((await comment.inputValue()) !== "")
       failures.push(
@@ -782,7 +782,7 @@ try {
       .first()
       .fill("A minimal lighthouse mark in navy");
     await clientRoot
-      .locator('.ll-client-fields button:has-text("Generate an image")')
+      .locator('.ll-client-fields button:has-text("Create an image")')
       .click();
     await clientRoot
       .locator(".ll-client-fields .ll-part-preview")

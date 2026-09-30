@@ -9,16 +9,16 @@ export type ClientSubmitResult = {
 };
 
 const PHOTO_TARGETS = [
-  { id: "hero", label: "Opening or hero image" },
-  { id: "secondary", label: "About or story image" },
-  { id: "tertiary", label: "Gallery image" },
+  { id: "hero", label: "Main image at the top" },
+  { id: "secondary", label: "About image" },
+  { id: "tertiary", label: "Gallery photo" },
   { id: "team", label: "Team photo" },
 ] as const;
 
-const LOGO_TARGET = { id: "logo", label: "Logo or brand mark" };
+const LOGO_TARGET = { id: "logo", label: "Logo" };
 
 const COLOR_ROLES = [
-  { id: "primary", label: "Brand or accent color", fallback: "#205d51" },
+  { id: "primary", label: "Main brand color", fallback: "#205d51" },
   { id: "surface", label: "Page background", fallback: "#f8f6f0" },
 ] as const;
 
@@ -91,11 +91,11 @@ export default function ClientFeedbackForm({
     const submittedEmail = reviewerEmail();
     if (!submittedEmail) return;
     if (prompt.trim().length < 3) {
-      setStatus("Describe the image you want first.");
+      setStatus("Describe the image first.");
       return;
     }
     setBusy(true);
-    setStatus("Generating an image…");
+    setStatus("Creating an image…");
     try {
       const response = await fetch(`${apiBase}/api/feedback-image`, {
         method: "POST",
@@ -115,7 +115,7 @@ export default function ClientFeedbackForm({
       };
       const url = data.images?.[0]?.url;
       if (!response.ok || !url)
-        throw new Error(data.error || "Image generation failed.");
+        throw new Error(data.error || "We could not create the image.");
       setGenerated({
         url,
         prompt: prompt.trim(),
@@ -124,10 +124,10 @@ export default function ClientFeedbackForm({
       });
       setReplacement(null);
       if (fileInput.current) fileInput.current.value = "";
-      setStatus("Generated. Choose it as your replacement, or generate another.");
+      setStatus("Created. Use this image, or create another.");
     } catch (error) {
       setStatus(
-        error instanceof Error ? error.message : "Image generation failed.",
+        error instanceof Error ? error.message : "We could not create the image.",
       );
     } finally {
       setBusy(false);
@@ -140,7 +140,7 @@ export default function ClientFeedbackForm({
     const submittedEmail = reviewerEmail();
     if (!submittedEmail) return;
     if (imageCategory && !replacement && !generated) {
-      setStatus("Upload or generate a replacement image.");
+      setStatus("Add a photo or create one.");
       return;
     }
     if (
@@ -158,7 +158,7 @@ export default function ClientFeedbackForm({
       !colorSelections.length &&
       !/#[0-9a-f]{6}/iu.test(comment)
     ) {
-      setStatus("Pick a colour or state a six-digit hex code in the note.");
+      setStatus("Pick a color, or type a color code like #205d51 in the note.");
       return;
     }
     const attachments = generated
@@ -183,7 +183,7 @@ export default function ClientFeedbackForm({
         form.set("token", token);
         form.set(
           "comment",
-          comment.trim() || "Replace this image with the uploaded file.",
+          comment.trim() || "Please replace this image with the one I uploaded.",
         );
         form.set("category", category);
         form.set("email", submittedEmail);
@@ -263,12 +263,12 @@ export default function ClientFeedbackForm({
           onChange={(event) => changeCategory(event.target.value)}
         >
           <option value="logo">Logo</option>
-          <option value="photos">Business photos</option>
-          <option value="style">Font or styling</option>
-          <option value="color">Colour</option>
-          <option value="text">Text or factual correction</option>
+          <option value="photos">Photos</option>
+          <option value="style">Fonts or spacing</option>
+          <option value="color">Colors</option>
+          <option value="text">Wording or facts</option>
           <option value="contact">Contact details</option>
-          <option value="other-small">Other small change</option>
+          <option value="other-small">Something else small</option>
         </select>
       </label>
       {imageCategory && (
@@ -320,13 +320,13 @@ export default function ClientFeedbackForm({
             disabled={busy}
             onClick={() => void generateImage()}
           >
-            {busy ? "Working…" : "Generate an image"}
+            {busy ? "Working…" : "Create an image"}
           </button>
           {generated && (
             <div className="feedback-part__preview">
-              <img src={generated.url} alt="Generated replacement" />
+              <img src={generated.url} alt="Your new image" />
               <div>
-                <strong>Generated image selected</strong>
+                <strong>Your new image is selected</strong>
                 <button
                   type="button"
                   className="feedback-part__remove"
@@ -340,11 +340,11 @@ export default function ClientFeedbackForm({
         </section>
       )}
       {category === "color" && (
-        <section className="feedback-part" aria-label="Colour choice">
-          <h3>Colours</h3>
+        <section className="feedback-part" aria-label="Color choice">
+          <h3>Colors</h3>
           <p className="feedback-part__hint">
-            Pick the colours you prefer. The rest of the palette is derived with
-            readable contrast.
+            Pick the colors you like. We will adjust the rest so text stays
+            easy to read.
           </p>
           <div className="feedback-colors">
             {COLOR_ROLES.map((role) => (
@@ -395,12 +395,12 @@ export default function ClientFeedbackForm({
               : category === "contact"
                 ? "Name one field and its new value, for example: Phone: (555) 555-0144."
                 : category === "color"
-                  ? "Tell us the brand colour if you know it, for example: Use #205d51."
+                  ? "Tell us the main color if you know it, for example: Use #205d51."
                   : category === "style"
-                    ? "Describe a small font or spacing change you would like."
+                    ? "Describe a small change to fonts or spacing."
                     : imageCategory
                       ? "Anything else about this image?"
-                      : "Describe the small change. Requests that change the page layout are reviewed separately."
+                      : "Tell us what you would like changed. Bigger redesigns are handled separately."
           }
         />
       </label>

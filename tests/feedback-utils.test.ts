@@ -162,7 +162,7 @@ describe("revision feedback", () => {
       true,
     );
     expect(feedbackRequestSummary(request)).toContain(
-      "Replace the hero image with the uploaded image.",
+      "Replace the main image with the uploaded image.",
     );
     expect(feedbackRequestSummary(request)).toContain("generated image");
   });
