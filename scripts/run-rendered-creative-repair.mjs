@@ -365,7 +365,7 @@ async function readCandidate(candidateDir) {
   };
 }
 
-function normalizeRepair(value) {
+export function normalizeRepair(value, currentFiles = {}) {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("Creative repair returned an invalid file bundle.");
   const normalized = {};
@@ -373,6 +373,12 @@ function normalizeRepair(value) {
     if (typeof value[key] !== "string" || !value[key].trim())
       throw new Error(`Creative repair returned no ${key} source.`);
     normalized[key] = value[key].replace(/[—–]/gu, "-").trim();
+  }
+  for (const key of ["servicePage", "locationPage", "servicesIndexPage"]) {
+    if (typeof value[key] === "string" && value[key].trim())
+      normalized[key] = value[key].replace(/[—–]/gu, "-").trim();
+    else if (typeof currentFiles[key] === "string" && currentFiles[key].trim())
+      normalized[key] = currentFiles[key];
   }
   return normalized;
 }
@@ -683,8 +689,10 @@ export async function defaultRepairCandidate({
   let validated;
   try {
     const modelRepaired = humanReview
-      ? applyCreativeRepairEdits(files, repairResponse?.edits)
-      : normalizeRepair(repairResponse);
+      ? applyCreativeRepairEdits(files, repairResponse?.edits, {
+          allowInnerPages: false,
+        })
+      : normalizeRepair(repairResponse, files);
     if (humanReview)
       assertCreativeRevisionScope(files, modelRepaired, creativeRepairScope);
     const repaired = {

@@ -66,6 +66,38 @@ describe("creative repair loop", () => {
     ).toThrow(/inline image data/iu);
   });
 
+  it("applies bounded edits to authored inner pages and keeps scoped human repairs on the homepage files", () => {
+    const files = {
+      experience: "<main>Experience</main>",
+      styles: "main { color: inherit; }",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+      servicePage: '<main data-service-page><h1>Service</h1></main>',
+    };
+    const result = applyCreativeRepairEdits(files, [
+      {
+        file: "servicePage",
+        find: "<h1>Service</h1>",
+        replace: "<h1>Service page</h1>",
+      },
+    ]);
+    expect(result.servicePage).toContain("Service page");
+    expect(result.experience).toBe(files.experience);
+
+    expect(() =>
+      applyCreativeRepairEdits(
+        files,
+        [
+          {
+            file: "servicePage",
+            find: "<h1>Service</h1>",
+            replace: "<h1>Other</h1>",
+          },
+        ],
+        { allowInnerPages: false },
+      ),
+    ).toThrow(/unsupported candidate file/iu);
+  });
+
   it("requires developer human repairs to return edits for a resolved scope", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-scoped-repair-prompt-"),
@@ -1554,6 +1586,37 @@ describe("creative repair loop", () => {
     expect(calls).toBe(2);
     expect(result.pass).toBe(true);
     expect(result.cyclesUsed).toBe(2);
+  });
+
+  it("updates authored inner pages through the repair loop and keeps unchanged pages", async () => {
+    const result = await runCreativeRepairLoop({
+      files: {
+        experience: "old",
+        styles: "old",
+        motion: "old",
+        servicePage: "service-old",
+        locationPage: "location-old",
+      },
+      referenceDna: { familyId: "test" },
+      generate: async () => ({
+        experience: "fixed",
+        styles: "fixed",
+        motion: "fixed",
+        servicePage: "service-fixed",
+        locationPage: "",
+      }),
+      evaluate: async (files: any) => ({
+        pass:
+          files.experience === "fixed" &&
+          files.servicePage === "service-fixed" &&
+          files.locationPage === "location-old",
+        findings: ["service-page desktop: heading identity drift"],
+      }),
+      maxCycles: 1,
+    });
+    expect(result.pass).toBe(true);
+    expect(result.files.servicePage).toBe("service-fixed");
+    expect(result.files.locationPage).toBe("location-old");
   });
 
   it("fails closed after the retry budget", async () => {

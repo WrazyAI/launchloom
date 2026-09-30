@@ -156,9 +156,13 @@ become client-site assets.
    the full candidate set before choosing another target, so subsequent repairs
    compare against current rendered output rather than a stale pre-repair batch.
    The repaired candidate is never trusted on its own claim: it must rebuild,
-   rerender, and pass the judges on the next round. The authored service page
-   source is included in every repair context and preserved through repairs, so
-   a repair cannot break the service page's styling or markers. Each repair response has a
+   rerender, and pass the judges on the next round. The authored inner page
+   sources are included in every repair context, and automatic rendered repairs
+   may return corrected inner-page sources or bounded edits naming them so
+   service, location, and services-index findings are fixed in their own page;
+   scoped human repairs stay restricted to the homepage files because their
+   section scope is declared against Experience.jsx. Inner pages are preserved
+   through repairs so a repair cannot silently drop or break them. Each repair response has a
    48k completion ceiling and records its
    finish reason plus completion/reasoning token counts without logging source
    content. When the combined authored source exceeds 20,000 characters, repair
