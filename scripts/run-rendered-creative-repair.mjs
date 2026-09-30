@@ -209,11 +209,15 @@ function repairPriority(report, candidateId) {
   return scores.length ? Math.min(...scores) : Number.NEGATIVE_INFINITY;
 }
 
-function lowestScoreFirst(report, targets) {
+// The per-candidate repair budget is scarce, so the loop repairs the
+// candidate closest to passing the measured gates first. Repairing the
+// weakest candidate first historically spent every cycle on candidates that
+// could not close a twenty-point gap and left the leader unrepaired.
+function closestToPassingFirst(report, targets) {
   return [...targets].sort((left, right) => {
     const scoreDelta =
-      repairPriority(report, left.candidateId) -
-      repairPriority(report, right.candidateId);
+      repairPriority(report, right.candidateId) -
+      repairPriority(report, left.candidateId);
     return scoreDelta || left.candidateId.localeCompare(right.candidateId);
   });
 }
@@ -1114,7 +1118,7 @@ export async function runRenderedCreativeRepair({
               directory: reportCandidate(report, target.candidateId)?.directory,
             }))
             .filter((target) => target.candidate);
-      const target = lowestScoreFirst(report, repairTargets)[0];
+      const target = closestToPassingFirst(report, repairTargets)[0];
       if (!target)
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
@@ -1310,7 +1314,7 @@ export async function runRenderedCreativeRepair({
             "Production promotion is not ready. Preserve the assigned Reference DNA and repair the selected candidate's remaining promotion blockers.",
         });
       }
-      const target = lowestScoreFirst(
+      const target = closestToPassingFirst(
         report,
         targets.filter(
           (item) => (cycleUse.get(item.candidateId) || 0) < cycleLimit,
