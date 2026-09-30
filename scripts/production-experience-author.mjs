@@ -2293,6 +2293,11 @@ export async function authorExperienceCandidates({
         signature: route.signature,
         navigation: route.navigation,
         heroGeometry: route.heroGeometry,
+        heroArchetype: route.heroArchetype || "",
+        referenceIds: Array.isArray(route.referenceIds)
+          ? [...route.referenceIds]
+          : [],
+        referenceDossierId: route.referenceDossier?.id || "",
         servicePresentation: route.servicePresentation,
         sectionRhythm: route.sectionRhythm,
         typographyCategory: route.typographyCategory,

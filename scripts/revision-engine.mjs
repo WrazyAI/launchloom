@@ -132,6 +132,25 @@ const PALETTE_KEYS = [
   "mutedColor",
   "lineColor",
 ];
+const COLOR_ROLE_KEYS = {
+  primary: "primaryColor",
+  surface: "surfaceColor",
+  hero: "heroColor",
+  ink: "inkColor",
+  muted: "mutedColor",
+  line: "lineColor",
+};
+// Replacement images are materialized into the client repository by the
+// revision workflow. The engine only accepts local feedback asset paths so a
+// crafted comment can never point the config at an arbitrary URL.
+const IMAGE_TARGET_FIELDS = {
+  logo: { assets: "logo" },
+  hero: { images: "hero", assets: "photoOne" },
+  secondary: { images: "secondary", assets: "photoTwo" },
+  tertiary: { images: "tertiary", assets: "photoThree" },
+  team: { assets: "teamPhoto" },
+};
+const FEEDBACK_IMAGE_PATH = /^\/images\/feedback\/[a-z0-9-]+\.webp$/u;
 const MODEL_OPERATION_KINDS = new Set([
   "set_copy",
   "set_service_copy",
@@ -324,6 +343,26 @@ const conversionFeatureRequest =
   /\b(exit(?:-intent)? (?:offer|popup|modal)|before you go|quick answers?|website assistant|faq (?:widget|assistant|chat)|ai (?:faq )?(?:chat|assistant|chatbot)|chatbot|guided (?:qualifier|questions?)|qualification (?:form|questions?)|question(?:naire)? tool|multi-step form)\b/i;
 const creativeVisualRequest =
   /\b(premium|high[- ]end|polished|cinematic|editorial|distinctive|generic|visual|composition|layout|hierarchy|spacing|whitespace|asymmetr(?:y|ical)|full[- ]bleed|motion|animation|reveal|scroll|mobile|responsive|typography|font|serif|sans|bold|minimal|modern|immersive|prominent|understated|simpler)\b|\b(move|place|reposition|resize|restyle|hide|remove|show|add|replace|change|swap)\b.{0,70}\b(hero|navigation|navbar|nav|cta|button|card|grid|image|imagery|photo|gallery|section|services?|feature|widget|calculator|carousel|tabs?|comparison|timeline|panel)\b|\b(larger|smaller|taller|shorter|wider|narrower)\b.{0,50}\b(hero|cta|button|image|imagery|photo|gallery|section|services?|feature|widget|panel)\b/i;
+const pureStructuredImageClause =
+  /^\s*(?:please\s+)?(?:smoke test:?\s*)?(?:replace|swap|change|update|use|choose|generate|regenerate|select)\b[^.;!?]{0,90}?\b(image|images|photo|photos|picture|pictures|logo|gallery|hero|opening|team photo)\b(?:\s+(?:instead|please|now))?[.!?]?\s*$/iu;
+const creativeVisualKeyword =
+  /\b(premium|high[- ]end|polished|cinematic|editorial|distinctive|generic|visual|composition|layout|hierarchy|spacing|whitespace|asymmetr(?:y|ical)|full[- ]bleed|motion|animation|reveal|scroll|mobile|responsive|typography|font|serif|sans|bold|minimal|modern|immersive|prominent|understated|simpler|larger|smaller|taller|shorter|wider|narrower|video|icon|illustration|graphic)\b/iu;
+
+// Drop clauses that are fully answered by a structured image replacement, so a
+// creative-candidate site does not need an authored source repair for a plain
+// "replace the hero image" note. Composition, sizing, and non-image asks stay.
+function residualVisualRequest(feedback) {
+  return clean(feedback, 4000)
+    .replace(/^\s*\[[^\]]+\]\s*/u, "")
+    .split(/(?<=[.;!?])\s+/u)
+    .map((clause) =>
+      pureStructuredImageClause.test(clause) &&
+      !creativeVisualKeyword.test(clause)
+        ? " "
+        : clause,
+    )
+    .join(" ");
+}
 
 function clean(value, limit = 360) {
   return String(value || "")
@@ -877,11 +916,70 @@ export function deterministicOperations(feedback, config) {
   operations.push(...approvedHeroShortening(feedback, config));
   return operations;
 }
-function intentsFor(feedback, config) {
+function validPaletteValue(value) {
+  return /^#[0-9a-f]{6}$/i.test(String(value || "")) ? value : undefined;
+}
+export function structuredOperations(item, config) {
+  const operations = [];
+  for (const asset of item?.assets || []) {
+    const field = IMAGE_TARGET_FIELDS[asset?.target];
+    const path = clean(asset?.path, 120);
+    if (!field || !FEEDBACK_IMAGE_PATH.test(path)) continue;
+    const source = asset?.source === "fal-generated" ? "fal-generated" : "client";
+    operations.push({
+      kind: "set_image",
+      target: asset.target,
+      path,
+      source,
+      ...(clean(asset?.prompt, 500)
+        ? { prompt: clean(asset.prompt, 500) }
+        : {}),
+      ...(clean(asset?.model, 80) ? { model: clean(asset.model, 80) } : {}),
+      ...(/^[a-f0-9]{8,64}$/iu.test(String(asset?.promptHash || ""))
+        ? { promptHash: String(asset.promptHash) }
+        : {}),
+      ...(/^[a-f0-9]{8,64}$/iu.test(String(asset?.sha256 || ""))
+        ? { sha256: String(asset.sha256) }
+        : {}),
+      ...(Number.isFinite(asset?.width) && Number(asset.width) > 0
+        ? { width: Math.round(asset.width) }
+        : {}),
+      ...(Number.isFinite(asset?.height) && Number(asset.height) > 0
+        ? { height: Math.round(asset.height) }
+        : {}),
+    });
+  }
+  const selectedColors = (item?.colors || []).filter((color) =>
+    Boolean(COLOR_ROLE_KEYS[color?.role]),
+  );
+  if (selectedColors.length) {
+    const current = config.style || {};
+    const defaults = paletteFor(config, "");
+    const palette = Object.fromEntries(
+      PALETTE_KEYS.map((key) => [
+        key,
+        validPaletteValue(current[key]) || defaults[key],
+      ]),
+    );
+    for (const color of selectedColors)
+      palette[COLOR_ROLE_KEYS[color.role]] = color.hex.toLowerCase();
+    operations.push({
+      kind: "set_color_palette",
+      palette,
+      requestedColors: selectedColors.map((color) => color.hex.toLowerCase()),
+    });
+  }
+  return operations;
+}
+function intentsFor(item, config) {
+  const feedback = typeof item === "string" ? item : clean(item?.text, 4000);
   const intents = [];
   if (socialProofRequest.test(feedback)) intents.push("social-proof");
   if (requestsColorChange(feedback)) intents.push("color");
   if (brandNameRequest.test(feedback)) intents.push("brand-name");
+  if (Array.isArray(item?.assets) && item.assets.length) intents.push("image");
+  if (Array.isArray(item?.colors) && item.colors.length && !intents.includes("color"))
+    intents.push("color");
   const structuralFeedback = feedbackWithoutConversionFeatures(feedback);
   const structural = layoutRequest.test(structuralFeedback)
     ? structuralOperations(structuralFeedback, config)
@@ -906,11 +1004,18 @@ function intentsFor(feedback, config) {
     intents.push("content");
   if (conversionFeatureRequest.test(feedback))
     intents.push("conversion-feature");
-  if (
-    config.design?.experience?.renderer === "creative-candidate" &&
-    creativeVisualRequest.test(feedback)
-  )
-    intents.push("layout");
+  if (config.design?.experience?.renderer === "creative-candidate") {
+    // A structured replacement already answers an image request. Keep the
+    // authored creative lane for composition, sizing, and non-image visual
+    // changes, but do not require a source repair just because the note says
+    // "replace the hero image".
+    const structuredImageOnly =
+      Array.isArray(item?.assets) &&
+      item.assets.length > 0 &&
+      !creativeVisualRequest.test(residualVisualRequest(feedback));
+    if (!structuredImageOnly && creativeVisualRequest.test(feedback))
+      intents.push("layout");
+  }
   return intents.length ? [...new Set(intents)] : ["unknown"];
 }
 function explicitContentTargets(feedback, config) {
@@ -1138,6 +1243,55 @@ export function applyOperation(config, operation) {
           PALETTE_KEYS.map((key) => [key, palette[key].toLowerCase()]),
         ),
       ),
+    };
+    return true;
+  }
+  if (operation.kind === "set_image") {
+    const field = IMAGE_TARGET_FIELDS[operation.target];
+    const path = clean(operation.path, 120);
+    if (!field || !FEEDBACK_IMAGE_PATH.test(path)) return false;
+    const source = operation.source === "fal-generated" ? "fal-generated" : "client";
+    config.images = { ...(config.images || {}) };
+    config.assets = { ...(config.assets || {}) };
+    if (field.images) config.images[field.images] = path;
+    if (field.assets) config.assets[field.assets] = path;
+    const replacedKeys = new Set(Object.values(field));
+    const used = (config.assetReport?.used || []).filter(
+      (entry) => !replacedKeys.has(entry?.asset),
+    );
+    used.push({
+      asset: field.assets || field.images,
+      placement: operation.target,
+      source,
+      ...(source === "fal-generated"
+        ? {
+            provider: "fal.ai",
+            ...(clean(operation.model, 80)
+              ? { model: clean(operation.model, 80) }
+              : {}),
+            ...(clean(operation.prompt, 500)
+              ? { subject: clean(operation.prompt, 500) }
+              : {}),
+            generatedAt: new Date().toISOString(),
+          }
+        : {}),
+      ...(clean(operation.promptHash, 64)
+        ? { promptHash: clean(operation.promptHash, 64) }
+        : {}),
+      ...(clean(operation.sha256, 64)
+        ? { sha256: clean(operation.sha256, 64) }
+        : {}),
+      ...(Number.isFinite(operation.width) && operation.width > 0
+        ? { width: Math.round(operation.width) }
+        : {}),
+      ...(Number.isFinite(operation.height) && operation.height > 0
+        ? { height: Math.round(operation.height) }
+        : {}),
+    });
+    config.assetReport = {
+      ...(config.assetReport || {}),
+      used,
+      skipped: config.assetReport?.skipped || [],
     };
     return true;
   }
@@ -1411,6 +1565,8 @@ function intentSatisfied(intent, operations) {
     return operations.some(
       (operation) => operation.kind === "set_color_palette",
     );
+  if (intent === "image")
+    return operations.some((operation) => operation.kind === "set_image");
   if (intent === "brand-name")
     return operations.some((operation) => operation.kind === "show_brand_name");
   if (intent === "layout")
@@ -1439,21 +1595,37 @@ export async function planRevision(
   config,
   planner = modelOperations,
 ) {
-  const items = feedbackItems.map((item) => clean(item, 4000)).filter(Boolean);
-  const deterministic = items.flatMap((feedback, feedbackIndex) =>
-    deterministicOperations(feedback, config).map((operation) => ({
-      ...operation,
-      feedbackIndex,
-    })),
+  const items = feedbackItems
+    .map((item) => {
+      if (typeof item === "string")
+        return { text: clean(item, 4000), assets: [], colors: [] };
+      return {
+        text: clean(item?.text, 4000),
+        assets: Array.isArray(item?.assets) ? item.assets : [],
+        colors: Array.isArray(item?.colors) ? item.colors : [],
+      };
+    })
+    .filter(
+      (item) => item.text || item.assets.length || item.colors.length,
+    );
+  const textItems = items.map((item) => item.text);
+  const deterministic = items.flatMap((item, feedbackIndex) =>
+    [
+      ...deterministicOperations(item.text, config),
+      // Explicit image and color choices are applied after text-derived
+      // operations so the reviewer's selection always wins.
+      ...structuredOperations(item, config),
+    ].map((operation) => ({ ...operation, feedbackIndex })),
   );
   const contentTargets = items.map((feedback) =>
     explicitContentTargets(feedback, config),
   );
-  const modeled = (await planner(items, config)).filter((operation) => {
+  const modeled = (await planner(textItems, config)).filter((operation) => {
     if (!MODEL_OPERATION_KINDS.has(operation.kind)) return false;
-    const feedback = items[operation.feedbackIndex];
+    const item = items[operation.feedbackIndex];
+    const feedback = item?.text;
     if (!feedback) return false;
-    const intents = intentsFor(feedback, config);
+    const intents = intentsFor(item, config);
     if (
       [
         "set_section_enabled",
@@ -1562,8 +1734,8 @@ export async function planRevision(
   const applied = [];
   for (const operation of candidates)
     if (applyOperation(draft, operation)) applied.push(operation);
-  const results = items.map((feedback, feedbackIndex) => {
-    const intents = intentsFor(feedback, config);
+  const results = items.map((item, feedbackIndex) => {
+    const intents = intentsFor(item, config);
     const operations = applied.filter(
       (operation) => operation.feedbackIndex === feedbackIndex,
     );
@@ -1598,7 +1770,7 @@ export async function planRevision(
             : "manual";
     return {
       feedbackIndex,
-      feedback,
+      feedback: item.text,
       intents,
       status,
       fulfilled,
@@ -1726,6 +1898,15 @@ export function expectedArtifacts(operations, config) {
           placement: "business-fact",
         },
       ];
+    if (
+      operation.kind === "update_design_token" &&
+      operation.token === "palette"
+    )
+      return (operation.requested || []).map((entry) => ({
+        type: "style",
+        field: entry.field,
+        value: entry.value,
+      }));
     if (operation.kind === "update_design_token") {
       const artifacts = [];
       if (operation.value)
@@ -1779,6 +1960,14 @@ export function expectedArtifacts(operations, config) {
         },
       ];
     }
+    if (operation.kind === "set_image")
+      return [
+        {
+          type: "image",
+          path: clean(operation.path, 120),
+          target: operation.target,
+        },
+      ];
     if (operation.kind === "set_service_copy")
       return [{ type: "text", value: clean(operation.description) }];
     if (operation.kind === "set_process")
@@ -2074,6 +2263,11 @@ export function verifyRevision(
       failures.push(
         `Missing rendered color: ${artifact.field}=${artifact.value}`,
       );
+    if (
+      artifact.type === "image" &&
+      !html.includes(artifact.path)
+    )
+      failures.push(`Missing rendered image: ${artifact.path}`);
     if (
       artifact.type === "variant" &&
       !html.includes(`variant-${artifact.value}`)

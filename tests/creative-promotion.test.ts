@@ -289,6 +289,7 @@ describe("creative candidate promotion", () => {
     await fs.cp(selectedPath, selectedBackup, { recursive: true });
 
     const fidelityEvidence: any[] = [];
+    const diversityEvidence: any[] = [];
     const renderedReferenceEvaluator = async (input: any) => {
       fidelityEvidence.push(input);
       return {
@@ -320,25 +321,29 @@ describe("creative candidate promotion", () => {
         reportPath: path.join(root, "v2-diversity-report.json"),
         screenshotsDir: path.join(root, "v2-diversity-screenshots"),
         renderedReferenceEvaluator,
-        renderedDiversityEvaluator: async () => ({
-          version: 1,
-          model: "test/model",
-          score: 92,
-          pass: true,
-          minimumPairDistance: 90,
-          audit: {
-            pairs: [
-              {
-                left: "candidate-a",
-                right: "candidate-b",
-                distance: 90,
-                reason: "Rendered compositions are materially different.",
-              },
-            ],
-            genericFallbackDetected: false,
-            summary: "Rendered candidates are visually distinct.",
-          },
-        }),
+        renderedDiversityEvaluator: async (input: any) => {
+          diversityEvidence.push(input);
+          return {
+            version: 1,
+            model: "test/model",
+            score: 92,
+            pass: true,
+            minimumPairDistance: 90,
+            audit: {
+              pairs: [
+                {
+                  left: "candidate-a",
+                  right: "candidate-b",
+                  distance: 90,
+                  pass: true,
+                  reason: "Rendered compositions are materially different.",
+                },
+              ],
+              genericFallbackDetected: false,
+              summary: "Rendered candidates are visually distinct.",
+            },
+          };
+        },
       });
 
       expect(report.diversity.pass).toBe(false);
@@ -349,12 +354,64 @@ describe("creative candidate promotion", () => {
       expect(pageOverview.width).toBe(1536);
       expect(pageOverview.height).toBeGreaterThanOrEqual(864);
       expect(firstEvidence.renderedGeometry.desktop.viewportHeight).toBe(864);
+      expect(diversityEvidence).toHaveLength(1);
+      expect(diversityEvidence[0].candidates).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            desktop: expect.stringMatching(/desktop-viewport\.png$/u),
+            mobile: expect.stringMatching(/mobile-viewport\.png$/u),
+          }),
+        ]),
+      );
       expect(report.visualDiversity.pass).toBe(true);
       expect(report.candidates.every((candidate: any) => candidate.eligible)).toBe(
         true,
       );
       expect(report.selectedCandidateId).not.toBeNull();
       expect(report.promotionReady).toBe(true);
+
+      const convergedPreview = await runCreativeBakeoff({
+        siteDir: siteRoot,
+        candidatesDir: root,
+        reportPath: path.join(root, "v2-preview-converged-report.json"),
+        screenshotsDir: path.join(root, "v2-preview-converged-screenshots"),
+        preview: true,
+        deferPromotion: true,
+        renderedReferenceEvaluator,
+        renderedDiversityEvaluator: async () => ({
+          version: 1,
+          model: "test/model",
+          score: 40,
+          pass: false,
+          minimumPairDistance: 40,
+          audit: {
+            pairs: [
+              {
+                left: "candidate-a",
+                right: "candidate-b",
+                distance: 40,
+                pass: false,
+                reason: "Both render the same centered split hero.",
+              },
+            ],
+            genericFallbackDetected: false,
+            summary: "Rendered heroes converged.",
+          },
+        }),
+      });
+      expect(convergedPreview.selectedCandidateId).toBeNull();
+      expect(convergedPreview.fallback).toBe(true);
+      expect(convergedPreview.previewDiversity).toMatchObject({
+        pass: false,
+        strategy: "converged-blocked",
+        convergenceDetected: true,
+      });
+      expect(
+        convergedPreview.candidates.every(
+          (candidate: any) =>
+            candidate.renderedHeroDistinctiveness?.allPairsPass === false,
+        ),
+      ).toBe(true);
 
       const blocked = await runCreativeBakeoff({
         siteDir: siteRoot,
@@ -396,7 +453,7 @@ describe("creative candidate promotion", () => {
       await fs.cp(selectedBackup, selectedPath, { recursive: true });
       await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 60_000);
+  }, 90_000);
 
   it("does not trust hero geometry markers when rendered composition violates topology", async () => {
     const root = await makeFixture();
@@ -494,6 +551,79 @@ describe("creative candidate promotion", () => {
       expect(report.selectedCandidateId).toBeNull();
       expect(report.fallback).toBe(true);
       expect(report.promotionReady).toBe(false);
+    } finally {
+      await fs.writeFile(configPath, originalConfig);
+      await fs.rm(selectedPath, { recursive: true, force: true });
+      await fs.cp(selectedBackup, selectedPath, { recursive: true });
+      await fs.rm(selectedBackup, { recursive: true, force: true });
+    }
+  }, 45_000);
+
+  it("selects one valid version-two candidate for preview without a pairwise comparison", async () => {
+    const root = await makeFixture();
+    const metadataPath = path.join(root, "candidate-a/metadata.json");
+    const metadata = JSON.parse(await fs.readFile(metadataPath, "utf8"));
+    const record = JSON.parse(
+      await fs.readFile("data/inspiration-registry.json", "utf8"),
+    ).records[0];
+    const baseDna = buildReferenceDna(record, { requireEvidence: true });
+    metadata.version = 2;
+    metadata.referenceDna = baseDna;
+    metadata.referenceEvidence = {
+      desktop: baseDna.evidence.desktopScreenshot.path,
+      mobile: baseDna.evidence.mobileScreenshot?.path || "",
+      complete: true,
+    };
+    metadata.creativeManifest = {
+      ...metadata.creativeManifest,
+      version: 2,
+      referenceDna: baseDna,
+      referenceEvidence: metadata.referenceEvidence,
+    };
+    await fs.writeFile(metadataPath, JSON.stringify(metadata));
+    await writeV2ContentManifest(root);
+
+    const siteRoot = path.resolve("templates/client-site");
+    const configPath = path.join(siteRoot, "src/site.config.json");
+    const selectedPath = path.join(siteRoot, "src/generated-experiences/selected");
+    const selectedBackup = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-selected-"));
+    const originalConfig = await fs.readFile(configPath, "utf8");
+    await fs.cp(selectedPath, selectedBackup, { recursive: true });
+    try {
+      const report = await runCreativeBakeoff({
+        siteDir: siteRoot,
+        candidatesDir: root,
+        reportPath: path.join(root, "preview-report.json"),
+        screenshotsDir: path.join(root, "preview-screenshots"),
+        preview: true,
+        renderedReferenceEvaluator: async () => ({
+          version: 1,
+          model: "test/model",
+          score: 100,
+          pass: true,
+          audit: {
+            scores: {
+              heroGeometry: 100,
+              typography: 100,
+              spatialRhythm: 100,
+              imagery: 100,
+              servicePresentation: 100,
+              navigation: 100,
+              ctaPlacement: 100,
+              mobileRecomposition: 100,
+              interactionEvidence: 100,
+            },
+            findings: [],
+          },
+        }),
+      });
+      expect(report.candidates[0].valid).toBe(true);
+      expect(report.candidates[0].eligible).toBe(true);
+      expect(report.selectedCandidateId).toBe("candidate-a");
+      expect(report.fallback).toBe(false);
+      expect(report.promotionReady).toBe(false);
+      const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+      expect(config.design.experience.selectionMode).toBe("creative-preview");
     } finally {
       await fs.writeFile(configPath, originalConfig);
       await fs.rm(selectedPath, { recursive: true, force: true });

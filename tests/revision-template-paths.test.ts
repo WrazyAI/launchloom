@@ -31,3 +31,31 @@ it("allows the legacy homepage only when social proof insertion can write it", (
   expect(withoutProof).not.toContain("src/pages/index.astro");
   expect(withProof).toContain("src/pages/index.astro");
 });
+
+it("allows exactly the feedback replacements named by set_image operations", () => {
+  const paths = revisionTemplateWritePaths({
+    revisionReport: {
+      operations: [
+        {
+          kind: "set_image",
+          target: "hero",
+          path: "/images/feedback/hero-0123456789ab.webp",
+        },
+        {
+          kind: "set_image",
+          target: "logo",
+          path: "/images/generated/logo-old.webp",
+        },
+        {
+          kind: "set_image",
+          target: "team",
+          path: "/images/feedback/team-../../escape.webp",
+        },
+      ],
+    },
+  });
+
+  expect(paths).toContain("public/images/feedback/hero-0123456789ab.webp");
+  expect(paths).not.toContain("public/images/generated/logo-old.webp");
+  expect(paths.some((entry) => entry.includes("escape"))).toBe(false);
+});

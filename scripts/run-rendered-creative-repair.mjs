@@ -857,6 +857,12 @@ export async function runRenderedCreativeRepair({
       selectedCandidateId: report.selectedCandidateId,
       promotionReady: Boolean(report.promotionReady),
       visualDiversityPass: Boolean(report.visualDiversity?.pass),
+      previewDiversityPass:
+        report.previewDiversity?.pass === undefined
+          ? null
+          : Boolean(report.previewDiversity.pass),
+      previewDiversityStrategy:
+        report.previewDiversity?.strategy || null,
       repairs: [],
       rejectedCandidates: [],
     };
@@ -869,6 +875,11 @@ export async function runRenderedCreativeRepair({
 
     if (!report.selectedCandidateId) {
       const candidates = (report.candidates || []).filter(candidateNeedsRepair);
+      const previewDiversityTargets =
+        requestedMode === "preview" &&
+        report.previewDiversity?.pass === false
+          ? diversityRepairTargets(report)
+          : [];
       let repairedAny = false;
       let rejectedAny = false;
       for (const candidate of candidates) {
@@ -899,6 +910,27 @@ export async function runRenderedCreativeRepair({
         } else if (repaired.status === "rejected") {
           rejectedAny = true;
           record.rejectedCandidates.push(candidate.candidateId);
+        }
+      }
+      if (!candidates.length && previewDiversityTargets.length) {
+        for (const target of previewDiversityTargets) {
+          const candidate = reportCandidate(report, target.candidateId);
+          if (!candidate) continue;
+          const repaired = await repair(
+            target.candidateId,
+            [target.finding],
+            "rendered-diversity-preview",
+            round,
+            screenshotsDir,
+            candidate.directory,
+          );
+          if (repaired.status === "repaired") {
+            repairedAny = true;
+            record.repairs.push(target.candidateId);
+          } else if (repaired.status === "rejected") {
+            rejectedAny = true;
+            record.rejectedCandidates.push(target.candidateId);
+          }
         }
       }
       if (repairedAny && humanRepairPending) humanRepairPending = false;
@@ -1102,6 +1134,12 @@ export async function runRenderedCreativeRepair({
         ? record.humanRevisionVerdict === "pass"
         : true,
       visualDiversityPass: Boolean(report.visualDiversity?.pass),
+      previewDiversityPass:
+        report.previewDiversity?.pass === undefined
+          ? null
+          : Boolean(report.previewDiversity.pass),
+      previewDiversityStrategy:
+        report.previewDiversity?.strategy || null,
       repairCycles: Object.fromEntries(cycleUse),
       rejectedCandidates,
       history,

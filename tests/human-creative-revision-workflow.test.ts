@@ -311,6 +311,118 @@ describe("human creative revision lifecycle", () => {
     }
   });
 
+  it("does not erase reviewer feedback draft on a rejected submission", () => {
+    const banner = readFileSync(
+      "templates/client-site/src/components/ReviewBanner.astro",
+      "utf8",
+    );
+    const clientForm = readFileSync(
+      "src/components/ClientFeedbackForm.tsx",
+      "utf8",
+    );
+    const developerForm = readFileSync(
+      "src/components/FeedbackParts.tsx",
+      "utf8",
+    );
+
+    const bannerClientReject = banner.indexOf(
+      'if (!response.ok) {\n          setStatusText(result.error || "Feedback could not be sent.");\n          return false;',
+    );
+    const bannerClientClear = banner.indexOf(
+      'feedbackSubmissionId = "";',
+      bannerClientReject,
+    );
+    expect(bannerClientReject).toBeGreaterThan(-1);
+    expect(bannerClientClear).toBeGreaterThan(bannerClientReject);
+
+    const bannerDeveloperReject = banner.indexOf(
+      'if (!response.ok) {\n          setStatusText(result.error || "Feedback could not be sent.");\n          return false;',
+      bannerClientClear,
+    );
+    const bannerDeveloperReset = banner.indexOf(
+      "form.reset();",
+      bannerDeveloperReject,
+    );
+    expect(bannerDeveloperReject).toBeGreaterThan(-1);
+    expect(bannerDeveloperReset).toBeGreaterThan(bannerDeveloperReject);
+
+    const clientReject = clientForm.indexOf("if (!response.ok) {");
+    const clientClear = clientForm.indexOf('setComment("");', clientReject);
+    expect(clientReject).toBeGreaterThan(-1);
+    expect(clientClear).toBeGreaterThan(clientReject);
+
+    const developerReject = developerForm.indexOf("if (!response.ok) {");
+    const developerClear = developerForm.indexOf(
+      "setNotes({});",
+      developerReject,
+    );
+    expect(developerReject).toBeGreaterThan(-1);
+    expect(developerClear).toBeGreaterThan(developerReject);
+
+    expect(clientForm).toContain('const submissionId = useRef("");');
+    expect(clientForm).toContain(
+      "submissionId.current ||= crypto.randomUUID();",
+    );
+    expect(clientForm).toContain(
+      'form.set("submissionId", submissionId.current);',
+    );
+    expect(clientForm).toContain("submissionId: submissionId.current");
+    expect(clientForm).not.toContain(
+      "submissionId: crypto.randomUUID()",
+    );
+
+    expect(developerForm).toContain('const submissionId = useRef("");');
+    expect(developerForm).toContain(
+      "submissionId.current ||= crypto.randomUUID();",
+    );
+    expect(developerForm).toContain("submissionId: submissionId.current");
+    expect(developerForm).not.toContain(
+      "submissionId: crypto.randomUUID()",
+    );
+  });
+
+  it("uses the reviewed site or deployed revision as the failed-revision primary destination", () => {
+    const developer = readFileSync(
+      ".github/workflows/process-feedback.yml",
+      "utf8",
+    );
+    const client = readFileSync(
+      ".github/workflows/process-client-feedback.yml",
+      "utf8",
+    );
+
+    for (const workflow of [developer, client]) {
+      expect(workflow).toContain(
+        'REVIEWED_PAGE: ${{ github.event.client_payload.reviewedPage }}',
+      );
+      expect(workflow).toContain(
+        'SITE_URL=$(REVIEWED_PAGE="$REVIEWED_PAGE" node -e',
+      );
+      expect(workflow).toContain(
+        'REVISION_DEPLOYED_PREVIEW: ${{ steps.deploy.outputs.preview }}',
+      );
+      expect(workflow).toContain('SITE_URL="$REVISION_DEPLOYED_PREVIEW"');
+      expect(workflow).toContain(
+        'if [ -z "$SITE_URL" ]; then SITE_URL="$REVIEWED_PAGE"; fi',
+      );
+      expect(workflow).toContain('--preview "$SITE_URL" --review "$SITE_URL"');
+      expect(workflow).toContain('--diagnostic-pr "https://github.com/');
+      expect(workflow).toContain('--diagnostic-run "$RUN_URL"');
+      expect(workflow).toContain(
+        'REVISION_FAILURE_SITE_URL: ${{ steps.deploy.outputs.preview || github.event.client_payload.reviewedPage }}',
+      );
+      expect(workflow).toContain(
+        'REVISION_FAILURE_RUN_URL: https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}',
+      );
+      expect(workflow).not.toMatch(
+        /--preview "https:\/\/github\.com\/\$CLIENT_REPO\/pull\//u,
+      );
+      expect(workflow).not.toMatch(
+        /--review "https:\/\/github\.com\/\$CLIENT_REPO\/pull\//u,
+      );
+    }
+  });
+
   it("returns client-requested revisions to the developer with the triggering request in the email", () => {
     const workflow = readFileSync(
       ".github/workflows/process-client-feedback.yml",

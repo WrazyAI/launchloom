@@ -1,3 +1,5 @@
+import { resolvePalette } from "./palette-policy.mjs";
+
 const categories = new Map([
   ["logo", "logo"],
   ["photos", "photos"],
@@ -27,6 +29,95 @@ const clean = (value, limit = 500) => String(value ?? "")
   .trim()
   .slice(0, limit);
 
+const COLOR_ROLE_KEYS = {
+  primary: "primaryColor",
+  surface: "surfaceColor",
+  hero: "heroColor",
+  ink: "inkColor",
+  muted: "mutedColor",
+  line: "lineColor",
+};
+
+const CLIENT_REPLACEMENT_TARGETS = {
+  logo: { slot: "logo" },
+  hero: { slot: "photoOne", image: "hero" },
+  secondary: { slot: "photoTwo", image: "secondary" },
+  tertiary: { slot: "photoThree", image: "tertiary" },
+  team: { slot: "teamPhoto" },
+};
+
+function structuredParts(item) {
+  if (!item || typeof item !== "object" || Array.isArray(item))
+    return { text: String(item ?? ""), attachments: [], colors: [] };
+  return {
+    text: String(item.text ?? ""),
+    attachments: Array.isArray(item.structure?.attachments)
+      ? item.structure.attachments
+      : [],
+    colors: Array.isArray(item.structure?.colors)
+      ? item.structure.colors
+      : [],
+  };
+}
+
+function signedReplacementUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    if (
+      url.protocol !== "https:" ||
+      url.hostname !== "assets.launchloom.wrazyos.com" ||
+      !url.pathname.startsWith("/client-replacements/") ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    )
+      return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
+function applyClientReplacement(config, target, url) {
+  const spec = CLIENT_REPLACEMENT_TARGETS[target];
+  if (!spec) return null;
+  config.assets ||= {};
+  config.assets[spec.slot] = url;
+  if (spec.image) {
+    config.images ||= {};
+    config.images[spec.image] = url;
+  }
+  return { kind: "replace_asset", slot: spec.slot, url, target };
+}
+
+function applyClientPalette(config, colors) {
+  const current = config.style || {};
+  const input = {};
+  for (const key of Object.values(COLOR_ROLE_KEYS)) {
+    const value = String(current[key] || "").toLowerCase();
+    if (/^#[0-9a-f]{6}$/u.test(value)) input[key] = value;
+  }
+  const palette = resolvePalette(input);
+  const requested = [];
+  for (const color of colors) {
+    const key = COLOR_ROLE_KEYS[color?.role];
+    const hex = String(color?.hex || "").toLowerCase();
+    if (!key || !/^#[0-9a-f]{6}$/u.test(hex)) continue;
+    palette[key] = hex;
+    requested.push({ role: color.role, field: key, value: hex });
+  }
+  if (!requested.length) return null;
+  config.style = { ...current, ...palette };
+  return {
+    kind: "update_design_token",
+    token: "palette",
+    value: requested[0].value,
+    palette,
+    requested,
+  };
+}
+
 function categoryAndNote(value) {
   const match = String(value || "").match(/^\s*\[([^\]]+)\]\s*([\s\S]*)$/u);
   if (!match) return { category: "", note: String(value || "").trim() };
@@ -39,16 +130,9 @@ function categoryAndNote(value) {
 function replacementAsset(note) {
   const match = note.match(/^Replacement asset:\s*(https:\/\/\S+)\s*\n+/iu);
   if (!match) return { url: "", note };
-  try {
-    const url = new URL(match[1]);
-    if (url.hostname !== "assets.launchloom.wrazyos.com" ||
-        !url.pathname.startsWith("/client-replacements/") ||
-        url.username || url.password || url.search || url.hash)
-      return { url: "", note };
-    return { url: url.href, note: note.slice(match[0].length).trim() };
-  } catch {
-    return { url: "", note };
-  }
+  const url = signedReplacementUrl(match[1]);
+  if (!url) return { url: "", note };
+  return { url, note: note.slice(match[0].length).trim() };
 }
 
 function accessibleText(hex) {
@@ -108,9 +192,31 @@ function factUpdate(note, allowedFields) {
   return { field, value };
 }
 
-function applyOne(config, value) {
-  const parsed = categoryAndNote(value);
+function applyOne(config, item) {
+  const parts = structuredParts(item);
+  const parsed = categoryAndNote(parts.text);
   const { category, note } = parsed;
+  const structured = [];
+  for (const attachment of parts.attachments) {
+    const url = signedReplacementUrl(attachment?.url);
+    if (!url)
+      return {
+        ok: false,
+        reason: "Replacement images must come from a signed review upload.",
+      };
+    const operation = applyClientReplacement(config, attachment?.target, url);
+    if (!operation)
+      return { ok: false, reason: "Unsupported replacement image target." };
+    structured.push(operation);
+  }
+  const paletteOperation = parts.colors.length
+    ? applyClientPalette(config, parts.colors)
+    : null;
+  if (parts.colors.length && !paletteOperation)
+    return { ok: false, reason: "Choose one of the listed palette colours." };
+  if (paletteOperation) structured.push(paletteOperation);
+  if (structured.length)
+    return { ok: true, operations: structured, operation: structured[0] };
   if (!category || !note) return { ok: false, reason: "Choose a listed small-change category and describe the request." };
   const uploaded = replacementAsset(note);
   if (category === "logo" || category === "photos") {
@@ -185,15 +291,27 @@ export function applyBoundedClientFeedback(config, feedbackItems) {
   const revised = structuredClone(config);
   const feedback = Array.isArray(feedbackItems) ? feedbackItems : [feedbackItems];
   const results = feedback.map((item, feedbackIndex) => {
-    const result = applyOne(revised, String(item || ""));
+    const result = applyOne(revised, item);
     return result.ok
-      ? { feedbackIndex, status: "fulfilled", operation: result.operation }
+      ? {
+          feedbackIndex,
+          status: "fulfilled",
+          operation: result.operation,
+          operations: result.operations || [result.operation],
+        }
       : { feedbackIndex, status: "manual", reason: result.reason };
   });
   return {
     ok: results.length > 0 && results.every((result) => result.status === "fulfilled"),
     config: revised,
-    operations: results.flatMap((result) => result.operation ? [{ feedbackIndex: result.feedbackIndex, ...result.operation }] : []),
+    operations: results.flatMap((result) => {
+      const applied =
+        result.operations || (result.operation ? [result.operation] : []);
+      return applied.map((operation) => ({
+        feedbackIndex: result.feedbackIndex,
+        ...operation,
+      }));
+    }),
     results,
   };
 }

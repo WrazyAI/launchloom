@@ -97,3 +97,74 @@ describe("bounded client feedback", () => {
     expect(result.operations.map((operation) => operation.kind)).toEqual(["update_business_fact", "update_business_fact"]);
   });
 });
+
+describe("structured client feedback", () => {
+  it("applies a generated replacement to an explicit photo placement", () => {
+    const config = baseConfig();
+    const url =
+      "https://assets.launchloom.wrazyos.com/client-replacements/harbor/12/a4/about.webp";
+    const result = applyBoundedClientFeedback(config, [
+      {
+        text: "[Business photos]",
+        structure: {
+          attachments: [{ target: "secondary", kind: "generated", url }],
+          colors: [],
+        },
+      },
+    ]);
+    expect(result.ok).toBe(true);
+    expect(result.config.assets.photoTwo).toBe(url);
+    expect(result.config.images.secondary).toBe(url);
+    expect(result.config.assets.photoOne).toBe(
+      "https://assets.launchloom.wrazyos.com/old/photo.png",
+    );
+    expect(result.operations).toEqual([
+      expect.objectContaining({ kind: "replace_asset", slot: "photoTwo" }),
+    ]);
+  });
+
+  it("applies a picked palette with derived contrast tokens", () => {
+    const result = applyBoundedClientFeedback(baseConfig(), [
+      {
+        text: "[Colour]",
+        structure: {
+          attachments: [],
+          colors: [
+            { role: "primary", hex: "#123456" },
+            { role: "surface", hex: "#f0f0f0" },
+          ],
+        },
+      },
+    ]);
+    expect(result.ok).toBe(true);
+    expect(result.config.style).toMatchObject({
+      primaryColor: "#123456",
+      surfaceColor: "#f0f0f0",
+    });
+    expect(result.config.style.contrastColor).toMatch(/^#[0-9a-f]{6}$/u);
+    expect(result.operations).toEqual([
+      expect.objectContaining({ kind: "update_design_token", token: "palette" }),
+    ]);
+  });
+
+  it("rejects structured replacements that did not come from a signed upload", () => {
+    const result = applyBoundedClientFeedback(baseConfig(), [
+      {
+        text: "[Logo]",
+        structure: {
+          attachments: [
+            {
+              target: "logo",
+              kind: "generated",
+              url: "https://evil.example.test/logo.webp",
+            },
+          ],
+          colors: [],
+        },
+      },
+    ]);
+    expect(result.ok).toBe(false);
+    expect(result.results[0].status).toBe("manual");
+    expect(result.config.assets.logo).toBeUndefined();
+  });
+});
