@@ -352,9 +352,14 @@ export async function validateAndCopyReusableCandidates({
     "motion.js",
     "styles.css",
   ];
-  // Authored candidates may carry the service-page companion from newer runs.
-  // It is validated when present but stays optional for older frozen runs.
-  const optionalCandidateFiles = ["ServicePage.jsx"];
+  // Authored candidates may carry service, location, and services-index page
+  // companions from newer runs. They are validated when present but stay
+  // optional for older frozen runs.
+  const optionalCandidateFiles = [
+    "ServicePage.jsx",
+    "LocationPage.jsx",
+    "ServicesIndexPage.jsx",
+  ];
   const copiedRootFiles = [
     "creative-run.json",
     "content-manifest.json",
@@ -486,18 +491,33 @@ export async function validateAndCopyReusableCandidates({
     for (const candidateName of candidateNames) {
       const index = candidateRouteIndex(candidateName);
       const candidatePath = path.join(staging, candidateName);
-      const [metadata, contentManifest, contract, experience, styles, motion, servicePage] =
-        await Promise.all([
-          readJson(path.join(candidatePath, "metadata.json")),
-          readJson(path.join(candidatePath, "content-manifest.json")),
-          readJson(path.join(candidatePath, "contract.json")),
-          fs.readFile(path.join(candidatePath, "Experience.jsx"), "utf8"),
-          fs.readFile(path.join(candidatePath, "styles.css"), "utf8"),
-          fs.readFile(path.join(candidatePath, "motion.js"), "utf8"),
-          fs
-            .readFile(path.join(candidatePath, "ServicePage.jsx"), "utf8")
-            .catch(() => ""),
-        ]);
+      const [
+        metadata,
+        contentManifest,
+        contract,
+        experience,
+        styles,
+        motion,
+        servicePage,
+        locationPage,
+        servicesIndexPage,
+      ] = await Promise.all([
+        readJson(path.join(candidatePath, "metadata.json")),
+        readJson(path.join(candidatePath, "content-manifest.json")),
+        readJson(path.join(candidatePath, "contract.json")),
+        fs.readFile(path.join(candidatePath, "Experience.jsx"), "utf8"),
+        fs.readFile(path.join(candidatePath, "styles.css"), "utf8"),
+        fs.readFile(path.join(candidatePath, "motion.js"), "utf8"),
+        fs
+          .readFile(path.join(candidatePath, "ServicePage.jsx"), "utf8")
+          .catch(() => ""),
+        fs
+          .readFile(path.join(candidatePath, "LocationPage.jsx"), "utf8")
+          .catch(() => ""),
+        fs
+          .readFile(path.join(candidatePath, "ServicesIndexPage.jsx"), "utf8")
+          .catch(() => ""),
+      ]);
       const route = inspiration.routes[index];
       const expectedManifest = buildCreativeContentManifest(config, route);
       const expectedDna = withoutAnalysisTime(route.referenceDna);
@@ -559,6 +579,8 @@ export async function validateAndCopyReusableCandidates({
           styles,
           motion,
           ...(servicePage.trim() ? { servicePage } : {}),
+          ...(locationPage.trim() ? { locationPage } : {}),
+          ...(servicesIndexPage.trim() ? { servicesIndexPage } : {}),
         },
         route: { ...route, referenceDna: route.referenceDna },
         content: contentManifest.values,

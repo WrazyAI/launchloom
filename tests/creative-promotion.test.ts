@@ -23,6 +23,53 @@ export default function ServicePage({ content, runtime, service }) {
   </main>;
 }`;
 
+const validLocationPage = `import { LeadForm } from "@launchloom/runtime";
+export default function LocationPage({ content, runtime, location }) {
+  return <main data-location-page data-location-slug={location.slug}>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-location-hero><h1>{location.name}</h1><p>{location.description}</p></section>
+    <section data-location-coverage><p>{location.localNote}</p></section>
+    <section data-location-related><ul>{location.services.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}{location.otherAreas.map((area) => <li key={area.slug}><a href={\`/locations/\${area.slug}/\`}>{area.name}</a></li>)}</ul></section>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`;
+
+const validServicesIndexPage = `import { LeadForm } from "@launchloom/runtime";
+export default function ServicesIndexPage({ content, runtime }) {
+  return <main data-services-index>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-services-index-hero><h1>{content.copy.servicesHeading || content.hero.heading}</h1><p>{content.copy.servicesIntro}</p></section>
+    <section data-services-index-list><ul>{content.services.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`;
+
+async function makeTemplateCopy(configOverrides = {}) {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-site-"));
+  tempRoots.push(root);
+  await fs.cp(path.resolve("templates/client-site"), root, {
+    recursive: true,
+    filter: (source) =>
+      !source.includes(`${path.sep}node_modules`) &&
+      !source.includes(`${path.sep}dist`) &&
+      !source.includes(`${path.sep}.astro`),
+  });
+  await fs.symlink(
+    path.resolve("templates/client-site/node_modules"),
+    path.join(root, "node_modules"),
+    "dir",
+  );
+  if (Object.keys(configOverrides).length) {
+    const configPath = path.join(root, "src/site.config.json");
+    const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+    await fs.writeFile(
+      configPath,
+      `${JSON.stringify({ ...config, ...configOverrides }, null, 2)}\n`,
+    );
+  }
+  return root;
+}
+
 async function makeFixture() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-creative-"));
   tempRoots.push(root);
@@ -219,6 +266,60 @@ describe("creative candidate promotion", () => {
     expect(config.design.experience.servicePage).toBe(false);
   });
 
+  it("copies authored location and services-index pages and enables their renderers", async () => {
+    const root = await makeFixture();
+    await fs.writeFile(
+      path.join(root, "candidate-a/LocationPage.jsx"),
+      validLocationPage,
+    );
+    await fs.writeFile(
+      path.join(root, "candidate-a/ServicesIndexPage.jsx"),
+      validServicesIndexPage,
+    );
+
+    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+
+    const selectedLocation = await fs.readFile(
+      path.join(root, "src/generated-experiences/selected/LocationPage.jsx"),
+      "utf8",
+    );
+    const selectedIndex = await fs.readFile(
+      path.join(root, "src/generated-experiences/selected/ServicesIndexPage.jsx"),
+      "utf8",
+    );
+    expect(selectedLocation).toContain("data-location-page");
+    expect(selectedIndex).toContain("data-services-index");
+    const config = JSON.parse(
+      await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),
+    );
+    expect(config.design.experience.locationPage).toBe(true);
+    expect(config.design.experience.servicesIndex).toBe(true);
+  });
+
+  it("keeps the fallback location and services-index pages when absent", async () => {
+    const root = await makeFixture();
+
+    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+
+    const selectedLocation = await fs.readFile(
+      path.join(root, "src/generated-experiences/selected/LocationPage.jsx"),
+      "utf8",
+    );
+    const selectedIndex = await fs.readFile(
+      path.join(root, "src/generated-experiences/selected/ServicesIndexPage.jsx"),
+      "utf8",
+    );
+    expect(selectedLocation).toContain("export default function LocationPage()");
+    expect(selectedIndex).toContain(
+      "export default function ServicesIndexPage()",
+    );
+    const config = JSON.parse(
+      await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),
+    );
+    expect(config.design.experience.locationPage).toBe(false);
+    expect(config.design.experience.servicesIndex).toBe(false);
+  });
+
   it("rejects an authored service page that bypasses the shared runtime", async () => {
     const root = await makeFixture();
     await fs.writeFile(
@@ -287,29 +388,52 @@ describe("creative candidate promotion", () => {
     expect(report.selectedCandidateId).toBeNull();
   }, 45_000);
 
-  it("renders the authored service page with the homepage visual identity", async () => {
+  it("renders authored service, location, and services-index pages with the homepage visual identity", async () => {
     const root = await makeFixture();
     await fs.writeFile(
       path.join(root, "candidate-a/ServicePage.jsx"),
       validServicePage,
     );
     await fs.writeFile(
+      path.join(root, "candidate-a/LocationPage.jsx"),
+      validLocationPage,
+    );
+    await fs.writeFile(
+      path.join(root, "candidate-a/ServicesIndexPage.jsx"),
+      validServicesIndexPage,
+    );
+    await fs.writeFile(
       path.join(root, "candidate-a/styles.css"),
       "body{background:rgb(16,18,20);color:rgb(240,240,240)}h1{font-family:Georgia,serif;font-weight:700}",
     );
+    const siteRoot = await makeTemplateCopy({
+      industry: "home-services",
+      businessKind: "plumbing",
+      locations: [
+        {
+          name: "East Austin",
+          slug: "east-austin",
+          description: "Serving East Austin homes.",
+          localNote: "Same-week scheduling depends on the current route.",
+        },
+      ],
+    });
     const report = await runCreativeBakeoff({
-      siteDir: path.resolve("templates/client-site"),
+      siteDir: siteRoot,
       candidatesDir: root,
-      reportPath: path.join(root, "service-report.json"),
-      screenshotsDir: path.join(root, "service-screenshots"),
+      reportPath: path.join(root, "authored-pages-report.json"),
+      screenshotsDir: path.join(root, "authored-pages-screenshots"),
       preview: true,
       requireDiversity: false,
     });
     const candidate = report.candidates[0];
-    expect(candidate.servicePage?.slug).toBe("skin-renewal");
     expect(candidate.servicePage?.failures).toEqual([]);
     expect(candidate.servicePage?.pass).toBe(true);
-  }, 120_000);
+    expect(candidate.locationPage?.failures).toEqual([]);
+    expect(candidate.locationPage?.pass).toBe(true);
+    expect(candidate.servicesIndexPage?.failures).toEqual([]);
+    expect(candidate.servicesIndexPage?.pass).toBe(true);
+  }, 240_000);
 
   it("rejects a version-two candidate before rendering when its content manifest is missing", async () => {
     const root = await makeFixture();

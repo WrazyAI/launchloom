@@ -149,7 +149,7 @@ describe("OpenRouter cache integration", () => {
       "For contract: fill designContract and designRationale; return content as an empty string.",
     );
     expect(source).toContain(
-      "For experience, service, styles, or motion: fill content; return designContract and designRationale as empty strings.",
+      "For experience, service, location, service-index, styles, or motion: fill content; return designContract and designRationale as empty strings.",
     );
   });
 

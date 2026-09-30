@@ -11,7 +11,9 @@ import {
   restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
   validateProductionCandidateFiles,
+  validateLocationPage,
   validateServicePage,
+  validateServicesIndexPage,
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
@@ -130,6 +132,33 @@ export default function ServicePage({ content, runtime, service }) {
     <section data-service-related><ul>{service.related.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
     {service.process.length > 0 && <ol>{service.process.map((step) => <li key={step}>{step}</li>)}</ol>}
     {service.faqs.length > 0 && <section>{service.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>}
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`,
+    };
+  }
+  if (request.stage === "service-index") {
+    return {
+      content: `import { LeadForm } from "@launchloom/runtime";
+export default function ServicesIndexPage({ content, runtime }) {
+  return <main data-services-index>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-services-index-hero><h1>{content.copy.servicesHeading || content.hero.heading}</h1><p>{content.copy.servicesIntro}</p></section>
+    <section data-services-index-list><ul>{content.services.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`,
+    };
+  }
+  if (request.stage === "location") {
+    return {
+      content: `import { LeadForm } from "@launchloom/runtime";
+export default function LocationPage({ content, runtime, location }) {
+  return <main data-location-page data-location-slug={location.slug}>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-location-hero><h1>{location.name}</h1><p>{location.description}</p></section>
+    <section data-location-coverage><p>{location.localNote}</p></section>
+    <section data-location-related><ul>{location.services.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}{location.otherAreas.map((area) => <li key={area.slug}><a href={\`/locations/\${area.slug}/\`}>{area.name}</a></li>)}</ul></section>
     <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
   </main>;
 }`,
@@ -1175,6 +1204,7 @@ describe("production experience author", () => {
       expect(Object.keys(candidate.files).sort()).toEqual([
         "Experience.jsx",
         "ServicePage.jsx",
+        "ServicesIndexPage.jsx",
         "content-manifest.json",
         "contract.json",
         "metadata.json",
@@ -1238,7 +1268,7 @@ describe("production experience author", () => {
       model: "test/model",
     });
 
-    expect(requests).toHaveLength(15);
+    expect(requests).toHaveLength(18);
     for (const request of requests)
       expect(request.route.referenceDossier).toEqual(
         dossiers.get(request.route.id),
@@ -1363,7 +1393,7 @@ describe("production experience author", () => {
       },
     });
 
-    expect(requests).toHaveLength(15);
+    expect(requests).toHaveLength(18);
     expect(
       new Set(requests.map((request) => request.route.signature)).size,
     ).toBe(3);
@@ -2167,6 +2197,12 @@ describe("production experience author", () => {
     for (const candidate of result.candidates) {
       expect(candidate.files["ServicePage.jsx"]).toContain("data-service-page");
       expect(candidate.metadata.servicePageAuthored).toBe(true);
+      expect(candidate.files["ServicesIndexPage.jsx"]).toContain(
+        "data-services-index",
+      );
+      expect(candidate.metadata.servicesIndexAuthored).toBe(true);
+      expect(candidate.files["LocationPage.jsx"]).toBeUndefined();
+      expect(candidate.metadata.locationPageAuthored).toBe(false);
     }
     const serviceRequests = requests.filter(
       (request) => request.stage === "service",
@@ -2174,12 +2210,73 @@ describe("production experience author", () => {
     expect(serviceRequests).toHaveLength(3);
     for (const request of serviceRequests)
       expect(request.experienceSource).toContain("Experience");
+    const servicesIndexRequests = requests.filter(
+      (request) => request.stage === "service-index",
+    );
+    expect(servicesIndexRequests).toHaveLength(3);
+    for (const request of servicesIndexRequests) {
+      expect(request.experienceSource).toContain("Experience");
+      expect(request.servicePageSource).toContain("data-service-page");
+    }
     const stylesRequests = requests.filter(
       (request) => request.stage === "styles",
     );
     expect(stylesRequests).toHaveLength(3);
-    for (const request of stylesRequests)
+    for (const request of stylesRequests) {
       expect(request.servicePageSource).toContain("data-service-page");
+      expect(request.servicesIndexSource).toContain("data-services-index");
+    }
+  });
+
+  it("authors location pages only when the intake lists home-service areas", async () => {
+    const requests: AuthorStageRequest[] = [];
+    const locationSite = {
+      ...site,
+      industry: "home-services",
+      businessKind: "plumbing",
+      locations: [
+        {
+          name: "East Austin",
+          slug: "east-austin",
+          description: "Serving East Austin homes.",
+          localNote: "Same-week scheduling depends on the current route.",
+        },
+        {
+          name: "Cedar Park",
+          slug: "cedar-park",
+          description: "Serving Cedar Park homes.",
+        },
+      ],
+    };
+    const result = await authorExperienceCandidates({
+      site: locationSite,
+      inspirationPack,
+      generate: async (request) => {
+        requests.push(request);
+        return safeStage(request);
+      },
+    });
+
+    for (const candidate of result.candidates) {
+      expect(candidate.files["LocationPage.jsx"]).toContain(
+        "data-location-page",
+      );
+      expect(candidate.metadata.locationPageAuthored).toBe(true);
+    }
+    const locationRequests = requests.filter(
+      (request) => request.stage === "location",
+    );
+    expect(locationRequests).toHaveLength(3);
+    for (const request of locationRequests)
+      expect(request.servicePageSource).toContain("data-service-page");
+    const stylesRequests = requests.filter(
+      (request) => request.stage === "styles",
+    );
+    expect(stylesRequests).toHaveLength(3);
+    for (const request of stylesRequests) {
+      expect(request.locationPageSource).toContain("data-location-page");
+      expect(request.servicesIndexSource).toContain("data-services-index");
+    }
   });
 
   it("validates the authored service page contract", () => {
@@ -2242,5 +2339,77 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
   </main>;
 }`;
     expect(() => validateServicePage(destructured, route, {})).not.toThrow();
+  });
+
+  it("validates the authored location and services-index page contracts", () => {
+    const route = { id: "route-inner-pages" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const locationPage = String(
+      safeStage({ ...request, stage: "location" }).content || "",
+    );
+    expect(() => validateLocationPage(locationPage, route, {})).not.toThrow();
+    expect(() =>
+      validateLocationPage(
+        locationPage.replace("data-location-coverage", "data-location-notes"),
+        route,
+        {},
+      ),
+    ).toThrow(/data-location-coverage/u);
+    expect(() =>
+      validateLocationPage(
+        locationPage.replace(/location\.localNote/gu, "location.summary"),
+        route,
+        {},
+      ),
+    ).toThrow(/location\.localNote/u);
+    expect(() =>
+      validateLocationPage(
+        locationPage.replace('id="contact"', 'id="reach-us"'),
+        route,
+        {},
+      ),
+    ).toThrow(/contact/u);
+
+    const servicesIndexPage = String(
+      safeStage({ ...request, stage: "service-index" }).content || "",
+    );
+    expect(() =>
+      validateServicesIndexPage(servicesIndexPage, route, {}),
+    ).not.toThrow();
+    expect(() =>
+      validateServicesIndexPage(
+        servicesIndexPage.replace(
+          "data-services-index-list",
+          "data-services-list",
+        ),
+        route,
+        {},
+      ),
+    ).toThrow(/data-services-index-list/u);
+    expect(() =>
+      validateServicesIndexPage(
+        servicesIndexPage.replace(
+          /content\.copy\.servicesIntro/gu,
+          "content.copy.servicesBody",
+        ),
+        route,
+        {},
+      ),
+    ).toThrow(/content\.copy\.servicesIntro/u);
+    expect(() =>
+      validateServicesIndexPage(
+        servicesIndexPage.replace(
+          "</main>",
+          '<img src="https://example.com/index.png" alt="Services" /></main>',
+        ),
+        route,
+        {},
+      ),
+    ).toThrow(/remote URL/u);
   });
 });
