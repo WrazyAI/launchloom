@@ -1618,7 +1618,7 @@ export async function planRevision(
     ].map((operation) => ({ ...operation, feedbackIndex })),
   );
   const contentTargets = items.map((feedback) =>
-    explicitContentTargets(feedback, config),
+    explicitContentTargets(feedback.text, config),
   );
   const modeled = (await planner(textItems, config)).filter((operation) => {
     if (!MODEL_OPERATION_KINDS.has(operation.kind)) return false;
@@ -1735,6 +1735,7 @@ export async function planRevision(
   for (const operation of candidates)
     if (applyOperation(draft, operation)) applied.push(operation);
   const results = items.map((item, feedbackIndex) => {
+    const feedback = item.text;
     const intents = intentsFor(item, config);
     const operations = applied.filter(
       (operation) => operation.feedbackIndex === feedbackIndex,

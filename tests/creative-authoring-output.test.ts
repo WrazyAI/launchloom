@@ -89,6 +89,26 @@ describe("creative authoring output budgets", () => {
     expect(checklist).toContain("do not carry desktop image occupancy into mobile");
   });
 
+  it("gives the author exact Reference DNA marker values consumed by the hard validator", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+      heroGeometry: { mode: "dark-photo-led-home-promise" },
+      navigationGeometry: { mode: "thin-utility-strip-over-airy-service-nav" },
+      servicePresentation: { pattern: "three-captioned-surface-studies" },
+      ctaPlacement: { early: "hero-estimate-anchor" },
+      mobileRecomposition: { strategy: "stacked-room-sample-sequence" },
+      motion: { primitive: "native-scroll-snap-gallery" },
+    });
+
+    expect(checklist).toContain('data-hero-geometry="dark-photo-led-home-promise"');
+    expect(checklist).toContain('data-navigation-geometry="thin-utility-strip-over-airy-service-nav"');
+    expect(checklist).toContain('data-service-presentation="three-captioned-surface-studies"');
+    expect(checklist).toContain('data-cta-placement="hero-estimate-anchor"');
+    expect(checklist).toContain('data-mobile-recomposition="stacked-room-sample-sequence"');
+    expect(checklist).toContain('data-motion-primitive="native-scroll-snap-gallery"');
+    expect(checklist).toContain("machine-readable verification markers, not visual substitutions");
+  });
+
   it("keeps required navigation links when a route has no reference DNA", () => {
     const checklist = referenceImplementationChecklist(undefined);
 

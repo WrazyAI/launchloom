@@ -58,10 +58,25 @@ export function referenceImplementationChecklist(referenceDna) {
     throw new Error(
       "Reference DNA sectionSequence must contain at least three unique, non-empty marker IDs.",
     );
+  const referenceMarkers = [
+    ["data-hero-geometry", referenceDna.heroGeometry?.mode, "the hero element"],
+    ["data-navigation-geometry", referenceDna.navigationGeometry?.mode, "the visible nav element"],
+    ["data-service-presentation", referenceDna.servicePresentation?.pattern, 'the section with id="services"'],
+    ["data-cta-placement", referenceDna.ctaPlacement?.early, "the early conversion anchor"],
+    ["data-mobile-recomposition", referenceDna.mobileRecomposition?.strategy, "the page's primary layout element"],
+    ["data-motion-primitive", referenceDna.motion?.primitive, "the element that owns the reference interaction"],
+  ]
+    .filter(([, value]) => typeof value === "string" && value.trim())
+    .map(([attribute, value, target]) =>
+      `- Put ${attribute}=${JSON.stringify(value)} on ${target}. Copy the Reference DNA value verbatim.`,
+    );
   return [
     'REQUIRED LITERAL SECTION IDS: put id="services", id="faqs", and id="contact" on the actual matching content sections. These must be literal JSX string attributes, not variables, expressions, aliases, or empty anchor elements.',
     navigationRequirement,
     ...(viewportTopology ? ["VIEWPORT-SPECIFIC HERO TOPOLOGY (HARD REQUIREMENT):", viewportTopology] : []),
+    "REQUIRED REFERENCE-DNA MARKERS: use these exact values on their matching visible elements:",
+    ...referenceMarkers,
+    "These are machine-readable verification markers, not visual substitutions. The rendered DOM and screenshots must still visibly realize the assigned geometry, service presentation, CTA placement, mobile recomposition, and interaction.",
     'REFERENCE SECTION ORDER: put each data-reference-section value on its corresponding visible <section> element, in this exact DOM order:',
     ...sectionIds.map(
       (id, index) => `${index + 1}. data-reference-section="${id}"`,

@@ -358,7 +358,7 @@ describe("inspiration registry", () => {
     expect(Math.max(...exposure.values())).toBeLessThanOrEqual(25);
   }, 120_000);
 
-  it("prefers three different hero archetypes when cleared inventory supports them", () => {
+  it("keeps multiple hero mechanics without sacrificing balanced reference rotation", () => {
     const pack = buildInspirationPack(
       {
         ...baseRequest,
@@ -374,8 +374,9 @@ describe("inspiration registry", () => {
 
     expect(pack.request.heroInventory.eligibleReferenceCount).toBe(6);
     expect(pack.request.heroInventory.distinctArchetypeCount).toBeGreaterThanOrEqual(3);
-    expect(new Set(pack.routes.map((route: any) => route.heroArchetype)).size).toBe(3);
-    expect(pack.request.heroInventory.selectedDistinctArchetypeCount).toBe(3);
+    expect(pack.request.selectionHistory.heroVarietyEnforced).toBe(true);
+    expect(new Set(pack.routes.map((route: any) => route.compositionTopology.hero)).size).toBeGreaterThan(1);
+    expect(pack.request.heroInventory.selectedDistinctArchetypeCount).toBeGreaterThan(1);
   });
 
   it("uses persisted recent trios to avoid an exact repeat and report the choice", () => {

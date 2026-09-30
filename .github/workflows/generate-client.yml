@@ -168,17 +168,22 @@ jobs:
           echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "No measured queries")')" >> "$GITHUB_OUTPUT"
           node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? "Measured SEO research is complete. Production approval is available." : observed ? "A live web-search fallback collected cited market observations, but measured SEO research is incomplete. This preview can be reviewed; production approval remains blocked until the measured SEO gate passes." : "SEO research is degraded and context-only. This preview can be reviewed; production approval remains blocked until the measured SEO gate passes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
       # Reserve visual routes against the latest main history before expensive
-      # reference analysis or authoring. If another intake wins the push race,
-      # reselect from the newly updated history rather than saving a stale pack.
+      # reference analysis or authoring. Branch preview-only canaries read the
+      # same history without writing hypothetical attempts into production.
+      # If a production intake wins the push race, reselect from latest main.
       - name: Reserve inspiration routes
-        if: (github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main') && env.REUSE_AUTHORED_CANDIDATES != 'true'
+        if: >-
+          (github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main' ||
+          (github.event_name == 'workflow_dispatch' && inputs.preview_only)) &&
+          env.REUSE_AUTHORED_CANDIDATES != 'true'
         env:
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
+          LAUNCHLOOM_READ_ONLY_HISTORY: ${{ github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main' && inputs.preview_only || false }}
         run: |
           git config user.name "LaunchLoom"
           git config user.email "automation@launchloom.app"
           HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"
-          HISTORY_RECORDED=false
+          HISTORY_READY=false
           for HISTORY_ATTEMPT in 1 2 3; do
             git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
             if ! git fetch origin main; then
@@ -188,11 +193,16 @@ jobs:
               continue
             fi
             HISTORY_FILE="$HISTORY_DIR/data/recent-launch-signatures.json"
-          node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs" \
+            node "$GITHUB_WORKSPACE/scripts/compile-inspiration-pack.mjs" \
               --config /tmp/site.config.json \
               --intake /tmp/canonical-site-brief.json \
               --history "$HISTORY_FILE" \
               --out /tmp/inspiration-pack.json
+            if [ "$LAUNCHLOOM_READ_ONLY_HISTORY" = "true" ]; then
+              echo "Preview-only branch canary selected against latest main history; no production attempt will be written."
+              HISTORY_READY=true
+              break
+            fi
             if ! node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
               --config /tmp/site.config.json \
               --inspiration /tmp/inspiration-pack.json \
@@ -204,19 +214,19 @@ jobs:
             fi
             if git -C "$HISTORY_DIR" diff --quiet -- data/recent-launch-signatures.json; then
               echo "No inspiration history change."
-              HISTORY_RECORDED=true
+              HISTORY_READY=true
               break
             fi
             git -C "$HISTORY_DIR" add data/recent-launch-signatures.json
             git -C "$HISTORY_DIR" commit -m "Record inspiration attempt [skip ci]"
             if git -C "$HISTORY_DIR" push origin HEAD:main; then
-              HISTORY_RECORDED=true
+              HISTORY_READY=true
               break
             fi
             echo "History push raced with another intake; reselecting from latest main ($HISTORY_ATTEMPT/3)."
           done
           git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
-          if [ "$HISTORY_RECORDED" != true ]; then
+          if [ "$HISTORY_READY" != true ]; then
             echo "::error title=Inspiration reservation failed::Could not atomically reserve a fresh inspiration pack after three attempts."
             exit 1
           fi
