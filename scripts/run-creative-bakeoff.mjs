@@ -182,7 +182,9 @@ async function inspect(page) {
       missingFragments: requiredTargets.filter((target) => !document.querySelector(target)).length,
       missingNavTargets: requiredTargets.filter((target) => !anchors.some((anchor) => anchor.getAttribute("href") === target)).length,
       hasLeadForm: Boolean(document.querySelector('[data-runtime="lead-form"]')),
-      missingAlt: [...document.images].filter((image) => !image.getAttribute("alt")?.trim()).length,
+      // Empty alt text is the sanctioned decorative treatment in the authoring
+      // and repair contracts; only a missing alt attribute fails this gate.
+      missingAlt: [...document.images].filter((image) => !image.hasAttribute("alt")).length,
       unnamedControls: [...document.querySelectorAll("button, a")].filter((element) => !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
       heroBottom: Math.round(heroBounds?.bottom || 0),
       viewportHeight: window.innerHeight,

@@ -318,6 +318,82 @@ describe("rendered creative repair orchestration", () => {
     expect(excludedCandidates).toEqual([[], []]);
   });
 
+  it("targets repairs with the rendered fidelity dimensions that miss their thresholds", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const repairFindings: any[][] = [];
+    let bakeoffCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: ["Rendered candidate needs repair."],
+                    renderedReferenceFidelity: {
+                      pass: false,
+                      audit: {
+                        verdict: "revise",
+                        overallScore: 78,
+                        scores: {
+                          heroGeometry: 87,
+                          typography: 82,
+                          spatialRhythm: 75,
+                          imagery: 88,
+                          servicePresentation: 72,
+                          navigation: 78,
+                          ctaPlacement: 91,
+                          mobileRecomposition: 83,
+                          interactionEvidence: 65,
+                          paletteAdherence: 56,
+                          artDirection: 84,
+                        },
+                        findings: [],
+                      },
+                    },
+                  }),
+                ],
+              })
+            : report({
+                selectedCandidateId: "candidate-a",
+                candidates: [candidate("candidate-a")],
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ findings }: any) => {
+        repairFindings.push(findings);
+      },
+      promoteImpl: async ({ candidateDir }: any) => ({
+        candidateId: path.basename(candidateDir),
+      }),
+    });
+
+    const findings = repairFindings[0].join("\n");
+    expect(findings).toContain(
+      "rendered-reference overall fidelity scored 78 and must reach 82",
+    );
+    expect(findings).toContain(
+      "rendered-reference dimension paletteAdherence scored 56 and must reach 80",
+    );
+    expect(findings).toContain(
+      "rendered-reference dimension servicePresentation scored 72 and must reach 80",
+    );
+    expect(findings).not.toContain("heroGeometry");
+    expect(result.status).toBe("passed");
+  });
+
   it("keeps preview available when one candidate repair violates its sealed-content contract", async () => {
     const { root, candidates } = await fixture([
       "candidate-a",

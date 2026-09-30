@@ -19,6 +19,18 @@ export const REFERENCE_PROVENANCE_OUTPUT_CONTRACT = [
   "Never render them in visitor-facing copy, page titles or descriptions, Open Graph metadata, structured data, image alt text, link labels, or credits; they are not client business facts.",
 ].join("\n");
 
+export const CLIENT_PALETTE_ROLE_CONTRACT = [
+  "CLIENT PALETTE ROLE CONTRACT",
+  "Map the client visual brief palette to page surfaces by role:",
+  "- surfaceColor is the dominant page surface. The page body and the large content fields use it.",
+  "- heroColor is the opening hero surface. It stays distinct from the page surface.",
+  "- brandSurfaceColor and brandSurfaceTextColor are limited brand bands, such as one conversion band or the footer, and never the dominant page surface.",
+  "- primaryColor and contrastColor are the action and accent pair for buttons, links, and small marks.",
+  "- inkColor, mutedColor, and lineColor carry body type, secondary type, and rules.",
+  "When the assigned reference's own surface direction conflicts with the client brief, the brief wins on surfaces while the reference keeps its composition, geometry, and hierarchy.",
+  "A brand color used as the dominant page surface, or an inverted light/dark direction, fails the palette-adherence gate.",
+].join("\n");
+
 export function completionLimitRequestField(tokens) {
   if (!Number.isSafeInteger(tokens) || tokens < 1)
     throw new Error("OpenRouter completion-token limit must be a positive integer.");

@@ -26,6 +26,7 @@ import {
 } from "./production-experience-author.mjs";
 import { runHumanRevisionGate } from "./human-revision-gate.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
+import { RENDERED_REFERENCE_THRESHOLDS } from "./rendered-reference-fidelity.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
 const REPAIR_FILES = ["Experience.jsx", "styles.css", "motion.js"];
@@ -54,6 +55,29 @@ function unique(values) {
   return [...new Set(values.filter(Boolean))];
 }
 
+function dimensionFindings(candidate) {
+  const audit = candidate?.renderedReferenceFidelity?.audit;
+  if (!audit) return [];
+  const findings = [];
+  const overall = Number(audit.overallScore);
+  if (
+    Number.isFinite(overall) &&
+    overall < RENDERED_REFERENCE_THRESHOLDS.overall
+  )
+    findings.push(
+      `rendered-reference overall fidelity scored ${overall} and must reach ${RENDERED_REFERENCE_THRESHOLDS.overall}.`,
+    );
+  for (const [key, value] of Object.entries(audit.scores || {})) {
+    const minimum = Number(RENDERED_REFERENCE_THRESHOLDS[key]);
+    const score = Number(value);
+    if (Number.isFinite(minimum) && Number.isFinite(score) && score < minimum)
+      findings.push(
+        `rendered-reference dimension ${key} scored ${score} and must reach ${minimum}.`,
+      );
+  }
+  return findings;
+}
+
 function candidateFindings(candidate) {
   return unique([
     ...(candidate?.failures || []),
@@ -64,6 +88,7 @@ function candidateFindings(candidate) {
     ...(candidate?.referenceFidelity?.renderedVisualFindings || []).map(
       (item) => item.message || item.code || "Reference contract mismatch.",
     ),
+    ...dimensionFindings(candidate),
   ]);
 }
 

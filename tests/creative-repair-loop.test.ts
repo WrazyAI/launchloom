@@ -854,6 +854,8 @@ describe("creative repair loop", () => {
     expect(prompt).toContain("CLIENT VISUAL BRIEF");
     expect(prompt).toContain("#f5f0e4");
     expect(prompt).toContain("Light tactile craft collage");
+    expect(prompt).toContain("CLIENT PALETTE ROLE CONTRACT");
+    expect(prompt).toContain("surfaceColor is the dominant page surface");
     expect(prompt).toContain(
       "Do not repair toward a generic LaunchLoom house style",
     );
