@@ -28,7 +28,6 @@ import { runHumanRevisionGate } from "./human-revision-gate.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
-const REPAIR_FILES = ["Experience.jsx", "styles.css", "motion.js"];
 
 function cliArgs(argv) {
   return Object.fromEntries(
@@ -332,19 +331,25 @@ function verifiedHumanFeedbackResults(audit, expectedItems, candidateId) {
 }
 
 async function readCandidate(candidateDir) {
-  const [metadata, contentManifest, experience, styles, motion] =
+  const [metadata, contentManifest, experience, styles, motion, servicePage] =
     await Promise.all([
       readJson(path.join(candidateDir, "metadata.json")),
       readJson(path.join(candidateDir, "content-manifest.json")),
       fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
       fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
       fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
+      fs.readFile(path.join(candidateDir, "ServicePage.jsx"), "utf8").catch(() => ""),
     ]);
   return {
     metadata,
     contentManifest,
     content: contentManifest.values || {},
-    files: { experience, styles, motion },
+    files: {
+      experience,
+      styles,
+      motion,
+      ...(servicePage.trim() ? { servicePage } : {}),
+    },
   };
 }
 
@@ -366,7 +371,7 @@ function normalizeRepair(value) {
 
 /**
  * @param {string} candidateDir
- * @param {{experience?: string, styles?: string, motion?: string}} files
+ * @param {{experience?: string, styles?: string, motion?: string, servicePage?: string}} files
  * @param {{fsImpl?: RepairFs}} [options]
  * @returns {Promise<void>}
  */
@@ -389,6 +394,9 @@ export async function writeCandidate(
     "styles.css": files.styles,
     "motion.js": files.motion,
   };
+  if (typeof files.servicePage === "string" && files.servicePage.trim())
+    map["ServicePage.jsx"] = files.servicePage;
+  const transactionFiles = Object.keys(map);
   const backedUp = [];
   const installed = [];
   let preserveBackup = false;
@@ -398,7 +406,7 @@ export async function writeCandidate(
     for (const [name, content] of Object.entries(map))
       await fsImpl.writeFile(path.join(staging, name), `${content.trim()}\n`);
 
-    for (const name of REPAIR_FILES) {
+    for (const name of transactionFiles) {
       await fsImpl.rename(
         path.join(candidateDir, name),
         path.join(backup, name),
@@ -406,7 +414,7 @@ export async function writeCandidate(
       backedUp.push(name);
     }
 
-    for (const name of REPAIR_FILES) {
+    for (const name of transactionFiles) {
       await fsImpl.rename(
         path.join(staging, name),
         path.join(candidateDir, name),

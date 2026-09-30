@@ -11,6 +11,7 @@ import {
   restoreRequiredExperienceMarkers,
   restoreRequiredSectionIdsOnSemanticSections,
   validateProductionCandidateFiles,
+  validateServicePage,
   type AuthorStageRequest,
 } from "../scripts/production-experience-author.mjs";
 import { buildReferenceDna } from "../scripts/reference-dna.mjs";
@@ -115,6 +116,22 @@ export default function Experience({ content, runtime }) {
     <section id="faqs">{content.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
     <section id="contact"><LeadForm content={content} runtime={runtime} /><a href={content.brand.phone}>{content.brand.phone}</a></section></main>
   </div>;
+}`,
+    };
+  }
+  if (request.stage === "service") {
+    return {
+      content: `import { LeadForm } from "@launchloom/runtime";
+export default function ServicePage({ content, runtime, service }) {
+  return <main data-service-page data-service-slug={service.slug}>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-service-hero><h1>{service.name}</h1><p>{service.description}</p><a href="#contact">{content.hero.primaryLabel}</a></section>
+    <section data-service-support><h2>{service.name}</h2><p>{service.support.scope}</p><p>{service.support.preparation}</p><p>{service.support.nextStep}</p></section>
+    <section data-service-related><ul>{service.related.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
+    {service.process.length > 0 && <ol>{service.process.map((step) => <li key={step}>{step}</li>)}</ol>}
+    {service.faqs.length > 0 && <section>{service.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>}
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
 }`,
     };
   }
@@ -1031,6 +1048,7 @@ describe("production experience author", () => {
     for (const candidate of result.candidates) {
       expect(Object.keys(candidate.files).sort()).toEqual([
         "Experience.jsx",
+        "ServicePage.jsx",
         "content-manifest.json",
         "contract.json",
         "metadata.json",
@@ -1094,7 +1112,7 @@ describe("production experience author", () => {
       model: "test/model",
     });
 
-    expect(requests).toHaveLength(12);
+    expect(requests).toHaveLength(15);
     for (const request of requests)
       expect(request.route.referenceDossier).toEqual(
         dossiers.get(request.route.id),
@@ -1219,7 +1237,7 @@ describe("production experience author", () => {
       },
     });
 
-    expect(requests).toHaveLength(12);
+    expect(requests).toHaveLength(15);
     expect(
       new Set(requests.map((request) => request.route.signature)).size,
     ).toBe(3);
@@ -2004,5 +2022,96 @@ describe("production experience author", () => {
       digests.add(recomputed);
     }
     expect(digests.size).toBe(3);
+  });
+
+  it("authors a service detail page per candidate and hands it to the styles stage", async () => {
+    const requests: AuthorStageRequest[] = [];
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        requests.push(request);
+        return safeStage(request);
+      },
+    });
+
+    for (const candidate of result.candidates) {
+      expect(candidate.files["ServicePage.jsx"]).toContain("data-service-page");
+      expect(candidate.metadata.servicePageAuthored).toBe(true);
+    }
+    const serviceRequests = requests.filter(
+      (request) => request.stage === "service",
+    );
+    expect(serviceRequests).toHaveLength(3);
+    for (const request of serviceRequests)
+      expect(request.experienceSource).toContain("Experience");
+    const stylesRequests = requests.filter(
+      (request) => request.stage === "styles",
+    );
+    expect(stylesRequests).toHaveLength(3);
+    for (const request of stylesRequests)
+      expect(request.servicePageSource).toContain("data-service-page");
+  });
+
+  it("validates the authored service page contract", () => {
+    const route = { id: "route-service" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const valid = String(
+      safeStage({ ...request, stage: "service" }).content || "",
+    );
+    expect(() => validateServicePage(valid, route, {})).not.toThrow();
+
+    const missingRuntime = valid.replace(
+      'import { LeadForm } from "@launchloom/runtime";\n',
+      "",
+    );
+    expect(() => validateServicePage(missingRuntime, route, {})).toThrow(
+      /LeadForm/u,
+    );
+
+    const missingMarker = valid.replace(
+      "data-service-support",
+      "data-service-decisions",
+    );
+    expect(() => validateServicePage(missingMarker, route, {})).toThrow(
+      /data-service-support/u,
+    );
+
+    const missingRelated = valid.replace(/service\.related/gu, "service.items");
+    expect(() => validateServicePage(missingRelated, route, {})).toThrow(
+      /service\.related/u,
+    );
+
+    const remoteImage = valid.replace(
+      "</main>",
+      '<img src="https://example.com/service.png" alt="Service context" /></main>',
+    );
+    expect(() => validateServicePage(remoteImage, route, {})).toThrow(
+      /remote URL/u,
+    );
+
+    const missingContact = valid.replace('id="contact"', 'id="reach-us"');
+    expect(() => validateServicePage(missingContact, route, {})).toThrow(
+      /contact/u,
+    );
+
+    const destructured = `import { LeadForm } from "@launchloom/runtime";
+export default function ServicePage({ content, runtime, service: { name, slug, description, support, related, process, faqs } }) {
+  return <main data-service-page data-service-slug={slug}>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-service-hero><h1>{name}</h1><p>{description}</p></section>
+    <section data-service-support><p>{support.scope}</p><p>{support.preparation}</p><p>{support.nextStep}</p></section>
+    <section data-service-related><ul>{related.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
+    {process.length > 0 && <ol>{process.map((step) => <li key={step}>{step}</li>)}</ol>}
+    {faqs.length > 0 && <section>{faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>}
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`;
+    expect(() => validateServicePage(destructured, route, {})).not.toThrow();
   });
 });
