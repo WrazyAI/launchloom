@@ -109,6 +109,63 @@ describe("creative authoring output budgets", () => {
     expect(checklist).toContain("machine-readable verification markers, not visual substitutions");
   });
 
+  it("promotes distinctive signature and art-direction mechanics into rendered obligations", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+      requiredSignatureElements: [
+        {
+          id: "room-service-selector",
+          description:
+            "a room-reveal service selector backed by a visible finished-room image",
+        },
+        {
+          id: "sample-library",
+          description:
+            "a paint-sample library with layered finish swatches and labeled choices",
+        },
+      ],
+      imageTreatment: {
+        mode: "finished rooms and paint sample-like color strips",
+        crop: "wide room reveal followed by contained material studies",
+        focalPoint: "keep the finished surface visible beside the service choice",
+      },
+      servicePresentation: {
+        pattern: "vertical service menu that changes the featured room image",
+        interaction: "room-reveal tabs with a complete static fallback",
+      },
+      palette: { contrastIntent: "ivory, charcoal, and warm paint accents" },
+      acceptanceChecks: [
+        "The room reveal remains visually dominant beside the service choice.",
+        "Paint sample treatment is visible before the final contact chapter.",
+      ],
+    });
+
+    expect(checklist).toContain(
+      'data-reference-signature="room-service-selector" must visibly realize',
+    );
+    expect(checklist).toContain(
+      'data-reference-signature="sample-library" must visibly realize',
+    );
+    expect(checklist).toContain(
+      "A data-reference-signature marker alone does not satisfy a signature",
+    );
+    expect(checklist).toContain(
+      "Image treatment: finished rooms and paint sample-like color strips",
+    );
+    expect(checklist).toContain(
+      "Service presentation: vertical service menu that changes the featured room image",
+    );
+    expect(checklist).toContain(
+      "differentiate them through reference-led crop, layering, sequencing",
+    );
+    expect(checklist).toContain(
+      "The room reveal remains visually dominant beside the service choice.",
+    );
+    expect(checklist).toContain(
+      "Treat these as rendered acceptance criteria, not descriptive prose",
+    );
+  });
+
   it("keeps required navigation links when a route has no reference DNA", () => {
     const checklist = referenceImplementationChecklist(undefined);
 

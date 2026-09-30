@@ -58,6 +58,49 @@ export function referenceImplementationChecklist(referenceDna) {
     throw new Error(
       "Reference DNA sectionSequence must contain at least three unique, non-empty marker IDs.",
     );
+  const requirementText = (value, limit = 420) =>
+    String(value || "")
+      .replace(/\s+/gu, " ")
+      .trim()
+      .slice(0, limit);
+  const visibleSignatures = (
+    Array.isArray(referenceDna.requiredSignatureElements)
+      ? referenceDna.requiredSignatureElements
+      : []
+  )
+    .map((element) => {
+      const id = requirementText(element?.id, 120);
+      if (!id) return "";
+      const description =
+        requirementText(element?.description, 420) ||
+        "the distinctive reference mechanic represented by this signature";
+      return `- data-reference-signature=${JSON.stringify(id)} must visibly realize: ${description}`;
+    })
+    .filter(Boolean);
+  const artDirectionRequirements = [
+    ["Image treatment", referenceDna.imageTreatment?.mode],
+    ["Image crop", referenceDna.imageTreatment?.crop],
+    ["Image focal role", referenceDna.imageTreatment?.focalPoint],
+    ["Service presentation", referenceDna.servicePresentation?.pattern],
+    ["Service interaction", referenceDna.servicePresentation?.interaction],
+    ["Palette contrast intent", referenceDna.palette?.contrastIntent],
+  ]
+    .map(([label, value]) => {
+      const detail = requirementText(value, 420);
+      return detail ? `- ${label}: ${detail}` : "";
+    })
+    .filter(Boolean);
+  const acceptanceChecks = (
+    Array.isArray(referenceDna.acceptanceChecks)
+      ? referenceDna.acceptanceChecks
+      : []
+  )
+    .map((item, index) => {
+      const detail = requirementText(item, 420);
+      return detail ? `${index + 1}. ${detail}` : "";
+    })
+    .filter(Boolean);
+
   const referenceMarkers = [
     ["data-hero-geometry", referenceDna.heroGeometry?.mode, "the hero element"],
     ["data-navigation-geometry", referenceDna.navigationGeometry?.mode, "the visible nav element"],
@@ -77,6 +120,28 @@ export function referenceImplementationChecklist(referenceDna) {
     "REQUIRED REFERENCE-DNA MARKERS: use these exact values on their matching visible elements:",
     ...referenceMarkers,
     "These are machine-readable verification markers, not visual substitutions. The rendered DOM and screenshots must still visibly realize the assigned geometry, service presentation, CTA placement, mobile recomposition, and interaction.",
+    ...(visibleSignatures.length
+      ? [
+          "REQUIRED VISIBLE SIGNATURE REALIZATION (HARD REQUIREMENT):",
+          ...visibleSignatures,
+          "A data-reference-signature marker alone does not satisfy a signature. Put the marker on the element that actually realizes the described visual mechanic, and make that mechanic obvious in the rendered desktop and mobile page.",
+          "Reference safety means changing identity, copy, and source assets, not erasing the transferable mechanic. Preserve the mechanic with client-specific content rather than collapsing to generic local-business grammar.",
+        ]
+      : []),
+    ...(artDirectionRequirements.length
+      ? [
+          "REFERENCE ART-DIRECTION CONTRACT (HARD REQUIREMENT):",
+          ...artDirectionRequirements,
+          "Use supplied client imagery within these assigned visual roles. When the same client assets are reused across candidate routes, differentiate them through reference-led crop, layering, sequencing, surface treatment, color treatment, and spatial choreography. Do not revert to a conventional text/image split or card grid merely because the underlying assets are shared.",
+        ]
+      : []),
+    ...(acceptanceChecks.length
+      ? [
+          "RENDERED ACCEPTANCE CHECKS:",
+          ...acceptanceChecks,
+          "Treat these as rendered acceptance criteria, not descriptive prose. Verify them against the visible page before returning source.",
+        ]
+      : []),
     'REFERENCE SECTION ORDER: put each data-reference-section value on its corresponding visible <section> element, in this exact DOM order:',
     ...sectionIds.map(
       (id, index) => `${index + 1}. data-reference-section="${id}"`,

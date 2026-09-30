@@ -443,6 +443,25 @@ describe("creative repair loop", () => {
       model: "test/model",
       referenceDna: {
         sectionSequence: ["hero", "services", "faqs", "contact"],
+        requiredSignatureElements: [
+          {
+            id: "room-service-selector",
+            description:
+              "a room-reveal service selector backed by a visible finished-room image",
+          },
+        ],
+        imageTreatment: {
+          mode: "finished rooms and paint sample-like color strips",
+          crop: "wide room reveal followed by contained material studies",
+          focalPoint: "keep the finished surface visible beside the service choice",
+        },
+        servicePresentation: {
+          pattern: "vertical service menu that changes the featured room image",
+          interaction: "room-reveal tabs with a complete static fallback",
+        },
+        acceptanceChecks: [
+          "The room reveal remains visually dominant beside the service choice.",
+        ],
         evidence: { desktopScreenshot: { path: desktop } },
       },
       findings: [],
@@ -465,6 +484,15 @@ describe("creative repair loop", () => {
     expect(prompt).toContain('data-reference-section="services"');
     expect(prompt).toContain('data-reference-section="faqs"');
     expect(prompt).toContain('data-reference-section="contact"');
+    expect(prompt).toContain(
+      'data-reference-signature="room-service-selector" must visibly realize',
+    );
+    expect(prompt).toContain(
+      "Image treatment: finished rooms and paint sample-like color strips",
+    );
+    expect(prompt).toContain(
+      "The room reveal remains visually dominant beside the service choice.",
+    );
     expect(prompt).toContain(
       "<FAQList content={content} />, <ContactLinks content={content} />, <LocationMap content={content} />, and <SocialProof content={content} runtime={runtime} />",
     );
