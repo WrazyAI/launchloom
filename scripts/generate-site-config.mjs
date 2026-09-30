@@ -47,6 +47,8 @@ function recentFingerprintsForSelection() {
 }
 
 const MODEL = "z-ai/glm-5.3-flash";
+const SITE_COPY_MAX_COMPLETION_TOKENS = 8192;
+const SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS = 4096;
 const MAX_CORE_SERVICES = 5;
 
 const SHARED_CREATIVE_DIRECTION =
@@ -1792,6 +1794,7 @@ async function askModel(intake, effort, model = MODEL) {
     sessionId,
     body: {
       model,
+      max_completion_tokens: SITE_COPY_MAX_COMPLETION_TOKENS,
       ...promptCacheRequestFields(model, promptCacheKey),
       reasoning_effort: effort,
       temperature: 0.3,
@@ -1842,6 +1845,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
     sessionId,
     body: {
       model,
+      max_completion_tokens: SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS,
       ...promptCacheRequestFields(model, promptCacheKey),
       reasoning_effort: "medium",
       temperature: 0.2,
@@ -1880,6 +1884,8 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       groundedIntake,
     );
   } catch (firstError) {
+    if (/^OpenRouter returned 402\b/u.test(String(firstError?.message || firstError)))
+      throw firstError;
     console.warn(
       "Low-effort generation failed; retrying once with high effort.",
       firstError.message,

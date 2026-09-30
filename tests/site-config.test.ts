@@ -81,7 +81,7 @@ function stubCopyModelResponses(
 ) {
   vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
   const remaining = [...candidates];
-  const fetchMock = vi.fn(async () => {
+  const fetchMock = vi.fn(async (_input?: RequestInfo | URL, _init?: RequestInit) => {
     const content = remaining.shift();
     return new Response(
       JSON.stringify({
@@ -1261,6 +1261,12 @@ describe("site configuration", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(config.copy.heroHeading).toBe("Mobile auto care for Portland drivers");
+    const requestBodies = fetchMock.mock.calls.map(([, init]) =>
+      JSON.parse(String(init?.body || "{}")),
+    );
+    expect(requestBodies.map((body) => body.max_completion_tokens)).toEqual([
+      8192, 4096,
+    ]);
     expect(config.qualityReport.issues).not.toContain(
       "Generated copy includes a repair outcome prohibited by the client art direction.",
     );
@@ -1284,6 +1290,34 @@ describe("site configuration", () => {
       }),
     ).rejects.toThrow(/explicit repair-outcome prohibition/i);
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry an OpenRouter credit failure at a higher reasoning effort", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    const fetchMock = vi.fn(
+      async (_input?: RequestInfo | URL, _init?: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "This request requires more credits, or fewer max_tokens.",
+              code: 402,
+              metadata: { limit_source: "openrouter_credits" },
+            },
+          }),
+          { status: 402, headers: { "content-type": "application/json" } },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      generateSiteConfigWithModel({
+        businessName: "Fieldnotes Veterinary Studio",
+        industry: "veterinary",
+        services: "Wellness examinations\nDiagnostic consultations",
+      }),
+    ).rejects.toThrow(/OpenRouter returned 402/);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("matches generated service copy by service identity instead of array position", () => {
