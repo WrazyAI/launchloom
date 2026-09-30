@@ -2,7 +2,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { validateCandidateManifest } from "./creative-compiler.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
-import { normalizeCreativeExperienceLinks } from "./creative-source-safety.mjs";
+import {
+  assertCreativeServicePageSource,
+  normalizeCreativeExperienceLinks,
+} from "./creative-source-safety.mjs";
+
+const SERVICE_PAGE_FALLBACK = `export default function ServicePage() {
+  return null;
+}
+`;
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -74,6 +82,16 @@ export async function promoteCreativeCandidate({
     styles: await fs.readFile(path.join(source, "styles.css"), "utf8"),
     motion: await fs.readFile(path.join(source, "motion.js"), "utf8"),
   };
+  const servicePageSource = await fs
+    .readFile(path.join(source, "ServicePage.jsx"), "utf8")
+    .catch(() => "");
+  if (servicePageSource.trim()) {
+    const servicePage = normalizeCreativeExperienceLinks(servicePageSource);
+    assertCreativeServicePageSource(servicePage, {
+      candidateId: candidateManifest.candidateId,
+    });
+    files.servicePage = servicePage;
+  }
   validateAuthoredFiles(candidateManifest.candidateId, files, candidateManifest, { preview });
 
   const selected = path.resolve(root, "src/generated-experiences/selected");
@@ -84,6 +102,10 @@ export async function promoteCreativeCandidate({
     fs.writeFile(path.join(selected, "Experience.jsx"), files.experience),
     fs.copyFile(path.join(source, "styles.css"), path.join(selected, "styles.css")),
     fs.copyFile(path.join(source, "motion.js"), path.join(selected, "motion.js")),
+    fs.writeFile(
+      path.join(selected, "ServicePage.jsx"),
+      files.servicePage ? `${files.servicePage.trim()}\n` : SERVICE_PAGE_FALLBACK,
+    ),
   ]);
   if (!preserveSelectedManifest)
     await fs.writeFile(
@@ -103,6 +125,7 @@ export async function promoteCreativeCandidate({
     referenceDnaVersion: candidateManifest.referenceDna?.version || null,
     contractHash: candidateManifest.routeFingerprint,
     fingerprint: candidateManifest.fingerprint,
+    servicePage: Boolean(files.servicePage),
     ...(Number.isFinite(visualScore) ? { visualScore } : {}),
     ...(Number.isFinite(distinctivenessScore) ? { distinctivenessScore } : {}),
     selectionMode,
