@@ -102,6 +102,24 @@ describe("authored creative repair scope", () => {
     );
   });
 
+  it("does not classify a hero LeadForm as the contact section", () => {
+    const sourceWithHeroForm = experience.replace(
+      '<section data-reference-section="hero"><h1>{content.hero.heading}</h1><a href="#contact">{content.hero.primaryLabel}</a></section>',
+      '<section data-reference-section="hero"><h1>{content.hero.heading}</h1><a href="#contact">{content.hero.primaryLabel}</a><LeadForm /></section>',
+    );
+    for (const feedback of [
+      "Improve the form layout.",
+      "Improve the consultation layout.",
+    ]) {
+      expect(
+        resolveCreativeRevisionScope({
+          source: sourceWithHeroForm,
+          feedbackItems: [{ feedbackIndex: 0, feedback }],
+        }).sectionIds,
+      ).toEqual(["contact"]);
+    }
+  });
+
   it("allows changes within the named section while preserving other sections", () => {
     const updated = {
       ...files,
@@ -115,6 +133,99 @@ describe("authored creative repair scope", () => {
       sectionIds: ["hero"],
       allowMotion: false,
     });
+  });
+
+  it("allows an unrelated scoped repair when the approved baseline already has unsafe patterns", () => {
+    const experienceWithExistingFindings = experience.replace(
+      "</section>",
+      '<button onClick={() => window.alert("existing")}>Existing control</button><a href="tel:555-0100">Call</a></section>',
+    );
+    const before = { ...files, experience: experienceWithExistingFindings };
+    const after = {
+      ...before,
+      styles:
+        '[data-reference-section="hero"] h1 { font-size: clamp(3rem, 8vw, 6rem); }',
+    };
+
+    expect(assertCreativeRevisionScope(before, after, heroScope())).toMatchObject(
+      { sectionIds: ["hero"] },
+    );
+  });
+
+  it("rejects a changed expression behind a pre-existing unsafe JSX handler", () => {
+    const beforeExperience = experience.replace(
+      "</section>",
+      '<button onClick={() => window.alert("baseline")}>Existing control</button></section>',
+    );
+    const afterExperience = beforeExperience.replace(
+      'window.alert("baseline")',
+      'window.location.assign("/escape")',
+    );
+
+    expect(() =>
+      assertCreativeRevisionScope(
+        { ...files, experience: beforeExperience },
+        { ...files, experience: afterExperience },
+        heroScope(),
+      ),
+    ).toThrow(/introduced JSX event handlers or page-wide behavior/iu);
+  });
+
+  it("rejects an added occurrence of an existing unsafe JSX behavior", () => {
+    const beforeExperience = experience.replace(
+      "</section>",
+      '<button onClick={() => "existing"}>Existing control</button></section>',
+    );
+    const afterExperience = beforeExperience.replace(
+      "</section>",
+      '<button onClick={() => "added"}>Added control</button></section>',
+    );
+
+    expect(() =>
+      assertCreativeRevisionScope(
+        { ...files, experience: beforeExperience },
+        { ...files, experience: afterExperience },
+        heroScope(),
+      ),
+    ).toThrow(/event handlers|executable JSX prop/iu);
+  });
+
+  it("rejects an added occurrence of an existing unsealed contact destination", () => {
+    const beforeExperience = experience.replace(
+      "</section>",
+      '<a href="tel:555-0100">Existing phone</a></section>',
+    );
+    const afterExperience = beforeExperience.replace(
+      "</section>",
+      '<a href="tel:555-0100">Added phone</a></section>',
+    );
+
+    expect(() =>
+      assertCreativeRevisionScope(
+        { ...files, experience: beforeExperience },
+        { ...files, experience: afterExperience },
+        heroScope(),
+      ),
+    ).toThrow(/introduced a contact destination.*sealed business content/iu);
+  });
+
+  it("rejects changing the value of an existing unsealed contact destination", () => {
+    const beforeExperience = experience.replace(
+      "</section>",
+      '<a href="tel:555-0100">Existing phone</a></section>',
+    );
+    const afterExperience = beforeExperience.replace(
+      "tel:555-0100",
+      "tel:555-0111",
+    );
+
+    expect(() =>
+      assertCreativeRevisionScope(
+        { ...files, experience: beforeExperience },
+        { ...files, experience: afterExperience },
+        heroScope(),
+      ),
+    ).toThrow(/introduced a contact destination.*sealed business content/iu);
   });
 
   it("requires an actual reduced-motion guard before starting scoped animation", () => {

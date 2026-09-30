@@ -93,6 +93,19 @@ function candidateDiversityFinding(
     .join("\n");
 }
 
+function previewDiversityEvidence(report) {
+  const preview = report?.previewDiversity;
+  const visual = report?.visualDiversity;
+  if (!preview) return visual;
+  return {
+    ...(visual || {}),
+    ...preview,
+    pass: preview.pass,
+    summary: preview.summary || visual?.summary || "",
+    pairs: visual?.pairs?.length ? visual.pairs : preview.pairs || [],
+  };
+}
+
 function gateFindings(report) {
   return (report?.audit?.findings || []).map((item) => ({
     category: item.category,
@@ -1048,9 +1061,11 @@ export async function runRenderedCreativeRepair({
 
     if (!report.selectedCandidateId) {
       const candidates = (report.candidates || []).filter(candidateNeedsRepair);
+      const previewDiversity =
+        requestedMode === "preview" ? previewDiversityEvidence(report) : null;
       const previewDiversityTargets =
-        requestedMode === "preview" && report.previewDiversity?.pass === false
-          ? diversityRepairTargets(report, report.previewDiversity)
+        previewDiversity?.pass === false
+          ? diversityRepairTargets(report, previewDiversity)
           : [];
       const canRepair = (candidateId) =>
         (cycleUse.get(candidateId) || 0) < cycleLimit &&
@@ -1080,8 +1095,8 @@ export async function runRenderedCreativeRepair({
         );
 
       const diversity =
-        report.previewDiversity?.pass === false
-          ? report.previewDiversity
+        previewDiversity?.pass === false
+          ? previewDiversity
           : report.visualDiversity;
       const diversityFinding = candidateDiversityFinding(
         report,

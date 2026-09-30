@@ -1124,6 +1124,10 @@ const REPAIR_OUTCOME_ISSUE =
   "Generated copy includes a repair outcome prohibited by the client art direction.";
 const REPAIR_OUTCOME_CLAIM =
   /\b(?:gets?|got|will be|is|are|was|were)\s+(?:(?:completely|fully)\s+)?(?:fixed|repaired|solved|restored|resolved)\b|\b(?:we|our team)\s+(?:will|can)\s+(?:fix|repair|solve|restore)\b/i;
+const REPAIR_OUTCOME_NEGATION =
+  /\b(?:not(?!\s+only)|never|cannot|can't|don't|doesn't|didn't|won't|wouldn't)\b|\bno\s+(?:one|claim|promise|guarantee|assurance|commitment)\b/iu;
+const REPAIR_OUTCOME_CLAUSE_BOUNDARY =
+  /[.!?;\n]|\b(?:but|however|yet|still)\b|\band(?=\s+(?:we|our|the|a|an|you|your|they|he|she|it|this|that)\b)/giu;
 
 function explicitlyProhibitsRepairOutcomes(config) {
   const direction = String(config.style?.artDirection || "");
@@ -1157,10 +1161,27 @@ function visitorFacingCopy(config) {
     .filter((value) => typeof value === "string")
     .join("\n");
 }
+
+function hasUnnegatedRepairOutcomeClaim(copy) {
+  const text = String(copy || "");
+  const claimPattern = new RegExp(REPAIR_OUTCOME_CLAIM.source, "giu");
+  for (const match of text.matchAll(claimPattern)) {
+    const claimStart = match.index || 0;
+    const prefix = text.slice(0, claimStart);
+    let clauseStart = 0;
+    for (const boundary of text.matchAll(REPAIR_OUTCOME_CLAUSE_BOUNDARY)) {
+      if ((boundary.index || 0) >= claimStart) break;
+      clauseStart = (boundary.index || 0) + boundary[0].length;
+    }
+    if (!REPAIR_OUTCOME_NEGATION.test(prefix.slice(clauseStart))) return true;
+  }
+  return false;
+}
+
 function violatesExplicitRepairOutcomeProhibition(config) {
   return (
     explicitlyProhibitsRepairOutcomes(config) &&
-    REPAIR_OUTCOME_CLAIM.test(visitorFacingCopy(config))
+    hasUnnegatedRepairOutcomeClaim(visitorFacingCopy(config))
   );
 }
 

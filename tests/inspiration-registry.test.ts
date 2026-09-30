@@ -7,6 +7,7 @@ import {
   normalizedHeroArchetype,
   referenceStructuralDistance,
 } from "../scripts/inspiration-registry.mjs";
+import { assertIndependentRoutes } from "../scripts/creative-compiler.mjs";
 import {
   assertReferenceDossierMatchesRecord,
   assertReferenceDossierPack,
@@ -134,6 +135,7 @@ describe("inspiration registry", () => {
 
     expect(first).toEqual(second);
     expect(first.routes).toHaveLength(3);
+    expect(() => assertIndependentRoutes(first.routes)).not.toThrow();
     expect(
       new Set(first.routes.flatMap((route: any) => route.referenceIds)).size,
     ).toBe(first.routes.flatMap((route: any) => route.referenceIds).length);
@@ -159,6 +161,45 @@ describe("inspiration registry", () => {
     expect(
       new Set(first.routes.map((route: any) => route.signature)).size,
     ).toBe(3);
+  });
+
+  it("fails closed when references share identical hero geometry despite differing DNA", () => {
+    const core = JSON.parse(
+      fs.readFileSync(
+        path.resolve("data/reference-library/core-collection.json"),
+        "utf8",
+      ),
+    );
+    const niche = core.niches.find(
+      (entry: any) => entry.businessKind === "home-care",
+    );
+    const nicheIds = new Set(niche.referenceIds);
+    const selectionRegistry = {
+      ...registry,
+      records: registry.records.map((record: any) =>
+        nicheIds.has(record.id)
+          ? {
+              ...record,
+              heroGeometry: "an unclassified shared hero geometry",
+              canonicalReferenceDna: loadReferenceDossier(record.dossierPath, {
+                repositoryRoot: path.resolve("."),
+              }).referenceDna,
+            }
+          : record,
+      ),
+    };
+    expect(() =>
+      buildInspirationPack(
+        {
+          ...baseRequest,
+          industry: "home-care",
+          styleTerms: [],
+          seed: "unclassified-hero-duplicate",
+        },
+        selectionRegistry,
+        { repositoryRoot: path.resolve("."), requireDossiers: false },
+      ),
+    ).toThrow(/cannot supply three structurally independent/iu);
   });
 
   it("selects a home-services trio with distinct recurring hero topologies", () => {
@@ -273,10 +314,7 @@ describe("inspiration registry", () => {
                 (first.routes[left] as any)[field] ===
                 (first.routes[right] as any)[field],
             );
-            expect(
-              sharedFields.length,
-              `${niche.id}:shared-fields`,
-            ).toBeLessThanOrEqual(2);
+            expect(sharedFields, `${niche.id}:shared-fields`).toEqual([]);
             expect(
               referenceStructuralDistance(
                 first.routes[left],

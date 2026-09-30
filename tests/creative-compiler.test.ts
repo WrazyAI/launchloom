@@ -89,10 +89,28 @@ describe("creative compiler", () => {
   it("rejects reusing the same source reference across distinct routes", () => {
     const reusedReferenceRoutes = routes.map((route) => ({
       ...route,
-      referenceFamilyId: "same-source-reference",
+      referenceIds: ["same-source-reference"],
     }));
 
     expect(() => assertIndependentRoutes(reusedReferenceRoutes)).toThrow(
+      /reuse the same reference source/iu,
+    );
+  });
+
+  it("uses dossier reference ids instead of visual family ids for source identity", () => {
+    const distinctSources = routes.map((route, index) => ({
+      ...route,
+      referenceIds: [`source-${index + 1}`],
+      referenceFamilyId: "shared-visual-family",
+    }));
+    expect(() => assertIndependentRoutes(distinctSources)).not.toThrow();
+
+    const reusedSource = routes.map((route, index) => ({
+      ...route,
+      referenceIds: ["same-source"],
+      referenceFamilyId: `visual-family-${index + 1}`,
+    }));
+    expect(() => assertIndependentRoutes(reusedSource)).toThrow(
       /reuse the same reference source/iu,
     );
   });

@@ -277,7 +277,7 @@ export function assertIndependentRoutes(routes, expected = 3) {
     (route) =>
       clean(route?.referenceDossier?.id, 120) ||
       clean(route?.referenceId, 120) ||
-      clean(route?.referenceFamilyId, 120),
+      clean(route?.referenceIds?.[0], 120),
   );
   if (referenceIds.some(Boolean)) {
     if (referenceIds.some((referenceId) => !referenceId))

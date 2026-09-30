@@ -1092,7 +1092,7 @@ export default function Experience({ content, runtime }) {
   it("repairs converged preview heroes before selecting a developer preview", async () => {
     const { root, candidates } = await fixture();
     let bakeoffCalls = 0;
-    const repairs: string[] = [];
+    const repairs: any[] = [];
     const promotions: any[] = [];
 
     const result = await runRenderedCreativeRepair({
@@ -1140,8 +1140,8 @@ export default function Experience({ content, runtime }) {
         );
       },
       runVisualGateImpl: (options: any) => visualGate(options, "pass"),
-      repairCandidateImpl: async ({ candidateId }: any) => {
-        repairs.push(candidateId);
+      repairCandidateImpl: async (repair: any) => {
+        repairs.push(repair);
       },
       promoteImpl: async (options: any) => {
         promotions.push(options);
@@ -1151,7 +1151,12 @@ export default function Experience({ content, runtime }) {
 
     expect(result.status).toBe("passed");
     expect(bakeoffCalls).toBe(2);
-    expect(repairs).toEqual(["candidate-a"]);
+    expect(repairs.map((repair) => repair.candidateId)).toEqual([
+      "candidate-a",
+    ]);
+    expect(repairs[0].findings.join("\n")).toContain(
+      "Both first viewports use the same image-left split hero.",
+    );
     expect(promotions).toHaveLength(1);
     expect(promotions[0].selectionMode).toBe("creative-preview");
     expect(result.previewDiversityPass).toBe(true);

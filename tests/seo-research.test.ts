@@ -8,6 +8,7 @@ import {
   createDataForSeoClient,
   createOpenRouterWebSearchClient,
   normaliseSeoIntake,
+  renderSeoMapMarkdown,
   researchSiteContext,
 } from "../scripts/seo-research.mjs";
 
@@ -177,6 +178,22 @@ describe("SEO market map", () => {
       { service: "Heating, ventilation and AC", complete: true, primaryKeyword: expect.any(String) },
     ]);
     expect(primary).toMatchObject({ volume: 90, kd: 41, cpc: 4.1, competition: 0.7, intent: "commercial" });
+  });
+
+  it("marks fallback search not-needed after successful measured research", async () => {
+    const webSearch = { search: vi.fn() };
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: researchProvider(),
+      webSearch,
+      maxTasks: 32,
+      maxUsd: 2,
+    });
+
+    expect(webSearch.search).not.toHaveBeenCalled();
+    expect(dossier.fallbackSearch.status).toBe("not-needed");
+    expect(renderSeoMapMarkdown(dossier)).toContain(
+      "Fallback web search: not needed (no provider stage failed).",
+    );
   });
 
   it("runs without optional Markdown map and enrichment CLI arguments", async () => {

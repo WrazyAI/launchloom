@@ -52,7 +52,6 @@ const STRUCTURAL_FIELDS = [
 ];
 // Structural distance is a minimum-quality guard, not a ranking boost. Ranking
 // it too heavily made a few high-distance references dominate every seed.
-const MAX_SHARED_STRUCTURAL_FIELDS = 2;
 const MIN_PAIRWISE_STRUCTURAL_DISTANCE = 65;
 const MIN_SEEDED_ROTATION_POOL_SIZE = 9;
 const MAX_FAMILY_POOL_REFERENCE_SHARE = 0.7;
@@ -627,15 +626,6 @@ function compositionTopologyFor(record) {
   return inferCompositionTopology(dna);
 }
 
-function sameStructuralField(left, right, field) {
-  if (field === "heroGeometry") {
-    const leftTopology = compositionTopologyFor(left).hero;
-    const rightTopology = compositionTopologyFor(right).hero;
-    return leftTopology !== "unclassified" && leftTopology === rightTopology;
-  }
-  return normalizedPhrase(left[field]) === normalizedPhrase(right[field]);
-}
-
 /**
  * Coarse hero-composition vocabulary. This intentionally collapses prose
  * variants such as "dark photo with a left promise" and "mountain image with
@@ -816,10 +806,10 @@ export function referenceStructuralDistance(left, right) {
 function structurallyIndependent(record, selected) {
   return selected.every((item) => {
     const sharedFields = STRUCTURAL_FIELDS.filter((field) =>
-      sameStructuralField(item, record, field),
+      normalizedPhrase(item[field]) === normalizedPhrase(record[field]),
     ).length;
     return (
-      sharedFields <= MAX_SHARED_STRUCTURAL_FIELDS &&
+      sharedFields === 0 &&
       referenceStructuralDistance(item, record) >=
         MIN_PAIRWISE_STRUCTURAL_DISTANCE
     );

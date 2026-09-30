@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import ts from "typescript";
 import postcss from "postcss";
 
@@ -281,7 +282,8 @@ function collectSections(source) {
       const aliases = new Set([marker.id, id].filter(Boolean));
       const identity = `${marker.id} ${id} ${values}`.toLowerCase();
       const structuralSignals = sectionStructuralSignals(node, file);
-      if (/\bdata-hero\b|\bhero\b/u.test(identity)) {
+      const isHero = /\bdata-hero\b|\bhero\b/u.test(identity);
+      if (isHero) {
         aliases.add("hero");
         aliases.add("opening");
         aliases.add("headline");
@@ -316,7 +318,7 @@ function collectSections(source) {
       if (
         id.toLowerCase() === "contact" ||
         /\bcontact\b/u.test(identity) ||
-        structuralSignals.has("LeadForm")
+        (!isHero && structuralSignals.has("LeadForm"))
       ) {
         for (const alias of [
           "contact",
@@ -599,6 +601,26 @@ function maskedJsx(source, scopedIds) {
   return maskedJsxTree(file, file, scopedIds);
 }
 
+function newlyIntroducedIssues(
+  beforeIssues,
+  afterIssues,
+  identityOf = (issue) => issue,
+) {
+  const remaining = new Map();
+  for (const issue of beforeIssues) {
+    const identity = identityOf(issue);
+    remaining.set(identity, (remaining.get(identity) || 0) + 1);
+  }
+  const added = [];
+  for (const issue of afterIssues) {
+    const identity = identityOf(issue);
+    const count = remaining.get(identity) || 0;
+    if (count > 0) remaining.set(identity, count - 1);
+    else added.push(issue);
+  }
+  return added;
+}
+
 function protectedSectionSnapshots(source, scopedIds) {
   const { file, sections } = collectSections(source);
   const scoped = new Set(scopedIds);
@@ -879,7 +901,7 @@ function scopedPropSpreads(source, scopedIds) {
  * @param {string} source
  * @param {string[] | null} [scopedIds=null]
  */
-export function findUnsafeJsxBehavior(source, scopedIds = null) {
+function findUnsafeJsxBehaviorIssues(source, scopedIds = null) {
   const file = parseSource(source, "Experience.jsx", ts.ScriptKind.TSX);
   const scoped = Array.isArray(scopedIds) ? new Set(scopedIds) : null;
   const roots = scoped
@@ -887,7 +909,15 @@ export function findUnsafeJsxBehavior(source, scopedIds = null) {
         .sections.filter((section) => scoped.has(section.id))
         .map((section) => ({ id: section.id, node: section.node }))
     : [{ id: "candidate", node: file }];
-  const issues = new Set();
+  const issues = [];
+  const addIssue = (sectionId, message, node) => {
+    const expression = node?.getText(file) || message;
+    const digest = createHash("sha256").update(expression).digest("hex");
+    issues.push({
+      identity: `${sectionId}:${message}:${digest}`,
+      message: `${sectionId}:${message}`,
+    });
+  };
 
   const inspectGlobalReference = (node, sectionId) => {
     if (!ts.isIdentifier(node) || !UNSAFE_EXPERIENCE_GLOBALS.has(node.text))
@@ -897,8 +927,12 @@ export function findUnsafeJsxBehavior(source, scopedIds = null) {
       (ts.isPropertyAccessExpression(parent) && parent.name === node) ||
       (ts.isPropertyAssignment(parent) && parent.name === node) ||
       (ts.isMethodDeclaration(parent) && parent.name === node);
-    if (!isPropertyName)
-      issues.add(`${sectionId}:page-wide global ${node.text}`);
+    if (!isPropertyName) {
+      const expression = ts.isPropertyAccessExpression(parent)
+        ? parent.parent || parent
+        : node;
+      addIssue(sectionId, `page-wide global ${node.text}`, expression);
+    }
   };
 
   for (const root of roots) {
@@ -911,39 +945,53 @@ export function findUnsafeJsxBehavior(source, scopedIds = null) {
       const opening = openingElement(node);
       if (opening) {
         if (opening.tagName.getText(file).toLowerCase() === "form")
-          issues.add(
-            `${root.id}:native form bypasses the shared LaunchLoom LeadForm endpoint`,
+          addIssue(
+            root.id,
+            "native form bypasses the shared LaunchLoom LeadForm endpoint",
+            opening,
           );
         for (const attribute of opening.attributes.properties) {
           if (ts.isJsxAttribute(attribute)) {
             const name = attribute.name.getText(file);
             if (["action", "formaction"].includes(name.toLowerCase()))
-              issues.add(
-                `${root.id}:unapproved form submission endpoint prop ${name}`,
+              addIssue(
+                root.id,
+                `unapproved form submission endpoint prop ${name}`,
+                attribute.initializer || attribute,
               );
             else if (isExecutableJsxProp(name))
-              issues.add(`${root.id}:executable JSX prop ${name}`);
+              addIssue(
+                root.id,
+                `executable JSX prop ${name}`,
+                attribute.initializer || attribute,
+              );
           } else if (ts.isJsxSpreadAttribute(attribute)) {
             if (!ts.isObjectLiteralExpression(attribute.expression)) {
-              issues.add(`${root.id}:dynamic JSX prop spread`);
+              addIssue(root.id, "dynamic JSX prop spread", attribute.expression);
               continue;
             }
             for (const property of attribute.expression.properties) {
               if (ts.isSpreadAssignment(property)) {
-                issues.add(`${root.id}:nested JSX prop spread`);
+                addIssue(root.id, "nested JSX prop spread", property);
                 continue;
               }
               const name = jsxPropertyName(property);
               if (name === null) {
-                issues.add(`${root.id}:computed JSX prop spread`);
+                addIssue(root.id, "computed JSX prop spread", property);
                 continue;
               }
               if (["action", "formaction"].includes(name.toLowerCase()))
-                issues.add(
-                  `${root.id}:unapproved form submission endpoint prop ${name}`,
+                addIssue(
+                  root.id,
+                  `unapproved form submission endpoint prop ${name}`,
+                  property,
                 );
               else if (isExecutableJsxProp(name))
-                issues.add(`${root.id}:executable JSX prop spread ${name}`);
+                addIssue(
+                  root.id,
+                  `executable JSX prop spread ${name}`,
+                  property,
+                );
             }
           }
         }
@@ -952,7 +1000,22 @@ export function findUnsafeJsxBehavior(source, scopedIds = null) {
     };
     visit(root.node);
   }
-  return [...issues].sort();
+  return issues.sort((left, right) => left.identity.localeCompare(right.identity));
+}
+
+/**
+ * Detect JSX behavior that can escape the rendered section boundary.
+ * @param {string} source
+ * @param {string[] | null} [scopedIds=null]
+ */
+export function findUnsafeJsxBehavior(source, scopedIds = null) {
+  return [
+    ...new Set(
+      findUnsafeJsxBehaviorIssues(source, scopedIds).map(
+        (issue) => issue.message,
+      ),
+    ),
+  ].sort();
 }
 
 function staticExpressionText(expression) {
@@ -1475,11 +1538,14 @@ function contactDestinationInfo(initializer, file, declarations) {
     isExactSealedContactExpression(expression, scheme, token, file)
   )
     return null;
-  return `${scheme} destination must use ${token} directly after the scheme`;
+  const source = expression?.getText(file) || initializer.getText(file);
+  return {
+    message: `${scheme} destination must use ${token} directly after the scheme`,
+    identity: createHash("sha256").update(source).digest("hex"),
+  };
 }
 
-/** Require telephone and email links to use the sealed business values. */
-export function findUnsealedContactDestinations(source, scopedIds = null) {
+function findUnsealedContactDestinationIssues(source, scopedIds = null) {
   const scoped = Array.isArray(scopedIds) ? new Set(scopedIds) : null;
   const roots = scoped
     ? collectSections(source)
@@ -1494,7 +1560,7 @@ export function findUnsealedContactDestinations(source, scopedIds = null) {
   const declarations = collectVariableInitializers(
     scoped ? collectSections(source).file : roots[0].node,
   );
-  const issues = new Set();
+  const issues = [];
   for (const root of roots) {
     const visit = (node) => {
       if (
@@ -1516,7 +1582,11 @@ export function findUnsealedContactDestinations(source, scopedIds = null) {
               node.getSourceFile(),
               declarations,
             );
-            if (issue) issues.add(`${root.id}: ${issue}`);
+            if (issue)
+              issues.push({
+                identity: `${root.id}:${issue.identity}`,
+                message: `${root.id}: ${issue.message}`,
+              });
           } else if (
             ts.isJsxSpreadAttribute(attribute) &&
             ts.isObjectLiteralExpression(attribute.expression)
@@ -1533,7 +1603,11 @@ export function findUnsealedContactDestinations(source, scopedIds = null) {
                 node.getSourceFile(),
                 declarations,
               );
-              if (issue) issues.add(`${root.id}: ${issue}`);
+              if (issue)
+                issues.push({
+                  identity: `${root.id}:${issue.identity}`,
+                  message: `${root.id}: ${issue.message}`,
+                });
             }
           }
         }
@@ -1542,7 +1616,16 @@ export function findUnsealedContactDestinations(source, scopedIds = null) {
     };
     visit(root.node);
   }
-  return [...issues].sort();
+  return issues.sort((left, right) =>
+    left.identity.localeCompare(right.identity),
+  );
+}
+
+/** Require telephone and email links to use the sealed business values. */
+export function findUnsealedContactDestinations(source, scopedIds = null) {
+  return findUnsealedContactDestinationIssues(source, scopedIds).map(
+    (issue) => issue.message,
+  );
 }
 
 function splitSelectors(selector) {
@@ -2301,18 +2384,23 @@ export function assertCreativeRevisionScope(before, after, scope) {
     throw scopeError("the declared scope references a missing section marker.");
   const allowed = new Set(sectionIds);
 
-  const unsafeBehavior = findUnsafeJsxBehavior(after.experience, sectionIds);
+  const unsafeBehavior = newlyIntroducedIssues(
+    findUnsafeJsxBehaviorIssues(before.experience, sectionIds),
+    findUnsafeJsxBehaviorIssues(after.experience, sectionIds),
+    (issue) => issue.identity,
+  );
   if (unsafeBehavior.length)
     throw scopeError(
-      `JSX event handlers and page-wide behavior are not allowed in human creative repairs: ${unsafeBehavior[0]}.`,
+      `human creative repair introduced JSX event handlers or page-wide behavior: ${unsafeBehavior[0].message}.`,
     );
-  const unsealedDestinations = findUnsealedContactDestinations(
-    after.experience,
-    sectionIds,
+  const unsealedDestinations = newlyIntroducedIssues(
+    findUnsealedContactDestinationIssues(before.experience, sectionIds),
+    findUnsealedContactDestinationIssues(after.experience, sectionIds),
+    (issue) => issue.identity,
   );
   if (unsealedDestinations.length)
     throw scopeError(
-      `contact destinations inside the scoped section must use sealed business content: ${unsealedDestinations[0]}.`,
+      `human creative repair introduced a contact destination that must use sealed business content: ${unsealedDestinations[0].message}.`,
     );
 
   if (

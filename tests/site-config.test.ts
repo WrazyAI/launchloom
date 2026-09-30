@@ -1240,6 +1240,49 @@ describe("site configuration", () => {
     expect(evaluateDraft(cautious).issues).not.toContain(
       "Generated copy includes a repair outcome prohibited by the client art direction.",
     );
+
+    for (const statement of [
+      "We do not claim your vehicle will be repaired at home.",
+      "We cannot promise your car will be fixed at home.",
+      "We never claim your vehicle gets fixed during the visit.",
+      "No one can guarantee your car will be restored.",
+      "We don't claim our team will repair every issue.",
+      "We won't claim your vehicle will be resolved in one visit.",
+    ]) {
+      const negated = normalise(
+        { copy: { heroBody: statement } },
+        intake,
+      );
+      expect(evaluateDraft(negated).issues).not.toContain(
+        "Generated copy includes a repair outcome prohibited by the client art direction.",
+      );
+    }
+
+    const positiveAfterNegation = normalise(
+      {
+        copy: {
+          heroBody:
+            "We do not guarantee prices; our team will fix every vehicle today.",
+        },
+      },
+      intake,
+    );
+    expect(evaluateDraft(positiveAfterNegation).issues).toContain(
+      "Generated copy includes a repair outcome prohibited by the client art direction.",
+    );
+
+    const unrelatedNegation = normalise(
+      {
+        copy: {
+          heroBody:
+            "Our call-out fee is not guaranteed and our team will repair every issue today.",
+        },
+      },
+      intake,
+    );
+    expect(evaluateDraft(unrelatedNegation).issues).toContain(
+      "Generated copy includes a repair outcome prohibited by the client art direction.",
+    );
   });
 
   it("selects a safe refined draft over the original prohibited claim", async () => {
