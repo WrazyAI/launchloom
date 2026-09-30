@@ -289,5 +289,5 @@ describe("full-page reference screenshot stitching plan", () => {
         server.close((error) => (error ? reject(error) : resolve())),
       );
     }
-  }, 20_000);
+  }, 45_000);
 });

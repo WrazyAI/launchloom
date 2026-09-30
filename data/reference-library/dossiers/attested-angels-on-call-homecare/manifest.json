@@ -17,11 +17,9 @@
     "rights": "permission-cleared",
     "rightsEvidence": "Requester attestation recorded 2026-09-25 permits internal retention of the full-page captures and their use as visual input to the LaunchLoom pipeline model. No source-owner grant or license was uploaded. See rights/requester-attestation.md.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
-    ],
     "provenanceEvidencePaths": [
-      "rights/capture-record.md"
+      "rights/capture-record.md",
+      "rights/business-verification.md"
     ]
   },
   "tags": {
@@ -71,7 +69,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "909c52dc98a0b52c20ed271205236f8bf4b7b02c2bcb8e894f87f22f69b84ae0"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -79,7 +78,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "b94332255699ce22dd1af10fb676c1b6a85b89cbb27fc7ed49950db2ddafd398"
     }
   },
   "referenceDna": {
@@ -189,7 +189,17 @@
       "The mobile page remains readable at 390 pixels and does not reduce the service catalog to tiny text or horizontal overflow.",
       "Clinical terms, credentials, accreditation, outcomes, response time, service areas, and testimonials come only from verified client facts.",
       "No original source identity, logos, photos, marks, or exact language is used in the generated site."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

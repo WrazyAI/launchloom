@@ -19,9 +19,6 @@
     "provenanceEvidencePaths": [
       "rights/business-verification.md",
       "rights/capture-record.md"
-    ],
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
     ]
   },
   "tags": {
@@ -62,7 +59,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "c0b94467a70b419a3a11b3234c4240699b746351e68980b4a59802dc4c705992"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -70,7 +68,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "5af574f2684c0f750aa2e6906aaf2eceb6db785632f39742f08fd2a6662a2cb5"
     }
   },
   "referenceDna": {
@@ -170,7 +169,17 @@
       "The service, process, proof, and contact chapters follow the reference's observed decision rhythm without copying its identity.",
       "Desktop and mobile captures show a readable page without width overflow or hidden conversion controls.",
       "Every claim, image, review, credential, location, and contact detail in the generated client page is independently verified."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "utility-panel",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "task-panel-in-opening",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

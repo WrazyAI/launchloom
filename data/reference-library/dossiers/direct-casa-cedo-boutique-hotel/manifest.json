@@ -10,8 +10,9 @@
     "rights": "permission-cleared",
     "rightsEvidence": "The requester attested on 2026-09-25 that clearance covers full-page screenshot retention, derived design prompts, and submitting screenshot evidence to the LaunchLoom pipeline model as visual reference. No source-owner grant file was attached.",
     "rightsEvidencePath": "rights/requester-attestation.md",
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -89,7 +90,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "4aabde2aa2626ea27923c3a4b83d6ecc4bb9ab814c9e8204707e304cb153508b"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -97,7 +99,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "5964b04d86bc7b4a8a2aa435c898f9dc174a0ab57088688e6f7c68900ebc6560"
     }
   },
   "referenceDna": {
@@ -208,7 +211,17 @@
       "mobile no longer than necessary while preserving the editorial pacing",
       "gallery captions and navigation work with touch and keyboard",
       "no source asset, copy, logo or claim is reused"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "requester-attested-internal-and-model-reference",

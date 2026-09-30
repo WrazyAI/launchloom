@@ -12,6 +12,10 @@
     "rightsEvidencePath": "rights/LICENSE",
     "assetEvidencePaths": [
       "rights/ASSET-PROVENANCE.md"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -87,7 +91,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "e07c2a0ce95e2d91d3c8d75eff79464363eeda53eaea74bfe3be60e7d1cb2517"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -95,7 +100,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "bdb90cbfc504d05d0f49f30fe0c7d45e238df5ff5610ebfba5c0eb7aeddb7efb"
     }
   },
   "referenceDna": {
@@ -208,7 +214,17 @@
       "practice scope and first contact are clear without overpromising",
       "desktop hierarchy is legible at 100 percent zoom",
       "mobile outcome rows and intake are readable without horizontal overflow"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "type-led-statement",
+      "mobileHero": "type-led-statement",
+      "mediaRelation": "copy-leads-opening",
+      "mobileMediaRelation": "copy-leads-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-open-license-pilot",

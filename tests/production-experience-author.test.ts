@@ -113,7 +113,7 @@ export default function Experience({ content, runtime }) {
     <main><section data-hero><h1>{content.hero.heading}</h1><p>{content.hero.body}</p><button data-early-conversion>{content.hero.primaryLabel}</button></section>
     <section id="services">{content.services.map((service) => <article key={service.name}><h2>{service.name}</h2><p>{service.description}</p></article>)}</section>
     <section id="faqs">{content.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>
-    <section id="contact"><LeadForm content={content} runtime={runtime} /><a href={content.brand.phone}>{content.brand.phone}</a></section></main>
+    <section id="contact"><LeadForm content={content} runtime={runtime} /><a href={"tel:" + content.brand.phone}>{content.brand.phone}</a></section></main>
   </div>;
 }`,
     };
@@ -129,6 +129,128 @@ export default function Experience({ content, runtime }) {
 }
 
 describe("production experience author", () => {
+  it("rejects unsealed or non-navigation URL attributes", () => {
+    const route = { id: "route-url-safety" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const unsafeSources = [
+      base.replace(
+        "<section data-hero>",
+        '<section data-hero><svg><image href="/images/unsealed.svg" /></svg>',
+      ),
+      base.replace(
+        "<section data-hero>",
+        '<section data-hero><object data="data:text/html,hello" />',
+      ),
+      base.replace(
+        '<a href={"tel:" + content.brand.phone}>',
+        "<a href={content.brand.phone}>",
+      ),
+      base.replace(
+        "<section data-hero>",
+        '<section data-hero><img src="/images/unsealed.webp" alt="Unsealed" />',
+      ),
+    ];
+
+    for (const experience of unsafeSources)
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+          content: {
+            hero: { image: "/images/hero.webp" },
+            brand: { phone: "+12125550186" },
+          },
+        }),
+      ).toThrow(/unsafe URL attribute|image source must use a sealed image content token/iu);
+  });
+
+  it("allows local navigation, sealed image tokens, and prefixed contact tokens", () => {
+    const route = { id: "route-safe-url" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace(
+      '<section data-hero>',
+      '<section data-hero><img src={content.hero.image} alt="A reviewed image" /><a href="/services/repair/">Service details</a>',
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).not.toThrow();
+
+    const serviceDetail = experience.replace(
+      "<article key={service.name}>",
+      '<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>',
+    );
+    expect(serviceDetail).not.toBe(experience);
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: serviceDetail, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).not.toThrow();
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience,
+          styles: `${styles}\n.hero { background-image: url('/images/unsealed.webp'); }`,
+          motion,
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).toThrow(/CSS must use sealed image content tokens/iu);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: {
+          experience: experience.replace(
+            '<a href="/services/repair/">',
+            '<a href={`tel:${content.brand.phone}`}>',
+          ),
+          styles,
+          motion,
+        },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
+      }),
+    ).not.toThrow();
+  });
+
   it("keeps the client visual brief alongside sealed content", () => {
     const manifest = buildCreativeContentManifest({
       ...site,
@@ -159,6 +281,86 @@ describe("production experience author", () => {
     });
     expect(manifest.values).not.toHaveProperty("style");
   });
+
+  it("rejects silent hero-image reuse across distinct image roles", () => {
+    const route = { id: "route-image-role-reuse" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace(
+      "<section data-hero>",
+      '<section data-hero><img src={content.hero.image} alt="Primary" /><img src={content.hero.image} alt="Repeated one" /><img src={content.hero.image} alt="Repeated two" />',
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: {
+            image: "/images/hero.webp",
+            secondaryImage: "",
+            tertiaryImage: "",
+          },
+        },
+      }),
+    ).toThrow(/reuses the primary hero image across distinct image roles/iu);
+  });
+
+  it("requires a dedicated stateful interaction when the client brief asks for one", () => {
+    const route = { id: "route-purposeful-interaction" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const visualBrief = {
+      artDirection:
+        "Use one purposeful interactive care guide to help visitors choose a next step.",
+    };
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        visualBrief,
+      }),
+    ).toThrow(/must implement the purposeful interaction requested/iu);
+
+    const guided = experience.replace(
+      '<section id="services">',
+      '<section id="services" data-purposeful-interaction><details><summary>{content.services[0].name}</summary><p>{content.services[0].description}</p></details>',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: guided, styles, motion },
+        route,
+        visualBrief,
+      }),
+    ).not.toThrow();
+  });
+
   it("accepts decorative empty alts but rejects missing or nullish alt values", () => {
     const route = { id: "route-decorative-alt" };
     const request = {
@@ -185,6 +387,10 @@ describe("production experience author", () => {
       validateProductionCandidateFiles({
         files: { experience: decorativeImage, styles, motion },
         route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+        },
       }),
     ).not.toThrow();
 
@@ -208,6 +414,82 @@ describe("production experience author", () => {
           route,
         }),
       ).toThrow(/must have a usable alt attribute/iu);
+  });
+
+  it("allows the single shared LeadForm in a reference-mandated utility-panel hero", () => {
+    const route = {
+      id: "route-utility-form",
+      compositionTopology: {
+        hero: "utility-panel",
+        mobileHero: "utility-panel",
+      },
+    };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    )
+      .replace(
+        "<section data-hero>",
+        '<section data-hero><aside className="estimate-panel"><LeadForm content={content} runtime={runtime} /></aside>',
+      )
+      .replace(
+        '<section id="contact"><LeadForm content={content} runtime={runtime} />',
+        '<section id="contact">',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+  });
+
+  it("keeps the single shared LeadForm in contact when the reference has no utility-panel hero", () => {
+    const route = { id: "route-contact-form" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    )
+      .replace(
+        "<section data-hero>",
+        '<section data-hero><aside className="estimate-panel"><LeadForm content={content} runtime={runtime} /></aside>',
+      )
+      .replace(
+        '<section id="contact"><LeadForm content={content} runtime={runtime} />',
+        '<section id="contact">',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).toThrow(
+      /must render the shared LeadForm inside the contact section for this reference/iu,
+    );
   });
 
   it("requires FAQ navigation anchors inside nav even when an unrelated FAQ link remains", () => {
@@ -421,6 +703,17 @@ describe("production experience author", () => {
       hiddenAnchor,
       spreadOverridesFalse,
       dynamicSpreadAfterFalse,
+    ])
+      expect(() =>
+        validateProductionCandidateFiles({
+          files: { experience, styles, motion },
+          route,
+        }),
+      ).toThrow(
+        'Candidate route-hidden-navigation navigation must expose literal <a href="#services"> inside a visible native <nav>.',
+      );
+
+    for (const experience of [
       displayNoneNavigation,
       displayNoneAnchor,
       displayNoneSpread,
@@ -433,7 +726,7 @@ describe("production experience author", () => {
           route,
         }),
       ).toThrow(
-        'Candidate route-hidden-navigation navigation must expose literal <a href="#services"> inside a visible native <nav>.',
+        "Candidate route-hidden-navigation contains forbidden inline styles; visual rules belong in styles.css.",
       );
 
     expect(() =>
@@ -819,6 +1112,25 @@ describe("production experience author", () => {
     expect(css).not.toContain("--ink:");
   });
 
+  it("namespaces candidate variables when comments precede their declarations", () => {
+    const css = namespaceCreativeCss(`
+      :root {
+        /* Palette chosen for this reference family. */
+        --primary: #14221d;
+        --accent: var(--primary);
+        /* --comment-only: #fff; */
+      }
+      .hero { color: var(--primary); background: var(--host-token); }
+    `);
+
+    expect(css).toContain("--ll-creative-primary: #14221d");
+    expect(css).toContain("--ll-creative-accent: var(--ll-creative-primary)");
+    expect(css).toContain("color: var(--ll-creative-primary)");
+    expect(css).toContain("background: var(--host-token)");
+    expect(css).toContain("--comment-only: #fff;");
+    expect(css).not.toContain("--primary:");
+  });
+
   it("authors three sealed and structurally independent candidate bundles", async () => {
     const result = await authorExperienceCandidates({
       site,
@@ -881,7 +1193,6 @@ describe("production experience author", () => {
         rightsEvidence:
           "Requester-attested permission covers screenshot retention and model reference use.",
         rightsEvidencePath: "rights/clearance.md",
-        assetEvidencePaths: ["rights/clearance.md"],
       },
       tags: { business: ["jewelry"], style: [`editorial-${index}`] },
       designPrompt: `# Reference implementation brief\n\nReference ${index}: ${"Preserve this route's own composition, image role, and service presentation mechanics without copying its identity. ".repeat(16)}`,
@@ -1080,6 +1391,35 @@ describe("production experience author", () => {
         },
       }),
     ).rejects.toThrow(/unapproved import axios/i);
+  });
+
+  it.each([
+    ["style elements", "<style></style>"],
+    ["inline style props", ""],
+  ])("keeps Experience.jsx free of %s", async (kind, prefix) => {
+    await expect(
+      authorExperienceCandidates({
+        site,
+        inspirationPack,
+        generate: async (request) => {
+          const value = safeStage(request);
+          if (request.stage !== "experience") return value;
+          if (kind === "style elements")
+            return {
+              content: String(value.content).replace(
+                "    <main>",
+                `    ${prefix}\n    <main>`,
+              ),
+            };
+          return {
+            content: String(value.content).replace(
+              '<div data-model-experience=',
+              '<div style="color:red" data-model-experience=',
+            ),
+          };
+        },
+      }),
+    ).rejects.toThrow(/inline styles; visual rules belong in styles\.css/iu);
   });
 
   it("accepts sealed content aliases created by ordinary React destructuring", async () => {
@@ -1457,7 +1797,10 @@ describe("production experience author", () => {
 
   it("repairs malformed CSS wrappers while retaining decorative empty alts", async () => {
     const result = await authorExperienceCandidates({
-      site,
+      site: {
+        ...site,
+        assets: { ...site.assets, photoOne: site.assets.hero },
+      },
       inspirationPack,
       generate: async (request) => {
         const value = safeStage(request);
@@ -1621,6 +1964,9 @@ describe("production experience author", () => {
     expect(source).toContain("stagePromptDigest");
     expect(source).toContain("referenceDossierDigest");
     expect(source).toContain("evidenceManifest");
+    expect(source).toContain("compositionTopology: request.route.compositionTopology");
+    expect(source).toContain("data-hero-copy");
+    expect(source).toContain("data-hero-media");
   });
 
   it("persists generation inputs and authored candidates without success-run artifact duplication", () => {

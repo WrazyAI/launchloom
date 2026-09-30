@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "id": "web-dental-vivid-specialized",
+  "productionEligible": false,
+  "referenceName": "Vivid Specialized Dentistry: cinematic specialty story and case-led chapters",
+  "familyId": "vivid-specialized-dentistry-editorial",
+  "businessKinds": [
+    "dental",
+    "specialty dentistry",
+    "prosthodontics",
+    "dental implants"
+  ],
+  "source": {
+    "name": "Vivid Specialized Dentistry official website",
+    "url": "https://www.vividdental.ca/",
+    "sourceType": "official direct business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance for internal full-page desktop/mobile screenshot retention, derived prompts, and pipeline-model visual-reference use. No source-owner written grant was attached; see rights/requester-attestation.md.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/source-observations.md",
+      "rights/capture-record.md",
+      "rights/business-verification.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "dental",
+      "specialty dental clinic",
+      "prosthodontics",
+      "implant and restorative dentistry"
+    ],
+    "style": [
+      "cinematic specialty editorial",
+      "near-black and soft white",
+      "muted lilac accents",
+      "fine script/display contrast"
+    ],
+    "composition": [
+      "atmospheric clinic-image opening",
+      "specialist proposition and portrait gallery",
+      "treatment-range selector",
+      "technology explainer",
+      "case-story sequence",
+      "detailed consultation and question close"
+    ],
+    "conversion": [
+      "consultation action in compact navigation",
+      "consultation after specialty explanation",
+      "contact information after patient questions"
+    ],
+    "motion": [
+      "manual treatment selector",
+      "manual review control",
+      "optional scroll reveals with static reduced-motion state"
+    ],
+    "imagery": [
+      "dark practice-interior hero",
+      "specialist portraits",
+      "technology imagery",
+      "patient-case media retained as reference-only evidence"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      }
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "The official Edmonton specialty practice site opens with an atmospheric, low-light clinic image, compact consultation navigation, and a large statement with restrained handwritten-style display. A light context strip follows. The long page moves between clean editorial text panels, specialist portraits, a treatment selector, an advanced-technology explanation, a patient-review chapter, and detailed patient case stories. A consultation section and questions precede a deep dark contact/footer. The palette alternates near-black photo fields, white editorial areas, and muted lilac; the desktop story uses broad alternating image/text panels while mobile becomes a long stack. The practice identity, clinical claims, staff, patient imagery, case results, reviews, metrics, and exact trade dress remain source-only.",
+    "heroGeometry": {
+      "mode": "dark atmospheric practice image with compact consultation tools and oversized specialty statement",
+      "alignment": "image-led opening with edge-aligned copy followed by clean editorial chapters",
+      "viewport": "small header, a clear specialty promise, and one consultation action are visible in the opening"
+    },
+    "navigationGeometry": {
+      "mode": "compact utility navigation with phone and consultation action",
+      "placement": "top edge over or directly above the image-led hero",
+      "mobile": "small wordmark, compact menu, and one reachable consultation action"
+    },
+    "typography": {
+      "display": "high-impact modern display paired with restrained script-like accent headings",
+      "body": "neutral sans-serif for clinical explanation and navigation",
+      "scale": "short hero statement, generous editorial section headings, concise patient-facing paragraphs"
+    },
+    "palette": {
+      "surfaces": [
+        "near-black",
+        "soft white",
+        "pale lavender"
+      ],
+      "ink": "charcoal and white",
+      "accents": [
+        "muted violet",
+        "soft gray"
+      ],
+      "contrastIntent": "high contrast at the image-led opening and footer, calm readable contrast in explanatory chapters"
+    },
+    "imageTreatment": {
+      "mode": "dark interior hero, portrait-led specialist chapter, technology details, and carefully sequenced case-story media",
+      "crop": "wide cinematic hero, mid-size specialist portraits, modular treatment crops, vertical mobile story panels",
+      "focalPoint": "protect faces and clinical context; keep text on calm portions of the photograph"
+    },
+    "sectionSequence": [
+      "compact consultation header",
+      "atmospheric specialty hero",
+      "brief practice and qualification context",
+      "specialist proposition with image sequence",
+      "team portrait presentation",
+      "treatment-range selector",
+      "technology explanation",
+      "patient proof moment",
+      "case or process story sequence",
+      "consultation invitation",
+      "patient questions",
+      "dark contact and footer close"
+    ],
+    "servicePresentation": {
+      "pattern": "treatment-range selector followed by explanatory specialty chapters",
+      "interaction": "manually selected, labeled categories lead to detailed service scope; no automatic scroll or unbounded carousel"
+    },
+    "ctaPlacement": {
+      "primary": "request a consultation",
+      "secondary": "call the practice",
+      "early": "consultation route in the header and after the specialist explanation, then contact after FAQs"
+    },
+    "motion": {
+      "primitive": "manual treatment/review controls with restrained chapter reveals",
+      "library": "native accessible controls; no source scripts transferred",
+      "reducedMotion": "show all chapters statically with controls still available"
+    },
+    "mobileRecomposition": {
+      "strategy": "sequential specialty-story panels with direct consultation action",
+      "rules": [
+        "use a subject-safe hero crop and maintain text contrast",
+        "stack portraits and explanations with comfortable reading measure",
+        "show one treatment item at a time with labeled controls",
+        "replace case-image strips with fully readable vertical story panels",
+        "keep FAQs and contact in the normal flow without overlays"
+      ]
+    },
+    "prohibitedPatterns": [
+      "reusing source brand, logo, typeface, photos, staff, patient cases, before/after media, reviews, metrics, or claims",
+      "invented specialist credentials, treatment results, warranties, success rates, pricing, timelines, or financing claims",
+      "case photography without client approval and patient consent",
+      "unsupported high-volume counters or decorative statistic tiles",
+      "tiny low-contrast clinical text or motion that hides patient information",
+      "a wall of repeated generic service cards"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "atmospheric-specialty-opening",
+        "selector": "[data-reference-signature=atmospheric-specialty-opening]",
+        "description": "image-led specialty opening that establishes a distinct practice mood and one direct next step"
+      },
+      {
+        "id": "treatment-range-selector",
+        "selector": "[data-reference-signature=treatment-range-selector]",
+        "description": "compact, navigable selector that distinguishes major treatment categories"
+      },
+      {
+        "id": "specialty-story-chapters",
+        "selector": "[data-reference-signature=specialty-story-chapters]",
+        "description": "alternating image and explanation chapters, with a process alternative when client-approved case evidence is unavailable"
+      }
+    ],
+    "acceptanceChecks": [
+      "The opening explains the verified specialty and provides a clear consultation action.",
+      "Treatment categories are distinct and lead to useful patient-facing scope information.",
+      "Technology, qualifications, patient reviews, and case imagery appear only when verified and approved by the client.",
+      "At 390 px, specialist stories and controls stack without overflow or clipped faces.",
+      "No source identity, photo, patient case, statistic, review, or unsupported treatment claim is reused."
+    ]
+  },
+  "review": {
+    "status": "archived-not-in-core",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-27",
+    "notes": "Complete archive alternative retained outside the fixed six-reference dental production pool. Alberta Dental Association listing corroborates the clinic identity, Edmonton address, and prosthodontics specialty. Full-page desktop and mobile captures were inspected after lazy media and offscreen sections were rendered; no broken images, page errors, or width overflow were observed. It is not part of the production core or registry. Requester-attested clearance is not represented as an independently verified source-owner grant."
+  }
+}

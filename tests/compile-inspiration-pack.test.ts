@@ -10,6 +10,52 @@ const registry = JSON.parse(fs.readFileSync(path.resolve("data/inspiration-regis
 const roots: string[] = [];
 
 describe("inspiration compilation history", () => {
+  it("scores positive visual direction without promoting negated patterns or factual disclaimers", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "inspiration-style-signals-"));
+    roots.push(root);
+    const config = {
+      business: { name: "Fieldnotes Veterinary Studio" },
+      businessKind: "veterinary",
+      style: { visualDirection: "Editorial field notes with plum and citrus accents." },
+    };
+    const intake = {
+      stylePreference: [
+        "INTERNAL FICTIONAL CANARY ONLY. This business and all facts are fictional.",
+        "No verified street address, emergency availability, credentials, reviews, prices, guarantees, response times, named staff, or patient outcomes.",
+        "Design direction: an independent animal-care studio with art-directed veterinary field notes, calm but expressive plum, chalk, and citrus accents, close-cropped pet portraits, and clear care navigation.",
+        "Use an unexpected image-and-type composition and one purposeful interactive care guide.",
+        "Avoid generic split hero, rounded card grids, blue medical stock photography, and copied brand assets, but keep vermilion annotations and paper-cutout imagery.",
+        "Use not only warm tones but electric lime and graphite for contrast.",
+      ].join(" "),
+    };
+    const configPath = path.join(root, "config.json");
+    const intakePath = path.join(root, "intake.json");
+    const historyPath = path.join(root, "history.json");
+    const outputPath = path.join(root, "pack.json");
+    fs.writeFileSync(configPath, JSON.stringify(config));
+    fs.writeFileSync(intakePath, JSON.stringify(intake));
+    fs.writeFileSync(historyPath, JSON.stringify({ version: 1, launches: [] }));
+
+    execFileSync(
+      "node",
+      ["scripts/compile-inspiration-pack.mjs", "--config", configPath, "--intake", intakePath, "--history", historyPath, "--out", outputPath],
+      { cwd: path.resolve("."), env: { ...process.env, LAUNCHLOOM_INTAKE_ID: "style-signal-regression" } },
+    );
+    const pack = JSON.parse(fs.readFileSync(outputPath, "utf8"));
+
+    expect(pack.request.styleTerms).toEqual(expect.arrayContaining(["plum", "citrus"]));
+    expect(pack.request.styleTerms).toEqual(
+      expect.arrayContaining(["vermilion", "annotations", "paper", "cutout", "warm", "electric", "lime", "graphite"]),
+    );
+    expect(pack.request.styleTerms).not.toEqual(
+      expect.arrayContaining(["fictional", "verified", "credentials", "prices", "generic", "split", "hero"]),
+    );
+    expect(pack.request.selectionHistory.fitPoolCount).toBeGreaterThanOrEqual(9);
+    expect(pack.request.selectionHistory.fitReferenceCoverage).toBe(6);
+    expect(pack.request.selectionHistory.fitMaximumReferenceShare).toBeLessThan(1);
+    expect(new Set(pack.routes.map((route: any) => route.familyId)).size).toBeGreaterThanOrEqual(2);
+  }, 30_000);
+
   it("scopes mixed no-kind legacy signatures without leaking global families", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "inspiration-no-kind-history-"));
     roots.push(root);
@@ -110,6 +156,50 @@ describe("inspiration compilation history", () => {
     expect(next.referenceLibrary.recordIds).not.toEqual(homeRecord.referenceIds);
     expect(next.referenceLibrary.recordIds).toEqual(next.request.selectedReferenceIds);
   }, 30_000);
+
+  it("keeps same-intake workflow retries in history so later attempts do not cycle back to an earlier trio", () => {
+    const seed = "same-intake-retry-rotation";
+    const config = {
+      business: { name: "Northside Care" },
+      businessKind: "home-care",
+      design: {},
+    };
+    const request = { seed, industry: "home-care", styleTerms: [] };
+    const referenceIds = (pack: any) =>
+      pack.routes.map((route: any) => route.referenceDossier.id).sort();
+
+    const firstPack = buildInspirationPack(request, registry);
+    const firstAttempt = launchRecordFrom({
+      config,
+      inspiration: firstPack,
+      stage: "attempt",
+      recordKey: "intake-42-run-1001-attempt-1",
+      launchedAt: "2026-09-28T00:00:00.000Z",
+    });
+    const secondPack = buildInspirationPack(
+      { ...request, recentLaunches: [firstAttempt] },
+      registry,
+    );
+    const secondAttempt = launchRecordFrom({
+      config,
+      inspiration: secondPack,
+      stage: "attempt",
+      recordKey: "intake-42-run-1002-attempt-1",
+      launchedAt: "2026-09-28T00:01:00.000Z",
+    });
+    const thirdPack = buildInspirationPack(
+      {
+        ...request,
+        recentLaunches: [firstAttempt, secondAttempt],
+      },
+      registry,
+    );
+
+    expect(firstAttempt.id).not.toBe(secondAttempt.id);
+    expect(referenceIds(secondPack)).not.toEqual(referenceIds(firstPack));
+    expect(referenceIds(thirdPack)).not.toEqual(referenceIds(firstPack));
+    expect(referenceIds(thirdPack)).not.toEqual(referenceIds(secondPack));
+  });
 });
 
 afterEach(() => {

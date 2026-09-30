@@ -1,4 +1,5 @@
 import ts from "typescript";
+import postcss from "postcss";
 import { validateReferenceDna } from "./reference-dna.mjs";
 
 const slug = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "");
@@ -394,9 +395,19 @@ export function validateReferenceContractCompliance({
   for (const pattern of referenceDna.prohibitedPatterns)
     if (hasProhibitedPattern(`${experienceSource}\n${renderedDom}`, pattern))
       findings.push(finding("prohibited-pattern", "critical", `Prohibited pattern detected: ${pattern}.`));
-  for (const match of stylesSource.matchAll(/--([a-z][\w-]*)\s*:/giu))
-    if (!match[1].startsWith("ll-creative-"))
-      findings.push(finding("css-token-collision", "critical", `Candidate CSS variable --${match[1]} is not isolated.`));
+  try {
+    const css = postcss.parse(stylesSource);
+    const checkCustomProperty = (property) => {
+      if (/^--[A-Za-z][\w-]*$/u.test(property) && !property.startsWith("--ll-creative-"))
+        findings.push(finding("css-token-collision", "critical", `Candidate CSS variable ${property} is not isolated.`));
+    };
+    css.walkDecls((declaration) => checkCustomProperty(declaration.prop));
+    css.walkAtRules("property", (atRule) =>
+      checkCustomProperty(String(atRule.params || "").trim().split(/\s/u)[0]),
+    );
+  } catch (error) {
+    findings.push(finding("css-parse-error", "critical", `Candidate CSS could not be parsed: ${error.message}`));
+  }
   const contentPaths = [...outputContentPaths(experienceSource)];
   for (const token of ["content.hero.image", "content.services", "content.faqs"])
     if (!contentPaths.some((path) => path === token || path.startsWith(`${token}.`)))

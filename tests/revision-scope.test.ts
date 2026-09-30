@@ -303,6 +303,26 @@ it("creates only the selected candidate paths after required creative repair", a
       },
       revisionReport: {
         creativeSourceRepairRequired: true,
+        creativeSourceRepairVerified: null,
+        operations: [{ kind: "set_social_proof" }],
+      },
+    }),
+  );
+  await expect(create("true")).rejects.toThrow(
+    /not verified for the selected candidate/iu,
+  );
+  await fs.writeFile(
+    path.join(client, "src/site.config.json"),
+    JSON.stringify({
+      design: {
+        experience: { renderer: "creative-candidate", candidateId: "selected" },
+      },
+      revisionReport: {
+        creativeSourceRepairRequired: true,
+        creativeSourceRepairVerified: {
+          pass: true,
+          candidateId: "selected",
+        },
         operations: [{ kind: "set_social_proof" }],
       },
     }),
@@ -327,6 +347,42 @@ it("creates only the selected candidate paths after required creative repair", a
   expect(
     repair.allowedPaths.every((entry: string) => !entry.includes("**")),
   ).toBe(true);
+});
+
+it("does not allow a repair verified for a different candidate", async () => {
+  const { root, client, base } = await fixture();
+  const guidelines = path.join(root, "guidelines.json");
+  const out = path.join(root, "manifest.json");
+  await fs.writeFile(guidelines, JSON.stringify(["docs/site-generation-guidelines.md"]));
+  await fs.writeFile(
+    path.join(client, "src/site.config.json"),
+    JSON.stringify({
+      design: {
+        experience: { renderer: "creative-candidate", candidateId: "candidate-a" },
+      },
+      revisionReport: {
+        creativeSourceRepairRequired: true,
+        creativeSourceRepairVerified: { pass: true, candidateId: "candidate-b" },
+      },
+    }),
+  );
+
+  await expect(
+    exec("node", [
+      script,
+      "create",
+      "--client",
+      client,
+      "--base",
+      base,
+      "--out",
+      out,
+      "--guidelines-written",
+      guidelines,
+      "--repair-required",
+      "true",
+    ]),
+  ).rejects.toThrow(/not verified for the selected candidate/iu);
 });
 
 it("rejects a deleted tracked symlink even when its path is allowed", async () => {

@@ -33,6 +33,28 @@ export function referenceImplementationChecklist(referenceDna) {
   const sections = Array.isArray(referenceDna?.sectionSequence)
     ? referenceDna.sectionSequence
     : [];
+  const topology = referenceDna?.compositionTopology || {};
+  const topologyGuardrails = [];
+  if (topology.hero === "type-led-statement") {
+    topologyGuardrails.push(
+      "Desktop type-led-statement guardrail: keep one dominant statement field. A substantial adjacent image panel is split-media and is not allowed. If imagery is needed, use a small non-adjacent accent or move the image to the next chapter; never leave an empty media placeholder.",
+      "During authoring and repair, do not satisfy an imagery finding by changing the assigned desktop hero topology.",
+    );
+    if (topology.mobileHero && topology.mobileHero !== topology.hero)
+      topologyGuardrails.push(
+        `Responsive translation guardrail: mobile may use ${topology.mobileHero}, but do not mirror that mobile image treatment into a desktop side-by-side media field.`,
+      );
+  }
+  const viewportTopology = topology.hero || topology.mobileHero
+    ? [
+        `Desktop hero topology: ${topology.hero || "unclassified"}`,
+        `Desktop media relation: ${topology.mediaRelation || "unclassified"}`,
+        `Mobile hero topology: ${topology.mobileHero || "unclassified"}`,
+        `Mobile media relation: ${topology.mobileMediaRelation || "unclassified"}`,
+        "Implement desktop and mobile hero topology as separate responsive layout contracts. When they differ, do not carry desktop image occupancy into mobile or force the desktop overlay onto the mobile opening.",
+        ...topologyGuardrails,
+      ].join("\n")
+    : "";
   const sectionIds = sections.map((section) => {
     const id = String(section || "")
       .toLowerCase()
@@ -48,9 +70,90 @@ export function referenceImplementationChecklist(referenceDna) {
     throw new Error(
       "Reference DNA sectionSequence must contain at least three unique, non-empty marker IDs.",
     );
+  const requirementText = (value, limit = 420) =>
+    String(value || "")
+      .replace(/\s+/gu, " ")
+      .trim()
+      .slice(0, limit);
+  const visibleSignatures = (
+    Array.isArray(referenceDna.requiredSignatureElements)
+      ? referenceDna.requiredSignatureElements
+      : []
+  )
+    .map((element) => {
+      const id = requirementText(element?.id, 120);
+      if (!id) return "";
+      const description =
+        requirementText(element?.description, 420) ||
+        "the distinctive reference mechanic represented by this signature";
+      return `- data-reference-signature=${JSON.stringify(id)} must visibly realize: ${description}`;
+    })
+    .filter(Boolean);
+  const artDirectionRequirements = [
+    ["Image treatment", referenceDna.imageTreatment?.mode],
+    ["Image crop", referenceDna.imageTreatment?.crop],
+    ["Image focal role", referenceDna.imageTreatment?.focalPoint],
+    ["Service presentation", referenceDna.servicePresentation?.pattern],
+    ["Service interaction", referenceDna.servicePresentation?.interaction],
+    ["Palette contrast intent", referenceDna.palette?.contrastIntent],
+  ]
+    .map(([label, value]) => {
+      const detail = requirementText(value, 420);
+      return detail ? `- ${label}: ${detail}` : "";
+    })
+    .filter(Boolean);
+  const acceptanceChecks = (
+    Array.isArray(referenceDna.acceptanceChecks)
+      ? referenceDna.acceptanceChecks
+      : []
+  )
+    .map((item, index) => {
+      const detail = requirementText(item, 420);
+      return detail ? `${index + 1}. ${detail}` : "";
+    })
+    .filter(Boolean);
+
+  const referenceMarkers = [
+    ["data-hero-geometry", referenceDna.heroGeometry?.mode, "the hero element"],
+    ["data-navigation-geometry", referenceDna.navigationGeometry?.mode, "the visible nav element"],
+    ["data-service-presentation", referenceDna.servicePresentation?.pattern, 'the section with id="services"'],
+    ["data-cta-placement", referenceDna.ctaPlacement?.early, "the early conversion anchor"],
+    ["data-mobile-recomposition", referenceDna.mobileRecomposition?.strategy, "the page's primary layout element"],
+    ["data-motion-primitive", referenceDna.motion?.primitive, "the element that owns the reference interaction"],
+  ]
+    .filter(([, value]) => typeof value === "string" && value.trim())
+    .map(([attribute, value, target]) =>
+      `- Put ${attribute}=${JSON.stringify(value)} on ${target}. Copy the Reference DNA value verbatim.`,
+    );
   return [
     'REQUIRED LITERAL SECTION IDS: put id="services", id="faqs", and id="contact" on the actual matching content sections. These must be literal JSX string attributes, not variables, expressions, aliases, or empty anchor elements.',
     navigationRequirement,
+    ...(viewportTopology ? ["VIEWPORT-SPECIFIC HERO TOPOLOGY (HARD REQUIREMENT):", viewportTopology] : []),
+    "REQUIRED REFERENCE-DNA MARKERS: use these exact values on their matching visible elements:",
+    ...referenceMarkers,
+    "These are machine-readable verification markers, not visual substitutions. The rendered DOM and screenshots must still visibly realize the assigned geometry, service presentation, CTA placement, mobile recomposition, and interaction.",
+    ...(visibleSignatures.length
+      ? [
+          "REQUIRED VISIBLE SIGNATURE REALIZATION (HARD REQUIREMENT):",
+          ...visibleSignatures,
+          "A data-reference-signature marker alone does not satisfy a signature. Put the marker on the element that actually realizes the described visual mechanic, and make that mechanic obvious in the rendered desktop and mobile page.",
+          "Reference safety means changing identity, copy, and source assets, not erasing the transferable mechanic. Preserve the mechanic with client-specific content rather than collapsing to generic local-business grammar.",
+        ]
+      : []),
+    ...(artDirectionRequirements.length
+      ? [
+          "REFERENCE ART-DIRECTION CONTRACT (HARD REQUIREMENT):",
+          ...artDirectionRequirements,
+          "Use supplied client imagery within these assigned visual roles. When the same client assets are reused across candidate routes, differentiate them through reference-led crop, layering, sequencing, surface treatment, color treatment, and spatial choreography. Do not revert to a conventional text/image split or card grid merely because the underlying assets are shared.",
+        ]
+      : []),
+    ...(acceptanceChecks.length
+      ? [
+          "RENDERED ACCEPTANCE CHECKS:",
+          ...acceptanceChecks,
+          "Treat these as rendered acceptance criteria, not descriptive prose. Verify them against the visible page before returning source.",
+        ]
+      : []),
     'REFERENCE SECTION ORDER: put each data-reference-section value on its corresponding visible <section> element, in this exact DOM order:',
     ...sectionIds.map(
       (id, index) => `${index + 1}. data-reference-section="${id}"`,

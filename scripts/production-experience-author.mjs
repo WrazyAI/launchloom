@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { redactPromptValue } from "./author-prompt-budget.mjs";
+import postcss from "postcss";
 import ts from "typescript";
 import {
   assertIndependentRoutes,
@@ -116,6 +117,38 @@ const requiredExperienceBindings = [
   { token: "content.services", aliases: ["content.services"] },
   { token: "content.faqs", aliases: ["content.faqs"] },
 ];
+const sealedImageSourcePaths = new Set([
+  "content.brand.logo",
+  "content.hero.image",
+  "content.hero.secondaryImage",
+  "content.hero.tertiaryImage",
+]);
+const urlBearingJsxAttributes = new Set([
+  "action",
+  "archive",
+  "background",
+  "cite",
+  "codebase",
+  "data",
+  "form",
+  "formaction",
+  "href",
+  "icon",
+  "itemid",
+  "longdesc",
+  "manifest",
+  "ping",
+  "poster",
+  "profile",
+  "resource",
+  "src",
+  "srcdoc",
+  "srcset",
+  "usemap",
+  "vocab",
+  "xlinkhref",
+  "xmlbase",
+]);
 
 function stableJson(value) {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
@@ -985,6 +1018,343 @@ function resolvedImageValue(attribute, content) {
   return undefined;
 }
 
+function expressionPath(expression, file) {
+  if (!expression) return "";
+  if (ts.isParenthesizedExpression(expression))
+    return expressionPath(expression.expression, file);
+  if (ts.isPropertyAccessExpression(expression))
+    return expression
+      .getText(file)
+      .replace(/\s+/gu, "")
+      .replace(/\?\./gu, ".");
+  return "";
+}
+
+function isSealedImageExpression(expression, file) {
+  if (!expression) return false;
+  if (ts.isParenthesizedExpression(expression))
+    return isSealedImageExpression(expression.expression, file);
+  if (sealedImageSourcePaths.has(expressionPath(expression, file))) return true;
+  if (
+    ts.isBinaryExpression(expression) &&
+    (expression.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
+      expression.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)
+  )
+    return (
+      isSealedImageExpression(expression.left, file) &&
+      isSealedImageExpression(expression.right, file)
+    );
+  return false;
+}
+
+function isSafeSealedImageUrl(value) {
+  const url = String(value || "").trim();
+  if (/^\/(?:images|assets|_astro)\/[A-Za-z0-9._~!$&'()*+,;=@%-]+(?:\/[A-Za-z0-9._~!$&'()*+,;=@%-]+)*(?:\?[^\s#]*)?(?:#[^\s]*)?$/u.test(url)) {
+    const pathname = url.split(/[?#]/u, 1)[0];
+    try {
+      return pathname.split("/").every((segment) => {
+        const decoded = decodeURIComponent(segment);
+        return decoded !== "." && decoded !== ".." && !/[\\/\u0000-\u001f]/u.test(decoded);
+      });
+    } catch {
+      return false;
+    }
+  }
+  if (/^data:image\/(?:png|jpeg|webp|avif);base64,[A-Za-z0-9+/]+={0,2}$/iu.test(url))
+    return true;
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname === "assets.launchloom.wrazyos.com" &&
+      parsed.username === "" &&
+      parsed.password === "" &&
+      parsed.port === "" &&
+      parsed.pathname.startsWith("/") &&
+      !parsed.pathname.split("/").some((part) => part === "." || part === "..")
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isSafeLocalHref(value) {
+  const href = String(value || "").trim();
+  if (!href || /[\u0000-\u0020\\]/u.test(href)) return false;
+  if (href.startsWith("#")) return href.length > 1;
+  return href.startsWith("/") && !href.startsWith("//");
+}
+
+function unwrapUrlExpression(expression) {
+  let current = expression;
+  while (current && ts.isParenthesizedExpression(current))
+    current = current.expression;
+  return current;
+}
+
+function contentGroupAliases(source, group) {
+  const aliases = new Set();
+  const patterns = [
+    /\bcontent\s*:\s*\{([^}]*)\}/gu,
+    /\b(?:const|let)\s*\{([^}]*)\}\s*=\s*content\b/gu,
+  ];
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) {
+      const property = new RegExp(
+        `(?:^|,)\\s*${group}(?:\\s*:\\s*([A-Za-z_$][\\w$]*))?\\s*(?=,|$)`,
+        "u",
+      ).exec(match[1]);
+      if (property) aliases.add(property[1] || group);
+    }
+  }
+  return aliases;
+}
+
+function isSealedContactPath(expression, tokenPath, file, source) {
+  const path = expressionPath(expression, file);
+  if (path === tokenPath) return true;
+  const parts = tokenPath.split(".");
+  const group = parts.at(-2);
+  const member = parts.at(-1);
+  if (parts.length !== 3 || parts[0] !== "content") return false;
+  const aliases = contentGroupAliases(source, group);
+  return [...aliases].some((alias) => path === `${alias}.${member}`);
+}
+
+function isPrefixedContactExpression(expression, prefix, tokenPath, file, source) {
+  const node = unwrapUrlExpression(expression);
+  if (!node) return false;
+  if (
+    ts.isBinaryExpression(node) &&
+    node.operatorToken.kind === ts.SyntaxKind.PlusToken
+  )
+    return (
+      ts.isStringLiteral(node.left) &&
+      node.left.text === prefix &&
+      isSealedContactPath(node.right, tokenPath, file, source)
+    );
+  return (
+    ts.isTemplateExpression(node) &&
+    node.head.text === prefix &&
+    node.templateSpans.length === 1 &&
+    isSealedContactPath(
+      node.templateSpans[0].expression,
+      tokenPath,
+      file,
+      source,
+    ) &&
+    node.templateSpans[0].literal.text === ""
+  );
+}
+
+function isServiceRouteExpression(expression, file, source) {
+  const node = unwrapUrlExpression(expression);
+  if (!node) return false;
+  let valid = false;
+  if (ts.isTemplateExpression(node))
+    valid =
+      node.head.text === "/services/" &&
+      node.templateSpans.length === 1 &&
+      expressionPath(node.templateSpans[0].expression, file) ===
+        "service.slug" &&
+      node.templateSpans[0].literal.text === "/";
+  if (
+    ts.isBinaryExpression(node) &&
+    node.operatorToken.kind === ts.SyntaxKind.PlusToken &&
+    ts.isBinaryExpression(node.left) &&
+    node.left.operatorToken.kind === ts.SyntaxKind.PlusToken
+  )
+    valid =
+      ts.isStringLiteral(node.left.left) &&
+      node.left.left.text === "/services/" &&
+      expressionPath(node.left.right, file) === "service.slug" &&
+      ts.isStringLiteral(node.right) &&
+      node.right.text === "/";
+  return valid && /content\.services\s*\.\s*map\s*\(\s*\(\s*service\s*\)/u.test(source);
+}
+
+function staticSpreadUrlKey(property) {
+  if (!property.name) return "";
+  if (ts.isComputedPropertyName(property.name)) {
+    const expression = property.name.expression;
+    if (
+      ts.isStringLiteral(expression) ||
+      ts.isNoSubstitutionTemplateLiteral(expression)
+    )
+      return expression.text.toLowerCase();
+    return "*";
+  }
+  if (
+    ts.isIdentifier(property.name) ||
+    ts.isStringLiteral(property.name) ||
+    ts.isNoSubstitutionTemplateLiteral(property.name)
+  )
+    return property.name.text.toLowerCase();
+  return "*";
+}
+
+function validateAuthoredUrlAttributes(source, route, content) {
+  const { file, elements } = collectJsxElements(source);
+  for (const { opening } of elements) {
+    const tag = jsxOpeningName(opening).toLowerCase();
+    for (const property of jsxAttributes(opening)) {
+      if (ts.isJsxSpreadAttribute(property)) {
+        if (!ts.isObjectLiteralExpression(property.expression))
+          throw new Error(
+            `Candidate ${route.id} contains an unsafe URL attribute spread; use explicit allowlisted attributes.`,
+          );
+        for (const spreadProperty of property.expression.properties) {
+          const key = staticSpreadUrlKey(spreadProperty);
+          if (
+            key === "*" ||
+            urlBearingJsxAttributes.has(key) ||
+            ts.isSpreadAssignment(spreadProperty)
+          )
+            throw new Error(
+              `Candidate ${route.id} contains an unsafe URL attribute in a JSX spread.`,
+            );
+        }
+        continue;
+      }
+      if (!ts.isJsxAttribute(property)) continue;
+      const attributeName = property.name.getText(file).toLowerCase();
+      if (!urlBearingJsxAttributes.has(attributeName)) continue;
+      const initializer = property.initializer;
+      const expression =
+        initializer && ts.isJsxExpression(initializer)
+          ? initializer.expression
+          : null;
+      const literalValue =
+        initializer &&
+        (ts.isStringLiteral(initializer) ||
+          ts.isNoSubstitutionTemplateLiteral(initializer))
+          ? initializer.text
+          : null;
+
+      if (attributeName === "src" && tag === "img") {
+        if (!isSealedImageExpression(expression, file))
+          throw new Error(
+            `Candidate ${route.id} image source must use a sealed image content token.`,
+          );
+        const value = resolvedImageValue(property, content);
+        if (!isSafeSealedImageUrl(value))
+          throw new Error(
+            `Candidate ${route.id} image source must resolve to a safe local or LaunchLoom-hosted image asset.`,
+          );
+        continue;
+      }
+
+      if (attributeName === "href" && (tag === "a" || tag === "area")) {
+        if (literalValue !== null && isSafeLocalHref(literalValue)) continue;
+        if (
+          isPrefixedContactExpression(
+            expression,
+            "tel:",
+            "content.brand.phone",
+            file,
+            source,
+          ) ||
+          isPrefixedContactExpression(
+            expression,
+            "mailto:",
+            "content.brand.email",
+            file,
+            source,
+          ) ||
+          isServiceRouteExpression(expression, file, source)
+        )
+          continue;
+      }
+
+      throw new Error(
+        `Candidate ${route.id} contains an unsafe URL attribute ${property.name.getText(file)} on <${tag}> (${initializer?.getText(file) || "missing value"}).`,
+      );
+    }
+  }
+}
+
+function validateImageRoleReuse(source, route, content) {
+  const heroImage = String(content?.hero?.image || "").trim();
+  if (!heroImage) return;
+
+  const { elements } = collectJsxElements(source);
+  const primaryImageUses = elements.filter(({ opening }) => {
+    if (jsxOpeningName(opening).toLowerCase() !== "img") return false;
+    return resolvedImageValue(jsxAttribute(opening, "src"), content) === heroImage;
+  }).length;
+
+  const missingSupportingFallbacks = ["secondaryImage", "tertiaryImage"].filter(
+    (slot) => {
+      if (String(content?.hero?.[slot] || "").trim()) return false;
+      return new RegExp(
+        `content\\.hero\\.${slot}\\s*(?:\\|\\||\\?\\?)\\s*content\\.hero\\.image`,
+        "u",
+      ).test(source);
+    },
+  );
+
+  if (primaryImageUses < 3 && missingSupportingFallbacks.length < 2) return;
+  throw new Error(
+    `Candidate ${route.id} reuses the primary hero image across distinct image roles. Do not silently fill missing secondary or tertiary media with the hero asset; keep the hero unique and adapt unsupported image chapters to a non-duplicative treatment.`,
+  );
+}
+
+function visualBriefText(visualBrief) {
+  return [
+    visualBrief?.artDirection,
+    visualBrief?.visualDirection,
+    visualBrief?.preference,
+  ]
+    .map((value) => String(value || ""))
+    .filter(Boolean)
+    .join(" ");
+}
+
+function requiresPurposefulInteraction(visualBrief) {
+  return /\b(?:purposeful\s+interactive|interactive\s+(?:care\s+)?(?:guide|selector|chooser|navigator|flow)|(?:guide|selector|chooser|navigator)\s+interaction)\b/iu.test(
+    visualBriefText(visualBrief),
+  );
+}
+
+function validatePurposefulInteraction(source, route, visualBrief) {
+  if (!requiresPurposefulInteraction(visualBrief)) return;
+  const marker = /data-purposeful-interaction(?:\s|=|>)/iu.exec(source);
+  if (!marker)
+    throw new Error(
+      `Candidate ${route.id} must implement the purposeful interaction requested by the client visual brief and mark its dedicated guide or selector with data-purposeful-interaction.`,
+    );
+
+  const close = source.indexOf("</section>", marker.index);
+  const interactionSource = source.slice(
+    marker.index,
+    close >= 0 ? close + "</section>".length : marker.index + 5000,
+  );
+  if (
+    /\bid\s*=\s*["']faqs["']|\bclassName\s*=\s*["'][^"']*(?:faq|social)[^"']*["']|<LeadForm\b|<ChatLauncher\b/iu.test(
+      interactionSource,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} cannot satisfy a purposeful interaction request with FAQ disclosure, the lead form, chat, or an image carousel alone.`,
+    );
+  if (
+    !/<details\b|<select\b|<button\b|\brole\s*=\s*["'](?:tab|radiogroup|listbox)["']/iu.test(
+      interactionSource,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} purposeful interaction must expose visible native stateful controls.`,
+    );
+  if (
+    !/<details\b|\baria-(?:selected|pressed|expanded)\s*=|\bon(?:Click|Change)\s*=/u.test(
+      interactionSource,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} purposeful interaction must expose a visible state change or native disclosure state.`,
+    );
+}
+
 /**
  * Restore reviewed alt text from the exact original src binding, or from an
  * unambiguous image URL resolved through sealed content tokens. New and
@@ -1258,6 +1628,18 @@ export function restoreRequiredExperienceMarkers(
   return restored;
 }
 
+function routeRequiresHeroUtilityForm(route) {
+  const topologies = [
+    route?.compositionTopology,
+    route?.referenceDna?.compositionTopology,
+  ].filter(Boolean);
+  return topologies.some(
+    (topology) =>
+      topology.hero === "utility-panel" ||
+      topology.mobileHero === "utility-panel",
+  );
+}
+
 function assertRequiredSectionAnchors(source, route) {
   const { file, elements } = collectJsxElements(source);
   for (const marker of ["data-hero", "data-early-conversion"])
@@ -1282,9 +1664,27 @@ function assertRequiredSectionAnchors(source, route) {
       jsxOpeningName(element.opening) === "section" &&
       idAttributeValue(element, file).value === "contact",
   );
-  if (!contact?.body.includes("<LeadForm"))
+  const leadForms = elements.filter(
+    ({ opening }) => jsxOpeningName(opening) === "LeadForm",
+  );
+  if (leadForms.length !== 1) return;
+
+  const hero = elements.find(({ opening }) =>
+    jsxAttribute(opening, "data-hero"),
+  );
+  if (
+    routeRequiresHeroUtilityForm(route) &&
+    (!hero || !isDescendantOf(leadForms[0].node, hero.node))
+  )
     throw new Error(
-      `Candidate ${route.id} must render the shared LeadForm inside the contact section, not in the hero.`,
+      `Candidate ${route.id} must place the single shared LeadForm inside the assigned utility-panel hero.`,
+    );
+  if (
+    !routeRequiresHeroUtilityForm(route) &&
+    (!contact || !isDescendantOf(leadForms[0].node, contact.node))
+  )
+    throw new Error(
+      `Candidate ${route.id} must render the shared LeadForm inside the contact section for this reference.`,
     );
 }
 
@@ -1674,7 +2074,7 @@ function referencesContentPath(source, token) {
   return memberBinding.test(source);
 }
 
-function validateExperience(source, route, content) {
+function validateExperience(source, route, content, visualBrief = {}) {
   syntaxErrorFor(source, route, "Experience.jsx", true);
   const scopeError = scopeErrorFor(source, route);
   if (scopeError) throw new Error(scopeError);
@@ -1690,6 +2090,10 @@ function validateExperience(source, route, content) {
     [/\beval\s*\(|\bnew\s+Function\b/iu, "dynamic code"],
     [/<canvas\b|\bthree(?:\s*\.?\s*js)\b/iu, "unapproved rendering engine"],
     [/<script\b/iu, "script element"],
+    [
+      /<style\b|\sstyle\s*=|\.\.\.\s*\{\s*(?:style\b|\[[^\]]*style[^\]]*\])\s*:/iu,
+      "inline styles; visual rules belong in styles.css",
+    ],
     [/—/u, "em dash"],
   ];
   for (const [pattern, label] of forbidden)
@@ -1711,7 +2115,7 @@ function validateExperience(source, route, content) {
   const leadFormCount = (source.match(/<LeadForm\b/gu) || []).length;
   if (leadFormCount !== 1)
     throw new Error(
-      `Candidate ${route.id} must render exactly one shared LeadForm in the contact section; keep the hero conversion as a compact link.`,
+      `Candidate ${route.id} must render exactly one shared LeadForm in the reference-directed location.`,
     );
   if (!/<LeadForm\b[^>]*\bcontent\s*=\s*\{\s*content\s*\}/u.test(source))
     throw new Error(
@@ -1721,6 +2125,8 @@ function validateExperience(source, route, content) {
     source,
     route,
   );
+  validateImageRoleReuse(source, route, content);
+  validatePurposefulInteraction(source, route, visualBrief);
   for (const { opening } of collectJsxElements(source).elements) {
     if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
     const altAttribute = jsxAttribute(opening, "alt");
@@ -1760,6 +2166,7 @@ function validateExperience(source, route, content) {
           `Candidate ${route.id} navigation must expose literal <a href="#${target}"> inside a visible native <nav>.`,
         );
   }
+  validateAuthoredUrlAttributes(source, route, content);
   for (const binding of requiredExperienceBindings)
     if (
       !helperSealedBindings.has(binding.token) &&
@@ -1789,8 +2196,10 @@ function validateStyles(source, route) {
     throw new Error(
       `Candidate ${route.id} styles must contain CSS only, not an HTML document.`,
     );
-  if (/url\s*\(\s*["']?(?:https?:)?\/\//iu.test(source))
-    throw new Error(`Candidate ${route.id} CSS contains a remote URL.`);
+  if (/url\s*\(/iu.test(source) || /@import\b/iu.test(source))
+    throw new Error(
+      `Candidate ${route.id} CSS must use sealed image content tokens instead of CSS URL resources.`,
+    );
   if (/—/u.test(source))
     throw new Error(`Candidate ${route.id} CSS contains an em dash.`);
   if (/(?:^|\n)\s*["']\s*\n?\}\s*$/u.test(source))
@@ -1807,11 +2216,12 @@ function validateStyles(source, route) {
  * variables remain available when a candidate intentionally consumes them.
  */
 export function namespaceCreativeCss(source) {
-  const declared = new Set(
-    [...source.matchAll(/(?:^|[;{])\s*(--[A-Za-z][\w-]*)\s*:/gu)].map(
-      (match) => match[1],
-    ),
-  );
+  const root = postcss.parse(source);
+  const declared = new Set();
+  root.walkDecls((declaration) => {
+    if (/^--[A-Za-z][\w-]*$/u.test(declaration.prop))
+      declared.add(declaration.prop);
+  });
   if (!declared.size) return source;
   return source.replace(/--[A-Za-z][\w-]*/gu, (token) =>
     declared.has(token) && !token.startsWith("--ll-creative-")
@@ -1882,13 +2292,14 @@ function validateMotion(source, route) {
 }
 
 /**
- * @param {{files?: {experience?: string, styles?: string, motion?: string}, route?: Record<string, any>, content?: Record<string, any>}} [options]
+ * @param {{files?: {experience?: string, styles?: string, motion?: string}, route?: Record<string, any>, content?: Record<string, any>, visualBrief?: Record<string, any>}} [options]
  * @returns {{files: {experience: string, styles: string, motion: string}, referenceFidelity: Record<string, any> | null}}
  */
 export function validateProductionCandidateFiles({
   files,
   route = {},
   content = {},
+  visualBrief = {},
 } = {}) {
   const experience = normalizeAuthoredSource(String(files?.experience || ""));
   const styles = normalizeAuthoredSource(String(files?.styles || ""));
@@ -1898,7 +2309,7 @@ export function validateProductionCandidateFiles({
   const referenceDna = route.referenceDna
     ? validateReferenceDna(route.referenceDna, { requireEvidence: true })
     : null;
-  validateExperience(experience, route, content);
+  validateExperience(experience, route, content, visualBrief);
   validateStyles(styles, route);
   validateMotion(motion, route);
   const isolatedStyles = namespaceCreativeCss(styles);
@@ -1927,14 +2338,16 @@ function authorRules() {
     "Use only React, @launchloom/runtime, GSAP, and GSAP ScrollTrigger in Experience.jsx. The deterministic host imports and mounts motion.js; do not import or invoke ./motion.js from Experience.jsx.",
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
     "Keep literal Services, FAQs, and Contact section anchors in the page. For dossier-backed routes, let the primary navigation follow the assigned reference geometry instead of forcing all three anchors into one conventional menu. Put conversion in the hero or immediately after it.",
-    "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; do not fake a form or create a second lead endpoint.",
+    "Import LeadForm from @launchloom/runtime and render exactly one instance in the reference-directed location: when desktop or mobile compositionTopology is utility-panel, place it in that utility panel inside the hero and retain the contact section for contact details; otherwise place it inside the contact section. Never fake a form or create a second lead endpoint.",
     EARLY_CONVERSION_OUTPUT_CONTRACT,
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
+    "Do not silently reuse the primary hero image to fill missing secondary or tertiary image roles. When supporting image tokens are unavailable, keep the hero unique and adapt that chapter to a non-duplicative text-led or graphic treatment that still preserves the assigned reference mechanics.",
+    "When the client visual brief explicitly requests a purposeful interaction, guide, selector, chooser, or navigator, implement a clearly labeled stateful native interaction marked with data-purposeful-interaction. Keep a useful visible default/static state. FAQ disclosure, LeadForm, ChatLauncher, ordinary navigation, or an image carousel alone do not satisfy that request; use only sealed service and decision-support content and never invent advice.",
     "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",
-    "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact: no full LeadForm, service list, or long-copy block in the first fold.",
+    "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact and preserve the assigned composition; a reference-required utility-panel form may appear in the first fold but must remain concise and usable.",
     "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
   ].join("\n");
 }
@@ -2136,7 +2549,12 @@ export async function authorExperienceCandidates({
       let complianceRepaired =
         contractResult.repaired || experienceResult.repaired;
       try {
-        validateExperience(experience, route, content);
+        validateExperience(
+          experience,
+          route,
+          content,
+          routeContentManifest.visualBrief,
+        );
       } catch (error) {
         complianceRepaired = true;
         let repairedExperience;
@@ -2155,7 +2573,12 @@ export async function authorExperienceCandidates({
             "experience",
           );
           experience = normalizeAuthoredSource(repairedExperience.value);
-          validateExperience(experience, route, content);
+          validateExperience(
+          experience,
+          route,
+          content,
+          routeContentManifest.visualBrief,
+        );
         } catch (repairError) {
           const repairMessage =
             repairError instanceof Error
@@ -2174,7 +2597,12 @@ export async function authorExperienceCandidates({
             "experience",
           );
           experience = normalizeAuthoredSource(finalRepair.value);
-          validateExperience(experience, route, content);
+          validateExperience(
+          experience,
+          route,
+          content,
+          routeContentManifest.visualBrief,
+        );
         }
       }
       let referenceRepairCycles = 0;
@@ -2207,7 +2635,12 @@ export async function authorExperienceCandidates({
           );
           experience = normalizeAuthoredSource(repaired.value);
           complianceRepaired = true;
-          validateExperience(experience, route, content);
+          validateExperience(
+          experience,
+          route,
+          content,
+          routeContentManifest.visualBrief,
+        );
           fidelity = validateReferenceCandidate({
             referenceDna: route.referenceDna,
             experienceSource: experience,
@@ -2294,7 +2727,8 @@ export async function authorExperienceCandidates({
         referenceIds: Array.isArray(route.referenceIds)
           ? [...route.referenceIds]
           : [],
-        referenceDossierId: route.referenceDossier?.id || "",
+        referenceDossierId:
+          "referenceDossier" in route ? route.referenceDossier?.id || "" : "",
         servicePresentation: route.servicePresentation,
         sectionRhythm: route.sectionRhythm,
         typographyCategory: route.typographyCategory,

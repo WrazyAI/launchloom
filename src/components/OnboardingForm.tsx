@@ -898,6 +898,7 @@ export default function OnboardingForm() {
               </option>
               <option value="home-services">Home services or trades</option>
               <option value="wellness">Care, wellness, or health</option>
+              <option value="veterinary">Veterinary or animal hospital</option>
               <option value="professional-services">
                 Professional services
               </option>

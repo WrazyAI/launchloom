@@ -2,7 +2,7 @@
 
 This directory stores canonical production and archive-only reference dossiers.
 `core-collection.json` is the source of truth for the curated local
-SEO set: exactly 84 unique references across 14 business niches, six per
+SEO set: exactly 96 unique references across 16 business niches, six per
 niche. The production selector samples three structurally independent routes
 from the matching niche with seeded recent-exposure balancing. It fails closed
 rather than filling with unrelated businesses. Production compilation keys
@@ -10,7 +10,7 @@ selection from the generated specific
 `businessKind` ahead of broad intake buckets such as wellness or professional
 services.
 
-Preview the 84 opening compositions in
+Preview the 96 opening compositions in
 [`core-collection-hero-contact-sheet.png`](core-collection-hero-contact-sheet.png).
 It is a thumbnail index only; each dossier's full-page desktop/mobile captures
 and `design-prompt.md` are the authoritative references.
@@ -25,7 +25,25 @@ Every dossier has:
   and how to translate them without copying source branding, copy, or assets.
 - `screenshots/desktop.png` and `screenshots/mobile.png`: full-page captures
   at the viewport widths recorded in that dossier's manifest (desktop and
-  compact mobile).
+  compact mobile). Their SHA-256 values are recorded in the manifest and
+  checked against the retained bytes whenever the dossier is loaded.
+- `rights/business-verification.md`: the first-party business self-description
+  for direct business sites, or an explicit not-applicable reason for licensed
+  template demonstrations, which are not operating businesses.
+- `rights/capture-record.md`: a record for each production dossier. Records
+  normalized from prior manifest fields say that no new capture was made;
+  the manifest remains authoritative for capture details.
+
+Every production dossier also has an explicit desktop and mobile
+`referenceDna.compositionTopology`, reviewed against the first viewport of each
+full-page capture. This is separate from `mobileRecomposition`, which explains
+responsive behavior but is not an exact hero-layout label. Nine hybrid or
+visually ambiguous references are marked medium-confidence with a note rather
+than treated as unquestionable single-pattern examples. When a niche offers
+more than one classified hero composition, the selector requires each
+three-route candidate set to include at least two, while seeded exposure
+balancing rotates rarer patterns across runs. The rendered composition gate
+evaluates desktop and mobile against their own contracts.
 
 The original ten niche pools contain 46 direct business-site captures and 14
 licensed sector-specific template demos. Those demos are useful visual
@@ -37,14 +55,19 @@ accounting (1). Hotels have six direct site captures. The auto-repair, HVAC,
 roofing, and painting pools each contain six direct business-site captures;
 those four pools do not use licensed templates.
 
-The 84 core IDs are enumerated in `core-collection.json`. The core includes
+The 96 core IDs are enumerated in `core-collection.json`. The core includes
 home services, dental, home care, fitness, restaurants, lodging,
 architecture/interior design, law firms, beauty/grooming, accounting, auto
-repair, HVAC, roofing, and painting. The licensed Spicer roofing template
+repair, HVAC, roofing, painting, real estate/property, and veterinary
+practices.
+The new real-estate and veterinary pools each contain six permission-cleared
+direct-business captures with paired full-page desktop/mobile evidence and
+their own source-specific design prompts. The licensed Spicer roofing template
 remains in the dossier library but is not counted as one of the six real
-roofing businesses or selected for that niche. The remaining 33 complete
-cross-industry, legacy, and A1/Kokoro design studies are listed in
-`archive-index.json`. They have full-page captures and prompts, but remain
+roofing businesses or selected for that niche. The archive index contains 35
+complete non-core dossiers: 33 cross-industry, legacy, and A1/Kokoro studies,
+plus two permission-cleared dental alternatives retained outside the fixed
+six-reference dental pool. They have full-page captures and prompts, but remain
 archive-only and cannot enter production selection. Screenshot-only fragments
 must be completed as a dossier or explicitly catalogued as incomplete; they are
 not valid model references.
@@ -65,32 +88,35 @@ to the historical owned-study provenance record, not an asset-by-asset audit.
 
 ## Coverage boundaries
 
-The 14 core niches above are the only production reference pools in this
+The 16 core niches above are the only production reference pools in this
 collection. Descriptive or adjacent tags such as garage door, plumbing,
-landscaping, electrician, family dentistry, bistro, grooming, and tax adviser
-are aliases or service specialties, not independent pools; they may route to a
-core niche only when the business itself fits that niche. Broad onboarding
+landscaping, electrician, family dentistry, bistro, and tax adviser are aliases
+or service specialties, not independent pools; they may route to a core niche
+only when the business itself fits that niche. Veterinary references are
+specifically clinical: pet grooming, boarding, sitting, walking, training, and
+pet retail do not route to veterinary. Architecture/interior-design references
+do not route to general graphic or digital design studios. Broad onboarding
 categories such as wellness and professional services are intake buckets, not
 reference families. A skin-aesthetics intake left at the broad wellness kind
 has no production reference pool and fails closed.
 
-These distinct subjects have archive examples but no complete, production-
-supported reference pool: event/wedding venues, medical clinics, bicycle
-workshops, auto dealerships, jewelry, independent retail, and industrial
-contractors. The event invitation, medical clinic, dealership, and industrial
-contractor examples are licensed templates, not verified real-business sites.
-The bicycle workshop, jewelry, and independent retail examples include direct
-site captures. None of these subjects has six selected, verified business
-references. Architecture, fitness, auto repair, roofing, and plumbing also
-have archive entries, but these are adjacent to or within existing core niches;
+`core-collection.json` records unsupported near-neighbor kinds and why each
+must fail closed. Current gaps include event/wedding venues, general medical
+clinics, bicycle workshops, dealerships and ambiguous automotive labels,
+jewelry, independent retail, general graphic/digital design studios,
+non-clinical pet services, and industrial contractors. Several have archive
+examples, but those do not form a six-business production pool: licensed
+template demonstrations are not
+verified businesses, and one-off direct-site captures are not enough for a
+niche. Architecture, fitness, auto repair, roofing, and plumbing also have
+archive entries, but these are adjacent to or within existing core niches;
 their archive status does not create a new production pool.
 
-Real estate/property, pet/veterinary, and generic "other" have no curated
-reference examples in this library. These are truly uncovered, rather than
-merely archive-only. Do not fill either kind of gap with visually unrelated
-references. Until a niche has six verified, permission-cleared business
-references and passes the same dossier checks, production selection must fail
-closed rather than borrow from an adjacent pool.
+Real estate/property and veterinary practice niches now each have six curated
+production reference dossiers. Generic "other" remains intentionally
+uncovered, rather than being filled with visually unrelated references. Keep
+that broad kind fail-closed until a specific business niche receives its own
+six verified, permission-cleared references and passes the dossier checks.
 
 Licensed references retain the applicable license and asset credits. Direct
 site references retain a requester attestation for screenshot retention,
@@ -143,7 +169,7 @@ selection, screenshot, and asset paths must point inside this library.
 4. Add complete Reference DNA, provenance, rights evidence, business kinds, and
    the dossier path to `data/inspiration-registry.json`. Run
    `npm run sync:reference-library -- --write` to register core dossiers and
-   bind business/capture evidence paths. Add a source to the 84-entry
+   bind business/capture evidence paths. Add a source to the 96-entry
    collection only if it genuinely matches a niche; do not fill gaps with
    unrelated business types.
 5. Run the tests and compile a production-style pack:

@@ -71,6 +71,123 @@ describe("creative authoring output budgets", () => {
     expect(checklist).toContain("semantically matching section");
   });
 
+  it("states distinct desktop and mobile hero topologies as separate layout contracts", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+      compositionTopology: {
+        hero: "media-overlay",
+        mobileHero: "type-led-statement",
+        mediaRelation: "copy-over-media",
+        mobileMediaRelation: "copy-leads-opening",
+      },
+    });
+
+    expect(checklist).toContain("Desktop hero topology: media-overlay");
+    expect(checklist).toContain("Desktop media relation: copy-over-media");
+    expect(checklist).toContain("Mobile hero topology: type-led-statement");
+    expect(checklist).toContain("Mobile media relation: copy-leads-opening");
+    expect(checklist).toContain("do not carry desktop image occupancy into mobile");
+  });
+
+  it("keeps type-led desktop repairs from drifting into split-media", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+      compositionTopology: {
+        hero: "type-led-statement",
+        mobileHero: "media-overlay",
+        mediaRelation: "copy-leads-opening",
+        mobileMediaRelation: "copy-over-media",
+      },
+    });
+
+    expect(checklist).toContain(
+      "A substantial adjacent image panel is split-media and is not allowed",
+    );
+    expect(checklist).toContain(
+      "do not satisfy an imagery finding by changing the assigned desktop hero topology",
+    );
+    expect(checklist).toContain(
+      "do not mirror that mobile image treatment into a desktop side-by-side media field",
+    );
+  });
+
+  it("gives the author exact Reference DNA marker values consumed by the hard validator", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+      heroGeometry: { mode: "dark-photo-led-home-promise" },
+      navigationGeometry: { mode: "thin-utility-strip-over-airy-service-nav" },
+      servicePresentation: { pattern: "three-captioned-surface-studies" },
+      ctaPlacement: { early: "hero-estimate-anchor" },
+      mobileRecomposition: { strategy: "stacked-room-sample-sequence" },
+      motion: { primitive: "native-scroll-snap-gallery" },
+    });
+
+    expect(checklist).toContain('data-hero-geometry="dark-photo-led-home-promise"');
+    expect(checklist).toContain('data-navigation-geometry="thin-utility-strip-over-airy-service-nav"');
+    expect(checklist).toContain('data-service-presentation="three-captioned-surface-studies"');
+    expect(checklist).toContain('data-cta-placement="hero-estimate-anchor"');
+    expect(checklist).toContain('data-mobile-recomposition="stacked-room-sample-sequence"');
+    expect(checklist).toContain('data-motion-primitive="native-scroll-snap-gallery"');
+    expect(checklist).toContain("machine-readable verification markers, not visual substitutions");
+  });
+
+  it("promotes distinctive signature and art-direction mechanics into rendered obligations", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+      requiredSignatureElements: [
+        {
+          id: "room-service-selector",
+          description:
+            "a room-reveal service selector backed by a visible finished-room image",
+        },
+        {
+          id: "sample-library",
+          description:
+            "a paint-sample library with layered finish swatches and labeled choices",
+        },
+      ],
+      imageTreatment: {
+        mode: "finished rooms and paint sample-like color strips",
+        crop: "wide room reveal followed by contained material studies",
+        focalPoint: "keep the finished surface visible beside the service choice",
+      },
+      servicePresentation: {
+        pattern: "vertical service menu that changes the featured room image",
+        interaction: "room-reveal tabs with a complete static fallback",
+      },
+      palette: { contrastIntent: "ivory, charcoal, and warm paint accents" },
+      acceptanceChecks: [
+        "The room reveal remains visually dominant beside the service choice.",
+        "Paint sample treatment is visible before the final contact chapter.",
+      ],
+    });
+
+    expect(checklist).toContain(
+      'data-reference-signature="room-service-selector" must visibly realize',
+    );
+    expect(checklist).toContain(
+      'data-reference-signature="sample-library" must visibly realize',
+    );
+    expect(checklist).toContain(
+      "A data-reference-signature marker alone does not satisfy a signature",
+    );
+    expect(checklist).toContain(
+      "Image treatment: finished rooms and paint sample-like color strips",
+    );
+    expect(checklist).toContain(
+      "Service presentation: vertical service menu that changes the featured room image",
+    );
+    expect(checklist).toContain(
+      "differentiate them through reference-led crop, layering, sequencing",
+    );
+    expect(checklist).toContain(
+      "The room reveal remains visually dominant beside the service choice.",
+    );
+    expect(checklist).toContain(
+      "Treat these as rendered acceptance criteria, not descriptive prose",
+    );
+  });
+
   it("keeps required navigation links when a route has no reference DNA", () => {
     const checklist = referenceImplementationChecklist(undefined);
 

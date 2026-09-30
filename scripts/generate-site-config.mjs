@@ -10,8 +10,10 @@ import {
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
+import { fictionalPipelineDemoNotice } from "./synthetic-demo-notice.mjs";
 import {
   defaultHistoryPath,
+  launchesForBusinessKind,
   recentLayoutFingerprints,
 } from "./launch-history.mjs";
 import { selectDesignVariant } from "../templates/client-site/src/lib/design-variants.ts";
@@ -22,19 +24,33 @@ import {
   selectExperienceVariantId,
 } from "../templates/client-site/src/lib/experience-pack.ts";
 
+const referenceCoverage = JSON.parse(
+  readFileSync(new URL("../data/reference-library/core-collection.json", import.meta.url), "utf8"),
+);
+const unsupportedBusinessKinds = new Set(
+  (referenceCoverage.unsupportedBusinessKinds || []).flatMap((entry) =>
+    (Array.isArray(entry.businessKinds) ? entry.businessKinds : []).map((kind) =>
+      String(kind).toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, ""),
+    ),
+  ),
+);
+
 export { parseModelJson } from "./model-json.mjs";
 
-function recentFingerprintsForSelection() {
+function recentFingerprintsForSelection(businessKind) {
   try {
-    return recentLayoutFingerprints(
-      JSON.parse(readFileSync(defaultHistoryPath(), "utf8")),
-    );
+    const history = JSON.parse(readFileSync(defaultHistoryPath(), "utf8"));
+    return recentLayoutFingerprints({
+      launches: launchesForBusinessKind(history, businessKind),
+    });
   } catch {
     return [];
   }
 }
 
 const MODEL = "z-ai/glm-5.3-flash";
+const SITE_COPY_MAX_COMPLETION_TOKENS = 8192;
+const SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS = 4096;
 const MAX_CORE_SERVICES = 5;
 
 const SHARED_CREATIVE_DIRECTION =
@@ -521,7 +537,7 @@ const BUSINESS_KIND_PROFILES = [
     businessKind: "painting",
     industry: "home-services",
     aliases: ["painting", "painter", "painting-contractor"],
-    facts: /\b(?:painting contractor|residential painting|commercial painting|house painting|painter)\b/iu,
+    facts: /\b(?:painting contractor|painter|(?:interior|exterior|residential|commercial|house|home|cabinet|wall|fence|trim) painting)\b/iu,
   },
   {
     businessKind: "dental",
@@ -577,6 +593,18 @@ const BUSINESS_KIND_PROFILES = [
     aliases: ["accounting", "accountant", "accountancy", "bookkeeping"],
     facts: /\b(?:accounting|accountant|accountancy|bookkeeping|tax accounting)\b/iu,
   },
+  {
+    businessKind: "real-estate",
+    industry: "real-estate",
+    aliases: ["real-estate", "real-estate-agent", "real-estate-brokerage", "realty", "realtor", "property-management"],
+    facts: /\b(?:real estate|realty|realtor|property management|real estate agent|real estate broker|property development|real estate development)\b/iu,
+  },
+  {
+    businessKind: "veterinary",
+    industry: "wellness",
+    aliases: ["veterinary", "veterinarian", "vet", "vet-clinic", "animal-clinic", "animal-hospital", "pet-clinic"],
+    facts: /\b(?:veterinar\w*|vet clinic|animal clinic|animal hospital|animal medical center|pet clinic|pet hospital)\b/iu,
+  },
 ];
 
 const BROAD_INDUSTRIES = new Set([
@@ -615,6 +643,12 @@ function businessProfileFromFacts(intake) {
   return BUSINESS_KIND_PROFILES.find((profile) => profile.facts.test(facts));
 }
 
+function profileForAmbiguousIndustry(intake, selectedIndustry) {
+  if (selectedIndustry !== "automotive") return undefined;
+  const profile = businessProfileFromFacts(intake);
+  return profile?.businessKind === "auto-repair" ? profile : undefined;
+}
+
 function intakeFacts(intake) {
   return [
     intake.businessName,
@@ -628,18 +662,23 @@ function intakeFacts(intake) {
 
 function industryFor(intake) {
   const selected = industryKey(intake.industry);
-  const explicitProfile = explicitBusinessProfile(intake);
+  const specificProfile = profileForAmbiguousIndustry(intake, selected);
+  if (unsupportedBusinessKinds.has(selected) && !specificProfile) return "other";
+  const explicitProfile = explicitBusinessProfile(intake) || specificProfile;
   if (explicitProfile) return explicitProfile.industry;
   if (BROAD_INDUSTRIES.has(selected) && selected !== "other") return selected;
 
   const facts = intakeFacts(intake);
+  const veterinaryProfile = businessProfileFromFacts(intake);
+  if (veterinaryProfile?.businessKind === "veterinary")
+    return veterinaryProfile.industry;
   if (
     /\b(?:pets?|veterinar\w*|vet clinic|animal hospital|(?:dog|cat)\s+(?:groom\w*|boarding|daycare|sitting|walking|training|care|food|treats|supplies))\b/iu.test(
       facts,
     )
   )
     return "other";
-  const factProfile = businessProfileFromFacts(intake);
+  const factProfile = veterinaryProfile || businessProfileFromFacts(intake);
   if (factProfile) return factProfile.industry;
   if (selected === "other") return "other";
   if (/\b(?:health|care|wellness|clinic|therapy|dental|medspa|medical|beauty)\b/u.test(facts))
@@ -654,7 +693,11 @@ function industryFor(intake) {
 }
 
 function businessKindFor(intake, industry) {
-  const profile = explicitBusinessProfile(intake) || businessProfileFromFacts(intake);
+  const selected = industryKey(intake.industry);
+  const specificProfile = profileForAmbiguousIndustry(intake, selected);
+  if (unsupportedBusinessKinds.has(selected) && !specificProfile) return selected;
+  const profile =
+    explicitBusinessProfile(intake) || specificProfile || businessProfileFromFacts(intake);
   return profile?.industry === industry ? profile.businessKind : industry;
 }
 
@@ -784,7 +827,7 @@ function designFor(kind, industry, intake = {}) {
     recipe,
     seed,
     requested: requestedPack,
-    recentFingerprints: recentFingerprintsForSelection(),
+    recentFingerprints: recentFingerprintsForSelection(kind),
     hasImage: Boolean(intake.heroImage || intake.photoOne || intake.photoTwo || intake.logo),
     avoidPackIds,
   });
@@ -1079,6 +1122,70 @@ function defaultFaq(industry, cta, kind = industry) {
 
 const GENERIC_COPY =
   /tailored to your needs|talk through your needs|personalized support|quality you can trust|when it matters|next level|we are here for you|your trusted partner|one[- ]stop/i;
+const REPAIR_OUTCOME_ISSUE =
+  "Generated copy includes a repair outcome prohibited by the client art direction.";
+const REPAIR_OUTCOME_CLAIM =
+  /\b(?:gets?|got|will be|is|are|was|were)\s+(?:(?:completely|fully)\s+)?(?:fixed|repaired|solved|restored|resolved)\b|\b(?:we|our team)\s+(?:will|can)\s+(?:fix|repair|solve|restore)\b/i;
+const REPAIR_OUTCOME_NEGATION =
+  /\b(?:not(?!\s+only)|never|cannot|can't|don't|doesn't|didn't|won't|wouldn't)\b|\bno\s+(?:one|claim|promise|guarantee|assurance|commitment)\b/iu;
+const REPAIR_OUTCOME_CLAUSE_BOUNDARY =
+  /[.!?;\n]|\b(?:but|however|yet|still)\b|\band(?=\s+(?:we|our|the|a|an|you|your|they|he|she|it|this|that)\b)/giu;
+
+function explicitlyProhibitsRepairOutcomes(config) {
+  const direction = String(config.style?.artDirection || "");
+  const seoProhibitions = Array.isArray(config.seoResearch?.prohibitedClaims)
+    ? config.seoResearch.prohibitedClaims.join("\n")
+    : "";
+  const prohibitionText = `${direction}\n${seoProhibitions}`;
+  return (
+    /\b(?:do not|don't|never|avoid)\b[^.!?]{0,100}\b(?:claim|promise|assert|state)\b[^.!?]{0,180}\b(?:repair|service|work)\s+(?:outcomes?|results?)\b/i.test(
+      prohibitionText,
+    ) || /\brepair\s+(?:outcomes?|results?)\b/i.test(seoProhibitions)
+  );
+}
+
+function visitorFacingCopy(config) {
+  return [
+    config.business?.tagline,
+    config.business?.description,
+    ...Object.values(config.copy || {}),
+    ...(config.services || []).flatMap((service) => [
+      service?.description,
+      ...Object.values(service?.decisionSupport || {}),
+    ]),
+    ...(config.differentiators || []),
+    ...(config.conversion?.process || []),
+    ...(config.conversion?.faqs || []).flatMap((faq) => [
+      faq?.question,
+      faq?.answer,
+    ]),
+  ]
+    .filter((value) => typeof value === "string")
+    .join("\n");
+}
+
+function hasUnnegatedRepairOutcomeClaim(copy) {
+  const text = String(copy || "");
+  const claimPattern = new RegExp(REPAIR_OUTCOME_CLAIM.source, "giu");
+  for (const match of text.matchAll(claimPattern)) {
+    const claimStart = match.index || 0;
+    const prefix = text.slice(0, claimStart);
+    let clauseStart = 0;
+    for (const boundary of text.matchAll(REPAIR_OUTCOME_CLAUSE_BOUNDARY)) {
+      if ((boundary.index || 0) >= claimStart) break;
+      clauseStart = (boundary.index || 0) + boundary[0].length;
+    }
+    if (!REPAIR_OUTCOME_NEGATION.test(prefix.slice(clauseStart))) return true;
+  }
+  return false;
+}
+
+function violatesExplicitRepairOutcomeProhibition(config) {
+  return (
+    explicitlyProhibitsRepairOutcomes(config) &&
+    hasUnnegatedRepairOutcomeClaim(visitorFacingCopy(config))
+  );
+}
 
 export function evaluateDraft(config) {
   const issues = [];
@@ -1118,6 +1225,8 @@ export function evaluateDraft(config) {
     )
   )
     issues.push("The primary headings use generic marketing language.");
+  if (violatesExplicitRepairOutcomeProhibition(config))
+    issues.push(REPAIR_OUTCOME_ISSUE);
   if (
     wordCount(copy.heroHeading || config.business?.tagline) > 10 ||
     text(copy.heroHeading || config.business?.tagline, 200).length > 72 ||
@@ -1610,10 +1719,12 @@ export function normalise(candidate, intake) {
         researchedLocations.has(slugify(name)),
       )
     : business.serviceAreas;
+  const demoNotice = fictionalPipelineDemoNotice(intake);
   return removeEmDashes({
     preset,
     industry: base.industry,
     businessKind: base.businessKind,
+    ...(demoNotice ? { demoNotice } : {}),
     business,
     seoPageMap: seoResearch?.pageMap || [],
     style: {
@@ -1706,6 +1817,7 @@ async function askModel(intake, effort, model = MODEL) {
     sessionId,
     body: {
       model,
+      max_completion_tokens: SITE_COPY_MAX_COMPLETION_TOKENS,
       ...promptCacheRequestFields(model, promptCacheKey),
       reasoning_effort: effort,
       temperature: 0.3,
@@ -1734,7 +1846,7 @@ async function askModel(intake, effort, model = MODEL) {
 }
 
 async function refineDraft(intake, draft, report, model = MODEL) {
-  const systemPrompt = `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`;
+  const systemPrompt = `You are the final creative director for a conversion-focused local-business website. Return JSON only, using the exact site-config shape provided. Use the same language and writing system as the client brief, and never insert untranslated foreign words. ${SHARED_CREATIVE_DIRECTION} ${RECIPE_CREATIVE_DIRECTION} Fix only the listed quality issues. Treat explicit negative instructions in client art direction and prohibitedClaims as hard constraints. Preserve the selected design recipe, every verified business fact, service name, address, contact detail, offer, brand asset, and unrelated approved positioning. Improve specificity, hierarchy, decision support, and calls to action without inventing proof, pricing, credentials, outcomes, locations, staff, or claims. Do not return HTML, CSS, code, explanations, or markdown.`;
   const identity = {
     businessName: intake.businessName || intake.business?.name || "",
     email: intake.email || intake.business?.email || "",
@@ -1756,6 +1868,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
     sessionId,
     body: {
       model,
+      max_completion_tokens: SITE_COPY_REFINEMENT_MAX_COMPLETION_TOKENS,
       ...promptCacheRequestFields(model, promptCacheKey),
       reasoning_effort: "medium",
       temperature: 0.2,
@@ -1794,6 +1907,8 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       groundedIntake,
     );
   } catch (firstError) {
+    if (/^OpenRouter returned 402\b/u.test(String(firstError?.message || firstError)))
+      throw firstError;
     console.warn(
       "Low-effort generation failed; retrying once with high effort.",
       firstError.message,
@@ -1816,15 +1931,32 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       groundedIntake,
     );
     const finalReport = evaluateDraft(refined);
-    const selected = finalReport.score >= initialReport.score ? refined : draft;
+    const initialHasProhibitedClaim = initialReport.issues.includes(REPAIR_OUTCOME_ISSUE);
+    const refinedHasProhibitedClaim = finalReport.issues.includes(REPAIR_OUTCOME_ISSUE);
+    const selected =
+      initialHasProhibitedClaim && !refinedHasProhibitedClaim
+        ? refined
+        : !initialHasProhibitedClaim && refinedHasProhibitedClaim
+          ? draft
+          : finalReport.score >= initialReport.score
+            ? refined
+            : draft;
+    const selectedReport = selected === refined ? finalReport : initialReport;
+    if (selectedReport.issues.includes(REPAIR_OUTCOME_ISSUE))
+      throw new Error(REPAIR_OUTCOME_ISSUE);
     return {
       ...selected,
       qualityReport: {
-        ...(selected === refined ? finalReport : initialReport),
+        ...selectedReport,
         refined: selected === refined,
       },
     };
   } catch (error) {
+    if (initialReport.issues.includes(REPAIR_OUTCOME_ISSUE))
+      throw new Error(
+        "Copy generation stopped because the explicit repair-outcome prohibition could not be satisfied.",
+        { cause: error },
+      );
     console.warn(
       "Quality refinement failed; keeping validated initial draft.",
       error instanceof Error ? error.message : error,

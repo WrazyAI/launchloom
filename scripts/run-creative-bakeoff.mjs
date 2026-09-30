@@ -13,11 +13,16 @@ import {
 import { promoteCreativeCandidate } from "./promote-creative-candidate.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import {
+  CSS_IMAGE_URL_PATTERN,
+  validateRenderedCompositionTopology,
+} from "./rendered-composition-topology.mjs";
+import {
   evaluateRenderedDiversity,
   evaluateRenderedReferenceFidelity,
 } from "./rendered-reference-fidelity.mjs";
 import {
   countRecentCreativeFamilyUses,
+  launchesForSiteConfig,
   readLaunchHistory,
 } from "./launch-history.mjs";
 
@@ -104,10 +109,65 @@ async function startServer(root) {
 }
 
 async function inspect(page) {
-  return page.evaluate(() => {
+  return page.evaluate((imageBackgroundPattern) => {
+    const hasImageBackground = new RegExp(imageBackgroundPattern, "iu");
     const root = document.querySelector("[data-creative-candidate]");
     const hero = root?.querySelector("[data-hero]");
     const heroBounds = hero?.getBoundingClientRect();
+    const rect = (element) => {
+      const bounds = element.getBoundingClientRect();
+      let left = Math.max(0, bounds.left);
+      let top = Math.max(0, bounds.top);
+      let right = Math.min(window.innerWidth, bounds.right);
+      let bottom = Math.min(window.innerHeight, bounds.bottom);
+      let opacity = 1;
+      for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+        const style = window.getComputedStyle(ancestor);
+        if (style.display === "none" || style.visibility === "hidden" || style.visibility === "collapse")
+          return null;
+        opacity *= Number.isFinite(Number.parseFloat(style.opacity))
+          ? Number.parseFloat(style.opacity)
+          : 1;
+        if (opacity <= 0.02) return null;
+        if (ancestor === element) continue;
+        const clip = ancestor.getBoundingClientRect();
+        if (["hidden", "clip", "scroll", "auto"].includes(style.overflowX)) {
+          left = Math.max(left, clip.left);
+          right = Math.min(right, clip.right);
+        }
+        if (["hidden", "clip", "scroll", "auto"].includes(style.overflowY)) {
+          top = Math.max(top, clip.top);
+          bottom = Math.min(bottom, clip.bottom);
+        }
+      }
+      if (right - left < 16 || bottom - top < 16) return null;
+      return { left, top, width: right - left, height: bottom - top };
+    };
+    const visible = (element) => Boolean(rect(element));
+    const copyRegions = hero
+      ? [...hero.querySelectorAll("[data-hero-copy]")]
+          .filter(visible)
+          .map(rect)
+      : [];
+    const mediaRegions = hero
+      ? [...hero.querySelectorAll("[data-hero-media]")]
+          .filter(visible)
+          .map((element) => {
+            const visualNodes = [element, ...element.querySelectorAll("*")]
+              .filter((node) => {
+                if (!visible(node)) return false;
+                if (node instanceof HTMLImageElement)
+                  return node.complete && node.naturalWidth > 0;
+                if (node instanceof HTMLVideoElement)
+                  return node.readyState >= 2;
+                return hasImageBackground.test(window.getComputedStyle(node).backgroundImage);
+              });
+            return {
+              container: rect(element),
+              visuals: visualNodes.map(rect),
+            };
+          })
+      : [];
     const text = [document.title, document.body.innerText].join("\n");
     const anchors = [...document.querySelectorAll("nav a")];
     const requiredTargets = ["#services", "#faqs", "#contact"];
@@ -138,8 +198,14 @@ async function inspect(page) {
       mobileRecomposition: root?.querySelector("[data-mobile-recomposition]")?.getAttribute("data-mobile-recomposition") || "",
       motionPrimitive: root?.querySelector("[data-motion-primitive]")?.getAttribute("data-motion-primitive") || "",
       creativeRenderer: document.querySelector("[data-creative-renderer]")?.getAttribute("data-creative-renderer") || "",
+      compositionEvidence: {
+        hero: heroBounds ? rect(hero) : null,
+        copy: copyRegions,
+        media: mediaRegions,
+        utilityCount: hero?.querySelectorAll('form, input, select, textarea, [role="search"], [role="combobox"]').length || 0,
+      },
     };
-  });
+  }, CSS_IMAGE_URL_PATTERN.source);
 }
 
 function hardFailures(evidence, viewport) {
@@ -303,14 +369,18 @@ export async function runCreativeBakeoff({
     );
   }
   const diversity = diversityReport(candidates.map(({ metadata }) => metadata));
+  const originalConfigPath = path.join(root, "src/site.config.json");
+  const originalConfig = await fs.readFile(originalConfigPath, "utf8");
   let recentHistory = { launches: [] };
   try {
-    recentHistory = await readLaunchHistory();
+    const history = await readLaunchHistory();
+    recentHistory = {
+      ...history,
+      launches: launchesForSiteConfig(history, originalConfig),
+    };
   } catch {
     // Rotation history is advisory; missing history must not block a bakeoff.
   }
-  const originalConfigPath = path.join(root, "src/site.config.json");
-  const originalConfig = await fs.readFile(originalConfigPath, "utf8");
   const selectedDir = path.join(root, "src/generated-experiences/selected");
   const selectedBackup = `${selectedDir}.bakeoff-${process.pid}`;
   await fs.rm(selectedBackup, { recursive: true, force: true });
@@ -357,6 +427,7 @@ export async function runCreativeBakeoff({
         await promoteCreativeCandidate({
           siteDir: root,
           candidateDir: path.relative(root, path.join(candidateRoot, candidate.directory)),
+          contentManifest: candidate.contentManifest,
           // Rendering a candidate for the bakeoff must remain available even
           // when source-level visual findings are present. Production
           // publication is enforced by the final promotion call below.
@@ -374,10 +445,44 @@ export async function runCreativeBakeoff({
             const browserErrors = [];
             page.on("pageerror", (error) => browserErrors.push(error.message));
             await page.goto(origin, { waitUntil: "networkidle" });
+            // Let the authored first-view reveal settle before measuring
+            // opacity-sensitive visual evidence or taking the viewport shot.
+            await page.waitForTimeout(900);
             const evidence = await inspect(page);
             const failures = [...hardFailures(evidence, viewport), browserErrors.length > 0 && "browser error"].filter(Boolean);
+            const compositionTopology = candidate.manifest.version >= 2
+              ? candidate.manifest.referenceDna?.compositionTopology
+              : null;
+            const compositionGeometry = compositionTopology
+              ? validateRenderedCompositionTopology(
+                compositionTopology,
+                evidence.compositionEvidence,
+                { viewportKind: viewport.name === "mobile" ? "mobile" : "desktop" },
+              )
+              : candidate.manifest.version >= 2
+                ? {
+                    pass: true,
+                    skipped: true,
+                    reason: "Reference DNA predates the normalized composition topology contract.",
+                  }
+                : null;
+            if (compositionGeometry && !compositionGeometry.pass)
+              failures.push(
+                ...compositionGeometry.findings.map((finding) =>
+                  `rendered composition: ${finding.message}`,
+                ),
+              );
             candidateResult.failures.push(...failures.map((failure) => `${viewport.name}: ${failure}`));
-            candidateResult.viewports.push({ ...viewport, ...evidence, browserErrors });
+            candidateResult.viewports.push({
+              ...viewport,
+              ...evidence,
+              compositionGeometry,
+              browserErrors,
+            });
+            candidateResult.compositionGeometryByViewport = {
+              ...(candidateResult.compositionGeometryByViewport || {}),
+              [viewport.name]: compositionGeometry,
+            };
             if (candidate.manifest.version >= 2) {
               const renderedFidelity = validateReferenceCandidate({
                 referenceDna: candidate.manifest.referenceDna,
@@ -873,6 +978,9 @@ export async function runCreativeBakeoff({
         root,
         path.join(candidateRoot, winner.directory),
       ),
+      contentManifest: candidates.find(
+        (candidate) => candidate.directory === winner.directory,
+      )?.contentManifest,
       visualScore: winner.visualScore,
       distinctivenessScore: winner.distinctivenessScore,
       selectionMode: promote ? "creative-bakeoff" : "creative-preview",

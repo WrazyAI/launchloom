@@ -6,6 +6,7 @@ import {
   openRouterSessionId,
   readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
+import { parseServiceAreas } from "./service-area-input.mjs";
 
 const DEFAULT_MAX_TASKS = 16;
 const HARD_MAX_TASKS = 32;
@@ -18,6 +19,27 @@ const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
 const DEFAULT_FALLBACK_MAX_USD = 0.05;
 const HARD_MAX_FALLBACK_USD = 0.25;
 const FALLBACK_RESULTS_PER_QUERY = 4;
+const GENERIC_BUSINESS_KINDS = new Set([
+  "general",
+  "business",
+  "local business",
+  "local service",
+  "local services",
+  "home services",
+  "professional services",
+  "health",
+  "healthcare",
+  "medical",
+  "wellness",
+  "care",
+  "other",
+]);
+const IMPLICIT_NICHE_SERVICE_TERMS = new Map([
+  ["auto repair", /\b(?:auto|car|vehicle|brake|engine|transmission|oil change|tire|alignment|mechanic)\b/u],
+  ["roofing", /\b(?:roof|roofer|shingle|gutter)\b/u],
+  ["painting", /\b(?:paint|painter|coating)\b/u],
+  ["hvac", /\b(?:hvac|heating|cooling|air conditioning|furnace|boiler|heat pump)\b/u],
+]);
 const US_STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
 };
@@ -36,11 +58,7 @@ const splitList = (value, limit = 20, splitCommas = false) => {
     .map((part) => text(part, 160))).filter(Boolean);
   return [...new Map(entries.map((item) => [item.toLocaleLowerCase(), item])).values()].slice(0, limit);
 };
-const areaList = (value, limit = 20) => {
-  const raw = Array.isArray(value) ? value : [value];
-  const entries = raw.flatMap((item) => text(item, 400).split(/\r?\n/u).map((part) => text(part, 160))).filter(Boolean);
-  return [...new Map(entries.map((item) => [item.toLocaleLowerCase(), item])).values()].slice(0, limit);
-};
+const areaList = (value, limit = 20) => parseServiceAreas(value, { limit });
 const finiteMetric = (value) => value === null || value === undefined || value === "" || !Number.isFinite(Number(value)) ? null : Number(value);
 const roundCost = (value) => Math.round((Number(value) || 0) * 100_000) / 100_000;
 const slugify = (value) => text(value, 180).toLocaleLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "").slice(0, 90);
@@ -66,10 +84,21 @@ export function normaliseSeoIntake(intake = {}) {
   const allConfirmedServices = splitList(intake.confirmedServices || intake.services, 100, legacy);
   const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
   const omittedServices = allConfirmedServices.slice(MAX_CORE_SERVICES);
-  const primaryCity = text(intake.primaryCity, 160) || areaList(intake.serviceAreas, 20)[0] || "";
-  const coverageAreas = areaList(intake.coverageAreas, 20);
+  const primaryCity = areaList(intake.primaryCity, 1)[0] || areaList(intake.serviceAreas, 20)[0] || "";
+  const coverageAreas = [...new Map(
+    [...areaList(intake.serviceAreas, 20), ...areaList(intake.coverageAreas, 20)]
+      .map((area) => [area.toLowerCase(), area]),
+  ).values()].slice(0, 20);
   if (!coverageAreas.length && primaryCity) coverageAreas.push(primaryCity);
   const serviceRadius = numericRadius(intake.serviceRadius);
+  const industry = text(intake.industry, 100);
+  const explicitBusinessKind = text(
+    intake.businessKind || intake.businessType || intake.business?.kind || intake.business?.businessKind,
+    100,
+  );
+  const businessKind = explicitBusinessKind || (
+    industry && !GENERIC_BUSINESS_KINDS.has(keywordKey(industry)) ? industry : ""
+  );
   const website = text(intake.website || intake.existingWebsite, 500);
   let websiteUrl = "";
   try {
@@ -87,11 +116,23 @@ export function normaliseSeoIntake(intake = {}) {
       (metricLocationForCity(primaryCity).split(",").at(-1) || "United States").trim(),
     coverageEvidence: intake.coverageEvidence || { source: "client_supplied_primary_city", lookups: 0 },
     coverageWarnings: Array.isArray(intake.coverageWarnings) ? intake.coverageWarnings.map((item) => text(item, 300)) : [],
-    industry: text(intake.industry, 100),
+    businessKind,
+    industry,
     businessName: text(intake.businessName || intake.business?.name, 120),
     existingWebsite: websiteUrl,
     phraseProvenance: "confirmed_service_city",
   };
+}
+
+function searchServiceTerm(seo, service) {
+  const businessKind = keywordKey(seo.businessKind);
+  if (!businessKind || GENERIC_BUSINESS_KINDS.has(businessKind)) return service;
+  const serviceKey = keywordKey(service);
+  if (
+    serviceKey.includes(businessKind) ||
+    IMPLICIT_NICHE_SERVICE_TERMS.get(businessKind)?.test(serviceKey)
+  ) return service;
+  return `${businessKind} ${service.toLocaleLowerCase()}`;
 }
 
 function variantsFor(service, city, industry) {
@@ -109,7 +150,9 @@ function variantsFor(service, city, industry) {
 }
 
 function defaultSeeds(seo) {
-  return [...new Set(seo.services.flatMap((service) => variantsFor(service, seo.primaryCity, seo.industry)))].slice(0, MAX_CORE_SERVICES * MAX_SERVICE_VARIANTS);
+  return [...new Set(seo.services.flatMap((service) =>
+    variantsFor(searchServiceTerm(seo, service), seo.primaryCity, seo.industry),
+  ))].slice(0, MAX_CORE_SERVICES * MAX_SERVICE_VARIANTS);
 }
 
 function findService(query, services) {
@@ -158,7 +201,7 @@ function emptyMap(seo) {
       title: service,
       slug: `/services/${slugify(service)}/`,
       service,
-      primaryKeyword: { keyword: `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "confirmed_service_city_not_measured" },
+      primaryKeyword: { keyword: `${searchServiceTerm(seo, service)}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "confirmed_service_city_not_measured" },
       supportingKeywords: [],
       fanOutQuestions: serviceQuestions(service, seo.industry),
       priority: "medium",
@@ -353,7 +396,7 @@ export function createOpenRouterWebSearchClient({
           model,
           messages: [{
             role: "user",
-            content: `Search the public web for this local-market query and return only a terse acknowledgement after searching: ${boundedQuery}`,
+            content: `Search the public web for this local-market query and return at most four concise source-backed observations. Include a direct citation for each observation using only a source returned by the search. If no relevant result is found, say no relevant source was returned. Do not claim keyword volume, rankings, difficulty, or CPC; this fallback collects qualitative source observations only. Query: ${boundedQuery}`,
           }],
           tools: [{
             type: "openrouter:web_search",
@@ -366,7 +409,7 @@ export function createOpenRouterWebSearchClient({
           }],
           max_tool_calls: 1,
           tool_choice: "required",
-          max_tokens: 32,
+          max_tokens: 256,
           temperature: 0,
         },
       });
@@ -406,7 +449,7 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
   const queries = [];
   for (const service of seo.services) {
     const city = seo.primaryCity ? ` ${seo.primaryCity}` : "";
-    queries.push(`${service}${city}`.trim());
+    queries.push(`${searchServiceTerm(seo, service)}${city}`.trim());
   }
   if (seo.businessName && seo.primaryCity) queries.push(`${seo.businessName} ${seo.primaryCity}`);
   for (const seed of seeds) if (!queries.includes(seed)) queries.push(seed);
@@ -534,7 +577,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
       budgetExhausted: false,
     },
     completeness: { keywordOverview: false, searchIntent: false, keywordDifficulty: false, serviceMetrics: [], serviceSerps: 0, serviceSerpsRequired: seo.services.length, competitors: 0 },
-    marketSnapshot: { primaryCity: seo.primaryCity, coverageAreas: seo.coverageAreas, confirmedServices: seo.services, metricLocation: seo.metricLocation, labsMetricLocation: seo.labsLocation, queriedKeywords: seeds.length, measuredKeywords: 0, competitorDomains: 0 },
+    marketSnapshot: { primaryCity: seo.primaryCity, coverageAreas: seo.coverageAreas, businessKind: seo.businessKind || null, confirmedServices: seo.services, metricLocation: seo.metricLocation, labsMetricLocation: seo.labsLocation, queriedKeywords: seeds.length, measuredKeywords: 0, competitorDomains: 0 },
     cost: { tasks: 0, usd: 0, limitUsd: limits.maxUsd, overBudget: false, complete: true, unreportedTasks: 0, stageCosts },
     warnings,
   };
@@ -617,7 +660,47 @@ export async function researchSiteContext(intake = {}, options = {}) {
     }
   }
 
-  function returnPartialResearch() {
+  async function attachFallbackEvidenceAfterProviderFailure() {
+    const hasProviderFailure = stageCosts.some((stage) =>
+      stage.status === "failed" || stage.status === "unavailable",
+    );
+    if (base.fallbackSearch.status !== "pending")
+      return;
+    if (!options.webSearch) {
+      base.fallbackSearch.status = "unavailable";
+      return;
+    }
+    if (!hasProviderFailure) {
+      base.fallbackSearch.status = "not-needed";
+      return;
+    }
+
+    const fallback = await collectFallbackWebEvidence(
+      seo,
+      seeds,
+      options.webSearch,
+      options,
+      warnings,
+    );
+    base.externalSearchEvidence = fallback.evidence;
+    base.fallbackSearch = { ...fallback };
+    base.evidence.push(...fallback.evidence.map((item) => ({
+      type: "external_web_search",
+      query: item.query,
+      sourceUrl: item.sourceUrl,
+      title: item.title,
+      snippet: item.snippet,
+      retrievedAt: item.retrievedAt,
+      provider: item.provider,
+      provenance: item.provenance,
+    })));
+    warnings.push(fallback.evidence.length
+      ? "Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts or production SEO readiness."
+      : "The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.");
+  }
+
+  async function returnPartialResearch() {
+    await attachFallbackEvidenceAfterProviderFailure();
     base.cost = { ...cost, limitUsd: limits.maxUsd, stageCosts };
     base.warnings = [...new Set(warnings)];
     return base;
@@ -854,6 +937,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     ...relatedRows.map((item) => ({ type: "related_keyword", query: item.keyword, provenance: item.provenance })),
     ...(rankingStageComplete ? [{ type: "ranked_keywords", target: seo.existingWebsite, resultCount: quickWins.length, provenance: "DataForSEO" }] : []),
   ];
+  await attachFallbackEvidenceAfterProviderFailure();
   const requiredResearchComplete =
     Boolean(seo.primaryCity) &&
     base.completeness.keywordOverview &&
@@ -1022,7 +1106,9 @@ export function renderSeoMapMarkdown(dossier) {
     `Coverage communities (facts, not automatic pages): ${(dossier.marketSnapshot?.coverageAreas || []).join(", ") || "primary city only"}`,
     `Keyword metrics measured: ${dossier.marketSnapshot?.measuredKeywords || 0}/${dossier.marketSnapshot?.queriedKeywords || 0}`,
     `DataForSEO provider-reported spend: ${spendSummary} (cap ${Number(dossier.cost?.limitUsd || 0).toFixed(2)}).`,
-    dossier.fallbackSearch?.status && dossier.fallbackSearch.status !== "unavailable"
+    dossier.fallbackSearch?.status === "not-needed"
+      ? "Fallback web search: not needed (no provider stage failed)."
+      : dossier.fallbackSearch?.status && dossier.fallbackSearch.status !== "unavailable"
       ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / USD ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations do not satisfy measured SEO publication requirements.`
       : "Fallback web search: unavailable.",
     "",
@@ -1087,7 +1173,7 @@ async function main() {
   const password = process.env.DATAFORSEO_PASSWORD;
   const dataForSeo = login && password ? createDataForSeoClient({ login, password }) : undefined;
   const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const webSearch = !dataForSeo && openRouterKey ? createOpenRouterWebSearchClient({ apiKey: openRouterKey }) : undefined;
+  const webSearch = openRouterKey ? createOpenRouterWebSearchClient({ apiKey: openRouterKey }) : undefined;
   const dossier = await researchSiteContext(intake, {
     dataForSeo,
     webSearch,

@@ -116,6 +116,9 @@ export function revisionTemplatePaths(config) {
 // Keep those exact secondary destinations in the machine-enforced write set.
 // Feedback replacements are committed beside generated imagery. Only the exact
 // files named by this revision's set_image operations are writable.
+export const REVISION_TEMPLATE_BASELINE_PATH =
+  ".launchloom/revision-template-baseline.json";
+
 export function revisionAssetWritePaths(config) {
   return (config.revisionReport?.operations || [])
     .filter(
@@ -129,6 +132,7 @@ export function revisionAssetWritePaths(config) {
 
 export function revisionTemplateWritePaths(config) {
   const files = new Set(revisionTemplatePaths(config));
+  files.add(REVISION_TEMPLATE_BASELINE_PATH);
   files.add("src/layouts/SiteLayout.astro");
   if (
     (config.revisionReport?.operations || []).some(

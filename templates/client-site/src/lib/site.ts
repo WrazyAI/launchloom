@@ -115,6 +115,7 @@ export type SiteConfig = {
   preset: "wellness" | "home-services";
   industry?: string;
   businessKind?: string;
+  demoNotice?: string;
   business: {
     name: string;
     tagline: string;

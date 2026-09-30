@@ -8,6 +8,7 @@ import { network } from "./network";
 let commentId = 100;
 let dispatchCount = 0;
 let failureEmails: Array<Record<string, unknown>> = [];
+let failureEmailIdempotencyKeys: string[] = [];
 
 function request(
   requestId: string,
@@ -34,6 +35,7 @@ describe("RevisionCoordinator", () => {
     commentId = 100;
     dispatchCount = 0;
     failureEmails = [];
+    failureEmailIdempotencyKeys = [];
     network.use(
       http.get(
         "https://api.github.com/repos/:owner/:repo/issues/:issue/comments",
@@ -52,6 +54,9 @@ describe("RevisionCoordinator", () => {
       ),
       http.post("https://api.resend.com/emails", async ({ request }) => {
         failureEmails.push((await request.json()) as Record<string, unknown>);
+        failureEmailIdempotencyKeys.push(
+          request.headers.get("Idempotency-Key") || "",
+        );
         return HttpResponse.json({ id: "email-1" });
       }),
     );
@@ -246,6 +251,9 @@ describe("RevisionCoordinator", () => {
 
     expect(dispatchCount).toBe(3);
     expect(failureEmails).toHaveLength(1);
+    expect(failureEmailIdempotencyKeys).toEqual([
+      "revision-failed-coordinator-request-dispatch-fail",
+    ]);
     expect(String(failureEmails[0].text)).toContain("Revision workflow could not be started.");
     expect(String(failureEmails[0].text)).toContain("Open reviewed website: https://review.example.pages.dev/");
     await expect(

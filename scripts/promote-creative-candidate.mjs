@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { validateCandidateManifest } from "./creative-compiler.mjs";
-import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import { normalizeCreativeExperienceLinks } from "./creative-source-safety.mjs";
+import { validateProductionCandidateFiles } from "./production-experience-author.mjs";
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -20,32 +20,47 @@ async function readJson(file) {
   return JSON.parse(await fs.readFile(file, "utf8"));
 }
 
-function validateAuthoredFiles(candidateId, files, candidateManifest, { preview = false } = {}) {
-  const experience = files.experience;
-  for (const marker of ["data-hero", "data-early-conversion", 'id="services"', 'id="faqs"', 'id="contact"'])
-    if (!experience.includes(marker)) throw new Error(`Creative candidate ${candidateId} is missing ${marker}.`);
-  if (!/from\s+["']@launchloom\/runtime["']/u.test(experience) || !/\bLeadForm\b/u.test(experience))
-    throw new Error(`Creative candidate ${candidateId} must use the shared LeadForm runtime.`);
-  if (/https?:\/\/|\bfetch\s*\(|\b(?:XMLHttpRequest|WebSocket)\b|\beval\s*\(|<script\b|—/iu.test(experience))
-    throw new Error(`Creative candidate ${candidateId} contains an unsafe Experience.jsx primitive.`);
-  if (/url\s*\(\s*["']?(?:https?:)?\/\//iu.test(files.styles) || /—/u.test(files.styles))
-    throw new Error(`Creative candidate ${candidateId} contains an unsafe styles.css value.`);
-  if (/\b(?:fetch|XMLHttpRequest|WebSocket|eval)\s*\(/iu.test(files.motion) || !/reducedMotion|prefers-reduced-motion/u.test(files.motion))
-    throw new Error(`Creative candidate ${candidateId} motion is missing safety or reduced-motion handling.`);
-  if (candidateManifest.version >= 2) {
-    const fidelity = validateReferenceCandidate({
+function validateAuthoredFiles(
+  candidateId,
+  files,
+  candidateManifest,
+  contentManifest,
+  { preview = false } = {},
+) {
+  if (
+    candidateManifest.version >= 2 &&
+    (!contentManifest ||
+      contentManifest.version !== 2 ||
+      !contentManifest.values ||
+      typeof contentManifest.values !== "object" ||
+      !contentManifest.visualBrief ||
+      typeof contentManifest.visualBrief !== "object")
+  )
+    throw new Error(
+      `Creative candidate ${candidateId} requires its sealed version-two content manifest before promotion.`,
+    );
+  const validation = validateProductionCandidateFiles({
+    files,
+    route: {
+      id: candidateId,
       referenceDna: candidateManifest.referenceDna,
-      experienceSource: files.experience,
-      stylesSource: files.styles,
-      motionSource: files.motion,
-    });
-    if (!fidelity.pass || (!preview && !fidelity.visualPass))
-      throw new Error(`Creative candidate ${candidateId} failed reference fidelity: ${fidelity.findings.map((item) => item.message).join(" | ")}`);
-  }
+    },
+    content: contentManifest?.values || {},
+    visualBrief: contentManifest?.visualBrief || {},
+  });
+  const fidelity = validation.referenceFidelity;
+  if (
+    candidateManifest.version >= 2 &&
+    (!fidelity?.pass || (!preview && !fidelity.visualPass))
+  )
+    throw new Error(
+      `Creative candidate ${candidateId} failed reference fidelity: ${(fidelity?.findings || []).map((item) => item.message).join(" | ")}`,
+    );
+  return validation.files;
 }
 
 /**
- * @param {{siteDir?: string, candidateDir?: string, configPath?: string, visualScore?: number, distinctivenessScore?: number, selectionMode?: string, preview?: boolean, preserveSelectedManifest?: boolean}} options
+ * @param {{siteDir?: string, candidateDir?: string, configPath?: string, visualScore?: number, distinctivenessScore?: number, selectionMode?: string, preview?: boolean, preserveSelectedManifest?: boolean, contentManifest?: Record<string, any>}} options
  * @returns {Promise<Record<string, any>>}
  */
 export async function promoteCreativeCandidate({
@@ -57,6 +72,7 @@ export async function promoteCreativeCandidate({
   selectionMode = "creative-bakeoff",
   preview = false,
   preserveSelectedManifest = false,
+  contentManifest: providedContentManifest,
 } = {}) {
   if (!candidateDir) throw new Error("A candidate directory is required.");
   const root = path.resolve(siteDir);
@@ -72,15 +88,25 @@ export async function promoteCreativeCandidate({
     styles: await fs.readFile(path.join(source, "styles.css"), "utf8"),
     motion: await fs.readFile(path.join(source, "motion.js"), "utf8"),
   };
-  validateAuthoredFiles(candidateManifest.candidateId, files, candidateManifest, { preview });
+  const contentManifest = providedContentManifest || await fs
+    .readFile(path.join(source, "content-manifest.json"), "utf8")
+    .then(JSON.parse)
+    .catch(() => null);
+  const validatedFiles = validateAuthoredFiles(
+    candidateManifest.candidateId,
+    files,
+    candidateManifest,
+    contentManifest,
+    { preview },
+  );
 
   const selected = path.resolve(root, "src/generated-experiences/selected");
   await fs.mkdir(selected, { recursive: true });
   if (preserveSelectedManifest)
     await fs.access(path.join(selected, "manifest.json"));
   await Promise.all([
-    fs.writeFile(path.join(selected, "Experience.jsx"), files.experience),
-    fs.copyFile(path.join(source, "styles.css"), path.join(selected, "styles.css")),
+    fs.writeFile(path.join(selected, "Experience.jsx"), validatedFiles.experience),
+    fs.writeFile(path.join(selected, "styles.css"), validatedFiles.styles),
     fs.copyFile(path.join(source, "motion.js"), path.join(selected, "motion.js")),
   ]);
   if (!preserveSelectedManifest)

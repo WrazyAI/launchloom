@@ -19,9 +19,6 @@
     "provenanceEvidencePaths": [
       "rights/business-verification.md",
       "rights/capture-record.md"
-    ],
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
     ]
   },
   "tags": {
@@ -63,7 +60,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "d4935fc3b202d4f0bc2a4fb896a3e0ef522e966f22233918b5c376c5a8063d60"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -71,7 +69,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "b02654e365ba8327271c963831f1e9434474ddabb69097e82831f3a067e4f136"
     }
   },
   "referenceDna": {
@@ -167,7 +166,17 @@
       "Opening has a working primary action and a useful secondary route.",
       "At 390 px, all sections and controls fit without horizontal overflow.",
       "No source brand, photograph, review, staff identity or unsupported claim is reused."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

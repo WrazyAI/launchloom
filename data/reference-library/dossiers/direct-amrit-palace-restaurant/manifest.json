@@ -10,11 +10,10 @@
     "rights": "permission-cleared",
     "rightsEvidence": "The requester attested that internal full-page desktop/mobile capture and derived design-prompt retention are cleared, and later explicitly confirmed that these screenshots may be sent to the LaunchLoom pipeline model as visual references. No restaurant-owner grant or written license was uploaded. See the requester-attestation and provenance files.",
     "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md",
-    "assetEvidencePaths": [
-      "rights/REQUESTER-ATTESTATION.md"
-    ],
     "provenanceEvidencePaths": [
-      "rights/PROVENANCE.md"
+      "rights/PROVENANCE.md",
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -96,7 +95,8 @@
       "viewport": {
         "width": 1536,
         "height": 864
-      }
+      },
+      "sha256": "13a319bbdae9b0305b9d9dfdaa2bd4a7a0e1299ed40288d6ca2149a86b88b3f4"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -104,7 +104,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "b42297d59b2e4daf798bcbb718acc8ba8479ed7b598a8c4ca3b1e462d95666cd"
     }
   },
   "referenceDna": {
@@ -216,7 +217,17 @@
       "photos are client-provided or separately rights-cleared and are not represented as client premises or dishes",
       "mobile menu rows, service images, contact information, and booking routes remain readable with no horizontal overflow",
       "review claims and rating details are used only when their source and current value are verified"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "requester-attested-visual-reference",

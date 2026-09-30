@@ -5,6 +5,8 @@ import path from "node:path";
 import {
   countRecentCreativeFamilyUses,
   launchRecordFrom,
+  launchesForBusinessKind,
+  launchesForSiteConfig,
   readLaunchHistory,
   recentCreativeFamilyIds,
   recentLayoutFingerprints,
@@ -53,7 +55,12 @@ async function temporaryHistory() {
 describe("launch history", () => {
   it("returns empty defaults for a missing history file", async () => {
     const history = await readLaunchHistory(await temporaryHistory());
-    expect(history).toEqual({ version: 1, updatedAt: null, launches: [] });
+    expect(history).toEqual({
+      version: 2,
+      updatedAt: null,
+      launches: [],
+      launchesByBusinessKind: {},
+    });
   });
 
   it("builds a launch record from the client config and inspiration pack", () => {
@@ -80,6 +87,116 @@ describe("launch history", () => {
       "text-led-editorial",
     ]);
     expect(record.routeSignatures).toEqual(["signature-a", "signature-b"]);
+  });
+
+  it("canonicalizes and retrieves history through equivalent niche aliases", async () => {
+    const historyPath = await temporaryHistory();
+    const record = launchRecordFrom({
+      config: {
+        business: { name: "North Loop Garage" },
+        businessKind: "mechanic",
+        design: {
+          recipe: "local-trades",
+          experience: { packId: "repair-editorial", fingerprint: "repair-v1" },
+        },
+      },
+      inspiration,
+      launchedAt: "2026-09-30T10:00:00.000Z",
+    });
+
+    expect(record.businessKind).toBe("auto-repair");
+    const history = await recordLaunch(record, historyPath);
+    expect(launchesForBusinessKind(history, "mechanic")).toEqual([
+      expect.objectContaining({ id: record.id, businessKind: "auto-repair" }),
+    ]);
+    expect(launchesForBusinessKind(history, "auto-repair")).toEqual(
+      launchesForBusinessKind(history, "mechanic"),
+    );
+  });
+
+  it("reads legacy alias keys from a raw version-two history object", () => {
+    const history = {
+      version: 2,
+      launches: [],
+      launchesByBusinessKind: {
+        mechanic: [
+          { id: "mechanic-run", businessKind: "mechanic", referenceIds: ["repair-a"] },
+        ],
+      },
+    };
+
+    expect(launchesForBusinessKind(history, "auto-repair")).toEqual([
+      expect.objectContaining({
+        id: "mechanic-run",
+        businessKind: "auto-repair",
+      }),
+    ]);
+  });
+
+  it("keeps bounded rotation history separate by business niche", async () => {
+    const historyPath = await temporaryHistory();
+    const veterinary = launchRecordFrom({
+      config: {
+        business: { name: "Northside Veterinary" },
+        businessKind: "veterinary",
+        design: { recipe: "care-editorial", experience: {} },
+      },
+      inspiration: { routes: [{ referenceIds: ["vet-a", "vet-b", "vet-c"] }] },
+      stage: "attempt",
+      recordKey: "vet-1",
+      launchedAt: "2026-09-01T00:00:00.000Z",
+    });
+    await recordLaunch(veterinary, historyPath);
+
+    for (let index = 0; index < 53; index += 1) {
+      const hvac = launchRecordFrom({
+        config: {
+          business: { name: `HVAC ${index}` },
+          businessKind: "hvac",
+          design: { recipe: "local-trades", experience: {} },
+        },
+        inspiration: { routes: [{ referenceIds: [`hvac-${index}`] }] },
+        stage: "attempt",
+        recordKey: `hvac-${index}`,
+        launchedAt: `2026-09-${String(2 + Math.floor(index / 24)).padStart(2, "0")}T${String(index % 24).padStart(2, "0")}:00:00.000Z`,
+      });
+      await recordLaunch(hvac, historyPath);
+    }
+
+    const history = await readLaunchHistory(historyPath);
+    expect(launchesForBusinessKind(history, "hvac", 50)).toHaveLength(50);
+    expect(launchesForBusinessKind(history, "veterinary")).toEqual([
+      expect.objectContaining({ id: veterinary.id }),
+    ]);
+    const serializedConfig = JSON.stringify({ businessKind: "hvac" });
+    expect(launchesForSiteConfig(history, serializedConfig, 2)).toEqual(
+      launchesForBusinessKind(history, "hvac", 2),
+    );
+  });
+
+  it("migrates v1 launch rows into alias-aware niche history", async () => {
+    const historyPath = await temporaryHistory();
+    await fs.writeFile(
+      historyPath,
+      JSON.stringify({
+        version: 1,
+        updatedAt: "2026-09-30T00:00:00.000Z",
+        launches: [
+          { id: "mechanic-1", businessKind: "mechanic" },
+          { id: "repair-2", businessKind: "auto-repair" },
+          { id: "hvac-1", businessKind: "hvac" },
+        ],
+      }),
+    );
+    const history = await readLaunchHistory(historyPath);
+
+    expect(launchesForBusinessKind(history, "auto-repair")).toEqual([
+      expect.objectContaining({ id: "mechanic-1", businessKind: "auto-repair" }),
+      expect.objectContaining({ id: "repair-2", businessKind: "auto-repair" }),
+    ]);
+    expect(launchesForBusinessKind(history, "hvac")).toEqual([
+      expect.objectContaining({ id: "hvac-1" }),
+    ]);
   });
 
   it("requires a pack id and layout fingerprint", () => {
@@ -135,14 +252,57 @@ describe("launch history", () => {
     expect(record.layoutFingerprint).toBe("");
   });
 
+  it("replaces the matching reservation with its successful preview history row", async () => {
+    const historyPath = await temporaryHistory();
+    const reservationKey = "intake-42-run-123-attempt-1";
+    const attempt = launchRecordFrom({
+      config: {
+        business: { name: "Northside Care" },
+        businessKind: "home-care",
+        design: { recipe: "care-editorial", experience: {} },
+      },
+      inspiration,
+      launchedAt: "2026-09-30T08:00:00.000Z",
+      stage: "attempt",
+      recordKey: reservationKey,
+    });
+    await recordLaunch(attempt, historyPath);
+
+    const preview = launchRecordFrom({
+      config: {
+        ...config,
+        businessKind: "home-care",
+        business: { name: "Northside Care" },
+      },
+      inspiration,
+      launchedAt: "2026-09-30T08:15:00.000Z",
+      stage: "preview",
+      recordKey: reservationKey,
+    });
+    const updated = await recordLaunch(preview, historyPath);
+
+    expect(updated.launches).toHaveLength(1);
+    expect(updated.launches[0]).toMatchObject({
+      id: preview.id,
+      stage: "preview",
+      reservationKey,
+    });
+  });
+
   it("persists the selected dossier IDs and business kind for later selection", () => {
     const record = launchRecordFrom({
-      config: { business: { name: "Northside Care" }, businessKind: "home-care", design: {} },
-      inspiration: { routes: [
-        { referenceDossier: { id: "care-a" } },
-        { referenceDossier: { id: "care-b" } },
-        { referenceDossier: { id: "care-c" } },
-      ] },
+      config: {
+        business: { name: "Northside Care" },
+        businessKind: "home-care",
+        design: {},
+      },
+      inspiration: {
+        routes: [
+          { referenceDossier: { id: "care-a" } },
+          { referenceDossier: { id: "care-b" } },
+          { referenceDossier: { id: "care-c" } },
+        ],
+      },
       stage: "attempt",
       recordKey: "123",
       launchedAt: "2026-09-28T00:00:00.000Z",
@@ -207,7 +367,8 @@ describe("launch history", () => {
             experience: {
               ...config.design.experience,
               variantId: "standard",
-              fingerprint: "bold-utility|standard|utility-pill|editorial-dialogue",
+              fingerprint:
+                "bold-utility|standard|utility-pill|editorial-dialogue",
             },
           },
         },

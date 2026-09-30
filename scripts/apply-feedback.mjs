@@ -12,6 +12,7 @@ import {
   planRevision,
   removeEmDashes,
 } from "./revision-engine.mjs";
+import { createCreativeRepairScopeDeclaration } from "./creative-revision-scope.mjs";
 
 const DEFAULT_ASSET_BASE_URL = "https://assets.launchloom.wrazyos.com";
 
@@ -105,6 +106,15 @@ const clientFeedbackContext = nextClientFeedbackContext(
 );
 const creativeRenderer =
   revised.design?.experience?.renderer === "creative-candidate";
+const {
+  required: creativeSourceRepairRequired,
+  declaration: creativeRepairScope,
+  feedbackText: revisionFeedbackText,
+} = createCreativeRepairScopeDeclaration({
+  creativeRenderer: stage !== "client" && creativeRenderer,
+  feedback: summaries,
+  results: planned.results,
+});
 const creativeIgnoredArtifactTypes = new Set([
   "section",
   "section-type",
@@ -121,15 +131,8 @@ revised.revisionReport = {
   clientFeedbackContext,
   operations: planned.operations,
   results: planned.results,
-  creativeSourceRepairRequired:
-    stage !== "client" && creativeRenderer &&
-    planned.results.some(
-      (result) =>
-        result.status === "creative" ||
-        result.intents?.some((intent) =>
-          ["layout", "color", "social-proof", "brand-name"].includes(intent),
-        ),
-    ),
+  creativeSourceRepairRequired,
+  creativeRepairScope,
   creativeSourceRepairVerified: null,
   expectedArtifacts: expectedArtifacts(planned.operations, revised).filter(
     (artifact) =>
@@ -144,7 +147,7 @@ revised.revisionReport = {
 if (process.env.FEEDBACK_SUMMARY_PATH)
   await fs.writeFile(
     process.env.FEEDBACK_SUMMARY_PATH,
-    summaries.join("\n\n").slice(0, 12_000),
+    revisionFeedbackText,
     "utf8",
   );
 if (process.env.FEEDBACK_OUTCOME_PATH)

@@ -14,7 +14,9 @@
       "rights/ASSET-PROVENANCE.md"
     ],
     "provenanceEvidencePaths": [
-      "rights/SOURCE-README.md"
+      "rights/SOURCE-README.md",
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -82,7 +84,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "778c3e81ff81183b3d3d26ea17fcc7f5d59deb87335b6e3f844a9776135b1753"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -90,7 +93,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "99d826714e4daa558b63cd18c3a01357acae45d273e02aea487a5a0f5bcfd860"
     }
   },
   "referenceDna": {
@@ -205,7 +209,17 @@
       "reveal elements remain visible if animation JavaScript is unavailable",
       "fonts use explicit font-family rules and have a readable fallback",
       "CC BY footer attribution remains linked in any adapted template"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "cc-by-production-reference-with-static-html-caveat",

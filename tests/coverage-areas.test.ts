@@ -1,7 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { discoverCoverageAreas } from "../scripts/coverage-areas.mjs";
+import {
+  discoverCoverageAreas,
+  primaryCityFromIntake,
+} from "../scripts/coverage-areas.mjs";
 
 describe("service coverage area discovery", () => {
+  it("uses the first semicolon-delimited service area as the primary geocoding city", () => {
+    expect(
+      primaryCityFromIntake({
+        serviceAreas:
+          "Portland, OR; Beaverton, OR; Lake Oswego, OR",
+      }),
+    ).toBe("Portland, OR");
+  });
+
+  it("retains only confirmed coverage when the submitted radius is unsupported", async () => {
+    let geocodingCalled = false;
+    const result = await discoverCoverageAreas({
+      primaryCity: "Portland, OR",
+      serviceRadius: "25",
+      geocodeCity: async () => {
+        geocodingCalled = true;
+        return { latitude: 45.5152, longitude: -122.6784 };
+      },
+      reverseGeocode: async () => [],
+    });
+
+    expect(geocodingCalled).toBe(false);
+    expect(result.primaryCity).toBe("Portland, OR");
+    expect(result.serviceRadiusMiles).toBeNull();
+    expect(result.coverageAreas).toEqual(["Portland, OR"]);
+    expect(result.warnings).toContain(
+      "A supported travel radius was not available; only the confirmed primary city is retained.",
+    );
+  });
+
   it("keeps only unique named communities whose returned center is within the confirmed radius", async () => {
     let call = 0;
     const result = await discoverCoverageAreas({

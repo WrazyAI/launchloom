@@ -1,14 +1,145 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
 import {
   argumentValue,
   evaluateDraft,
+  generateSiteConfigWithModel,
   normalise,
   prepareGenerationIntake,
 } from "../scripts/generate-site-config.mjs";
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+
+function repairOutcomeCandidate(heroHeading: string) {
+  return {
+    preset: "home-services",
+    business: {
+      name: "Riverview Mobile Auto Care",
+      tagline: "The shop comes to your driveway",
+      description:
+        "Appointment-based mobile vehicle care in Portland. Each visit starts with a documented inspection before recommendations.",
+    },
+    services: [
+      {
+        name: "Mobile vehicle diagnostics",
+        description:
+          "We scan warning lights and explain what the findings can and cannot tell you.",
+      },
+      {
+        name: "Brake inspection and repair",
+        description:
+          "We check brake wear and share a written estimate before any agreed work.",
+      },
+    ],
+    differentiators: [
+      "A documented inspection precedes recommendations.",
+      "An itemized estimate is shared before work begins.",
+    ],
+    copy: {
+      heroKicker: "Mobile auto care in Portland, OR",
+      heroHeading,
+      heroBody:
+        "Book mobile auto care for your vehicle and review inspection notes before any work is considered.",
+      servicesHeading: "Vehicle care, explained",
+      servicesIntro:
+        "Choose a confirmed service and review what it includes before booking.",
+      aboutHeading: "Clear steps before any work",
+      aboutBody:
+        "Appointment-based mobile service brings vehicle inspections to Portland drivers.",
+      contactHeading: "Request a service appointment",
+      formIntro:
+        "Share your vehicle and preferred appointment details so the team can confirm the next step.",
+    },
+    conversion: {
+      process: [
+        "Share the vehicle details and concern.",
+        "The team confirms whether the service and location are a fit.",
+        "Review findings and the estimate before approving work.",
+      ],
+      faqs: [
+        {
+          question: "What happens during the first appointment?",
+          answer:
+            "The visit begins with a documented inspection and a discussion of the next step before work is considered.",
+        },
+        {
+          question: "When do I approve repairs?",
+          answer:
+            "An itemized estimate is presented before work begins so you can review the scope and decide.",
+        },
+      ],
+    },
+  };
+}
+
+function stubCopyModelResponses(
+  candidates: ReturnType<typeof repairOutcomeCandidate>[],
+) {
+  vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+  const remaining = [...candidates];
+  const fetchMock = vi.fn(async (_input?: RequestInfo | URL, _init?: RequestInit) => {
+    const content = remaining.shift();
+    return new Response(
+      JSON.stringify({
+        choices: [{ message: { content: JSON.stringify(content) } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
 describe("site configuration", () => {
+  it("marks only explicitly synthetic demo intakes with the fixed public notice", () => {
+    const demo = normalise({}, {
+      submissionId: "demo-coastal-20260923",
+      confirmAccuracy: "synthetic demo brief; not a real client attestation",
+      additionalNotes: "FICTIONAL DEMO ONLY. Never publish this as a real client site.",
+      businessName: "Coastal Brush Painting Co.",
+      industry: "painting",
+      services: "Interior painting\nCabinet refinishing",
+      serviceAreas: "Charleston, South Carolina",
+    });
+
+    expect(demo.demoNotice).toBe("Fictional pipeline demo");
+
+    const client = normalise({}, {
+      submissionId: "submission-real-painting-2026",
+      confirmAccuracy: "yes",
+      additionalNotes: "We use demo rooms to show our color process.",
+      businessName: "Harbor Paint Studio",
+      industry: "painting",
+      services: "Interior painting",
+      serviceAreas: "Charleston, South Carolina",
+    });
+
+    expect(client).not.toHaveProperty("demoNotice");
+  });
+
+  it("resolves explicit automotive repair facts while leaving vehicle sales unsupported", () => {
+    const repair = normalise({}, {
+      businessName: "Precision Auto Care",
+      industry: "automotive",
+      services: "Digital vehicle inspections\nBrake service\nRoutine automotive maintenance",
+    });
+    expect(repair.industry).toBe("home-services");
+    expect(repair.businessKind).toBe("auto-repair");
+
+    const dealership = normalise({}, {
+      businessName: "Metro Auto Center",
+      industry: "automotive",
+      services: "New vehicle sales\nUsed vehicle sales",
+    });
+    expect(dealership.industry).toBe("other");
+    expect(dealership.businessKind).toBe("automotive");
+  });
+
   it("keeps an explicit HVAC niche ahead of incidental care wording in intake notes", () => {
     const config = normalise(
       {},
@@ -42,6 +173,8 @@ describe("site configuration", () => {
     ["hvac", "home-services", "hvac"],
     ["roofing", "home-services", "roofing"],
     ["painting", "home-services", "painting"],
+    ["real-estate", "real-estate", "real-estate"],
+    ["veterinary", "wellness", "veterinary"],
   ])(
     "maps the %s intake niche to the %s site recipe and %s reference niche",
     (selectedIndustry, expectedIndustry, expectedBusinessKind) => {
@@ -74,6 +207,36 @@ describe("site configuration", () => {
     expect(config.industry).toBe("home-services");
     expect(config.businessKind).toBe("hvac");
   });
+
+  it("routes painting services from broad home-services intake to painting references", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Coastal Brush Painting Co.",
+        industry: "home-services",
+        services: "Interior painting\nCabinet refinishing\nExterior painting and trim",
+      },
+    );
+    const registry = JSON.parse(
+      readFileSync(
+        new URL("../data/inspiration-registry.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    const pack = buildInspirationPack(
+      { seed: "coastal-brush-painting-regression", industry: config.businessKind, styleTerms: [] },
+      registry,
+      { repositoryRoot: process.cwd(), requireDossiers: true },
+    );
+
+    expect(config.industry).toBe("home-services");
+    expect(config.businessKind).toBe("painting");
+    expect(pack.request.industry).toBe("painting");
+    expect(pack.routes).toHaveLength(3);
+    expect(
+      pack.routes.every((route: any) => route.referenceDossier.tags.business.includes("painting")),
+    ).toBe(true);
+  }, 15_000);
 
   it("selects only HVAC reference dossiers after generating an HVAC config", () => {
     const config = normalise(
@@ -219,6 +382,32 @@ describe("site configuration", () => {
     expect(config.copy.aboutBody).not.toMatch(/\p{Script=Han}/u);
     expect(config.copy.aboutBody).toContain("goal, constraints, and questions");
   });
+
+  it("keeps generic pet-care intake out of the veterinary reference niche", () => {
+    const config = normalise({}, {
+      businessName: "Moss and Mane Pet Care",
+      industry: "pet-care",
+      services: "Dog grooming\nCat boarding\nPet sitting",
+      serviceAreas: "Portland, Oregon",
+    });
+
+    expect(config.industry).toBe("other");
+    expect(config.businessKind).toBe("pet-care");
+  });
+
+  it.each(["design-studio", "auto-dealership", "event-venue"])(
+    "preserves unsupported business kind %s so reference selection can fail with the correct gap",
+    (industry) => {
+      const config = normalise({}, {
+        businessName: "Independent Studio",
+        industry,
+        services: "Consultation and project planning",
+      });
+
+      expect(config.industry).toBe("other");
+      expect(config.businessKind).toBe(industry);
+    },
+  );
 
   it("does not classify a barber as a pet business because of grooming language", () => {
     const config = normalise({}, {
@@ -1027,6 +1216,151 @@ describe("site configuration", () => {
         expect.stringMatching(/visitor journey/i),
       ]),
     );
+  });
+
+  it("blocks repair-outcome copy when the client explicitly prohibited those claims", () => {
+    const intake = {
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      differentiators:
+        "Documented inspection before recommendations. Itemized estimate before work.",
+      brandNotes:
+        "Do not claim emergency availability, warranties, prices, or repair outcomes.",
+    };
+    const prohibited = normalise({}, intake);
+    prohibited.copy.heroHeading = "Your Car Gets Fixed Where It Sits";
+    expect(evaluateDraft(prohibited).issues).toContain(
+      "Generated copy includes a repair outcome prohibited by the client art direction.",
+    );
+
+    const cautious = normalise({}, intake);
+    cautious.copy.heroHeading = "Mobile auto care for Portland drivers";
+    expect(evaluateDraft(cautious).issues).not.toContain(
+      "Generated copy includes a repair outcome prohibited by the client art direction.",
+    );
+
+    for (const statement of [
+      "We do not claim your vehicle will be repaired at home.",
+      "We cannot promise your car will be fixed at home.",
+      "We never claim your vehicle gets fixed during the visit.",
+      "No one can guarantee your car will be restored.",
+      "We don't claim our team will repair every issue.",
+      "We won't claim your vehicle will be resolved in one visit.",
+    ]) {
+      const negated = normalise(
+        { copy: { heroBody: statement } },
+        intake,
+      );
+      expect(evaluateDraft(negated).issues).not.toContain(
+        "Generated copy includes a repair outcome prohibited by the client art direction.",
+      );
+    }
+
+    const positiveAfterNegation = normalise(
+      {
+        copy: {
+          heroBody:
+            "We do not guarantee prices; our team will fix every vehicle today.",
+        },
+      },
+      intake,
+    );
+    expect(evaluateDraft(positiveAfterNegation).issues).toContain(
+      "Generated copy includes a repair outcome prohibited by the client art direction.",
+    );
+
+    const unrelatedNegation = normalise(
+      {
+        copy: {
+          heroBody:
+            "Our call-out fee is not guaranteed and our team will repair every issue today.",
+        },
+      },
+      intake,
+    );
+    expect(evaluateDraft(unrelatedNegation).issues).toContain(
+      "Generated copy includes a repair outcome prohibited by the client art direction.",
+    );
+  });
+
+  it("selects a safe refined draft over the original prohibited claim", async () => {
+    const fetchMock = stubCopyModelResponses([
+      repairOutcomeCandidate("Your Car Gets Fixed Where It Sits"),
+      repairOutcomeCandidate("Mobile auto care for Portland drivers"),
+    ]);
+    const config = await generateSiteConfigWithModel({
+      businessName: "Riverview Mobile Auto Care",
+      industry: "auto-repair",
+      services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+      serviceAreas: "Portland, OR",
+      phone: "(503) 555-0146",
+      differentiators:
+        "Documented inspection before recommendations.\nItemized estimate before work.",
+      brandNotes:
+        "Do not claim emergency availability, warranties, prices, or repair outcomes.",
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(config.copy.heroHeading).toBe("Mobile auto care for Portland drivers");
+    const requestBodies = fetchMock.mock.calls.map(([, init]) =>
+      JSON.parse(String(init?.body || "{}")),
+    );
+    expect(requestBodies.map((body) => body.max_completion_tokens)).toEqual([
+      8192, 4096,
+    ]);
+    expect(config.qualityReport.issues).not.toContain(
+      "Generated copy includes a repair outcome prohibited by the client art direction.",
+    );
+  });
+
+  it("fails closed if copy refinement keeps an explicitly prohibited repair outcome", async () => {
+    const prohibited = repairOutcomeCandidate("Your Car Gets Fixed Where It Sits");
+    const fetchMock = stubCopyModelResponses([prohibited, prohibited]);
+
+    await expect(
+      generateSiteConfigWithModel({
+        businessName: "Riverview Mobile Auto Care",
+        industry: "auto-repair",
+        services: "Mobile vehicle diagnostics\nBrake inspection and repair",
+        serviceAreas: "Portland, OR",
+        phone: "(503) 555-0146",
+        differentiators:
+          "Documented inspection before recommendations.\nItemized estimate before work.",
+        brandNotes:
+          "Do not claim emergency availability, warranties, prices, or repair outcomes.",
+      }),
+    ).rejects.toThrow(/explicit repair-outcome prohibition/i);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry an OpenRouter credit failure at a higher reasoning effort", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    const fetchMock = vi.fn(
+      async (_input?: RequestInfo | URL, _init?: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "This request requires more credits, or fewer max_tokens.",
+              code: 402,
+              metadata: { limit_source: "openrouter_credits" },
+            },
+          }),
+          { status: 402, headers: { "content-type": "application/json" } },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      generateSiteConfigWithModel({
+        businessName: "Fieldnotes Veterinary Studio",
+        industry: "veterinary",
+        services: "Wellness examinations\nDiagnostic consultations",
+      }),
+    ).rejects.toThrow(/OpenRouter returned 402/);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("matches generated service copy by service identity instead of array position", () => {

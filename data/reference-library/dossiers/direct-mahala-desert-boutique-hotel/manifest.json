@@ -10,11 +10,10 @@
     "rights": "permission-cleared",
     "rightsEvidence": "The requester attested that internal full-page desktop/mobile capture and derived design-prompt retention are cleared, and later explicitly confirmed that these screenshots may be sent to the LaunchLoom pipeline model as visual references. No hotel-owner grant or written license was uploaded. See the requester-attestation and provenance files.",
     "rightsEvidencePath": "rights/REQUESTER-ATTESTATION.md",
-    "assetEvidencePaths": [
-      "rights/REQUESTER-ATTESTATION.md"
-    ],
     "provenanceEvidencePaths": [
-      "rights/PROVENANCE.md"
+      "rights/PROVENANCE.md",
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -97,7 +96,8 @@
       "viewport": {
         "width": 1536,
         "height": 864
-      }
+      },
+      "sha256": "508ea903274cdd79717f3338e4cb0659a3b8214913da8e4bb7cc7ce058a8433c"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -105,7 +105,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "1c3aec7b242b7f654373e49c1ca96a9be95517b66df962c249e0603b23836ce4"
     }
   },
   "referenceDna": {
@@ -217,7 +218,20 @@
       "video has poster and reduced-motion/data-saving fallbacks and is never required to understand the offer",
       "room names, amenities, prices, availability, contact details, and booking behavior bind only to verified content",
       "source photographs, videos, logo, illustration, and merchandise assets are not copied into deployed client output"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "modular-image-field",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "coordinated-image-windows",
+      "basis": "curated-screenshots",
+      "confidence": "medium",
+      "secondaryPatterns": [
+        "hybrid-hero-needs-human-review"
+      ],
+      "note": "Screenshot shows overlapping layout mechanics; preserve the hybrid treatment rather than flattening it to this primary topology.",
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "requester-attested-visual-reference",

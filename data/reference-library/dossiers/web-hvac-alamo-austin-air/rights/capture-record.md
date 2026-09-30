@@ -8,3 +8,10 @@
 - Method: navigate to the first-party homepage, wait for the document, scroll down in about 80 percent viewport increments to trigger lazy sections, wait for content, return to the top, and capture the full vertical page. Chromium CDP beyond-viewport clipping preserved the exact viewport width when page overflow affected a normal full-page screenshot.
 
 Only these two PNG captures were retained as source visual evidence. No site source code, font file, separate image, logo or media asset was downloaded into this dossier. The source's visible marks and claims are not client assets. Rights status is based on the separate requester attestation, not a source-owner document.
+
+## Screenshot checksums (SHA-256, verified 2026-09-29 UTC)
+
+| File | SHA-256 |
+|---|---|
+| `screenshots/desktop.png` | `8cb0b4237f75e98bc456b12c71c6f443f66463e88f6b864ebcec4c1fa8f2e7b6` |
+| `screenshots/mobile.png` | `68181819f917957f6bb6e5db03043adc4afa99f8a5480e09a5493a26719b8826` |

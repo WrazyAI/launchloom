@@ -24,6 +24,29 @@ describe("reference fidelity validator", () => {
     expect(report.hardFindings).toContainEqual(expect.objectContaining({ code: "css-token-collision" }));
   });
 
+  it("does not mistake CSS feature queries for unisolated custom-property declarations", () => {
+    const report = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: `${validStyles} @supports (--primary: #fff) { .hero { color: var(--primary); } }`,
+      motionSource: validMotion,
+    });
+
+    expect(report.pass).toBe(true);
+    expect(report.hardFindings).not.toContainEqual(
+      expect.objectContaining({ code: "css-token-collision" }),
+    );
+    const unisolatedRegisteredProperty = validateReferenceCandidate({
+      referenceDna: dna,
+      experienceSource: validExperience,
+      stylesSource: `${validStyles} @property --primary { syntax: "<color>"; inherits: false; initial-value: #fff; }`,
+      motionSource: validMotion,
+    });
+    expect(unisolatedRegisteredProperty.hardFindings).toContainEqual(
+      expect.objectContaining({ code: "css-token-collision" }),
+    );
+  });
+
   it("ignores prohibited words outside relevant attribute values", () => {
     const report = validateReferenceCandidate({
       referenceDna: { ...dna, prohibitedPatterns: [...dna.prohibitedPatterns, "cards", "grid"] },

@@ -8,6 +8,7 @@ import {
   createDataForSeoClient,
   createOpenRouterWebSearchClient,
   normaliseSeoIntake,
+  renderSeoMapMarkdown,
   researchSiteContext,
 } from "../scripts/seo-research.mjs";
 
@@ -74,6 +75,51 @@ describe("SEO market map", () => {
       metricLocation: "Tacoma,Washington,United States",
       labsLocation: "United States",
     });
+  });
+
+  it("preserves an explicit niche separately from a broad industry label", () => {
+    expect(normaliseSeoIntake({
+      businessKind: "veterinary",
+      industry: "wellness",
+      services: ["Preventive wellness visits"],
+    })).toMatchObject({
+      businessKind: "veterinary",
+      industry: "wellness",
+    });
+    expect(normaliseSeoIntake({ industry: "veterinary" }).businessKind).toBe("veterinary");
+    expect(normaliseSeoIntake({ industry: "wellness" }).businessKind).toBe("");
+  });
+
+  it("uses the first semicolon-delimited city for SEO and preserves all submitted areas", async () => {
+    const legacyIntake = {
+      intakeVersion: "1",
+      businessName: "Rivet and Road Mobile Auto Repair",
+      industry: "auto-repair",
+      services: "Brake repair",
+      serviceAreas: "Portland, OR; Beaverton, OR; Gresham, OR",
+      coverageAreas: ["Portland, OR", "Tigard, OR"],
+      serviceRadius: "30",
+    };
+
+    expect(normaliseSeoIntake(legacyIntake)).toMatchObject({
+      primaryCity: "Portland, OR",
+      coverageAreas: [
+        "Portland, OR",
+        "Beaverton, OR",
+        "Gresham, OR",
+        "Tigard, OR",
+      ],
+    });
+
+    const dossier = await researchSiteContext(legacyIntake);
+    expect(dossier.seedQueries).toContain("Brake repair Portland OR");
+    expect(dossier.marketSnapshot.primaryCity).toBe("Portland, OR");
+    expect(dossier.marketSnapshot.coverageAreas).toEqual([
+      "Portland, OR",
+      "Beaverton, OR",
+      "Gresham, OR",
+      "Tigard, OR",
+    ]);
   });
 
   it("preserves atomic service entries and applies the shared five-service limit", async () => {
@@ -145,6 +191,22 @@ describe("SEO market map", () => {
       { service: "Heating, ventilation and AC", complete: true, primaryKeyword: expect.any(String) },
     ]);
     expect(primary).toMatchObject({ volume: 90, kd: 41, cpc: 4.1, competition: 0.7, intent: "commercial" });
+  });
+
+  it("marks fallback search not-needed after successful measured research", async () => {
+    const webSearch = { search: vi.fn() };
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: researchProvider(),
+      webSearch,
+      maxTasks: 32,
+      maxUsd: 2,
+    });
+
+    expect(webSearch.search).not.toHaveBeenCalled();
+    expect(dossier.fallbackSearch.status).toBe("not-needed");
+    expect(renderSeoMapMarkdown(dossier)).toContain(
+      "Fallback web search: not needed (no provider stage failed).",
+    );
   });
 
   it("runs without optional Markdown map and enrichment CLI arguments", async () => {
@@ -407,6 +469,112 @@ describe("SEO market map", () => {
     expect(dossier.warnings.join(" ")).toContain("external observations only");
   });
 
+  it("qualifies fallback service searches with an explicit niche, not a broad industry guess", async () => {
+    const webSearch = {
+      search: vi.fn(async ({ query }: { query: string }) => ({
+        results: [{
+          url: "https://example.test/service",
+          title: `Observed result for ${query}`,
+          snippet: "Observed public search evidence.",
+        }],
+        costUsd: 0.001,
+      })),
+    };
+    const veterinaryIntake = {
+      industry: "veterinary",
+      businessName: "Fieldnotes Veterinary Studio",
+      services: [
+        "Preventive wellness visits",
+        "Vaccination appointments",
+        "Diagnostic consultations",
+      ],
+      primaryCity: "Madison, WI",
+    };
+
+    const veterinary = await researchSiteContext(veterinaryIntake, {
+      webSearch,
+      maxFallbackSearchQueries: 3,
+      maxFallbackUsd: 0.05,
+    });
+
+    expect(webSearch.search.mock.calls.map(([request]) => request.query)).toEqual([
+      "veterinary preventive wellness visits Madison, WI",
+      "veterinary vaccination appointments Madison, WI",
+      "veterinary diagnostic consultations Madison, WI",
+    ]);
+    expect(veterinary.mode).toBe("context-only");
+    expect(veterinary.publishReady).toBe(false);
+    expect(veterinary.marketSnapshot.businessKind).toBe("veterinary");
+    expect(veterinary.validatedQueries.every((item) =>
+      item.volume === null && item.kd === null && item.cpc === null &&
+      item.competition === null && item.intent === null,
+    )).toBe(true);
+
+    const generalSearch = {
+      search: vi.fn(async ({ query }: { query: string }) => ({
+        results: [{ url: "https://example.test/general", title: query, snippet: "Observed." }],
+        costUsd: 0.001,
+      })),
+    };
+    await researchSiteContext({
+      ...veterinaryIntake,
+      industry: "wellness",
+    }, {
+      webSearch: generalSearch,
+      maxFallbackSearchQueries: 1,
+      maxFallbackUsd: 0.05,
+    });
+    expect(generalSearch.search.mock.calls[0]?.[0].query).toBe(
+      "Preventive wellness visits Madison, WI",
+    );
+    expect(generalSearch.search.mock.calls[0]?.[0].query).not.toContain("veterinary");
+  });
+
+  it("uses bounded web evidence after DataForSEO fails without treating it as measured SEO", async () => {
+    const provider = researchProvider();
+    provider.googleSearchVolume.mockRejectedValueOnce(
+      new Error("DataForSEO returned HTTP 402"),
+    );
+    const webSearch = {
+      search: vi.fn(async ({ query }: { query: string }) => ({
+        results: [{
+          url: "https://example.test/auto-repair",
+          title: `Observed result for ${query}`,
+          snippet: "A directly observed page about the requested service.",
+        }],
+        costUsd: 0.002,
+      })),
+    };
+
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      webSearch,
+      maxFallbackSearchQueries: 2,
+      maxFallbackUsd: 0.05,
+    });
+
+    expect(webSearch.search).toHaveBeenCalledTimes(2);
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.publishReady).toBe(false);
+    expect(dossier.cost.stageCosts[0]).toMatchObject({
+      stage: "local_search_volume",
+      status: "failed",
+    });
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "complete",
+      queriesAttempted: 2,
+      costUsd: 0.004,
+      maxUsd: 0.05,
+    });
+    expect(dossier.externalSearchEvidence).toHaveLength(2);
+    expect(dossier.validatedQueries.every((item) =>
+      item.volume === null && item.kd === null && item.cpc === null &&
+      item.competition === null && item.intent === null,
+    )).toBe(true);
+    expect(dossier.warnings.join(" ")).toContain("DataForSEO returned HTTP 402");
+    expect(dossier.warnings.join(" ")).toContain("external observations only");
+  });
+
   it("keeps an explicit degraded context-only result when no online search provider is configured", async () => {
     const dossier = await researchSiteContext(intake, { maxTasks: 16, maxUsd: 0.25 });
     expect(dossier.mode).toBe("context-only");
@@ -467,6 +635,16 @@ describe("SEO market map", () => {
     }]);
     expect(request.max_tool_calls).toBe(1);
     expect(request.tool_choice).toBe("required");
+    expect(request.messages[0].content).toContain(
+      "Include a direct citation for each observation",
+    );
+    expect(request.messages[0].content).toContain(
+      "Do not claim keyword volume, rankings, difficulty, or CPC",
+    );
+    expect(request.messages[0].content).not.toContain(
+      "only a terse acknowledgement",
+    );
+    expect(request.max_tokens).toBeGreaterThanOrEqual(256);
   });
 
   it("stops fallback research when the provider-reported spend bound is reached", async () => {

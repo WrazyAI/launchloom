@@ -27,7 +27,7 @@ for (const workflow of [
   "process-feedback.yml",
   "process-client-feedback.yml",
 ]) {
-  it(`${workflow} validates scope before each revision commit, push and Pages deploy`, async () => {
+  it(`${workflow} commits and pushes only after every revision quality gate passes`, async () => {
     const source = await fs.readFile(`.github/workflows/${workflow}`, "utf8");
     const preflight = source.indexOf("revision-scope.mjs preflight");
     const applyFeedback = source.indexOf("node scripts/apply-feedback.mjs");
@@ -36,19 +36,24 @@ for (const workflow of [
     const deployStep = source.indexOf("- name: Build and direct-upload");
     expect(deployStep).toBeGreaterThanOrEqual(0);
     const deploy = source.slice(deployStep);
-    const lines = deploy.split("\n");
-    for (const [index, line] of lines.entries()) {
-      if (/^\s+git commit -m /.test(line))
-        expect(lines.slice(Math.max(0, index - 3), index).join("\n")).toContain(
-          'revision-scope.mjs" validate',
-        );
-      if (/^\s+git push origin /.test(line))
-        expect(lines.slice(Math.max(0, index - 3), index).join("\n")).toContain(
-          'revision-scope.mjs" validate',
-        );
-      if (/^\s+npx wrangler pages deploy /.test(line))
-        expect(lines[index - 1]).toContain('revision-scope.mjs" validate');
-    }
+    const finalVisualGate = deploy.indexOf("--mode verify");
+    const emDashGate = deploy.indexOf('"—" dist');
+    const commit = deploy.indexOf("git commit -m");
+    const push = deploy.indexOf("git push origin");
+    const pagesDeploy = deploy.indexOf("npx wrangler pages deploy");
+    expect(finalVisualGate).toBeGreaterThanOrEqual(0);
+    expect(emDashGate).toBeGreaterThan(finalVisualGate);
+    expect(commit).toBeGreaterThan(emDashGate);
+    expect(push).toBeGreaterThan(commit);
+    expect(pagesDeploy).toBeGreaterThan(push);
+    expect(deploy.slice(commit, push)).toContain(
+      "LaunchLoom-Revision-Request: $REVISION_REQUEST_ID",
+    );
+    expect(deploy.slice(commit, push)).toContain("LaunchLoom-Revision-Scope:");
+    expect(source).toContain("revision-checkpoint.mjs");
+    expect(source).toMatch(
+      /steps\.(?:branch|revision)\.outputs\.replay == 'true'/u,
+    );
     expect(source).not.toMatch(/git add src public/);
     expect(source).not.toMatch(/--out \.launchloom\/human-revision/);
     expect(runScripts(source)).not.toMatch(

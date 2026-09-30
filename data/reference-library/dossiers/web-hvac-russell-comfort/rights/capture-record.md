@@ -8,3 +8,10 @@
 - Method: navigate to the first-party homepage, wait for the document, scroll down in about 80 percent viewport increments to trigger lazy sections, wait for content, return to the top, and capture the full vertical page. Playwright fullPage screenshot preserved the page from header to footer.
 
 Only these two PNG captures were retained as source visual evidence. No site source code, font file, separate image, logo or media asset was downloaded into this dossier. The source's visible marks and claims are not client assets. Rights status is based on the separate requester attestation, not a source-owner document.
+
+## Screenshot checksums (SHA-256, verified 2026-09-29 UTC)
+
+| File | SHA-256 |
+|---|---|
+| `screenshots/desktop.png` | `d03fc43d2b048502055b8532bca7b51f3db6c2a40fbb159f9727ded6edbcf924` |
+| `screenshots/mobile.png` | `7d27b3f0fb37b2274c46a074818e123056937e270c8ebdf017a34d2aa8ce2106` |

@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "id": "web-veterinary-perry-paws-mobile",
+  "productionEligible": true,
+  "referenceName": "Independent mobile veterinarian with service rows and at-home visit emphasis",
+  "familyId": "veterinary-mobile-house-call",
+  "businessKinds": [
+    "mobile veterinarian",
+    "house-call veterinary service",
+    "in-home pet care",
+    "independent veterinary practice",
+    "veterinary"
+  ],
+  "source": {
+    "name": "Perry Paws Mobile official website",
+    "url": "https://www.perrypawsmobile.com/",
+    "sourceType": "official direct veterinary-business website, captured in Playwright Chromium",
+    "rights": "permission-cleared",
+    "rightsEvidence": "Requester-attested clearance on 2026-09-29 covers retaining the paired desktop/mobile full-page captures, deriving a design prompt, and using these captures as internal pipeline-model visual references. No source-owner grant was supplied.",
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
+  },
+  "tags": {
+    "business": [
+      "mobile veterinarian",
+      "house-call vet",
+      "in-home veterinary care",
+      "pet behavior support",
+      "veterinary"
+    ],
+    "style": [
+      "independent practice",
+      "warm neutral minimalism",
+      "soft rounded photography",
+      "humanist sans"
+    ],
+    "composition": [
+      "promise-before-photo hero",
+      "separate reassurance band",
+      "service rows",
+      "testimonial field",
+      "paired pet portrait close"
+    ],
+    "conversion": [
+      "request an at-home visit",
+      "confirm service area",
+      "explore services",
+      "pricing information"
+    ],
+    "motion": [
+      "static-first editorial layout",
+      "simple navigation disclosure",
+      "reduced-motion complete"
+    ],
+    "imagery": [
+      "in-home pet visit",
+      "pet portraits",
+      "calm domestic photography",
+      "reference evidence only"
+    ]
+  },
+  "evidence": {
+    "desktop": {
+      "path": "screenshots/desktop.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "sha256": "0ccd5a10f62aea50b5c78d6106c0be7e64984e923f07b4ad75fd38cff7204a0a"
+    },
+    "mobile": {
+      "path": "screenshots/mobile.png",
+      "capture": "full-page",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "sha256": "2d560a289e10dc53637724239dc49e06b0ac31bafc271bb90f0486032f67ea53"
+    }
+  },
+  "referenceDna": {
+    "annotatedDescription": "An independent mobile practice places a compact brand-and-booking header over a spacious warm-neutral opening. The desktop promise is paired with a rounded at-home-care photograph, but all key service and geographic context remains separate, so the text is easy to scan. A contrasting reassurance statement breaks the hero, then a titled service index uses thin ruled rows and directional links instead of icon cards. A pale testimonial chapter contains compact text proof and two pet photographs, ending with a dark green footer that repeats the practical visit action, hours, and coverage. On mobile the promise comes first, then the image and service lines become an orderly single-column sequence. Transfer this direct, personal information hierarchy without the source identity, photo, exact wording, reviews, rate details, or claims.",
+    "heroGeometry": {
+      "mode": "copy-first at-home service opening beside one large rounded documentary image",
+      "alignment": "balanced two-column layout",
+      "viewport": "headline, one-sentence scope, and visit action fit in the opening viewport"
+    },
+    "navigationGeometry": {
+      "mode": "compact wordmark, plain topic links, and one pill booking action",
+      "placement": "top edge",
+      "mobile": "minimal brand row and menu control followed by a visible booking link"
+    },
+    "typography": {
+      "display": "humanist sans with moderate weight",
+      "body": "high-legibility sans",
+      "scale": "fluid but restrained heading and short row labels"
+    },
+    "palette": {
+      "surfaces": [
+        "warm ivory",
+        "soft blush",
+        "pale mint",
+        "deep green"
+      ],
+      "ink": "forest-toned charcoal",
+      "accents": [
+        "warm clay",
+        "subdued green"
+      ],
+      "contrastIntent": "calm surfaces, readable paragraphs, and dark text on every button"
+    },
+    "imageTreatment": {
+      "mode": "one personal home-visit photo and a small pair of pet portraits",
+      "crop": "rounded large desktop crop with subject-centered mobile placement",
+      "focalPoint": "keep the pet and caregiver together without overlaying service text"
+    },
+    "sectionSequence": [
+      "promise and visit action",
+      "care reassurance",
+      "ruled service index",
+      "client-proof chapter",
+      "paired pet imagery",
+      "service-area and contact footer"
+    ],
+    "servicePresentation": {
+      "pattern": "two-column ruled service index on desktop, full-width labeled service rows on mobile",
+      "interaction": "each row has a directional link and brief independent explanation"
+    },
+    "ctaPlacement": {
+      "primary": "request an at-home visit",
+      "secondary": "check services or area coverage",
+      "early": "primary action sits alongside the opening promise"
+    },
+    "motion": {
+      "primitive": "quiet link feedback and responsive menu disclosure",
+      "library": "native CSS only is sufficient",
+      "reducedMotion": "keep content fully visible and remove nonessential transitions"
+    },
+    "mobileRecomposition": {
+      "strategy": "move headline, promise, and action first, then stack the hero image and thin service rows",
+      "rules": [
+        "show service-area qualifications near the action",
+        "allow service descriptions to wrap without truncation",
+        "keep pet imagery after the promise rather than before it",
+        "do not pin an overlapping action rail"
+      ]
+    },
+    "prohibitedPatterns": [
+      "claiming the new client offers mobile or in-home visits without proof",
+      "using Perry Paws logo, photos, domain, testimonials, certifications, exact copy, hours, prices, or coverage",
+      "reproducing the source color scheme as a fixed brand identity",
+      "inventing reviews or clinical outcomes",
+      "turning each service into a decorative card"
+    ],
+    "requiredSignatureElements": [
+      {
+        "id": "visit-first-promise",
+        "selector": "[data-reference-signature=visit-first-promise]",
+        "description": "A clear at-home or in-clinic service promise precedes the hero image and identifies who the practice helps."
+      },
+      {
+        "id": "ruled-service-index",
+        "selector": "[data-reference-signature=ruled-service-index]",
+        "description": "Core services appear as clean rows with a short scope statement and useful destination."
+      },
+      {
+        "id": "service-area-confirmation",
+        "selector": "[data-reference-signature=service-area-confirmation]",
+        "description": "Coverage is stated accurately and the next step clarifies how an address or service-area fit is confirmed."
+      }
+    ],
+    "acceptanceChecks": [
+      "The first viewport explains the real service model and one next step.",
+      "The service list is scannable without repeated cards.",
+      "Coverage is based on submitted or verified facts and does not imply a clinic address.",
+      "Mobile action and all service descriptions fit without horizontal overflow.",
+      "Testimonials, fear-free credentials, prices, and health claims are not borrowed from the source."
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "type-led-statement",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "copy-leads-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
+  },
+  "review": {
+    "status": "reviewed",
+    "reviewer": "Codex direct-source capture QA",
+    "date": "2026-09-29",
+    "notes": "Official site returned HTTP 200 at both requested viewports. It identifies an active mobile veterinary practice in the Washington, DC service area. Full-page desktop and mobile images were visually checked; no broken content images or browser page errors were recorded."
+  }
+}

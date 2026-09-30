@@ -63,21 +63,39 @@ describe("experience-pack compiler", () => {
     oneCity.industry = "home-services";
     oneCity.preset = "home-services";
     oneCity.businessKind = "home-services";
-    oneCity.design = { ...oneCity.design!, recipe: "local-trades", sections: [] };
+    oneCity.design = {
+      ...oneCity.design!,
+      recipe: "local-trades",
+      sections: [],
+    };
     const bakery = site("Lumière Artisan Bakery & Café", "cinematic-narrative");
     bakery.industry = "hospitality";
-    bakery.services = [{
-      name: "Catering",
-      description: "Catering orders for local gatherings.",
-      slug: "catering",
-    }];
+    bakery.services = [
+      {
+        name: "Catering",
+        description: "Catering orders for local gatherings.",
+        slug: "catering",
+      },
+    ];
 
-    expect(compileExperiencePack(local, "local-trades").content.coverageHeading).toBe("Service in nearby communities.");
-    expect(compileExperiencePack(oneCity, "local-trades").content.coverageHeading).toBe("Service area.");
-    expect(compileExperiencePack(care, "care-editorial").content.coverageHeading).toBe("Areas the practice serves.");
-    expect(compileExperiencePack(site("Oak & Ledger", "bold-utility"), "general-editorial").content.coverageHeading)
-      .toBe("Support across the local area.");
-    expect(compileExperiencePack(bakery, "general-editorial").content).toMatchObject({
+    expect(
+      compileExperiencePack(local, "local-trades").content.coverageHeading,
+    ).toBe("Service in nearby communities.");
+    expect(
+      compileExperiencePack(oneCity, "local-trades").content.coverageHeading,
+    ).toBe("Service area.");
+    expect(
+      compileExperiencePack(care, "care-editorial").content.coverageHeading,
+    ).toBe("Areas the practice serves.");
+    expect(
+      compileExperiencePack(
+        site("Oak & Ledger", "bold-utility"),
+        "general-editorial",
+      ).content.coverageHeading,
+    ).toBe("Support across the local area.");
+    expect(
+      compileExperiencePack(bakery, "general-editorial").content,
+    ).toMatchObject({
       coverageHeading: "Local to Asheville.",
       coverageIntro: "Ask about catering for a gathering.",
     });
@@ -218,7 +236,9 @@ describe("experience-pack compiler", () => {
     expect(workflow).toContain(
       "History push raced with another intake; reselecting from latest main",
     );
-    expect(workflow).toContain('--record-key "$LAUNCHLOOM_INTAKE_ID"');
+    expect(workflow).toContain(
+      '--record-key "$LAUNCHLOOM_INTAKE_ID-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
+    );
     const reservationBlock = workflow.slice(reservationIndex, analysisIndex);
     expect(reservationBlock).toContain(
       'HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"',
@@ -227,8 +247,17 @@ describe("experience-pack compiler", () => {
       'git worktree add --detach "$HISTORY_DIR" origin/main',
     );
     expect(reservationBlock).toContain('--history "$HISTORY_FILE"');
-    expect(reservationBlock).toContain('git -C "$HISTORY_DIR" push origin HEAD:main');
+    expect(reservationBlock).toContain(
+      'git -C "$HISTORY_DIR" push origin HEAD:main',
+    );
     expect(reservationBlock).not.toContain("git reset --hard origin/main");
+    const successfulPreviewHistory = workflow.slice(
+      workflow.indexOf("- name: Record launch signature for rotation"),
+    );
+    expect(successfulPreviewHistory).toContain("--stage preview");
+    expect(successfulPreviewHistory).toContain(
+      '--record-key "$LAUNCHLOOM_INTAKE_ID-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"',
+    );
   });
 
   it("runs a three-viewport internal bakeoff and preserves a safe fallback", () => {
@@ -328,7 +357,9 @@ describe("experience-pack compiler", () => {
     expect(component).toContain(
       '<a href="#guided-experience-lead">Start an inquiry</a>',
     );
-    expect(component).toContain("{brand.email && <a href={`mailto:${brand.email}`}");
+    expect(component).toContain(
+      "{brand.email && <a href={`mailto:${brand.email}`}",
+    );
     expect(component).toContain("{brand.address && <p>{brand.address}</p>}");
     expect(styles).toContain(".xp-guide__hero figcaption");
     expect(styles).toContain("z-index: 2;");

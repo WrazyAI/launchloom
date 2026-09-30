@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "sourceUrl": "https://www.perrypawsmobile.com/",
+  "captures": {
+    "desktop": {
+      "url": "https://www.perrypawsmobile.com/",
+      "finalUrl": "https://www.perrypawsmobile.com/",
+      "httpStatus": 200,
+      "title": "Mobile Veterinarian in Washington, DC | Perry Paws Mobile",
+      "h1": [
+        "Mobile veterinarian in Washington, DC"
+      ],
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "image": {
+        "width": 1440,
+        "height": 3790
+      },
+      "documentWidth": 1440,
+      "documentHeight": 3790,
+      "scrollWidthOverflow": false,
+      "brokenImages": [],
+      "pageErrors": [],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    },
+    "mobile": {
+      "url": "https://www.perrypawsmobile.com/",
+      "finalUrl": "https://www.perrypawsmobile.com/",
+      "httpStatus": 200,
+      "title": "Mobile Veterinarian in Washington, DC | Perry Paws Mobile",
+      "h1": [
+        "Mobile veterinarian in Washington, DC"
+      ],
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "image": {
+        "width": 390,
+        "height": 5912
+      },
+      "documentWidth": 390,
+      "documentHeight": 5912,
+      "scrollWidthOverflow": false,
+      "brokenImages": [],
+      "pageErrors": [],
+      "fullPage": true,
+      "captureMethod": "Playwright Chromium fullPage after progressive scroll/lazy-media activation"
+    }
+  }
+}

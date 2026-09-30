@@ -1,7 +1,42 @@
 import { describe, expect, it } from "vitest";
 import { compileCanonicalSiteBrief } from "../scripts/compile-canonical-site-brief.mjs";
+import { normalise } from "../scripts/generate-site-config.mjs";
 
 describe("canonical site brief compilation", () => {
+  it("carries an explicit synthetic demo notice through config generation", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        submissionId: "demo-precision-20260923",
+        businessName: "Precision Auto Care",
+        industry: "automotive",
+        services: "Digital vehicle inspections\nBrake service",
+        confirmAccuracy: "synthetic demo brief; not a real client attestation",
+        additionalNotes: "FICTIONAL DEMO ONLY. Never publish this as a real client site.",
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief.demoNotice).toBe("Fictional pipeline demo");
+    expect(normalise({}, brief).demoNotice).toBe("Fictional pipeline demo");
+  });
+
+  it("does not turn an ordinary client mention of a demo into a synthetic-site label", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        submissionId: "submission-client-001",
+        businessName: "Harbor Auto Care",
+        industry: "automotive",
+        services: "Brake service",
+        confirmAccuracy: "yes",
+        additionalNotes: "We use demo vehicles when explaining our inspection process.",
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief).not.toHaveProperty("demoNotice");
+    expect(normalise({}, brief)).not.toHaveProperty("demoNotice");
+  });
+
   it("keeps client-confirmed business truth ahead of researched service and page suggestions", () => {
     const brief = compileCanonicalSiteBrief({
       intake: {
@@ -91,6 +126,78 @@ describe("canonical site brief compilation", () => {
 
     expect(brief.services).toEqual(["Drain cleaning", "Water heater repair"]);
     expect(brief.coverageAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
+  });
+
+  it("splits semicolon-delimited service areas without splitting commas inside place names", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        services: "Interior painting",
+        serviceAreas: "Portland, OR; Beaverton, OR; Lake Oswego, OR",
+        serviceRadius: "30",
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief.primaryCity).toBe("Portland, OR");
+    expect(brief.coverageAreas).toEqual([
+      "Portland, OR",
+      "Beaverton, OR",
+      "Lake Oswego, OR",
+    ]);
+    expect(brief.serviceAreas).toBe(
+      "Portland, OR\nBeaverton, OR\nLake Oswego, OR",
+    );
+  });
+
+  it("does not discard client-confirmed towns when coverage enrichment adds suggestions", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        serviceAreas: "Portland, OR; Beaverton, OR; Lake Oswego, OR",
+      },
+      enrichment: {
+        coverageAreas: ["Portland, OR", "Tigard, OR"],
+        coverageEvidence: { source: "google_geocoding", lookups: 16 },
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief.coverageAreas).toEqual([
+      "Portland, OR",
+      "Beaverton, OR",
+      "Lake Oswego, OR",
+      "Tigard, OR",
+    ]);
+    expect(brief.businessTruth.coverageAreas).toMatchObject([
+      { value: "Portland, OR", provenance: "client_confirmed_primary_city" },
+      { value: "Beaverton, OR", provenance: "legacy_client_supplied_area" },
+      { value: "Lake Oswego, OR", provenance: "legacy_client_supplied_area" },
+      { value: "Tigard, OR", provenance: "google_geocoding" },
+    ]);
+  });
+
+  it("does not retain an unsupported travel radius as confirmed canonical truth", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        primaryCity: "Portland, OR",
+        serviceRadius: "25",
+      },
+      enrichment: {
+        coverageAreas: ["Portland, OR", "Tigard, OR"],
+        coverageEvidence: { source: "google_geocoding", lookups: 16 },
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief.serviceRadius).toBeNull();
+    expect(brief.coverageAreas).toEqual(["Portland, OR"]);
+    expect(brief.businessTruth.serviceRadius).toBeNull();
+    expect(brief.coverage.evidence).toEqual({
+      source: "client_confirmed_primary_city",
+      lookups: 0,
+    });
+    expect(brief.coverage.warnings).toContain(
+      "The submitted travel radius is not supported; only explicitly confirmed coverage areas are retained.",
+    );
   });
 
   it("preserves commas within one confirmed service from intake through the page map", () => {

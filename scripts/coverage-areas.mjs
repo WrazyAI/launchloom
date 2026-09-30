@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { firstServiceArea } from "./service-area-input.mjs";
 
 const radiusMiles = new Set([10, 20, 30, 50]);
 const metersPerMile = 1609.344;
@@ -45,6 +46,13 @@ function destination(center, distanceMeters, bearingDegrees) {
 
 function primaryName(value) {
   return text(value).split(",")[0].toLocaleLowerCase();
+}
+
+export function primaryCityFromIntake(intake = {}) {
+  return (
+    firstServiceArea(intake.primaryCity) ||
+    firstServiceArea(intake.serviceAreas)
+  );
 }
 
 export async function discoverCoverageAreas({
@@ -195,7 +203,7 @@ async function main() {
   if (!source || !destination)
     throw new Error("Usage: node coverage-areas.mjs --source intake.md --out business-enrichment.json");
   const intake = extractIntake(await fs.readFile(source, "utf8"));
-  const primaryCity = intake.primaryCity || text(intake.serviceAreas).split(/\r?\n/u)[0];
+  const primaryCity = primaryCityFromIntake(intake);
   let discovery;
   try {
     const client = createGoogleGeocodingClient({ apiKey: process.env.GOOGLE_PLACES_API_KEY });

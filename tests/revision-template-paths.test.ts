@@ -28,6 +28,7 @@ it("allows the legacy homepage only when social proof insertion can write it", (
   });
 
   expect(withoutProof).toContain("src/layouts/SiteLayout.astro");
+  expect(withoutProof).toContain(".launchloom/revision-template-baseline.json");
   expect(withoutProof).not.toContain("src/pages/index.astro");
   expect(withProof).toContain("src/pages/index.astro");
 });

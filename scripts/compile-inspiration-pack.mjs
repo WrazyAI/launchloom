@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { launchesForBusinessKind } from "./launch-history.mjs";
 import { buildInspirationPack } from "./inspiration-registry.mjs";
 
 function parseArgs(values) {
@@ -12,9 +13,17 @@ function parseArgs(values) {
 const STYLE_STOPWORDS = new Set([
   "and",
   "are",
+  "all",
+  "business",
+  "but",
+  "however",
+  "facts",
   "for",
   "from",
   "into",
+  "keep",
+  "internal",
+  "instead",
   "not",
   "the",
   "this",
@@ -23,7 +32,30 @@ const STYLE_STOPWORDS = new Set([
   "use",
   "with",
   "your",
+  "fictional",
+  "canary",
+  "only",
+  "verified",
+  "street",
+  "address",
+  "credentials",
+  "reviews",
+  "prices",
+  "rather",
+  "still",
+  "guarantees",
+  "response",
+  "times",
+  "named",
+  "staff",
+  "patient",
+  "outcomes",
+  "design",
+  "direction",
 ]);
+
+const STYLE_NEGATION =
+  /\b(?:avoid|avoids|avoiding|no|not|never|without|do\s+not|don't|exclude|excluding|prohibit|prohibited)\b/iu;
 
 function words(value) {
   return String(value || "")
@@ -31,6 +63,29 @@ function words(value) {
     .replace(/[^a-z0-9]+/gu, " ")
     .split(/\s+/u)
     .filter((word) => word.length > 2 && !STYLE_STOPWORDS.has(word));
+}
+
+function positiveStyleTerms(value) {
+  const terms = new Set();
+  // "Not only X but Y" is an additive construction, not a prohibition.
+  // For actual prohibitions, keep positive cues before the negation and cues
+  // explicitly reintroduced after a contrast marker ("avoid X, but keep Y").
+  const normalized = String(value || "").replace(/\bnot\s+only\b/giu, "");
+  for (const clause of normalized.split(/[.!?;\n]+/u)) {
+    const negation = clause.search(STYLE_NEGATION);
+    const positiveClauses = [negation < 0 ? clause : clause.slice(0, negation)];
+    if (negation >= 0) {
+      const tail = clause.slice(negation);
+      const contrast = tail.match(/\b(?:but|however|instead|rather|yet|still)\b(?:\s+(?:keep|use|prefer|include|retain|choose))?/iu);
+      if (contrast?.index !== undefined) {
+        positiveClauses.push(tail.slice(contrast.index + contrast[0].length));
+      }
+    }
+    for (const positiveClause of positiveClauses) {
+      for (const term of words(positiveClause)) terms.add(term);
+    }
+  }
+  return [...terms].slice(0, 48);
 }
 
 function intakeFromMarkdown(value) {
@@ -72,13 +127,11 @@ const [config, baseRegistry, history, intake] = await Promise.all([
     : {},
 ]);
 const registry = baseRegistry;
-const recent = Array.isArray(history.launches)
-  ? history.launches.slice(-30)
-  : [];
 const normalizedIndustry = String(config.businessKind || config.industry || "").toLowerCase();
 const industry = ["", "all", "general", "other"].includes(normalizedIndustry)
   ? intake.industry || config.businessKind || config.preset || "all"
   : normalizedIndustry;
+const recent = launchesForBusinessKind(history, industry);
 const styleText = [
   intake.stylePreference,
   intake.brandNotes,
@@ -90,8 +143,8 @@ const styleText = [
   config.design?.recipe,
 ]
   .filter(Boolean)
-  .join(" ");
-const styleTerms = words(styleText);
+  .join(". ");
+const styleTerms = positiveStyleTerms(styleText);
 const pack = buildInspirationPack(
   {
     seed:

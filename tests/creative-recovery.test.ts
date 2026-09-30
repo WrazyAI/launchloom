@@ -122,6 +122,28 @@ describe("creative recovery diagnostics", () => {
 });
 
 describe("developer-triggered creative repair workflow", () => {
+  it("masks every generated signed review token before derived links can reach workflow logs", () => {
+    const workflows = [
+      ".github/workflows/generate-client.yml",
+      ".github/workflows/repair-creative-candidate.yml",
+      ".github/workflows/send-developer-review.yml",
+      ".github/workflows/process-feedback.yml",
+      ".github/workflows/process-client-feedback.yml",
+      ".github/workflows/publish-site.yml",
+    ];
+    for (const workflowPath of workflows) {
+      const source = readFileSync(workflowPath, "utf8");
+      const generatedTokens = [...source.matchAll(
+        /TOKEN=\$\(node[\s\S]*?create-review-link\.mjs[\s\S]*?--token-only true\)/gu,
+      )];
+      expect(generatedTokens.length, workflowPath).toBeGreaterThan(0);
+      for (const match of generatedTokens) {
+        const followingShell = source.slice(match.index! + match[0].length).trimStart();
+        expect(followingShell, workflowPath).toMatch(/^echo "::add-mask::\$TOKEN"/u);
+      }
+    }
+  });
+
   it("provides one signed, head-bound repair without rerunning research or image generation", () => {
     const initialWorkflow = readFileSync(
       ".github/workflows/generate-client.yml",
@@ -134,6 +156,15 @@ describe("developer-triggered creative repair workflow", () => {
     expect(initialWorkflow).toContain("--creative-repair-session");
     expect(initialWorkflow).toContain("/api/internal/creative-repairs");
     expect(initialWorkflow).toContain("diagnosticPreviewEligible");
+    const generatedToken = initialWorkflow.indexOf("TOKEN=$(node");
+    const maskGeneratedToken = initialWorkflow.indexOf(
+      'echo "::add-mask::$TOKEN"',
+      generatedToken,
+    );
+    const exposeGeneratedToken = initialWorkflow.indexOf("REVIEW_LINK=", generatedToken);
+    expect(generatedToken).toBeGreaterThan(-1);
+    expect(maskGeneratedToken).toBeGreaterThan(generatedToken);
+    expect(maskGeneratedToken).toBeLessThan(exposeGeneratedToken);
     expect(initialWorkflow).toContain(
       'echo "send_anyway_url=$DIAGNOSTIC_PREVIEW_URL?review=$TOKEN"',
     );

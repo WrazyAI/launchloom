@@ -11,10 +11,23 @@ Production references are stored as canonical dossiers in
 `data/reference-library/dossiers/`, indexed by
 `data/reference-library/core-collection.json`. Each dossier folder contains a
 full-page desktop capture, a full-page mobile capture, a local rights record,
-a business/source manifest, and a detailed `design-prompt.md`. The first core
-contains three structurally independent references for each of ten supported
-niches. A niche without three eligible dossiers fails closed; unrelated designs
-are never used as filler.
+a business/source manifest, and a detailed `design-prompt.md`. The current core
+contains six eligible references for each of sixteen supported niches. The
+selector draws three pairwise-distinct references from the matching niche; a
+niche without three eligible dossiers above the structural-distance floor
+fails closed. Unrelated designs are never used as filler.
+
+When at least nine structurally valid trios can each use three different
+visual families, cover every eligible dossier, and keep any one dossier at or
+below 70% of that choice pool, the selector requires that family spread.
+Otherwise it keeps the broader seeded exposure-balanced pool so a one-off
+family is not pinned into every generation. Style-matching tokens come only
+from affirmative visual-direction clauses; negative instructions and factual
+disclaimers remain in author context but are never scored as positive
+inspiration terms. The selector widens a lexical style-fit band as needed to
+preserve at least nine seeded choices while covering every structurally
+eligible dossier in the niche; brand vocabulary must not starve other valid
+references.
 
 `reference-dossier.mjs` verifies the screenshots, capture dimensions, prompt,
 rights evidence, registered paths, and content digest. Production packs bind
@@ -109,9 +122,15 @@ become client-site assets.
    and full-page overviews, applies the screenshot-to-reference judge, and then
    runs `visual-quality-gate.mjs` against the selected rendered candidate.
    Repairable findings are returned to Luna with the current source, Reference
-   DNA, and available screenshots. The repaired candidate is never trusted on
-   its own claim: it must rebuild, rerender, and pass the judges on the next
-   round. Each repair response has a 48k completion ceiling and records its
+   DNA, and available screenshots. When pairwise diversity fails, the repair
+   also receives the closest failed sibling's desktop and mobile first-viewport
+   captures, labeled as comparison-only evidence with an explicit do-not-copy
+   instruction. The loop repairs one candidate per render round, then rerenders
+   the full candidate set before choosing another target, so subsequent repairs
+   compare against current rendered output rather than a stale pre-repair batch.
+   The repaired candidate is never trusted on its own claim: it must rebuild,
+   rerender, and pass the judges on the next round. Each repair response has a
+   48k completion ceiling and records its
    finish reason plus completion/reasoning token counts without logging source
    content. When the combined authored source exceeds 20,000 characters, repair
    is split into sequential JSX, CSS, and motion responses to keep each returned

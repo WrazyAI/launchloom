@@ -9,8 +9,10 @@ import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 import { validateAndCopyReusableCandidates } from "../scripts/validate-reusable-creative-candidates.mjs";
 import {
+  assertReusableCandidateSet,
   assertReusableCandidateDossierBinding,
   assertReusableInspirationPack,
+  assertReusablePromptEvidence,
 } from "../scripts/validate-reusable-creative-candidates.mjs";
 
 const roots: string[] = [];
@@ -124,6 +126,67 @@ describe("reusable creative candidate validation", () => {
     expect(() =>
       assertReusableCandidateDossierBinding(tampered, contract, route, "candidate-a"),
     ).toThrow(/Reference Dossier does not match its route/iu);
+  });
+
+  it("accepts a partial preview set only when failed sibling routes are recorded", () => {
+    const routes = architecturePack().routes;
+    const run = {
+      candidates: [{ candidateId: "candidate-c", routeId: routes[2].id }],
+      failures: [
+        { candidateId: "candidate-a", routeId: routes[0].id, error: "CSS source finding" },
+        { candidateId: "candidate-b", routeId: routes[1].id, error: "CSS source finding" },
+      ],
+    };
+
+    expect(assertReusableCandidateSet(["candidate-c"], run, routes)).toBe(true);
+    expect(() => assertReusableCandidateSet(["candidate-c"], {
+      ...run,
+      failures: [run.failures[0]],
+    }, routes)).toThrow(/account for all three candidates/iu);
+    expect(() => assertReusableCandidateSet(["candidate-b", "candidate-c"], run, routes))
+      .toThrow(/candidate directories do not match the authored-run candidate manifest/iu);
+  });
+
+  it("requires each reused candidate's prompt stages to attest both assigned screenshot digests", () => {
+    const inspiration = architecturePack();
+    const route = inspiration.routes[2];
+    const creativeSession = {
+      sessionId: "launchloom:creative:reusable-evidence",
+      reasoningEffort: "xhigh",
+    };
+    const records = ["contract", "experience", "styles", "motion"].map((stage) => ({
+      routeId: route.id,
+      referenceId: route.referenceDossier.id,
+      referenceDossierDigest: route.referenceDossier.digest,
+      stage,
+      effort: creativeSession.reasoningEffort,
+      sessionId: creativeSession.sessionId,
+      evidence: ["desktopScreenshot", "mobileScreenshot"].map((viewport) => {
+        const screenshot = route.referenceDna.evidence[viewport];
+        return { path: screenshot.path, digest: screenshot.sha256 };
+      }),
+    }));
+    const promptEvidence = {
+      version: 1,
+      model: "openai/gpt-6-luna",
+      records,
+    };
+    const options = {
+      model: promptEvidence.model,
+      creativeSession,
+      inspiration,
+      candidateNames: ["candidate-c"],
+    };
+
+    expect(assertReusablePromptEvidence(promptEvidence, options)).toBe(true);
+    const missingMobile = structuredClone(promptEvidence);
+    missingMobile.records[0].evidence.pop();
+    expect(() => assertReusablePromptEvidence(missingMobile, options))
+      .toThrow(/missing the assigned mobileScreenshot screenshot digest/iu);
+    const wrongDossier = structuredClone(promptEvidence);
+    wrongDossier.records[0].referenceDossierDigest = "0".repeat(64);
+    expect(() => assertReusablePromptEvidence(wrongDossier, options))
+      .toThrow(/not bound to its validated dossier/iu);
   });
 
   it("rejects reusable artifacts without canonical dossier bindings before copying", async () => {

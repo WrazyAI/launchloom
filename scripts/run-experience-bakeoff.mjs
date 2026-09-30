@@ -6,6 +6,7 @@ import { chromium } from "playwright";
 import { compileExperienceCandidates } from "../templates/client-site/src/lib/experience-pack.ts";
 import {
   defaultHistoryPath,
+  launchesForBusinessKind,
   readLaunchHistory,
   recentLayoutFingerprints,
 } from "./launch-history.mjs";
@@ -140,9 +141,12 @@ const inspiration = await fs
   .readFile(inspirationPath, "utf8")
   .then(JSON.parse)
   .catch(() => undefined);
-const recentFingerprints = recentLayoutFingerprints(
-  await readLaunchHistory(historyPath),
-);
+const recentFingerprints = recentLayoutFingerprints({
+  launches: launchesForBusinessKind(
+    await readLaunchHistory(historyPath),
+    original.businessKind || original.industry,
+  ),
+});
 const candidates = compileExperienceCandidates(original, recipe, {
   recentFingerprints,
   typography: original.design?.treatment?.typography,

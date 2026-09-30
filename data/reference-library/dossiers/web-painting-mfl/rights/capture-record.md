@@ -6,3 +6,10 @@ Captured 2026-09-26 directly from https://mflpainting.com/ with a local Playwrig
 - Mobile viewport: 390 x 844 CSS pixels at device scale 1. Full-page PNG: 390 x 19135 pixels at screenshots/mobile.png.
 - The PNG dimensions were read from the saved image headers. Both files cover the opening through the visible footer. Hidden carousel slides and third-party widgets may defer their own off-screen images.
 - No source HTML, stylesheet, script, standalone photo, logo, or font was retained. These screenshots are reference evidence, not client assets.
+
+## Screenshot checksums (SHA-256, verified 2026-09-29 UTC)
+
+| File | SHA-256 |
+|---|---|
+| `screenshots/desktop.png` | `7cc8247867d45793842c592d7bdddcf08805e23a0163a9d4069e377bdc9898d5` |
+| `screenshots/mobile.png` | `305e5a2d87e80bfa4925d72304d4b3d62dfcf04f6b7077bb394d17e89f01b332` |

@@ -31,6 +31,7 @@ const CURATED_DNA_FIELDS = [
   "ctaPlacement",
   "motion",
   "mobileRecomposition",
+  "compositionTopology",
   "prohibitedPatterns",
   "requiredSignatureElements",
   "acceptanceChecks",
@@ -51,16 +52,34 @@ function stableJson(value) {
 function curatedDnaContract(dna) {
   return {
     ...Object.fromEntries(CURATED_DNA_FIELDS.map((field) => [field, dna?.[field]])),
+    compositionTopology: normalizeCompositionTopologyContract(dna?.compositionTopology),
     annotatedDescription: dna?.evidence?.annotatedDescription || "",
     desktopScreenshot: screenshotContract(dna?.evidence?.desktopScreenshot),
     mobileScreenshot: screenshotContract(dna?.evidence?.mobileScreenshot),
   };
 }
 
+function normalizeCompositionTopologyContract(topology) {
+  if (!topology || typeof topology !== "object") return null;
+  return {
+    hero: topology.hero || "",
+    mobileHero: topology.mobileHero || "",
+    mediaRelation: topology.mediaRelation || "",
+    mobileMediaRelation: topology.mobileMediaRelation || "",
+    basis: topology.basis || "",
+    confidence: topology.confidence || "",
+    secondaryPatterns: Array.isArray(topology.secondaryPatterns)
+      ? topology.secondaryPatterns
+      : [],
+    note: topology.note || null,
+    mobileTreatmentChanged: topology.mobileTreatmentChanged === true,
+  };
+}
+
 function screenshotContract(screenshot) {
   if (!screenshot || typeof screenshot !== "object") return null;
   return Object.fromEntries(
-    ["path", "available", "required", "fullPage", "width", "height", "viewport"].map(
+    ["path", "sha256", "available", "required", "fullPage", "width", "height", "viewport"].map(
       (field) => [field, screenshot[field]],
     ),
   );
@@ -102,7 +121,7 @@ function pngDimensions(filePath, label) {
   return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
 }
 
-function resolveScreenshot(directory, screenshot, label, viewportKind) {
+function resolveScreenshot(directory, screenshot, label, viewportKind, requireSha256 = false) {
   if (!screenshot || typeof screenshot !== "object")
     throw new Error(`Reference dossier needs a ${label} full-page screenshot.`);
   if (screenshot.capture !== "full-page")
@@ -117,6 +136,15 @@ function resolveScreenshot(directory, screenshot, label, viewportKind) {
   const realDirectory = fs.realpathSync(directory);
   const realFilePath = fs.realpathSync(filePath);
   within(realDirectory, realFilePath, `${label} screenshot path`);
+  const screenshotBytes = fs.readFileSync(filePath);
+  const sha256 = crypto.createHash("sha256").update(screenshotBytes).digest("hex");
+  const declaredSha256 = String(screenshot.sha256 || "").toLowerCase();
+  if (requireSha256 && !declaredSha256)
+    throw new Error(`Reference dossier ${label} screenshot must declare a SHA-256 digest.`);
+  if (declaredSha256 && !/^[a-f0-9]{64}$/u.test(declaredSha256))
+    throw new Error(`Reference dossier ${label} screenshot SHA-256 digest is invalid.`);
+  if (declaredSha256 && declaredSha256 !== sha256)
+    throw new Error(`Reference dossier ${label} screenshot SHA-256 digest does not match the retained image.`);
   const dimensions = pngDimensions(filePath, `${label} full-page capture`);
   const viewport = screenshot.viewport;
   const widthMin = viewportKind === "desktop" ? 1024 : 320;
@@ -133,6 +161,7 @@ function resolveScreenshot(directory, screenshot, label, viewportKind) {
     available: true,
     required: true,
     fullPage: true,
+    sha256,
     width: dimensions.width,
     height: dimensions.height,
     viewport: { width: viewport.width, height: viewport.height },
@@ -186,6 +215,7 @@ function normalizeReferenceDna(manifest, screenshots) {
     ctaPlacement: dna.ctaPlacement,
     motion: dna.motion,
     mobileRecomposition: dna.mobileRecomposition,
+    compositionTopology: dna.compositionTopology,
     prohibitedPatterns: safeList(dna.prohibitedPatterns, "prohibited patterns", 2, 30),
     requiredSignatureElements,
     acceptanceChecks: [
@@ -234,12 +264,26 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
     }),
   );
   const directory = path.resolve(dossierDirectory || process.cwd());
-  const desktop = resolveScreenshot(directory, manifest.evidence?.desktop, "desktop", "desktop");
-  const mobile = resolveScreenshot(directory, manifest.evidence?.mobile, "mobile", "mobile");
+  const desktop = resolveScreenshot(
+    directory,
+    manifest.evidence?.desktop,
+    "desktop",
+    "desktop",
+    manifest.productionEligible,
+  );
+  const mobile = resolveScreenshot(
+    directory,
+    manifest.evidence?.mobile,
+    "mobile",
+    "mobile",
+    manifest.productionEligible,
+  );
   let rightsEvidenceDigest = null;
   let rightsEvidencePath = "";
   const assetEvidencePaths = [];
   const assetEvidenceDigests = {};
+  const provenanceEvidencePaths = [];
+  const provenanceEvidenceDigests = {};
   if (rights !== "owned") {
     rightsEvidencePath = requiredText(source?.rightsEvidencePath, "local rights evidence path", 260);
     if (path.isAbsolute(rightsEvidencePath))
@@ -250,9 +294,11 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       throw new Error(`Reference dossier '${id}' is missing its local license or permission evidence.`);
     within(fs.realpathSync(directory), fs.realpathSync(proofPath), "rights evidence path");
     rightsEvidenceDigest = crypto.createHash("sha256").update(fs.readFileSync(proofPath)).digest("hex");
-    const declaredAssets = Array.isArray(source?.assetEvidencePaths) ? source.assetEvidencePaths : [];
-    if (manifest.productionEligible && !declaredAssets.length)
-      throw new Error(`Production dossier '${id}' needs explicit license evidence for bundled images and fonts.`);
+    const declaredAssets = Array.isArray(source?.assetEvidencePaths)
+      ? source.assetEvidencePaths.filter((value) => String(value || "").trim() !== rightsEvidencePath)
+      : [];
+    if (manifest.productionEligible && rights === "licensed" && !declaredAssets.length)
+      throw new Error(`Production dossier '${id}' needs explicit asset license evidence for bundled images and fonts.`);
     for (const value of declaredAssets) {
       const relative = requiredText(value, "asset rights evidence path", 260);
       if (path.isAbsolute(relative))
@@ -265,6 +311,31 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       assetEvidencePaths.push(relative);
       assetEvidenceDigests[relative] = crypto.createHash("sha256").update(fs.readFileSync(assetPath)).digest("hex");
     }
+  }
+  const declaredProvenance = Array.isArray(source?.provenanceEvidencePaths)
+    ? source.provenanceEvidencePaths.filter(
+        (value) => String(value || "").trim() !== rightsEvidencePath,
+      )
+    : [];
+  for (const value of declaredProvenance) {
+    const relative = requiredText(value, "provenance evidence path", 260);
+    if (path.isAbsolute(relative))
+      throw new Error("Reference provenance evidence paths must be dossier-relative.");
+    const evidencePath = path.resolve(directory, relative);
+    within(directory, evidencePath, "provenance evidence path");
+    if (
+      !fs.existsSync(evidencePath) ||
+      fs.lstatSync(evidencePath).isSymbolicLink() ||
+      !fs.statSync(evidencePath).isFile()
+    )
+      throw new Error(`Reference dossier '${id}' is missing local provenance evidence: ${relative}.`);
+    within(fs.realpathSync(directory), fs.realpathSync(evidencePath), "provenance evidence path");
+    if (provenanceEvidencePaths.includes(relative)) continue;
+    provenanceEvidencePaths.push(relative);
+    provenanceEvidenceDigests[relative] = crypto
+      .createHash("sha256")
+      .update(fs.readFileSync(evidencePath))
+      .digest("hex");
   }
   const promptPath = path.join(directory, "design-prompt.md");
   if (
@@ -281,6 +352,11 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
     if (!new RegExp(`^#{1,3}\\s+${heading}\\s*$`, "imu").test(designPrompt))
       throw new Error(`Reference dossier '${id}' design-prompt.md needs a '${heading}' section.`);
   const referenceDna = normalizeReferenceDna(manifest, { desktop, mobile });
+  if (
+    manifest.productionEligible &&
+    referenceDna.compositionTopology?.basis !== "curated-screenshots"
+  )
+    throw new Error(`Production dossier '${id}' needs screenshot-curated desktop and mobile composition topology.`);
   return {
     schemaVersion: 1,
     id,
@@ -294,6 +370,7 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       rightsEvidence: requiredText(source.rightsEvidence, "rights evidence", 600),
       ...(rightsEvidencePath ? { rightsEvidencePath } : {}),
       ...(assetEvidencePaths.length ? { assetEvidencePaths } : {}),
+      ...(provenanceEvidencePaths.length ? { provenanceEvidencePaths } : {}),
     },
     businessKinds,
     tags,
@@ -306,6 +383,7 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       mobile: crypto.createHash("sha256").update(fs.readFileSync(mobile.absolutePath)).digest("hex"),
       rightsEvidence: rightsEvidenceDigest,
       assets: assetEvidenceDigests,
+      provenance: provenanceEvidenceDigests,
     },
     digest: crypto.createHash("sha256").update(JSON.stringify({
       manifest,
@@ -314,6 +392,7 @@ export function validateReferenceDossier(manifest, { dossierDirectory } = {}) {
       mobileDigest: crypto.createHash("sha256").update(fs.readFileSync(mobile.absolutePath)).digest("hex"),
       rightsEvidenceDigest,
       assetEvidenceDigests,
+      provenanceEvidenceDigests,
     })).digest("hex"),
   };
 }

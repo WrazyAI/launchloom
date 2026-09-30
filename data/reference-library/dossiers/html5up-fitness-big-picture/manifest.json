@@ -29,7 +29,8 @@
       "rights/generated-image-manifest.md",
       "rights/imagegen-prompts.md",
       "rights/openai-output-terms.md",
-      "rights/capture-record.md"
+      "rights/capture-record.md",
+      "rights/business-verification.md"
     ]
   },
   "tags": {
@@ -73,7 +74,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "0612506727800a119e93e8d251acebc3a7e1dc8f499d130e6c0b126948838896"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -81,7 +83,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "f4c11281300e77574879fca5bd051c7c42c3629d8ccdb46f224d3f17dc3e36ab"
     }
   },
   "referenceDna": {
@@ -185,7 +188,17 @@
       "A contrasting gallery section and separate final contact section follow the image chapters.",
       "At 390 by 844, image backgrounds scroll normally, gallery has two columns, and no page-level horizontal overflow occurs.",
       "Motion never hides required copy, traps scrolling, or claims real fitness outcomes."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "media-overlay",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "copy-over-media",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "reviewed",

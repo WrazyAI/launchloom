@@ -13,9 +13,6 @@
     "provenanceEvidencePaths": [
       "rights/business-verification.md",
       "rights/capture-record.md"
-    ],
-    "assetEvidencePaths": [
-      "rights/requester-attestation.md"
     ]
   },
   "provenance": {
@@ -83,7 +80,8 @@
       "viewport": {
         "width": 1440,
         "height": 1000
-      }
+      },
+      "sha256": "7452705b32849b70b26b73eaa9e0f16204667ce12ced67e38e81e39f620ccd82"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -91,7 +89,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "099dd0489c2c2b560a3d3d622db28d1fbe2802c8a08994e6ed38fedbd0a604f4"
     }
   },
   "referenceDna": {
@@ -192,7 +191,17 @@
       "All signature relationships are visible in rendered desktop and mobile screenshots.",
       "No source identity, people, images, exact copy, logos, awards, testimonials or claims have transferred.",
       "The page has no horizontal overflow, unreadable contrast, dead calls or inaccessible form controls."
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "media-overlay",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "copy-over-media",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-permission-attested",

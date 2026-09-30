@@ -12,6 +12,10 @@
     "rightsEvidencePath": "rights/LICENSE",
     "assetEvidencePaths": [
       "rights/ASSET-PROVENANCE.md"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
@@ -88,7 +92,8 @@
       "viewport": {
         "width": 1440,
         "height": 900
-      }
+      },
+      "sha256": "6657cbe4c80f8a165aa34a5cac352d232c93f1102acae13d02d920d657631b24"
     },
     "mobile": {
       "path": "screenshots/mobile.png",
@@ -96,7 +101,8 @@
       "viewport": {
         "width": 390,
         "height": 844
-      }
+      },
+      "sha256": "ca03419c94a51a5b8231d48d57e8597c1c11537b78a654b6bc88b61d113f45e5"
     }
   },
   "referenceDna": {
@@ -209,7 +215,17 @@
       "calendar and fee paths are visible before long firm history",
       "mobile calendar remains readable",
       "source content and art are excluded from deliverables"
-    ]
+    ],
+    "compositionTopology": {
+      "hero": "split-media",
+      "mobileHero": "type-led-statement",
+      "mediaRelation": "side-by-side-fields",
+      "mobileMediaRelation": "copy-leads-opening",
+      "basis": "curated-screenshots",
+      "confidence": "high",
+      "secondaryPatterns": [],
+      "mobileTreatmentChanged": false
+    }
   },
   "review": {
     "status": "curated-open-license-pilot",

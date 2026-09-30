@@ -353,7 +353,9 @@ async function captureViewport(
         title: await frame.title().catch(() => ""),
         bodyText: await frame
           .locator("body")
-          .innerText({ timeout: 300 })
+          // Resource-constrained CI can take longer to surface the iframe's
+          // error document while a full-page screenshot is being stitched.
+          .innerText({ timeout: 1_000 })
           .catch(() => ""),
       })),
   );

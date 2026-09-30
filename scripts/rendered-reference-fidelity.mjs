@@ -165,6 +165,54 @@ function parseChoice(payload, label) {
   }
 }
 
+function isTruncated(payload) {
+  return ["length", "max_tokens"].includes(
+    payload?.choices?.[0]?.finish_reason,
+  );
+}
+
+function truncatedDiagnostics(payload, label, maxTokens) {
+  const choice = payload?.choices?.[0];
+  const usage = payload?.usage || {};
+  const reasoningTokens =
+    usage.completion_tokens_details?.reasoning_tokens ?? "unknown";
+  const completionTokens = usage.completion_tokens ?? "unknown";
+  const contentChars = String(choice?.message?.content || "").length;
+  return `${label} was truncated (finish_reason=${choice?.finish_reason || "unknown"} max_tokens=${maxTokens} completion_tokens=${completionTokens} reasoning_tokens=${reasoningTokens} content_chars=${contentChars}).`;
+}
+
+const JUDGE_AFFORDABILITY_RETRY_MIN_TOKENS = 2_048;
+const JUDGE_AFFORDABILITY_RETRY_HEADROOM_TOKENS = 1_024;
+
+function affordableJudgeRetryLimit(status, payload, requestedTokens) {
+  if (status !== 402) return null;
+  const message = String(payload?.error?.message || "");
+  const match = message.match(/can only afford\s+([\d,]+)\b/iu);
+  if (!match) return null;
+  const affordableTokens = Number(match[1].replace(/,/gu, ""));
+  if (
+    !Number.isSafeInteger(affordableTokens) ||
+    affordableTokens >= requestedTokens
+  )
+    return null;
+  const retryTokens = Math.min(
+    requestedTokens - 1,
+    affordableTokens - JUDGE_AFFORDABILITY_RETRY_HEADROOM_TOKENS,
+  );
+  return retryTokens >= JUDGE_AFFORDABILITY_RETRY_MIN_TOKENS
+    ? retryTokens
+    : null;
+}
+
+function isTransientCreditConflict(status, payload) {
+  if (status !== 402) return false;
+  const message = String(payload?.error?.message || "");
+  return (
+    /current in-flight requests/iu.test(message) &&
+    /retry after in-flight requests settle/iu.test(message)
+  );
+}
+
 async function imagePart(file) {
   return promptImagePart(file);
 }
@@ -188,6 +236,7 @@ async function requestJson({
   sessionId,
   promptCacheKey,
   maxTokens = 7000,
+  reasoningEffort = "medium",
   fetchImpl = fetch,
 }) {
   if (!process.env.OPENROUTER_API_KEY)
@@ -195,9 +244,17 @@ async function requestJson({
       "OPENROUTER_API_KEY is required for rendered reference evaluation.",
     );
   const maxAttempts = 3;
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+  const maxTransientCreditRetries = 2;
+  const maxTotalAttempts = maxAttempts + maxTransientCreditRetries;
+  let activeReasoningEffort = reasoningEffort;
+  let truncatedRetryUsed = false;
+  let affordabilityRetryUsed = false;
+  let ordinaryRetryCount = 0;
+  let transientCreditRetryCount = 0;
+  for (let attempt = 0; attempt < maxTotalAttempts; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 180_000);
+    let retryDelayMs = 500 * (attempt + 1);
     try {
       const response = await openRouterChatCompletion({
         title: "LaunchLoom Rendered Reference Judge",
@@ -210,14 +267,14 @@ async function requestJson({
           model,
           ...promptCacheRequestFields(model, promptCacheKey),
           temperature: 0,
-          reasoning: { effort: "medium", exclude: true },
+          reasoning: { effort: activeReasoningEffort, exclude: true },
           max_tokens: maxTokens,
           response_format: { type: "json_schema", json_schema: schema },
           messages: [
             {
               role: "system",
               content:
-                "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. Return JSON only.",
+                "You are a strict visual design critic. Judge rendered pixels, not DOM labels or model claims. Compare design mechanics and visual language only. Do not require copied branding, copy, assets, logos, proprietary fonts, or trade dress. Penalize generic split heroes, card walls, generic SaaS/editorial grammar, weak type scale, weak image choreography, incorrect section pacing, and mobile layouts that merely stack desktop. overallScore must measure assigned-reference mechanics only; do not lower it for client-only palette or art-direction misses. Score paletteAdherence and artDirection separately, and still return blocking findings for client-brief failures. Return JSON only.",
             },
             { role: "user", content },
           ],
@@ -230,6 +287,17 @@ async function requestJson({
       });
       if (response.ok) {
         const cache = logOpenRouterCacheUsage(label, payload.usage);
+        if (isTruncated(payload)) {
+          if (!truncatedRetryUsed && activeReasoningEffort !== "low") {
+            console.info(
+              `rendered_judge_retry reason=truncated label=${label} reasoning_effort=${activeReasoningEffort}->low max_tokens=${maxTokens} completion_tokens=${payload?.usage?.completion_tokens ?? "unknown"} reasoning_tokens=${payload?.usage?.completion_tokens_details?.reasoning_tokens ?? "unknown"}`,
+            );
+            activeReasoningEffort = "low";
+            truncatedRetryUsed = true;
+            continue;
+          }
+          throw new Error(truncatedDiagnostics(payload, label, maxTokens));
+        }
         return {
           audit: parseChoice(payload, label),
           usage: payload.usage || null,
@@ -238,18 +306,58 @@ async function requestJson({
           provider: payload.provider || null,
         };
       }
+      if (response.status === 402 && !affordabilityRetryUsed) {
+        const retryLimit = affordableJudgeRetryLimit(
+          response.status,
+          payload,
+          maxTokens,
+        );
+        if (retryLimit) {
+          console.info(
+            `rendered_judge_retry reason=provider-affordability label=${label} requested_max_tokens=${maxTokens} retry_max_tokens=${retryLimit}`,
+          );
+          maxTokens = retryLimit;
+          affordabilityRetryUsed = true;
+          continue;
+        }
+      }
+      const transientCreditConflict = isTransientCreditConflict(
+        response.status,
+        payload,
+      );
       const retryable =
         response.status === 408 ||
         response.status === 429 ||
         (response.status >= 500 && response.status < 600);
-      if (!retryable || attempt === maxAttempts - 1)
+      if (transientCreditConflict) {
+        if (
+          transientCreditRetryCount >= maxTransientCreditRetries ||
+          attempt === maxTotalAttempts - 1
+        )
+          throw new Error(
+            `${label} failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
+          );
+        transientCreditRetryCount += 1;
+        retryDelayMs = 2_000 * transientCreditRetryCount;
+        console.info(
+          `rendered_judge_retry reason=transient-inflight-credit label=${label} retry_in_ms=${retryDelayMs} retry=${transientCreditRetryCount}/${maxTransientCreditRetries}`,
+        );
+      } else if (
+        !retryable ||
+        ordinaryRetryCount >= maxAttempts - 1 ||
+        attempt === maxTotalAttempts - 1
+      )
         throw new Error(
           `${label} failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
         );
+      else {
+        ordinaryRetryCount += 1;
+        retryDelayMs = 500 * ordinaryRetryCount;
+      }
     } finally {
       clearTimeout(timeout);
     }
-    await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
   }
 }
 
@@ -361,7 +469,7 @@ ${candidateOverview ? `The candidate desktop page overview is ${overviewSize}. U
       type: "text",
       text: `CLIENT VISUAL BRIEF
 ${JSON.stringify(visualBrief || {}, null, 2)}
-Treat this as binding client art direction layered onto the reference mechanics. Score paletteAdherence and artDirection independently and strictly. A candidate that substitutes an unrelated house palette, reverses an explicit light/dark surface direction, ignores a named composition request, or visibly collapses into a generic LaunchLoom treatment must score below the corresponding hard threshold and receive a palette-adherence or client-art-direction finding. Do not hide client-intent failures inside otherwise strong reference-mechanics scores.`,
+Treat this as binding client art direction layered onto the reference mechanics. Score paletteAdherence and artDirection independently and strictly. Keep overallScore limited to the assigned reference mechanics so it remains interpretable as reference fidelity; client-only palette and art-direction misses belong in their dedicated scores and findings. They still block pass through the existing per-dimension thresholds and major-finding rule. A candidate that substitutes an unrelated house palette, reverses an explicit light/dark surface direction, ignores a named composition request, or visibly collapses into a generic LaunchLoom treatment must score below the corresponding hard threshold and receive a palette-adherence or client-art-direction finding. Do not hide client-intent failures inside otherwise strong reference-mechanics scores.`,
     },
     { type: "text", text: "Candidate desktop first viewport 1536x864:" },
     await imagePart(candidateDesktop),
