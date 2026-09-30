@@ -204,6 +204,15 @@ function affordableJudgeRetryLimit(status, payload, requestedTokens) {
     : null;
 }
 
+function isTransientCreditConflict(status, payload) {
+  if (status !== 402) return false;
+  const message = String(payload?.error?.message || "");
+  return (
+    /current in-flight requests/iu.test(message) &&
+    /retry after in-flight requests settle/iu.test(message)
+  );
+}
+
 async function imagePart(file) {
   return promptImagePart(file);
 }
@@ -241,6 +250,7 @@ async function requestJson({
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 180_000);
+    let retryDelayMs = 500 * (attempt + 1);
     try {
       const response = await openRouterChatCompletion({
         title: "LaunchLoom Rendered Reference Judge",
@@ -307,18 +317,29 @@ async function requestJson({
           continue;
         }
       }
+      const transientCreditConflict = isTransientCreditConflict(
+        response.status,
+        payload,
+      );
       const retryable =
         response.status === 408 ||
         response.status === 429 ||
-        (response.status >= 500 && response.status < 600);
+        (response.status >= 500 && response.status < 600) ||
+        transientCreditConflict;
       if (!retryable || attempt === maxAttempts - 1)
         throw new Error(
           `${label} failed (${response.status}): ${payload?.error?.message || "unknown error"}`,
         );
+      if (transientCreditConflict) {
+        retryDelayMs = 2_000 * (attempt + 1);
+        console.info(
+          `rendered_judge_retry reason=transient-inflight-credit label=${label} retry_in_ms=${retryDelayMs} attempt=${attempt + 1}`,
+        );
+      }
     } finally {
       clearTimeout(timeout);
     }
-    await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+    await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
   }
 }
 

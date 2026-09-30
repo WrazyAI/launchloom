@@ -307,6 +307,28 @@ describe("rendered reference request retries", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it("backs off on the provider's transient in-flight credit response", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        failure(
+          402,
+          "This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.",
+        ),
+      )
+      .mockResolvedValueOnce(response(audit));
+
+    const pending = evaluate(fetchImpl);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect((await pending).pass).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
   it("stops after three attempts and preserves the final HTTP error", async () => {
     const fetchImpl = vi
       .fn<typeof fetch>()
