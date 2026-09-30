@@ -67,22 +67,30 @@ function candidateFindings(candidate) {
   ]);
 }
 
-function candidateDiversityFinding(report, candidateId) {
-  const diversity = report?.visualDiversity;
+function candidateDiversityFinding(
+  report,
+  candidateId,
+  diversity = report?.visualDiversity,
+) {
   if (!diversity) return "";
   const pairs = (diversity.pairs || []).filter(
-    (pair) => pair.left === candidateId || pair.right === candidateId,
+    (pair) =>
+      (pair.left === candidateId || pair.right === candidateId) &&
+      (diversity.pass !== false || pair.pass === false),
   );
   if (!pairs.length && diversity.pass !== false) return "";
   if (!pairs.length)
     return `Rendered candidate diversity failed: ${diversity.summary || "the candidates share too much visual grammar"}. Preserve this candidate's assigned reference and make its composition distinct from its siblings.`;
-  return pairs.map((pair) => {
-    const sibling = pair.left === candidateId ? pair.right : pair.left;
-    const reason = pair.reason || diversity.summary || "the candidate set has converged";
-    return diversity.pass === false
-      ? `Rendered diversity failed at ${pair.distance ?? "unknown"}/100 against sibling ${sibling}. Make this candidate's reference-led composition more distinct; do not converge toward the sibling. Evidence: ${reason}`
-      : `Rendered diversity currently passes at ${pair.distance ?? "unknown"}/100 against sibling ${sibling}. Preserve or increase this candidate's distinct design grammar; do not converge toward the sibling. Evidence: ${reason}`;
-  }).join("\n");
+  return pairs
+    .map((pair) => {
+      const sibling = pair.left === candidateId ? pair.right : pair.left;
+      const reason =
+        pair.reason || diversity.summary || "the candidate set has converged";
+      return diversity.pass === false
+        ? `Rendered diversity failed at ${pair.distance ?? "unknown"}/100 against sibling ${sibling}. Make this candidate's reference-led composition more distinct; do not converge toward the sibling. Evidence: ${reason}`
+        : `Rendered diversity currently passes at ${pair.distance ?? "unknown"}/100 against sibling ${sibling}. Preserve or increase this candidate's distinct design grammar; do not converge toward the sibling. Evidence: ${reason}`;
+    })
+    .join("\n");
 }
 
 function gateFindings(report) {
@@ -118,8 +126,8 @@ function candidateNeedsRepair(candidate) {
   );
 }
 
-function diversityRepairTargets(report) {
-  if (report?.visualDiversity?.pass !== false) return [];
+function diversityRepairTargets(report, diversity = report?.visualDiversity) {
+  if (diversity?.pass !== false) return [];
   const findingsByCandidate = new Map();
   const add = (candidateId, finding) => {
     if (!candidateId) return;
@@ -127,7 +135,7 @@ function diversityRepairTargets(report) {
     if (!findings.includes(finding)) findings.push(finding);
     findingsByCandidate.set(candidateId, findings);
   };
-  for (const pair of report.visualDiversity.pairs || []) {
+  for (const pair of diversity.pairs || []) {
     if (pair.pass === false) {
       add(
         pair.left,
@@ -143,7 +151,7 @@ function diversityRepairTargets(report) {
     for (const candidate of report.candidates || [])
       add(
         candidate.candidateId,
-        report.visualDiversity.summary ||
+        diversity.summary ||
           "Rendered candidates are not visually distinct enough for production promotion. Preserve this candidate's assigned reference mechanics and move away from generic shared grammar.",
       );
   }
@@ -151,6 +159,67 @@ function diversityRepairTargets(report) {
     candidateId,
     finding: findings.join("\n"),
   }));
+}
+
+function repairPriority(report, candidateId) {
+  const candidate = reportCandidate(report, candidateId);
+  const scores = [
+    candidate?.renderedReferenceFidelity?.score,
+    candidate?.referenceFidelity?.score,
+    candidate?.visualScore,
+  ].filter((score) => typeof score === "number" && Number.isFinite(score));
+  return scores.length ? Math.min(...scores) : Number.NEGATIVE_INFINITY;
+}
+
+function lowestScoreFirst(report, targets) {
+  return [...targets].sort((left, right) => {
+    const scoreDelta =
+      repairPriority(report, left.candidateId) -
+      repairPriority(report, right.candidateId);
+    return scoreDelta || left.candidateId.localeCompare(right.candidateId);
+  });
+}
+
+function closestFailedSibling(report, candidateId) {
+  const failedComparisons = [report?.visualDiversity, report?.previewDiversity]
+    .filter((diversity) => diversity?.pass === false)
+    .flatMap((diversity) => diversity.pairs || [])
+    .filter(
+      (pair) =>
+        pair?.pass === false &&
+        (pair.left === candidateId || pair.right === candidateId),
+    )
+    .map((pair) => ({
+      candidateId: pair.left === candidateId ? pair.right : pair.left,
+      distance:
+        typeof pair.distance === "number" && Number.isFinite(pair.distance)
+          ? pair.distance
+          : Number.POSITIVE_INFINITY,
+    }))
+    .filter((pair) => typeof pair.candidateId === "string" && pair.candidateId);
+
+  return failedComparisons.sort(
+    (left, right) =>
+      left.distance - right.distance ||
+      left.candidateId.localeCompare(right.candidateId),
+  )[0]?.candidateId;
+}
+
+async function comparisonScreenshotsFor(report, candidateId, screenshotsDir) {
+  const siblingCandidateId = closestFailedSibling(report, candidateId);
+  if (!siblingCandidateId) return [];
+  const captures = ["desktop", "mobile"].map((viewport) => ({
+    candidateId: siblingCandidateId,
+    viewport,
+    path: path.join(
+      screenshotsDir,
+      `${siblingCandidateId}-${viewport}-viewport.png`,
+    ),
+  }));
+  const available = new Set(
+    await collectAvailableScreenshots(captures.map((capture) => capture.path)),
+  );
+  return captures.filter((capture) => available.has(capture.path));
 }
 
 async function readJson(file) {
@@ -436,13 +505,14 @@ async function validateCandidateReasoningBindings(
 
 /**
  * Validate and atomically persist one authored candidate repair.
- * @param {{candidateDir: string, findings: any[], screenshots: string[], model: string, creativeSession?: Record<string, any> | null}} options
+ * @param {{candidateDir: string, findings: any[], screenshots: string[], comparisonScreenshots?: Array<{candidateId: string, viewport: string, path: string}>, model: string, creativeSession?: Record<string, any> | null}} options
  * @returns {Promise<{experience: string, styles: string, motion: string}>}
  */
 export async function defaultRepairCandidate({
   candidateDir,
   findings,
   screenshots,
+  comparisonScreenshots = [],
   model,
   creativeSession = null,
 } = {}) {
@@ -460,9 +530,7 @@ export async function defaultRepairCandidate({
       typeof finding === "object" &&
       finding.category === "human-review-feedback",
   );
-  const creativeRepairScope = humanReview
-    ? metadata.creativeRepairScope
-    : null;
+  const creativeRepairScope = humanReview ? metadata.creativeRepairScope : null;
   if (humanReview && !creativeRepairScope)
     throw repairOutputRejected(
       new Error("Human repair candidate omitted its resolved section scope."),
@@ -475,6 +543,7 @@ export async function defaultRepairCandidate({
     findings,
     files,
     screenshots,
+    comparisonScreenshots,
     contentManifest,
     creativeSession,
     creativeRepairScope,
@@ -721,6 +790,7 @@ export async function runRenderedCreativeRepair({
     round,
     screenshotsDir,
     candidateDirectory,
+    report,
   ) {
     const used = cycleUse.get(candidateId) || 0;
     if (used >= cycleLimit) return { status: "exhausted" };
@@ -737,9 +807,19 @@ export async function runRenderedCreativeRepair({
     const fullPageScreenshots = VIEWPORTS.map((viewport) =>
       path.join(screenshotsDir, `${candidateId}-${viewport}.png`),
     );
-    const screenshots = (await collectAvailableScreenshots(viewportScreenshots)).length === viewportScreenshots.length
-      ? [...viewportScreenshots, fullPageScreenshots[0]]
-      : fullPageScreenshots;
+    const currentViewports =
+      await collectAvailableScreenshots(viewportScreenshots);
+    const comparisonScreenshots = await comparisonScreenshotsFor(
+      report,
+      candidateId,
+      screenshotsDir,
+    );
+    const screenshots =
+      currentViewports.length === viewportScreenshots.length
+        ? comparisonScreenshots.length
+          ? currentViewports
+          : [...currentViewports, fullPageScreenshots[0]]
+        : fullPageScreenshots;
     // A build failure can legitimately leave an ENOENT screenshot, but
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);
@@ -754,6 +834,7 @@ export async function runRenderedCreativeRepair({
           candidateId,
           findings: activeFindings,
           screenshots: availableScreenshots,
+          comparisonScreenshots,
           model: resolvedModel,
           creativeSession: frozenCreativeSession,
           cycle: attempt,
@@ -861,8 +942,7 @@ export async function runRenderedCreativeRepair({
         report.previewDiversity?.pass === undefined
           ? null
           : Boolean(report.previewDiversity.pass),
-      previewDiversityStrategy:
-        report.previewDiversity?.strategy || null,
+      previewDiversityStrategy: report.previewDiversity?.strategy || null,
       repairs: [],
       rejectedCandidates: [],
     };
@@ -876,68 +956,77 @@ export async function runRenderedCreativeRepair({
     if (!report.selectedCandidateId) {
       const candidates = (report.candidates || []).filter(candidateNeedsRepair);
       const previewDiversityTargets =
-        requestedMode === "preview" &&
-        report.previewDiversity?.pass === false
-          ? diversityRepairTargets(report)
+        requestedMode === "preview" && report.previewDiversity?.pass === false
+          ? diversityRepairTargets(report, report.previewDiversity)
           : [];
-      let repairedAny = false;
-      let rejectedAny = false;
-      for (const candidate of candidates) {
-        const diversityFinding = candidateDiversityFinding(
-          report,
-          candidate.candidateId,
-        );
-        const findings = [
-          ...candidateFindings(candidate),
-          ...(diversityFinding ? [diversityFinding] : []),
-          ...(humanRepairPending ? humanFindings : []),
-        ];
-        const repaired = await repair(
-          candidate.candidateId,
-          findings.length
-            ? findings
-            : ["Candidate did not pass rendered preview gates."],
-          humanRepairPending
-            ? "human-review-feedback"
-            : "candidate-render-failure",
-          round,
-          screenshotsDir,
-          candidate.directory,
-        );
-        if (repaired.status === "repaired") {
-          repairedAny = true;
-          record.repairs.push(candidate.candidateId);
-        } else if (repaired.status === "rejected") {
-          rejectedAny = true;
-          record.rejectedCandidates.push(candidate.candidateId);
-        }
-      }
-      if (!candidates.length && previewDiversityTargets.length) {
-        for (const target of previewDiversityTargets) {
-          const candidate = reportCandidate(report, target.candidateId);
-          if (!candidate) continue;
-          const repaired = await repair(
-            target.candidateId,
-            [target.finding],
-            "rendered-diversity-preview",
-            round,
-            screenshotsDir,
-            candidate.directory,
-          );
-          if (repaired.status === "repaired") {
-            repairedAny = true;
-            record.repairs.push(target.candidateId);
-          } else if (repaired.status === "rejected") {
-            rejectedAny = true;
-            record.rejectedCandidates.push(target.candidateId);
-          }
-        }
-      }
-      if (repairedAny && humanRepairPending) humanRepairPending = false;
-      if (!repairedAny && !rejectedAny)
+      const canRepair = (candidateId) =>
+        (cycleUse.get(candidateId) || 0) < cycleLimit &&
+        !excludedCandidateIds.has(candidateId);
+      const repairCandidates = candidates
+        .filter((candidate) => canRepair(candidate.candidateId))
+        .map((candidate) => ({
+          candidateId: candidate.candidateId,
+          directory: candidate.directory,
+          candidate,
+          finding: null,
+        }));
+      const repairTargets = repairCandidates.length
+        ? repairCandidates
+        : previewDiversityTargets
+            .filter((target) => canRepair(target.candidateId))
+            .map((target) => ({
+              ...target,
+              candidate: reportCandidate(report, target.candidateId),
+              directory: reportCandidate(report, target.candidateId)?.directory,
+            }))
+            .filter((target) => target.candidate);
+      const target = lowestScoreFirst(report, repairTargets)[0];
+      if (!target)
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
         );
+
+      const diversity =
+        report.previewDiversity?.pass === false
+          ? report.previewDiversity
+          : report.visualDiversity;
+      const diversityFinding = candidateDiversityFinding(
+        report,
+        target.candidateId,
+        diversity,
+      );
+      const findings = target.finding
+        ? [target.finding]
+        : [
+            ...candidateFindings(target.candidate),
+            ...(diversityFinding ? [diversityFinding] : []),
+            ...(humanRepairPending ? humanFindings : []),
+          ];
+      const repaired = await repair(
+        target.candidateId,
+        findings.length
+          ? findings
+          : ["Candidate did not pass rendered preview gates."],
+        target.finding
+          ? "rendered-diversity-preview"
+          : humanRepairPending
+            ? "human-review-feedback"
+            : "candidate-render-failure",
+        round,
+        screenshotsDir,
+        target.directory,
+        report,
+      );
+      if (repaired.status === "repaired") {
+        record.repairs.push(target.candidateId);
+        if (humanRepairPending) humanRepairPending = false;
+      } else if (repaired.status === "rejected") {
+        record.rejectedCandidates.push(target.candidateId);
+      } else {
+        throw new Error(
+          `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
+        );
+      }
       continue;
     }
 
@@ -960,6 +1049,7 @@ export async function runRenderedCreativeRepair({
         round,
         screenshotsDir,
         selected.directory,
+        report,
       );
       if (repaired.status !== "repaired")
         throw new Error(
@@ -1010,6 +1100,7 @@ export async function runRenderedCreativeRepair({
         round,
         screenshotsDir,
         selected.directory,
+        report,
       );
       if (repaired.status === "rejected") {
         record.rejectedCandidates.push(selectedId);
@@ -1054,6 +1145,7 @@ export async function runRenderedCreativeRepair({
           round,
           screenshotsDir,
           selected.directory,
+          report,
         );
         if (repaired.status !== "repaired")
           throw new Error(
@@ -1076,25 +1168,30 @@ export async function runRenderedCreativeRepair({
             "Production promotion is not ready. Preserve the assigned Reference DNA and repair the selected candidate's remaining promotion blockers.",
         });
       }
-      let repairedAny = false;
-      for (const target of targets) {
-        const repaired = await repair(
-          target.candidateId,
-          [target.finding],
-          "rendered-diversity",
-          round,
-          screenshotsDir,
-          reportCandidate(report, target.candidateId)?.directory,
-        );
-        if (repaired.status === "repaired") {
-          repairedAny = true;
-          record.repairs.push(target.candidateId);
-        }
-      }
-      if (!repairedAny)
+      const target = lowestScoreFirst(
+        report,
+        targets.filter(
+          (item) => (cycleUse.get(item.candidateId) || 0) < cycleLimit,
+        ),
+      )[0];
+      if (!target)
         throw new Error(
           `Production promotion is not ready after the ${cycleLimit}-cycle per-candidate repair budget.`,
         );
+      const repaired = await repair(
+        target.candidateId,
+        [target.finding],
+        "rendered-diversity",
+        round,
+        screenshotsDir,
+        reportCandidate(report, target.candidateId)?.directory,
+        report,
+      );
+      if (repaired.status !== "repaired")
+        throw new Error(
+          `Production promotion is not ready after the ${cycleLimit}-cycle per-candidate repair budget.`,
+        );
+      record.repairs.push(target.candidateId);
       continue;
     }
 
@@ -1138,8 +1235,7 @@ export async function runRenderedCreativeRepair({
         report.previewDiversity?.pass === undefined
           ? null
           : Boolean(report.previewDiversity.pass),
-      previewDiversityStrategy:
-        report.previewDiversity?.strategy || null,
+      previewDiversityStrategy: report.previewDiversity?.strategy || null,
       repairCycles: Object.fromEntries(cycleUse),
       rejectedCandidates,
       history,

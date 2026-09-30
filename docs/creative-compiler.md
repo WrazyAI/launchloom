@@ -122,9 +122,15 @@ become client-site assets.
    and full-page overviews, applies the screenshot-to-reference judge, and then
    runs `visual-quality-gate.mjs` against the selected rendered candidate.
    Repairable findings are returned to Luna with the current source, Reference
-   DNA, and available screenshots. The repaired candidate is never trusted on
-   its own claim: it must rebuild, rerender, and pass the judges on the next
-   round. Each repair response has a 48k completion ceiling and records its
+   DNA, and available screenshots. When pairwise diversity fails, the repair
+   also receives the closest failed sibling's desktop and mobile first-viewport
+   captures, labeled as comparison-only evidence with an explicit do-not-copy
+   instruction. The loop repairs one candidate per render round, then rerenders
+   the full candidate set before choosing another target, so subsequent repairs
+   compare against current rendered output rather than a stale pre-repair batch.
+   The repaired candidate is never trusted on its own claim: it must rebuild,
+   rerender, and pass the judges on the next round. Each repair response has a
+   48k completion ceiling and records its
    finish reason plus completion/reasoning token counts without logging source
    content. When the combined authored source exceeds 20,000 characters, repair
    is split into sequential JSX, CSS, and motion responses to keep each returned

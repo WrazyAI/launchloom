@@ -33,8 +33,9 @@ afterEach(async () => {
 describe("creative repair loop", () => {
   it("applies only unique, bounded literal edits to candidate files", () => {
     const files = {
-      experience: '<section data-reference-section="hero"><h1>Old</h1></section>',
-      styles: "[data-reference-section=\"hero\"] h1 { font-size: 4rem; }",
+      experience:
+        '<section data-reference-section="hero"><h1>Old</h1></section>',
+      styles: '[data-reference-section="hero"] h1 { font-size: 4rem; }',
       motion: "export function mountExperienceMotion() { return () => {}; }",
     };
     const result = applyCreativeRepairEdits(files, [
@@ -56,7 +57,11 @@ describe("creative repair loop", () => {
     ).toThrow(/must match exactly once/iu);
     expect(() =>
       applyCreativeRepairEdits(files, [
-        { file: "styles", find: "font-size: 4rem;", replace: `data:image/webp;base64,${"a".repeat(40)}` },
+        {
+          file: "styles",
+          find: "font-size: 4rem;",
+          replace: `data:image/webp;base64,${"a".repeat(40)}`,
+        },
       ]),
     ).toThrow(/inline image data/iu);
   });
@@ -69,8 +74,9 @@ describe("creative repair loop", () => {
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
     const files = {
-      experience: '<section data-reference-section="hero"><h1>Old</h1></section>',
-      styles: "[data-reference-section=\"hero\"] h1 { font-size: 4rem; }",
+      experience:
+        '<section data-reference-section="hero"><h1>Old</h1></section>',
+      styles: '[data-reference-section="hero"] h1 { font-size: 4rem; }',
       motion: "export function mountExperienceMotion() { return () => {}; }",
     };
     const edits = {
@@ -101,7 +107,10 @@ describe("creative repair loop", () => {
         evidence: { desktopScreenshot: { path: desktop } },
       },
       findings: [
-        { category: "human-review-feedback", message: "Improve the hero layout." },
+        {
+          category: "human-review-feedback",
+          message: "Improve the hero layout.",
+        },
       ],
       files,
       screenshots: [],
@@ -176,7 +185,10 @@ describe("creative repair loop", () => {
           evidence: { desktopScreenshot: { path: desktop } },
         },
         findings: [
-          { category: "human-review-feedback", message: "Improve the hero layout." },
+          {
+            category: "human-review-feedback",
+            message: "Improve the hero layout.",
+          },
         ],
         files: { experience: "before", styles: "before", motion: "before" },
         screenshots: [],
@@ -187,7 +199,9 @@ describe("creative repair loop", () => {
           requestText: "Improve the hero layout.",
         },
       }),
-    ).rejects.toThrow(/must return bounded literal edits, not complete files/iu);
+    ).rejects.toThrow(
+      /must return bounded literal edits, not complete files/iu,
+    );
   });
 
   it("uses a generous repair completion budget and reports bounded response diagnostics", async () => {
@@ -198,8 +212,9 @@ describe("creative repair loop", () => {
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
     const files = {
-      experience: "<section data-reference-section=\"hero\"><h1>Old</h1></section>",
-      styles: "[data-reference-section=\"hero\"] h1 { font-size: 4rem; }",
+      experience:
+        '<section data-reference-section="hero"><h1>Old</h1></section>',
+      styles: '[data-reference-section="hero"] h1 { font-size: 4rem; }',
       motion: "export function mountExperienceMotion() { return () => {}; }",
     };
     const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
@@ -730,6 +745,79 @@ describe("creative repair loop", () => {
     );
   });
 
+  it("labels sibling screenshots as comparison-only evidence in diversity repairs", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-sibling-visual-repair-"),
+    );
+    roots.push(root);
+    const paths = {
+      referenceDesktop: path.join(root, "reference-desktop.png"),
+      referenceMobile: path.join(root, "reference-mobile.png"),
+      currentDesktop: path.join(root, "candidate-a-desktop-viewport.png"),
+      currentMobile: path.join(root, "candidate-a-mobile-viewport.png"),
+      siblingDesktop: path.join(root, "candidate-b-desktop-viewport.png"),
+      siblingMobile: path.join(root, "candidate-b-mobile-viewport.png"),
+    };
+    for (const [name, file] of Object.entries(paths))
+      await fs.writeFile(file, `${name}-pixels`);
+    const repaired = { experience: "fixed", styles: "fixed", motion: "fixed" };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [{ message: { content: JSON.stringify(repaired) } }],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: {
+          desktopScreenshot: { path: paths.referenceDesktop },
+          mobileScreenshot: { path: paths.referenceMobile },
+        },
+      },
+      findings: [
+        "Rendered diversity failed against candidate-b. Candidate layouts converge on the same split hero.",
+      ],
+      files: repaired,
+      screenshots: [paths.currentDesktop, paths.currentMobile],
+      comparisonScreenshots: [
+        {
+          candidateId: "candidate-b",
+          viewport: "desktop",
+          path: paths.siblingDesktop,
+        },
+        {
+          candidateId: "candidate-b",
+          viewport: "mobile",
+          path: paths.siblingMobile,
+        },
+      ],
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    const content = body.messages[1].content;
+    const prompt = content
+      .filter((part: any) => part.type === "text")
+      .map((part: any) => part.text)
+      .join("\n");
+    expect(prompt).toContain(
+      "Sibling candidate candidate-b desktop first viewport",
+    );
+    expect(prompt).toContain(
+      "Sibling candidate candidate-b mobile first viewport",
+    );
+    expect(prompt).toContain("Comparison-only visual evidence");
+    expect(prompt).toContain("Do not copy its layout or style");
+    expect(
+      content.filter((part: any) => part.type === "image_url"),
+    ).toHaveLength(6);
+  });
+
   it("uses the frozen creative session effort and session id for repairs", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-frozen-repair-session-"),
@@ -786,8 +874,9 @@ describe("creative repair loop", () => {
     const desktop = path.join(root, "desktop.png");
     await fs.writeFile(desktop, "desktop-evidence");
     const files = {
-      experience: '<section data-reference-section="hero"><h1>Old</h1></section>',
-      styles: "[data-reference-section=\"hero\"] h1 { font-size: 4rem; }",
+      experience:
+        '<section data-reference-section="hero"><h1>Old</h1></section>',
+      styles: '[data-reference-section="hero"] h1 { font-size: 4rem; }',
       motion: "export function mountExperienceMotion() { return () => {}; }",
     };
     const repaired = {
@@ -889,8 +978,12 @@ describe("creative repair loop", () => {
       "Preserve verified business facts, sealed content bindings, accessibility",
     );
     expect(prompt).toContain("SOURCE SAFETY CONTRACT");
-    expect(prompt).toContain("Do not add style attributes or style props to Experience.jsx");
-    expect(prompt).toContain("Use className hooks in JSX and put all visual declarations in styles.css");
+    expect(prompt).toContain(
+      "Do not add style attributes or style props to Experience.jsx",
+    );
+    expect(prompt).toContain(
+      "Use className hooks in JSX and put all visual declarations in styles.css",
+    );
     expect(prompt).not.toContain(
       "Preserve its composition and sealed content bindings.",
     );
@@ -906,7 +999,8 @@ describe("creative repair loop", () => {
     const files = {
       experience: `<main>${"existing visitor copy ".repeat(1_000)}<button>Request care</button></main>`,
       styles: ".care-guide { opacity: 1; }",
-      motion: "export function mountExperienceMotion(runtime) { return () => {}; }",
+      motion:
+        "export function mountExperienceMotion(runtime) { return () => {}; }",
     };
     const fetchMock = vi.fn(async (_url: string, options: RequestInit) => {
       const body = JSON.parse(String(options.body));
@@ -914,7 +1008,9 @@ describe("creative repair loop", () => {
         .filter((part: { type: string; text?: string }) => part.type === "text")
         .map((part: { text?: string }) => part.text || "")
         .join("\n");
-      const target = prompt.match(/REPAIR TARGET: (experience|styles|motion)/u)?.[1];
+      const target = prompt.match(
+        /REPAIR TARGET: (experience|styles|motion)/u,
+      )?.[1];
       return new Response(
         JSON.stringify({
           choices: [
@@ -923,7 +1019,10 @@ describe("creative repair loop", () => {
               message: {
                 content: JSON.stringify({
                   file: target,
-                  content: target === "motion" ? "export function mountExperienceMotion(runtime) { return () => {}; }" : files[target as keyof typeof files],
+                  content:
+                    target === "motion"
+                      ? "export function mountExperienceMotion(runtime) { return () => {}; }"
+                      : files[target as keyof typeof files],
                 }),
               },
             },
@@ -968,7 +1067,9 @@ describe("creative repair loop", () => {
       'matchMedia("(prefers-reduced-motion: reduce)")',
     );
     expect(motionPrompt).toContain("keep a still equivalent");
-    expect(motionPrompt).toContain("Clean up listeners, observers, timelines, and timers");
+    expect(motionPrompt).toContain(
+      "Clean up listeners, observers, timelines, and timers",
+    );
   });
 
   it("treats sealed visitor-facing values as data and forbids hardcoding them in repairs", async () => {
@@ -1000,7 +1101,9 @@ describe("creative repair loop", () => {
         sectionSequence: repairSectionSequence,
         evidence: { desktopScreenshot: { path: desktop } },
       },
-      findings: [{ category: "visual", message: "Adjust the appointment action." }],
+      findings: [
+        { category: "visual", message: "Adjust the appointment action." },
+      ],
       files: {
         experience:
           '<a href="#contact">{content.copy.appointmentPreparation}</a>',
@@ -1055,7 +1158,10 @@ describe("creative repair loop", () => {
               {
                 finish_reason: "stop",
                 message: {
-                  content: JSON.stringify({ file: "experience", content: "  " }),
+                  content: JSON.stringify({
+                    file: "experience",
+                    content: "  ",
+                  }),
                 },
               },
             ],
@@ -1075,7 +1181,9 @@ describe("creative repair loop", () => {
         files,
         screenshots: [],
       }),
-    ).rejects.toThrow(/returned an empty experience file.*finish_reason=stop/iu);
+    ).rejects.toThrow(
+      /returned an empty experience file.*finish_reason=stop/iu,
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -1112,7 +1220,8 @@ describe("creative repair loop", () => {
         referenceName: "Licensed service template",
         source: { rights: "licensed" },
         tags: { business: ["hvac"] },
-        designPrompt: "A source reference whose exact identity and credit must not become client copy.",
+        designPrompt:
+          "A source reference whose exact identity and credit must not become client copy.",
       },
       findings: [
         {
@@ -1135,13 +1244,17 @@ describe("creative repair loop", () => {
       .map((part: any) => part.text)
       .join("\n");
     expect(prompt).toContain("REFERENCE PROVENANCE BOUNDARY");
-    expect(prompt).toContain("rights and attribution are research metadata only");
+    expect(prompt).toContain(
+      "rights and attribution are research metadata only",
+    );
     expect(prompt).toContain("Never render them in visitor-facing copy");
     expect(prompt).toContain("EARLY CONVERSION INVARIANT");
     expect(prompt).toContain("native anchor to #contact");
     expect(prompt).toContain("content.hero.primaryLabel");
     expect(prompt).toContain("data-early-conversion");
-    expect(prompt).toContain("Do not replace it with a button, form, or JavaScript-only action");
+    expect(prompt).toContain(
+      "Do not replace it with a button, form, or JavaScript-only action",
+    );
   });
 
   it("preserves composition when a repair finding is non-visual", async () => {

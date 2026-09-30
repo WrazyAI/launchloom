@@ -151,7 +151,11 @@ function isRepairEditSet(value) {
 export function applyCreativeRepairEdits(files, edits) {
   if (!files || typeof files !== "object" || Array.isArray(files))
     throw new Error("Creative repair edits require candidate files.");
-  if (!Array.isArray(edits) || edits.length < 1 || edits.length > MAX_REPAIR_EDITS)
+  if (
+    !Array.isArray(edits) ||
+    edits.length < 1 ||
+    edits.length > MAX_REPAIR_EDITS
+  )
     throw new Error(
       `Creative repair edits must contain 1 to ${MAX_REPAIR_EDITS} literal replacements.`,
     );
@@ -160,7 +164,11 @@ export function applyCreativeRepairEdits(files, edits) {
   let patchTextChars = 0;
   for (const [index, edit] of edits.entries()) {
     const label = `Creative repair edit ${index + 1}`;
-    if (!edit || typeof edit !== "object" || !REPAIR_EDITABLE_FILES.has(edit.file))
+    if (
+      !edit ||
+      typeof edit !== "object" ||
+      !REPAIR_EDITABLE_FILES.has(edit.file)
+    )
       throw new Error(`${label} targets an unsupported candidate file.`);
     if (
       typeof edit.find !== "string" ||
@@ -169,7 +177,9 @@ export function applyCreativeRepairEdits(files, edits) {
       typeof edit.replace !== "string" ||
       edit.replace.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS
     )
-      throw new Error(`${label} exceeds the bounded literal replacement contract.`);
+      throw new Error(
+        `${label} exceeds the bounded literal replacement contract.`,
+      );
     const replacement = edit.replace.replace(/[—–]/gu, "-");
     if (edit.find === replacement)
       throw new Error(`${label} does not change the candidate source.`);
@@ -382,7 +392,7 @@ body:has([data-creative-host="true"]) .quick-answers {
  * Bounded author-owned repair loop. The evaluator is deliberately injected so
  * tests can prove the retry limit without contacting a model provider.
  *
- * @param {{files?: {experience?: string, styles?: string, motion?: string}, referenceDna?: any, referenceDossier?: any, findings?: any[], screenshots?: string[], generate?: (input: any) => Promise<any>, evaluate?: (files: any) => Promise<any>, maxCycles?: number}} options
+ * @param {{files?: {experience?: string, styles?: string, motion?: string}, referenceDna?: any, referenceDossier?: any, findings?: any[], screenshots?: string[], comparisonScreenshots?: Array<{candidateId: string, viewport: string, path: string}>, generate?: (input: any) => Promise<any>, evaluate?: (files: any) => Promise<any>, maxCycles?: number}} options
  */
 export async function runCreativeRepairLoop({
   files,
@@ -390,6 +400,7 @@ export async function runCreativeRepairLoop({
   referenceDossier,
   findings = [],
   screenshots = [],
+  comparisonScreenshots = [],
   generate,
   evaluate,
   maxCycles = 2,
@@ -425,6 +436,7 @@ export async function runCreativeRepairLoop({
         referenceDossier,
         findings: cycleFindings,
         screenshots,
+        comparisonScreenshots,
         files: current,
       });
       if (!isCompleteRepair(repaired))
@@ -524,6 +536,7 @@ export async function resolveReferenceEvidencePath(record) {
  *   findings?: any[],
  *   files?: {experience?: string, styles?: string, motion?: string},
  *   screenshots?: string[],
+ *   comparisonScreenshots?: Array<{candidateId: string, viewport: string, path: string}>,
  *   contentManifest?: Record<string, any>,
  *   creativeSession?: Record<string, any> | null,
  *   creativeRepairScope?: Record<string, any> | null,
@@ -538,6 +551,7 @@ export async function requestRepair({
   findings,
   files,
   screenshots,
+  comparisonScreenshots = [],
   contentManifest = {},
   creativeSession = null,
   creativeRepairScope = null,
@@ -679,6 +693,32 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     candidateEvidence.push(await imagePart(screenshot));
   }
 
+  for (const comparison of comparisonScreenshots.slice(0, 2)) {
+    if (
+      !comparison ||
+      typeof comparison.candidateId !== "string" ||
+      !/^[a-z0-9][a-z0-9._-]{0,79}$/iu.test(comparison.candidateId) ||
+      !["desktop", "mobile"].includes(comparison.viewport) ||
+      typeof comparison.path !== "string" ||
+      !path.isAbsolute(comparison.path)
+    )
+      throw new Error(
+        "Creative repair received invalid sibling screenshot evidence.",
+      );
+    try {
+      await fs.access(comparison.path);
+    } catch (error) {
+      if (error?.code === "ENOENT") continue;
+      throw error;
+    }
+    const dimensions = await imageSizeLabel(comparison.path);
+    candidateEvidence.push({
+      type: "text",
+      text: `Sibling candidate ${comparison.candidateId} ${comparison.viewport} first viewport (${dimensions}). Comparison-only visual evidence. Do not copy its layout or style; preserve this candidate's assigned Reference DNA and use the comparison only to avoid visual convergence.`,
+    });
+    candidateEvidence.push(await imagePart(comparison.path));
+  }
+
   const sourcePrompt = (currentFiles, target = null) => `${repairInstruction}
 
 ${scopedHumanRepair ? `RESOLVED SECTION SCOPE\n${JSON.stringify(creativeRepairScope, null, 2)}\nOnly these section IDs may change.` : ""}
@@ -708,14 +748,20 @@ Every <img> must have a usable alt attribute. Use concise descriptive alt text f
 SEALED CONTENT BINDING CONTRACT
 Treat every business-specific string and fact shown in CURRENT SEALED CONTENT SHAPE as sealed data, not source copy. Do not copy, paraphrase, or hardcode those values into JSX/HTML, CSS generated content, accessibility attributes, or motion code. Preserve existing content-token expressions and render business content through the existing content bindings or the supplied content-bound runtime helpers. Never replace a content binding with a literal value from the sealed shape. If a requested repair cannot be made while preserving those bindings, leave the binding intact and report the repair as unresolved rather than inventing or embedding copy.
 
-${motionRepair || target === "motion" ? `MOTION REPAIR CONTRACT
+${
+  motionRepair || target === "motion"
+    ? `MOTION REPAIR CONTRACT
 Treat motion.js as behavior-only. Never use motion code to add, remove, or change visitor-facing text, JSX/HTML, DOM structure, headings, labels, buttons, links, or accessibility copy. Use only existing selectors and DOM hooks. Do not use innerHTML, textContent, insertAdjacentHTML, or create new content nodes. If the motion needs a missing structural hook, leave the motion repair unresolved instead of changing the page markup. Changes to markup for a separate, explicit non-motion finding must stay in Experience.jsx and must not be implemented by motion code.
 ${target === "motion" ? "Keep CURRENT EXPERIENCE.JSX byte-for-byte unchanged for this motion-only repair." : "When the findings request only a motion change, keep CURRENT EXPERIENCE.JSX byte-for-byte unchanged."}
-Every motion sequence must respect reduced-motion preferences: check runtime?.reducedMotion and matchMedia("(prefers-reduced-motion: reduce)") before starting, keep a still equivalent with all content and controls usable when reduced motion is active, and cancel/revert active timelines or scroll effects when the preference changes. Clean up listeners, observers, timelines, and timers when the experience unmounts.` : ""}
+Every motion sequence must respect reduced-motion preferences: check runtime?.reducedMotion and matchMedia("(prefers-reduced-motion: reduce)") before starting, keep a still equivalent with all content and controls usable when reduced motion is active, and cancel/revert active timelines or scroll effects when the preference changes. Clean up listeners, observers, timelines, and timers when the experience unmounts.`
+    : ""
+}
 
-${scopedHumanRepair
+${
+  scopedHumanRepair
     ? `Return JSON with an "edits" array only, never complete files. Each edit must name one of experience, styles, or motion; its exact "find" fragment must occur once; its "replace" is the minimal correction. Return 1-12 edits, each fragment at most 6000 characters, total find-plus-replace text at most 24000 characters. An empty edit list means the request cannot be safely fulfilled and must fail closed.`
-    : "Return complete files required by the response schema and no unrelated explanation."} Keep required reference signatures and safety/content contracts unless the explicit repair requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
+    : "Return complete files required by the response schema and no unrelated explanation."
+} Keep required reference signatures and safety/content contracts unless the explicit repair requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
 
   const buildRepairContent = (currentFiles, target) => {
     const requestContent = [
