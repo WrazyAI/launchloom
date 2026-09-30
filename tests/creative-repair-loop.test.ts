@@ -280,7 +280,7 @@ describe("creative repair loop", () => {
           JSON.stringify({
             error: {
               message:
-                "This request requires more credits, or fewer max_tokens. You requested up to 48000 tokens, but can only afford 46992.",
+                "This request requires more credits, or fewer max_tokens. You requested up to 48000 tokens, but can only afford 32578.",
             },
           }),
           { status: 402 },
@@ -321,12 +321,12 @@ describe("creative repair loop", () => {
     const firstBody = JSON.parse(fetchMock.mock.calls[0][1].body as string);
     const retryBody = JSON.parse(fetchMock.mock.calls[1][1].body as string);
     expect(firstBody.max_completion_tokens).toBe(48000);
-    expect(retryBody.max_completion_tokens).toBe(45968);
+    expect(retryBody.max_completion_tokens).toBe(31554);
     expect(diagnostics.join(" ")).toContain(
-      "creative_repair_retry reason=provider-affordability requested_max_completion_tokens=48000 retry_max_completion_tokens=45968",
+      "creative_repair_retry reason=provider-affordability requested_max_completion_tokens=48000 retry_max_completion_tokens=31554",
     );
     expect(diagnostics.join(" ")).toContain(
-      "creative_completion stage=creative-repair finish_reason=stop max_completion_tokens=45968 completion_tokens=3456 reasoning_tokens=321",
+      "creative_completion stage=creative-repair finish_reason=stop max_completion_tokens=31554 completion_tokens=3456 reasoning_tokens=321",
     );
   });
 
@@ -453,7 +453,8 @@ describe("creative repair loop", () => {
         imageTreatment: {
           mode: "finished rooms and paint sample-like color strips",
           crop: "wide room reveal followed by contained material studies",
-          focalPoint: "keep the finished surface visible beside the service choice",
+          focalPoint:
+            "keep the finished surface visible beside the service choice",
         },
         servicePresentation: {
           pattern: "vertical service menu that changes the featured room image",
