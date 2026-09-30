@@ -211,7 +211,6 @@ describe("OpenRouter cache integration", () => {
 
   it("limits exact response caching to deterministic control and judge lanes", () => {
     const expectedResponseCached = [
-      "scripts/analyze-reference-dna.mjs",
       "scripts/evaluate-visual-models.mjs",
       "scripts/rendered-reference-fidelity.mjs",
       "scripts/revision-engine.mjs",
@@ -221,6 +220,13 @@ describe("OpenRouter cache integration", () => {
       expect(fs.readFileSync(file, "utf8"), file).toContain(
         "responseCache: true",
       );
+
+    const referenceAnalyzer = fs.readFileSync(
+      "scripts/analyze-reference-dna.mjs",
+      "utf8",
+    );
+    expect(referenceAnalyzer).toContain("requestAnalysis(true)");
+    expect(referenceAnalyzer).toContain("requestAnalysis(false)");
 
     for (const file of [
       "scripts/author-production-experiences.mjs",

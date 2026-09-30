@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
-import { applyMeasuredReferenceAnalysis } from "../scripts/analyze-reference-dna.mjs";
+import { applyMeasuredReferenceAnalysis, enrichInspirationPack } from "../scripts/analyze-reference-dna.mjs";
 import { buildReferenceDna, inferCompositionTopology, normalizeSectionSequence, validateReferenceDna } from "../scripts/reference-dna.mjs";
 
 const registry = JSON.parse(fs.readFileSync("data/inspiration-registry.json", "utf8"));
@@ -102,6 +102,99 @@ describe("Reference DNA", () => {
     expect(measured.measurements.headlineWidthRatio).toBe(0.72);
     expect(measured.evidence.pixelAnalysisSummary).toContain("Measured from");
     expect(measured.evidence.annotatedDescription).toBe(original.evidence.annotatedDescription);
+  });
+
+  it("bypasses the exact-response cache once when a reference analyzer response is invalid JSON", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    const validAnalysis = {
+      annotatedDescription: "Measured the hierarchy, imagery, and spacing from the paired screenshots.",
+      heroGeometry: { mode: "image-led", alignment: "asymmetric", viewport: "adapted desktop composition" },
+      navigationGeometry: { mode: "compact", placement: "top edge", mobile: "collapsed menu" },
+      typography: { display: "editorial serif", body: "neutral sans", scale: "oversized to compact" },
+      palette: { surfaces: ["warm ivory"], ink: "deep green", accents: ["ochre"], contrastIntent: "high contrast" },
+      imageTreatment: { mode: "full bleed", crop: "wide crop", focalPoint: "center-right" },
+      sectionSequence: ["hero", "services", "studio story", "contact"],
+      servicePresentation: { pattern: "editorial rows", interaction: "static links" },
+      ctaPlacement: { primary: "hero", secondary: "footer", early: "visible in first viewport" },
+      motion: { primitive: "subtle reveal", library: "CSS", reducedMotion: "disable reveal" },
+      mobileRecomposition: { strategy: "single column", rules: ["stack media", "keep CTA above the fold"] },
+      prohibitedPatterns: ["generic card wall", "split hero", "repeated accordion"],
+      requiredSignatureElements: [
+        { id: "oversized-title", selector: "h1", description: "large editorial title" },
+        { id: "archive-rows", selector: "[data-section='archive']", description: "thin ruled archive rows" },
+      ],
+      acceptanceChecks: ["retain title scale", "keep the archive", "use the screenshot crop", "preserve mobile order"],
+      measurements: {
+        headlineWidthRatio: 0.7,
+        headlineHeightRatio: 0.2,
+        heroImageOccupancyRatio: 0.6,
+        contentColumnWidthRatio: 0.5,
+        navTopRatio: 0.03,
+        navSideInsetRatio: 0.04,
+        ctaTopRatio: 0.7,
+        dominantSectionHeightRatios: [0.8, 0.7, 0.9],
+        imageAspectRatios: [1.5],
+        overlapRelationships: [],
+        surfaceTransitions: ["ivory to dark green"],
+        mobile: { headlineWidthRatio: 0.9, imageOccupancyRatio: 0.5, ctaTopRatio: 1.1, contentInsetRatio: 0.05 },
+      },
+    };
+    const requestCalls: Array<{ url: string; init?: RequestInit }> = [];
+    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      requestCalls.push({ url, init });
+      const attempt = requestCalls.length;
+      const content = attempt === 1 ? "{ malformed analyzer response" : JSON.stringify(validAnalysis);
+      return new Response(JSON.stringify({ choices: [{ message: { content }, finish_reason: "stop" }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    const pack = buildInspirationPack({
+      seed: "reference-analyzer-retry",
+      industry: "legal-services",
+      styleTerms: [],
+      recentReferenceIds: [],
+      recentRouteSignatures: [],
+    }, productionRegistry);
+
+    try {
+      const enriched = await enrichInspirationPack(pack, { fetchImpl: fetchImpl as typeof fetch });
+      expect(enriched.routes).toHaveLength(3);
+      expect(fetchImpl).toHaveBeenCalledTimes(4);
+      const cacheHeaders = requestCalls.map(({ init }) => new Headers(init?.headers).get("X-OpenRouter-Cache"));
+      expect(cacheHeaders).toEqual(["true", null, "true", "true"]);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("fails closed after one uncached retry still returns invalid JSON", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");
+    const requestCalls: Array<{ url: string; init?: RequestInit }> = [];
+    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      requestCalls.push({ url, init });
+      return new Response(JSON.stringify({ choices: [{ message: { content: "{ still malformed" }, finish_reason: "stop" }] }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    const pack = buildInspirationPack({
+      seed: "reference-analyzer-retry-still-fails",
+      industry: "legal-services",
+      styleTerms: [],
+      recentReferenceIds: [],
+      recentRouteSignatures: [],
+    }, productionRegistry);
+
+    try {
+      await expect(enrichInspirationPack(pack, { fetchImpl: fetchImpl as typeof fetch }))
+        .rejects.toThrow("Reference analyzer returned invalid JSON after one uncached retry");
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+      const cacheHeaders = requestCalls.map(({ init }) => new Headers(init?.headers).get("X-OpenRouter-Cache"));
+      expect(cacheHeaders).toEqual(["true", null]);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("fails closed when the required desktop screenshot is missing", () => {
