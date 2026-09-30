@@ -378,13 +378,13 @@ const { diagnosticPreview = false } = Astro.props;
 
     // ---------------------------------------------------------------- client
     const CLIENT_COLORS = [
-      { id: "primary", label: "Brand or accent color", fallback: "#205d51" },
+      { id: "primary", label: "Main brand color", fallback: "#205d51" },
       { id: "surface", label: "Page background", fallback: "#f8f6f0" },
     ];
     const CLIENT_PHOTO_TARGETS = [
-      { id: "hero", label: "Opening or hero image" },
-      { id: "secondary", label: "About or story image" },
-      { id: "tertiary", label: "Gallery image" },
+      { id: "hero", label: "Main image at the top" },
+      { id: "secondary", label: "About image" },
+      { id: "tertiary", label: "Gallery photo" },
       { id: "team", label: "Team photo" },
     ];
     let clientCategory = "text";
@@ -482,7 +482,7 @@ const { diagnosticPreview = false } = Astro.props;
       if (!chosen) return;
       if (clientGenerated) {
         clientPreviewImage.src = clientGenerated.url;
-        clientPreviewLabel.textContent = "Generated image selected";
+        clientPreviewLabel.textContent = "Your new image is selected";
         return;
       }
       clientPreviewUrl = URL.createObjectURL(clientFile);
@@ -494,12 +494,12 @@ const { diagnosticPreview = false } = Astro.props;
       clientCategorySelect = document.createElement("select");
       for (const [value, label] of [
         ["logo", "Logo"],
-        ["photos", "Business photos"],
-        ["style", "Font or styling"],
-        ["color", "Colour"],
-        ["text", "Text or factual correction"],
+        ["photos", "Photos"],
+        ["style", "Fonts or spacing"],
+        ["color", "Colors"],
+        ["text", "Wording or facts"],
         ["contact", "Contact details"],
-        ["other-small", "Other small change"],
+        ["other-small", "Something else small"],
       ]) {
         const option = document.createElement("option");
         option.value = value;
@@ -533,12 +533,12 @@ const { diagnosticPreview = false } = Astro.props;
       clientGenerateButton = document.createElement("button");
       clientGenerateButton.type = "button";
       clientGenerateButton.className = "ll-generate";
-      clientGenerateButton.textContent = "Generate an image";
+      clientGenerateButton.textContent = "Create an image";
       clientPreview = document.createElement("div");
       clientPreview.className = "ll-part-preview";
       clientPreview.hidden = true;
       clientPreviewImage = document.createElement("img");
-      clientPreviewImage.alt = "Selected replacement image";
+      clientPreviewImage.alt = "Selected image";
       const previewCopy = document.createElement("div");
       clientPreviewLabel = document.createElement("strong");
       const removePreview = document.createElement("button");
@@ -566,10 +566,10 @@ const { diagnosticPreview = false } = Astro.props;
       clientColorSection.className = "ll-part";
       clientColorSection.hidden = true;
       const colorHeading = document.createElement("h3");
-      colorHeading.textContent = "Colours";
+      colorHeading.textContent = "Colors";
       const colorHint = document.createElement("p");
       colorHint.className = "ll-part-status";
-      colorHint.textContent = "Pick the colours you prefer. The rest of the palette is derived with readable contrast.";
+      colorHint.textContent = "Pick the colors you like. We will adjust the rest so text stays easy to read.";
       clientColorSection.append(colorHeading, colorHint, clientColorHost);
 
       clientFields.hidden = false;
@@ -584,7 +584,7 @@ const { diagnosticPreview = false } = Astro.props;
         commentInput.placeholder =
           clientCategory === "text"
             ? 'Quote the exact text and replacement, for example: Replace text "Same day service" with "Prompt scheduling".'
-            : "Describe the small change. Requests that change the page layout are reviewed separately.";
+            : "Tell us what you would like changed. Bigger redesigns are handled separately.";
         renderClientTargets();
         renderClientPreview();
         setClientImageVisibility();
@@ -615,11 +615,11 @@ const { diagnosticPreview = false } = Astro.props;
         emailInput.setCustomValidity("");
         const prompt = String(clientPrompt.value || "").trim();
         if (prompt.length < 3) {
-          clientStatus.textContent = "Describe the image you want first.";
+          clientStatus.textContent = "Describe the image first.";
           return;
         }
         clientGenerateButton.disabled = true;
-        clientStatus.textContent = "Generating an image…";
+        clientStatus.textContent = "Creating an image…";
         try {
           const response = await fetch(`${launchloomUrl}/api/feedback-image`, {
             method: "POST",
@@ -628,13 +628,13 @@ const { diagnosticPreview = false } = Astro.props;
           });
           const result = await response.json().catch(() => ({}));
           const url = result.images?.[0]?.url;
-          if (!response.ok || !url) throw new Error(result.error || "Image generation failed.");
+          if (!response.ok || !url) throw new Error(result.error || "We could not create the image.");
           clientGenerated = { url, prompt, model: result.model || "" };
           clientFile = null;
           if (clientFileInput) clientFileInput.value = "";
-          clientStatus.textContent = "Generated. Choose it as your replacement, or generate another.";
+          clientStatus.textContent = "Created. Use this image, or create another.";
         } catch (error) {
-          clientStatus.textContent = error instanceof Error ? error.message : "Image generation failed.";
+          clientStatus.textContent = error instanceof Error ? error.message : "We could not create the image.";
         } finally {
           clientGenerateButton.disabled = false;
           renderClientPreview();
@@ -657,18 +657,18 @@ const { diagnosticPreview = false } = Astro.props;
     async function submitClientFeedback(submittedEmail) {
       const imageCategory = clientCategory === "logo" || clientCategory === "photos";
       if (imageCategory && !clientFile && !clientGenerated) {
-        setStatusText("Upload or generate a replacement image.");
+        setStatusText("Add a photo or create one.");
         return false;
       }
       if (["text", "contact", "style", "other-small"].includes(clientCategory) && !commentInput.value.trim()) {
-        setStatusText("Describe the small change.");
+        setStatusText("Tell us what you would like changed.");
         return false;
       }
       const colorSelections = clientColors
         .filter((role) => role.enabled)
         .map((role) => ({ role: role.id, hex: role.hex.toLowerCase() }));
       if (clientCategory === "color" && !colorSelections.length && !/#[0-9a-f]{6}/i.test(commentInput.value)) {
-        setStatusText("Pick a colour or state a six-digit hex code in the note.");
+        setStatusText("Pick a color, or type a color code like #205d51 in the note.");
         return false;
       }
       const attachments = clientGenerated
@@ -680,7 +680,7 @@ const { diagnosticPreview = false } = Astro.props;
         if (clientFile) {
           const body = new FormData();
           body.set("token", token);
-          body.set("comment", commentInput.value.trim() || "Replace this image with the uploaded file.");
+          body.set("comment", commentInput.value.trim() || "Please replace this image with the one I uploaded.");
           body.set("category", clientCategory);
           body.set("email", submittedEmail);
           body.set("pageUrl", window.location.href);
@@ -711,7 +711,7 @@ const { diagnosticPreview = false } = Astro.props;
         }
         setStatusText(
           result.queueStatus === "queued"
-            ? "Queued. Your request will start after the current revision."
+            ? "Queued. Your request will start after the current update."
             : "Received. We will review your request before publishing an update.",
         );
         feedbackSubmissionId = "";
@@ -735,26 +735,26 @@ const { diagnosticPreview = false } = Astro.props;
 
     // ------------------------------------------------------------- developer
     const IMAGE_PARTS = [
-      { id: "logo", label: "Logo", prompt: "Describe the logo or brand mark you want" },
-      { id: "hero", label: "Hero image", prompt: "Describe the opening image you want" },
-      { id: "secondary", label: "About or story image", prompt: "Describe the story or about image you want" },
-      { id: "tertiary", label: "Gallery photos", prompt: "Describe the gallery image you want" },
+      { id: "logo", label: "Logo", prompt: "Describe the logo you want" },
+      { id: "hero", label: "Main image at the top", prompt: "Describe the image you want at the top of the page" },
+      { id: "secondary", label: "About image", prompt: "Describe the image you want in the about section" },
+      { id: "tertiary", label: "Gallery photos", prompt: "Describe a gallery photo you want" },
       { id: "team", label: "Team photo", prompt: "Describe the team photo you want" },
     ];
     const TEXT_PARTS = [
-      { id: "navigation", label: "Navigation", hint: "For example: keep the menu short and put Contact last." },
+      { id: "navigation", label: "Menu", hint: "For example: keep the menu short and put Contact last." },
       { id: "wording", label: "Wording", hint: "For example: make the headline more direct." },
       { id: "services", label: "Services", hint: "For example: rename a service or clarify what it covers." },
       { id: "phone", label: "Phone number", hint: "For example: make the phone number easier to find." },
-      { id: "faq", label: "FAQ", hint: "For example: add a question about coverage." },
+      { id: "faq", label: "Common questions", hint: "For example: add a question about coverage." },
     ];
     const COLOR_ROLES = [
-      { id: "primary", label: "Brand or accent color", fallback: "#1f3a5f" },
+      { id: "primary", label: "Main brand color", fallback: "#1f3a5f" },
       { id: "surface", label: "Page background", fallback: "#faf7f2" },
-      { id: "hero", label: "Hero surface", fallback: "#e8f0f1", advanced: true },
-      { id: "ink", label: "Body text", fallback: "#17242b", advanced: true },
-      { id: "muted", label: "Muted text", fallback: "#5b6b72", advanced: true },
-      { id: "line", label: "Divider lines", fallback: "#d7e0e2", advanced: true },
+      { id: "hero", label: "Top section background", fallback: "#e8f0f1", advanced: true },
+      { id: "ink", label: "Main text", fallback: "#17242b", advanced: true },
+      { id: "muted", label: "Smaller, lighter text", fallback: "#5b6b72", advanced: true },
+      { id: "line", label: "Lines and borders", fallback: "#d7e0e2", advanced: true },
     ];
     const selectedParts = new Set();
     const notes = {};
@@ -789,8 +789,8 @@ const { diagnosticPreview = false } = Astro.props;
       if (!chosen) return;
       preview.querySelector("img").src = chosen.url;
       preview.querySelector("[data-part-preview-label]").textContent = draft.generated
-        ? "Generated image selected"
-        : "Uploaded image selected";
+        ? "Your new image is selected"
+        : "Your uploaded image is selected";
     };
 
     function buildDeveloperForm() {
@@ -860,12 +860,12 @@ const { diagnosticPreview = false } = Astro.props;
           body.set("file", prepared);
           const response = await fetch(`${launchloomUrl}/api/feedback-image`, { method: "POST", body });
           const result = await response.json().catch(() => ({}));
-          if (!response.ok || !result.url) throw new Error(result.error || "The image upload failed.");
+          if (!response.ok || !result.url) throw new Error(result.error || "We could not upload the image.");
           drafts[id].upload = { url: result.url, name: file.name };
           drafts[id].generated = undefined;
-          drafts[id].status = "Uploaded. It replaces this image in the next revision.";
+          drafts[id].status = "Uploaded. It will replace this image in the next update.";
         } catch (error) {
-          drafts[id].status = error instanceof Error ? error.message : "The image upload failed.";
+          drafts[id].status = error instanceof Error ? error.message : "We could not upload the image.";
         } finally {
           drafts[id].busy = false;
           setStatus(id, drafts[id].status);
@@ -886,12 +886,12 @@ const { diagnosticPreview = false } = Astro.props;
         const promptInput = root.querySelector(`[data-part-prompt="${id}"]`);
         const prompt = String(promptInput?.value || "").trim();
         if (prompt.length < 3) {
-          drafts[id].status = "Describe the image you want first.";
+          drafts[id].status = "Describe the image first.";
           setStatus(id, drafts[id].status);
           return;
         }
         drafts[id].busy = true;
-        drafts[id].status = "Generating an image…";
+        drafts[id].status = "Creating an image…";
         setStatus(id, drafts[id].status);
         try {
           const response = await fetch(`${launchloomUrl}/api/feedback-image`, {
@@ -901,12 +901,12 @@ const { diagnosticPreview = false } = Astro.props;
           });
           const result = await response.json().catch(() => ({}));
           const url = result.images?.[0]?.url;
-          if (!response.ok || !url) throw new Error(result.error || "Image generation failed.");
+          if (!response.ok || !url) throw new Error(result.error || "We could not create the image.");
           drafts[id].generated = { url, prompt, model: result.model || "" };
           drafts[id].upload = undefined;
-          drafts[id].status = "Generated. Choose it as your replacement, or generate another.";
+          drafts[id].status = "Created. Use this image, or create another.";
         } catch (error) {
-          drafts[id].status = error instanceof Error ? error.message : "Image generation failed.";
+          drafts[id].status = error instanceof Error ? error.message : "We could not create the image.";
         } finally {
           drafts[id].busy = false;
           setStatus(id, drafts[id].status);
@@ -924,7 +924,7 @@ const { diagnosticPreview = false } = Astro.props;
 <label>Note (optional)<textarea data-part-note="${part.id}" maxlength="2000" placeholder="Anything else about this image?"></textarea></label>
 <label>Upload your own image<input type="file" accept="image/png,image/jpeg,image/webp" data-part-file="${part.id}"></label>
 <label>${part.prompt}<textarea data-part-prompt="${part.id}" maxlength="500" placeholder="For example: a calm, warm photo of the work in progress, no text."></textarea></label>
-<button type="button" class="ll-generate" data-part-generate="${part.id}">Generate an image</button>
+<button type="button" class="ll-generate" data-part-generate="${part.id}">Create an image</button>
 <div class="ll-part-preview" data-part-preview="${part.id}" hidden><img alt="" /><div><strong data-part-preview-label></strong><button type="button" class="ll-part-clear" data-part-clear="${part.id}">Remove image</button></div></div>
 <p class="ll-part-status" data-part-status="${part.id}" role="status"></p>`;
         const note = section.querySelector(`[data-part-note="${part.id}"]`);
@@ -990,7 +990,7 @@ const { diagnosticPreview = false } = Astro.props;
         section.className = "ll-part";
         section.dataset.partSection = "colors";
         section.hidden = true;
-        section.innerHTML = `<h3>Colors</h3><p class="ll-part-status">Pick the colors you prefer. The rest of the palette is derived with readable contrast.</p><div class="ll-colors"></div><button type="button" class="ll-advanced">Advanced colors</button>`;
+        section.innerHTML = `<h3>Colors</h3><p class="ll-part-status">Pick the colors you like. We will adjust the rest so text stays easy to read.</p><div class="ll-colors"></div><button type="button" class="ll-advanced">More color options</button>`;
         const host = section.querySelector(".ll-colors");
         const renderRoles = () => {
           host.innerHTML = "";
@@ -1031,7 +1031,7 @@ const { diagnosticPreview = false } = Astro.props;
         };
         section.querySelector(".ll-advanced").addEventListener("click", (event) => {
           showAdvancedColors = !showAdvancedColors;
-          event.currentTarget.textContent = showAdvancedColors ? "Hide advanced colors" : "Advanced colors";
+          event.currentTarget.textContent = showAdvancedColors ? "Fewer color options" : "More color options";
           renderRoles();
         });
         renderColorRoles = renderRoles;
@@ -1081,7 +1081,7 @@ const { diagnosticPreview = false } = Astro.props;
         if (choice.enabled) colorSelections.push({ role: role.id, hex: choice.hex.toLowerCase() });
       }
       if (selectedParts.has("colors") && !colorSelections.length) {
-        setStatusText("Choose at least one color, or turn the Colors part off.");
+        setStatusText("Pick at least one color, or turn off Colors.");
         return false;
       }
       const generalNote = String(commentInput.value || "").trim();
@@ -1111,15 +1111,15 @@ const { diagnosticPreview = false } = Astro.props;
         setStatusText(
           diagnosticReview
             ? result.queueStatus === "queued"
-              ? "Accepted as the working baseline. Your feedback is queued; the client has not received this version."
-              : "Accepted as the working baseline. A developer revision is underway; the client has not received this version."
+              ? "Saved as the starting point. Your changes are queued; the client has not received this version."
+              : "Saved as the starting point. Your changes are being applied; the client has not received this version."
             : result.queueStatus === "queued"
-              ? "Queued. Your request will start after the current revision."
+              ? "Queued. Your request will start after the current update."
               : "Received. A revised developer preview will be sent shortly.",
         );
         if (diagnosticReview) {
           fieldNotice.hidden = false;
-          fieldNotice.textContent = "Feedback saved as the working baseline. The client has not received this preview.";
+          fieldNotice.textContent = "Your changes are saved as the starting point. The client has not received this preview.";
           open.disabled = true;
           sendAnyway.disabled = true;
           sendAnyway.textContent = "Revision in progress";
@@ -1146,7 +1146,7 @@ const { diagnosticPreview = false } = Astro.props;
         root.querySelectorAll(".ll-toggle input").forEach((input) => { input.checked = false; });
         showAdvancedColors = false;
         const advancedButton = sectionsHost.querySelector(".ll-advanced");
-        if (advancedButton) advancedButton.textContent = "Advanced colors";
+        if (advancedButton) advancedButton.textContent = "More color options";
         renderColorRoles();
         updateDraftHint();
         return true;
@@ -1166,15 +1166,15 @@ const { diagnosticPreview = false } = Astro.props;
     }
 
     root.querySelector(".ll-review__summary").innerHTML = diagnosticReview
-      ? "<span aria-hidden=\"true\">▣</span> This is still a work. This is just a field preview."
+      ? "<span aria-hidden=\"true\">▣</span> This is an internal preview. The client has not received it."
       : developer
       ? "<span aria-hidden=\"true\">▣</span> Internal developer review. Approve before the client sees this."
       : "<span aria-hidden=\"true\">▣</span> Your website is live. Tell us what you would like changed.";
     root.querySelector(".ll-review__intro").textContent = developer
       ? diagnosticReview
-        ? "The automated visual checks did not all pass. Send feedback for another revision, or choose to send this exact preview anyway."
+        ? "Some automatic quality checks did not pass. Send your changes, or choose to send this exact preview anyway."
         : "Leave clear internal notes, or approve this exact version to publish and invite the client."
-      : "Request a small correction such as a logo, photo, colour, contact detail, or wording change. You can upload a replacement image or generate one.";
+      : "Request a small correction such as a logo, photo, color, contact detail, or wording change. You can upload a new image or create one.";
     root.querySelector(".ll-general-note").firstChild.textContent = developer
       ? "Anything else?"
       : "Describe the small change";
@@ -1182,7 +1182,7 @@ const { diagnosticPreview = false } = Astro.props;
       ? "For example: Keep the overall direction, but make the service choices easier to scan."
       : clientCategory === "text"
         ? 'Quote the exact text and replacement, for example: Replace text "Same day service" with "Prompt scheduling".'
-        : "Describe the small change. Requests that change the page layout are reviewed separately.";
+        : "Tell us what you would like changed. Bigger redesigns are handled separately.";
     approve.toggleAttribute("hidden", !developer);
     if (diagnosticReview) {
       approve.setAttribute("hidden", "");
@@ -1206,7 +1206,7 @@ const { diagnosticPreview = false } = Astro.props;
             open.disabled = true;
             sendAnyway.disabled = true;
             sendAnyway.textContent = "Revision in progress";
-            fieldNotice.textContent = "This version is accepted as the working baseline. A developer revision is in progress; the client has not received this preview.";
+            fieldNotice.textContent = "This version is saved as the starting point. A developer update is in progress; the client has not received this preview.";
           } else if (["dispatching", "published"].includes(result.overrideStatus)) {
             sendAnyway.disabled = true;
             sendAnyway.textContent = result.overrideStatus === "published" ? "Client release already queued" : "Client release request is processing";

@@ -18,21 +18,21 @@ const IMAGE_PARTS: Array<{
   label: string;
   promptLabel: string;
 }> = [
-  { id: "logo", label: "Logo", promptLabel: "Describe the logo or brand mark you want" },
+  { id: "logo", label: "Logo", promptLabel: "Describe the logo you want" },
   {
     id: "hero",
-    label: "Hero image",
-    promptLabel: "Describe the opening image you want",
+    label: "Main image at the top",
+    promptLabel: "Describe the image you want at the top of the page",
   },
   {
     id: "secondary",
-    label: "About or story image",
-    promptLabel: "Describe the story or about image you want",
+    label: "About image",
+    promptLabel: "Describe the image you want in the about section",
   },
   {
     id: "tertiary",
     label: "Gallery photos",
-    promptLabel: "Describe the gallery image you want",
+    promptLabel: "Describe a gallery photo you want",
   },
   {
     id: "team",
@@ -48,7 +48,7 @@ const TEXT_PARTS: Array<{
 }> = [
   {
     id: "navigation",
-    label: "Navigation",
+    label: "Menu",
     hint: "For example: keep the menu short and put Contact last.",
   },
   {
@@ -68,7 +68,7 @@ const TEXT_PARTS: Array<{
   },
   {
     id: "faq",
-    label: "FAQ",
+    label: "Common questions",
     hint: "For example: add a question about coverage.",
   },
 ];
@@ -79,12 +79,12 @@ const COLOR_ROLES: Array<{
   defaultHex: string;
   advanced?: boolean;
 }> = [
-  { id: "primary", label: "Brand or accent color", defaultHex: "#1f3a5f" },
+  { id: "primary", label: "Main brand color", defaultHex: "#1f3a5f" },
   { id: "surface", label: "Page background", defaultHex: "#faf7f2" },
-  { id: "hero", label: "Hero surface", defaultHex: "#e8f0f1", advanced: true },
-  { id: "ink", label: "Body text", defaultHex: "#17242b", advanced: true },
-  { id: "muted", label: "Muted text", defaultHex: "#5b6b72", advanced: true },
-  { id: "line", label: "Divider lines", defaultHex: "#d7e0e2", advanced: true },
+  { id: "hero", label: "Top section background", defaultHex: "#e8f0f1", advanced: true },
+  { id: "ink", label: "Main text", defaultHex: "#17242b", advanced: true },
+  { id: "muted", label: "Smaller, lighter text", defaultHex: "#5b6b72", advanced: true },
+  { id: "line", label: "Lines and borders", defaultHex: "#d7e0e2", advanced: true },
 ];
 
 type ImageDraft = {
@@ -206,10 +206,10 @@ export default function FeedbackParts({
         url?: string;
       };
       if (!response.ok || !data.url)
-        throw new Error(data.error || "The image upload failed.");
+        throw new Error(data.error || "We could not upload the image.");
       updateDraft(id, {
         busy: false,
-        status: "Uploaded. It replaces this image in the next revision.",
+        status: "Uploaded. It will replace this image in the next update.",
         upload: { url: data.url, name: file.name },
         generated: undefined,
       });
@@ -217,7 +217,7 @@ export default function FeedbackParts({
       updateDraft(id, {
         busy: false,
         status:
-          error instanceof Error ? error.message : "The image upload failed.",
+          error instanceof Error ? error.message : "We could not upload the image.",
       });
     }
   }
@@ -227,10 +227,10 @@ export default function FeedbackParts({
     if (!reviewerEmail) return;
     const prompt = drafts[id]?.prompt.trim() || "";
     if (prompt.length < 3) {
-      updateDraft(id, { status: "Describe the image you want first." });
+      updateDraft(id, { status: "Describe the image first." });
       return;
     }
-    updateDraft(id, { busy: true, status: "Generating an image…" });
+    updateDraft(id, { busy: true, status: "Creating an image…" });
     try {
       const response = await fetch(`${apiBase}/api/feedback-image`, {
         method: "POST",
@@ -250,11 +250,11 @@ export default function FeedbackParts({
       };
       const url = data.images?.[0]?.url;
       if (!response.ok || !url)
-        throw new Error(data.error || "Image generation failed.");
+        throw new Error(data.error || "We could not create the image.");
       updateDraft(id, {
         busy: false,
         status:
-          "Generated. Choose it as your replacement, or generate another.",
+          "Created. Use this image, or create another.",
         generated: { url, prompt, model: data.model || "" },
         upload: undefined,
       });
@@ -262,7 +262,7 @@ export default function FeedbackParts({
       updateDraft(id, {
         busy: false,
         status:
-          error instanceof Error ? error.message : "Image generation failed.",
+          error instanceof Error ? error.message : "We could not create the image.",
       });
     }
   }
@@ -323,7 +323,7 @@ export default function FeedbackParts({
       active.includes("colors") &&
       !selectedColors.length
     ) {
-      setMessage("Choose at least one color, or turn the Colors part off.");
+      setMessage("Pick at least one color, or turn off Colors.");
       return;
     }
     if (!textLines.length && !attachments.length && !selectedColors.length) {
@@ -474,7 +474,7 @@ export default function FeedbackParts({
                   disabled={draft.busy || disabled}
                   onClick={() => void generateImage(part.id)}
                 >
-                  {draft.busy ? "Working…" : "Generate an image"}
+                  {draft.busy ? "Working…" : "Create an image"}
                 </button>
               </div>
               {chosen && (
@@ -486,8 +486,8 @@ export default function FeedbackParts({
                   <div>
                     <strong>
                       {draft.generated
-                        ? "Generated image selected"
-                        : "Uploaded image selected"}
+                        ? "Your new image is selected"
+                        : "Your uploaded image is selected"}
                     </strong>
                     <button
                       type="button"
@@ -517,7 +517,7 @@ export default function FeedbackParts({
 
       {active.includes("navigation") && (
         <section className="feedback-part" aria-label="Navigation feedback">
-          <h3>Navigation</h3>
+          <h3>Menu</h3>
           <label className="feedback-toggle">
             <input
               type="checkbox"
@@ -541,8 +541,8 @@ export default function FeedbackParts({
         <section className="feedback-part" aria-label="Color feedback">
           <h3>Colors</h3>
           <p className="feedback-part__hint">
-            Pick the colors you prefer. The rest of the palette is derived with
-            readable contrast.
+            Pick the colors you like. We will adjust the rest so text stays
+            easy to read.
           </p>
           <div className="feedback-colors">
             {visibleColorRoles.map((role) => (
@@ -577,7 +577,7 @@ export default function FeedbackParts({
             aria-expanded={advanced}
             onClick={() => setAdvanced((value) => !value)}
           >
-            {advanced ? "Hide advanced colors" : "Advanced colors"}
+            {advanced ? "Fewer color options" : "More color options"}
           </button>
         </section>
       )}

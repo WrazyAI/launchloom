@@ -48,19 +48,19 @@ export const EMPTY_FEEDBACK_STRUCTURE: FeedbackStructure = {
 
 const ATTACHMENT_LABELS: Record<FeedbackAttachmentTarget, string> = {
   logo: "logo",
-  hero: "hero image",
-  secondary: "about or story image",
+  hero: "main image",
+  secondary: "about image",
   tertiary: "gallery image",
   team: "team photo",
 };
 
 const COLOR_LABELS: Record<FeedbackColorRole, string> = {
-  primary: "brand or accent color",
+  primary: "main brand color",
   surface: "page background",
-  hero: "hero surface color",
-  ink: "body text color",
-  muted: "muted text color",
-  line: "divider and line color",
+  hero: "top section background",
+  ink: "main text color",
+  muted: "lighter text color",
+  line: "line and border color",
 };
 
 function clean(value: unknown, limit = 200) {
@@ -127,7 +127,7 @@ export function sanitizeFeedbackStructure(
     if (kind === "generated" && !prompt)
       return {
         ok: false,
-        error: "Describe the image you want generated.",
+        error: "Describe the image you want.",
       };
     const model = kind === "generated" ? clean(item.model, 80) : "";
     seenTargets.add(target);

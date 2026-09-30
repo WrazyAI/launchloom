@@ -3,19 +3,19 @@ const STRUCTURE_MARKER =
 
 const ATTACHMENT_LABELS = {
   logo: "logo",
-  hero: "hero image",
-  secondary: "about or story image",
+  hero: "main image",
+  secondary: "about image",
   tertiary: "gallery image",
   team: "team photo",
 };
 
 const COLOR_LABELS = {
-  primary: "brand or accent color",
+  primary: "main brand color",
   surface: "page background",
-  hero: "hero surface color",
-  ink: "body text color",
-  muted: "muted text color",
-  line: "divider and line color",
+  hero: "top section background",
+  ink: "main text color",
+  muted: "lighter text color",
+  line: "line and border color",
 };
 
 export function feedbackTextFromComment(body) {
