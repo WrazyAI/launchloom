@@ -95,6 +95,10 @@ const MAX_REPAIR_EDITS = 12;
 const MAX_REPAIR_EDIT_FRAGMENT_CHARS = 6_000;
 const MAX_REPAIR_PATCH_TEXT_CHARS = 24_000;
 const MAX_REPAIR_FILE_SOURCE_CHARS = 80_000;
+const MOTION_FINDING_PATTERN =
+  /\b(?:motion|animation|animated|scrolltrigger|scroll-linked|parallax)\b/iu;
+const REFERENCE_MISMATCH_PATTERN =
+  /reference|composition|geometry|distinctiveness|diversity|generic|layout|section order|hero fit|image crop|visual mismatch/iu;
 
 function clean(value, limit = 900) {
   return String(value || "")
@@ -108,6 +112,7 @@ function findingText(finding) {
   if (!finding || typeof finding !== "object") return "";
   return [
     finding.category,
+    finding.code,
     finding.message,
     finding.evidence,
     finding.recommendation,
@@ -175,18 +180,15 @@ function repairTargetFiles(findings) {
   const texts = (Array.isArray(findings) ? findings : [findings])
     .map(findingText)
     .filter(Boolean);
-  const motionOnly = texts.length > 0 && texts.every((text) =>
-    /\b(?:motion|animation|animated|scrolltrigger|scroll-linked|parallax)\b/iu.test(
-      text,
-    ),
-  );
+  const motionOnly =
+    texts.length > 0 &&
+    texts.every((text) => MOTION_FINDING_PATTERN.test(text)) &&
+    !texts.some((text) => REFERENCE_MISMATCH_PATTERN.test(text));
   if (motionOnly) return ["motion"];
 
   const targets = new Set();
   const motionRequested = texts.some((text) =>
-    /\b(?:motion|animation|animated|scrolltrigger|scroll-linked|parallax)\b/iu.test(
-      text,
-    ),
+    MOTION_FINDING_PATTERN.test(text),
   );
   const stylesOnly = texts.length > 0 && texts.every((text) =>
     /\b(?:palette|color|colour|contrast|font|typography|spacing|density)\b/iu.test(
@@ -667,10 +669,7 @@ export async function requestRepair({
       "Manual creative repair requires a resolved, non-empty section scope.",
     );
   const scopedHumanRepair = humanReview;
-  const motionRepair = hasFinding(
-    findings || [],
-    /\b(?:motion|animation|animated|scrolltrigger|scroll-linked|parallax)\b/iu,
-  );
+  const motionRepair = hasFinding(findings || [], MOTION_FINDING_PATTERN);
   const referenceMismatch = (findings || []).some((finding) => {
     const detail =
       typeof finding === "string"
@@ -684,9 +683,7 @@ export async function requestRepair({
           ]
             .filter(Boolean)
             .join(" ");
-    return /reference|composition|geometry|distinctiveness|diversity|generic|layout|section order|hero fit|image crop|visual mismatch/iu.test(
-      detail,
-    );
+    return REFERENCE_MISMATCH_PATTERN.test(detail);
   });
   const repairInstruction = scopedHumanRepair
     ? "Make the smallest safe source edit that satisfies the explicit human review request only inside the resolved section scope. Do not change unrelated sections, section order, global CSS, sealed content, factual claims, contact behavior, or the assigned Reference DNA outside that scope. Do not convert this candidate into a legacy renderer."
