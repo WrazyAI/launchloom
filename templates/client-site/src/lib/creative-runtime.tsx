@@ -37,6 +37,13 @@ export type CreativeContent = {
   process: readonly string[];
   faqs: readonly { question: string; answer: string }[];
   locations: readonly { name: string; description?: string }[];
+  locationMap: {
+    available: boolean;
+    address: string;
+    hours: string;
+    directionsHref: string;
+    embedHref: string;
+  };
   copy: Record<string, string | undefined>;
   businessDescription: string;
   showLocationMap: boolean;
@@ -257,17 +264,62 @@ function ConfiguredLeadForm({
   );
 }
 
-export function LocationMap({ content }: { content: CreativeContent }) {
-  if (!content.showLocationMap || !content.locations.length) return null;
+export function LocationMap({
+  content,
+  variant = "full",
+}: {
+  content: CreativeContent;
+  variant?: "compact" | "full";
+}) {
+  const location = content.locationMap;
+  if (!location?.available) return null;
+
+  if (variant === "compact")
+    return (
+      <div
+        className="launchloom-location-compact"
+        data-runtime="location-map"
+        data-location-integration="compact"
+      >
+        {location.address && <span>{location.address}</span>}
+        {location.directionsHref && (
+          <a href={location.directionsHref} target="_blank" rel="noopener noreferrer">
+            Get directions <span aria-hidden="true">↗</span>
+          </a>
+        )}
+      </div>
+    );
+
   return (
-    <div className="launchloom-location-map" data-runtime="location-map">
-      {content.locations.map((location) => (
-        <span key={location.name}>
-          {location.name}
-          {location.description ? `: ${location.description}` : ""}
-        </span>
-      ))}
-    </div>
+    <section
+      className="launchloom-location-map"
+      id="location"
+      data-runtime="location-map"
+      data-location-integration="full"
+    >
+      <div className="launchloom-location-map-copy">
+        <span>Visit us</span>
+        <h2>Find {content.brand.name}</h2>
+        {location.address && <address>{location.address}</address>}
+        {location.hours && <p>{location.hours}</p>}
+        {location.directionsHref && (
+          <a href={location.directionsHref} target="_blank" rel="noopener noreferrer">
+            Open in Google Maps <span aria-hidden="true">↗</span>
+          </a>
+        )}
+      </div>
+      {location.embedHref && (
+        <div className="launchloom-location-map-frame">
+          <iframe
+            src={location.embedHref}
+            title={`Map showing ${content.brand.name}${location.address ? ` at ${location.address}` : ""}`}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+        </div>
+      )}
+    </section>
   );
 }
 

@@ -263,6 +263,66 @@ describe("production experience author", () => {
       }),
     ).not.toThrow();
 
+    const aliasedServiceDetail = serviceDetail
+      .replace(
+        "{content.services.map((service) =>",
+        "{(() => { const serviceItems = content.services; return serviceItems.map((service) =>",
+      )
+      .replace(
+        "</article>)}</section>",
+        "</article>); })()}</section>",
+      );
+    expect(aliasedServiceDetail).toContain("serviceItems.map((service) =>");
+    expect(aliasedServiceDetail).not.toContain("content.services.map((service) =>");
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: aliasedServiceDetail, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).not.toThrow();
+
+    const unsealedServiceDetail = aliasedServiceDetail.replace(
+      "const serviceItems = content.services",
+      "const boundServices = content.services; const serviceItems = [{ slug: \"outside-content\" }]",
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: unsealedServiceDetail, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
+
+    const shadowedServiceDetail = serviceDetail.replace(
+      "export default function Experience",
+      `const serviceItems = content.services;
+function UntrustedLinks() {
+  const serviceItems = [{ slug: "outside-content" }];
+  return serviceItems.map((service) => <a href={\`/services/\${service.slug}/\`}>{service.slug}</a>);
+}
+export default function Experience`,
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: shadowedServiceDetail, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "Repair" }],
+        },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
+
     expect(() =>
       validateProductionCandidateFiles({
         files: {
@@ -295,6 +355,48 @@ describe("production experience author", () => {
         },
       }),
     ).not.toThrow();
+  });
+
+  it("retries unsafe candidate links with the deterministic validation finding", async () => {
+    let repairRequest: AuthorStageRequest | undefined;
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        const base = safeStage(request);
+        if (request.route.id !== "route-01" || request.stage !== "experience")
+          return base;
+        if (request.validationError) {
+          repairRequest = request;
+          return base;
+        }
+        return {
+          content: String(base.content)
+            .replace(
+              "{content.services.map((service) =>",
+              "{(() => { const serviceItems = [{ slug: 'unsealed' }]; return serviceItems.map((service) =>",
+            )
+            .replace(
+              "<article key={service.name}>",
+              '<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>',
+            )
+            .replace(
+              "</article>)}</section>",
+              "</article>); })()}</section>",
+            ),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(repairRequest?.validationError).toMatch(/unsafe URL attribute/iu);
+    const repairedCandidate = result.candidates.find(
+      (candidate) => candidate.metadata.routeId === "route-01",
+    );
+    expect(repairedCandidate?.metadata.complianceRepaired).toBe(true);
+    expect(repairedCandidate?.files["Experience.jsx"]).not.toContain(
+      "unsealed",
+    );
   });
 
   it("keeps the client visual brief alongside sealed content", () => {
