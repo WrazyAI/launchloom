@@ -9,7 +9,11 @@
     "url": "https://mcalpinehouse.com/",
     "rights": "permission-cleared",
     "rightsEvidence": "The requester attested on 2026-09-25 that clearance covers full-page screenshot retention, derivative prompts, and sending screenshots to the pipeline model as visual reference. The source-specific grant was not attached.",
-    "rightsEvidencePath": "rights/requester-attestation.md"
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
   },
   "provenance": {
     "discoveryPageUrl": "https://www.lapa.ninja/post/mcalpinehouse/",

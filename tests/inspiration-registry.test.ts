@@ -710,6 +710,83 @@ describe("inspiration registry", () => {
     },
   );
 
++  it("requires business/source classification and capture records for every production core dossier", () => {
+    const core = JSON.parse(
+      fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"),
+    );
+    const repositoryRoot = path.resolve(".");
+    const transcribedCaptureIds = new Set<string>([
+  "colorlib-fixwell-quote-desk",
+  "spicer-landscaping-season-wheel",
+  "colorlib-ironworks-strength-club",
+  "spicer-gym-timetable-first",
+  "colorlib-tavola-restaurant",
+  "direct-amrit-palace-restaurant",
+  "direct-ethos-greek-bistro",
+  "direct-mahala-desert-boutique-hotel",
+  "direct-casa-cedo-boutique-hotel",
+  "direct-fogo-island-inn-hospitality",
+  "colorlib-drafthouse-atlas",
+  "lapa-mcalpine-sanctuary",
+  "lapa-mesh-architects-editorial",
+  "colorlib-caseworth-legal-ledger",
+  "spicer-law-firm-results-ledger",
+  "spicer-barber-walk-in-queue",
+  "spicer-hair-salon-stylist-menu",
+  "spicer-accountant-deadline-calendar",
+  "direct-alex-co-accountants-practice",
+  "direct-change-accountants-york"
+]);
+
+    for (const niche of core.niches) {
+      for (const id of niche.referenceIds) {
+        const dossierPath = path.join("data/reference-library/dossiers", id);
+        const directory = path.resolve(repositoryRoot, dossierPath);
+        const manifest = JSON.parse(
+          fs.readFileSync(path.join(directory, "manifest.json"), "utf8"),
+        );
+        expect(manifest.productionEligible, id).toBe(true);
+
+        const businessPath = path.join(directory, "rights/business-verification.md");
+        expect(fs.existsSync(businessPath), id).toBe(true);
+        const businessEvidence = fs.readFileSync(businessPath, "utf8");
+        if (manifest.source.rights === "licensed") {
+          expect(businessEvidence, id).toMatch(
+            /Status: not applicable\. This is a licensed template demonstration, not a real operating business\./iu,
+          );
+          expect(businessEvidence, id).toContain(manifest.source.rightsEvidencePath);
+          expect(fs.existsSync(path.join(directory, manifest.source.rightsEvidencePath)), id).toBe(true);
+          for (const assetPath of manifest.source.assetEvidencePaths || []) {
+            expect(businessEvidence, id).toContain(assetPath);
+            expect(fs.existsSync(path.join(directory, assetPath)), id).toBe(true);
+          }
+        } else {
+          expect(businessEvidence, id).toContain(manifest.source.url);
+        }
+
+        const capturePath = path.join(directory, "rights/capture-record.md");
+        expect(fs.existsSync(capturePath), id).toBe(true);
+        const captureEvidence = fs.readFileSync(capturePath, "utf8");
+        if (transcribedCaptureIds.has(id)) {
+          expect(captureEvidence, id).toContain(
+            "This record transcribes existing capture metadata from `manifest.json` and the retained screenshot files. No new capture was made.",
+          );
+          for (const device of ["desktop", "mobile"]) {
+            expect(captureEvidence, id).toContain(manifest.evidence[device].path);
+            expect(captureEvidence, id).toContain(manifest.evidence[device].sha256);
+          }
+        }
+
+        for (const device of ["desktop", "mobile"]) {
+          expect(manifest.evidence[device].capture, id).toBe("full-page");
+          expect(manifest.evidence[device].sha256, id).toMatch(/^[a-f0-9]{64}$/iu);
+          expect(fs.existsSync(path.join(directory, manifest.evidence[device].path)), id).toBe(true);
+        }
+      }
+    }
+  });
+
+
   it("defines an exact 96-dossier core with six verified references per niche and production-randomizer coverage", () => {
     const corePath = path.resolve("data/reference-library/core-collection.json");
     const core = JSON.parse(fs.readFileSync(corePath, "utf8"));

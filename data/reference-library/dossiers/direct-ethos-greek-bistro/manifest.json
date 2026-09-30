@@ -9,7 +9,11 @@
     "url": "https://www.ethosbistro.com/",
     "rights": "permission-cleared",
     "rightsEvidence": "The requester attested on 2026-09-25 that permission covers full-page screenshot retention, derived design prompts, and sending screenshots to the pipeline model as visual reference. The source-specific grant was not attached.",
-    "rightsEvidencePath": "rights/requester-attestation.md"
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
   },
   "provenance": {
     "discoveryContext": "Found during direct-source search for contemporary local restaurant experiences. No gallery screenshot or downloaded source media was retained.",

@@ -12,6 +12,10 @@
     "rightsEvidencePath": "rights/LICENSE",
     "assetEvidencePaths": [
       "rights/ASSET-PROVENANCE.md"
+    ],
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {

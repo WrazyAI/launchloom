@@ -19,7 +19,8 @@
     "rightsEvidencePath": "rights/requester-attestation.md",
     "provenanceEvidencePaths": [
       "rights/source-observations.md",
-      "rights/capture-record.md"
+      "rights/capture-record.md",
+      "rights/business-verification.md"
     ]
   },
   "tags": {

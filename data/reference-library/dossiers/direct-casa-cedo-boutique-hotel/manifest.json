@@ -9,7 +9,11 @@
     "url": "https://www.casacedo.com/",
     "rights": "permission-cleared",
     "rightsEvidence": "The requester attested on 2026-09-25 that clearance covers full-page screenshot retention, derived design prompts, and submitting screenshot evidence to the LaunchLoom pipeline model as visual reference. No source-owner grant file was attached.",
-    "rightsEvidencePath": "rights/requester-attestation.md"
+    "rightsEvidencePath": "rights/requester-attestation.md",
+    "provenanceEvidencePaths": [
+      "rights/business-verification.md",
+      "rights/capture-record.md"
+    ]
   },
   "provenance": {
     "method": "Rendered the direct official domain in an isolated agent-browser Chromium session; captured full-page desktop and mobile screenshots after scrolling the full page and decoding all source images. No gallery screenshot or source media file was downloaded. The visible cookie notice was dismissed using its consent control before final capture.",

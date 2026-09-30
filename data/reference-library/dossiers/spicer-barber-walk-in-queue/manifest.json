@@ -14,7 +14,9 @@
       "rights/ASSET-PROVENANCE.md"
     ],
     "provenanceEvidencePaths": [
-      "rights/SOURCE-README.md"
+      "rights/SOURCE-README.md",
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {

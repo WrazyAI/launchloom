@@ -27,6 +27,12 @@ Every dossier has:
   at the viewport widths recorded in that dossier's manifest (desktop and
   compact mobile). Their SHA-256 values are recorded in the manifest and
   checked against the retained bytes whenever the dossier is loaded.
+- `rights/business-verification.md`: the first-party business self-description
+  for direct business sites, or an explicit not-applicable reason for licensed
+  template demonstrations, which are not operating businesses.
+- `rights/capture-record.md`: a record for each production dossier. Records
+  normalized from prior manifest fields say that no new capture was made;
+  the manifest remains authoritative for capture details.
 
 Every production dossier also has an explicit desktop and mobile
 `referenceDna.compositionTopology`, reviewed against the first viewport of each

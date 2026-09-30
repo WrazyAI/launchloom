@@ -14,7 +14,9 @@
       "rights/CREDITS.txt"
     ],
     "provenanceEvidencePaths": [
-      "rights/PROVENANCE.md"
+      "rights/PROVENANCE.md",
+      "rights/business-verification.md",
+      "rights/capture-record.md"
     ]
   },
   "provenance": {
