@@ -209,6 +209,7 @@ jobs:
           CLIENT_EMAIL=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.email)')
           ORIGINS="$DEPLOY_PREVIEW,https://$DEPLOY_PROJECT.pages.dev"
           TOKEN=$(node scripts/create-review-link.mjs --stage developer --repo "$CLIENT_REPO" --pr "$REVIEW_PR" --sha "$DEPLOY_SHA" --site "$DEPLOY_PROJECT" --email "$LAUNCHLOOM_DEVELOPER_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$ORIGINS" --token-only true)
+          echo "::add-mask::$TOKEN"
           LINK="$DEPLOY_PREVIEW?review=$TOKEN"
           gh pr comment "$REVIEW_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\nPreview: %s\n\nSecure developer review: %s' '<!-- launchloom-revision:developer -->' '## Client-feedback developer preview' "$DEPLOY_PREVIEW" "$LINK")"
           gh issue comment "$FEEDBACK_ISSUE" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s' '<!-- launchloom-revision:client -->' 'Client feedback has been incorporated into an internal developer preview.')"

@@ -19,6 +19,27 @@ const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
 const DEFAULT_FALLBACK_MAX_USD = 0.05;
 const HARD_MAX_FALLBACK_USD = 0.25;
 const FALLBACK_RESULTS_PER_QUERY = 4;
+const GENERIC_BUSINESS_KINDS = new Set([
+  "general",
+  "business",
+  "local business",
+  "local service",
+  "local services",
+  "home services",
+  "professional services",
+  "health",
+  "healthcare",
+  "medical",
+  "wellness",
+  "care",
+  "other",
+]);
+const IMPLICIT_NICHE_SERVICE_TERMS = new Map([
+  ["auto repair", /\b(?:auto|car|vehicle|brake|engine|transmission|oil change|tire|alignment|mechanic)\b/u],
+  ["roofing", /\b(?:roof|roofer|shingle|gutter)\b/u],
+  ["painting", /\b(?:paint|painter|coating)\b/u],
+  ["hvac", /\b(?:hvac|heating|cooling|air conditioning|furnace|boiler|heat pump)\b/u],
+]);
 const US_STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
 };
@@ -70,6 +91,14 @@ export function normaliseSeoIntake(intake = {}) {
   ).values()].slice(0, 20);
   if (!coverageAreas.length && primaryCity) coverageAreas.push(primaryCity);
   const serviceRadius = numericRadius(intake.serviceRadius);
+  const industry = text(intake.industry, 100);
+  const explicitBusinessKind = text(
+    intake.businessKind || intake.businessType || intake.business?.kind || intake.business?.businessKind,
+    100,
+  );
+  const businessKind = explicitBusinessKind || (
+    industry && !GENERIC_BUSINESS_KINDS.has(keywordKey(industry)) ? industry : ""
+  );
   const website = text(intake.website || intake.existingWebsite, 500);
   let websiteUrl = "";
   try {
@@ -87,11 +116,23 @@ export function normaliseSeoIntake(intake = {}) {
       (metricLocationForCity(primaryCity).split(",").at(-1) || "United States").trim(),
     coverageEvidence: intake.coverageEvidence || { source: "client_supplied_primary_city", lookups: 0 },
     coverageWarnings: Array.isArray(intake.coverageWarnings) ? intake.coverageWarnings.map((item) => text(item, 300)) : [],
-    industry: text(intake.industry, 100),
+    businessKind,
+    industry,
     businessName: text(intake.businessName || intake.business?.name, 120),
     existingWebsite: websiteUrl,
     phraseProvenance: "confirmed_service_city",
   };
+}
+
+function searchServiceTerm(seo, service) {
+  const businessKind = keywordKey(seo.businessKind);
+  if (!businessKind || GENERIC_BUSINESS_KINDS.has(businessKind)) return service;
+  const serviceKey = keywordKey(service);
+  if (
+    serviceKey.includes(businessKind) ||
+    IMPLICIT_NICHE_SERVICE_TERMS.get(businessKind)?.test(serviceKey)
+  ) return service;
+  return `${businessKind} ${service.toLocaleLowerCase()}`;
 }
 
 function variantsFor(service, city, industry) {
@@ -109,7 +150,9 @@ function variantsFor(service, city, industry) {
 }
 
 function defaultSeeds(seo) {
-  return [...new Set(seo.services.flatMap((service) => variantsFor(service, seo.primaryCity, seo.industry)))].slice(0, MAX_CORE_SERVICES * MAX_SERVICE_VARIANTS);
+  return [...new Set(seo.services.flatMap((service) =>
+    variantsFor(searchServiceTerm(seo, service), seo.primaryCity, seo.industry),
+  ))].slice(0, MAX_CORE_SERVICES * MAX_SERVICE_VARIANTS);
 }
 
 function findService(query, services) {
@@ -158,7 +201,7 @@ function emptyMap(seo) {
       title: service,
       slug: `/services/${slugify(service)}/`,
       service,
-      primaryKeyword: { keyword: `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "confirmed_service_city_not_measured" },
+      primaryKeyword: { keyword: `${searchServiceTerm(seo, service)}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`, volume: null, kd: null, cpc: null, competition: null, intent: null, provenance: "confirmed_service_city_not_measured" },
       supportingKeywords: [],
       fanOutQuestions: serviceQuestions(service, seo.industry),
       priority: "medium",
@@ -406,7 +449,7 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
   const queries = [];
   for (const service of seo.services) {
     const city = seo.primaryCity ? ` ${seo.primaryCity}` : "";
-    queries.push(`${service}${city}`.trim());
+    queries.push(`${searchServiceTerm(seo, service)}${city}`.trim());
   }
   if (seo.businessName && seo.primaryCity) queries.push(`${seo.businessName} ${seo.primaryCity}`);
   for (const seed of seeds) if (!queries.includes(seed)) queries.push(seed);
@@ -534,7 +577,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
       budgetExhausted: false,
     },
     completeness: { keywordOverview: false, searchIntent: false, keywordDifficulty: false, serviceMetrics: [], serviceSerps: 0, serviceSerpsRequired: seo.services.length, competitors: 0 },
-    marketSnapshot: { primaryCity: seo.primaryCity, coverageAreas: seo.coverageAreas, confirmedServices: seo.services, metricLocation: seo.metricLocation, labsMetricLocation: seo.labsLocation, queriedKeywords: seeds.length, measuredKeywords: 0, competitorDomains: 0 },
+    marketSnapshot: { primaryCity: seo.primaryCity, coverageAreas: seo.coverageAreas, businessKind: seo.businessKind || null, confirmedServices: seo.services, metricLocation: seo.metricLocation, labsMetricLocation: seo.labsLocation, queriedKeywords: seeds.length, measuredKeywords: 0, competitorDomains: 0 },
     cost: { tasks: 0, usd: 0, limitUsd: limits.maxUsd, overBudget: false, complete: true, unreportedTasks: 0, stageCosts },
     warnings,
   };

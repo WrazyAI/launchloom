@@ -77,6 +77,19 @@ describe("SEO market map", () => {
     });
   });
 
+  it("preserves an explicit niche separately from a broad industry label", () => {
+    expect(normaliseSeoIntake({
+      businessKind: "veterinary",
+      industry: "wellness",
+      services: ["Preventive wellness visits"],
+    })).toMatchObject({
+      businessKind: "veterinary",
+      industry: "wellness",
+    });
+    expect(normaliseSeoIntake({ industry: "veterinary" }).businessKind).toBe("veterinary");
+    expect(normaliseSeoIntake({ industry: "wellness" }).businessKind).toBe("");
+  });
+
   it("uses the first semicolon-delimited city for SEO and preserves all submitted areas", async () => {
     const legacyIntake = {
       intakeVersion: "1",
@@ -454,6 +467,67 @@ describe("SEO market map", () => {
     expect(dossier.competitors).toEqual([]);
     expect(dossier.pageMap.some((page) => page.pageType === "location")).toBe(false);
     expect(dossier.warnings.join(" ")).toContain("external observations only");
+  });
+
+  it("qualifies fallback service searches with an explicit niche, not a broad industry guess", async () => {
+    const webSearch = {
+      search: vi.fn(async ({ query }: { query: string }) => ({
+        results: [{
+          url: "https://example.test/service",
+          title: `Observed result for ${query}`,
+          snippet: "Observed public search evidence.",
+        }],
+        costUsd: 0.001,
+      })),
+    };
+    const veterinaryIntake = {
+      industry: "veterinary",
+      businessName: "Fieldnotes Veterinary Studio",
+      services: [
+        "Preventive wellness visits",
+        "Vaccination appointments",
+        "Diagnostic consultations",
+      ],
+      primaryCity: "Madison, WI",
+    };
+
+    const veterinary = await researchSiteContext(veterinaryIntake, {
+      webSearch,
+      maxFallbackSearchQueries: 3,
+      maxFallbackUsd: 0.05,
+    });
+
+    expect(webSearch.search.mock.calls.map(([request]) => request.query)).toEqual([
+      "veterinary preventive wellness visits Madison, WI",
+      "veterinary vaccination appointments Madison, WI",
+      "veterinary diagnostic consultations Madison, WI",
+    ]);
+    expect(veterinary.mode).toBe("context-only");
+    expect(veterinary.publishReady).toBe(false);
+    expect(veterinary.marketSnapshot.businessKind).toBe("veterinary");
+    expect(veterinary.validatedQueries.every((item) =>
+      item.volume === null && item.kd === null && item.cpc === null &&
+      item.competition === null && item.intent === null,
+    )).toBe(true);
+
+    const generalSearch = {
+      search: vi.fn(async ({ query }: { query: string }) => ({
+        results: [{ url: "https://example.test/general", title: query, snippet: "Observed." }],
+        costUsd: 0.001,
+      })),
+    };
+    await researchSiteContext({
+      ...veterinaryIntake,
+      industry: "wellness",
+    }, {
+      webSearch: generalSearch,
+      maxFallbackSearchQueries: 1,
+      maxFallbackUsd: 0.05,
+    });
+    expect(generalSearch.search.mock.calls[0]?.[0].query).toBe(
+      "Preventive wellness visits Madison, WI",
+    );
+    expect(generalSearch.search.mock.calls[0]?.[0].query).not.toContain("veterinary");
   });
 
   it("uses bounded web evidence after DataForSEO fails without treating it as measured SEO", async () => {

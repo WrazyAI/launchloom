@@ -65,6 +65,7 @@ jobs:
           fi
           npx wrangler pages deploy dist --project-name "$PROJECT" --commit-hash "$APPROVED_SHA" --commit-message "LaunchLoom approved deployment"
           TOKEN=$(node "$GITHUB_WORKSPACE/scripts/create-review-link.mjs" --stage client --repo "$CLIENT_REPO" --site "$PROJECT" --email "$CLIENT_EMAIL" --client-email "$CLIENT_EMAIL" --feedback-issue "$FEEDBACK_ISSUE" --origins "$PRODUCTION" --token-only true)
+          echo "::add-mask::$TOKEN"
           NAME="$(node -e 'const x=require("./src/site.config.json"); console.log(x.business.name)')"
           REVIEW_URL="$PRODUCTION?review=$TOKEN"
           EMAIL_ARGS=(--to "$CLIENT_EMAIL" --name "$NAME" --preview "$PRODUCTION" --review "$REVIEW_URL" --kind published --audience client)
