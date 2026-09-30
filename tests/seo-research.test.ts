@@ -407,6 +407,51 @@ describe("SEO market map", () => {
     expect(dossier.warnings.join(" ")).toContain("external observations only");
   });
 
+  it("uses bounded web evidence after DataForSEO fails without treating it as measured SEO", async () => {
+    const provider = researchProvider();
+    provider.googleSearchVolume.mockRejectedValueOnce(
+      new Error("DataForSEO returned HTTP 402"),
+    );
+    const webSearch = {
+      search: vi.fn(async ({ query }: { query: string }) => ({
+        results: [{
+          url: "https://example.test/auto-repair",
+          title: `Observed result for ${query}`,
+          snippet: "A directly observed page about the requested service.",
+        }],
+        costUsd: 0.002,
+      })),
+    };
+
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      webSearch,
+      maxFallbackSearchQueries: 2,
+      maxFallbackUsd: 0.05,
+    });
+
+    expect(webSearch.search).toHaveBeenCalledTimes(2);
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.publishReady).toBe(false);
+    expect(dossier.cost.stageCosts[0]).toMatchObject({
+      stage: "local_search_volume",
+      status: "failed",
+    });
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "complete",
+      queriesAttempted: 2,
+      costUsd: 0.004,
+      maxUsd: 0.05,
+    });
+    expect(dossier.externalSearchEvidence).toHaveLength(2);
+    expect(dossier.validatedQueries.every((item) =>
+      item.volume === null && item.kd === null && item.cpc === null &&
+      item.competition === null && item.intent === null,
+    )).toBe(true);
+    expect(dossier.warnings.join(" ")).toContain("DataForSEO returned HTTP 402");
+    expect(dossier.warnings.join(" ")).toContain("external observations only");
+  });
+
   it("keeps an explicit degraded context-only result when no online search provider is configured", async () => {
     const dossier = await researchSiteContext(intake, { maxTasks: 16, maxUsd: 0.25 });
     expect(dossier.mode).toBe("context-only");

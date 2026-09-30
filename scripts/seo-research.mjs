@@ -617,7 +617,39 @@ export async function researchSiteContext(intake = {}, options = {}) {
     }
   }
 
-  function returnPartialResearch() {
+  async function attachFallbackEvidenceAfterProviderFailure() {
+    const hasProviderFailure = stageCosts.some((stage) =>
+      stage.status === "failed" || stage.status === "unavailable",
+    );
+    if (!options.webSearch || !hasProviderFailure || base.fallbackSearch.status !== "pending")
+      return;
+
+    const fallback = await collectFallbackWebEvidence(
+      seo,
+      seeds,
+      options.webSearch,
+      options,
+      warnings,
+    );
+    base.externalSearchEvidence = fallback.evidence;
+    base.fallbackSearch = { ...fallback };
+    base.evidence.push(...fallback.evidence.map((item) => ({
+      type: "external_web_search",
+      query: item.query,
+      sourceUrl: item.sourceUrl,
+      title: item.title,
+      snippet: item.snippet,
+      retrievedAt: item.retrievedAt,
+      provider: item.provider,
+      provenance: item.provenance,
+    })));
+    warnings.push(fallback.evidence.length
+      ? "Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts or production SEO readiness."
+      : "The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.");
+  }
+
+  async function returnPartialResearch() {
+    await attachFallbackEvidenceAfterProviderFailure();
     base.cost = { ...cost, limitUsd: limits.maxUsd, stageCosts };
     base.warnings = [...new Set(warnings)];
     return base;
@@ -854,6 +886,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     ...relatedRows.map((item) => ({ type: "related_keyword", query: item.keyword, provenance: item.provenance })),
     ...(rankingStageComplete ? [{ type: "ranked_keywords", target: seo.existingWebsite, resultCount: quickWins.length, provenance: "DataForSEO" }] : []),
   ];
+  await attachFallbackEvidenceAfterProviderFailure();
   const requiredResearchComplete =
     Boolean(seo.primaryCity) &&
     base.completeness.keywordOverview &&
@@ -1087,7 +1120,7 @@ async function main() {
   const password = process.env.DATAFORSEO_PASSWORD;
   const dataForSeo = login && password ? createDataForSeoClient({ login, password }) : undefined;
   const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const webSearch = !dataForSeo && openRouterKey ? createOpenRouterWebSearchClient({ apiKey: openRouterKey }) : undefined;
+  const webSearch = openRouterKey ? createOpenRouterWebSearchClient({ apiKey: openRouterKey }) : undefined;
   const dossier = await researchSiteContext(intake, {
     dataForSeo,
     webSearch,
