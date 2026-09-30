@@ -63,38 +63,43 @@ become client-site assets.
    not CSS viewport units; the adapted desktop header and hero must still fit
    inside the 1536x864 browser viewport.
 3. `author-production-experiences.mjs` asks the visual author for three
-   independent `Experience.jsx`, `ServicePage.jsx`, `styles.css`, and
-   `motion.js` candidates. The author receives the complete Reference DNA and
-   its desktop/mobile evidence, plus a bounded client visual brief containing
-   the resolved palette, tone, style preference, visual direction, and
-   submitted art direction. The visual brief remains available to rendered
-   repair and reference judging so a repair cannot silently converge on a
-   LaunchLoom house palette or reverse an explicit light/dark direction. The
-   author must expose the contract's signatures and geometry markers in the
-   rendered DOM. It can use React, the shared runtime, GSAP, and ScrollTrigger,
-   but not network access, remote code, canvas, or Three.js by default. Model
-   stages are globally limited to two in-flight requests so a three-candidate
-   bakeoff does not exhaust the provider budget. The authoring budget defaults
-   to 65 minutes and can be bounded with
+   independent `Experience.jsx`, `ServicePage.jsx`, `LocationPage.jsx`,
+   `ServicesIndexPage.jsx`, `styles.css`, and `motion.js` candidates. The
+   author receives the complete Reference DNA and its desktop/mobile evidence,
+   plus a bounded client visual brief containing the resolved palette, tone,
+   style preference, visual direction, and submitted art direction. The visual
+   brief remains available to rendered repair and reference judging so a repair
+   cannot silently converge on a LaunchLoom house palette or reverse an explicit
+   light/dark direction. The author must expose the contract's signatures and
+   geometry markers in the rendered DOM. It can use React, the shared runtime,
+   GSAP, and ScrollTrigger, but not network access, remote code, canvas, or
+   Three.js by default. Model stages are globally limited to two in-flight
+   requests so a three-candidate bakeoff does not exhaust the provider budget.
+   The authoring budget defaults to 85 minutes and can be bounded with
    `CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS`; it never turns an expired author
    run into a legacy renderer. Completion ceilings are stage-specific: 24k
-   tokens for the design contract, 48k for JSX, 32k for the service page, 40k
-   for CSS, and 24k for motion, with up to 5 minutes for contract/motion, 6
-   minutes for the service page, and 8 minutes for JSX/CSS. These are upper
+   tokens for the design contract, 48k for JSX, 32k for the service and
+   location pages, 24k for the services index, 40k for CSS, and 24k for motion,
+   with up to 5 minutes for contract/motion/services-index, 6 minutes for the
+   service and location pages, and 8 minutes for JSX/CSS. These are upper
    bounds, not reserved spend. The author logs finish reason,
    completion/reasoning token usage, and returned content length on every
    response so output truncation is distinguishable from input-context errors.
    A failed reference-fidelity check gets at most two author-owned repairs and
    then fails closed.
-   The `ServicePage.jsx` companion is the service detail page for
-   `/services/<slug>/`. It is authored against the same sealed content, the
-   same Reference DNA, and the same design contract as the homepage, and it
-   receives one render-time `service` record containing the service name, slug,
-   description, decision support, related services, process, FAQs, and imagery
-   token. It must reuse the homepage class vocabulary, render exactly one H1,
-   the three decision-support blocks, real `/services/<slug>/` related links,
-   and the single shared LeadForm. The styles stage receives both authored
-   source files and must style both from one stylesheet.
+   The inner-page companions are authored against the same sealed content, the
+   same Reference DNA, and the same design contract as the homepage.
+   `ServicePage.jsx` renders `/services/<slug>/` with one service record
+   (name, slug, description, decision support, related services, process,
+   FAQs, imagery). `LocationPage.jsx` renders `/locations/<slug>/` for
+   home-service intakes that list service areas, with the location name,
+   description, coverage note, confirmed services, and other listed areas.
+   `ServicesIndexPage.jsx` renders `/services/` from the sealed services list,
+   heading, and introduction. Each page must reuse the homepage class
+   vocabulary, render exactly one H1, keep its page markers, link real
+   `/services/<slug>/` routes, and render the single shared LeadForm. The
+   styles stage receives every authored source file and must style them all
+   from one stylesheet.
 4. `run-creative-bakeoff.mjs` promotes each candidate into the real Astro
    shell, builds it, renders 1536x864 desktop, 1366x768 compact desktop, and
    390x844 mobile viewports, and records the evidence. Structural contract
@@ -111,17 +116,17 @@ become client-site assets.
    Screenshot-to-screenshot candidate distance is
    recorded for preview and is a hard production-promotion gate; different
    metadata, colors, or copy do not count as visual diversity.
-   When a candidate carries an authored `ServicePage.jsx`, the bakeoff also
-   builds and renders one `/services/<slug>/` route at desktop and mobile. The
-   authored page must expose its service-page, hero, decision-support, and
-   related-services markers, the shared LeadForm, and no overflow, broken
-   imagery, unnamed controls, or em dashes. The rendered canvas background,
-   heading typeface, and heading weight must match the same candidate's
-   homepage; drifting back to the generic inner template is a hard candidate
-   failure. Service-page screenshots are retained as private evidence beside
-   the homepage captures. Legacy candidates without an authored service page
-   keep the deterministic inner template and are reported without the
-   service-page gate.
+   When a candidate carries authored inner pages, the bakeoff also builds and
+   renders one `/services/<slug>/` route, one `/locations/<slug>/` route when
+   the intake lists home-service areas, and `/services/` at desktop and mobile.
+   Each authored page must expose its page, hero, region, and listing markers,
+   the shared LeadForm, and no overflow, broken imagery, unnamed controls, or
+   em dashes. The rendered canvas background, heading typeface, and heading
+   weight must match the same candidate's homepage; drifting back to the
+   generic inner template is a hard candidate failure. Inner-page screenshots
+   are retained as private evidence beside the homepage captures. Legacy
+   candidates without authored inner pages keep the deterministic inner
+   template and are reported without those gates.
 5. Route fingerprints remain an early compiler diagnostic so independently
    authored routes do not collapse before rendering. Explicitly named reference
    intent is carried into candidate metadata and is compared before aggregate

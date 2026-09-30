@@ -125,8 +125,9 @@ authentic customer proof, recent work, coverage, practical questions, quote.
 
 Create substantive service pages that answer a real customer question and link
 to related services and the primary action. On a creative-candidate site,
-service detail pages are authored from the same Reference DNA, design contract,
-and stylesheet as the homepage, so they keep the same palette, typography,
+service detail pages, location pages for listed home-service areas, and the
+services index are authored from the same Reference DNA, design contract, and
+stylesheet as the homepage, so they keep the same palette, typography,
 surfaces, navigation language, and composition rhythm; their rendered canvas
 and heading identity are verified against the homepage before promotion. The
 deterministic inner template remains only for legacy and experience-pack sites.

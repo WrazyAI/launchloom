@@ -3,11 +3,22 @@ import path from "node:path";
 import { validateCandidateManifest } from "./creative-compiler.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 import {
+  assertCreativeInnerPageSource,
   assertCreativeServicePageSource,
   normalizeCreativeExperienceLinks,
 } from "./creative-source-safety.mjs";
 
 const SERVICE_PAGE_FALLBACK = `export default function ServicePage() {
+  return null;
+}
+`;
+
+const LOCATION_PAGE_FALLBACK = `export default function LocationPage() {
+  return null;
+}
+`;
+
+const SERVICES_INDEX_FALLBACK = `export default function ServicesIndexPage() {
   return null;
 }
 `;
@@ -92,6 +103,34 @@ export async function promoteCreativeCandidate({
     });
     files.servicePage = servicePage;
   }
+  const locationPageSource = await fs
+    .readFile(path.join(source, "LocationPage.jsx"), "utf8")
+    .catch(() => "");
+  if (locationPageSource.trim()) {
+    const locationPage = normalizeCreativeExperienceLinks(locationPageSource);
+    assertCreativeInnerPageSource(locationPage, {
+      candidateId: candidateManifest.candidateId,
+      pageLabel: "LocationPage.jsx",
+      rootMarker: "data-location-page",
+      requireServiceRoute: true,
+    });
+    files.locationPage = locationPage;
+  }
+  const servicesIndexSource = await fs
+    .readFile(path.join(source, "ServicesIndexPage.jsx"), "utf8")
+    .catch(() => "");
+  if (servicesIndexSource.trim()) {
+    const servicesIndexPage = normalizeCreativeExperienceLinks(
+      servicesIndexSource,
+    );
+    assertCreativeInnerPageSource(servicesIndexPage, {
+      candidateId: candidateManifest.candidateId,
+      pageLabel: "ServicesIndexPage.jsx",
+      rootMarker: "data-services-index",
+      requireServiceRoute: true,
+    });
+    files.servicesIndexPage = servicesIndexPage;
+  }
   validateAuthoredFiles(candidateManifest.candidateId, files, candidateManifest, { preview });
 
   const selected = path.resolve(root, "src/generated-experiences/selected");
@@ -105,6 +144,16 @@ export async function promoteCreativeCandidate({
     fs.writeFile(
       path.join(selected, "ServicePage.jsx"),
       files.servicePage ? `${files.servicePage.trim()}\n` : SERVICE_PAGE_FALLBACK,
+    ),
+    fs.writeFile(
+      path.join(selected, "LocationPage.jsx"),
+      files.locationPage ? `${files.locationPage.trim()}\n` : LOCATION_PAGE_FALLBACK,
+    ),
+    fs.writeFile(
+      path.join(selected, "ServicesIndexPage.jsx"),
+      files.servicesIndexPage
+        ? `${files.servicesIndexPage.trim()}\n`
+        : SERVICES_INDEX_FALLBACK,
     ),
   ]);
   if (!preserveSelectedManifest)
@@ -126,6 +175,8 @@ export async function promoteCreativeCandidate({
     contractHash: candidateManifest.routeFingerprint,
     fingerprint: candidateManifest.fingerprint,
     servicePage: Boolean(files.servicePage),
+    locationPage: Boolean(files.locationPage),
+    servicesIndex: Boolean(files.servicesIndexPage),
     ...(Number.isFinite(visualScore) ? { visualScore } : {}),
     ...(Number.isFinite(distinctivenessScore) ? { distinctivenessScore } : {}),
     selectionMode,

@@ -10,12 +10,15 @@ import {
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
 } from "./creative-authoring-output.mjs";
-import { assertCreativeServicePageSource } from "./creative-source-safety.mjs";
+import {
+  assertCreativeInnerPageSource,
+  assertCreativeServicePageSource,
+} from "./creative-source-safety.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 
 /**
- * @typedef {"contract" | "experience" | "service" | "styles" | "motion"} AuthorStage
+ * @typedef {"contract" | "experience" | "service" | "location" | "service-index" | "styles" | "motion"} AuthorStage
  * @typedef {{
  *   stage: AuthorStage;
  *   route: Record<string, any>;
@@ -26,6 +29,7 @@ import { validateReferenceCandidate } from "./reference-fidelity.mjs";
  *   designContract?: string;
  *   experienceSource?: string;
  *   servicePageSource?: string;
+ *   locationPageSource?: string;
  *   validationError?: string;
  *   previousSource?: string;
  * }} AuthorStageRequest
@@ -154,6 +158,34 @@ const servicePageRequiredPaths = [
   "related",
   "process",
   "faqs",
+];
+
+/**
+ * The render-time shape a location page receives beside the sealed homepage
+ * content. The host builds this from the verified site configuration and
+ * normalizes optional fields, so every property below is always present.
+ */
+export function creativeLocationPageShape() {
+  return {
+    location: {
+      name: "string",
+      slug: "string",
+      description: "string",
+      localNote: "string",
+      services: [{ name: "string", slug: "string", description: "string" }],
+      otherAreas: [{ name: "string", slug: "string" }],
+      images: { context: "string?" },
+    },
+  };
+}
+
+const locationPageRequiredPaths = [
+  "name",
+  "slug",
+  "description",
+  "localNote",
+  "services",
+  "otherAreas",
 ];
 
 function stableJson(value) {
@@ -1831,18 +1863,22 @@ function referencesContentPath(source, token) {
   return memberBinding.test(source);
 }
 
-function referencesServicePath(source, path) {
+function referencesObjectPath(source, root, path) {
   const [group, member] = String(path).split(".");
+  const rootName = String(root);
   const access = (suffix) =>
-    new RegExp(`\\bservice\\s*\\??\\s*\\.\\s*${suffix}\\b`, "u").test(source);
-  const destructuredTop = (name) =>
-    new RegExp(
-      `(?:const|let)\\s*\\{[^}]*\\b${name}\\b[^}]*\\}\\s*=\\s*service\\b`,
-      "u",
-    ).test(source) ||
-    new RegExp(`\\bservice\\s*:\\s*\\{[^}]*\\b${name}\\b[^}]*\\}`, "u").test(
+    new RegExp(`\\b${rootName}\\s*\\??\\s*\\.\\s*${suffix}\\b`, "u").test(
       source,
     );
+  const destructuredTop = (name) =>
+    new RegExp(
+      `(?:const|let)\\s*\\{[^}]*\\b${name}\\b[^}]*\\}\\s*=\\s*${rootName}\\b`,
+      "u",
+    ).test(source) ||
+    new RegExp(
+      `\\b${rootName}\\s*:\\s*\\{[^}]*\\b${name}\\b[^}]*\\}`,
+      "u",
+    ).test(source);
   if (!member) return access(group) || destructuredTop(group);
   if (access(`${group}\\s*\\??\\s*\\.\\s*${member}`)) return true;
   if (destructuredTop(group)) {
@@ -1854,7 +1890,7 @@ function referencesServicePath(source, path) {
   }
   if (
     new RegExp(
-      `(?:const|let)\\s*\\{[^}]*\\b${member}\\b[^}]*\\}\\s*=\\s*service\\s*\\??\\s*\\.\\s*${group}\\b`,
+      `(?:const|let)\\s*\\{[^}]*\\b${member}\\b[^}]*\\}\\s*=\\s*${rootName}\\s*\\??\\s*\\.\\s*${group}\\b`,
       "u",
     ).test(source) ||
     new RegExp(
@@ -1866,18 +1902,23 @@ function referencesServicePath(source, path) {
   return false;
 }
 
-/**
- * Validate an authored service detail page. The page renders the same sealed
- * site content as the homepage plus one service record, so it must expose the
- * shared router, conversion, and design-system contracts for the rendered
- * identity checks in the creative bakeoff.
- */
-export function validateServicePage(source, route, content) {
-  syntaxErrorFor(source, route, "ServicePage.jsx", true);
+function validateInnerPageSource({
+  source,
+  route,
+  content,
+  file,
+  rootComponent,
+  identifiers,
+  markers = [],
+  pathRoot = "",
+  requiredPaths = [],
+  requiredContentPaths = [],
+}) {
+  syntaxErrorFor(source, route, file, true);
   const scopeError = scopeErrorFor(source, route, {
-    fileName: "ServicePage.jsx",
-    rootComponent: "ServicePage",
-    identifiers: ["content", "service"],
+    fileName: file,
+    rootComponent,
+    identifiers,
   });
   if (scopeError) throw new Error(scopeError);
   for (const specifier of importSpecifiers(source))
@@ -1901,21 +1942,16 @@ export function validateServicePage(source, route, content) {
   for (const [pattern, label] of forbidden)
     if (pattern.test(source))
       throw new Error(
-        `Candidate ${route.id} ServicePage.jsx contains forbidden ${label}.`,
+        `Candidate ${route.id} ${file} contains forbidden ${label}.`,
       );
-  assertCreativeServicePageSource(source, { candidateId: route.id || "candidate" });
-  for (const marker of [
-    "data-service-hero",
-    "data-service-support",
-    "data-service-related",
-  ])
+  for (const marker of markers)
     if (!source.includes(marker))
       throw new Error(
-        `Candidate ${route.id} ServicePage.jsx is missing the ${marker} region marker.`,
+        `Candidate ${route.id} ${file} is missing the ${marker} region marker.`,
       );
   if (!/<section\b[^>]*\bid\s*=\s*["']contact["']/u.test(source))
     throw new Error(
-      `Candidate ${route.id} ServicePage.jsx must include a contact section with id="contact".`,
+      `Candidate ${route.id} ${file} must include a contact section with id="contact".`,
     );
   const { elements } = collectJsxElements(source);
   const headings = elements.filter(
@@ -1923,23 +1959,24 @@ export function validateServicePage(source, route, content) {
   );
   if (headings.length !== 1)
     throw new Error(
-      `Candidate ${route.id} ServicePage.jsx must render exactly one H1 service heading.`,
+      `Candidate ${route.id} ${file} must render exactly one H1 heading.`,
     );
   if (
     !elements.some(({ opening }) => jsxOpeningName(opening).toLowerCase() === "main")
   )
     throw new Error(
-      `Candidate ${route.id} ServicePage.jsx must render a main landmark.`,
+      `Candidate ${route.id} ${file} must render a main landmark.`,
     );
-  for (const path of servicePageRequiredPaths)
-    if (!referencesServicePath(source, path))
+  for (const path of requiredPaths)
+    if (!referencesObjectPath(source, pathRoot, path))
       throw new Error(
-        `Candidate ${route.id} ServicePage.jsx is missing required sealed binding service.${path}.`,
+        `Candidate ${route.id} ${file} is missing required sealed binding ${pathRoot}.${path}.`,
       );
-  if (!referencesContentPath(source, "content.brand.name"))
-    throw new Error(
-      `Candidate ${route.id} ServicePage.jsx must reuse the sealed brand name from content.brand.name.`,
-    );
+  for (const token of requiredContentPaths)
+    if (!referencesContentPath(source, token))
+      throw new Error(
+        `Candidate ${route.id} ${file} is missing required sealed binding ${token}.`,
+      );
   validateContentBoundRuntimeHelpers(source, route);
   validateImageRoleReuse(source, route, content);
   for (const { opening } of elements) {
@@ -1958,21 +1995,110 @@ export function validateServicePage(source, route, content) {
         (ts.isIdentifier(expression) && expression.text === "undefined"));
     if (!altAttribute || !initializer || invalidExpression)
       throw new Error(
-        `Candidate ${route.id} ServicePage.jsx has an image that must have a usable alt attribute; use alt="" only for decorative or redundant imagery.`,
+        `Candidate ${route.id} ${file} has an image that must have a usable alt attribute; use alt="" only for decorative or redundant imagery.`,
       );
   }
   const literals = unsupportedClaimLiterals(source);
   if (literals.length)
     throw new Error(
-      `Candidate ${route.id} ServicePage.jsx contains an unsupported claim literal: ${literals[0]}`,
+      `Candidate ${route.id} ${file} contains an unsupported claim literal: ${literals[0]}`,
     );
   const embeddedFact = scalarContentValues(content).find((value) =>
     source.includes(value),
   );
   if (embeddedFact)
     throw new Error(
-      `Candidate ${route.id} ServicePage.jsx hardcodes sealed content instead of using a token: ${embeddedFact}`,
+      `Candidate ${route.id} ${file} hardcodes sealed content instead of using a token: ${embeddedFact}`,
     );
+}
+
+/**
+ * Validate an authored service detail page. The page renders the same sealed
+ * site content as the homepage plus one service record, so it must expose the
+ * shared router, conversion, and design-system contracts for the rendered
+ * identity checks in the creative bakeoff.
+ */
+export function validateServicePage(source, route, content) {
+  validateInnerPageSource({
+    source,
+    route,
+    content,
+    file: "ServicePage.jsx",
+    rootComponent: "ServicePage",
+    identifiers: ["content", "service"],
+    markers: [
+      "data-service-hero",
+      "data-service-support",
+      "data-service-related",
+    ],
+    pathRoot: "service",
+    requiredPaths: servicePageRequiredPaths,
+    requiredContentPaths: ["content.brand.name"],
+  });
+  assertCreativeServicePageSource(source, {
+    candidateId: route.id || "candidate",
+  });
+}
+
+/**
+ * Validate an authored location detail page. The page renders the same sealed
+ * site content as the homepage plus one location record, and must keep the
+ * coverage language truthful for the listed service area.
+ */
+export function validateLocationPage(source, route, content) {
+  validateInnerPageSource({
+    source,
+    route,
+    content,
+    file: "LocationPage.jsx",
+    rootComponent: "LocationPage",
+    identifiers: ["content", "location"],
+    markers: [
+      "data-location-hero",
+      "data-location-coverage",
+      "data-location-related",
+    ],
+    pathRoot: "location",
+    requiredPaths: locationPageRequiredPaths,
+    requiredContentPaths: ["content.brand.name"],
+  });
+  assertCreativeInnerPageSource(source, {
+    candidateId: route.id || "candidate",
+    pageLabel: "LocationPage.jsx",
+    rootMarker: "data-location-page",
+    requireServiceRoute: true,
+  });
+}
+
+/**
+ * Validate an authored services index. The page renders entirely from the
+ * sealed homepage content and must expose the confirmed service list as real
+ * /services/ routes with the shared conversion path.
+ */
+export function validateServicesIndexPage(source, route, content) {
+  validateInnerPageSource({
+    source,
+    route,
+    content,
+    file: "ServicesIndexPage.jsx",
+    rootComponent: "ServicesIndexPage",
+    identifiers: ["content"],
+    markers: ["data-services-index-hero", "data-services-index-list"],
+    pathRoot: "",
+    requiredPaths: [],
+    requiredContentPaths: [
+      "content.copy.servicesHeading",
+      "content.copy.servicesIntro",
+      "content.services",
+      "content.brand.name",
+    ],
+  });
+  assertCreativeInnerPageSource(source, {
+    candidateId: route.id || "candidate",
+    pageLabel: "ServicesIndexPage.jsx",
+    rootMarker: "data-services-index",
+    requireServiceRoute: true,
+  });
 }
 
 function validateExperience(source, route, content, visualBrief = {}) {
@@ -2190,7 +2316,7 @@ function validateMotion(source, route) {
 }
 
 /**
- * @param {{files?: {experience?: string, styles?: string, motion?: string}, route?: Record<string, any>, content?: Record<string, any>, visualBrief?: Record<string, any>}} [options]
+ * @param {{files?: {experience?: string, styles?: string, motion?: string, servicePage?: string, locationPage?: string, servicesIndexPage?: string}, route?: Record<string, any>, content?: Record<string, any>, visualBrief?: Record<string, any>}} [options]
  * @returns {{files: {experience: string, styles: string, motion: string}, referenceFidelity: Record<string, any> | null}}
  */
 export function validateProductionCandidateFiles({
@@ -2203,6 +2329,10 @@ export function validateProductionCandidateFiles({
   const styles = normalizeAuthoredSource(String(files?.styles || ""));
   const motion = normalizeAuthoredSource(String(files?.motion || ""));
   const servicePage = normalizeAuthoredSource(String(files?.servicePage || ""));
+  const locationPage = normalizeAuthoredSource(String(files?.locationPage || ""));
+  const servicesIndexPage = normalizeAuthoredSource(
+    String(files?.servicesIndexPage || ""),
+  );
   if (!experience || !styles || !motion)
     throw new Error("A complete creative candidate file bundle is required.");
   const referenceDna = route.referenceDna
@@ -2212,6 +2342,9 @@ export function validateProductionCandidateFiles({
   validateStyles(styles, route);
   validateMotion(motion, route);
   if (servicePage) validateServicePage(servicePage, route, content);
+  if (locationPage) validateLocationPage(locationPage, route, content);
+  if (servicesIndexPage)
+    validateServicesIndexPage(servicesIndexPage, route, content);
   const isolatedStyles = namespaceCreativeCss(styles);
   let referenceFidelity = null;
   if (referenceDna) {
@@ -2232,6 +2365,8 @@ export function validateProductionCandidateFiles({
       styles: isolatedStyles,
       motion,
       ...(servicePage ? { servicePage } : {}),
+      ...(locationPage ? { locationPage } : {}),
+      ...(servicesIndexPage ? { servicesIndexPage } : {}),
     },
     referenceFidelity,
   };
@@ -2572,6 +2707,43 @@ export async function authorExperienceCandidates({
       });
       const servicePage = servicePageOutput.source;
       complianceRepaired ||= servicePageOutput.repaired;
+      const locations = Array.isArray(site.locations) ? site.locations : [];
+      const authorLocationPage =
+        site.industry === "home-services" && locations.length > 0;
+      let locationPage = "";
+      if (authorLocationPage) {
+        const locationPageOutput = await generateValidatedSource({
+          generate: limitedGenerate,
+          request: {
+            ...base,
+            stage: "location",
+            designContract,
+            experienceSource: experience,
+            servicePageSource: servicePage,
+          },
+          stage: "location",
+          validate: (source, locationRoute) =>
+            validateLocationPage(source, locationRoute, content),
+        });
+        locationPage = locationPageOutput.source;
+        complianceRepaired ||= locationPageOutput.repaired;
+      }
+      const servicesIndexOutput = await generateValidatedSource({
+        generate: limitedGenerate,
+        request: {
+          ...base,
+          stage: "service-index",
+          designContract,
+          experienceSource: experience,
+          servicePageSource: servicePage,
+          locationPageSource: locationPage,
+        },
+        stage: "service-index",
+        validate: (source, serviceIndexRoute) =>
+          validateServicesIndexPage(source, serviceIndexRoute, content),
+      });
+      const servicesIndexPage = servicesIndexOutput.source;
+      complianceRepaired ||= servicesIndexOutput.repaired;
       const [stylesOutput, motionOutput] = await Promise.all([
         generateValidatedSource({
           generate: limitedGenerate,
@@ -2581,6 +2753,8 @@ export async function authorExperienceCandidates({
             designContract,
             experienceSource: experience,
             servicePageSource: servicePage,
+            locationPageSource: locationPage,
+            servicesIndexSource: servicesIndexPage,
           },
           stage: "styles",
           validate: validateStyles,
@@ -2665,6 +2839,8 @@ export async function authorExperienceCandidates({
         referenceRepairCycles,
         motionFallback: Boolean(motionOutput.fallback),
         servicePageAuthored: true,
+        locationPageAuthored: Boolean(locationPage),
+        servicesIndexAuthored: true,
         contentManifestDigest: routeContentManifest.digest,
         contentManifestPath: "content-manifest.json",
         allowedImports: [...allowedImports],
@@ -2701,6 +2877,8 @@ export async function authorExperienceCandidates({
           "contract.json": `${JSON.stringify(contract, null, 2)}\n`,
           "Experience.jsx": `${experience}\n`,
           "ServicePage.jsx": `${servicePage}\n`,
+          ...(locationPage ? { "LocationPage.jsx": `${locationPage}\n` } : {}),
+          "ServicesIndexPage.jsx": `${servicesIndexPage}\n`,
           "styles.css": `${styles}\n`,
           "motion.js": `${motion}\n`,
           "metadata.json": `${JSON.stringify(metadata, null, 2)}\n`,
