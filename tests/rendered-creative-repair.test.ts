@@ -1353,7 +1353,7 @@ export default function Experience({ content, runtime }) {
 
     expect(result.status).toBe("passed");
     expect(repairs.map((repair) => repair.candidateId)).toEqual([
-      "candidate-a",
+      "candidate-b",
     ]);
     expect(repairs[0].findings.join("\n")).toContain("sibling");
     expect(repairs[0].findings.join("\n")).toMatch(/preserve/iu);
@@ -1511,22 +1511,31 @@ export default function Experience({ content, runtime }) {
     expect(bakeoffCalls).toBe(3);
     expect(repairs.map((repair) => repair.candidateId)).toEqual([
       "candidate-a",
-      "candidate-b",
+      "candidate-c",
     ]);
-    for (const repair of repairs) {
-      expect(repair.findings.join("\n")).toContain("Rendered diversity failed");
-      expect(repair.findings.join("\n")).toContain("sibling");
-      expect(repair.findings.join("\n")).toContain("split-hero grammar");
-      const sibling = "candidate-c";
-      expect(
+    expect(
+      repairs.map((repair) =>
         repair.comparisonScreenshots.map((item) => [
           item.candidateId,
           item.viewport,
         ]),
-      ).toEqual([
-        [sibling, "desktop"],
-        [sibling, "mobile"],
-      ]);
+      ),
+    ).toEqual([
+      [
+        ["candidate-c", "desktop"],
+        ["candidate-c", "mobile"],
+      ],
+      [
+        ["candidate-a", "desktop"],
+        ["candidate-a", "mobile"],
+      ],
+    ]);
+    for (const [index, repair] of repairs.entries()) {
+      expect(repair.findings.join("\n")).toContain("Rendered diversity failed");
+      expect(repair.findings.join("\n")).toContain("sibling");
+      expect(repair.findings.join("\n")).toContain(
+        ["split-hero grammar", "split-hero structure"][index],
+      );
       for (const item of repair.comparisonScreenshots)
         await expect(fs.access(item.path)).resolves.toBeUndefined();
     }
@@ -1534,7 +1543,7 @@ export default function Experience({ content, runtime }) {
     expect(repairs[1].bakeoffRound).toBe(2);
     expect(
       await fs.readFile(repairs[1].comparisonScreenshots[0].path, "utf8"),
-    ).toBe("candidate-c-desktop-round-2");
+    ).toBe("candidate-a-desktop-round-2");
   });
 
   it("repairs the selected candidate when promotion is blocked without diversity pairs", async () => {
