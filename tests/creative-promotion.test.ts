@@ -10,6 +10,19 @@ import { runCreativeBakeoff } from "../scripts/run-creative-bakeoff.mjs";
 
 const tempRoots: string[] = [];
 
+const validServicePage = `import { LeadForm } from "@launchloom/runtime";
+export default function ServicePage({ content, runtime, service }) {
+  return <main data-service-page data-service-slug={service.slug}>
+    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
+    <section data-service-hero><h1>{service.name}</h1><p>{service.description}</p></section>
+    <section data-service-support><p>{service.support.scope}</p><p>{service.support.preparation}</p><p>{service.support.nextStep}</p></section>
+    <section data-service-related><ul>{service.related.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
+    {service.process.length > 0 && <ol>{service.process.map((step) => <li key={step}>{step}</li>)}</ol>}
+    {service.faqs.length > 0 && <section>{service.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>}
+    <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+  </main>;
+}`;
+
 async function makeFixture() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-creative-"));
   tempRoots.push(root);
@@ -169,6 +182,58 @@ describe("creative candidate promotion", () => {
     expect(selected).not.toContain("href={`#${service.slug}`}");
   });
 
+  it("copies the authored service page and enables the service renderer", async () => {
+    const root = await makeFixture();
+    await fs.writeFile(
+      path.join(root, "candidate-a/ServicePage.jsx"),
+      validServicePage,
+    );
+
+    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+
+    const selected = await fs.readFile(
+      path.join(root, "src/generated-experiences/selected/ServicePage.jsx"),
+      "utf8",
+    );
+    expect(selected).toContain("data-service-page");
+    expect(selected).toContain("/services/${item.slug}/");
+    const config = JSON.parse(
+      await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),
+    );
+    expect(config.design.experience.servicePage).toBe(true);
+  });
+
+  it("keeps the fallback service page for a candidate that predates it", async () => {
+    const root = await makeFixture();
+
+    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+
+    const selected = await fs.readFile(
+      path.join(root, "src/generated-experiences/selected/ServicePage.jsx"),
+      "utf8",
+    );
+    expect(selected).toContain("export default function ServicePage()");
+    const config = JSON.parse(
+      await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),
+    );
+    expect(config.design.experience.servicePage).toBe(false);
+  });
+
+  it("rejects an authored service page that bypasses the shared runtime", async () => {
+    const root = await makeFixture();
+    await fs.writeFile(
+      path.join(root, "candidate-a/ServicePage.jsx"),
+      validServicePage.replace(
+        'import { LeadForm } from "@launchloom/runtime";\n',
+        "",
+      ),
+    );
+
+    await expect(
+      promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" }),
+    ).rejects.toThrow(/LeadForm/u);
+  });
+
   it("rejects a candidate that bypasses the shared runtime", async () => {
     const root = await makeFixture();
     const file = path.join(root, "candidate-a/Experience.jsx");
@@ -221,6 +286,30 @@ describe("creative candidate promotion", () => {
     expect(report.fallback).toBe(true);
     expect(report.selectedCandidateId).toBeNull();
   }, 45_000);
+
+  it("renders the authored service page with the homepage visual identity", async () => {
+    const root = await makeFixture();
+    await fs.writeFile(
+      path.join(root, "candidate-a/ServicePage.jsx"),
+      validServicePage,
+    );
+    await fs.writeFile(
+      path.join(root, "candidate-a/styles.css"),
+      "body{background:rgb(16,18,20);color:rgb(240,240,240)}h1{font-family:Georgia,serif;font-weight:700}",
+    );
+    const report = await runCreativeBakeoff({
+      siteDir: path.resolve("templates/client-site"),
+      candidatesDir: root,
+      reportPath: path.join(root, "service-report.json"),
+      screenshotsDir: path.join(root, "service-screenshots"),
+      preview: true,
+      requireDiversity: false,
+    });
+    const candidate = report.candidates[0];
+    expect(candidate.servicePage?.slug).toBe("skin-renewal");
+    expect(candidate.servicePage?.failures).toEqual([]);
+    expect(candidate.servicePage?.pass).toBe(true);
+  }, 120_000);
 
   it("rejects a version-two candidate before rendering when its content manifest is missing", async () => {
     const root = await makeFixture();

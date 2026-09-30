@@ -105,6 +105,14 @@ for (const file of ["Experience.jsx", "styles.css", "motion.js"])
     path.join(selectedDir, file),
     path.join(candidateDir, file),
   );
+if (experience.servicePage === true) {
+  await fs.copyFile(
+    path.join(selectedDir, "ServicePage.jsx"),
+    path.join(candidateDir, "ServicePage.jsx"),
+  );
+} else {
+  await fs.rm(path.join(candidateDir, "ServicePage.jsx"), { force: true });
+}
 
 const contractPath = path.join(candidateDir, "contract.json");
 const metadataPath = path.join(candidateDir, "metadata.json");

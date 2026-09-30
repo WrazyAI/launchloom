@@ -495,6 +495,9 @@ export async function runCreativeRepairLoop({
       ),
       styles: clean(repaired.styles || current.styles, Number.MAX_SAFE_INTEGER),
       motion: clean(repaired.motion || current.motion, Number.MAX_SAFE_INTEGER),
+      ...(typeof current.servicePage === "string" && current.servicePage
+        ? { servicePage: current.servicePage }
+        : {}),
     };
     current = applyCreativeVisualSafetyRepairs(current, cycleFindings);
     result = await evaluate(current);
@@ -763,6 +766,7 @@ ${currentFiles.styles}
 
 CURRENT MOTION.JS
 ${currentFiles.motion}
+${currentFiles.servicePage ? `\nCURRENT SERVICEPAGE.JSX\n${currentFiles.servicePage}\n\nThe service page renders one /services/<slug>/ detail page as a second page of the same visual system. Keep every data-service-* marker, the single shared LeadForm, the /services/ related links, and its class hooks working. When you change styles.css, keep the service page selectors styled and do not repurpose shared classes so the service page loses its authored treatment.` : ""}
 
 SOURCE SAFETY CONTRACT
 Experience.jsx is markup and className hooks only. Do not add style attributes or style props to Experience.jsx, including React style={{...}}, style variables, or spreads that supply a style prop. Do not add <style> elements or inline visual rules. Use className hooks in JSX and put all visual declarations in styles.css. When changing appearance, update the matching CSS selector and its Experience.jsx className hook; keep behavior in motion.js and do not use it to inject visual declarations into markup.

@@ -171,7 +171,19 @@ async function inspect(page) {
     const text = [document.title, document.body.innerText].join("\n");
     const anchors = [...document.querySelectorAll("nav a")];
     const requiredTargets = ["#services", "#faqs", "#contact"];
+    const identityHeading = root?.querySelector("h1") || document.querySelector("h1");
+    const identityHeadingStyle = identityHeading
+      ? window.getComputedStyle(identityHeading)
+      : null;
+    const identity = {
+      bodyBackground: window.getComputedStyle(document.body).backgroundColor,
+      htmlBackground: window.getComputedStyle(document.documentElement).backgroundColor,
+      headingFontFamily: identityHeadingStyle?.fontFamily || "",
+      headingFontWeight: identityHeadingStyle?.fontWeight || "",
+      headingLetterSpacing: identityHeadingStyle?.letterSpacing || "",
+    };
     return {
+      identity,
       h1Count: document.querySelectorAll("h1").length,
       hasHero: Boolean(hero),
       hasEarlyConversion: Boolean(root?.querySelector("[data-early-conversion]")),
@@ -228,6 +240,103 @@ function hardFailures(evidence, viewport) {
     evidence.brokenImages > 0 && "broken image",
     evidence.emDashes > 0 && "em dash found",
     evidence.creativeRenderer !== "creative-candidate" && "creative renderer marker missing",
+  ].filter(Boolean);
+}
+
+async function inspectServicePage(page) {
+  return page.evaluate(() => {
+    const host = document.querySelector("[data-service-page-host]");
+    const authored = host?.querySelector("[data-service-page]") || null;
+    const pageRoot = authored || host;
+    const text = [document.title, document.body.innerText].join("\n");
+    const heading = document.querySelector("h1");
+    const headingStyle = heading ? window.getComputedStyle(heading) : null;
+    return {
+      identity: {
+        bodyBackground: window.getComputedStyle(document.body).backgroundColor,
+        htmlBackground: window.getComputedStyle(document.documentElement).backgroundColor,
+        headingFontFamily: headingStyle?.fontFamily || "",
+        headingFontWeight: headingStyle?.fontWeight || "",
+        headingLetterSpacing: headingStyle?.letterSpacing || "",
+      },
+      hasHost: Boolean(host),
+      creativeRenderer: host?.getAttribute("data-creative-renderer") || "",
+      hasServicePageMarker: Boolean(authored),
+      h1Count: pageRoot ? pageRoot.querySelectorAll("h1").length : 0,
+      hasServiceHero: Boolean(pageRoot?.querySelector("[data-service-hero]")),
+      hasServiceSupport: Boolean(pageRoot?.querySelector("[data-service-support]")),
+      hasServiceRelated: Boolean(pageRoot?.querySelector("[data-service-related]")),
+      hasContactSection: Boolean(pageRoot?.querySelector("#contact")),
+      hasLeadForm: Boolean(pageRoot?.querySelector('[data-runtime="lead-form"]')),
+      missingAlt: [...document.images].filter((image) => !image.getAttribute("alt")?.trim()).length,
+      unnamedControls: [...(pageRoot?.querySelectorAll("button, a") || [])].filter((element) => !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
+      emDashes: (text.match(/—/gu) || []).length,
+    };
+  });
+}
+
+function normalizeColor(value) {
+  return String(value || "").replace(/\s+/gu, "").toLowerCase();
+}
+
+/**
+ * Compare a rendered service page against the same candidate's homepage. The
+ * service page may recompose freely, but the canvas, heading typeface, and
+ * heading weight are identity anchors that must not drift to the generic
+ * inner-page template.
+ */
+export function servicePageIdentityFindings(home, service) {
+  const findings = [];
+  if (!home || !service) return findings;
+  const homeCanvas =
+    normalizeColor(home.bodyBackground) || normalizeColor(home.htmlBackground);
+  const serviceCanvas =
+    normalizeColor(service.bodyBackground) || normalizeColor(service.htmlBackground);
+  if (homeCanvas && serviceCanvas && homeCanvas !== serviceCanvas)
+    findings.push(
+      `service page canvas background drifts from the homepage (${homeCanvas} to ${serviceCanvas})`,
+    );
+  if (
+    home.headingFontFamily &&
+    service.headingFontFamily &&
+    home.headingFontFamily !== service.headingFontFamily
+  )
+    findings.push(
+      "service page heading typeface drifts from the homepage typeface",
+    );
+  if (
+    home.headingFontWeight &&
+    service.headingFontWeight &&
+    home.headingFontWeight !== service.headingFontWeight
+  )
+    findings.push(
+      "service page heading weight drifts from the homepage weight",
+    );
+  return findings;
+}
+
+/**
+ * Deterministic rendered failures for one authored service page viewport.
+ */
+export function servicePageFailures(evidence) {
+  return [
+    !evidence.hasHost && "missing service page host",
+    evidence.creativeRenderer !== "creative-candidate" &&
+      "creative renderer marker missing",
+    !evidence.hasServicePageMarker && "missing authored service page marker",
+    evidence.h1Count !== 1 && "expected one service H1",
+    !evidence.hasServiceHero && "missing service hero region",
+    !evidence.hasServiceSupport && "missing service decision-support region",
+    !evidence.hasServiceRelated && "missing related-services region",
+    !evidence.hasContactSection && "missing contact section",
+    !evidence.hasLeadForm && "missing shared lead form runtime",
+    evidence.missingAlt > 0 && "image is missing alt text",
+    evidence.unnamedControls > 0 && "interactive control has no accessible name",
+    evidence.overflow && "horizontal overflow",
+    evidence.brokenImages > 0 && "broken image",
+    evidence.emDashes > 0 && "em dash found",
   ].filter(Boolean);
 }
 
@@ -388,6 +497,12 @@ export async function runCreativeBakeoff({
   await fs.rm(selectedBackup, { recursive: true, force: true });
   await fs.cp(selectedDir, selectedBackup, { recursive: true, force: true }).catch(() => {});
   const browser = await chromium.launch({ headless: true });
+  const bakeoffConfig = JSON.parse(originalConfig);
+  const serviceSlug = String(
+    (Array.isArray(bakeoffConfig.services) ? bakeoffConfig.services : []).find(
+      (service) => service?.slug,
+    )?.slug || "",
+  );
   const results = [];
   await fs.mkdir(evidenceDir, { recursive: true });
 
@@ -525,6 +640,79 @@ export async function runCreativeBakeoff({
               await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}-viewport.png`) });
             await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}.png`), fullPage: true });
             await page.close();
+          }
+          const servicePagePath = path.join(
+            candidateRoot,
+            candidate.directory,
+            "ServicePage.jsx",
+          );
+          const hasServicePage = await fs
+            .access(servicePagePath)
+            .then(() => true)
+            .catch(() => false);
+          if (hasServicePage && serviceSlug) {
+            const serviceResult = {
+              slug: serviceSlug,
+              viewports: [],
+              failures: [],
+            };
+            const homepageIdentity =
+              candidateResult.viewports.find(
+                (viewport) => viewport.name === "desktop",
+              )?.identity || null;
+            for (const viewport of [
+              { name: "desktop", width: 1536, height: 864 },
+              { name: "mobile", width: 390, height: 844 },
+            ]) {
+              const page = await browser.newPage({ viewport });
+              const browserErrors = [];
+              page.on("pageerror", (error) => browserErrors.push(error.message));
+              await page.goto(`${origin}/services/${serviceSlug}/`, {
+                waitUntil: "networkidle",
+              });
+              await page.waitForTimeout(900);
+              const evidence = await inspectServicePage(page);
+              const identityFindings = servicePageIdentityFindings(
+                homepageIdentity,
+                evidence.identity,
+              );
+              const failures = [
+                ...servicePageFailures(evidence),
+                ...identityFindings,
+                browserErrors.length > 0 && "browser error",
+              ].filter(Boolean);
+              serviceResult.viewports.push({
+                ...viewport,
+                ...evidence,
+                identityFindings,
+                browserErrors,
+              });
+              serviceResult.failures.push(
+                ...failures.map((failure) => `${viewport.name}: ${failure}`),
+              );
+              await page.screenshot({
+                path: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-service-${viewport.name}-viewport.png`,
+                ),
+              });
+              await page.screenshot({
+                path: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-service-${viewport.name}.png`,
+                ),
+                fullPage: true,
+              });
+              await page.close();
+            }
+            serviceResult.failures = [...new Set(serviceResult.failures)];
+            serviceResult.pass = serviceResult.failures.length === 0;
+            candidateResult.servicePage = serviceResult;
+            candidateResult.failures.push(
+              ...serviceResult.failures.map(
+                (failure) => `service-page ${failure}`,
+              ),
+            );
           }
         } finally {
           await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
