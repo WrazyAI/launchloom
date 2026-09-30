@@ -68,6 +68,20 @@ export type CreativeServicePage = {
   images: { context?: string };
 };
 
+export type CreativeLocationPage = {
+  name: string;
+  slug: string;
+  description: string;
+  localNote: string;
+  services: readonly {
+    name: string;
+    slug: string;
+    description: string;
+  }[];
+  otherAreas: readonly { name: string; slug: string }[];
+  images: { context?: string };
+};
+
 export function useReducedMotion(runtime?: CreativeRuntime) {
   const [reducedMotion, setReducedMotion] = useState(
     Boolean(runtime?.reducedMotion),

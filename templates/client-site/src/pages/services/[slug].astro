@@ -85,10 +85,11 @@ const serviceStructuredData = {
 <SiteLayout title={`${service.name} | ${site.business.name}`} description={service.description} schemas={[serviceStructuredData]}>
   {creativeService && experience ? (
     <div
-      data-service-page-host="true"
+      data-authored-page-host="true"
+      data-authored-page-kind="service"
       data-creative-renderer="creative-candidate"
-      data-service-page-candidate={creativeRuntime.candidateId}
-      data-service-page-family={site.design?.experience?.familyId || "unknown"}
+      data-creative-candidate={creativeRuntime.candidateId}
+      data-creative-family={site.design?.experience?.familyId || "unknown"}
     >
       <ServiceCandidateHost client:load content={experience.content} runtime={creativeRuntime} service={creativeService} />
     </div>
