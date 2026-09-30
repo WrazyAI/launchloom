@@ -958,11 +958,11 @@ export async function runRenderedCreativeRepair({
         });
         return { status: "repaired", attempts };
       } catch (error) {
-        const mayRetrySourceRejection =
+        const mayRetryRepairOutputRejection =
           requestedMode === "preview" &&
           !humanFeedback &&
           error?.code === "CREATIVE_REPAIR_OUTPUT_REJECTED";
-        if (!mayRetrySourceRejection) throw error;
+        if (!mayRetryRepairOutputRejection) throw error;
 
         const message = safeRepairRejectionMessage(error);
         const status = attempt < cycleLimit ? "retrying" : "rejected";
@@ -988,13 +988,13 @@ export async function runRenderedCreativeRepair({
         activeFindings = [
           ...activeFindings,
           {
-            category: "source-validation-repair",
+            category: "repair-output-rejected",
             severity: "major",
             message:
-              "The previous repair output was rejected by deterministic source validation.",
+              "The previous repair output did not satisfy the bounded repair contract or deterministic source validation.",
             evidence: message,
             recommendation:
-              "Fix the reported source-validation error in this bounded retry. Preserve sealed content bindings, the contact-bound early-conversion anchor, required Reference DNA markers, and verified content. Do not remove required semantics or weaken safety checks to make validation pass.",
+              "Return a non-empty, bounded repair that fixes the reported output or source-validation issue. Preserve sealed content bindings, the contact-bound early-conversion anchor, required Reference DNA markers, and verified content. Do not remove required semantics or weaken safety checks to make validation pass.",
           },
         ];
       }

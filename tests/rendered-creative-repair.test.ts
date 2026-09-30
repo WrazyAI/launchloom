@@ -251,7 +251,7 @@ describe("rendered creative repair orchestration", () => {
       );
   });
 
-  it("retries a source-rejected repair once within the candidate's cycle budget", async () => {
+  it("retries a rejected repair output once within the candidate's cycle budget", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const repairFindings: any[][] = [];
     const excludedCandidates: string[][] = [];
@@ -308,7 +308,7 @@ describe("rendered creative repair orchestration", () => {
     expect(repairFindings[1]).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          category: "source-validation-repair",
+          category: "repair-output-rejected",
           evidence: expect.stringContaining(
             "early conversion anchor was removed",
           ),

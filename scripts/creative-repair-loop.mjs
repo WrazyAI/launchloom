@@ -156,6 +156,14 @@ function isRepairEditSet(value) {
   );
 }
 
+function repairOutputRejection(message, cause) {
+  const error = new Error(message, {
+    ...(cause instanceof Error ? { cause } : {}),
+  });
+  error.code = "CREATIVE_REPAIR_OUTPUT_REJECTED";
+  return error;
+}
+
 /** Apply exact, bounded source replacements; ambiguous edits fail closed. */
 export function applyCreativeRepairEdits(files, edits) {
   if (!files || typeof files !== "object" || Array.isArray(files))
@@ -165,7 +173,7 @@ export function applyCreativeRepairEdits(files, edits) {
     edits.length < 1 ||
     edits.length > MAX_REPAIR_EDITS
   )
-    throw new Error(
+    throw repairOutputRejection(
       `Creative repair edits must contain 1 to ${MAX_REPAIR_EDITS} literal replacements.`,
     );
 
@@ -178,7 +186,9 @@ export function applyCreativeRepairEdits(files, edits) {
       typeof edit !== "object" ||
       !REPAIR_EDITABLE_FILES.has(edit.file)
     )
-      throw new Error(`${label} targets an unsupported candidate file.`);
+      throw repairOutputRejection(
+        `${label} targets an unsupported candidate file.`,
+      );
     if (
       typeof edit.find !== "string" ||
       !edit.find.length ||
@@ -186,24 +196,28 @@ export function applyCreativeRepairEdits(files, edits) {
       typeof edit.replace !== "string" ||
       edit.replace.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS
     )
-      throw new Error(
+      throw repairOutputRejection(
         `${label} exceeds the bounded literal replacement contract.`,
       );
     const replacement = edit.replace.replace(/[—–]/gu, "-");
     if (edit.find === replacement)
-      throw new Error(`${label} does not change the candidate source.`);
+      throw repairOutputRejection(
+        `${label} does not change the candidate source.`,
+      );
     if (/data:image\//iu.test(edit.find) || /data:image\//iu.test(edit.replace))
-      throw new Error(`${label} cannot contain inline image data.`);
+      throw repairOutputRejection(`${label} cannot contain inline image data.`);
     patchTextChars += edit.find.length + edit.replace.length;
     if (patchTextChars > MAX_REPAIR_PATCH_TEXT_CHARS)
-      throw new Error("Creative repair patch exceeds the bounded text budget.");
+      throw repairOutputRejection(
+        "Creative repair patch exceeds the bounded text budget.",
+      );
 
     const source = repaired[edit.file];
     if (typeof source !== "string")
       throw new Error(`${label} targets a missing candidate file.`);
     const start = source.indexOf(edit.find);
     if (start < 0 || source.indexOf(edit.find, start + edit.find.length) >= 0)
-      throw new Error(
+      throw repairOutputRejection(
         `${label} source fragment must match exactly once in ${edit.file}.`,
       );
     repaired[edit.file] =
@@ -883,21 +897,21 @@ Return only the bounded literal edit set described above. Use exact, unique sour
       `creative_completion stage=creative-repair ${diagnosticText}${editsOnly ? " mode=bounded-edits" : ""}`,
     );
     if (["length", "max_tokens"].includes(diagnostics.finishReason))
-      throw new Error(
+      throw repairOutputRejection(
         `Creative repair response was truncated (${diagnosticText}).`,
       );
     let parsed;
     try {
       parsed = parseModelJson(responseContent);
     } catch (cause) {
-      throw new Error(
+      throw repairOutputRejection(
         `Creative repair response was malformed (${diagnosticText}).`,
-        { cause },
+        cause,
       );
     }
     if (scopedHumanRepair) {
       if (!isRepairEditSet(parsed))
-        throw new Error(
+        throw repairOutputRejection(
           "Human creative repair must return bounded literal edits, not complete files.",
         );
       applyCreativeRepairEdits(files, parsed.edits);
@@ -905,7 +919,7 @@ Return only the bounded literal edit set described above. Use exact, unique sour
     }
     if (editsOnly) {
       if (!isRepairEditSet(parsed))
-        throw new Error(
+        throw repairOutputRejection(
           "Large creative repair must return bounded literal edits, not complete files.",
         );
       return applyCreativeRepairEdits(currentFiles, parsed.edits);

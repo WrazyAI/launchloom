@@ -658,6 +658,52 @@ describe("creative repair loop", () => {
     expect(diagnostics.join(" ")).not.toContain("from=max to=xhigh");
   });
 
+  it("marks an empty bounded edit set as a retryable model-output rejection", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-empty-repair-edits-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  finish_reason: "stop",
+                  message: { content: JSON.stringify({ edits: [] }) },
+                },
+              ],
+              usage: { prompt_tokens: 1, completion_tokens: 1 },
+            }),
+          ),
+      ),
+    );
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: ["rendered-reference: hero composition is too generic"],
+        files: {
+          experience: "old JSX",
+          styles: `body { color: navy; }\n${"x".repeat(21_000)}`,
+          motion: "old motion",
+        },
+        screenshots: [],
+      }),
+    ).rejects.toMatchObject({
+      code: "CREATIVE_REPAIR_OUTPUT_REJECTED",
+      message: expect.stringContaining("Creative repair edits must contain"),
+    });
+  });
+
   it("classifies malformed non-truncated repair JSON with usage diagnostics", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-malformed-json-"),
