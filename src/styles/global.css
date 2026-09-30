@@ -898,23 +898,29 @@ button {
 .review-shell {
   min-height: 100vh;
   display: grid;
-  place-items: center;
-  padding: 28px;
+  align-items: start;
+  justify-items: center;
+  padding: clamp(24px, 4vw, 56px);
   background:
     radial-gradient(circle at top right, #d8ed9b, transparent 35%), var(--paper);
 }
 .review-card {
-  max-width: 610px;
-  padding: clamp(26px, 5vw, 52px);
+  width: min(100%, 1040px);
+  max-width: 1040px;
+  padding: clamp(28px, 4vw, 56px);
   border-radius: 28px;
   background: var(--card);
   box-shadow: var(--shadow);
 }
 .review-card h1 {
-  font-size: clamp(2.4rem, 6vw, 4.5rem);
-  letter-spacing: -0.075em;
-  line-height: 0.92;
+  max-width: 24ch;
+  font-size: clamp(2.5rem, 4.6vw, 3.9rem);
+  letter-spacing: -0.07em;
+  line-height: 0.94;
   margin: 13px 0;
+}
+.review-card > p {
+  max-width: 68ch;
 }
 .review-card h2 {
   letter-spacing: -0.05em;
@@ -957,7 +963,7 @@ button {
 .feedback-parts__grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 .feedback-part-chip {
   display: inline-flex;
@@ -1014,8 +1020,8 @@ button {
   opacity: 1;
 }
 .feedback-part {
-  margin-top: 18px;
-  padding: 16px 16px 18px;
+  margin-top: 20px;
+  padding: 20px 20px 22px;
   border: 1px solid #dce5dd;
   border-radius: 16px;
   background: #fbfdfb;
@@ -1055,14 +1061,14 @@ button {
 .feedback-part__choices {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 12px;
+  gap: 14px;
+  margin-top: 14px;
 }
 .feedback-choice {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
+  gap: 10px;
+  padding: 16px;
   border: 1px solid #e0e8e1;
   border-radius: 12px;
   background: white;
@@ -1081,9 +1087,9 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
+  min-height: 56px;
   margin-top: auto;
-  padding: 10px 12px;
+  padding: 12px 14px;
   border: 1.5px dashed #b9cdbd;
   border-radius: 10px;
   background: #f6faf6;
@@ -1119,20 +1125,23 @@ button {
   font-size: 0.85rem;
 }
 .feedback-parts.feedback-parts .field {
-  margin: 14px 0 0;
+  margin: 16px 0 0;
 }
 .feedback-parts.feedback-parts .feedback-choice .field {
   margin: 0;
 }
 .feedback-choice textarea {
-  min-height: 64px;
+  min-height: 84px;
+}
+.feedback-part > .field textarea {
+  min-height: 84px;
 }
 .feedback-attachment {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 14px 0 0;
-  padding: 10px;
+  gap: 16px;
+  margin: 16px 0 0;
+  padding: 12px;
   border: 1px solid #dce5dd;
   border-radius: 14px;
   background: white;
@@ -1140,8 +1149,8 @@ button {
 .feedback-attachment__thumb {
   display: grid;
   flex: 0 0 auto;
-  width: 104px;
-  height: 78px;
+  width: 148px;
+  height: 108px;
   place-items: center;
   border: 1px solid #e6ece6;
   border-radius: 10px;
@@ -1169,7 +1178,7 @@ button {
 }
 .feedback-attachment__badge {
   justify-self: start;
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: #e9f4ec;
   color: #1e5b47;
@@ -1182,14 +1191,14 @@ button {
   display: -webkit-box;
   overflow: hidden;
   color: #33473f;
-  font-size: 0.84rem;
+  font-size: 0.92rem;
   font-weight: 600;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 .feedback-attachment__remove {
   justify-self: start;
-  margin-top: 2px;
+  margin-top: 4px;
   border: 0;
   padding: 0;
   background: none;
@@ -1321,8 +1330,8 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  margin-top: 22px;
-  padding-top: 16px;
+  margin-top: 28px;
+  padding-top: 20px;
   border-top: 1px solid var(--line);
 }
 .feedback-parts__summary {
