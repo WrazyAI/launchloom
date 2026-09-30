@@ -214,8 +214,8 @@ function isTransientCreditConflict(status, payload) {
   );
 }
 
-async function imagePart(file) {
-  return promptImagePart(file);
+async function imagePart(file, options) {
+  return promptImagePart(file, options);
 }
 
 async function imageSize(file) {
@@ -449,11 +449,11 @@ Evaluate geometry, typography scale and role, spacing rhythm, image occupancy an
   const content = [
     { type: "text", text: reusableReferencePrefix },
     { type: "text", text: `Reference desktop capture (${referenceSize}):` },
-    await imagePart(desktopReference),
+    await imagePart(desktopReference, { detail: "high" }),
     ...(mobileReference
       ? [
           { type: "text", text: "Reference mobile:" },
-          await imagePart(mobileReference),
+          await imagePart(mobileReference, { detail: "high" }),
         ]
       : []),
     promptCachedText(
@@ -474,21 +474,21 @@ ${CLIENT_PALETTE_ROLE_CONTRACT}
 Treat this as binding client art direction layered onto the reference mechanics. Score paletteAdherence and artDirection independently and strictly. Keep overallScore limited to the assigned reference mechanics so it remains interpretable as reference fidelity; client-only palette and art-direction misses belong in their dedicated scores and findings. They still block pass through the existing per-dimension thresholds and major-finding rule. A candidate that substitutes an unrelated house palette, reverses an explicit light/dark surface direction, ignores a named composition request, or visibly collapses into a generic LaunchLoom treatment must score below the corresponding hard threshold and receive a palette-adherence or client-art-direction finding. Do not hide client-intent failures inside otherwise strong reference-mechanics scores.`,
     },
     { type: "text", text: "Candidate desktop first viewport 1536x864:" },
-    await imagePart(candidateDesktop),
+    await imagePart(candidateDesktop, { detail: "high" }),
     {
       type: "text",
       text: "Candidate compact desktop first viewport 1366x768:",
     },
-    await imagePart(candidateCompact),
+    await imagePart(candidateCompact, { detail: "high" }),
     { type: "text", text: "Candidate mobile first viewport 390x844:" },
-    await imagePart(candidateMobile),
+    await imagePart(candidateMobile, { detail: "high" }),
     ...(candidateOverview
       ? [
           {
             type: "text",
             text: `Candidate desktop page overview (${overviewSize}):`,
           },
-          await imagePart(candidateOverview),
+          await imagePart(candidateOverview, { detail: "low", fit: "page" }),
         ]
       : []),
   ];
@@ -551,9 +551,9 @@ export async function evaluateRenderedDiversity({
   ];
   for (const candidate of candidates) {
     content.push({ type: "text", text: `${candidate.candidateId} desktop:` });
-    content.push(await imagePart(candidate.desktop));
+    content.push(await imagePart(candidate.desktop, { detail: "high" }));
     content.push({ type: "text", text: `${candidate.candidateId} mobile:` });
-    content.push(await imagePart(candidate.mobile));
+    content.push(await imagePart(candidate.mobile, { detail: "high" }));
   }
   const result = await requestJson({
     model,

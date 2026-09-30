@@ -26,7 +26,34 @@ describe("prompt evidence", () => {
     expect(part.type).toBe("image_url");
     expect(part.image_url.detail).toBe("low");
     expect(part.image_url.url.startsWith("data:image/jpeg;base64,")).toBe(true);
-    expect(Buffer.from(part.image_url.url.split(",")[1], "base64").length).toBeLessThan(900_000);
+    const bytes = Buffer.from(part.image_url.url.split(",")[1], "base64");
+    expect(bytes.length).toBeLessThan(900_000);
+    const metadata = await sharp(bytes).metadata();
+    expect(metadata.width).toBe(1200);
+    expect(metadata.height).toBe(1800);
+  });
+
+  it("keeps a squashed whole-page window on request and passes high detail through", async () => {
+    const directory = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-prompt-page-test-"));
+    const source = path.join(directory, "overview.png");
+    await sharp({
+      create: {
+        width: 1920,
+        height: 6832,
+        channels: 3,
+        background: { r: 32, g: 32, b: 32 },
+      },
+    }).png().toFile(source);
+
+    const page = await promptImagePart(source, {
+      detail: "high",
+      fit: "page",
+    });
+    expect(page.image_url.detail).toBe("high");
+    const pageBytes = Buffer.from(page.image_url.url.split(",")[1], "base64");
+    const pageMetadata = await sharp(pageBytes).metadata();
+    expect(pageMetadata.height).toBe(1800);
+    expect(pageMetadata.width).toBeLessThan(1200);
   });
 
   it("transcodes A1 AVIF reference screenshots into actual JPEG evidence", async () => {
