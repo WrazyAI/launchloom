@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { fictionalPipelineDemoNotice } from "./synthetic-demo-notice.mjs";
 
 const text = (value, limit = 1000) => String(value ?? "").replace(/\u0000/gu, "").replace(/—/gu, "-").trim().slice(0, limit);
 const MAX_CORE_SERVICES = 5;
@@ -99,6 +100,7 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
   const brandColor = text(intake.brandColor || intake.primaryColor, 80);
   const primaryColor = /^#[0-9a-f]{6}$/iu.test(brandColor) ? brandColor : "";
   const brandNote = [brandNotes, brandColor && !primaryColor ? `Client-supplied existing brand colour: ${brandColor}` : ""].filter(Boolean).join("\n");
+  const demoNotice = fictionalPipelineDemoNotice(intake);
 
   return {
     type: "CanonicalSiteBrief",
@@ -106,6 +108,7 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
     createdAt: new Date().toISOString(),
     legacy,
     submissionId: text(intake.submissionId, 100),
+    ...(demoNotice ? { demoNotice } : {}),
     businessTruth,
     pageMap,
     seoResearch,

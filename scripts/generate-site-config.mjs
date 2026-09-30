@@ -10,6 +10,7 @@ import {
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
+import { fictionalPipelineDemoNotice } from "./synthetic-demo-notice.mjs";
 import {
   defaultHistoryPath,
   recentLayoutFingerprints,
@@ -762,18 +763,6 @@ function requestedTypography(intake, fallback) {
   if (/sans[- ]serif|sans serif/.test(notes)) return "sans";
   if (/serif/.test(notes)) return "editorial";
   return fallback;
-}
-
-function fictionalPipelineDemoNotice(intake = {}) {
-  const submissionId = text(intake.submissionId, 120).toLowerCase();
-  const accuracy = text(intake.confirmAccuracy, 240).toLowerCase();
-  const notes = text(intake.additionalNotes, 1800).toLowerCase();
-  const isDeclaredSyntheticDemo =
-    /^demo[-_]/u.test(submissionId) &&
-    /\bsynthetic demo brief\b/u.test(accuracy) &&
-    /\bfictional demo only\b/u.test(notes);
-
-  return isDeclaredSyntheticDemo ? "Fictional pipeline demo" : undefined;
 }
 
 export function requestedDesignFamily(intake) {

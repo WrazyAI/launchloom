@@ -1,7 +1,42 @@
 import { describe, expect, it } from "vitest";
 import { compileCanonicalSiteBrief } from "../scripts/compile-canonical-site-brief.mjs";
+import { normalise } from "../scripts/generate-site-config.mjs";
 
 describe("canonical site brief compilation", () => {
+  it("carries an explicit synthetic demo notice through config generation", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        submissionId: "demo-precision-20260923",
+        businessName: "Precision Auto Care",
+        industry: "automotive",
+        services: "Digital vehicle inspections\nBrake service",
+        confirmAccuracy: "synthetic demo brief; not a real client attestation",
+        additionalNotes: "FICTIONAL DEMO ONLY. Never publish this as a real client site.",
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief.demoNotice).toBe("Fictional pipeline demo");
+    expect(normalise({}, brief).demoNotice).toBe("Fictional pipeline demo");
+  });
+
+  it("does not turn an ordinary client mention of a demo into a synthetic-site label", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        submissionId: "submission-client-001",
+        businessName: "Harbor Auto Care",
+        industry: "automotive",
+        services: "Brake service",
+        confirmAccuracy: "yes",
+        additionalNotes: "We use demo vehicles when explaining our inspection process.",
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief).not.toHaveProperty("demoNotice");
+    expect(normalise({}, brief)).not.toHaveProperty("demoNotice");
+  });
+
   it("keeps client-confirmed business truth ahead of researched service and page suggestions", () => {
     const brief = compileCanonicalSiteBrief({
       intake: {
