@@ -109,6 +109,13 @@ const { diagnosticPreview = false } = Astro.props;
 </style>
 
 <style is:global>
+  /* The base modal width lives in the client stylesheet; override here so the
+     refreshed component carries the wider layout into every review build. */
+  .ll-review__modal .ll-review__dialog {
+    width: min(800px, 100%);
+    padding: clamp(22px, 3vw, 34px);
+  }
+
   .visually-hidden {
     position: absolute !important;
     width: 1px;
@@ -124,18 +131,18 @@ const { diagnosticPreview = false } = Astro.props;
   .ll-parts {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin: 0 0 16px;
+    gap: 9px;
+    margin: 0 0 18px;
   }
 
   .ll-part-chip {
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    min-height: 38px;
+    min-height: 40px;
     border: 1px solid #cfd8cf;
     border-radius: 999px;
-    padding: 7px 13px;
+    padding: 8px 15px;
     background: #fff;
     color: #38544a;
     font: inherit;
@@ -189,8 +196,8 @@ const { diagnosticPreview = false } = Astro.props;
   }
 
   .ll-part {
-    margin: 0 0 14px;
-    padding: 14px;
+    margin: 0 0 16px;
+    padding: 18px;
     border: 1px solid #dce5dd;
     border-radius: 14px;
     background: #fbfdfb;
@@ -263,21 +270,21 @@ const { diagnosticPreview = false } = Astro.props;
 
   .ll-part textarea,
   .ll-client-fields textarea {
-    min-height: 58px;
+    min-height: 76px;
   }
 
   .ll-part__choices {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    margin-top: 12px;
+    gap: 14px;
+    margin-top: 14px;
   }
 
   .ll-choice {
     display: flex;
     flex-direction: column;
-    gap: 7px;
-    padding: 11px;
+    gap: 9px;
+    padding: 14px;
     border: 1px solid #e0e8e1;
     border-radius: 12px;
     background: #fff;
@@ -299,9 +306,9 @@ const { diagnosticPreview = false } = Astro.props;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
+    min-height: 52px;
     margin-top: auto;
-    padding: 9px 12px;
+    padding: 11px 14px;
     border: 1.5px dashed #b9cdbd;
     border-radius: 10px;
     background: #f6faf6;
@@ -356,8 +363,8 @@ const { diagnosticPreview = false } = Astro.props;
     display: grid;
     place-items: center;
     flex: 0 0 auto;
-    width: 96px;
-    height: 72px;
+    width: 120px;
+    height: 90px;
     border: 1px solid #e6ece6;
     border-radius: 9px;
     overflow: hidden;
@@ -402,7 +409,7 @@ const { diagnosticPreview = false } = Astro.props;
     display: -webkit-box;
     overflow: hidden;
     color: #33473f;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -442,8 +449,8 @@ const { diagnosticPreview = false } = Astro.props;
   }
 
   .ll-part-status {
-    margin: 8px 0 0;
-    font-size: 0.74rem;
+    margin: 9px 0 0;
+    font-size: 0.78rem;
     font-weight: 550;
     color: #52645b;
   }
@@ -562,9 +569,14 @@ const { diagnosticPreview = false } = Astro.props;
     display: none !important;
   }
 
-  @media (max-width: 560px) {
+  @media (max-width: 620px) {
     .ll-part__choices {
       grid-template-columns: 1fr;
+    }
+
+    .ll-review__modal .ll-review__dialog {
+      width: 100%;
+      padding: 20px 16px;
     }
   }
 
