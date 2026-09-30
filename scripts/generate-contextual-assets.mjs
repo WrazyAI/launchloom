@@ -290,23 +290,6 @@ function pathFor(placement, promptHash) {
   return `/images/generated/${placement.id}-${promptHash.slice(0, 12)}.webp`;
 }
 
-async function withTimeout(promise, timeoutMs) {
-  let timer;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error("FAL image request timed out.")),
-          timeoutMs,
-        );
-      }),
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 async function normalizeImage(buffer, placement) {
   const sourceMetadata = await sharp(buffer).metadata();
   if (!sourceMetadata.width || !sourceMetadata.height)
@@ -376,18 +359,17 @@ async function downloadImage(url, fetchImpl = fetch, timeoutMs = 30_000) {
 }
 
 async function requestImage({ client, model, prompt, aspectRatio, timeoutMs }) {
-  const result = await withTimeout(
-    client.subscribe(model, {
-      input: {
-        prompt,
-        aspect_ratio: aspectRatio,
-        num_images: 1,
-        prompt_optimizer: false,
-      },
-      logs: false,
-    }),
-    timeoutMs,
-  );
+  const result = await client.subscribe(model, {
+    input: {
+      prompt,
+      aspect_ratio: aspectRatio,
+      num_images: 1,
+      prompt_optimizer: false,
+    },
+    logs: false,
+    // The SDK cancels the queue request when this subscription timeout fires.
+    timeout: timeoutMs,
+  });
   const image = result?.data?.images?.[0] || result?.images?.[0];
   if (!image?.url) throw new Error("FAL returned no image URL.");
   return { url: image.url, requestId: result?.requestId || "" };

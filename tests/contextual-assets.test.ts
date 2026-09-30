@@ -54,6 +54,32 @@ async function fakeImageResponse() {
 }
 
 describe("contextual image generation", () => {
+  it("passes its per-request limit to the FAL queue so timed-out work is cancelled", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const timeouts: number[] = [];
+    await generate({
+      site: fixture(),
+      inspiration: { routes: [{ id: "route-timeout", signature: "bounded" }] },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 1,
+      maxRequests: 1,
+      timeoutMs: 7_321,
+      falClient: {
+        config() {},
+        async subscribe(_model: string, options: { timeout?: number }) {
+          timeouts.push(options.timeout ?? 0);
+          return {
+            data: { images: [{ url: "https://fal.example/bounded.jpg" }] },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(timeouts).toEqual([7_321]);
+  });
+
   it("writes local optimized WebP assets and keeps provider URLs out of site config", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const manifestPath = join(outputDir, "generated-assets.json");
