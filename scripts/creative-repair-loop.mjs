@@ -46,19 +46,6 @@ const REPAIR_SCHEMA = {
 
 const REPAIR_FILE_ORDER = ["experience", "styles", "motion"];
 
-const REPAIR_FILE_SCHEMA = {
-  name: "launchloom_creative_repair_file",
-  strict: true,
-  schema: {
-    type: "object",
-    additionalProperties: false,
-    required: ["file", "content"],
-    properties: {
-      file: { type: "string", enum: REPAIR_FILE_ORDER },
-      content: { type: "string" },
-    },
-  },
-};
 const REPAIR_EDIT_SCHEMA = {
   name: "launchloom_creative_repair_edits",
   strict: true,
@@ -86,7 +73,7 @@ const REPAIR_EDIT_SCHEMA = {
     },
   },
 };
-const REPAIR_SOURCE_SPLIT_THRESHOLD_CHARS = 20_000;
+const REPAIR_SOURCE_EDIT_THRESHOLD_CHARS = 20_000;
 const REPAIR_AFFORDABILITY_RETRY_MIN_TOKENS = 8_000;
 const REPAIR_AFFORDABILITY_RETRY_HEADROOM_TOKENS = 1_024;
 const REPAIR_EDITABLE_FILES = new Set(REPAIR_FILE_ORDER);
@@ -741,7 +728,10 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     candidateEvidence.push(await imagePart(comparison.path));
   }
 
-  const sourcePrompt = (currentFiles, target = null) => `${repairInstruction}
+  const sourcePrompt = (
+    currentFiles,
+    editsOnly = false,
+  ) => `${repairInstruction}
 
 ${scopedHumanRepair ? `RESOLVED SECTION SCOPE\n${JSON.stringify(creativeRepairScope, null, 2)}\nOnly these section IDs may change.` : ""}
 
@@ -771,31 +761,31 @@ SEALED CONTENT BINDING CONTRACT
 Treat every business-specific string and fact shown in CURRENT SEALED CONTENT SHAPE as sealed data, not source copy. Do not copy, paraphrase, or hardcode those values into JSX/HTML, CSS generated content, accessibility attributes, or motion code. Preserve existing content-token expressions and render business content through the existing content bindings or the supplied content-bound runtime helpers. Never replace a content binding with a literal value from the sealed shape. If a requested repair cannot be made while preserving those bindings, leave the binding intact and report the repair as unresolved rather than inventing or embedding copy.
 
 ${
-  motionRepair || target === "motion"
+  motionRepair
     ? `MOTION REPAIR CONTRACT
 Treat motion.js as behavior-only. Never use motion code to add, remove, or change visitor-facing text, JSX/HTML, DOM structure, headings, labels, buttons, links, or accessibility copy. Use only existing selectors and DOM hooks. Do not use innerHTML, textContent, insertAdjacentHTML, or create new content nodes. If the motion needs a missing structural hook, leave the motion repair unresolved instead of changing the page markup. Changes to markup for a separate, explicit non-motion finding must stay in Experience.jsx and must not be implemented by motion code.
-${target === "motion" ? "Keep CURRENT EXPERIENCE.JSX byte-for-byte unchanged for this motion-only repair." : "When the findings request only a motion change, keep CURRENT EXPERIENCE.JSX byte-for-byte unchanged."}
+Keep CURRENT EXPERIENCE.JSX byte-for-byte unchanged when the findings request only a motion change.
 Every motion sequence must respect reduced-motion preferences: check runtime?.reducedMotion and matchMedia("(prefers-reduced-motion: reduce)") before starting, keep a still equivalent with all content and controls usable when reduced motion is active, and cancel/revert active timelines or scroll effects when the preference changes. Clean up listeners, observers, timelines, and timers when the experience unmounts.`
     : ""
 }
 
 ${
-  scopedHumanRepair
-    ? `Return JSON with an "edits" array only, never complete files. Each edit must name one of experience, styles, or motion; its exact "find" fragment must occur once; its "replace" is the minimal correction. Return 1-12 edits, each fragment at most 6000 characters, total find-plus-replace text at most 24000 characters. An empty edit list means the request cannot be safely fulfilled and must fail closed.`
+  scopedHumanRepair || editsOnly
+    ? `Return JSON with an "edits" array only, never complete files. Each edit must name one of experience, styles, or motion; its exact "find" fragment must occur once; its "replace" is the smallest correction that addresses a supplied finding. Return 1-12 edits, each fragment at most 6000 characters, total find-plus-replace text at most 24000 characters. Change only files and source regions needed for the measured findings. An empty edit list means the request cannot be safely fulfilled and must fail closed.`
     : "Return complete files required by the response schema and no unrelated explanation."
 } Keep required reference signatures and safety/content contracts unless the explicit repair requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
 
-  const buildRepairContent = (currentFiles, target) => {
+  const buildRepairContent = (currentFiles, editsOnly = false) => {
     const requestContent = [
       ...referenceContext,
       ...candidateEvidence,
-      { type: "text", text: sourcePrompt(currentFiles, target) },
+      { type: "text", text: sourcePrompt(currentFiles, editsOnly) },
     ];
-    if (target)
+    if (editsOnly)
       requestContent.push({
         type: "text",
-        text: `REPAIR TARGET: ${target}
-Return only the complete ${target} source file in the JSON content field. Do not return or modify other files. Keep the other current files as context only. Use the exact target name "${target}" in the file field. Make focused changes for the supplied findings while preserving the assigned reference, sealed content bindings, required markers, and safety contract.${target === "motion" ? " The motion-only constraints are mandatory: do not change or regenerate any visitor-facing copy, JSX/HTML, or DOM structure, and implement the required reduced-motion behavior." : ""}`,
+        text: `LARGE-CANDIDATE REPAIR MODE
+Return only the bounded literal edit set described above. Use exact, unique source fragments from CURRENT EXPERIENCE.JSX, CURRENT STYLES.CSS, or CURRENT MOTION.JS. Do not re-emit complete files. Keep each edit in the file it names, preserve unaffected source byte-for-byte, and make focused changes for the supplied findings while preserving the assigned reference, sealed content bindings, required markers, and safety contract.`,
       });
     assertModelPromptTextBudget(requestContent);
     return requestContent;
@@ -821,8 +811,11 @@ Return only the complete ${target} source file in the JSON content field. Do not
     creativeSession?.reasoningPolicyVersion || "static-reasoning",
     stableReferenceDna,
   );
-  const requestModelRepair = async (currentFiles, target = null) => {
-    const requestContent = buildRepairContent(currentFiles, target);
+  const requestModelRepair = async (
+    currentFiles,
+    { editsOnly = false } = {},
+  ) => {
+    const requestContent = buildRepairContent(currentFiles, editsOnly);
     const sendRepairRequest = (maxCompletionTokens) =>
       openRouterChatCompletion({
         title: "LaunchLoom creative repair",
@@ -837,9 +830,8 @@ Return only the complete ${target} source file in the JSON content field. Do not
           },
           response_format: {
             type: "json_schema",
-            json_schema: target
-              ? REPAIR_FILE_SCHEMA
-              : scopedHumanRepair
+            json_schema:
+              scopedHumanRepair || editsOnly
                 ? REPAIR_EDIT_SCHEMA
                 : REPAIR_SCHEMA,
           },
@@ -888,7 +880,7 @@ Return only the complete ${target} source file in the JSON content field. Do not
     });
     const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
     logger(
-      `creative_completion stage=creative-repair ${diagnosticText}${target ? ` target=${target}` : ""}`,
+      `creative_completion stage=creative-repair ${diagnosticText}${editsOnly ? " mode=bounded-edits" : ""}`,
     );
     if (["length", "max_tokens"].includes(diagnostics.finishReason))
       throw new Error(
@@ -903,29 +895,20 @@ Return only the complete ${target} source file in the JSON content field. Do not
         { cause },
       );
     }
-    if (target) {
-      if (
-        !parsed ||
-        typeof parsed !== "object" ||
-        Array.isArray(parsed) ||
-        parsed.file !== target ||
-        typeof parsed.content !== "string"
-      )
-        throw new Error(
-          `Creative repair response did not contain the requested ${target} file.`,
-        );
-      if (!parsed.content.trim())
-        throw new Error(
-          `Creative repair returned an empty ${target} file (${diagnosticText}).`,
-        );
-      return parsed;
-    }
     if (scopedHumanRepair) {
       if (!isRepairEditSet(parsed))
         throw new Error(
           "Human creative repair must return bounded literal edits, not complete files.",
         );
       applyCreativeRepairEdits(files, parsed.edits);
+      return parsed;
+    }
+    if (editsOnly) {
+      if (!isRepairEditSet(parsed))
+        throw new Error(
+          "Large creative repair must return bounded literal edits, not complete files.",
+        );
+      return applyCreativeRepairEdits(currentFiles, parsed.edits);
     }
     return parsed;
   };
@@ -935,15 +918,9 @@ Return only the complete ${target} source file in the JSON content field. Do not
     0,
   );
   if (scopedHumanRepair) return requestModelRepair(files);
-  if (sourceChars <= REPAIR_SOURCE_SPLIT_THRESHOLD_CHARS)
+  if (sourceChars <= REPAIR_SOURCE_EDIT_THRESHOLD_CHARS)
     return requestModelRepair(files);
-
-  const repairedFiles = { ...files };
-  for (const target of REPAIR_FILE_ORDER) {
-    const repaired = await requestModelRepair(repairedFiles, target);
-    repairedFiles[target] = repaired.content;
-  }
-  return repairedFiles;
+  return requestModelRepair(files, { editsOnly: true });
 }
 
 async function main() {

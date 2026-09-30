@@ -545,7 +545,7 @@ describe("creative repair loop", () => {
     );
   });
 
-  it("splits large repairs by source file while preserving the frozen max-effort session", async () => {
+  it("repairs large candidates with bounded edits inside the affordable max-effort budget", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-file-scope-"),
     );
@@ -554,71 +554,62 @@ describe("creative repair loop", () => {
     await fs.writeFile(desktop, "desktop-evidence");
     const sourceFiles = {
       experience: "original JSX",
-      styles: "x".repeat(21000),
+      styles: `.hero { color: navy; }\n${"x".repeat(21000)}`,
       motion: "original motion",
     };
     const repaired = {
       experience: "complete JSX",
-      styles: "complete CSS",
+      styles: sourceFiles.styles.replace(
+        ".hero { color: navy; }",
+        ".hero { color: #064e3b; }",
+      ),
       motion: "complete motion",
+    };
+    const patchSet = {
+      edits: [
+        {
+          file: "experience",
+          find: "original JSX",
+          replace: repaired.experience,
+        },
+        {
+          file: "styles",
+          find: ".hero { color: navy; }",
+          replace: ".hero { color: #064e3b; }",
+        },
+        {
+          file: "motion",
+          find: "original motion",
+          replace: repaired.motion,
+        },
+      ],
     };
     const responses = [
       {
-        choices: [
-          {
-            finish_reason: "stop",
-            message: {
-              content: JSON.stringify({
-                file: "experience",
-                content: repaired.experience,
-              }),
-            },
-          },
-        ],
-        usage: {
-          completion_tokens: 1200,
-          completion_tokens_details: { reasoning_tokens: 700 },
+        error: {
+          message:
+            "This request requires more credits, or fewer max_tokens. You requested up to 48000 tokens, but can only afford 14652.",
         },
       },
       {
         choices: [
           {
             finish_reason: "stop",
-            message: {
-              content: JSON.stringify({
-                file: "styles",
-                content: repaired.styles,
-              }),
-            },
+            message: { content: JSON.stringify(patchSet) },
           },
         ],
         usage: {
-          completion_tokens: 1100,
-          completion_tokens_details: { reasoning_tokens: 650 },
-        },
-      },
-      {
-        choices: [
-          {
-            finish_reason: "stop",
-            message: {
-              content: JSON.stringify({
-                file: "motion",
-                content: repaired.motion,
-              }),
-            },
-          },
-        ],
-        usage: {
-          completion_tokens: 800,
-          completion_tokens_details: { reasoning_tokens: 500 },
+          completion_tokens: 1400,
+          completion_tokens_details: { reasoning_tokens: 900 },
         },
       },
     ];
-    const fetchMock = vi.fn(
-      async (_url: string, _options: RequestInit) =>
-        new Response(JSON.stringify(responses.shift())),
-    );
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => {
+      const response = responses.shift()!;
+      return new Response(JSON.stringify(response), {
+        status: "error" in response ? 402 : 200,
+      });
+    });
     vi.stubGlobal("fetch", fetchMock);
     const diagnostics: string[] = [];
 
@@ -648,45 +639,22 @@ describe("creative repair loop", () => {
     });
 
     expect(result).toEqual(repaired);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     const bodies = fetchMock.mock.calls.map((call) =>
       JSON.parse(call[1].body as string),
     );
-    expect(bodies.map((body) => body.reasoning.effort)).toEqual([
-      "max",
-      "max",
-      "max",
-    ]);
+    expect(bodies.map((body) => body.reasoning.effort)).toEqual(["max", "max"]);
     expect(new Set(bodies.map((body) => body.session_id))).toEqual(
       new Set(["launchloom:creative:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]),
     );
-    expect(
-      bodies.map((body) => body.response_format.json_schema.schema.required),
-    ).toEqual([
-      ["file", "content"],
-      ["file", "content"],
-      ["file", "content"],
-    ]);
-    expect(
-      bodies.map(
-        (body) => body.response_format.json_schema.schema.properties.file.enum,
-      ),
-    ).toEqual([
-      ["experience", "styles", "motion"],
-      ["experience", "styles", "motion"],
-      ["experience", "styles", "motion"],
-    ]);
-    const targetPrompts = bodies.map(
-      (body) =>
-        body.messages[1].content
-          .filter(
-            (part: { type: string; text?: string }) => part.type === "text",
-          )
-          .map((part: { text?: string }) => part.text || "")
-          .join("\n")
-          .match(/REPAIR TARGET: (experience|styles|motion)/u)?.[1],
+    expect(bodies.map((body) => body.response_format.json_schema.name)).toEqual(
+      ["launchloom_creative_repair_edits", "launchloom_creative_repair_edits"],
     );
-    expect(targetPrompts).toEqual(["experience", "styles", "motion"]);
+    expect(bodies[0].max_completion_tokens).toBe(48000);
+    expect(bodies[1].max_completion_tokens).toBe(13628);
+    expect(diagnostics.join(" ")).toContain(
+      "creative_repair_retry reason=provider-affordability requested_max_completion_tokens=48000 retry_max_completion_tokens=13628",
+    );
     expect(diagnostics.join(" ")).not.toContain("from=max to=xhigh");
   });
 
@@ -1102,15 +1070,7 @@ describe("creative repair loop", () => {
       motion:
         "export function mountExperienceMotion(runtime) { return () => {}; }",
     };
-    const fetchMock = vi.fn(async (_url: string, options: RequestInit) => {
-      const body = JSON.parse(String(options.body));
-      const prompt = body.messages[1].content
-        .filter((part: { type: string; text?: string }) => part.type === "text")
-        .map((part: { text?: string }) => part.text || "")
-        .join("\n");
-      const target = prompt.match(
-        /REPAIR TARGET: (experience|styles|motion)/u,
-      )?.[1];
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => {
       return new Response(
         JSON.stringify({
           choices: [
@@ -1118,11 +1078,13 @@ describe("creative repair loop", () => {
               finish_reason: "stop",
               message: {
                 content: JSON.stringify({
-                  file: target,
-                  content:
-                    target === "motion"
-                      ? "export function mountExperienceMotion(runtime) { return () => {}; }"
-                      : files[target as keyof typeof files],
+                  edits: [
+                    {
+                      file: "motion",
+                      find: "return () => {};",
+                      replace: "return () => { stop(); };",
+                    },
+                  ],
                 }),
               },
             },
@@ -1148,15 +1110,15 @@ describe("creative repair loop", () => {
       screenshots: [],
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     const bodies = fetchMock.mock.calls.map((call) =>
       JSON.parse(call[1].body as string),
     );
-    const motionPrompt = bodies[2].messages[1].content
+    const motionPrompt = bodies[0].messages[1].content
       .filter((part: { type: string; text?: string }) => part.type === "text")
       .map((part: { text?: string }) => part.text || "")
       .join("\n");
-    expect(motionPrompt).toContain("REPAIR TARGET: motion");
+    expect(motionPrompt).toContain("LARGE-CANDIDATE REPAIR MODE");
     expect(motionPrompt).toContain("MOTION REPAIR CONTRACT");
     expect(motionPrompt).toContain("Treat motion.js as behavior-only");
     expect(motionPrompt).toContain(
@@ -1238,7 +1200,7 @@ describe("creative repair loop", () => {
     expect(prompt).toContain("content.copy.appointmentPreparation");
   });
 
-  it("rejects empty file-scoped repair output with completion diagnostics", async () => {
+  it("rejects an empty bounded-edit response for a large candidate", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-empty-file-repair-"),
     );
@@ -1258,10 +1220,7 @@ describe("creative repair loop", () => {
               {
                 finish_reason: "stop",
                 message: {
-                  content: JSON.stringify({
-                    file: "experience",
-                    content: "  ",
-                  }),
+                  content: JSON.stringify({ edits: [] }),
                 },
               },
             ],
@@ -1281,9 +1240,7 @@ describe("creative repair loop", () => {
         files,
         screenshots: [],
       }),
-    ).rejects.toThrow(
-      /returned an empty experience file.*finish_reason=stop/iu,
-    );
+    ).rejects.toThrow(/1 to 12 literal replacements/iu);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
