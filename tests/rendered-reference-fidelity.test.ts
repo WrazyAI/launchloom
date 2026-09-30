@@ -222,6 +222,91 @@ describe("rendered reference request retries", () => {
     },
   );
 
+  it("retries an affordability-limited diversity judge below the provider ceiling", async () => {
+    const requests: Record<string, any>[] = [];
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return failure(
+          402,
+          "This request requires more credits, or fewer max_tokens. You requested up to 12000 tokens, but can only afford 6670.",
+        );
+      })
+      .mockImplementationOnce(async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return response({
+          overallDistinctiveness: 88,
+          genericFallbackDetected: false,
+          pairs: [
+            {
+              left: "candidate-a",
+              right: "candidate-b",
+              distance: 84,
+              reason: "Their rendered compositions differ.",
+            },
+          ],
+          summary: "The two visual systems are distinct.",
+        });
+      });
+
+    const result = await evaluateRenderedDiversity({
+      candidates: [
+        {
+          candidateId: "candidate-a",
+          desktop: files.candidateDesktop,
+          mobile: files.candidateMobile,
+        },
+        {
+          candidateId: "candidate-b",
+          desktop: files.secondDesktop,
+          mobile: files.secondMobile,
+        },
+      ],
+      fetchImpl,
+    });
+
+    expect(result.pass).toBe(true);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(requests.map((request) => request.max_tokens)).toEqual([
+      12_000, 5_646,
+    ]);
+    expect(requests.map((request) => request.reasoning.effort)).toEqual([
+      "medium",
+      "medium",
+    ]);
+  });
+
+  it("does not retry an affordability-limited judge below the safe output floor", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        failure(
+          402,
+          "This request requires more credits, or fewer max_tokens. You requested up to 12000 tokens, but can only afford 2000.",
+        ),
+      );
+
+    await expect(
+      evaluateRenderedDiversity({
+        candidates: [
+          {
+            candidateId: "candidate-a",
+            desktop: files.candidateDesktop,
+            mobile: files.candidateMobile,
+          },
+          {
+            candidateId: "candidate-b",
+            desktop: files.secondDesktop,
+            mobile: files.secondMobile,
+          },
+        ],
+        fetchImpl,
+      }),
+    ).rejects.toThrow(/Rendered diversity judge failed \(402\)/u);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
   it("stops after three attempts and preserves the final HTTP error", async () => {
     const fetchImpl = vi
       .fn<typeof fetch>()

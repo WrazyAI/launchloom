@@ -181,6 +181,29 @@ function truncatedDiagnostics(payload, label, maxTokens) {
   return `${label} was truncated (finish_reason=${choice?.finish_reason || "unknown"} max_tokens=${maxTokens} completion_tokens=${completionTokens} reasoning_tokens=${reasoningTokens} content_chars=${contentChars}).`;
 }
 
+const JUDGE_AFFORDABILITY_RETRY_MIN_TOKENS = 2_048;
+const JUDGE_AFFORDABILITY_RETRY_HEADROOM_TOKENS = 1_024;
+
+function affordableJudgeRetryLimit(status, payload, requestedTokens) {
+  if (status !== 402) return null;
+  const message = String(payload?.error?.message || "");
+  const match = message.match(/can only afford\s+([\d,]+)\b/iu);
+  if (!match) return null;
+  const affordableTokens = Number(match[1].replace(/,/gu, ""));
+  if (
+    !Number.isSafeInteger(affordableTokens) ||
+    affordableTokens >= requestedTokens
+  )
+    return null;
+  const retryTokens = Math.min(
+    requestedTokens - 1,
+    affordableTokens - JUDGE_AFFORDABILITY_RETRY_HEADROOM_TOKENS,
+  );
+  return retryTokens >= JUDGE_AFFORDABILITY_RETRY_MIN_TOKENS
+    ? retryTokens
+    : null;
+}
+
 async function imagePart(file) {
   return promptImagePart(file);
 }
@@ -214,6 +237,7 @@ async function requestJson({
   const maxAttempts = 3;
   let activeReasoningEffort = reasoningEffort;
   let truncatedRetryUsed = false;
+  let affordabilityRetryUsed = false;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 180_000);
@@ -267,6 +291,21 @@ async function requestJson({
           responseCache,
           provider: payload.provider || null,
         };
+      }
+      if (response.status === 402 && !affordabilityRetryUsed) {
+        const retryLimit = affordableJudgeRetryLimit(
+          response.status,
+          payload,
+          maxTokens,
+        );
+        if (retryLimit) {
+          console.info(
+            `rendered_judge_retry reason=provider-affordability label=${label} requested_max_tokens=${maxTokens} retry_max_tokens=${retryLimit}`,
+          );
+          maxTokens = retryLimit;
+          affordabilityRetryUsed = true;
+          continue;
+        }
       }
       const retryable =
         response.status === 408 ||
