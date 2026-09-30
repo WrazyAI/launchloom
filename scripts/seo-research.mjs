@@ -6,6 +6,7 @@ import {
   openRouterSessionId,
   readOpenRouterResponseEnvelope,
 } from "./openrouter-client.mjs";
+import { parseServiceAreas } from "./service-area-input.mjs";
 
 const DEFAULT_MAX_TASKS = 16;
 const HARD_MAX_TASKS = 32;
@@ -36,11 +37,7 @@ const splitList = (value, limit = 20, splitCommas = false) => {
     .map((part) => text(part, 160))).filter(Boolean);
   return [...new Map(entries.map((item) => [item.toLocaleLowerCase(), item])).values()].slice(0, limit);
 };
-const areaList = (value, limit = 20) => {
-  const raw = Array.isArray(value) ? value : [value];
-  const entries = raw.flatMap((item) => text(item, 400).split(/\r?\n/u).map((part) => text(part, 160))).filter(Boolean);
-  return [...new Map(entries.map((item) => [item.toLocaleLowerCase(), item])).values()].slice(0, limit);
-};
+const areaList = (value, limit = 20) => parseServiceAreas(value, { limit });
 const finiteMetric = (value) => value === null || value === undefined || value === "" || !Number.isFinite(Number(value)) ? null : Number(value);
 const roundCost = (value) => Math.round((Number(value) || 0) * 100_000) / 100_000;
 const slugify = (value) => text(value, 180).toLocaleLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "").slice(0, 90);
@@ -66,8 +63,11 @@ export function normaliseSeoIntake(intake = {}) {
   const allConfirmedServices = splitList(intake.confirmedServices || intake.services, 100, legacy);
   const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
   const omittedServices = allConfirmedServices.slice(MAX_CORE_SERVICES);
-  const primaryCity = text(intake.primaryCity, 160) || areaList(intake.serviceAreas, 20)[0] || "";
-  const coverageAreas = areaList(intake.coverageAreas, 20);
+  const primaryCity = areaList(intake.primaryCity, 1)[0] || areaList(intake.serviceAreas, 20)[0] || "";
+  const coverageAreas = [...new Map(
+    [...areaList(intake.serviceAreas, 20), ...areaList(intake.coverageAreas, 20)]
+      .map((area) => [area.toLowerCase(), area]),
+  ).values()].slice(0, 20);
   if (!coverageAreas.length && primaryCity) coverageAreas.push(primaryCity);
   const serviceRadius = numericRadius(intake.serviceRadius);
   const website = text(intake.website || intake.existingWebsite, 500);

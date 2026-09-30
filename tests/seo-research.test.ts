@@ -76,6 +76,38 @@ describe("SEO market map", () => {
     });
   });
 
+  it("uses the first semicolon-delimited city for SEO and preserves all submitted areas", async () => {
+    const legacyIntake = {
+      intakeVersion: "1",
+      businessName: "Rivet and Road Mobile Auto Repair",
+      industry: "auto-repair",
+      services: "Brake repair",
+      serviceAreas: "Portland, OR; Beaverton, OR; Gresham, OR",
+      coverageAreas: ["Portland, OR", "Tigard, OR"],
+      serviceRadius: "30",
+    };
+
+    expect(normaliseSeoIntake(legacyIntake)).toMatchObject({
+      primaryCity: "Portland, OR",
+      coverageAreas: [
+        "Portland, OR",
+        "Beaverton, OR",
+        "Gresham, OR",
+        "Tigard, OR",
+      ],
+    });
+
+    const dossier = await researchSiteContext(legacyIntake);
+    expect(dossier.seedQueries).toContain("Brake repair Portland OR");
+    expect(dossier.marketSnapshot.primaryCity).toBe("Portland, OR");
+    expect(dossier.marketSnapshot.coverageAreas).toEqual([
+      "Portland, OR",
+      "Beaverton, OR",
+      "Gresham, OR",
+      "Tigard, OR",
+    ]);
+  });
+
   it("preserves atomic service entries and applies the shared five-service limit", async () => {
     const confirmedServices = [
       "Heating, ventilation and AC",
