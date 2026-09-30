@@ -79,15 +79,6 @@ jobs:
           if [ ! -s "$RUNNER_TEMP/revision-outcome.txt" ]; then printf 'The revision workflow stopped before producing a validated outcome.\n' > "$RUNNER_TEMP/revision-outcome.txt"; fi
           DETAILS=$(sed -n '1,80p' "$RUNNER_TEMP/revision-outcome.txt")
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-manual-attention:developer -->' '## Manual attention needed' 'The requested feedback was not fully fulfilled, so no revised preview or completion email was sent.' "$DETAILS")"
-      - name: Ensure failed revision email is delivered
-        if: steps.claim.outputs.run == 'true' && failure() && (steps.preflight.outcome == 'failure' || steps.apply_feedback.outcome == 'failure')
-        run: |
-          if [ ! -s "$RUNNER_TEMP/developer-feedback.txt" ]; then printf 'The requested feedback could not be safely applied.\n' > "$RUNNER_TEMP/developer-feedback.txt"; fi
-          if [ ! -s "$RUNNER_TEMP/revision-outcome.txt" ]; then printf 'The revision workflow stopped before producing a validated outcome.\n' > "$RUNNER_TEMP/revision-outcome.txt"; fi
-          NAME=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')
-          SITE_URL=$(REVIEWED_PAGE="$REVIEWED_PAGE" node -e 'const u=new URL(process.env.REVIEWED_PAGE); if(u.protocol!=="https:"||u.username||u.password) process.exit(1); u.search=""; u.hash=""; process.stdout.write(u.href)')
-          RUN_URL="https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}"
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$SITE_URL" --review "$SITE_URL" --diagnostic-pr "https://github.com/$CLIENT_REPO/pull/$CLIENT_PR" --diagnostic-run "$RUN_URL" --kind revision-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/developer-feedback.txt" --outcome-file "$RUNNER_TEMP/revision-outcome.txt" --idempotency-key "revision-failed-$REVISION_REQUEST_ID"
       - name: Configure live site integrations
         if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
         env:
@@ -108,6 +99,10 @@ jobs:
             CHAT_TOKEN=$(node scripts/create-ai-chat-token.mjs --project "$PROJECT" --file "$RUNNER_TEMP/client/src/site.config.json" --origins "$ORIGINS")
             node scripts/enrich-site-config.mjs --file "$RUNNER_TEMP/client/src/site.config.json" --api https://api.launchloom.wrazyos.com --chatToken "$CHAT_TOKEN"
           fi
+      - name: Install client dependencies before creative repair
+        if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
+        working-directory: ${{ runner.temp }}/client
+        run: npm ci
       - name: Refine authored creative candidate from developer feedback
         if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
         id: creative_revision
@@ -159,7 +154,6 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$CLIENT_DIR" --manifest "$RUNNER_TEMP/revision-scope.json"
           git push origin "$REVISION_BRANCH"
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
-          npm ci
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
           node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --dist dist
           node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
@@ -212,19 +206,10 @@ jobs:
         run: node scripts/revision-queue-client.mjs
       - name: Report downstream developer revision failure
         if: always() && steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success' && (steps.deploy.outcome != 'success' || steps.review_delivery.outcome != 'success' || steps.complete.outcome != 'success')
-        env:
-          REVISION_DEPLOYED_PREVIEW: ${{ steps.deploy.outputs.preview }}
-          REVISION_ACTIONS_RUN_URL: https://github.com/WrazyAI/launchloom/actions/runs/${{ github.run_id }}
         run: |
           printf '\nRendered creative refinement or downstream verification did not complete successfully. Inspect GitHub Actions run %s.\n' '${{ github.run_id }}' >> "$RUNNER_TEMP/revision-outcome.txt"
           DETAILS=$(sed -n '1,80p' "$RUNNER_TEMP/revision-outcome.txt")
           gh pr comment "$CLIENT_PR" --repo "$CLIENT_REPO" --body "$(printf '%s\n\n%s\n\n%s\n\n%s' '<!-- launchloom-manual-attention:developer -->' '## Manual attention needed' 'The requested feedback was preserved, but the revised preview did not pass every downstream gate. No completion email was sent.' "$DETAILS")"
-          NAME=$(node -e 'const x=require(process.env.RUNNER_TEMP + "/client/src/site.config.json"); console.log(x.business.name)')
-          SITE_URL="$REVISION_DEPLOYED_PREVIEW"
-          if [ -z "$SITE_URL" ]; then SITE_URL="$REVIEWED_PAGE"; fi
-          SITE_URL=$(SITE_URL="$SITE_URL" node -e 'const u=new URL(process.env.SITE_URL); if(u.protocol!=="https:"||u.username||u.password) process.exit(1); u.search=""; u.hash=""; process.stdout.write(u.href)')
-          RUN_URL="$REVISION_ACTIONS_RUN_URL"
-          node scripts/send-preview-email.mjs --to "$LAUNCHLOOM_DEVELOPER_EMAIL" --name "$NAME" --preview "$SITE_URL" --review "$SITE_URL" --diagnostic-pr "https://github.com/$CLIENT_REPO/pull/$CLIENT_PR" --diagnostic-run "$RUN_URL" --kind revision-failed --audience manual-attention --feedback-file "$RUNNER_TEMP/developer-feedback.txt" --outcome-file "$RUNNER_TEMP/revision-outcome.txt" --idempotency-key "revision-failed-$REVISION_REQUEST_ID"
       - name: Pause revision queue after workflow failure
         if: always() && steps.claim.outputs.run == 'true' && steps.complete.outcome != 'success'
         env:

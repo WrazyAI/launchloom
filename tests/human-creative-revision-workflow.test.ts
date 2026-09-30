@@ -396,19 +396,6 @@ describe("human creative revision lifecycle", () => {
         'REVIEWED_PAGE: ${{ github.event.client_payload.reviewedPage }}',
       );
       expect(workflow).toContain(
-        'SITE_URL=$(REVIEWED_PAGE="$REVIEWED_PAGE" node -e',
-      );
-      expect(workflow).toContain(
-        'REVISION_DEPLOYED_PREVIEW: ${{ steps.deploy.outputs.preview }}',
-      );
-      expect(workflow).toContain('SITE_URL="$REVISION_DEPLOYED_PREVIEW"');
-      expect(workflow).toContain(
-        'if [ -z "$SITE_URL" ]; then SITE_URL="$REVIEWED_PAGE"; fi',
-      );
-      expect(workflow).toContain('--preview "$SITE_URL" --review "$SITE_URL"');
-      expect(workflow).toContain('--diagnostic-pr "https://github.com/');
-      expect(workflow).toContain('--diagnostic-run "$RUN_URL"');
-      expect(workflow).toContain(
         'REVISION_FAILURE_SITE_URL: ${{ steps.deploy.outputs.preview || github.event.client_payload.reviewedPage }}',
       );
       expect(workflow).toContain(
@@ -420,7 +407,38 @@ describe("human creative revision lifecycle", () => {
       expect(workflow).not.toMatch(
         /--review "https:\/\/github\.com\/\$CLIENT_REPO\/pull\//u,
       );
+      expect(workflow).not.toMatch(
+        /send-preview-email\.mjs[^\n]*--kind revision-failed/u,
+      );
     }
+
+    const coordinator = readFileSync(
+      "worker/src/revision-coordinator.ts",
+      "utf8",
+    );
+    expect(coordinator).toContain(
+      '"Idempotency-Key": `revision-failed-coordinator-${row.request_id}`',
+    );
+  });
+
+  it("installs client dependencies before rendered creative repair", () => {
+    const workflow = readFileSync(
+      ".github/workflows/process-feedback.yml",
+      "utf8",
+    );
+    const installIndex = workflow.indexOf(
+      "- name: Install client dependencies before creative repair",
+    );
+    const installCommandIndex = workflow.indexOf("npm ci", installIndex);
+    const repairIndex = workflow.indexOf(
+      "scripts/run-rendered-creative-repair.mjs",
+    );
+    const lateInstallIndex = workflow.indexOf("npm ci", repairIndex);
+
+    expect(installIndex).toBeGreaterThan(-1);
+    expect(installCommandIndex).toBeGreaterThan(installIndex);
+    expect(repairIndex).toBeGreaterThan(installCommandIndex);
+    expect(lateInstallIndex).toBe(-1);
   });
 
   it("returns client-requested revisions to the developer with the triggering request in the email", () => {
