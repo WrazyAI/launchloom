@@ -656,6 +656,8 @@ jobs:
       # failure here must not block generation, preview deployment, or handoff.
       - name: Record launch signature for rotation
         if: github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main'
+        env:
+          LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
         continue-on-error: true
         run: |
           git config user.name "LaunchLoom"
@@ -663,7 +665,8 @@ jobs:
           node "$GITHUB_WORKSPACE/scripts/record-launch.mjs" \
             --config "${{ steps.branch.outputs.dir }}/src/site.config.json" \
             --inspiration "${{ steps.branch.outputs.dir }}/.launchloom/inspiration-pack.json" \
-            --stage preview
+            --stage preview \
+            --record-key "$LAUNCHLOOM_INTAKE_ID-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"
           if git diff --quiet -- data/recent-launch-signatures.json; then
             echo "No launch history change."
             exit 0

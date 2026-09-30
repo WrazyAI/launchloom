@@ -446,6 +446,76 @@ describe("revision operations", () => {
     });
   });
 
+  it("requires per-feedbackIndex creative proof for a multi-item repair", () => {
+    const draft = config();
+    draft.design = { experience: { candidateId: "candidate-a" } };
+    const report: any = {
+      creativeSourceRepairRequired: true,
+      creativeSourceRepairVerified: {
+        pass: true,
+        candidateId: "candidate-a",
+      },
+      results: [
+        {
+          feedbackIndex: 0,
+          feedback: "Make the hero more cinematic.",
+          status: "creative",
+          unresolved: [],
+        },
+        {
+          feedbackIndex: 3,
+          feedback: "Move the gallery before the services.",
+          status: "creative",
+          unresolved: [],
+        },
+      ],
+      expectedArtifacts: [],
+    };
+
+    expect(verifyRevision(draft, report, "<main></main>").ok).toBe(false);
+    expect(verifyRevision(draft, report, "<main></main>").failures).toContain(
+      "Creative source repair requires separate rendered evidence for every creative feedback index.",
+    );
+
+    report.creativeSourceRepairVerified.feedbackResults = [
+      {
+        feedbackIndex: 0,
+        feedback: "Make the hero more cinematic.",
+        verdict: "pass",
+        evidence:
+          "The desktop and mobile screenshots show the requested hero change.",
+        candidateId: "candidate-a",
+      },
+      {
+        feedbackIndex: 3,
+        feedback: "Move the gallery before the services.",
+        verdict: "pass",
+        evidence: "The screenshots show the requested section order.",
+        candidateId: "candidate-a",
+      },
+    ];
+    expect(verifyRevision(draft, report, "<main></main>")).toEqual({
+      ok: true,
+      failures: [],
+    });
+
+    report.creativeSourceRepairVerified.feedbackResults[1].verdict = "revise";
+    expect(verifyRevision(draft, report, "<main></main>").ok).toBe(false);
+    report.creativeSourceRepairVerified.feedbackResults[1].verdict = "pass";
+    report.creativeSourceRepairVerified.feedbackResults[1].candidateId =
+      "candidate-b";
+    expect(verifyRevision(draft, report, "<main></main>").ok).toBe(false);
+    report.creativeSourceRepairVerified.feedbackResults[1].candidateId =
+      "candidate-a";
+    report.creativeSourceRepairVerified.feedbackResults[1].feedback =
+      "Make the hero more cinematic.";
+    expect(verifyRevision(draft, report, "<main></main>").ok).toBe(false);
+    report.creativeSourceRepairVerified.feedbackResults[1].feedback =
+      "Move the gallery before the services.";
+    report.creativeSourceRepairVerified.feedbackResults.pop();
+    expect(verifyRevision(draft, report, "<main></main>").ok).toBe(false);
+  });
+
   it("blocks fulfilled structured feedback when creative source verification was also required", () => {
     const draft = config();
     const report: any = {

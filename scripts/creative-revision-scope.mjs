@@ -722,9 +722,11 @@ function contentPathsInExpression(node, aliases) {
   }
   if (ts.isElementAccessExpression(node)) {
     const argument = node.argumentExpression;
-    const key = argument && (ts.isStringLiteral(argument) || ts.isNumericLiteral(argument))
-      ? argument.text
-      : null;
+    const key =
+      argument &&
+      (ts.isStringLiteral(argument) || ts.isNumericLiteral(argument))
+        ? argument.text
+        : null;
     const base = contentPathsInExpression(node.expression, aliases);
     return base.length && key !== null ? appendContentPath(base, key) : [];
   }
@@ -740,7 +742,10 @@ function addContentAlias(aliases, name, paths) {
   if (!name || !paths.length) return false;
   const existing = aliases.get(name) || [];
   const merged = [...new Set([...existing, ...paths])].sort();
-  if (existing.length === merged.length && existing.every((path, index) => path === merged[index]))
+  if (
+    existing.length === merged.length &&
+    existing.every((path, index) => path === merged[index])
+  )
     return false;
   aliases.set(name, merged);
   return true;
@@ -753,20 +758,25 @@ function bindContentPattern(pattern, basePaths, aliases) {
   let changed = false;
   for (const element of pattern.elements) {
     if (element.dotDotDotToken) {
-      changed = addContentAlias(aliases, element.name.getText(), [
-        ...basePaths.map((base) => (base ? `${base}.*` : "*")),
-      ]) || changed;
+      changed =
+        addContentAlias(aliases, element.name.getText(), [
+          ...basePaths.map((base) => (base ? `${base}.*` : "*")),
+        ]) || changed;
       continue;
     }
     const property = element.propertyName || element.name;
-    const key = ts.isIdentifier(property) || ts.isStringLiteral(property) || ts.isNumericLiteral(property)
-      ? property.text
-      : "*";
-    changed = bindContentPattern(
-      element.name,
-      appendContentPath(basePaths, key),
-      aliases,
-    ) || changed;
+    const key =
+      ts.isIdentifier(property) ||
+      ts.isStringLiteral(property) ||
+      ts.isNumericLiteral(property)
+        ? property.text
+        : "*";
+    changed =
+      bindContentPattern(
+        element.name,
+        appendContentPath(basePaths, key),
+        aliases,
+      ) || changed;
   }
   return changed;
 }
@@ -799,11 +809,12 @@ function contentAliasesForSection(section) {
     const visit = (node) => {
       if (node !== body && ts.isFunctionLike(node)) return;
       if (ts.isVariableDeclaration(node) && node.initializer)
-        changed = bindContentPattern(
-          node.name,
-          contentPathsInExpression(node.initializer, aliases),
-          aliases,
-        ) || changed;
+        changed =
+          bindContentPattern(
+            node.name,
+            contentPathsInExpression(node.initializer, aliases),
+            aliases,
+          ) || changed;
       ts.forEachChild(node, visit);
     };
     visit(body);
@@ -822,7 +833,10 @@ function scopedContentBindings(source, scopedIds) {
       const paths = [];
       const visit = (node) => {
         if (node !== section.node && sectionMarker(node, file)) return;
-        if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
+        if (
+          ts.isPropertyAccessExpression(node) ||
+          ts.isElementAccessExpression(node)
+        ) {
           const parent = node.parent;
           const parentContinuesPath =
             (ts.isPropertyAccessExpression(parent) ||
@@ -830,7 +844,9 @@ function scopedContentBindings(source, scopedIds) {
             parent.expression === node &&
             contentPathsInExpression(parent, aliases).length > 0;
           if (!parentContinuesPath)
-            paths.push(...contentPathsInExpression(node, aliases).filter(Boolean));
+            paths.push(
+              ...contentPathsInExpression(node, aliases).filter(Boolean),
+            );
         }
         ts.forEachChild(node, visit);
       };
@@ -1656,8 +1672,7 @@ function stripScopedDeclarations(container, parentSelectors, allowedIds) {
       if (!(node.nodes || []).some((child) => child.type !== "comment"))
         node.remove();
     } else if (node.type === "atrule") {
-      if (!SCOPED_CSS_GROUPING_AT_RULES.has(node.name.toLowerCase()))
-        continue;
+      if (!SCOPED_CSS_GROUPING_AT_RULES.has(node.name.toLowerCase())) continue;
       stripScopedDeclarations(node, parentSelectors, allowedIds);
       if (
         Array.isArray(node.nodes) &&
@@ -1915,17 +1930,174 @@ function declaredMotionTargets(body, allowedIds) {
   return targets;
 }
 
+function topLevelConstInitializers(body) {
+  const initializers = new Map();
+  for (const statement of body.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      if (
+        (statement.declarationList.flags & ts.NodeFlags.Const) !== 0 &&
+        ts.isIdentifier(declaration.name) &&
+        declaration.initializer
+      )
+        initializers.set(declaration.name.text, declaration.initializer);
+    }
+  }
+  return initializers;
+}
+
+function unwrapMotionAlias(node, initializers, seen = new Set()) {
+  let current = node;
+  while (ts.isParenthesizedExpression(current)) current = current.expression;
+  if (!ts.isIdentifier(current) || seen.has(current.text)) return current;
+  const initializer = initializers.get(current.text);
+  if (!initializer) return current;
+  const nextSeen = new Set(seen);
+  nextSeen.add(current.text);
+  return unwrapMotionAlias(initializer, initializers, nextSeen);
+}
+
+function isRuntimeReducedMotion(node) {
+  return (
+    ts.isPropertyAccessExpression(node) &&
+    node.name.text === "reducedMotion" &&
+    ts.isIdentifier(node.expression) &&
+    node.expression.text === "runtime"
+  );
+}
+
+function isReducedMotionMediaMatch(node) {
+  if (
+    !ts.isPropertyAccessExpression(node) ||
+    node.name.text !== "matches" ||
+    !ts.isCallExpression(node.expression) ||
+    memberCallName(node.expression) !== "window.matchMedia"
+  )
+    return false;
+  const query =
+    node.expression.arguments.length === 1
+      ? node.expression.arguments[0]
+      : null;
+  return Boolean(
+    query &&
+    ts.isStringLiteral(query) &&
+    query.text === "(prefers-reduced-motion: reduce)",
+  );
+}
+
+function isRuntimeReducedMotionExpression(node, initializers) {
+  const expression = unwrapMotionAlias(node, initializers);
+  if (isRuntimeReducedMotion(expression)) return true;
+  return (
+    ts.isCallExpression(expression) &&
+    ts.isIdentifier(expression.expression) &&
+    expression.expression.text === "Boolean" &&
+    expression.arguments.length === 1 &&
+    isRuntimeReducedMotionExpression(expression.arguments[0], initializers)
+  );
+}
+
+function isMediaReducedMotionExpression(node, initializers) {
+  return isReducedMotionMediaMatch(unwrapMotionAlias(node, initializers));
+}
+
+function isReducedPreferenceOr(node, initializers) {
+  const expression = unwrapMotionAlias(node, initializers);
+  if (
+    !ts.isBinaryExpression(expression) ||
+    expression.operatorToken.kind !== ts.SyntaxKind.BarBarToken
+  )
+    return false;
+  return (
+    (isRuntimeReducedMotionExpression(expression.left, initializers) &&
+      isMediaReducedMotionExpression(expression.right, initializers)) ||
+    (isMediaReducedMotionExpression(expression.left, initializers) &&
+      isRuntimeReducedMotionExpression(expression.right, initializers))
+  );
+}
+
+function isNoopCleanupReturn(statement) {
+  if (!ts.isReturnStatement(statement) || !statement.expression) return false;
+  const cleanup = statement.expression;
+  if (
+    !(ts.isArrowFunction(cleanup) || ts.isFunctionExpression(cleanup)) ||
+    cleanup.parameters.length !== 0
+  )
+    return false;
+  return ts.isBlock(cleanup.body) && cleanup.body.statements.length === 0;
+}
+
+function hasReducedMotionGuardBefore(body, firstAnimationPosition) {
+  const initializers = topLevelConstInitializers(body);
+  return body.statements.some((statement) => {
+    if (
+      !ts.isIfStatement(statement) ||
+      statement.getEnd() > firstAnimationPosition ||
+      !isReducedPreferenceOr(statement.expression, initializers)
+    )
+      return false;
+    if (isNoopCleanupReturn(statement.thenStatement)) return true;
+    return (
+      ts.isBlock(statement.thenStatement) &&
+      statement.thenStatement.statements.length === 1 &&
+      isNoopCleanupReturn(statement.thenStatement.statements[0])
+    );
+  });
+}
+
+function cleanupTargetsFromReturn(statement) {
+  if (!ts.isReturnStatement(statement) || !statement.expression)
+    return new Set();
+  const cleanup = statement.expression;
+  if (
+    !(ts.isArrowFunction(cleanup) || ts.isFunctionExpression(cleanup)) ||
+    cleanup.parameters.length !== 0
+  )
+    return new Set();
+  const statements = ts.isBlock(cleanup.body)
+    ? cleanup.body.statements
+    : [ts.factory.createExpressionStatement(cleanup.body)];
+  const targets = new Set();
+  for (const cleanupStatement of statements) {
+    if (
+      !ts.isExpressionStatement(cleanupStatement) ||
+      !ts.isCallExpression(cleanupStatement.expression) ||
+      memberCallName(cleanupStatement.expression) !== "gsap.killTweensOf"
+    )
+      continue;
+    const target = cleanupStatement.expression.arguments[0];
+    if (target && ts.isIdentifier(target)) targets.add(target.text);
+  }
+  return targets;
+}
+
+function hasCleanupForEveryAnimation(
+  body,
+  animatedTargets,
+  lastAnimationPosition,
+) {
+  const cleanedTargets = new Set();
+  for (const statement of body.statements) {
+    if (
+      ts.isReturnStatement(statement) &&
+      statement.getStart() > lastAnimationPosition
+    )
+      for (const target of cleanupTargetsFromReturn(statement))
+        cleanedTargets.add(target);
+  }
+  return [...animatedTargets].every((target) => cleanedTargets.has(target));
+}
+
 function validateMotionScope(source, scope) {
   const file = parseSource(source, "motion.js", ts.ScriptKind.JS);
   const allowedIds = new Set(scope.sectionIds);
   const body = findSingleTopLevelMotionHook(file).body;
 
   const targets = declaredMotionTargets(body, allowedIds);
-  if (!targets.size)
-    throw scopeError("motion target must be a declared section element.");
 
   const allowedCalls = new Set();
   const animatedTargets = new Set();
+  const animationCalls = [];
   const allowedGlobals = new Set();
   const isIdentifier = (node, name) =>
     Boolean(node && ts.isIdentifier(node) && node.text === name);
@@ -1991,7 +2163,10 @@ function validateMotionScope(source, scope) {
           throw scopeError(
             "motion target must be a declared section element; global or string selectors are not allowed.",
           );
-        animatedTargets.add(target.text);
+        if (["from", "fromTo", "to"].includes(method)) {
+          animatedTargets.add(target.text);
+          animationCalls.push(node);
+        }
         allowedCalls.add(node);
         allowedGlobals.add(node.expression.expression);
       } else if (
@@ -2065,8 +2240,24 @@ function validateMotionScope(source, scope) {
     throw scopeError(
       `GSAP motion cannot change DOM text, HTML, or attributes through ${unsafeProperty}.`,
     );
-  if (!animatedTargets.size)
-    throw scopeError("motion edits must animate a declared section element.");
+  if (!animationCalls.length) return;
+
+  const firstAnimationPosition = Math.min(
+    ...animationCalls.map((call) => call.getStart(file)),
+  );
+  const lastAnimationPosition = Math.max(
+    ...animationCalls.map((call) => call.getEnd()),
+  );
+  if (!hasReducedMotionGuardBefore(body, firstAnimationPosition))
+    throw scopeError(
+      "motion requires an early reduced-motion guard using runtime.reducedMotion and prefers-reduced-motion before GSAP animation starts.",
+    );
+  if (
+    !hasCleanupForEveryAnimation(body, animatedTargets, lastAnimationPosition)
+  )
+    throw scopeError(
+      "motion cleanup must cancel every scoped GSAP animation before unmount.",
+    );
 }
 
 function assertApprovedMotionChange(before, after, scope) {

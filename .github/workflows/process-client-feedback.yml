@@ -81,11 +81,25 @@ jobs:
             gh pr edit "$PR" --repo "$CLIENT_REPO" --add-label launchloom-client-revision
           fi
           if [ ! -d "$RUNNER_TEMP/client/.git" ]; then git clone --branch "$BRANCH" "https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git" "$RUNNER_TEMP/client"; fi
-          git -C "$RUNNER_TEMP/client" rev-parse HEAD > "$RUNNER_TEMP/client-base-sha"
+          node scripts/revision-checkpoint.mjs \
+            --action prepare \
+            --repo "$RUNNER_TEMP/client" \
+            --request-id "$REVISION_REQUEST_ID" \
+            --out "$RUNNER_TEMP/revision-checkpoint.json" \
+            --restore-dir "$RUNNER_TEMP"
+          REPLAY=$(jq -r '.found // false' "$RUNNER_TEMP/revision-checkpoint.json")
+          if [ "$REPLAY" = true ]; then
+            BASE_SHA=$(jq -r '.baseSha' "$RUNNER_TEMP/revision-checkpoint.json")
+            cp "$RUNNER_TEMP/revision-feedback.txt" "$RUNNER_TEMP/client-feedback.txt"
+          else
+            BASE_SHA=$(git -C "$RUNNER_TEMP/client" rev-parse HEAD)
+          fi
+          printf '%s\n' "$BASE_SHA" > "$RUNNER_TEMP/client-base-sha"
+          echo "replay=$REPLAY" >> "$GITHUB_OUTPUT"
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
       - name: Preflight revision write destinations
-        if: steps.claim.outputs.run == 'true'
+        if: steps.claim.outputs.run == 'true' && steps.revision.outputs.replay != 'true'
         id: preflight
         run: |
           if ! node scripts/revision-scope.mjs preflight --client "$RUNNER_TEMP/client" --base "$(cat "$RUNNER_TEMP/client-base-sha")" > "$RUNNER_TEMP/revision-preflight.log" 2>&1; then
@@ -96,7 +110,7 @@ jobs:
           fi
           cat "$RUNNER_TEMP/revision-preflight.log"
       - name: Apply pending client feedback
-        if: steps.claim.outputs.run == 'true'
+        if: steps.claim.outputs.run == 'true' && steps.revision.outputs.replay != 'true'
         id: apply_feedback
         env:
           CLIENT_PR: ${{ steps.revision.outputs.pr }}
@@ -131,20 +145,21 @@ jobs:
             node scripts/enrich-site-config.mjs --file "$RUNNER_TEMP/client/src/site.config.json" --api https://api.launchloom.wrazyos.com --chatToken "$CHAT_TOKEN"
           fi
       - name: Build and direct-upload developer preview
-        if: steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success'
+        if: steps.claim.outputs.run == 'true' && (steps.apply_feedback.outcome == 'success' || steps.revision.outputs.replay == 'true')
         id: deploy
         env:
           REVISION_BRANCH: ${{ steps.revision.outputs.branch }}
+          REVISION_REPLAY: ${{ steps.revision.outputs.replay }}
         run: |
           cd "$RUNNER_TEMP/client"
-          node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$RUNNER_TEMP/client" --guidelines-written "$RUNNER_TEMP/guidelines-written.json"
-          node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" create --client "$RUNNER_TEMP/client" --base "$(cat "$RUNNER_TEMP/client-base-sha")" --out "$RUNNER_TEMP/revision-scope.json" --guidelines-written "$RUNNER_TEMP/guidelines-written.json" --repair-required false
-          node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json" --stage
-          if git diff --cached --quiet; then echo "Feedback produced no reviewable site change." >&2; exit 1; fi
-          git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
-          git commit -m "Apply client feedback for developer review"
-          node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json"
-          git push origin "$REVISION_BRANCH"
+          if [ "$REVISION_REPLAY" != true ]; then
+            node "$GITHUB_WORKSPACE/scripts/sync-revision-template.mjs" --client "$RUNNER_TEMP/client" --guidelines-written "$RUNNER_TEMP/guidelines-written.json"
+            node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" create --client "$RUNNER_TEMP/client" --base "$(cat "$RUNNER_TEMP/client-base-sha")" --out "$RUNNER_TEMP/revision-scope.json" --guidelines-written "$RUNNER_TEMP/guidelines-written.json" --repair-required false
+            node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json" --stage
+            if git diff --cached --quiet; then echo "Feedback produced no reviewable site change." >&2; exit 1; fi
+          else
+            node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json"
+          fi
           PROJECT=$(node -e "console.log(require('./.launchloom-deployment.json').project)")
           npm ci
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
@@ -158,16 +173,24 @@ jobs:
             node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
             node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
             node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/revision-screenshots" --report "$RUNNER_TEMP/revision-screenshots/visual-gate-final.json"
-            node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json" --stage
-            git commit -m "Apply GLM visual quality corrections"
-            node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json"
-            git push origin "$REVISION_BRANCH"
           fi
           # Scan rendered text assets only. Binary generated imagery can contain
           # the UTF-8 byte sequence by coincidence and is not page copy.
           if grep -R -I -F -q --include='*.html' --include='*.css' --include='*.js' --include='*.json' --include='*.svg' --include='*.txt' "—" dist; then echo "Generated page contains an em dash"; exit 1; fi
+          if [ "$REVISION_REPLAY" != true ]; then
+            node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json" --stage
+            if git diff --cached --quiet; then echo "Feedback produced no reviewable site change." >&2; exit 1; fi
+            SCOPE_B64=$(base64 -w 0 "$RUNNER_TEMP/revision-scope.json")
+            git config user.name "LaunchLoom"; git config user.email "automation@launchloom.app"
+            git commit -m "Apply client feedback for developer review" \
+              -m "LaunchLoom-Revision-Request: $REVISION_REQUEST_ID" \
+              -m "LaunchLoom-Revision-Scope: $SCOPE_B64"
+            node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json"
+            git push origin "$REVISION_BRANCH"
+          else
+            node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json"
+          fi
           BRANCH_SAFE=$(printf '%s' "$REVISION_BRANCH" | tr '/' '-')
-          node "$GITHUB_WORKSPACE/scripts/revision-scope.mjs" validate --client "$RUNNER_TEMP/client" --manifest "$RUNNER_TEMP/revision-scope.json"
           npx wrangler pages deploy dist --project-name "$PROJECT" --branch "$BRANCH_SAFE" --commit-hash "$(git rev-parse HEAD)" --commit-message "Client feedback developer preview"
           echo "changed=true" >> "$GITHUB_OUTPUT"
           echo "project=$PROJECT" >> "$GITHUB_OUTPUT"
@@ -199,7 +222,7 @@ jobs:
           QUEUED_FEEDBACK_PATH: ${{ runner.temp }}/queued-feedback.txt
         run: node scripts/revision-queue-client.mjs
       - name: Report downstream client revision failure
-        if: always() && steps.claim.outputs.run == 'true' && steps.apply_feedback.outcome == 'success' && (steps.deploy.outcome != 'success' || steps.review_delivery.outcome != 'success' || steps.complete.outcome != 'success')
+        if: always() && steps.claim.outputs.run == 'true' && (steps.apply_feedback.outcome == 'success' || steps.revision.outputs.replay == 'true') && (steps.deploy.outcome != 'success' || steps.review_delivery.outcome != 'success' || steps.complete.outcome != 'success')
         env:
           REVISION_PR: ${{ steps.revision.outputs.pr }}
         run: |

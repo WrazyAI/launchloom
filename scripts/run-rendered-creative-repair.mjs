@@ -226,6 +226,98 @@ async function readJson(file) {
   return JSON.parse(await fs.readFile(file, "utf8"));
 }
 
+function creativeFeedbackItems(config, requestText) {
+  const revision = config.revisionReport || {};
+  const results = Array.isArray(revision.results) ? revision.results : [];
+  const scopedItems = Array.isArray(revision.creativeRepairScope?.feedbackItems)
+    ? revision.creativeRepairScope.feedbackItems
+    : [];
+  const creativeResults = results.filter(
+    (result) => result?.status === "creative",
+  );
+  const sourceItems = scopedItems.length
+    ? scopedItems
+    : creativeResults.length
+      ? creativeResults
+      : [{ feedbackIndex: 0, feedback: requestText }];
+  const feedbackItems = [];
+  const seen = new Set();
+  for (const item of sourceItems) {
+    const feedbackIndex = item?.feedbackIndex;
+    const feedback = String(item?.feedback || "").trim();
+    if (!Number.isSafeInteger(feedbackIndex) || feedbackIndex < 0 || !feedback)
+      throw new Error(
+        "Creative human verification requires an exact feedback index and request text for every item.",
+      );
+    if (seen.has(feedbackIndex))
+      throw new Error(
+        `Creative human verification received duplicate feedback index ${feedbackIndex}.`,
+      );
+    seen.add(feedbackIndex);
+    feedbackItems.push({ feedbackIndex, feedback });
+  }
+  for (const result of creativeResults) {
+    const item = feedbackItems.find(
+      (candidate) => candidate.feedbackIndex === result.feedbackIndex,
+    );
+    if (!item || String(result.feedback || "").trim() !== item.feedback)
+      throw new Error(
+        `Creative human verification is missing or mismatches revision feedback item ${result.feedbackIndex + 1}.`,
+      );
+  }
+  return feedbackItems.sort(
+    (left, right) => left.feedbackIndex - right.feedbackIndex,
+  );
+}
+
+function verifiedHumanFeedbackResults(audit, expectedItems, candidateId) {
+  if (!Array.isArray(audit?.feedbackResults))
+    throw new Error(
+      "Human revision gate returned an aggregate pass without per-feedbackIndex evidence.",
+    );
+  const expectedByIndex = new Map(
+    expectedItems.map((item) => [item.feedbackIndex, item]),
+  );
+  const seen = new Set();
+  const verified = [];
+  for (const result of audit.feedbackResults) {
+    const index = result?.feedbackIndex;
+    const expected = expectedByIndex.get(index);
+    if (
+      !Number.isSafeInteger(index) ||
+      !expected ||
+      seen.has(index) ||
+      result?.verdict !== "pass" ||
+      String(result?.feedback || "").trim() !== expected.feedback ||
+      typeof result?.evidence !== "string" ||
+      !result.evidence.trim() ||
+      result?.candidateId !== candidateId ||
+      !Array.isArray(result.findings) ||
+      result.findings.some((finding) =>
+        ["critical", "major"].includes(finding?.severity),
+      )
+    )
+      throw new Error(
+        `Human revision gate passed without valid candidate-bound evidence for feedback index ${Number.isSafeInteger(index) ? index : "unknown"}.`,
+      );
+    seen.add(index);
+    verified.push({
+      feedbackIndex: index,
+      feedback: expected.feedback,
+      verdict: "pass",
+      evidence: result.evidence.trim(),
+      candidateId,
+    });
+  }
+  if (seen.size !== expectedByIndex.size)
+    throw new Error(
+      "Human revision gate aggregate pass omitted evidence for one or more creative feedback indexes.",
+    );
+  return verified.sort(
+    (left, right) => left.feedbackIndex - right.feedbackIndex,
+  );
+}
+
 async function readCandidate(candidateDir) {
   const [metadata, contentManifest, experience, styles, motion] =
     await Promise.all([
@@ -777,6 +869,7 @@ export async function runRenderedCreativeRepair({
   if (humanFindings.length > 0 && !humanFeedback)
     throw new Error("Human feedback must contain non-empty request text.");
   let humanRepairPending = humanFindings.length > 0;
+  let verifiedHumanFeedback = null;
   const excludedCandidateIds = new Set();
   /** @type {Record<string, string>} */
   const rejectedCandidates = {};
@@ -1136,6 +1229,7 @@ export async function runRenderedCreativeRepair({
               : []),
             ...(humanGate.audit?.findings || []).map((finding) => ({
               category: finding.category,
+              feedbackIndex: finding.feedbackIndex,
               message: finding.evidence,
               evidence: finding.evidence,
               recommendation: finding.recommendation,
@@ -1154,6 +1248,13 @@ export async function runRenderedCreativeRepair({
         record.repairs.push(selectedId);
         continue;
       }
+      const gateConfig = await readJson(gateConfigPath);
+      const expectedItems = creativeFeedbackItems(gateConfig, humanFeedback);
+      verifiedHumanFeedback = verifiedHumanFeedbackResults(
+        humanGate.audit,
+        expectedItems,
+        selectedId,
+      );
     }
 
     if (requestedMode === "promote" && !report.promotionReady) {
@@ -1289,6 +1390,7 @@ export async function runRenderedCreativeRepair({
         liveConfig.revisionReport.creativeSourceRepairVerified = {
           pass: true,
           candidateId: selectedId,
+          feedbackResults: verifiedHumanFeedback,
           repairCycles: Object.fromEntries(cycleUse),
         };
         await fs.writeFile(

@@ -4,7 +4,12 @@ import path from "node:path";
 const HISTORY_LIMIT = 50;
 
 export function defaultHistoryPath() {
-  return path.join(import.meta.dirname, "..", "data", "recent-launch-signatures.json");
+  return path.join(
+    import.meta.dirname,
+    "..",
+    "data",
+    "recent-launch-signatures.json",
+  );
 }
 
 export function emptyLaunchHistory() {
@@ -40,9 +45,7 @@ export function recentCreativeFamilyIds(history) {
       [
         launch.creativeFamilyId,
         launch.referenceFamilyId,
-        ...(Array.isArray(launch.routeFamilyIds)
-          ? launch.routeFamilyIds
-          : []),
+        ...(Array.isArray(launch.routeFamilyIds) ? launch.routeFamilyIds : []),
       ]
         .map((value) => String(value || "").trim())
         .filter(Boolean),
@@ -95,26 +98,37 @@ export function launchRecordFrom({
   const variantId = String(experience.variantId || "standard").trim();
   const fingerprint = String(experience.fingerprint || "").trim();
   const normalizedStage =
-    stage === "production" ? "production" : stage === "attempt" ? "attempt" : "preview";
+    stage === "production"
+      ? "production"
+      : stage === "attempt"
+        ? "attempt"
+        : "preview";
   if (normalizedStage !== "attempt" && (!packId || !fingerprint))
     throw new Error("A launch record needs a pack id and layout fingerprint.");
   const routes = Array.isArray(inspiration?.routes) ? inspiration.routes : [];
   const baseId = `${launchedAt.slice(0, 10)}-${slug(config?.business?.name)}`;
+  const reservationKey = String(recordKey || "").trim() ? slug(recordKey) : "";
   const attemptKey = slug(
-    recordKey ||
+    reservationKey ||
       String(launchedAt || "")
         .replace(/[^0-9]+/gu, "")
         .slice(-9),
   );
+  const id =
+    normalizedStage === "attempt"
+      ? `${baseId}-attempt-${attemptKey || "reservation"}`
+      : normalizedStage === "preview" && reservationKey
+        ? `${baseId}-preview-${reservationKey}`
+        : baseId;
   return {
-    id:
-      normalizedStage === "attempt"
-        ? `${baseId}-attempt-${attemptKey || "reservation"}`
-        : baseId,
+    id,
     launchedAt,
     stage: normalizedStage,
+    ...(reservationKey ? { reservationKey } : {}),
     businessName: String(config?.business?.name || "").trim(),
-    businessKind: String(config?.businessKind || config?.industry || "").trim().toLowerCase(),
+    businessKind: String(config?.businessKind || config?.industry || "")
+      .trim()
+      .toLowerCase(),
     recipe: String(config?.design?.recipe || "").trim(),
     packId,
     variantId,
@@ -140,13 +154,19 @@ export function launchRecordFrom({
   };
 }
 
-export async function recordLaunch(
-  entry,
-  historyPath = defaultHistoryPath(),
-) {
+export async function recordLaunch(entry, historyPath = defaultHistoryPath()) {
   const history = await readLaunchHistory(historyPath);
   const launches = [
-    ...history.launches.filter((launch) => launch.id !== entry.id),
+    ...history.launches.filter(
+      (launch) =>
+        launch.id !== entry.id &&
+        !(
+          entry.stage === "preview" &&
+          entry.reservationKey &&
+          launch.stage === "attempt" &&
+          launch.reservationKey === entry.reservationKey
+        ),
+    ),
     entry,
   ].slice(-HISTORY_LIMIT);
   const next = {

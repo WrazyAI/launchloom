@@ -925,7 +925,8 @@ export function structuredOperations(item, config) {
     const field = IMAGE_TARGET_FIELDS[asset?.target];
     const path = clean(asset?.path, 120);
     if (!field || !FEEDBACK_IMAGE_PATH.test(path)) continue;
-    const source = asset?.source === "fal-generated" ? "fal-generated" : "client";
+    const source =
+      asset?.source === "fal-generated" ? "fal-generated" : "client";
     operations.push({
       kind: "set_image",
       target: asset.target,
@@ -978,7 +979,11 @@ function intentsFor(item, config) {
   if (requestsColorChange(feedback)) intents.push("color");
   if (brandNameRequest.test(feedback)) intents.push("brand-name");
   if (Array.isArray(item?.assets) && item.assets.length) intents.push("image");
-  if (Array.isArray(item?.colors) && item.colors.length && !intents.includes("color"))
+  if (
+    Array.isArray(item?.colors) &&
+    item.colors.length &&
+    !intents.includes("color")
+  )
     intents.push("color");
   const structuralFeedback = feedbackWithoutConversionFeatures(feedback);
   const structural = layoutRequest.test(structuralFeedback)
@@ -1250,7 +1255,8 @@ export function applyOperation(config, operation) {
     const field = IMAGE_TARGET_FIELDS[operation.target];
     const path = clean(operation.path, 120);
     if (!field || !FEEDBACK_IMAGE_PATH.test(path)) return false;
-    const source = operation.source === "fal-generated" ? "fal-generated" : "client";
+    const source =
+      operation.source === "fal-generated" ? "fal-generated" : "client";
     config.images = { ...(config.images || {}) };
     config.assets = { ...(config.assets || {}) };
     if (field.images) config.images[field.images] = path;
@@ -1605,9 +1611,7 @@ export async function planRevision(
         colors: Array.isArray(item?.colors) ? item.colors : [],
       };
     })
-    .filter(
-      (item) => item.text || item.assets.length || item.colors.length,
-    );
+    .filter((item) => item.text || item.assets.length || item.colors.length);
   const textItems = items.map((item) => item.text);
   const deterministic = items.flatMap((item, feedbackIndex) =>
     [
@@ -1653,9 +1657,7 @@ export async function planRevision(
         )
           return false;
         const sectionTargets = scopedLayoutSections(feedback);
-        if (
-          !operationMatchesSectionScope(operation, sectionTargets, feedback)
-        )
+        if (!operationMatchesSectionScope(operation, sectionTargets, feedback))
           return false;
         const broadLayout = broadLayoutRequest.test(feedback);
         if (operation.kind === "set_design_treatment") {
@@ -1746,11 +1748,11 @@ export async function planRevision(
         : intent === "layout" && scopedLayoutSections(feedback).length > 0
           ? operations.some((operation) =>
               operationMatchesSectionScope(
-              operation,
-              scopedLayoutSections(feedback),
-              feedback,
-            ),
-          )
+                operation,
+                scopedLayoutSections(feedback),
+                feedback,
+              ),
+            )
           : intentSatisfied(intent, operations),
     );
     const unresolved = intents.filter((intent) => !fulfilled.includes(intent));
@@ -2120,8 +2122,7 @@ function containsTextInCopyTarget(html, artifact, config) {
 }
 function containsArtifactText(html, artifact, config) {
   if (!html) return false;
-  if (artifact.field)
-    return containsTextInCopyTarget(html, artifact, config);
+  if (artifact.field) return containsTextInCopyTarget(html, artifact, config);
   if (artifact.placement === "hero-heading")
     return containsTextInHero(html, "h1", artifact.value);
   if (artifact.placement === "heading")
@@ -2194,21 +2195,75 @@ export function verifyRevision(
   const verifiedCandidateId = String(
     report.creativeSourceRepairVerified?.candidateId || "",
   ).trim();
-  const creativeSourceVerified =
+  const creativeFeedbackResults = Array.isArray(report.results)
+    ? report.results.filter((result) => result.status === "creative")
+    : [];
+  const baseCreativeSourceVerified =
     report.creativeSourceRepairVerified?.pass === true &&
     Boolean(verifiedCandidateId) &&
     (!selectedCandidateId || verifiedCandidateId === selectedCandidateId);
+  const itemProofs = Array.isArray(
+    report.creativeSourceRepairVerified?.feedbackResults,
+  )
+    ? report.creativeSourceRepairVerified.feedbackResults
+    : [];
+  const itemProofsRequired =
+    creativeFeedbackResults.length > 1 || itemProofs.length > 0;
+  const expectedCreativeIndexes = new Set(
+    creativeFeedbackResults.map((result) => result.feedbackIndex),
+  );
+  const creativeIndexesValid =
+    expectedCreativeIndexes.size === creativeFeedbackResults.length &&
+    creativeFeedbackResults.every((result) =>
+      Number.isSafeInteger(result.feedbackIndex),
+    );
+  const itemProofByIndex = new Map();
+  let itemProofSetValid =
+    itemProofs.length === creativeFeedbackResults.length &&
+    expectedCreativeIndexes.size === creativeFeedbackResults.length;
+  for (const proof of itemProofs) {
+    const index = proof?.feedbackIndex;
+    const expectedResult = creativeFeedbackResults.find(
+      (result) => result.feedbackIndex === index,
+    );
+    if (
+      !Number.isSafeInteger(index) ||
+      !expectedCreativeIndexes.has(index) ||
+      itemProofByIndex.has(index) ||
+      proof?.verdict !== "pass" ||
+      typeof proof?.evidence !== "string" ||
+      !proof.evidence.trim() ||
+      !expectedResult?.feedback ||
+      String(proof?.feedback || "").trim() !==
+        String(expectedResult.feedback).trim() ||
+      (selectedCandidateId && proof?.candidateId !== selectedCandidateId)
+    ) {
+      itemProofSetValid = false;
+      continue;
+    }
+    itemProofByIndex.set(index, proof);
+  }
+  if (itemProofByIndex.size !== expectedCreativeIndexes.size)
+    itemProofSetValid = false;
+  const creativeSourceVerified =
+    baseCreativeSourceVerified &&
+    creativeIndexesValid &&
+    (!itemProofsRequired || itemProofSetValid);
   if (!Array.isArray(report.results) || !report.results.length)
     failures.push("Revision has no per-feedback results.");
   if (report.creativeSourceRepairRequired === true && !creativeSourceVerified)
     failures.push(
-      "Creative source repair was required but did not pass rendered human verification.",
+      itemProofsRequired && !itemProofSetValid
+        ? "Creative source repair requires separate rendered evidence for every creative feedback index."
+        : "Creative source repair was required but did not pass rendered human verification.",
     );
   for (const result of report.results || []) {
     const creativeVerified =
       result.status === "creative" &&
       report.creativeSourceRepairRequired === true &&
-      creativeSourceVerified;
+      baseCreativeSourceVerified &&
+      (!itemProofsRequired ||
+        (itemProofSetValid && itemProofByIndex.has(result.feedbackIndex)));
     if (result.status !== "fulfilled" && !creativeVerified)
       failures.push(
         `Feedback item ${result.feedbackIndex + 1} is ${result.status}: ${result.unresolved?.join(", ") || "unresolved"}.`,
@@ -2264,10 +2319,7 @@ export function verifyRevision(
       failures.push(
         `Missing rendered color: ${artifact.field}=${artifact.value}`,
       );
-    if (
-      artifact.type === "image" &&
-      !html.includes(artifact.path)
-    )
+    if (artifact.type === "image" && !html.includes(artifact.path))
       failures.push(`Missing rendered image: ${artifact.path}`);
     if (
       artifact.type === "variant" &&

@@ -165,6 +165,22 @@ function parseChoice(payload, label) {
   }
 }
 
+function isTruncated(payload) {
+  return ["length", "max_tokens"].includes(
+    payload?.choices?.[0]?.finish_reason,
+  );
+}
+
+function truncatedDiagnostics(payload, label, maxTokens) {
+  const choice = payload?.choices?.[0];
+  const usage = payload?.usage || {};
+  const reasoningTokens =
+    usage.completion_tokens_details?.reasoning_tokens ?? "unknown";
+  const completionTokens = usage.completion_tokens ?? "unknown";
+  const contentChars = String(choice?.message?.content || "").length;
+  return `${label} was truncated (finish_reason=${choice?.finish_reason || "unknown"} max_tokens=${maxTokens} completion_tokens=${completionTokens} reasoning_tokens=${reasoningTokens} content_chars=${contentChars}).`;
+}
+
 async function imagePart(file) {
   return promptImagePart(file);
 }
@@ -188,6 +204,7 @@ async function requestJson({
   sessionId,
   promptCacheKey,
   maxTokens = 7000,
+  reasoningEffort = "medium",
   fetchImpl = fetch,
 }) {
   if (!process.env.OPENROUTER_API_KEY)
@@ -195,6 +212,8 @@ async function requestJson({
       "OPENROUTER_API_KEY is required for rendered reference evaluation.",
     );
   const maxAttempts = 3;
+  let activeReasoningEffort = reasoningEffort;
+  let truncatedRetryUsed = false;
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 180_000);
@@ -210,7 +229,7 @@ async function requestJson({
           model,
           ...promptCacheRequestFields(model, promptCacheKey),
           temperature: 0,
-          reasoning: { effort: "medium", exclude: true },
+          reasoning: { effort: activeReasoningEffort, exclude: true },
           max_tokens: maxTokens,
           response_format: { type: "json_schema", json_schema: schema },
           messages: [
@@ -230,6 +249,17 @@ async function requestJson({
       });
       if (response.ok) {
         const cache = logOpenRouterCacheUsage(label, payload.usage);
+        if (isTruncated(payload)) {
+          if (!truncatedRetryUsed && activeReasoningEffort !== "low") {
+            console.info(
+              `rendered_judge_retry reason=truncated label=${label} reasoning_effort=${activeReasoningEffort}->low max_tokens=${maxTokens} completion_tokens=${payload?.usage?.completion_tokens ?? "unknown"} reasoning_tokens=${payload?.usage?.completion_tokens_details?.reasoning_tokens ?? "unknown"}`,
+            );
+            activeReasoningEffort = "low";
+            truncatedRetryUsed = true;
+            continue;
+          }
+          throw new Error(truncatedDiagnostics(payload, label, maxTokens));
+        }
         return {
           audit: parseChoice(payload, label),
           usage: payload.usage || null,

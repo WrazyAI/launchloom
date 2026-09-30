@@ -320,14 +320,12 @@ describe("rendered reference request retries", () => {
       { choices: [{ message: { content: "invalid" } }] },
       "returned invalid JSON",
     ],
-    [
-      { choices: [{ finish_reason: "length", message: { content: "{}" } }] },
-      "was truncated",
-    ],
   ])("does not retry invalid model output: %j", async (payload, message) => {
     const fetchImpl = vi
       .fn<typeof fetch>()
-      .mockResolvedValue(new Response(JSON.stringify(payload)));
+      .mockImplementation(() =>
+        Promise.resolve(new Response(JSON.stringify(payload))),
+      );
     await expect(evaluate(fetchImpl)).rejects.toThrow(
       `Rendered reference judge ${message}`,
     );
@@ -647,6 +645,112 @@ describe("rendered reference fidelity", () => {
 
     expect(requests[0].max_tokens).toBe(12_000);
     expect(result.pass).toBe(true);
+  });
+
+  it("retries a truncated visual judge with lower reasoning effort", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const requests: Record<string, any>[] = [];
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "length",
+                message: { content: '{"overallDistinctiveness":' },
+              },
+            ],
+            usage: {
+              completion_tokens: 12_000,
+              completion_tokens_details: { reasoning_tokens: 11_800 },
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      })
+      .mockImplementationOnce(async (_url, options) => {
+        requests.push(JSON.parse(String(options?.body || "{}")));
+        return response({
+          overallDistinctiveness: 90,
+          genericFallbackDetected: false,
+          pairs: [
+            {
+              left: "candidate-a",
+              right: "candidate-b",
+              distance: 90,
+              reason: "Their visible compositions differ.",
+            },
+          ],
+          summary: "The candidate compositions are distinct.",
+        });
+      });
+
+    const result = await evaluateRenderedDiversity({
+      candidates: [
+        {
+          candidateId: "candidate-a",
+          desktop: files.candidateDesktop,
+          mobile: files.candidateMobile,
+        },
+        {
+          candidateId: "candidate-b",
+          desktop: files.secondDesktop,
+          mobile: files.secondMobile,
+        },
+      ],
+      fetchImpl,
+    });
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(requests[0].reasoning.effort).toBe("medium");
+    expect(requests[1].reasoning.effort).toBe("low");
+    expect(requests[1].max_tokens).toBe(12_000);
+    expect(result.pass).toBe(true);
+  });
+
+  it("never treats a repeatedly truncated diversity judge as a pass", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const fetchImpl = vi.fn<typeof fetch>().mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "length",
+                message: { content: '{"overallDistinctiveness":' },
+              },
+            ],
+            usage: {
+              completion_tokens: 12_000,
+              completion_tokens_details: { reasoning_tokens: 11_800 },
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
+
+    await expect(
+      evaluateRenderedDiversity({
+        candidates: [
+          {
+            candidateId: "candidate-a",
+            desktop: files.candidateDesktop,
+            mobile: files.candidateMobile,
+          },
+          {
+            candidateId: "candidate-b",
+            desktop: files.secondDesktop,
+            mobile: files.secondMobile,
+          },
+        ],
+        fetchImpl,
+      }),
+    ).rejects.toThrow(/Rendered diversity judge was truncated/u);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
   it("uses screenshot distance rather than route metadata for diversity", async () => {

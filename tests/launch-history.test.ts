@@ -135,14 +135,57 @@ describe("launch history", () => {
     expect(record.layoutFingerprint).toBe("");
   });
 
+  it("replaces the matching reservation with its successful preview history row", async () => {
+    const historyPath = await temporaryHistory();
+    const reservationKey = "intake-42-run-123-attempt-1";
+    const attempt = launchRecordFrom({
+      config: {
+        business: { name: "Northside Care" },
+        businessKind: "home-care",
+        design: { recipe: "care-editorial", experience: {} },
+      },
+      inspiration,
+      launchedAt: "2026-09-30T08:00:00.000Z",
+      stage: "attempt",
+      recordKey: reservationKey,
+    });
+    await recordLaunch(attempt, historyPath);
+
+    const preview = launchRecordFrom({
+      config: {
+        ...config,
+        businessKind: "home-care",
+        business: { name: "Northside Care" },
+      },
+      inspiration,
+      launchedAt: "2026-09-30T08:15:00.000Z",
+      stage: "preview",
+      recordKey: reservationKey,
+    });
+    const updated = await recordLaunch(preview, historyPath);
+
+    expect(updated.launches).toHaveLength(1);
+    expect(updated.launches[0]).toMatchObject({
+      id: preview.id,
+      stage: "preview",
+      reservationKey,
+    });
+  });
+
   it("persists the selected dossier IDs and business kind for later selection", () => {
     const record = launchRecordFrom({
-      config: { business: { name: "Northside Care" }, businessKind: "home-care", design: {} },
-      inspiration: { routes: [
-        { referenceDossier: { id: "care-a" } },
-        { referenceDossier: { id: "care-b" } },
-        { referenceDossier: { id: "care-c" } },
-      ] },
+      config: {
+        business: { name: "Northside Care" },
+        businessKind: "home-care",
+        design: {},
+      },
+      inspiration: {
+        routes: [
+          { referenceDossier: { id: "care-a" } },
+          { referenceDossier: { id: "care-b" } },
+          { referenceDossier: { id: "care-c" } },
+        ],
+      },
       stage: "attempt",
       recordKey: "123",
       launchedAt: "2026-09-28T00:00:00.000Z",
@@ -207,7 +250,8 @@ describe("launch history", () => {
             experience: {
               ...config.design.experience,
               variantId: "standard",
-              fingerprint: "bold-utility|standard|utility-pill|editorial-dialogue",
+              fingerprint:
+                "bold-utility|standard|utility-pill|editorial-dialogue",
             },
           },
         },

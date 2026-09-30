@@ -1624,7 +1624,22 @@ export default function Experience({ content, runtime }) {
         humanGateCalls += 1;
         expect(feedback).toContain("cinematic");
         return {
-          audit: { verdict: "pass", findings: [], summary: "Request met." },
+          audit: {
+            verdict: "pass",
+            findings: [],
+            summary: "Request met.",
+            feedbackResults: [
+              {
+                feedbackIndex: 0,
+                feedback: "Make the hero feel more cinematic and asymmetrical.",
+                verdict: "pass",
+                evidence:
+                  "Desktop and mobile captures show the requested hero treatment.",
+                candidateId: "candidate-a",
+                findings: [],
+              },
+            ],
+          },
         };
       },
       repairCandidateImpl: async (options: any) => {
@@ -1654,11 +1669,173 @@ export default function Experience({ content, runtime }) {
     expect(result.humanRevisionPass).toBe(true);
   });
 
+  it("persists feedback-index-bound evidence after a successful multi-item human audit", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const configPath = path.join(root, "src/site.config.json");
+    const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+    config.design.experience.candidateId = "candidate-a";
+    config.revisionReport = {
+      results: [
+        {
+          feedbackIndex: 2,
+          feedback: "Make the hero more cinematic.",
+          status: "creative",
+        },
+        {
+          feedbackIndex: 5,
+          feedback: "Move the gallery before the services.",
+          status: "creative",
+        },
+      ],
+      creativeRepairScope: {
+        feedbackItems: [
+          {
+            feedbackIndex: 2,
+            feedback: "Make the hero more cinematic.",
+          },
+          {
+            feedbackIndex: 5,
+            feedback: "Move the gallery before the services.",
+          },
+        ],
+      },
+    };
+    await fs.writeFile(configPath, JSON.stringify(config));
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      requestedFindings: [
+        {
+          category: "human-review-feedback",
+          message: "Make the hero more cinematic.",
+        },
+        {
+          category: "human-review-feedback",
+          message: "Move the gallery before the services.",
+        },
+      ],
+      runBakeoffImpl: async (options: any) =>
+        writeBakeoffEvidence(
+          options,
+          report({ candidates: [candidate("candidate-a")] }),
+        ),
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      runHumanGateImpl: async () => ({
+        audit: {
+          verdict: "pass",
+          summary: "Each requested change is present.",
+          findings: [],
+          feedbackResults: [
+            {
+              feedbackIndex: 5,
+              feedback: "Move the gallery before the services.",
+              verdict: "pass",
+              evidence:
+                "Desktop and mobile captures show the gallery before services.",
+              candidateId: "candidate-a",
+              findings: [],
+            },
+            {
+              feedbackIndex: 2,
+              feedback: "Make the hero more cinematic.",
+              verdict: "pass",
+              evidence:
+                "The hero uses the requested cinematic treatment in all captures.",
+              candidateId: "candidate-a",
+              findings: [],
+            },
+          ],
+        },
+      }),
+      repairCandidateImpl: async () => {},
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    const persisted = JSON.parse(await fs.readFile(configPath, "utf8"));
+    expect(result.status).toBe("passed");
+    expect(persisted.revisionReport.creativeSourceRepairVerified).toMatchObject(
+      {
+        pass: true,
+        candidateId: "candidate-a",
+        feedbackResults: [
+          {
+            feedbackIndex: 2,
+            feedback: "Make the hero more cinematic.",
+            verdict: "pass",
+            evidence:
+              "The hero uses the requested cinematic treatment in all captures.",
+            candidateId: "candidate-a",
+          },
+          {
+            feedbackIndex: 5,
+            feedback: "Move the gallery before the services.",
+            verdict: "pass",
+            evidence:
+              "Desktop and mobile captures show the gallery before services.",
+            candidateId: "candidate-a",
+          },
+        ],
+      },
+    );
+  });
+
+  it("rejects an aggregate human pass that omits indexed evidence", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let promoteCalls = 0;
+
+    await expect(
+      runRenderedCreativeRepair({
+        siteDir: root,
+        candidatesDir: candidates,
+        outDir: path.join(root, "evidence"),
+        requestedFindings: [
+          {
+            category: "human-review-feedback",
+            message: "Make the hero more cinematic.",
+          },
+          {
+            category: "human-review-feedback",
+            message: "Move the gallery before the services.",
+          },
+        ],
+        runBakeoffImpl: async (options: any) =>
+          writeBakeoffEvidence(
+            options,
+            report({ candidates: [candidate("candidate-a")] }),
+          ),
+        runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+        runHumanGateImpl: async () => ({
+          audit: {
+            verdict: "pass",
+            summary: "Both requests look complete.",
+            findings: [],
+          },
+        }),
+        repairCandidateImpl: async () => {},
+        promoteImpl: async () => {
+          promoteCalls += 1;
+          return { candidateId: "candidate-a" };
+        },
+      }),
+    ).rejects.toThrow(/aggregate pass without per-feedbackIndex evidence/iu);
+
+    expect(promoteCalls).toBe(0);
+    const persisted = JSON.parse(
+      await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),
+    );
+    expect(
+      persisted.revisionReport?.creativeSourceRepairVerified,
+    ).toBeUndefined();
+  });
+
   it("reruns Luna when the rendered human request gate still sees a mismatch", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     let humanGateCalls = 0;
     let repairCalls = 0;
     let bakeoffCalls = 0;
+    const repairFindings: any[] = [];
 
     const result = await runRenderedCreativeRepair({
       siteDir: root,
@@ -1688,6 +1865,7 @@ export default function Experience({ content, runtime }) {
                 summary: "CTA is still too prominent.",
                 findings: [
                   {
+                    feedbackIndex: 0,
                     category: "requirement-mismatch",
                     severity: "major",
                     viewport: "desktop",
@@ -1703,17 +1881,33 @@ export default function Experience({ content, runtime }) {
                 verdict: "pass",
                 summary: "Request met.",
                 findings: [],
+                feedbackResults: [
+                  {
+                    feedbackIndex: 0,
+                    feedback:
+                      "Move the CTA below the gallery and make it understated.",
+                    verdict: "pass",
+                    evidence:
+                      "Desktop and mobile captures show the CTA below the gallery with restrained emphasis.",
+                    candidateId: "candidate-a",
+                    findings: [],
+                  },
+                ],
               },
             };
       },
-      repairCandidateImpl: async () => {
+      repairCandidateImpl: async ({ findings }: any) => {
         repairCalls += 1;
+        repairFindings.push(findings);
       },
       promoteImpl: async () => ({ candidateId: "candidate-a" }),
     });
 
     expect(result.status).toBe("passed");
     expect(repairCalls).toBe(2);
+    expect(
+      repairFindings.flat().some((finding) => finding.feedbackIndex === 0),
+    ).toBe(true);
     expect(bakeoffCalls).toBe(3);
     expect(humanGateCalls).toBe(2);
     expect(result.repairCycles).toEqual({ "candidate-a": 2 });
