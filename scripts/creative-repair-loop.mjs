@@ -46,6 +46,20 @@ const REPAIR_SCHEMA = {
 
 const REPAIR_FILE_ORDER = ["experience", "styles", "motion"];
 
+const REPAIR_FILE_SCHEMA = {
+  name: "launchloom_creative_file_repair",
+  strict: true,
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["file", "source"],
+    properties: {
+      file: { type: "string", enum: REPAIR_FILE_ORDER },
+      source: { type: "string" },
+    },
+  },
+};
+
 const REPAIR_EDIT_SCHEMA = {
   name: "launchloom_creative_repair_edits",
   strict: true,
@@ -80,6 +94,7 @@ const REPAIR_EDITABLE_FILES = new Set(REPAIR_FILE_ORDER);
 const MAX_REPAIR_EDITS = 12;
 const MAX_REPAIR_EDIT_FRAGMENT_CHARS = 6_000;
 const MAX_REPAIR_PATCH_TEXT_CHARS = 24_000;
+const MAX_REPAIR_FILE_SOURCE_CHARS = 80_000;
 
 function clean(value, limit = 900) {
   return String(value || "")
@@ -154,6 +169,61 @@ function isRepairEditSet(value) {
     !Array.isArray(value) &&
     Array.isArray(value.edits),
   );
+}
+
+function repairTargetFiles(findings) {
+  const texts = (Array.isArray(findings) ? findings : [findings])
+    .map(findingText)
+    .filter(Boolean);
+  const motionOnly = texts.length > 0 && texts.every((text) =>
+    /\b(?:motion|animation|animated|scrolltrigger|scroll-linked|parallax)\b/iu.test(
+      text,
+    ),
+  );
+  if (motionOnly) return ["motion"];
+
+  const targets = new Set();
+  const motionRequested = texts.some((text) =>
+    /\b(?:motion|animation|animated|scrolltrigger|scroll-linked|parallax)\b/iu.test(
+      text,
+    ),
+  );
+  const stylesOnly = texts.length > 0 && texts.every((text) =>
+    /\b(?:palette|color|colour|contrast|font|typography|spacing|density)\b/iu.test(
+      text,
+    ),
+  );
+  if (stylesOnly) targets.add("styles");
+  else {
+    targets.add("experience");
+    targets.add("styles");
+  }
+  if (motionRequested) targets.add("motion");
+  return REPAIR_FILE_ORDER.filter((file) => targets.has(file));
+}
+
+function validateCandidateFileReplacement(response, file) {
+  if (!response || typeof response !== "object" || Array.isArray(response))
+    throw repairOutputRejection(
+      `Large creative repair must return a complete ${file} file replacement.`,
+    );
+  if (response.file !== file)
+    throw repairOutputRejection(
+      `Large creative repair requested ${file} but returned ${String(response.file || "no file")}.`,
+    );
+  if (
+    typeof response.source !== "string" ||
+    !response.source.trim() ||
+    response.source.length > MAX_REPAIR_FILE_SOURCE_CHARS
+  )
+    throw repairOutputRejection(
+      `Large creative repair ${file} source must be non-empty and at most ${MAX_REPAIR_FILE_SOURCE_CHARS} characters.`,
+    );
+  if (/data:image\/[^;\s]+;base64,/iu.test(response.source))
+    throw repairOutputRejection(
+      `Large creative repair ${file} source cannot contain inline image data.`,
+    );
+  return response.source.replace(/[—–]/gu, "-").trim();
 }
 
 function repairOutputRejection(message, cause) {
@@ -744,7 +814,7 @@ Use these helpers instead of inventing network calls or duplicating platform beh
 
   const sourcePrompt = (
     currentFiles,
-    editsOnly = false,
+    { targetFile = null } = {},
   ) => `${repairInstruction}
 
 ${scopedHumanRepair ? `RESOLVED SECTION SCOPE\n${JSON.stringify(creativeRepairScope, null, 2)}\nOnly these section IDs may change.` : ""}
@@ -790,22 +860,31 @@ Every motion sequence must respect reduced-motion preferences: check runtime?.re
 }
 
 ${
-  scopedHumanRepair || editsOnly
+  scopedHumanRepair
     ? `Return JSON with an "edits" array only, never complete files. Each edit must name one of experience, styles, or motion; its exact "find" fragment must occur once; its "replace" is the smallest correction that addresses a supplied finding. Return 1-12 edits, each fragment at most 6000 characters, total find-plus-replace text at most 24000 characters. Change only files and source regions needed for the measured findings. An empty edit list means the request cannot be safely fulfilled and must fail closed.`
-    : "Return complete files required by the response schema and no unrelated explanation."
+    : targetFile
+      ? `Return JSON with file="${targetFile}" and source containing the complete replacement for that file only. Do not include any other file, patch, or explanation. Keep every other candidate file unchanged. The replacement must satisfy the existing source-safety, sealed-content, Reference DNA, and functionality contracts.`
+      : "Return complete files required by the response schema and no unrelated explanation."
 } Keep required reference signatures and safety/content contracts unless the explicit repair requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
 
-  const buildRepairContent = (currentFiles, editsOnly = false) => {
+  const buildRepairContent = (
+    currentFiles,
+    { targetFile = null } = {},
+  ) => {
     const requestContent = [
       ...referenceContext,
       ...candidateEvidence,
-      { type: "text", text: sourcePrompt(currentFiles, editsOnly) },
+      {
+        type: "text",
+        text: sourcePrompt(currentFiles, { targetFile }),
+      },
     ];
-    if (editsOnly)
+    if (targetFile)
       requestContent.push({
         type: "text",
-        text: `LARGE-CANDIDATE REPAIR MODE
-Return only the bounded literal edit set described above. Use exact, unique source fragments from CURRENT EXPERIENCE.JSX, CURRENT STYLES.CSS, or CURRENT MOTION.JS. Do not re-emit complete files. Keep each edit in the file it names, preserve unaffected source byte-for-byte, and make focused changes for the supplied findings while preserving the assigned reference, sealed content bindings, required markers, and safety contract.`,
+        text: `LARGE-CANDIDATE FILE-SCOPED REPAIR MODE
+TARGET CANDIDATE FILE: ${targetFile}
+Return a complete replacement for only this requested file. The source must be non-empty, must not exceed ${MAX_REPAIR_FILE_SOURCE_CHARS} characters, and must not contain inline image data. Treat the other current candidate files as immutable. The orchestrator will combine your replacement with those unchanged files, run the complete source and Reference DNA validators, then rebuild and recapture every viewport before any visual gate can pass.`,
       });
     assertModelPromptTextBudget(requestContent);
     return requestContent;
@@ -833,9 +912,9 @@ Return only the bounded literal edit set described above. Use exact, unique sour
   );
   const requestModelRepair = async (
     currentFiles,
-    { editsOnly = false } = {},
+    { targetFile = null } = {},
   ) => {
-    const requestContent = buildRepairContent(currentFiles, editsOnly);
+    const requestContent = buildRepairContent(currentFiles, { targetFile });
     const sendRepairRequest = (maxCompletionTokens) =>
       openRouterChatCompletion({
         title: "LaunchLoom creative repair",
@@ -851,9 +930,11 @@ Return only the bounded literal edit set described above. Use exact, unique sour
           response_format: {
             type: "json_schema",
             json_schema:
-              scopedHumanRepair || editsOnly
+              scopedHumanRepair
                 ? REPAIR_EDIT_SCHEMA
-                : REPAIR_SCHEMA,
+                : targetFile
+                  ? REPAIR_FILE_SCHEMA
+                  : REPAIR_SCHEMA,
           },
           ...completionLimitRequestField(maxCompletionTokens),
           messages: [
@@ -900,7 +981,7 @@ Return only the bounded literal edit set described above. Use exact, unique sour
     });
     const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
     logger(
-      `creative_completion stage=creative-repair ${diagnosticText}${editsOnly ? " mode=bounded-edits" : ""}`,
+      `creative_completion stage=creative-repair ${diagnosticText}${scopedHumanRepair ? " mode=bounded-edits" : targetFile ? ` mode=file-replacement file=${targetFile}` : ""}`,
     );
     if (["length", "max_tokens"].includes(diagnostics.finishReason))
       throw repairOutputRejection(
@@ -923,12 +1004,12 @@ Return only the bounded literal edit set described above. Use exact, unique sour
       applyCreativeRepairEdits(files, parsed.edits);
       return parsed;
     }
-    if (editsOnly) {
-      if (!isRepairEditSet(parsed))
-        throw repairOutputRejection(
-          "Large creative repair must return bounded literal edits, not complete files.",
-        );
-      return applyCreativeRepairEdits(currentFiles, parsed.edits);
+    if (targetFile) {
+      const source = validateCandidateFileReplacement(
+        parsed,
+        targetFile,
+      );
+      return { ...currentFiles, [targetFile]: source };
     }
     return parsed;
   };
@@ -940,7 +1021,15 @@ Return only the bounded literal edit set described above. Use exact, unique sour
   if (scopedHumanRepair) return requestModelRepair(files);
   if (sourceChars <= REPAIR_SOURCE_EDIT_THRESHOLD_CHARS)
     return requestModelRepair(files);
-  return requestModelRepair(files, { editsOnly: true });
+  let currentFiles = { ...files };
+  for (const targetFile of repairTargetFiles(findings)) {
+    if (String(currentFiles[targetFile] || "").length > MAX_REPAIR_FILE_SOURCE_CHARS)
+      throw repairOutputRejection(
+        `Large creative repair cannot replace ${targetFile}: current source exceeds ${MAX_REPAIR_FILE_SOURCE_CHARS} characters.`,
+      );
+    currentFiles = await requestModelRepair(currentFiles, { targetFile });
+  }
+  return currentFiles;
 }
 
 async function main() {

@@ -1147,17 +1147,166 @@ function isPrefixedContactExpression(expression, prefix, tokenPath, file, source
   );
 }
 
-function isServiceRouteExpression(expression, file, source) {
+function lexicalScope(node) {
+  for (let current = node?.parent; current; current = current.parent)
+    if (
+      ts.isBlock(current) ||
+      ts.isSourceFile(current) ||
+      ts.isFunctionLike(current) ||
+      ts.isForStatement(current) ||
+      ts.isForInStatement(current) ||
+      ts.isForOfStatement(current) ||
+      ts.isCatchClause(current)
+    )
+      return current;
+  return null;
+}
+
+function bindingPathForName(bindingName, name, prefix = []) {
+  if (ts.isIdentifier(bindingName))
+    return bindingName.text === name ? prefix : null;
+  if (!ts.isObjectBindingPattern(bindingName)) return null;
+  for (const element of bindingName.elements) {
+    if (element.dotDotDotToken || ts.isOmittedExpression(element)) continue;
+    const property = element.propertyName || element.name;
+    const propertyName = ts.isIdentifier(property) || ts.isStringLiteral(property)
+      ? property.text
+      : null;
+    if (!propertyName) continue;
+    const result = bindingPathForName(element.name, name, [
+      ...prefix,
+      propertyName,
+    ]);
+    if (result) return result;
+  }
+  return null;
+}
+
+function isScopeBoundary(node) {
+  return (
+    ts.isBlock(node) ||
+    ts.isSourceFile(node) ||
+    ts.isFunctionLike(node) ||
+    ts.isForStatement(node) ||
+    ts.isForInStatement(node) ||
+    ts.isForOfStatement(node) ||
+    ts.isCatchClause(node)
+  );
+}
+
+function visibleBinding(name, use) {
+  for (let scope = use?.parent; scope; scope = scope.parent) {
+    if (!isScopeBoundary(scope)) continue;
+    const declarations = [];
+    const visit = (node) => {
+      if (node !== scope && isScopeBoundary(node)) return;
+      if (
+        ts.isVariableDeclaration(node) &&
+        lexicalScope(node) === scope &&
+        bindingPathForName(node.name, name)
+      )
+        declarations.push({ kind: "variable", node });
+      else if (
+        ts.isParameter(node) &&
+        node.parent === scope &&
+        bindingPathForName(node.name, name)
+      )
+        declarations.push({ kind: "parameter", node });
+      else if (
+        ((ts.isFunctionDeclaration(node) && node.name) ||
+          (ts.isClassDeclaration(node) && node.name)) &&
+        node.name.text === name &&
+        lexicalScope(node) === scope
+      )
+        declarations.push({ kind: "other", node });
+      ts.forEachChild(node, visit);
+    };
+    visit(scope);
+    if (declarations.length) return declarations.length === 1 ? declarations[0] : null;
+  }
+  return null;
+}
+
+function isSealedServiceCollectionExpression(expression, file, seen = new Set()) {
+  if (!expression) return false;
+  const node = unwrapUrlExpression(expression);
+  const directPath = expressionPath(node, file);
+  if (directPath === "content.services") return true;
+  if (
+    ts.isCallExpression(node) &&
+    ts.isPropertyAccessExpression(node.expression) &&
+    ["filter", "slice"].includes(node.expression.name.text)
+  )
+    return isSealedServiceCollectionExpression(
+      node.expression.expression,
+      file,
+      seen,
+    );
+  if (!ts.isIdentifier(node) || seen.has(node.text)) return false;
+  const binding = visibleBinding(node.text, node);
+  if (!binding || binding.kind === "other") return false;
+  seen.add(node.text);
+  const bindingPath = bindingPathForName(binding.node.name, node.text);
+  if (binding.kind === "parameter")
+    return bindingPath?.join(".") === "content.services";
+  if (bindingPath?.join(".") === "services")
+    return (
+      ts.isIdentifier(binding.node.initializer) &&
+      binding.node.initializer.text === "content"
+    );
+  if (bindingPath?.length) return false;
+  return isSealedServiceCollectionExpression(
+    binding.node.initializer,
+    file,
+    seen,
+  );
+}
+
+function isSealedServiceSlug(expression, file) {
+  const slugPath = expressionPath(expression, file);
+  const match = /^([A-Za-z_$][\w$]*)\.slug$/u.exec(slugPath);
+  if (!match) return false;
+  const serviceName = match[1];
+  let current = expression;
+  while (current && current !== file) {
+    if (ts.isArrowFunction(current) || ts.isFunctionExpression(current)) {
+      const hasServiceParameter = current.parameters.some(
+        (parameter) =>
+          ts.isIdentifier(parameter.name) &&
+          parameter.name.text === serviceName,
+      );
+      if (hasServiceParameter) {
+        const call = unwrapUrlExpression(current.parent);
+        if (
+          ts.isCallExpression(call) &&
+          ts.isPropertyAccessExpression(call.expression) &&
+          call.expression.name.text === "map" &&
+          call.arguments.some(
+            (argument) => unwrapUrlExpression(argument) === current,
+          ) &&
+          isSealedServiceCollectionExpression(
+            call.expression.expression,
+            file,
+          )
+        )
+          return true;
+      }
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
+function isServiceRouteExpression(expression, file) {
   const node = unwrapUrlExpression(expression);
   if (!node) return false;
   let valid = false;
+  let slugExpression = null;
   if (ts.isTemplateExpression(node))
-    valid =
-      node.head.text === "/services/" &&
-      node.templateSpans.length === 1 &&
-      expressionPath(node.templateSpans[0].expression, file) ===
-        "service.slug" &&
-      node.templateSpans[0].literal.text === "/";
+    if (node.head.text === "/services/" && node.templateSpans.length === 1) {
+      slugExpression = node.templateSpans[0].expression;
+      valid = node.templateSpans[0].literal.text === "/";
+    }
   if (
     ts.isBinaryExpression(node) &&
     node.operatorToken.kind === ts.SyntaxKind.PlusToken &&
@@ -1167,10 +1316,15 @@ function isServiceRouteExpression(expression, file, source) {
     valid =
       ts.isStringLiteral(node.left.left) &&
       node.left.left.text === "/services/" &&
-      expressionPath(node.left.right, file) === "service.slug" &&
       ts.isStringLiteral(node.right) &&
       node.right.text === "/";
-  return valid && /content\.services\s*\.\s*map\s*\(\s*\(\s*service\s*\)/u.test(source);
+  if (
+    valid &&
+    ts.isBinaryExpression(node) &&
+    ts.isBinaryExpression(node.left)
+  )
+    slugExpression = node.left.right;
+  return valid && isSealedServiceSlug(slugExpression, file);
 }
 
 function staticSpreadUrlKey(property) {
@@ -1261,7 +1415,7 @@ function validateAuthoredUrlAttributes(source, route, content) {
             file,
             source,
           ) ||
-          isServiceRouteExpression(expression, file, source)
+          isServiceRouteExpression(expression, file)
         )
           continue;
       }
