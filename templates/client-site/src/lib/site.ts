@@ -244,6 +244,7 @@ export type SiteConfig = {
       avoidPackIds?: string[];
       selectionMode?: "internal-bakeoff" | "requested" | "legacy" | "creative-bakeoff";
       fingerprint?: string;
+      servicePage?: boolean;
     };
   };
   assetReport?: {
