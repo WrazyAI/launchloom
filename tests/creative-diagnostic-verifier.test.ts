@@ -12,7 +12,15 @@ afterEach(async () => {
   await Promise.all(roots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
 });
 
-async function createDiagnosticSite({ demoNotice, includeNotice }: { demoNotice?: string; includeNotice: boolean }) {
+async function createDiagnosticSite({
+  demoNotice,
+  includeNotice,
+  imageMarkup = "",
+}: {
+  demoNotice?: string;
+  includeNotice: boolean;
+  imageMarkup?: string;
+}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-diagnostic-notice-"));
   roots.push(root);
   await fs.mkdir(path.join(root, "dist"), { recursive: true });
@@ -26,7 +34,7 @@ async function createDiagnosticSite({ demoNotice, includeNotice }: { demoNotice?
     : "";
   await fs.writeFile(
     path.join(root, "dist/index.html"),
-    `<!doctype html><html><head><meta name="robots" content="noindex, nofollow"><title>Test preview</title></head><body>${notice}<main data-creative-host="true" data-creative-diagnostic="true" data-creative-candidate="candidate-a" data-creative-renderer="creative-candidate"><section data-hero><h1>Test preview</h1></section></main></body></html>`,
+    `<!doctype html><html><head><meta name="robots" content="noindex, nofollow"><title>Test preview</title></head><body>${notice}<main data-creative-host="true" data-creative-diagnostic="true" data-creative-candidate="candidate-a" data-creative-renderer="creative-candidate"><section data-hero><h1>Test preview</h1></section>${imageMarkup}</main></body></html>`,
   );
   return root;
 }
@@ -63,5 +71,27 @@ describe("creative diagnostic preview verification", () => {
     const ordinaryResult = runVerifier(ordinary);
 
     expect(ordinaryResult.status).toBe(0);
+  }, 20_000);
+
+  it("accepts decorative empty alt text and rejects images without an alt attribute", async () => {
+    const pixel =
+      "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+    const decorative = await createDiagnosticSite({
+      includeNotice: false,
+      imageMarkup: `<img src="${pixel}" alt="" />`,
+    });
+    const accepted = runVerifier(decorative);
+
+    expect(accepted.status).toBe(0);
+    expect(accepted.stdout).toContain('"diagnosticPreview":"safe"');
+
+    const missing = await createDiagnosticSite({
+      includeNotice: false,
+      imageMarkup: `<img src="${pixel}" />`,
+    });
+    const rejected = runVerifier(missing);
+
+    expect(rejected.status).toBe(1);
+    expect(rejected.stderr).toContain("image missing alt text");
   }, 20_000);
 });

@@ -26,9 +26,9 @@ import {
 } from "./production-experience-author.mjs";
 import { runHumanRevisionGate } from "./human-revision-gate.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
+import { RENDERED_REFERENCE_THRESHOLDS } from "./rendered-reference-fidelity.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
-const REPAIR_FILES = ["Experience.jsx", "styles.css", "motion.js"];
 
 function cliArgs(argv) {
   return Object.fromEntries(
@@ -54,6 +54,29 @@ function unique(values) {
   return [...new Set(values.filter(Boolean))];
 }
 
+function dimensionFindings(candidate) {
+  const audit = candidate?.renderedReferenceFidelity?.audit;
+  if (!audit) return [];
+  const findings = [];
+  const overall = Number(audit.overallScore);
+  if (
+    Number.isFinite(overall) &&
+    overall < RENDERED_REFERENCE_THRESHOLDS.overall
+  )
+    findings.push(
+      `rendered-reference overall fidelity scored ${overall} and must reach ${RENDERED_REFERENCE_THRESHOLDS.overall}.`,
+    );
+  for (const [key, value] of Object.entries(audit.scores || {})) {
+    const minimum = Number(RENDERED_REFERENCE_THRESHOLDS[key]);
+    const score = Number(value);
+    if (Number.isFinite(minimum) && Number.isFinite(score) && score < minimum)
+      findings.push(
+        `rendered-reference dimension ${key} scored ${score} and must reach ${minimum}.`,
+      );
+  }
+  return findings;
+}
+
 function candidateFindings(candidate) {
   return unique([
     ...(candidate?.failures || []),
@@ -64,6 +87,7 @@ function candidateFindings(candidate) {
     ...(candidate?.referenceFidelity?.renderedVisualFindings || []).map(
       (item) => item.message || item.code || "Reference contract mismatch.",
     ),
+    ...dimensionFindings(candidate),
   ]);
 }
 
@@ -184,11 +208,15 @@ function repairPriority(report, candidateId) {
   return scores.length ? Math.min(...scores) : Number.NEGATIVE_INFINITY;
 }
 
-function lowestScoreFirst(report, targets) {
+// The per-candidate repair budget is scarce, so the loop repairs the
+// candidate closest to passing the measured gates first. Repairing the
+// weakest candidate first historically spent every cycle on candidates that
+// could not close a twenty-point gap and left the leader unrepaired.
+function closestToPassingFirst(report, targets) {
   return [...targets].sort((left, right) => {
     const scoreDelta =
-      repairPriority(report, left.candidateId) -
-      repairPriority(report, right.candidateId);
+      repairPriority(report, right.candidateId) -
+      repairPriority(report, left.candidateId);
     return scoreDelta || left.candidateId.localeCompare(right.candidateId);
   });
 }
@@ -332,23 +360,50 @@ function verifiedHumanFeedbackResults(audit, expectedItems, candidateId) {
 }
 
 async function readCandidate(candidateDir) {
-  const [metadata, contentManifest, experience, styles, motion] =
-    await Promise.all([
-      readJson(path.join(candidateDir, "metadata.json")),
-      readJson(path.join(candidateDir, "content-manifest.json")),
-      fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
-      fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
-      fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
-    ]);
+  const [
+    metadata,
+    contentManifest,
+    experience,
+    styles,
+    motion,
+    servicePage,
+    locationPage,
+    servicesIndexPage,
+  ] = await Promise.all([
+    readJson(path.join(candidateDir, "metadata.json")),
+    readJson(path.join(candidateDir, "content-manifest.json")),
+    fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
+    fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
+    fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
+    fs.readFile(path.join(candidateDir, "ServicePage.jsx"), "utf8").catch(() => ""),
+    fs.readFile(path.join(candidateDir, "LocationPage.jsx"), "utf8").catch(() => ""),
+    fs.readFile(path.join(candidateDir, "ServicesIndexPage.jsx"), "utf8").catch(() => ""),
+  ]);
   return {
     metadata,
     contentManifest,
     content: contentManifest.values || {},
-    files: { experience, styles, motion },
+    files: {
+      experience,
+      styles,
+      motion,
+      ...(servicePage.trim() ? { servicePage } : {}),
+      ...(locationPage.trim() ? { locationPage } : {}),
+      ...(servicesIndexPage.trim() ? { servicesIndexPage } : {}),
+    },
   };
 }
 
-function normalizeRepair(value) {
+/**
+ * Normalize a complete-file repair response. The homepage files are required;
+ * authored inner pages fall back to their current source when the response
+ * omits them or returns an empty string.
+ *
+ * @param {Record<string, any>} value
+ * @param {Record<string, any>} [currentFiles]
+ * @returns {Record<string, string>}
+ */
+export function normalizeRepair(value, currentFiles = {}) {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("Creative repair returned an invalid file bundle.");
   const normalized = {};
@@ -356,6 +411,12 @@ function normalizeRepair(value) {
     if (typeof value[key] !== "string" || !value[key].trim())
       throw new Error(`Creative repair returned no ${key} source.`);
     normalized[key] = value[key].replace(/[—–]/gu, "-").trim();
+  }
+  for (const key of ["servicePage", "locationPage", "servicesIndexPage"]) {
+    if (typeof value[key] === "string" && value[key].trim())
+      normalized[key] = value[key].replace(/[—–]/gu, "-").trim();
+    else if (typeof currentFiles[key] === "string" && currentFiles[key].trim())
+      normalized[key] = currentFiles[key];
   }
   return normalized;
 }
@@ -366,7 +427,7 @@ function normalizeRepair(value) {
 
 /**
  * @param {string} candidateDir
- * @param {{experience?: string, styles?: string, motion?: string}} files
+ * @param {{experience?: string, styles?: string, motion?: string, servicePage?: string, locationPage?: string, servicesIndexPage?: string}} files
  * @param {{fsImpl?: RepairFs}} [options]
  * @returns {Promise<void>}
  */
@@ -389,6 +450,16 @@ export async function writeCandidate(
     "styles.css": files.styles,
     "motion.js": files.motion,
   };
+  if (typeof files.servicePage === "string" && files.servicePage.trim())
+    map["ServicePage.jsx"] = files.servicePage;
+  if (typeof files.locationPage === "string" && files.locationPage.trim())
+    map["LocationPage.jsx"] = files.locationPage;
+  if (
+    typeof files.servicesIndexPage === "string" &&
+    files.servicesIndexPage.trim()
+  )
+    map["ServicesIndexPage.jsx"] = files.servicesIndexPage;
+  const transactionFiles = Object.keys(map);
   const backedUp = [];
   const installed = [];
   let preserveBackup = false;
@@ -398,7 +469,7 @@ export async function writeCandidate(
     for (const [name, content] of Object.entries(map))
       await fsImpl.writeFile(path.join(staging, name), `${content.trim()}\n`);
 
-    for (const name of REPAIR_FILES) {
+    for (const name of transactionFiles) {
       await fsImpl.rename(
         path.join(candidateDir, name),
         path.join(backup, name),
@@ -406,7 +477,7 @@ export async function writeCandidate(
       backedUp.push(name);
     }
 
-    for (const name of REPAIR_FILES) {
+    for (const name of transactionFiles) {
       await fsImpl.rename(
         path.join(staging, name),
         path.join(candidateDir, name),
@@ -656,8 +727,10 @@ export async function defaultRepairCandidate({
   let validated;
   try {
     const modelRepaired = humanReview
-      ? applyCreativeRepairEdits(files, repairResponse?.edits)
-      : normalizeRepair(repairResponse);
+      ? applyCreativeRepairEdits(files, repairResponse?.edits, {
+          allowInnerPages: false,
+        })
+      : normalizeRepair(repairResponse, files);
     if (humanReview)
       assertCreativeRevisionScope(files, modelRepaired, creativeRepairScope);
     const repaired = {
@@ -1089,7 +1162,7 @@ export async function runRenderedCreativeRepair({
               directory: reportCandidate(report, target.candidateId)?.directory,
             }))
             .filter((target) => target.candidate);
-      const target = lowestScoreFirst(report, repairTargets)[0];
+      const target = closestToPassingFirst(report, repairTargets)[0];
       if (!target)
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
@@ -1285,7 +1358,7 @@ export async function runRenderedCreativeRepair({
             "Production promotion is not ready. Preserve the assigned Reference DNA and repair the selected candidate's remaining promotion blockers.",
         });
       }
-      const target = lowestScoreFirst(
+      const target = closestToPassingFirst(
         report,
         targets.filter(
           (item) => (cycleUse.get(item.candidateId) || 0) < cycleLimit,

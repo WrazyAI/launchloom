@@ -1,6 +1,12 @@
 export const AUTHORING_STAGE_BUDGETS = Object.freeze({
   contract: Object.freeze({ maxTokens: 24_000, timeoutMs: 5 * 60_000 }),
   experience: Object.freeze({ maxTokens: 48_000, timeoutMs: 8 * 60_000 }),
+  // Service, location, and services-index pages are authored as additional
+  // pages of the same visual system, so they get real composition budgets
+  // instead of reusing the generic inner template.
+  service: Object.freeze({ maxTokens: 32_000, timeoutMs: 6 * 60_000 }),
+  location: Object.freeze({ maxTokens: 32_000, timeoutMs: 6 * 60_000 }),
+  "service-index": Object.freeze({ maxTokens: 24_000, timeoutMs: 5 * 60_000 }),
   styles: Object.freeze({ maxTokens: 40_000, timeoutMs: 8 * 60_000 }),
   motion: Object.freeze({ maxTokens: 24_000, timeoutMs: 5 * 60_000 }),
 });
@@ -17,6 +23,18 @@ export const REFERENCE_PROVENANCE_OUTPUT_CONTRACT = [
   "REFERENCE PROVENANCE BOUNDARY",
   "The reference source, source name, URL, rights and attribution are research metadata only.",
   "Never render them in visitor-facing copy, page titles or descriptions, Open Graph metadata, structured data, image alt text, link labels, or credits; they are not client business facts.",
+].join("\n");
+
+export const CLIENT_PALETTE_ROLE_CONTRACT = [
+  "CLIENT PALETTE ROLE CONTRACT",
+  "Map the client visual brief palette to page surfaces by role:",
+  "- surfaceColor is the dominant page surface. The page body and the large content fields use it.",
+  "- heroColor is the opening hero surface. It stays distinct from the page surface.",
+  "- brandSurfaceColor and brandSurfaceTextColor are limited brand bands, such as one conversion band or the footer, and never the dominant page surface.",
+  "- primaryColor and contrastColor are the action and accent pair for buttons, links, and small marks.",
+  "- inkColor, mutedColor, and lineColor carry body type, secondary type, and rules.",
+  "When the assigned reference's own surface direction conflicts with the client brief, the brief wins on surfaces while the reference keeps its composition, geometry, and hierarchy.",
+  "A brand color used as the dominant page surface, or an inverted light/dark direction, fails the palette-adherence gate.",
 ].join("\n");
 
 export function completionLimitRequestField(tokens) {
@@ -113,6 +131,11 @@ export function referenceImplementationChecklist(referenceDna) {
     })
     .filter(Boolean);
 
+  const imageIndependentGuardrail =
+    topology.hero === "type-led-statement" ||
+    /without photography|image[- ]independent/iu.test(
+      String(referenceDna.imageTreatment?.mode || ""),
+    );
   const referenceMarkers = [
     ["data-hero-geometry", referenceDna.heroGeometry?.mode, "the hero element"],
     ["data-navigation-geometry", referenceDna.navigationGeometry?.mode, "the visible nav element"],
@@ -145,6 +168,12 @@ export function referenceImplementationChecklist(referenceDna) {
           "REFERENCE ART-DIRECTION CONTRACT (HARD REQUIREMENT):",
           ...artDirectionRequirements,
           "Use supplied client imagery within these assigned visual roles. When the same client assets are reused across candidate routes, differentiate them through reference-led crop, layering, sequencing, surface treatment, color treatment, and spatial choreography. Do not revert to a conventional text/image split or card grid merely because the underlying assets are shared.",
+        ]
+      : []),
+    ...(imageIndependentGuardrail
+      ? [
+          "IMAGE-INDEPENDENT REFERENCE GUARDRAIL (HARD REQUIREMENT):",
+          "This reference carries hierarchy with typography, rules, tables, and ledgers rather than photography. Do not place sealed photo tokens as decorative chapter filler, background washes, or inside aria-hidden figures. Use an image only where a chapter needs a real content image, give it a specific descriptive alt, keep it subordinate to the type-led hierarchy, and otherwise carry that chapter without imagery.",
         ]
       : []),
     ...(acceptanceChecks.length

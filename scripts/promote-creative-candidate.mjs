@@ -1,8 +1,27 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { validateCandidateManifest } from "./creative-compiler.mjs";
-import { normalizeCreativeExperienceLinks } from "./creative-source-safety.mjs";
 import { validateProductionCandidateFiles } from "./production-experience-author.mjs";
+import {
+  assertCreativeInnerPageSource,
+  assertCreativeServicePageSource,
+  normalizeCreativeExperienceLinks,
+} from "./creative-source-safety.mjs";
+
+const SERVICE_PAGE_FALLBACK = `export default function ServicePage(_props) {
+  return null;
+}
+`;
+
+const LOCATION_PAGE_FALLBACK = `export default function LocationPage(_props) {
+  return null;
+}
+`;
+
+const SERVICES_INDEX_FALLBACK = `export default function ServicesIndexPage(_props) {
+  return null;
+}
+`;
 
 function argsFrom(argv) {
   return Object.fromEntries(
@@ -88,6 +107,44 @@ export async function promoteCreativeCandidate({
     styles: await fs.readFile(path.join(source, "styles.css"), "utf8"),
     motion: await fs.readFile(path.join(source, "motion.js"), "utf8"),
   };
+  const servicePageSource = await fs
+    .readFile(path.join(source, "ServicePage.jsx"), "utf8")
+    .catch(() => "");
+  if (servicePageSource.trim()) {
+    const servicePage = normalizeCreativeExperienceLinks(servicePageSource);
+    assertCreativeServicePageSource(servicePage, {
+      candidateId: candidateManifest.candidateId,
+    });
+    files.servicePage = servicePage;
+  }
+  const locationPageSource = await fs
+    .readFile(path.join(source, "LocationPage.jsx"), "utf8")
+    .catch(() => "");
+  if (locationPageSource.trim()) {
+    const locationPage = normalizeCreativeExperienceLinks(locationPageSource);
+    assertCreativeInnerPageSource(locationPage, {
+      candidateId: candidateManifest.candidateId,
+      pageLabel: "LocationPage.jsx",
+      rootMarker: "data-location-page",
+      requireServiceRoute: true,
+    });
+    files.locationPage = locationPage;
+  }
+  const servicesIndexSource = await fs
+    .readFile(path.join(source, "ServicesIndexPage.jsx"), "utf8")
+    .catch(() => "");
+  if (servicesIndexSource.trim()) {
+    const servicesIndexPage = normalizeCreativeExperienceLinks(
+      servicesIndexSource,
+    );
+    assertCreativeInnerPageSource(servicesIndexPage, {
+      candidateId: candidateManifest.candidateId,
+      pageLabel: "ServicesIndexPage.jsx",
+      rootMarker: "data-services-index",
+      requireServiceRoute: true,
+    });
+    files.servicesIndexPage = servicesIndexPage;
+  }
   const contentManifest = providedContentManifest || await fs
     .readFile(path.join(source, "content-manifest.json"), "utf8")
     .then(JSON.parse)
@@ -100,6 +157,8 @@ export async function promoteCreativeCandidate({
     { preview },
   );
 
+
+
   const selected = path.resolve(root, "src/generated-experiences/selected");
   await fs.mkdir(selected, { recursive: true });
   if (preserveSelectedManifest)
@@ -108,6 +167,20 @@ export async function promoteCreativeCandidate({
     fs.writeFile(path.join(selected, "Experience.jsx"), validatedFiles.experience),
     fs.writeFile(path.join(selected, "styles.css"), validatedFiles.styles),
     fs.copyFile(path.join(source, "motion.js"), path.join(selected, "motion.js")),
+    fs.writeFile(
+      path.join(selected, "ServicePage.jsx"),
+      validatedFiles.servicePage ? `${validatedFiles.servicePage.trim()}\n` : SERVICE_PAGE_FALLBACK,
+    ),
+    fs.writeFile(
+      path.join(selected, "LocationPage.jsx"),
+      validatedFiles.locationPage ? `${validatedFiles.locationPage.trim()}\n` : LOCATION_PAGE_FALLBACK,
+    ),
+    fs.writeFile(
+      path.join(selected, "ServicesIndexPage.jsx"),
+      validatedFiles.servicesIndexPage
+        ? `${validatedFiles.servicesIndexPage.trim()}\n`
+        : SERVICES_INDEX_FALLBACK,
+    ),
   ]);
   if (!preserveSelectedManifest)
     await fs.writeFile(
@@ -127,6 +200,9 @@ export async function promoteCreativeCandidate({
     referenceDnaVersion: candidateManifest.referenceDna?.version || null,
     contractHash: candidateManifest.routeFingerprint,
     fingerprint: candidateManifest.fingerprint,
+    servicePage: Boolean(files.servicePage),
+    locationPage: Boolean(files.locationPage),
+    servicesIndex: Boolean(files.servicesIndexPage),
     ...(Number.isFinite(visualScore) ? { visualScore } : {}),
     ...(Number.isFinite(distinctivenessScore) ? { distinctivenessScore } : {}),
     selectionMode,

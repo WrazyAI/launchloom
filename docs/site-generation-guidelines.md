@@ -124,7 +124,14 @@ authentic customer proof, recent work, coverage, practical questions, quote.
 ## Local SEO pages
 
 Create substantive service pages that answer a real customer question and link
-to related services and the primary action. Create location pages only for
+to related services and the primary action. On a creative-candidate site,
+service detail pages, location pages for listed home-service areas, and the
+services index are authored from the same Reference DNA, design contract, and
+stylesheet as the homepage, so they keep the same palette, typography,
+surfaces, navigation language, and composition rhythm; their rendered canvas
+and heading identity are verified against the homepage before promotion. The
+deterministic inner template remains only for legacy and experience-pack sites.
+Create location pages only for
 submitted service areas. Each location page must state coverage truthfully and
 provide useful local context from verified facts. Do not multiply thin pages
 by combining every service with every city or create interchangeable city-swap

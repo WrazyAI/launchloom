@@ -179,6 +179,15 @@ describe("reusable creative candidate validation", () => {
     };
 
     expect(assertReusablePromptEvidence(promptEvidence, options)).toBe(true);
+    const withInnerStages = structuredClone(promptEvidence);
+    for (const stage of ["service", "service-index", "location"])
+      withInnerStages.records.push({ ...records[0], stage });
+    expect(assertReusablePromptEvidence(withInnerStages, options)).toBe(true);
+    const missingBaseStage = structuredClone(withInnerStages);
+    missingBaseStage.records = missingBaseStage.records.filter((record) => record.stage !== "experience");
+    expect(() => assertReusablePromptEvidence(missingBaseStage, options))
+      .toThrow(/omits a required authoring stage/iu);
+
     const missingMobile = structuredClone(promptEvidence);
     missingMobile.records[0].evidence.pop();
     expect(() => assertReusablePromptEvidence(missingMobile, options))

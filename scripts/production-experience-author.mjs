@@ -10,11 +10,15 @@ import {
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
 } from "./creative-authoring-output.mjs";
+import {
+  assertCreativeInnerPageSource,
+  assertCreativeServicePageSource,
+} from "./creative-source-safety.mjs";
 import { validateReferenceDna } from "./reference-dna.mjs";
 import { validateReferenceCandidate } from "./reference-fidelity.mjs";
 
 /**
- * @typedef {"contract" | "experience" | "styles" | "motion"} AuthorStage
+ * @typedef {"contract" | "experience" | "service" | "location" | "service-index" | "styles" | "motion"} AuthorStage
  * @typedef {{
  *   stage: AuthorStage;
  *   route: Record<string, any>;
@@ -24,6 +28,9 @@ import { validateReferenceCandidate } from "./reference-fidelity.mjs";
  *   rules: string;
  *   designContract?: string;
  *   experienceSource?: string;
+ *   servicePageSource?: string;
+ *   locationPageSource?: string;
+ *   servicesIndexSource?: string;
  *   validationError?: string;
  *   previousSource?: string;
  * }} AuthorStageRequest
@@ -149,6 +156,70 @@ const urlBearingJsxAttributes = new Set([
   "xlinkhref",
   "xmlbase",
 ]);
+
+/**
+ * The render-time shape a service page receives beside the sealed homepage
+ * content. The host builds this from the verified site configuration and
+ * normalizes optional fields, so every property below is always present.
+ */
+export function creativeServicePageShape() {
+  return {
+    service: {
+      name: "string",
+      slug: "string",
+      description: "string",
+      support: {
+        scope: "string",
+        preparation: "string",
+        nextStep: "string",
+      },
+      related: [{ name: "string", slug: "string", description: "string" }],
+      process: ["string"],
+      faqs: [{ question: "string", answer: "string" }],
+      images: { context: "string?" },
+    },
+  };
+}
+
+const servicePageRequiredPaths = [
+  "name",
+  "slug",
+  "description",
+  "support.scope",
+  "support.preparation",
+  "support.nextStep",
+  "related",
+  "process",
+  "faqs",
+];
+
+/**
+ * The render-time shape a location page receives beside the sealed homepage
+ * content. The host builds this from the verified site configuration and
+ * normalizes optional fields, so every property below is always present.
+ */
+export function creativeLocationPageShape() {
+  return {
+    location: {
+      name: "string",
+      slug: "string",
+      description: "string",
+      localNote: "string",
+      services: [{ name: "string", slug: "string", description: "string" }],
+      otherAreas: [{ name: "string", slug: "string" }],
+      images: { context: "string?" },
+    },
+  };
+}
+
+const locationPageRequiredPaths = [
+  "name",
+  "slug",
+  "description",
+  "localNote",
+  "services",
+  "otherAreas",
+];
 
 function stableJson(value) {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
@@ -427,12 +498,12 @@ function functionHasParameter(node, name) {
   );
 }
 
-function functionUsesUnboundContent(node) {
+function functionUsesUnboundIdentifier(node, identifierName) {
   let found = false;
   const visit = (child) => {
     if (found) return;
     if (child !== node && ts.isFunctionLike(child)) return;
-    if (ts.isIdentifier(child) && child.text === "content") {
+    if (ts.isIdentifier(child) && child.text === identifierName) {
       const parent = child.parent;
       if (
         (ts.isPropertyAccessExpression(parent) && parent.name === child) ||
@@ -448,23 +519,29 @@ function functionUsesUnboundContent(node) {
   return found;
 }
 
-function scopeErrorFor(source, route) {
+function scopeErrorFor(
+  source,
+  route,
+  { fileName = "Experience.jsx", rootComponent = "Experience", identifiers = ["content"] } = {},
+) {
   const file = ts.createSourceFile(
-    "Experience.jsx",
+    fileName,
     source,
     ts.ScriptTarget.Latest,
     true,
     ts.ScriptKind.JSX,
   );
   for (const statement of file.statements) {
-    if (
-      ts.isFunctionDeclaration(statement) &&
-      statement.name &&
-      statement.name.text !== "Experience" &&
-      !functionHasParameter(statement, "content") &&
-      functionUsesUnboundContent(statement)
-    )
-      return `Candidate ${route.id} component ${statement.name.text} references content without receiving it.`;
+    if (!ts.isFunctionDeclaration(statement) || !statement.name) continue;
+    const componentName = statement.name.text;
+    for (const identifier of identifiers) {
+      if (componentName === rootComponent) continue;
+      if (
+        !functionHasParameter(statement, identifier) &&
+        functionUsesUnboundIdentifier(statement, identifier)
+      )
+        return `Candidate ${route.id} component ${componentName} references ${identifier} without receiving it.`;
+    }
   }
 }
 
@@ -1147,17 +1224,166 @@ function isPrefixedContactExpression(expression, prefix, tokenPath, file, source
   );
 }
 
-function isServiceRouteExpression(expression, file, source) {
+function lexicalScope(node) {
+  for (let current = node?.parent; current; current = current.parent)
+    if (
+      ts.isBlock(current) ||
+      ts.isSourceFile(current) ||
+      ts.isFunctionLike(current) ||
+      ts.isForStatement(current) ||
+      ts.isForInStatement(current) ||
+      ts.isForOfStatement(current) ||
+      ts.isCatchClause(current)
+    )
+      return current;
+  return null;
+}
+
+function bindingPathForName(bindingName, name, prefix = []) {
+  if (ts.isIdentifier(bindingName))
+    return bindingName.text === name ? prefix : null;
+  if (!ts.isObjectBindingPattern(bindingName)) return null;
+  for (const element of bindingName.elements) {
+    if (element.dotDotDotToken || ts.isOmittedExpression(element)) continue;
+    const property = element.propertyName || element.name;
+    const propertyName = ts.isIdentifier(property) || ts.isStringLiteral(property)
+      ? property.text
+      : null;
+    if (!propertyName) continue;
+    const result = bindingPathForName(element.name, name, [
+      ...prefix,
+      propertyName,
+    ]);
+    if (result) return result;
+  }
+  return null;
+}
+
+function isScopeBoundary(node) {
+  return (
+    ts.isBlock(node) ||
+    ts.isSourceFile(node) ||
+    ts.isFunctionLike(node) ||
+    ts.isForStatement(node) ||
+    ts.isForInStatement(node) ||
+    ts.isForOfStatement(node) ||
+    ts.isCatchClause(node)
+  );
+}
+
+function visibleBinding(name, use) {
+  for (let scope = use?.parent; scope; scope = scope.parent) {
+    if (!isScopeBoundary(scope)) continue;
+    const declarations = [];
+    const visit = (node) => {
+      if (node !== scope && isScopeBoundary(node)) return;
+      if (
+        ts.isVariableDeclaration(node) &&
+        lexicalScope(node) === scope &&
+        bindingPathForName(node.name, name)
+      )
+        declarations.push({ kind: "variable", node });
+      else if (
+        ts.isParameter(node) &&
+        node.parent === scope &&
+        bindingPathForName(node.name, name)
+      )
+        declarations.push({ kind: "parameter", node });
+      else if (
+        ((ts.isFunctionDeclaration(node) && node.name) ||
+          (ts.isClassDeclaration(node) && node.name)) &&
+        node.name.text === name &&
+        lexicalScope(node) === scope
+      )
+        declarations.push({ kind: "other", node });
+      ts.forEachChild(node, visit);
+    };
+    visit(scope);
+    if (declarations.length) return declarations.length === 1 ? declarations[0] : null;
+  }
+  return null;
+}
+
+function isSealedServiceCollectionExpression(expression, file, seen = new Set()) {
+  if (!expression) return false;
+  const node = unwrapUrlExpression(expression);
+  const directPath = expressionPath(node, file);
+  if (directPath === "content.services") return true;
+  if (
+    ts.isCallExpression(node) &&
+    ts.isPropertyAccessExpression(node.expression) &&
+    ["filter", "slice"].includes(node.expression.name.text)
+  )
+    return isSealedServiceCollectionExpression(
+      node.expression.expression,
+      file,
+      seen,
+    );
+  if (!ts.isIdentifier(node) || seen.has(node.text)) return false;
+  const binding = visibleBinding(node.text, node);
+  if (!binding || binding.kind === "other") return false;
+  seen.add(node.text);
+  const bindingPath = bindingPathForName(binding.node.name, node.text);
+  if (binding.kind === "parameter")
+    return bindingPath?.join(".") === "content.services";
+  if (bindingPath?.join(".") === "services")
+    return (
+      ts.isIdentifier(binding.node.initializer) &&
+      binding.node.initializer.text === "content"
+    );
+  if (bindingPath?.length) return false;
+  return isSealedServiceCollectionExpression(
+    binding.node.initializer,
+    file,
+    seen,
+  );
+}
+
+function isSealedServiceSlug(expression, file) {
+  const slugPath = expressionPath(expression, file);
+  const match = /^([A-Za-z_$][\w$]*)\.slug$/u.exec(slugPath);
+  if (!match) return false;
+  const serviceName = match[1];
+  let current = expression;
+  while (current && current !== file) {
+    if (ts.isArrowFunction(current) || ts.isFunctionExpression(current)) {
+      const hasServiceParameter = current.parameters.some(
+        (parameter) =>
+          ts.isIdentifier(parameter.name) &&
+          parameter.name.text === serviceName,
+      );
+      if (hasServiceParameter) {
+        const call = unwrapUrlExpression(current.parent);
+        if (
+          ts.isCallExpression(call) &&
+          ts.isPropertyAccessExpression(call.expression) &&
+          call.expression.name.text === "map" &&
+          call.arguments.some(
+            (argument) => unwrapUrlExpression(argument) === current,
+          ) &&
+          isSealedServiceCollectionExpression(
+            call.expression.expression,
+            file,
+          )
+        )
+          return true;
+      }
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
+function isServiceRouteExpression(expression, file) {
   const node = unwrapUrlExpression(expression);
   if (!node) return false;
   let valid = false;
+  let slugExpression = null;
   if (ts.isTemplateExpression(node))
-    valid =
-      node.head.text === "/services/" &&
-      node.templateSpans.length === 1 &&
-      expressionPath(node.templateSpans[0].expression, file) ===
-        "service.slug" &&
-      node.templateSpans[0].literal.text === "/";
+    if (node.head.text === "/services/" && node.templateSpans.length === 1) {
+      slugExpression = node.templateSpans[0].expression;
+      valid = node.templateSpans[0].literal.text === "/";
+    }
   if (
     ts.isBinaryExpression(node) &&
     node.operatorToken.kind === ts.SyntaxKind.PlusToken &&
@@ -1167,10 +1393,15 @@ function isServiceRouteExpression(expression, file, source) {
     valid =
       ts.isStringLiteral(node.left.left) &&
       node.left.left.text === "/services/" &&
-      expressionPath(node.left.right, file) === "service.slug" &&
       ts.isStringLiteral(node.right) &&
       node.right.text === "/";
-  return valid && /content\.services\s*\.\s*map\s*\(\s*\(\s*service\s*\)/u.test(source);
+  if (
+    valid &&
+    ts.isBinaryExpression(node) &&
+    ts.isBinaryExpression(node.left)
+  )
+    slugExpression = node.left.right;
+  return valid && isSealedServiceSlug(slugExpression, file);
 }
 
 function staticSpreadUrlKey(property) {
@@ -1261,7 +1492,7 @@ function validateAuthoredUrlAttributes(source, route, content) {
             file,
             source,
           ) ||
-          isServiceRouteExpression(expression, file, source)
+          isServiceRouteExpression(expression, file)
         )
           continue;
       }
@@ -2074,6 +2305,244 @@ function referencesContentPath(source, token) {
   return memberBinding.test(source);
 }
 
+function referencesObjectPath(source, root, path) {
+  const [group, member] = String(path).split(".");
+  const rootName = String(root);
+  const access = (suffix) =>
+    new RegExp(`\\b${rootName}\\s*\\??\\s*\\.\\s*${suffix}\\b`, "u").test(
+      source,
+    );
+  const destructuredTop = (name) =>
+    new RegExp(
+      `(?:const|let)\\s*\\{[^}]*\\b${name}\\b[^}]*\\}\\s*=\\s*${rootName}\\b`,
+      "u",
+    ).test(source) ||
+    new RegExp(
+      `\\b${rootName}\\s*:\\s*\\{[^}]*\\b${name}\\b[^}]*\\}`,
+      "u",
+    ).test(source);
+  if (!member) return access(group) || destructuredTop(group);
+  if (access(`${group}\\s*\\??\\s*\\.\\s*${member}`)) return true;
+  if (destructuredTop(group)) {
+    if (
+      new RegExp(`\\b${group}\\s*\\??\\s*\\.\\s*${member}\\b`, "u").test(source)
+    )
+      return true;
+    if (destructuredTop(member)) return true;
+  }
+  if (
+    new RegExp(
+      `(?:const|let)\\s*\\{[^}]*\\b${member}\\b[^}]*\\}\\s*=\\s*${rootName}\\s*\\??\\s*\\.\\s*${group}\\b`,
+      "u",
+    ).test(source) ||
+    new RegExp(
+      `(?:const|let)\\s*\\{[^}]*\\b${member}\\b[^}]*\\}\\s*=\\s*${group}\\b`,
+      "u",
+    ).test(source)
+  )
+    return true;
+  return false;
+}
+
+function validateInnerPageSource({
+  source,
+  route,
+  content,
+  file,
+  rootComponent,
+  identifiers,
+  markers = [],
+  pathRoot = "",
+  requiredPaths = [],
+  requiredContentPaths = [],
+}) {
+  syntaxErrorFor(source, route, file, true);
+  const scopeError = scopeErrorFor(source, route, {
+    fileName: file,
+    rootComponent,
+    identifiers,
+  });
+  if (scopeError) throw new Error(scopeError);
+  for (const specifier of importSpecifiers(source))
+    if (!allowedImports.has(specifier))
+      throw new Error(
+        `Candidate ${route.id} uses unapproved import ${specifier}.`,
+      );
+  const forbidden = [
+    [/https?:\/\/|(?:src|href)\s*=\s*["']\/\//iu, "remote URL"],
+    [/\bfetch\s*\(/iu, "network request"],
+    [/\bXMLHttpRequest\b|\bWebSocket\b/iu, "network primitive"],
+    [/\beval\s*\(|\bnew\s+Function\b/iu, "dynamic code"],
+    [/<canvas\b|\bthree(?:\s*\.?\s*js)\b/iu, "unapproved rendering engine"],
+    [/<script\b/iu, "script element"],
+    [
+      /<style\b|\sstyle\s*=|\.\.\.\s*\{\s*(?:style\b|\[[^\]]*style[^\]]*\])\s*:/iu,
+      "inline styles; visual rules belong in styles.css",
+    ],
+    [/—/u, "em dash"],
+  ];
+  for (const [pattern, label] of forbidden)
+    if (pattern.test(source))
+      throw new Error(
+        `Candidate ${route.id} ${file} contains forbidden ${label}.`,
+      );
+  for (const marker of markers)
+    if (!source.includes(marker))
+      throw new Error(
+        `Candidate ${route.id} ${file} is missing the ${marker} region marker.`,
+      );
+  if (!/<section\b[^>]*\bid\s*=\s*["']contact["']/u.test(source))
+    throw new Error(
+      `Candidate ${route.id} ${file} must include a contact section with id="contact".`,
+    );
+  const { elements } = collectJsxElements(source);
+  const headings = elements.filter(
+    ({ opening }) => jsxOpeningName(opening).toLowerCase() === "h1",
+  );
+  if (headings.length !== 1)
+    throw new Error(
+      `Candidate ${route.id} ${file} must render exactly one H1 heading.`,
+    );
+  if (
+    !elements.some(({ opening }) => jsxOpeningName(opening).toLowerCase() === "main")
+  )
+    throw new Error(
+      `Candidate ${route.id} ${file} must render a main landmark.`,
+    );
+  for (const path of requiredPaths)
+    if (!referencesObjectPath(source, pathRoot, path))
+      throw new Error(
+        `Candidate ${route.id} ${file} is missing required sealed binding ${pathRoot}.${path}.`,
+      );
+  for (const token of requiredContentPaths)
+    if (!referencesContentPath(source, token))
+      throw new Error(
+        `Candidate ${route.id} ${file} is missing required sealed binding ${token}.`,
+      );
+  validateContentBoundRuntimeHelpers(source, route);
+  validateImageRoleReuse(source, route, content);
+  for (const { opening } of elements) {
+    if (jsxOpeningName(opening).toLowerCase() !== "img") continue;
+    const altAttribute = jsxAttribute(opening, "alt");
+    const initializer = altAttribute?.initializer;
+    const expression =
+      initializer && ts.isJsxExpression(initializer)
+        ? initializer.expression
+        : null;
+    const invalidExpression =
+      initializer &&
+      ts.isJsxExpression(initializer) &&
+      (!expression ||
+        expression.kind === ts.SyntaxKind.NullKeyword ||
+        (ts.isIdentifier(expression) && expression.text === "undefined"));
+    if (!altAttribute || !initializer || invalidExpression)
+      throw new Error(
+        `Candidate ${route.id} ${file} has an image that must have a usable alt attribute; use alt="" only for decorative or redundant imagery.`,
+      );
+  }
+  const literals = unsupportedClaimLiterals(source);
+  if (literals.length)
+    throw new Error(
+      `Candidate ${route.id} ${file} contains an unsupported claim literal: ${literals[0]}`,
+    );
+  const embeddedFact = scalarContentValues(content).find((value) =>
+    source.includes(value),
+  );
+  if (embeddedFact)
+    throw new Error(
+      `Candidate ${route.id} ${file} hardcodes sealed content instead of using a token: ${embeddedFact}`,
+    );
+}
+
+/**
+ * Validate an authored service detail page. The page renders the same sealed
+ * site content as the homepage plus one service record, so it must expose the
+ * shared router, conversion, and design-system contracts for the rendered
+ * identity checks in the creative bakeoff.
+ */
+export function validateServicePage(source, route, content) {
+  validateInnerPageSource({
+    source,
+    route,
+    content,
+    file: "ServicePage.jsx",
+    rootComponent: "ServicePage",
+    identifiers: ["content", "service"],
+    markers: [
+      "data-service-hero",
+      "data-service-support",
+      "data-service-related",
+    ],
+    pathRoot: "service",
+    requiredPaths: servicePageRequiredPaths,
+    requiredContentPaths: ["content.brand.name"],
+  });
+  assertCreativeServicePageSource(source, {
+    candidateId: route.id || "candidate",
+  });
+}
+
+/**
+ * Validate an authored location detail page. The page renders the same sealed
+ * site content as the homepage plus one location record, and must keep the
+ * coverage language truthful for the listed service area.
+ */
+export function validateLocationPage(source, route, content) {
+  validateInnerPageSource({
+    source,
+    route,
+    content,
+    file: "LocationPage.jsx",
+    rootComponent: "LocationPage",
+    identifiers: ["content", "location"],
+    markers: [
+      "data-location-hero",
+      "data-location-coverage",
+      "data-location-related",
+    ],
+    pathRoot: "location",
+    requiredPaths: locationPageRequiredPaths,
+    requiredContentPaths: ["content.brand.name"],
+  });
+  assertCreativeInnerPageSource(source, {
+    candidateId: route.id || "candidate",
+    pageLabel: "LocationPage.jsx",
+    rootMarker: "data-location-page",
+    requireServiceRoute: true,
+  });
+}
+
+/**
+ * Validate an authored services index. The page renders entirely from the
+ * sealed homepage content and must expose the confirmed service list as real
+ * /services/ routes with the shared conversion path.
+ */
+export function validateServicesIndexPage(source, route, content) {
+  validateInnerPageSource({
+    source,
+    route,
+    content,
+    file: "ServicesIndexPage.jsx",
+    rootComponent: "ServicesIndexPage",
+    identifiers: ["content"],
+    markers: ["data-services-index-hero", "data-services-index-list"],
+    pathRoot: "",
+    requiredPaths: [],
+    requiredContentPaths: [
+      "content.copy.servicesHeading",
+      "content.copy.servicesIntro",
+      "content.services",
+      "content.brand.name",
+    ],
+  });
+  assertCreativeInnerPageSource(source, {
+    candidateId: route.id || "candidate",
+    pageLabel: "ServicesIndexPage.jsx",
+    rootMarker: "data-services-index",
+    requireServiceRoute: true,
+  });
+}
+
 function validateExperience(source, route, content, visualBrief = {}) {
   syntaxErrorFor(source, route, "Experience.jsx", true);
   const scopeError = scopeErrorFor(source, route);
@@ -2292,7 +2761,7 @@ function validateMotion(source, route) {
 }
 
 /**
- * @param {{files?: {experience?: string, styles?: string, motion?: string}, route?: Record<string, any>, content?: Record<string, any>, visualBrief?: Record<string, any>}} [options]
+ * @param {{files?: {experience?: string, styles?: string, motion?: string, servicePage?: string, locationPage?: string, servicesIndexPage?: string}, route?: Record<string, any>, content?: Record<string, any>, visualBrief?: Record<string, any>}} [options]
  * @returns {{files: {experience: string, styles: string, motion: string}, referenceFidelity: Record<string, any> | null}}
  */
 export function validateProductionCandidateFiles({
@@ -2304,6 +2773,11 @@ export function validateProductionCandidateFiles({
   const experience = normalizeAuthoredSource(String(files?.experience || ""));
   const styles = normalizeAuthoredSource(String(files?.styles || ""));
   const motion = normalizeAuthoredSource(String(files?.motion || ""));
+  const servicePage = normalizeAuthoredSource(String(files?.servicePage || ""));
+  const locationPage = normalizeAuthoredSource(String(files?.locationPage || ""));
+  const servicesIndexPage = normalizeAuthoredSource(
+    String(files?.servicesIndexPage || ""),
+  );
   if (!experience || !styles || !motion)
     throw new Error("A complete creative candidate file bundle is required.");
   const referenceDna = route.referenceDna
@@ -2312,6 +2786,10 @@ export function validateProductionCandidateFiles({
   validateExperience(experience, route, content, visualBrief);
   validateStyles(styles, route);
   validateMotion(motion, route);
+  if (servicePage) validateServicePage(servicePage, route, content);
+  if (locationPage) validateLocationPage(locationPage, route, content);
+  if (servicesIndexPage)
+    validateServicesIndexPage(servicesIndexPage, route, content);
   const isolatedStyles = namespaceCreativeCss(styles);
   let referenceFidelity = null;
   if (referenceDna) {
@@ -2327,7 +2805,14 @@ export function validateProductionCandidateFiles({
       );
   }
   return {
-    files: { experience, styles: isolatedStyles, motion },
+    files: {
+      experience,
+      styles: isolatedStyles,
+      motion,
+      ...(servicePage ? { servicePage } : {}),
+      ...(locationPage ? { locationPage } : {}),
+      ...(servicesIndexPage ? { servicesIndexPage } : {}),
+    },
     referenceFidelity,
   };
 }
@@ -2653,6 +3138,57 @@ export async function authorExperienceCandidates({
             `Reference fidelity failed for ${route.id}: ${fidelity.findings.map((item) => item.message).join(" | ")}`,
           );
       }
+      const servicePageOutput = await generateValidatedSource({
+        generate: limitedGenerate,
+        request: {
+          ...base,
+          stage: "service",
+          designContract,
+          experienceSource: experience,
+        },
+        stage: "service",
+        validate: (source, serviceRoute) =>
+          validateServicePage(source, serviceRoute, content),
+      });
+      const servicePage = servicePageOutput.source;
+      complianceRepaired ||= servicePageOutput.repaired;
+      const locations = Array.isArray(site.locations) ? site.locations : [];
+      const authorLocationPage =
+        site.industry === "home-services" && locations.length > 0;
+      let locationPage = "";
+      if (authorLocationPage) {
+        const locationPageOutput = await generateValidatedSource({
+          generate: limitedGenerate,
+          request: {
+            ...base,
+            stage: "location",
+            designContract,
+            experienceSource: experience,
+            servicePageSource: servicePage,
+          },
+          stage: "location",
+          validate: (source, locationRoute) =>
+            validateLocationPage(source, locationRoute, content),
+        });
+        locationPage = locationPageOutput.source;
+        complianceRepaired ||= locationPageOutput.repaired;
+      }
+      const servicesIndexOutput = await generateValidatedSource({
+        generate: limitedGenerate,
+        request: {
+          ...base,
+          stage: "service-index",
+          designContract,
+          experienceSource: experience,
+          servicePageSource: servicePage,
+          locationPageSource: locationPage,
+        },
+        stage: "service-index",
+        validate: (source, serviceIndexRoute) =>
+          validateServicesIndexPage(source, serviceIndexRoute, content),
+      });
+      const servicesIndexPage = servicesIndexOutput.source;
+      complianceRepaired ||= servicesIndexOutput.repaired;
       const [stylesOutput, motionOutput] = await Promise.all([
         generateValidatedSource({
           generate: limitedGenerate,
@@ -2661,6 +3197,9 @@ export async function authorExperienceCandidates({
             stage: "styles",
             designContract,
             experienceSource: experience,
+            servicePageSource: servicePage,
+            locationPageSource: locationPage,
+            servicesIndexSource: servicesIndexPage,
           },
           stage: "styles",
           validate: validateStyles,
@@ -2745,6 +3284,9 @@ export async function authorExperienceCandidates({
         complianceRepaired,
         referenceRepairCycles,
         motionFallback: Boolean(motionOutput.fallback),
+        servicePageAuthored: true,
+        locationPageAuthored: Boolean(locationPage),
+        servicesIndexAuthored: true,
         contentManifestDigest: routeContentManifest.digest,
         contentManifestPath: "content-manifest.json",
         allowedImports: [...allowedImports],
@@ -2780,6 +3322,9 @@ export async function authorExperienceCandidates({
           "content-manifest.json": `${JSON.stringify(routeContentManifest, null, 2)}\n`,
           "contract.json": `${JSON.stringify(contract, null, 2)}\n`,
           "Experience.jsx": `${experience}\n`,
+          "ServicePage.jsx": `${servicePage}\n`,
+          ...(locationPage ? { "LocationPage.jsx": `${locationPage}\n` } : {}),
+          "ServicesIndexPage.jsx": `${servicesIndexPage}\n`,
           "styles.css": `${styles}\n`,
           "motion.js": `${motion}\n`,
           "metadata.json": `${JSON.stringify(metadata, null, 2)}\n`,

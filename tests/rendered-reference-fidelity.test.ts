@@ -634,6 +634,8 @@ describe("rendered reference fidelity", () => {
     expect(textBlocks).toContain("CLIENT VISUAL BRIEF");
     expect(textBlocks).toContain("#f5f0e4");
     expect(textBlocks).toContain("Light tactile craft collage");
+    expect(textBlocks).toContain("CLIENT PALETTE ROLE CONTRACT");
+    expect(textBlocks).toContain("surfaceColor is the dominant page surface");
     expect(textBlocks).toContain(
       "Keep overallScore limited to the assigned reference mechanics",
     );

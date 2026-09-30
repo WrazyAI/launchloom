@@ -20,6 +20,9 @@ describe("creative authoring output budgets", () => {
     expect(AUTHORING_STAGE_BUDGETS).toEqual({
       contract: { maxTokens: 24000, timeoutMs: 300000 },
       experience: { maxTokens: 48000, timeoutMs: 480000 },
+      service: { maxTokens: 32000, timeoutMs: 360000 },
+      location: { maxTokens: 32000, timeoutMs: 360000 },
+      "service-index": { maxTokens: 24000, timeoutMs: 300000 },
       styles: { maxTokens: 40000, timeoutMs: 480000 },
       motion: { maxTokens: 24000, timeoutMs: 300000 },
     });
@@ -87,6 +90,7 @@ describe("creative authoring output budgets", () => {
     expect(checklist).toContain("Mobile hero topology: type-led-statement");
     expect(checklist).toContain("Mobile media relation: copy-leads-opening");
     expect(checklist).toContain("do not carry desktop image occupancy into mobile");
+    expect(checklist).not.toContain("IMAGE-INDEPENDENT REFERENCE GUARDRAIL");
   });
 
   it("keeps type-led desktop repairs from drifting into split-media", () => {
@@ -109,6 +113,25 @@ describe("creative authoring output budgets", () => {
     expect(checklist).toContain(
       "do not mirror that mobile image treatment into a desktop side-by-side media field",
     );
+    expect(checklist).toContain("IMAGE-INDEPENDENT REFERENCE GUARDRAIL");
+    expect(checklist).toContain(
+      "Do not place sealed photo tokens as decorative chapter filler",
+    );
+  });
+
+  it("scopes the image-independent guardrail to DNA that functions without photography", () => {
+    const checklist = referenceImplementationChecklist({
+      sectionSequence: ["hero", "services", "faqs", "contact"],
+      compositionTopology: {
+        hero: "split-media",
+        mediaRelation: "copy-beside-media",
+      },
+      imageTreatment: {
+        mode: "finished rooms and paint sample-like color strips",
+      },
+    });
+
+    expect(checklist).not.toContain("IMAGE-INDEPENDENT REFERENCE GUARDRAIL");
   });
 
   it("gives the author exact Reference DNA marker values consumed by the hard validator", () => {

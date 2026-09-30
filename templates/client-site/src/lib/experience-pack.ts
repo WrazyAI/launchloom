@@ -4,6 +4,7 @@ import type {
   PageSectionType,
   SiteConfig,
 } from "./site";
+import { resolveLocationMap } from "./location-map.mjs";
 
 export type ExperiencePackId =
   "cinematic-narrative" | "bold-utility" | "kinetic-poster";
@@ -121,6 +122,13 @@ export type ExperienceContent = Readonly<{
   process: readonly string[];
   faqs: readonly { question: string; answer: string }[];
   locations: readonly SiteConfig["locations"][number][];
+  locationMap: {
+    available: boolean;
+    address: string;
+    hours: string;
+    directionsHref: string;
+    embedHref: string;
+  };
   coverageHeading: string;
   coverageIntro: string;
   copy: NonNullable<SiteConfig["copy"]>;
@@ -759,6 +767,12 @@ function contentFor(site: SiteConfig): ExperienceContent {
   const eventOrderServices = site.services
     .filter((service) => /cater|cake|event/iu.test(service.name))
     .map((service) => service.name.toLocaleLowerCase());
+  const locationMap = resolveLocationMap({
+    businessName: site.business.name,
+    address: site.business.address,
+    placeId: site.business.placeId,
+    googleMapsUrl: site.business.googleMapsUrl,
+  });
   return {
     brand: {
       name: site.business.name,
@@ -787,6 +801,10 @@ function contentFor(site: SiteConfig): ExperienceContent {
     process: (site.conversion?.process || []).slice(0, 4),
     faqs: (site.conversion?.faqs || []).slice(0, 8),
     locations: site.locations,
+    locationMap: {
+      ...locationMap,
+      hours: site.business.hours,
+    },
     coverageHeading: site.industry === "home-services"
       ? (site.business.serviceAreas.length > 1 ? "Service in nearby communities." : "Service area.")
       : site.industry === "wellness"
@@ -803,8 +821,7 @@ function contentFor(site: SiteConfig): ExperienceContent {
     businessDescription: site.business.description,
     showLocationMap:
       site.business.primaryCta.trim().toLowerCase() === "get directions" &&
-      (Boolean(site.business.placeId?.trim()) ||
-        /(?:^|,\s*)\d+[a-z]?\s+[a-z]/i.test(site.business.address.trim())),
+      locationMap.available,
     hasSocialProof:
       socialProofPoints.length > 0 ||
       fallbackProofPoints.length > 0 ||

@@ -6,6 +6,7 @@ import path from "node:path";
 import {
   collectAvailableScreenshots,
   defaultRepairCandidate,
+  normalizeRepair,
   runRenderedCreativeRepair,
   runVisualGateProcess,
   writeCandidate,
@@ -158,6 +159,35 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+  it("keeps authored inner pages when a repair response omits or empties them", () => {
+    const current = {
+      experience: "experience",
+      styles: "styles",
+      motion: "motion",
+      servicePage: '<main data-service-page><h1>Service</h1></main>',
+      locationPage: '<main data-location-page><h1>Location</h1></main>',
+    };
+    const repaired = normalizeRepair(
+      {
+        experience: "experience-fixed",
+        styles: "styles-fixed",
+        motion: "motion-fixed",
+        servicePage: '<main data-service-page><h1>Service fixed</h1></main>',
+        locationPage: "",
+      },
+      current,
+    );
+    expect(repaired.servicePage).toContain("Service fixed");
+    expect(repaired.locationPage).toBe(current.locationPage);
+
+    const unchanged = normalizeRepair(
+      { experience: "a", styles: "b", motion: "c" },
+      current,
+    );
+    expect(unchanged.servicePage).toBe(current.servicePage);
+    expect(unchanged.locationPage).toBe(current.locationPage);
+    expect(unchanged).not.toHaveProperty("servicesIndexPage");
+  });
   it("rejects full-file human repair output before changing candidate files", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-full-file-rejection-"),
@@ -316,6 +346,82 @@ describe("rendered creative repair orchestration", () => {
       ]),
     );
     expect(excludedCandidates).toEqual([[], []]);
+  });
+
+  it("targets repairs with the rendered fidelity dimensions that miss their thresholds", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const repairFindings: any[][] = [];
+    let bakeoffCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? report({
+                selectedCandidateId: null,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: ["Rendered candidate needs repair."],
+                    renderedReferenceFidelity: {
+                      pass: false,
+                      audit: {
+                        verdict: "revise",
+                        overallScore: 78,
+                        scores: {
+                          heroGeometry: 87,
+                          typography: 82,
+                          spatialRhythm: 75,
+                          imagery: 88,
+                          servicePresentation: 72,
+                          navigation: 78,
+                          ctaPlacement: 91,
+                          mobileRecomposition: 83,
+                          interactionEvidence: 65,
+                          paletteAdherence: 56,
+                          artDirection: 84,
+                        },
+                        findings: [],
+                      },
+                    },
+                  }),
+                ],
+              })
+            : report({
+                selectedCandidateId: "candidate-a",
+                candidates: [candidate("candidate-a")],
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ findings }: any) => {
+        repairFindings.push(findings);
+      },
+      promoteImpl: async ({ candidateDir }: any) => ({
+        candidateId: path.basename(candidateDir),
+      }),
+    });
+
+    const findings = repairFindings[0].join("\n");
+    expect(findings).toContain(
+      "rendered-reference overall fidelity scored 78 and must reach 82",
+    );
+    expect(findings).toContain(
+      "rendered-reference dimension paletteAdherence scored 56 and must reach 80",
+    );
+    expect(findings).toContain(
+      "rendered-reference dimension servicePresentation scored 72 and must reach 80",
+    );
+    expect(findings).not.toContain("heroGeometry");
+    expect(result.status).toBe("passed");
   });
 
   it("keeps preview available when one candidate repair violates its sealed-content contract", async () => {
@@ -1277,7 +1383,7 @@ export default function Experience({ content, runtime }) {
 
     expect(result.status).toBe("passed");
     expect(repairs.map((repair) => repair.candidateId)).toEqual([
-      "candidate-a",
+      "candidate-b",
     ]);
     expect(repairs[0].findings.join("\n")).toContain("sibling");
     expect(repairs[0].findings.join("\n")).toMatch(/preserve/iu);
@@ -1435,22 +1541,31 @@ export default function Experience({ content, runtime }) {
     expect(bakeoffCalls).toBe(3);
     expect(repairs.map((repair) => repair.candidateId)).toEqual([
       "candidate-a",
-      "candidate-b",
+      "candidate-c",
     ]);
-    for (const repair of repairs) {
-      expect(repair.findings.join("\n")).toContain("Rendered diversity failed");
-      expect(repair.findings.join("\n")).toContain("sibling");
-      expect(repair.findings.join("\n")).toContain("split-hero grammar");
-      const sibling = "candidate-c";
-      expect(
+    expect(
+      repairs.map((repair) =>
         repair.comparisonScreenshots.map((item) => [
           item.candidateId,
           item.viewport,
         ]),
-      ).toEqual([
-        [sibling, "desktop"],
-        [sibling, "mobile"],
-      ]);
+      ),
+    ).toEqual([
+      [
+        ["candidate-c", "desktop"],
+        ["candidate-c", "mobile"],
+      ],
+      [
+        ["candidate-a", "desktop"],
+        ["candidate-a", "mobile"],
+      ],
+    ]);
+    for (const [index, repair] of repairs.entries()) {
+      expect(repair.findings.join("\n")).toContain("Rendered diversity failed");
+      expect(repair.findings.join("\n")).toContain("sibling");
+      expect(repair.findings.join("\n")).toContain(
+        ["split-hero grammar", "split-hero structure"][index],
+      );
       for (const item of repair.comparisonScreenshots)
         await expect(fs.access(item.path)).resolves.toBeUndefined();
     }
@@ -1458,7 +1573,7 @@ export default function Experience({ content, runtime }) {
     expect(repairs[1].bakeoffRound).toBe(2);
     expect(
       await fs.readFile(repairs[1].comparisonScreenshots[0].path, "utf8"),
-    ).toBe("candidate-c-desktop-round-2");
+    ).toBe("candidate-a-desktop-round-2");
   });
 
   it("repairs the selected candidate when promotion is blocked without diversity pairs", async () => {
