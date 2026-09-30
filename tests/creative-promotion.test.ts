@@ -45,7 +45,15 @@ export default function ServicesIndexPage({ content, runtime }) {
 }`;
 
 async function makeTemplateCopy(configOverrides = {}) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-site-"));
+  // Keep the copy inside the repository so Node and Vite resolve dependencies
+  // through the root node_modules on CI, where the template has no install of
+  // its own. node_modules/.cache is ignored by git.
+  const cacheRoot = path.join(
+    path.resolve("."),
+    "node_modules/.cache/launchloom-test-sites",
+  );
+  await fs.mkdir(cacheRoot, { recursive: true });
+  const root = await fs.mkdtemp(path.join(cacheRoot, "site-"));
   tempRoots.push(root);
   await fs.cp(path.resolve("templates/client-site"), root, {
     recursive: true,
@@ -54,11 +62,15 @@ async function makeTemplateCopy(configOverrides = {}) {
       !source.includes(`${path.sep}dist`) &&
       !source.includes(`${path.sep}.astro`),
   });
-  await fs.symlink(
-    path.resolve("templates/client-site/node_modules"),
-    path.join(root, "node_modules"),
-    "dir",
-  );
+  const templateNodeModules = path.resolve("templates/client-site/node_modules");
+  if (
+    await fs
+      .access(templateNodeModules)
+      .then(() => true)
+      .catch(() => false)
+  ) {
+    await fs.symlink(templateNodeModules, path.join(root, "node_modules"), "dir");
+  }
   if (Object.keys(configOverrides).length) {
     const configPath = path.join(root, "src/site.config.json");
     const config = JSON.parse(await fs.readFile(configPath, "utf8"));
