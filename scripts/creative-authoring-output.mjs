@@ -125,6 +125,11 @@ export function referenceImplementationChecklist(referenceDna) {
     })
     .filter(Boolean);
 
+  const imageIndependentGuardrail =
+    topology.hero === "type-led-statement" ||
+    /without photography|image[- ]independent/iu.test(
+      String(referenceDna.imageTreatment?.mode || ""),
+    );
   const referenceMarkers = [
     ["data-hero-geometry", referenceDna.heroGeometry?.mode, "the hero element"],
     ["data-navigation-geometry", referenceDna.navigationGeometry?.mode, "the visible nav element"],
@@ -157,6 +162,12 @@ export function referenceImplementationChecklist(referenceDna) {
           "REFERENCE ART-DIRECTION CONTRACT (HARD REQUIREMENT):",
           ...artDirectionRequirements,
           "Use supplied client imagery within these assigned visual roles. When the same client assets are reused across candidate routes, differentiate them through reference-led crop, layering, sequencing, surface treatment, color treatment, and spatial choreography. Do not revert to a conventional text/image split or card grid merely because the underlying assets are shared.",
+        ]
+      : []),
+    ...(imageIndependentGuardrail
+      ? [
+          "IMAGE-INDEPENDENT REFERENCE GUARDRAIL (HARD REQUIREMENT):",
+          "This reference carries hierarchy with typography, rules, tables, and ledgers rather than photography. Do not place sealed photo tokens as decorative chapter filler, background washes, or inside aria-hidden figures. Use an image only where a chapter needs a real content image, give it a specific descriptive alt, keep it subordinate to the type-led hierarchy, and otherwise carry that chapter without imagery.",
         ]
       : []),
     ...(acceptanceChecks.length
