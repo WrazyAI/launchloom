@@ -1,3 +1,3 @@
-export default function LocationPage() {
+export default function LocationPage(_props) {
   return null;
 }

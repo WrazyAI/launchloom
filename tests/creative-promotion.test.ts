@@ -271,7 +271,7 @@ describe("creative candidate promotion", () => {
       path.join(root, "src/generated-experiences/selected/ServicePage.jsx"),
       "utf8",
     );
-    expect(selected).toContain("export default function ServicePage()");
+    expect(selected).toContain("export default function ServicePage(_props)");
     const config = JSON.parse(
       await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),
     );
@@ -321,9 +321,9 @@ describe("creative candidate promotion", () => {
       path.join(root, "src/generated-experiences/selected/ServicesIndexPage.jsx"),
       "utf8",
     );
-    expect(selectedLocation).toContain("export default function LocationPage()");
+    expect(selectedLocation).toContain("export default function LocationPage(_props)");
     expect(selectedIndex).toContain(
-      "export default function ServicesIndexPage()",
+      "export default function ServicesIndexPage(_props)",
     );
     const config = JSON.parse(
       await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),

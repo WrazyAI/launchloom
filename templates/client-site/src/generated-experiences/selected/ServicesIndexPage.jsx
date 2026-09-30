@@ -1,3 +1,3 @@
-export default function ServicesIndexPage() {
+export default function ServicesIndexPage(_props) {
   return null;
 }

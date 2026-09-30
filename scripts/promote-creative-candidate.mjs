@@ -8,17 +8,17 @@ import {
   normalizeCreativeExperienceLinks,
 } from "./creative-source-safety.mjs";
 
-const SERVICE_PAGE_FALLBACK = `export default function ServicePage() {
+const SERVICE_PAGE_FALLBACK = `export default function ServicePage(_props) {
   return null;
 }
 `;
 
-const LOCATION_PAGE_FALLBACK = `export default function LocationPage() {
+const LOCATION_PAGE_FALLBACK = `export default function LocationPage(_props) {
   return null;
 }
 `;
 
-const SERVICES_INDEX_FALLBACK = `export default function ServicesIndexPage() {
+const SERVICES_INDEX_FALLBACK = `export default function ServicesIndexPage(_props) {
   return null;
 }
 `;

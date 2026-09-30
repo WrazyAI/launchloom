@@ -30,6 +30,7 @@ import { validateReferenceCandidate } from "./reference-fidelity.mjs";
  *   experienceSource?: string;
  *   servicePageSource?: string;
  *   locationPageSource?: string;
+ *   servicesIndexSource?: string;
  *   validationError?: string;
  *   previousSource?: string;
  * }} AuthorStageRequest
