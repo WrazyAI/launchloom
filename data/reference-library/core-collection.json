@@ -48,6 +48,12 @@
       "label": "Industrial contractors and heavy civil services",
       "businessKinds": ["industrial", "industrial-contractor", "industrial-services", "heavy-civil-engineering"],
       "reason": "Residential local-trade references do not represent industrial procurement or heavy civil engineering."
+    },
+    {
+      "id": "bicycle-workshops-and-cycle-retail",
+      "label": "Bicycle workshops and cycle retail",
+      "businessKinds": ["bicycle-workshop", "bike-workshop", "bicycle-repair", "bike-repair", "cycle-repair", "cycle-workshop", "bicycle-repair-shop", "bike-repair-shop", "bicycle-shop", "bike-shop", "cycle-shop"],
+      "reason": "The archive contains only a one-off direct bicycle-workshop study, not six verified, permission-cleared businesses. It cannot support a production niche, and automotive repair references are not a substitute."
     }
   ],
   "niches": [

@@ -634,6 +634,26 @@ describe("inspiration registry", () => {
       requireDossiers: true,
     })).toThrow(/0 eligible dossier\(s\) matched to/iu);
   });
+  it("explicitly classifies bicycle workshops instead of treating the archive capture as a production niche", () => {
+    expect(() =>
+      buildInspirationPack(
+        {
+          ...baseRequest,
+          industry: "bicycle-workshop",
+          recentReferenceIds: [],
+          recentRouteSignatures: [],
+        },
+        registry,
+        {
+          repositoryRoot: path.resolve("."),
+          requireDossiers: true,
+        },
+      ),
+    ).toThrow(
+      /explicitly unsupported for production reference selection \(bicycle-workshops-and-cycle-retail\)/iu,
+    );
+  });
+
 
   it.each(["all", "general", "local-business", "small-business"])("fails closed when business kind %s is too broad", (industry) => {
     expect(() => buildInspirationPack({
@@ -656,7 +676,7 @@ describe("inspiration registry", () => {
     const core = JSON.parse(
       fs.readFileSync(path.resolve("data/reference-library/core-collection.json"), "utf8"),
     );
-    expect(core.unsupportedBusinessKinds).toHaveLength(7);
+    expect(core.unsupportedBusinessKinds).toHaveLength(8);
     const unsupportedAliases = core.unsupportedBusinessKinds.flatMap(
       (boundary: any) => boundary.businessKinds,
     );

@@ -207,7 +207,7 @@ jobs:
               --config /tmp/site.config.json \
               --inspiration /tmp/inspiration-pack.json \
               --stage attempt \
-              --record-key "$LAUNCHLOOM_INTAKE_ID" \
+              --record-key "$LAUNCHLOOM_INTAKE_ID-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT" \
               --history "$HISTORY_FILE"; then
               git worktree remove --force "$HISTORY_DIR" >/dev/null 2>&1 || true
               continue

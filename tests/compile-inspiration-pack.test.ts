@@ -156,6 +156,50 @@ describe("inspiration compilation history", () => {
     expect(next.referenceLibrary.recordIds).not.toEqual(homeRecord.referenceIds);
     expect(next.referenceLibrary.recordIds).toEqual(next.request.selectedReferenceIds);
   }, 30_000);
+
+  it("keeps same-intake workflow retries in history so later attempts do not cycle back to an earlier trio", () => {
+    const seed = "same-intake-retry-rotation";
+    const config = {
+      business: { name: "Northside Care" },
+      businessKind: "home-care",
+      design: {},
+    };
+    const request = { seed, industry: "home-care", styleTerms: [] };
+    const referenceIds = (pack: any) =>
+      pack.routes.map((route: any) => route.referenceDossier.id).sort();
+
+    const firstPack = buildInspirationPack(request, registry);
+    const firstAttempt = launchRecordFrom({
+      config,
+      inspiration: firstPack,
+      stage: "attempt",
+      recordKey: "intake-42-run-1001-attempt-1",
+      launchedAt: "2026-09-28T00:00:00.000Z",
+    });
+    const secondPack = buildInspirationPack(
+      { ...request, recentLaunches: [firstAttempt] },
+      registry,
+    );
+    const secondAttempt = launchRecordFrom({
+      config,
+      inspiration: secondPack,
+      stage: "attempt",
+      recordKey: "intake-42-run-1002-attempt-1",
+      launchedAt: "2026-09-28T00:01:00.000Z",
+    });
+    const thirdPack = buildInspirationPack(
+      {
+        ...request,
+        recentLaunches: [firstAttempt, secondAttempt],
+      },
+      registry,
+    );
+
+    expect(firstAttempt.id).not.toBe(secondAttempt.id);
+    expect(referenceIds(secondPack)).not.toEqual(referenceIds(firstPack));
+    expect(referenceIds(thirdPack)).not.toEqual(referenceIds(firstPack));
+    expect(referenceIds(thirdPack)).not.toEqual(referenceIds(secondPack));
+  });
 });
 
 afterEach(() => {

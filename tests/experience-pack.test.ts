@@ -218,7 +218,7 @@ describe("experience-pack compiler", () => {
     expect(workflow).toContain(
       "History push raced with another intake; reselecting from latest main",
     );
-    expect(workflow).toContain('--record-key "$LAUNCHLOOM_INTAKE_ID"');
+    expect(workflow).toContain('--record-key "$LAUNCHLOOM_INTAKE_ID-run-$GITHUB_RUN_ID-attempt-$GITHUB_RUN_ATTEMPT"');
     const reservationBlock = workflow.slice(reservationIndex, analysisIndex);
     expect(reservationBlock).toContain(
       'HISTORY_DIR="$RUNNER_TEMP/launchloom-history-main"',
