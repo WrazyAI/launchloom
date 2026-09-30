@@ -13,6 +13,10 @@ const args = Object.fromEntries(
 const dist = path.resolve(args.dist || "dist");
 const candidateId = String(args.candidate || "");
 const screenshots = path.resolve(args.screenshots || ".launchloom/creative-diagnostic-screenshots");
+const siteConfig = JSON.parse(
+  await fs.readFile(path.resolve(args.config || "src/site.config.json"), "utf8").catch(() => "{}"),
+);
+const expectedDemoNotice = String(siteConfig.demoNotice || "").trim();
 const types = {
   ".css": "text/css",
   ".html": "text/html",
@@ -67,12 +71,26 @@ try {
     const state = await page.evaluate(() => {
       const creative = document.querySelector("[data-creative-host='true']");
       const hero = creative?.querySelector("[data-hero]");
+      const demoNotice = document.querySelector("[data-demo-notice]");
+      const demoNoticeStyle = demoNotice ? getComputedStyle(demoNotice) : null;
+      const demoNoticeBounds = demoNotice?.getBoundingClientRect();
       return {
         robots: document.querySelector('meta[name="robots"]')?.getAttribute("content") || "",
         canonical: Boolean(document.querySelector('link[rel="canonical"]')),
         diagnostic: creative?.getAttribute("data-creative-diagnostic") === "true",
         candidateId: creative?.getAttribute("data-creative-candidate") || "",
         renderer: creative?.getAttribute("data-creative-renderer") || "",
+        demoNoticeText: demoNotice?.textContent?.replace(/\s+/gu, " ").trim() || "",
+        demoNoticeVisible: Boolean(
+          demoNotice &&
+            demoNoticeStyle?.display !== "none" &&
+            demoNoticeStyle?.visibility !== "hidden" &&
+            Number(demoNoticeStyle?.opacity || 1) > 0 &&
+            Number(demoNoticeBounds?.width || 0) > 0 &&
+            Number(demoNoticeBounds?.height || 0) > 0 &&
+            Number(demoNoticeBounds?.top || 0) < innerHeight &&
+            Number(demoNoticeBounds?.bottom || 0) > 0,
+        ),
         forms: [...document.forms].filter((form) => !form.closest("#ll-review")).length,
         reviewForms: document.querySelectorAll("#ll-review .ll-feedback-form").length,
         activeLeadForm: document.querySelectorAll('[data-runtime="lead-form"]').length,
@@ -91,6 +109,7 @@ try {
     if (!/(^|,\s*)noindex(,|$)/iu.test(state.robots) || !/(^|,\s*)nofollow(,|$)/iu.test(state.robots)) failures.push(`${viewport.name}: preview is not noindex,nofollow`);
     if (state.canonical) failures.push(`${viewport.name}: diagnostic preview has a canonical URL`);
     if (!state.diagnostic || state.candidateId !== candidateId || state.renderer !== "creative-candidate") failures.push(`${viewport.name}: authored diagnostic renderer marker is missing`);
+    if (expectedDemoNotice && (!state.demoNoticeVisible || !state.demoNoticeText.includes(expectedDemoNotice))) failures.push(`${viewport.name}: demo notice is missing or not visible`);
     if (state.forms || state.activeLeadForm) failures.push(`${viewport.name}: live lead form is present`);
     if (state.reviewControlsVisible) failures.push(`${viewport.name}: review controls are visible without a signed developer review token`);
     if (state.overflow) failures.push(`${viewport.name}: horizontal overflow`);

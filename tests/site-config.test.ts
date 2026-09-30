@@ -96,6 +96,50 @@ function stubCopyModelResponses(
 }
 
 describe("site configuration", () => {
+  it("marks only explicitly synthetic demo intakes with the fixed public notice", () => {
+    const demo = normalise({}, {
+      submissionId: "demo-coastal-20260923",
+      confirmAccuracy: "synthetic demo brief; not a real client attestation",
+      additionalNotes: "FICTIONAL DEMO ONLY. Never publish this as a real client site.",
+      businessName: "Coastal Brush Painting Co.",
+      industry: "painting",
+      services: "Interior painting\nCabinet refinishing",
+      serviceAreas: "Charleston, South Carolina",
+    });
+
+    expect(demo.demoNotice).toBe("Fictional pipeline demo");
+
+    const client = normalise({}, {
+      submissionId: "submission-real-painting-2026",
+      confirmAccuracy: "yes",
+      additionalNotes: "We use demo rooms to show our color process.",
+      businessName: "Harbor Paint Studio",
+      industry: "painting",
+      services: "Interior painting",
+      serviceAreas: "Charleston, South Carolina",
+    });
+
+    expect(client).not.toHaveProperty("demoNotice");
+  });
+
+  it("resolves explicit automotive repair facts while leaving vehicle sales unsupported", () => {
+    const repair = normalise({}, {
+      businessName: "Precision Auto Care",
+      industry: "automotive",
+      services: "Digital vehicle inspections\nBrake service\nRoutine automotive maintenance",
+    });
+    expect(repair.industry).toBe("home-services");
+    expect(repair.businessKind).toBe("auto-repair");
+
+    const dealership = normalise({}, {
+      businessName: "Metro Auto Center",
+      industry: "automotive",
+      services: "New vehicle sales\nUsed vehicle sales",
+    });
+    expect(dealership.industry).toBe("other");
+    expect(dealership.businessKind).toBe("automotive");
+  });
+
   it("keeps an explicit HVAC niche ahead of incidental care wording in intake notes", () => {
     const config = normalise(
       {},

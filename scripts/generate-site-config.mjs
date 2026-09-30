@@ -638,6 +638,12 @@ function businessProfileFromFacts(intake) {
   return BUSINESS_KIND_PROFILES.find((profile) => profile.facts.test(facts));
 }
 
+function profileForAmbiguousIndustry(intake, selectedIndustry) {
+  if (selectedIndustry !== "automotive") return undefined;
+  const profile = businessProfileFromFacts(intake);
+  return profile?.businessKind === "auto-repair" ? profile : undefined;
+}
+
 function intakeFacts(intake) {
   return [
     intake.businessName,
@@ -651,8 +657,9 @@ function intakeFacts(intake) {
 
 function industryFor(intake) {
   const selected = industryKey(intake.industry);
-  if (unsupportedBusinessKinds.has(selected)) return "other";
-  const explicitProfile = explicitBusinessProfile(intake);
+  const specificProfile = profileForAmbiguousIndustry(intake, selected);
+  if (unsupportedBusinessKinds.has(selected) && !specificProfile) return "other";
+  const explicitProfile = explicitBusinessProfile(intake) || specificProfile;
   if (explicitProfile) return explicitProfile.industry;
   if (BROAD_INDUSTRIES.has(selected) && selected !== "other") return selected;
 
@@ -682,8 +689,10 @@ function industryFor(intake) {
 
 function businessKindFor(intake, industry) {
   const selected = industryKey(intake.industry);
-  if (unsupportedBusinessKinds.has(selected)) return selected;
-  const profile = explicitBusinessProfile(intake) || businessProfileFromFacts(intake);
+  const specificProfile = profileForAmbiguousIndustry(intake, selected);
+  if (unsupportedBusinessKinds.has(selected) && !specificProfile) return selected;
+  const profile =
+    explicitBusinessProfile(intake) || specificProfile || businessProfileFromFacts(intake);
   return profile?.industry === industry ? profile.businessKind : industry;
 }
 
@@ -753,6 +762,18 @@ function requestedTypography(intake, fallback) {
   if (/sans[- ]serif|sans serif/.test(notes)) return "sans";
   if (/serif/.test(notes)) return "editorial";
   return fallback;
+}
+
+function fictionalPipelineDemoNotice(intake = {}) {
+  const submissionId = text(intake.submissionId, 120).toLowerCase();
+  const accuracy = text(intake.confirmAccuracy, 240).toLowerCase();
+  const notes = text(intake.additionalNotes, 1800).toLowerCase();
+  const isDeclaredSyntheticDemo =
+    /^demo[-_]/u.test(submissionId) &&
+    /\bsynthetic demo brief\b/u.test(accuracy) &&
+    /\bfictional demo only\b/u.test(notes);
+
+  return isDeclaredSyntheticDemo ? "Fictional pipeline demo" : undefined;
 }
 
 export function requestedDesignFamily(intake) {
@@ -1684,10 +1705,12 @@ export function normalise(candidate, intake) {
         researchedLocations.has(slugify(name)),
       )
     : business.serviceAreas;
+  const demoNotice = fictionalPipelineDemoNotice(intake);
   return removeEmDashes({
     preset,
     industry: base.industry,
     businessKind: base.businessKind,
+    ...(demoNotice ? { demoNotice } : {}),
     business,
     seoPageMap: seoResearch?.pageMap || [],
     style: {
