@@ -132,11 +132,15 @@ become client-site assets.
    rerender, and pass the judges on the next round. Each repair response has a
    48k completion ceiling and records its
    finish reason plus completion/reasoning token counts without logging source
-   content. When the combined authored source exceeds 20,000 characters, repair
-   is split into sequential JSX, CSS, and motion responses to keep each returned
-   bundle within the provider ceiling. Every file-scoped call reuses the same
-   frozen reasoning effort and creative session identity. Each candidate gets
-   at most two repair cycles. Production promotion
+   content. When the combined authored source exceeds 20,000 characters,
+   automated repair requests sequential complete replacements only for files
+   implicated by the findings, with an 80,000-character per-file response cap.
+   The candidate bundle is then validated as a whole before any file is written;
+   the next loop round rebuilds and recaptures all viewports before judging it.
+   Human-feedback repairs remain bounded literal edits and cannot use the
+   full-file path. Every file-scoped call reuses the same frozen reasoning
+   effort and creative session identity. Each candidate gets at most two repair
+   cycles. Production promotion
    still requires `promotionReady`, including rendered candidate diversity, plus a
    passing final visual gate. The loop never falls back to a legacy renderer.
 
