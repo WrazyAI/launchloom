@@ -1259,6 +1259,18 @@ export function restoreRequiredExperienceMarkers(
   return restored;
 }
 
+function routeRequiresHeroUtilityForm(route) {
+  const topologies = [
+    route?.compositionTopology,
+    route?.referenceDna?.compositionTopology,
+  ].filter(Boolean);
+  return topologies.some(
+    (topology) =>
+      topology.hero === "utility-panel" ||
+      topology.mobileHero === "utility-panel",
+  );
+}
+
 function assertRequiredSectionAnchors(source, route) {
   const { file, elements } = collectJsxElements(source);
   for (const marker of ["data-hero", "data-early-conversion"])
@@ -1283,9 +1295,27 @@ function assertRequiredSectionAnchors(source, route) {
       jsxOpeningName(element.opening) === "section" &&
       idAttributeValue(element, file).value === "contact",
   );
-  if (!contact?.body.includes("<LeadForm"))
+  const leadForms = elements.filter(
+    ({ opening }) => jsxOpeningName(opening) === "LeadForm",
+  );
+  if (leadForms.length !== 1) return;
+
+  const hero = elements.find(({ opening }) =>
+    jsxAttribute(opening, "data-hero"),
+  );
+  if (
+    routeRequiresHeroUtilityForm(route) &&
+    (!hero || !isDescendantOf(leadForms[0].node, hero.node))
+  )
     throw new Error(
-      `Candidate ${route.id} must render the shared LeadForm inside the contact section, not in the hero.`,
+      `Candidate ${route.id} must place the single shared LeadForm inside the assigned utility-panel hero.`,
+    );
+  if (
+    !routeRequiresHeroUtilityForm(route) &&
+    (!contact || !isDescendantOf(leadForms[0].node, contact.node))
+  )
+    throw new Error(
+      `Candidate ${route.id} must render the shared LeadForm inside the contact section for this reference.`,
     );
 }
 
@@ -1691,7 +1721,10 @@ function validateExperience(source, route, content) {
     [/\beval\s*\(|\bnew\s+Function\b/iu, "dynamic code"],
     [/<canvas\b|\bthree(?:\s*\.?\s*js)\b/iu, "unapproved rendering engine"],
     [/<script\b/iu, "script element"],
-    [/<style\b|\sstyle\s*=|\.\.\.\s*\{\s*(?:style\b|\[[^\]]*style[^\]]*\])\s*:/iu, "inline styles; visual rules belong in styles.css"],
+    [
+      /<style\b|\sstyle\s*=|\.\.\.\s*\{\s*(?:style\b|\[[^\]]*style[^\]]*\])\s*:/iu,
+      "inline styles; visual rules belong in styles.css",
+    ],
     [/—/u, "em dash"],
   ];
   for (const [pattern, label] of forbidden)
@@ -1713,7 +1746,7 @@ function validateExperience(source, route, content) {
   const leadFormCount = (source.match(/<LeadForm\b/gu) || []).length;
   if (leadFormCount !== 1)
     throw new Error(
-      `Candidate ${route.id} must render exactly one shared LeadForm in the contact section; keep the hero conversion as a compact link.`,
+      `Candidate ${route.id} must render exactly one shared LeadForm in the reference-directed location.`,
     );
   if (!/<LeadForm\b[^>]*\bcontent\s*=\s*\{\s*content\s*\}/u.test(source))
     throw new Error(
@@ -1930,14 +1963,14 @@ function authorRules() {
     "Use only React, @launchloom/runtime, GSAP, and GSAP ScrollTrigger in Experience.jsx. The deterministic host imports and mounts motion.js; do not import or invoke ./motion.js from Experience.jsx.",
     "Do not use remote URLs, network calls, canvas, Three.js, dynamic code, remote scripts, or new packages.",
     "Keep literal Services, FAQs, and Contact section anchors in the page. For dossier-backed routes, let the primary navigation follow the assigned reference geometry instead of forcing all three anchors into one conventional menu. Put conversion in the hero or immediately after it.",
-    "Import LeadForm from @launchloom/runtime and render exactly one instance inside the contact section; do not fake a form or create a second lead endpoint.",
+    "Import LeadForm from @launchloom/runtime and render exactly one instance in the reference-directed location: when desktop or mobile compositionTopology is utility-panel, place it in that utility panel inside the hero and retain the contact section for contact details; otherwise place it inside the contact section. Never fake a form or create a second lead endpoint.",
     EARLY_CONVERSION_OUTPUT_CONTRACT,
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Never hide required sections or their content with opacity, visibility, or display before a scroll trigger. The full page must remain readable without JavaScript and in a no-scroll screenshot; animate visible content into place instead.",
-    "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact: no full LeadForm, service list, or long-copy block in the first fold.",
+    "The complete header and hero must fit at 1536x864 and 1366x768 at 100 percent zoom. Keep the hero compact and preserve the assigned composition; a reference-required utility-panel form may appear in the first fold but must remain concise and usable.",
     "Do not use em dashes, numbered service cards, bento grids, generic card walls, glassmorphism, or decorative motion without narrative purpose.",
   ].join("\n");
 }

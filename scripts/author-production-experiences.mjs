@@ -257,12 +257,30 @@ ${request.previousSource}
 `;
 }
 
+function routeUsesUtilityPanel(request) {
+  const topologies = [
+    request.route?.compositionTopology,
+    request.route?.referenceDna?.compositionTopology,
+  ].filter(Boolean);
+  return topologies.some(
+    (topology) =>
+      topology.hero === "utility-panel" ||
+      topology.mobileHero === "utility-panel",
+  );
+}
+
+function leadFormPlacementInstruction(request) {
+  return routeUsesUtilityPanel(request)
+    ? 'Place exactly one <LeadForm content={content} runtime={runtime} /> in the assigned utility panel inside the hero. Keep the section with id="contact" and its contact details/links; do not add a second form.'
+    : 'Place exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". Do not put the form in the hero, nav, or promise band.';
+}
+
 function stagePromptSuffix(request) {
   const repair = boundedFormatRepair(request);
   if (request.stage === "contract")
     return `${repair}
 CONTRACT STAGE
-Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, normalized hero compositionTopology, actual copy/media region relationship, hero geometry, early conversion, non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
+Return a precise implementation contract and a rationale under 220 words. The contract must specify the independent page narrative, DOM outline, exact section IDs, class vocabulary, navigation behavior, normalized hero compositionTopology, actual copy/media region relationship, hero geometry, early conversion, shared-form placement (put the single form inside a desktop or mobile utility-panel hero when either assigned topology requires it; otherwise put it in #contact), non-card service treatment, section sequence, typography system, image placement using content.hero image tokens, compact-desktop behavior, mobile recomposition, one justified interaction strategy, reduced-motion behavior, and accessibility. Do not return source files.`;
 
   if (request.stage === "experience")
     return `DESIGN CONTRACT
@@ -280,7 +298,7 @@ ${request.previousSource}
     : ""
 }
 EXPERIENCE STAGE
-Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime and render exactly one <LeadForm content={content} runtime={runtime} /> inside the section with id="contact". ${EARLY_CONVERSION_OUTPUT_CONTRACT} Never put LeadForm inside the hero, nav, or promise band. Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-hero-copy on its visible promise group, data-hero-media on each actual visual media panel required by compositionTopology, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
+Return complete Experience.jsx in content. Export default function Experience({ content, runtime }). Import { LeadForm } from @launchloom/runtime. ${leadFormPlacementInstruction(request)} ${EARLY_CONVERSION_OUTPUT_CONTRACT} Every helper component that reads sealed content must receive content (or a sealed destructured subset) as a prop; never reference a free content variable. Use content tokens for every business fact and every visitor-facing marketing sentence or section heading. Do not place authored marketing words directly between JSX tags. Generic interface labels may be Services, FAQs, Contact, Menu, Open menu, and Close menu. The deterministic host imports and mounts ./motion.js after the component renders; do not import or invoke ./motion.js from Experience.jsx. The deterministic runtime owns root instrumentation. Include data-hero on the opening section, data-hero-copy on its visible promise group, data-hero-media on each actual visual media panel required by compositionTopology, data-early-conversion on the primary early action, and sections with ids services, faqs, and contact. Use real anchor links href="#services", href="#faqs", and href="#contact" in the navigation; JavaScript-only section buttons are not sufficient. Service detail links must resolve to the real /services/ route using the sealed service slug and a trailing slash. Never turn a service slug into a homepage fragment, because service slugs are real SEO routes, not section IDs. Before returning, confirm the source binds the hero heading, services, and FAQs from content.hero.heading, content.services, and content.faqs, either directly or through destructuring. Use content.hero.image, content.hero.secondaryImage, and content.hero.tertiaryImage for supplied imagery, with descriptive non-claiming alt text. Do not return CSS.
 
 Add these literal implementation markers to the rendered DOM: data-hero-geometry="<Reference DNA hero geometry slug>", data-navigation-geometry="<navigation geometry slug>", data-service-presentation="<service presentation slug>", data-cta-placement="<CTA placement slug>", data-mobile-recomposition="<mobile recomposition slug>", and data-motion-primitive="<motion primitive slug>". Add every required signature as data-reference-signature="<signature id>" on the corresponding section or element. Add data-reference-section="<section sequence id>" to each major section so the compiler can verify the assigned rhythm. Do not invent values: use the slugs from Reference DNA.`;
 
@@ -293,7 +311,7 @@ AUTHORED EXPERIENCE JSX
 ${request.experienceSource}
 
 STYLES STAGE
-Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. Style the exact markup without changing its structure. The header plus hero must have a measured bounding bottom no greater than the viewport height at 1536x864 and 1366x768 at 100 percent zoom. Use a compact hero composition: one headline, short body, one early CTA, and the image treatment. Do not make the hero grow to accommodate a contact form, service list, or long copy. Avoid large fixed padding and min-heights that exceed the viewport; use min-height: 0 where content can wrap. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
+Return complete styles.css in content. Return CSS text only, never an HTML document, JSX, markdown fences, or script tags. Style the exact markup without changing its structure. The header plus hero must have a measured bounding bottom no greater than the viewport height at 1536x864 and 1366x768 at 100 percent zoom. Use a compact hero composition: one headline, short body, one early CTA, and the image treatment. ${routeUsesUtilityPanel(request) ? "The assigned utility-panel form belongs in the hero; keep that panel concise, usable, and within the viewport-fit contract." : "Do not make the hero grow to accommodate a contact form, service list, or long copy."} Avoid large fixed padding and min-heights that exceed the viewport; use min-height: 0 where content can wrap. Recompose for 390x844 without horizontal overflow. Include visible focus, adequate contrast, readable body type, and prefers-reduced-motion. Use no remote URLs.`;
 
   return `${repair}
 DESIGN CONTRACT

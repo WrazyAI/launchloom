@@ -210,6 +210,82 @@ describe("production experience author", () => {
       ).toThrow(/must have a usable alt attribute/iu);
   });
 
+  it("allows the single shared LeadForm in a reference-mandated utility-panel hero", () => {
+    const route = {
+      id: "route-utility-form",
+      compositionTopology: {
+        hero: "utility-panel",
+        mobileHero: "utility-panel",
+      },
+    };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    )
+      .replace(
+        "<section data-hero>",
+        '<section data-hero><aside className="estimate-panel"><LeadForm content={content} runtime={runtime} /></aside>',
+      )
+      .replace(
+        '<section id="contact"><LeadForm content={content} runtime={runtime} />',
+        '<section id="contact">',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).not.toThrow();
+  });
+
+  it("keeps the single shared LeadForm in contact when the reference has no utility-panel hero", () => {
+    const route = { id: "route-contact-form" };
+    const request = {
+      route,
+      contentTokens: [],
+      contentShape: {},
+      rules: "",
+    };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    )
+      .replace(
+        "<section data-hero>",
+        '<section data-hero><aside className="estimate-panel"><LeadForm content={content} runtime={runtime} /></aside>',
+      )
+      .replace(
+        '<section id="contact"><LeadForm content={content} runtime={runtime} />',
+        '<section id="contact">',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+      }),
+    ).toThrow(
+      /must render the shared LeadForm inside the contact section for this reference/iu,
+    );
+  });
+
   it("requires FAQ navigation anchors inside nav even when an unrelated FAQ link remains", () => {
     const route = { id: "route-02" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
