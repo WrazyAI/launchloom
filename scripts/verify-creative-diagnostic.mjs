@@ -100,7 +100,9 @@ try {
           return !element.hasAttribute("hidden") && style.display !== "none" && style.visibility !== "hidden";
         }),
         overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-        missingAlt: [...document.images].filter((image) => !image.getAttribute("alt")?.trim()).length,
+        // Empty alt text is the sanctioned decorative treatment in the authoring
+        // and repair contracts; only a missing alt attribute fails this gate.
+        missingAlt: [...document.images].filter((image) => !image.hasAttribute("alt")).length,
         brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
         unnamedControls: [...document.querySelectorAll("button, a")].filter((element) => !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
         heroBottom: hero?.getBoundingClientRect().bottom || 0,

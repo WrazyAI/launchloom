@@ -32,6 +32,7 @@ import {
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import {
   AUTHORING_STAGE_BUDGETS,
+  CLIENT_PALETTE_ROLE_CONTRACT,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
   authoringCompletionDiagnostics,
@@ -239,6 +240,8 @@ ${formatModelBoundContentShape(request.contentShape)}
 CLIENT VISUAL BRIEF
 ${JSON.stringify(request.visualBrief || {}, null, 2)}
 The visual brief is client intent, not source content. Use it to choose palette, surface treatment, typography mood, image treatment, and composition within the assigned route. Explicit named-reference or art-direction requests should remain visibly recognizable after adaptation.
+
+${CLIENT_PALETTE_ROLE_CONTRACT}
 
 ${referenceMarkers}
 
