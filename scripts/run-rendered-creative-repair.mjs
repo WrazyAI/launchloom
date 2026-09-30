@@ -394,6 +394,15 @@ async function readCandidate(candidateDir) {
   };
 }
 
+/**
+ * Normalize a complete-file repair response. The homepage files are required;
+ * authored inner pages fall back to their current source when the response
+ * omits them or returns an empty string.
+ *
+ * @param {Record<string, any>} value
+ * @param {Record<string, any>} [currentFiles]
+ * @returns {Record<string, string>}
+ */
 export function normalizeRepair(value, currentFiles = {}) {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("Creative repair returned an invalid file bundle.");
