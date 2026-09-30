@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { fictionalPipelineDemoNotice } from "./synthetic-demo-notice.mjs";
+import { parseServiceAreas } from "./service-area-input.mjs";
 
 const text = (value, limit = 1000) => String(value ?? "").replace(/\u0000/gu, "").replace(/—/gu, "-").trim().slice(0, limit);
 const MAX_CORE_SERVICES = 5;
@@ -51,14 +52,39 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
   const legacy = text(intake.intakeVersion, 10) !== "2";
   const allConfirmedServices = values(intake.confirmedServices || intake.services, 100, legacy);
   const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
-  const rawPrimaryCity = text(intake.primaryCity, 180) || values(intake.serviceAreas, 20)[0] || "";
-  const enrichmentAreas = values(enrichment.coverageAreas, 20);
-  const suppliedAreas = enrichmentAreas.length ? enrichmentAreas : values(intake.coverageAreas || intake.serviceAreas, 20);
+  const rawPrimaryCity = parseServiceAreas(
+    text(intake.primaryCity, 180) || intake.serviceAreas,
+    { limit: 1 },
+  )[0] || "";
+  const submittedRadius = text(intake.serviceRadius, 8);
+  const serviceRadius = submittedRadius === "50+"
+    ? "50+"
+    : ["10", "20", "30", "50"].includes(submittedRadius)
+      ? Number(submittedRadius)
+      : null;
+  const unsupportedRadiusWarning = submittedRadius && serviceRadius === null
+    ? "The submitted travel radius is not supported; only explicitly confirmed coverage areas are retained."
+    : "";
+  const enrichmentAreas = unsupportedRadiusWarning
+    ? []
+    : values(enrichment.coverageAreas, 20);
+  const clientConfirmedAreas = parseServiceAreas(
+    Array.isArray(intake.coverageAreas)
+      ? intake.coverageAreas.length
+        ? intake.coverageAreas
+        : intake.serviceAreas
+      : intake.coverageAreas || intake.serviceAreas,
+  );
+  const clientAreaKeys = new Set(
+    [...clientConfirmedAreas, rawPrimaryCity].map(cityKey),
+  );
+  const suppliedAreas = [
+    ...new Set([...clientConfirmedAreas, ...enrichmentAreas]),
+  ].slice(0, 20);
   const coverageAreas = rawPrimaryCity
     ? [rawPrimaryCity, ...suppliedAreas.filter((area) => cityKey(area) !== cityKey(rawPrimaryCity))]
     : suppliedAreas;
   const primaryCity = rawPrimaryCity || coverageAreas[0] || "";
-  const serviceRadius = intake.serviceRadius === "50+" ? "50+" : Number.isFinite(Number(intake.serviceRadius)) ? Number(intake.serviceRadius) : null;
   const pageMap = confirmedPageMap(research, services, coverageAreas);
   const seoResearch = {
     ...research,
@@ -89,7 +115,17 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
     desiredDomain: text(intake.domain || intake.desiredDomain, 180),
     services: services.map((value) => ({ value, provenance: "client_confirmed" })),
     primaryCity: primaryCity ? { value: primaryCity, provenance: intake.primaryCity ? "client_confirmed" : "legacy_client_area" } : null,
-    coverageAreas: coverageAreas.map((value) => ({ value, provenance: value === primaryCity ? "client_confirmed_primary_city" : enrichment.coverageEvidence?.source || "legacy_client_supplied_area" })),
+    coverageAreas: coverageAreas.map((value) => ({
+      value,
+      provenance:
+        value === primaryCity
+          ? "client_confirmed_primary_city"
+          : clientAreaKeys.has(cityKey(value))
+            ? legacy
+              ? "legacy_client_supplied_area"
+              : "client_confirmed_coverage"
+            : enrichment.coverageEvidence?.source || "legacy_client_supplied_area",
+    })),
     serviceRadius: serviceRadius === null ? null : { value: serviceRadius, provenance: "client_confirmed" },
     differentiators: values(intake.differentiators, 12).map((value) => ({ value, provenance: "client_supplied" })),
     leadEmail: text(intake.leadEmail || intake.email, 240),
@@ -116,8 +152,13 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
       primaryCity,
       serviceRadius,
       coverageAreas,
-      evidence: enrichment.coverageEvidence || { source: primaryCity ? "client_confirmed_primary_city" : "unavailable", lookups: 0 },
-      warnings: Array.isArray(enrichment.warnings) ? enrichment.warnings : [],
+      evidence: unsupportedRadiusWarning
+        ? { source: primaryCity ? "client_confirmed_primary_city" : "unavailable", lookups: 0 }
+        : enrichment.coverageEvidence || { source: primaryCity ? "client_confirmed_primary_city" : "unavailable", lookups: 0 },
+      warnings: [...new Set([
+        ...(Array.isArray(enrichment.warnings) ? enrichment.warnings : []),
+        ...(unsupportedRadiusWarning ? [unsupportedRadiusWarning] : []),
+      ])],
     },
     verifiedAssets: Object.fromEntries(Object.entries(assets).filter(([, value]) => typeof value === "string" && value).map(([key, value]) => [key, { url: value, provenance: "client_supplied_asset" }])),
     brand: {

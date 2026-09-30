@@ -87,6 +87,17 @@ function imageOnlyDirection(value, limit = 180) {
     .trim();
 }
 
+function sceneOnlyDirection(value, limit = 280) {
+  const safeReferenceText = String(value || "").replace(
+    /\b(?:phone|email|address|street|contact|url|estimate|form|button|navigation|nav|hero|layout|column|paired|alongside|carries|carry|overlay|stacked|statement|floating|upper|lower|left|right|centered|headline|promise|action|cta|section|slider|before-and-after|homeowners?|technicians?|workers?|people|persons?|customers?|clients?|staff|employees?|faces?)\b/giu,
+    " ",
+  );
+  return imageOnlyDirection(safeReferenceText, limit)
+    .replace(/\b(?:full[- ]width|wide[- ]screen|desktop|mobile|viewport)\b/giu, " ")
+    .replace(/[,:;\s]+/gu, " ")
+    .trim();
+}
+
 function sha256(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
@@ -213,11 +224,9 @@ function promptFor(site, route, placement) {
   };
   const familyBrief = familyAssetBriefs[dna.familyId] || {
     medium: "commercial editorial photography",
-    hero: "Create a distinctive hero scene whose geometry follows the assigned Reference DNA.",
-    secondary:
-      "Create a supporting scene whose crop follows the assigned Reference DNA.",
-    tertiary:
-      "Create a tactile supporting detail whose crop follows the assigned Reference DNA.",
+    hero: "Create a distinctive, service-relevant scene using the assigned reference's physical subject cues.",
+    secondary: "Create a distinct supporting service scene using the assigned reference's physical subject cues.",
+    tertiary: "Create a tactile material or service detail using the assigned reference's physical subject cues.",
   };
   const subject = services.length
     ? services.join(", ")
@@ -234,8 +243,14 @@ function promptFor(site, route, placement) {
   const problemContext = problems.length
     ? `Customer concerns to understand visually, without adding claims: ${problems.join("; ")}.`
     : "";
+  const referenceScene = sceneOnlyDirection(
+    `${dna.heroGeometry?.mode || ""}. ${dna.imageTreatment?.mode || ""}`,
+  );
+  const referenceSceneContext = referenceScene
+    ? `Reference-specific physical scene cues: ${referenceScene}. Use only subject and material cues; do not reproduce its layout, interface, or exact source image.`
+    : "";
   const dnaContext = dna.familyId
-    ? `Image art direction: ${familyImageDirection[dna.familyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${imageOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
+    ? `Image art direction: ${familyImageDirection[dna.familyId] || "Follow the assigned reference's visual mood and materials without copying a brand."} Image treatment: ${sceneOnlyDirection(dna.imageTreatment?.mode, 120)}. Crop strategy: ${imageOnlyDirection(dna.imageTreatment?.crop, 140)}. Palette intent: ${imageOnlyDirection(dna.palette?.contrastIntent, 140)}.`
     : "";
   const directionContext = direction ? `Visual direction: ${direction}.` : "";
   const placementBrief =
@@ -250,6 +265,7 @@ function promptFor(site, route, placement) {
     "Hard rule: output only a single image, never a website or webpage screenshot, browser frame, UI, interface, wireframe, mockup, poster, brochure, menu, book cover, sign, or text collage. No readable text or text-like marks, words, letters, glyphs, logos, watermarks, branded products, people, faces, credentials, medical claims, or copied campaign. Reference is visual mood only, not image content.",
     `Primary request: ${placementBrief}.`,
     `Business context: ${subject}.`,
+    referenceSceneContext,
     areaContext,
     dnaContext,
     directionContext,

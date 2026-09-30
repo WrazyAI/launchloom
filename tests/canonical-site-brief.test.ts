@@ -128,6 +128,78 @@ describe("canonical site brief compilation", () => {
     expect(brief.coverageAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
   });
 
+  it("splits semicolon-delimited service areas without splitting commas inside place names", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        services: "Interior painting",
+        serviceAreas: "Portland, OR; Beaverton, OR; Lake Oswego, OR",
+        serviceRadius: "30",
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief.primaryCity).toBe("Portland, OR");
+    expect(brief.coverageAreas).toEqual([
+      "Portland, OR",
+      "Beaverton, OR",
+      "Lake Oswego, OR",
+    ]);
+    expect(brief.serviceAreas).toBe(
+      "Portland, OR\nBeaverton, OR\nLake Oswego, OR",
+    );
+  });
+
+  it("does not discard client-confirmed towns when coverage enrichment adds suggestions", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        serviceAreas: "Portland, OR; Beaverton, OR; Lake Oswego, OR",
+      },
+      enrichment: {
+        coverageAreas: ["Portland, OR", "Tigard, OR"],
+        coverageEvidence: { source: "google_geocoding", lookups: 16 },
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief.coverageAreas).toEqual([
+      "Portland, OR",
+      "Beaverton, OR",
+      "Lake Oswego, OR",
+      "Tigard, OR",
+    ]);
+    expect(brief.businessTruth.coverageAreas).toMatchObject([
+      { value: "Portland, OR", provenance: "client_confirmed_primary_city" },
+      { value: "Beaverton, OR", provenance: "legacy_client_supplied_area" },
+      { value: "Lake Oswego, OR", provenance: "legacy_client_supplied_area" },
+      { value: "Tigard, OR", provenance: "google_geocoding" },
+    ]);
+  });
+
+  it("does not retain an unsupported travel radius as confirmed canonical truth", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        primaryCity: "Portland, OR",
+        serviceRadius: "25",
+      },
+      enrichment: {
+        coverageAreas: ["Portland, OR", "Tigard, OR"],
+        coverageEvidence: { source: "google_geocoding", lookups: 16 },
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief.serviceRadius).toBeNull();
+    expect(brief.coverageAreas).toEqual(["Portland, OR"]);
+    expect(brief.businessTruth.serviceRadius).toBeNull();
+    expect(brief.coverage.evidence).toEqual({
+      source: "client_confirmed_primary_city",
+      lookups: 0,
+    });
+    expect(brief.coverage.warnings).toContain(
+      "The submitted travel radius is not supported; only explicitly confirmed coverage areas are retained.",
+    );
+  });
+
   it("preserves commas within one confirmed service from intake through the page map", () => {
     const brief = compileCanonicalSiteBrief({
       intake: {

@@ -338,6 +338,96 @@ describe("contextual image generation", () => {
       expect(manifest.placements).toHaveLength(1);
   });
 
+  it("carries each painting reference's physical scene cues into its own hero image prompt", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
+    const site = fixture();
+    site.businessKind = "residential painting contractor";
+    site.industry = "painting";
+    site.services = [{ name: "Interior and exterior painting" }];
+    site.style = {
+      tone: "calm and craft-focused",
+      preference: "warm residential",
+      visualDirection: "documentary photos of completed residential painting work",
+    };
+    site.seoResearch = {
+      copyVocabulary: ["residential painting Minneapolis"],
+      customerQuestions: ["Which rooms or exterior surfaces need painting?"],
+    };
+    const prompts: string[] = [];
+    const routes = [
+      {
+        id: "interior-reference",
+        signature: "warm residential interior",
+        referenceDna: {
+          familyId: "web-painting-novak",
+          heroGeometry: {
+            mode: "an editorial column paired with a large refined living-room photograph",
+          },
+          imageTreatment: {
+            mode: "calm residential interiors and project thumbnails",
+          },
+        },
+      },
+      {
+        id: "coastal-exterior-reference",
+        signature: "coastal finished house",
+        referenceDna: {
+          familyId: "web-painting-mfl",
+          heroGeometry: {
+            mode: "a coastal-house exterior image carries an estimate form alongside",
+          },
+          imageTreatment: {
+            mode: "residential exterior project photography",
+          },
+        },
+      },
+      {
+        id: "painted-house-reference",
+        signature: "painted home scene",
+        referenceDna: {
+          familyId: "web-painting-southern",
+          heroGeometry: {
+            mode: "a full-width painted-house exterior lifestyle scene with a floating estimate form",
+          },
+          imageTreatment: {
+            mode: "finished painted homes and room interiors",
+          },
+        },
+      },
+    ];
+
+    await generate({
+      site,
+      inspiration: { routes },
+      outputDir,
+      key: "test-fal-key",
+      maxImages: 3,
+      maxRequests: 3,
+      falClient: {
+        config() {},
+        async subscribe(
+          _model: string,
+          options: { input: { prompt: string } },
+        ) {
+          prompts.push(options.input.prompt);
+          return {
+            data: {
+              images: [{ url: `https://fal.example/painting-${prompts.length}.jpg` }],
+            },
+          };
+        },
+      },
+      fetchImpl: async () => fakeImageResponse(),
+    });
+
+    expect(prompts).toHaveLength(3);
+    expect(prompts[0]).toMatch(/living-room/i);
+    expect(prompts[1]).toMatch(/coastal-house|exterior/i);
+    expect(prompts[2]).toMatch(/painted-house|exterior/i);
+    for (const prompt of prompts)
+      expect(prompt).not.toMatch(/estimate form|floating estimate/iu);
+  });
+
   it("keeps layout and typography labels out of standalone image prompts", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "launchloom-assets-"));
     const prompts: string[] = [];
