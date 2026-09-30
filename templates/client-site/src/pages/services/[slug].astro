@@ -3,17 +3,26 @@ import SiteLayout from "../../layouts/SiteLayout.astro";
 import Header from "../../components/Header.astro";
 import LeadForm from "../../components/LeadForm.astro";
 import Footer from "../../components/Footer.astro";
+import ServiceCandidateHost from "../../components/ServiceCandidateHost";
 import site, { phoneHref, type Service } from "../../lib/site";
 import { resolvePageRecipe } from "../../lib/page-recipe";
 import { compileExperiencePack } from "../../lib/experience-pack";
 import "../../styles/experience-packs.css";
+import "../../generated-experiences/selected/styles.css";
 
 export function getStaticPaths() {
   return site.services.map((service) => ({ params: { slug: service.slug }, props: { service } }));
 }
 const { service } = Astro.props as { service: Service };
 const { recipe } = resolvePageRecipe(site);
-const experience = site.design?.experience?.packId ? compileExperiencePack(site, recipe) : null;
+const creativeServicePage = Boolean(
+  site.design?.experience?.renderer === "creative-candidate" &&
+    site.design?.experience?.candidateId &&
+    site.design?.experience?.servicePage === true,
+);
+const experience = site.design?.experience?.packId || creativeServicePage
+  ? compileExperiencePack(site, recipe)
+  : null;
 const trades = recipe === "local-trades";
 const care = recipe === "care-editorial";
 const serviceImage = site.assets?.photoTwo || site.assets?.photoOne || site.images.secondary || site.images.hero;
@@ -21,6 +30,44 @@ const related = site.services.filter((item) => item.slug !== service.slug).slice
 const process = site.conversion?.process?.slice(0, 4) || [];
 const faqs = site.conversion?.faqs?.slice(0, 4) || [];
 const support = service.decisionSupport;
+const diagnostic = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
+const creativeRuntime = {
+  candidateId: site.design?.experience?.candidateId || "selected",
+  diagnostic,
+  lead: {
+    apiUrl: diagnostic ? "" : site.lead?.apiUrl || "",
+    token: diagnostic ? "" : site.lead?.token || "",
+  },
+  reviews: {
+    apiUrl: site.socialProof?.google?.apiUrl || "",
+    token: site.socialProof?.google?.token || "",
+  },
+};
+const creativeService = creativeServicePage
+  ? {
+      name: service.name,
+      slug: service.slug,
+      description: service.description,
+      support: {
+        scope: support?.scope || service.description,
+        preparation:
+          support?.preparation ||
+          site.business.offer ||
+          `Contact ${site.business.name} for details that apply to your needs.`,
+        nextStep:
+          support?.nextStep ||
+          (trades
+            ? "Describe the issue, share your location, and the team will confirm the appropriate next step before scheduling."
+            : care
+              ? "Share what support you are considering. The team will listen, answer questions, and help you decide whether this option is suitable."
+              : "Share your goal and contact details so the team can recommend a next step."),
+      },
+      related: related.map(({ name, slug, description }) => ({ name, slug, description })),
+      process,
+      faqs,
+      images: { context: serviceImage || "" },
+    }
+  : null;
 const serviceStructuredData = {
   "@context": "https://schema.org",
   "@type": "Service",
@@ -36,19 +83,32 @@ const serviceStructuredData = {
 ---
 
 <SiteLayout title={`${service.name} | ${site.business.name}`} description={service.description} schemas={[serviceStructuredData]}>
-  <Header />
-  <main class:list={["inner-page", `recipe-${recipe}`, experience && `inner-experience-${experience.program.packId}`]} data-experience-pack={experience?.program.packId}>
-    <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home</a> / <a class="breadcrumb" href="/services/">All services</a><span class="kicker">{care ? "Care option" : "Service details"}</span><h1>{service.name}</h1><p>{service.description}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{serviceImage && <img src={serviceImage} alt={`${site.business.name} ${site.assets?.photoOne || site.assets?.photoTwo ? "client-provided service photo" : "service context"}`} />}</div></section>
+  {creativeService && experience ? (
+    <div
+      data-service-page-host="true"
+      data-creative-renderer="creative-candidate"
+      data-service-page-candidate={creativeRuntime.candidateId}
+      data-service-page-family={site.design?.experience?.familyId || "unknown"}
+    >
+      <ServiceCandidateHost client:load content={experience.content} runtime={creativeRuntime} service={creativeService} />
+    </div>
+  ) : (
+    <>
+      <Header />
+      <main class:list={["inner-page", `recipe-${recipe}`, experience && `inner-experience-${experience.program.packId}`]} data-experience-pack={experience?.program.packId}>
+        <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home</a> / <a class="breadcrumb" href="/services/">All services</a><span class="kicker">{care ? "Care option" : "Service details"}</span><h1>{service.name}</h1><p>{service.description}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{serviceImage && <img src={serviceImage} alt={`${site.business.name} ${site.assets?.photoOne || site.assets?.photoTwo ? "client-provided service photo" : "service context"}`} />}</div></section>
 
-    <section class="section wrap service-decision"><div class="section-heading"><span class="kicker">A useful place to start</span><h2>{trades ? "Understand the problem, then choose the right service." : care ? "Talk through the support that fits your situation." : "A few useful details before you choose."}</h2></div><div class="decision-grid"><div><h3>What to ask about</h3><p>{support?.scope || service.description}</p></div><div><h3>What happens next</h3><p>{support?.nextStep || (trades ? "Describe the issue, share your location, and the team will confirm the appropriate next step before scheduling." : care ? "Share what support you are considering. The team will listen, answer questions, and help you decide whether this option is suitable." : "Share your goal and contact details so the team can recommend a next step.")}</p></div><div><h3>What to prepare</h3><p>{support?.preparation || site.business.offer || `Contact ${site.business.name} for details that apply to your needs.`}</p></div></div></section>
+        <section class="section wrap service-decision"><div class="section-heading"><span class="kicker">A useful place to start</span><h2>{trades ? "Understand the problem, then choose the right service." : care ? "Talk through the support that fits your situation." : "A few useful details before you choose."}</h2></div><div class="decision-grid"><div><h3>What to ask about</h3><p>{support?.scope || service.description}</p></div><div><h3>What happens next</h3><p>{support?.nextStep || (trades ? "Describe the issue, share your location, and the team will confirm the appropriate next step before scheduling." : care ? "Share what support you are considering. The team will listen, answer questions, and help you decide whether this option is suitable." : "Share your goal and contact details so the team can recommend a next step.")}</p></div><div><h3>What to prepare</h3><p>{support?.preparation || site.business.offer || `Contact ${site.business.name} for details that apply to your needs.`}</p></div></div></section>
 
-    {process.length > 0 && <section class="inner-band"><div class="wrap"><div class="section-heading"><span class="kicker">The process</span><h2>Clear steps from first contact.</h2></div><ol class="process-grid">{process.map((step, index) => <li><span>0{index + 1}</span><p>{step}</p></li>)}</ol></div></section>}
+        {process.length > 0 && <section class="inner-band"><div class="wrap"><div class="section-heading"><span class="kicker">The process</span><h2>Clear steps from first contact.</h2></div><ol class="process-grid">{process.map((step, index) => <li><span>0{index + 1}</span><p>{step}</p></li>)}</ol></div></section>}
 
-    {related.length > 0 && <section class="section wrap related-services"><div class="section-heading"><span class="kicker">Other ways we can help</span><h2>Explore related services.</h2></div><div class="service-grid">{related.map((item) => <a class="service-card" href={`/services/${item.slug}/`}><h3>{item.name}</h3><p>{item.description}</p><b>View service details <i aria-hidden="true">↗</i></b></a>)}</div></section>}
+        {related.length > 0 && <section class="section wrap related-services"><div class="section-heading"><span class="kicker">Other ways we can help</span><h2>Explore related services.</h2></div><div class="service-grid">{related.map((item) => <a class="service-card" href={`/services/${item.slug}/`}><h3>{item.name}</h3><p>{item.description}</p><b>View service details <i aria-hidden="true">↗</i></b></a>)}</div></section>}
 
-    {faqs.length > 0 && <section class="section wrap faq-section"><div class="section-heading"><span class="kicker">Before you reach out</span><h2>Practical questions, answered.</h2></div><div class="faq-list">{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
+        {faqs.length > 0 && <section class="section wrap faq-section"><div class="section-heading"><span class="kicker">Before you reach out</span><h2>Practical questions, answered.</h2></div><div class="faq-list">{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
 
-    <section class="contact-section" id="contact"><div class="wrap contact-grid"><div class="contact-copy"><span class="kicker">Ask about {service.name}</span><h2>{site.business.primaryCta}</h2><p>Tell us what you need and we will follow up with the most useful next step.</p>{site.business.phone && <a class="contact-phone" href={phoneHref(site.business.phone)}>{site.business.phone}</a>}</div><LeadForm id={`service-${service.slug}`} /></div></section>
-  </main>
-  <Footer />
+        <section class="contact-section" id="contact"><div class="wrap contact-grid"><div class="contact-copy"><span class="kicker">Ask about {service.name}</span><h2>{site.business.primaryCta}</h2><p>Tell us what you need and we will follow up with the most useful next step.</p>{site.business.phone && <a class="contact-phone" href={phoneHref(site.business.phone)}>{site.business.phone}</a>}</div><LeadForm id={`service-${service.slug}`} /></div></section>
+      </main>
+      <Footer />
+    </>
+  )}
 </SiteLayout>

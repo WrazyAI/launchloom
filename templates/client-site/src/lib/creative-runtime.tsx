@@ -49,6 +49,25 @@ export type CreativeContent = {
   } | null;
 };
 
+export type CreativeServicePage = {
+  name: string;
+  slug: string;
+  description: string;
+  support: {
+    scope: string;
+    preparation: string;
+    nextStep: string;
+  };
+  related: readonly {
+    name: string;
+    slug: string;
+    description: string;
+  }[];
+  process: readonly string[];
+  faqs: readonly { question: string; answer: string }[];
+  images: { context?: string };
+};
+
 export function useReducedMotion(runtime?: CreativeRuntime) {
   const [reducedMotion, setReducedMotion] = useState(
     Boolean(runtime?.reducedMotion),
