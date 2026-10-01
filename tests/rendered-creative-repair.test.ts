@@ -543,7 +543,8 @@ export default function Experience({ content, runtime }) { return <main><section
     expect(result.status).toBe("passed");
     expect(seenAtRepair).toHaveLength(2);
     expect(seenAtRepair[1]).toBe(originalSource);
-    expect(repairFindings[1]).toContain("overall fidelity scored 78");
+    expect(repairFindings[1]).toContain("must not regress");
+    expect(repairFindings[1]).toContain("overall 78");
     expect(repairFindings[1]).not.toContain("scored 60");
   });
 
@@ -654,7 +655,7 @@ export default function Experience({ content, runtime }) { return <main><section
                       pass: false,
                       audit: {
                         verdict: "revise",
-                        overallScore: 78,
+                        overallScore: 74,
                         scores: {
                           heroGeometry: 87,
                           typography: 82,
@@ -691,13 +692,13 @@ export default function Experience({ content, runtime }) { return <main><section
 
     const findings = repairFindings[0].join("\n");
     expect(findings).toContain(
-      "rendered-reference overall fidelity scored 78 and must reach 82",
+      "rendered-reference overall fidelity scored 74 and must reach 78",
     );
     expect(findings).toContain(
       "rendered-reference dimension paletteAdherence scored 56 and must reach 80",
     );
     expect(findings).toContain(
-      "rendered-reference dimension servicePresentation scored 72 and must reach 80",
+      "rendered-reference dimension servicePresentation scored 72 and must reach 75",
     );
     expect(findings).not.toContain("dimension heroGeometry scored");
     expect(findings).toContain(

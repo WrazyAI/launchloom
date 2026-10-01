@@ -1142,9 +1142,15 @@ export async function runRenderedCreativeRepair({
   async function rememberBestState(report, round) {
     for (const candidate of report?.candidates || []) {
       const state = repairState(report, candidate);
-      // A candidate measured at or above the rendered bar would have been
-      // selected, so only below-bar states are worth keeping as baselines.
-      if (!(state.metric < RENDERED_REFERENCE_THRESHOLDS.overall)) continue;
+      // Only states judged by the rendered measurements are comparable as
+      // repair baselines. The candidate is failing in this branch, so even a
+      // state at the overall bar can still be the best available baseline.
+      if (
+        !Number.isFinite(
+          Number(candidate?.renderedReferenceFidelity?.audit?.overallScore),
+        )
+      )
+        continue;
       const existing = bestState.get(candidate.candidateId);
       if (!isBetterState(state, existing)) continue;
       const directory = resolveCandidateDirectory(

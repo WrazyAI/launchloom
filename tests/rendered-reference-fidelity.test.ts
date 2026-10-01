@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
+  RENDERED_REFERENCE_THRESHOLDS,
   evaluateRenderedDiversity,
   evaluateRenderedReferenceFidelity,
 } from "../scripts/rendered-reference-fidelity.mjs";
@@ -958,5 +959,25 @@ describe("rendered reference fidelity", () => {
         pass: false,
       }),
     ]);
+  });
+
+  it("keeps the approved 2026-10-01 rendered-reference calibration", () => {
+    expect(RENDERED_REFERENCE_THRESHOLDS.overall).toBe(78);
+    expect(RENDERED_REFERENCE_THRESHOLDS.servicePresentation).toBe(75);
+    expect(RENDERED_REFERENCE_THRESHOLDS).toEqual({
+      overall: 78,
+      heroGeometry: 80,
+      typography: 78,
+      spatialRhythm: 78,
+      imagery: 72,
+      servicePresentation: 75,
+      navigation: 75,
+      ctaPlacement: 75,
+      mobileRecomposition: 78,
+      interactionEvidence: 65,
+      paletteAdherence: 80,
+      artDirection: 80,
+      pairwiseDistinctiveness: 72,
+    });
   });
 });

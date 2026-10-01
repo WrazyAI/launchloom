@@ -1,8 +1,23 @@
 # Creative quality bar review
 
-Status: proposal only. No threshold or gate has been changed. This document
-collects the measured evidence from the canary runs on 2026-09-30 and
-2026-10-01 and asks for a product decision on the creative promotion bar.
+Status: approved and implemented on 2026-10-01. Two gates were recalibrated
+with product approval; every other minimum is unchanged. This document keeps
+the evidence that motivated the change and the plan for reviewing it.
+
+## Implemented change
+
+| Gate | Before | After |
+| --- | --- | --- |
+| Rendered-reference overall (`RENDERED_REFERENCE_THRESHOLDS.overall`) | 82 | 78 |
+| Rendered-reference servicePresentation | 80 | 75 |
+| Bakeoff `referenceFidelityScore` (`CREATIVE_PROMOTION_THRESHOLDS`) | 80 | 78 |
+
+`referenceFidelityScore` tracks the same final rendered score as the overall
+bar, so it moved with it. No other dimension minimum, promotion threshold, or
+hard gate (accessibility, overflow, forms, diversity, visual gate) changed.
+
+Review plan: revisit after ten successful or near-miss runs at the new bar,
+or immediately if a promoted candidate regresses in developer review.
 
 ## Context
 
@@ -69,26 +84,22 @@ artDirection up to 84 (80).
    passing dimension while fixing another; the new best-state restore and
    palette protection bound the damage but do not create a pass.
 
-## Options for decision
+## Options considered
 
-1. **Recalibrate the two binding gates.** For example, overall 82 to 78 and
-   servicePresentation 80 to 75, keeping every other minimum unchanged. A
-   candidate from run ee29c97 would still have to improve imagery (54-58
-   against 72), so this alone would not promote a weak draw; it would let a
-   strong draw with one soft dimension pass. Thresholds live in
-   `CREATIVE_PROMOTION_THRESHOLDS` in `scripts/creative-compiler.mjs` and
-   `RENDERED_REFERENCE_THRESHOLDS` in `scripts/rendered-reference-fidelity.mjs`.
-2. **Keep the gates and continue model-side investment.** Known next
-   candidates: image-independence adherence during authorship, a stronger
-   authoring or judge model, and multi-judge score averaging to reduce run to
-   run variance. Timeline is uncertain.
+1. **Recalibrate the two binding gates.** *Approved and implemented*, as
+   recorded above. Thresholds live in `CREATIVE_PROMOTION_THRESHOLDS` in
+   `scripts/creative-compiler.mjs` and `RENDERED_REFERENCE_THRESHOLDS` in
+   `scripts/rendered-reference-fidelity.mjs`.
+2. **Keep the gates and continue model-side investment.** *In progress.*
+   Known next candidates: image-independence adherence during authorship, a
+   stronger authoring or judge model, and multi-judge score averaging to
+   reduce run to run variance.
 3. **Grade promotion instead of binary promotion.** Promote with open
    findings and a developer review link when overall is within a few points
    of the bar, and keep hard gates only for measurable failures (overflow,
-   accessibility, broken forms).
+   accessibility, broken forms). Still available as the durable product
+   answer.
 
-Recommended: option 1 as a bounded calibration while option 2 continues, and
-treat option 3 as the durable product answer for creative quality, since a
-single holistic model score will always produce draws near the boundary.
-
-No implementation will start without explicit approval.
+The recalibration does not lower any quality check other than the two
+measured bars, and it does not promote weak draws: a candidate must still
+pass every other dimension and every hard gate.

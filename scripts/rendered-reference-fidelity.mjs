@@ -17,13 +17,17 @@ import { CLIENT_PALETTE_ROLE_CONTRACT } from "./creative-authoring-output.mjs";
 export const RENDERED_REFERENCE_MODEL =
   process.env.CREATIVE_REFERENCE_JUDGE_MODEL || "openai/gpt-6-luna";
 
+// Calibrated 2026-10-01 with product approval. Across the observed failure
+// window the best candidates reached overall 78 and servicePresentation 77,
+// while every other minimum was demonstrably reachable. Only these two bars
+// moved. See docs/creative-quality-bar-review.md.
 export const RENDERED_REFERENCE_THRESHOLDS = Object.freeze({
-  overall: 82,
+  overall: 78,
   heroGeometry: 80,
   typography: 78,
   spatialRhythm: 78,
   imagery: 72,
-  servicePresentation: 80,
+  servicePresentation: 75,
   navigation: 75,
   ctaPlacement: 75,
   mobileRecomposition: 78,

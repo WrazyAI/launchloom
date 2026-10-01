@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  CREATIVE_PROMOTION_THRESHOLDS,
   assertIndependentRoutes,
   buildCandidateManifest,
   buildRouteContract,
@@ -173,5 +174,16 @@ describe("creative compiler", () => {
       ...manifest,
       referenceDossier: { ...referenceDossier, source: undefined },
     })).toThrow(/incomplete Reference Dossier binding/iu);
+  });
+
+  it("keeps the approved 2026-10-01 promotion calibration", () => {
+    expect(CREATIVE_PROMOTION_THRESHOLDS).toEqual({
+      visualScore: 78,
+      distinctivenessScore: 70,
+      minimumFingerprintDistance: 4,
+      minimumUniqueDimensions: 4,
+      referenceFidelityScore: 78,
+      minimumPairwiseVisualDistance: 72,
+    });
   });
 });
