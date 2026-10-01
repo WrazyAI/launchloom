@@ -18,6 +18,8 @@ const HARD_MAX_FALLBACK_SEARCH_QUERIES = 5;
 const DEFAULT_FALLBACK_MAX_USD = 0.05;
 const HARD_MAX_FALLBACK_USD = 0.25;
 const FALLBACK_RESULTS_PER_QUERY = 4;
+const FALLBACK_SEARCH_TIMEOUT_MS = 45_000;
+const FALLBACK_PROVIDER = "OpenRouter web search (Parallel fast)";
 const US_STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
 };
@@ -343,30 +345,39 @@ export function createOpenRouterWebSearchClient({
   return {
     async search({ query, maxResults = FALLBACK_RESULTS_PER_QUERY }) {
       const boundedQuery = text(query, 300);
+      const boundedMaxResults = Math.max(
+        1,
+        Math.min(
+          FALLBACK_RESULTS_PER_QUERY,
+          Number(maxResults) || FALLBACK_RESULTS_PER_QUERY,
+        ),
+      );
       const response = await openRouterChatCompletion({
         apiKey,
         title: "LaunchLoom SEO Web Search",
         sessionId: openRouterSessionId("seo-web-search", boundedQuery),
         fetchImpl,
-        signal: AbortSignal.timeout(20_000),
+        signal: AbortSignal.timeout(FALLBACK_SEARCH_TIMEOUT_MS),
         body: {
           model,
           messages: [{
             role: "user",
-            content: `Search the public web for this local-market query and return only a terse acknowledgement after searching: ${boundedQuery}`,
+            content: `Search the public web for this local-market query and return at most ${boundedMaxResults} concise source-backed observations. Include a direct citation for every observation using only sources returned by the web-search tool. Do not write or guess URLs yourself. If no relevant result is found, say no relevant source was returned. Do not claim keyword volume, rankings, keyword difficulty, CPC, competitor positions, client facts, services, or locations; this fallback collects qualitative source observations only. Query: ${boundedQuery}`,
           }],
           tools: [{
             type: "openrouter:web_search",
             parameters: {
               engine: "parallel",
-              max_results: Math.max(1, Math.min(FALLBACK_RESULTS_PER_QUERY, Number(maxResults) || FALLBACK_RESULTS_PER_QUERY)),
-              max_total_results: Math.max(1, Math.min(FALLBACK_RESULTS_PER_QUERY, Number(maxResults) || FALLBACK_RESULTS_PER_QUERY)),
+              mode: "fast",
+              max_results: boundedMaxResults,
+              max_uses: 1,
+              max_total_results: boundedMaxResults,
               max_characters: 1200,
             },
           }],
           max_tool_calls: 1,
           tool_choice: "required",
-          max_tokens: 32,
+          max_tokens: 256,
           temperature: 0,
         },
       });
@@ -377,10 +388,27 @@ export function createOpenRouterWebSearchClient({
       if (!response.ok || apiError)
         throw apiError || new Error(`OpenRouter web search returned HTTP ${response.status}.`);
       const body = envelope.payload;
+      const message = body?.choices?.[0]?.message;
+      if (!message || typeof message !== "object")
+        throw new Error("OpenRouter web search returned no assistant message.");
+      const annotations = message.annotations;
+      if (annotations !== undefined && !Array.isArray(annotations))
+        throw new Error("OpenRouter web search returned an unexpected citation shape.");
       const reportedCostUsd = finiteMetric(body?.usage?.cost);
-      const annotations = body?.choices?.[0]?.message?.annotations;
+      const rawSearchRequests = finiteMetric(
+        body?.usage?.server_tool_use?.web_search_requests,
+      );
+      const searchRequests = rawSearchRequests === null
+        ? null
+        : Math.max(0, Math.trunc(rawSearchRequests));
+      if (searchRequests !== null && searchRequests > 1)
+        throw new Error("OpenRouter web search exceeded the one-search server-tool limit.");
       const results = (Array.isArray(annotations) ? annotations : [])
-        .filter((annotation) => annotation?.type === "url_citation" && annotation?.url_citation)
+        .filter((annotation) =>
+          annotation?.type === "url_citation" &&
+          annotation?.url_citation &&
+          typeof annotation.url_citation === "object"
+        )
         .map((annotation) => annotation.url_citation)
         .map((citation) => {
           const url = safeHttpsUrl(citation?.url);
@@ -392,96 +420,168 @@ export function createOpenRouterWebSearchClient({
           };
         })
         .filter(Boolean)
-        .slice(0, FALLBACK_RESULTS_PER_QUERY);
-      return { results, costUsd: reportedCostUsd };
+        .slice(0, boundedMaxResults);
+      return { results, costUsd: reportedCostUsd, searchRequests };
     },
   };
 }
 
 async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnings) {
-  const requested = Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES);
-  const maxQueries = Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number.isFinite(requested) ? requested : DEFAULT_FALLBACK_SEARCH_QUERIES));
+  const requested = Number(
+    options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES,
+  );
+  const maxQueries = Math.max(
+    0,
+    Math.min(
+      HARD_MAX_FALLBACK_SEARCH_QUERIES,
+      Number.isFinite(requested) ? requested : DEFAULT_FALLBACK_SEARCH_QUERIES,
+    ),
+  );
   const requestedUsd = Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD);
-  const maxUsd = Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number.isFinite(requestedUsd) ? requestedUsd : DEFAULT_FALLBACK_MAX_USD));
+  const maxUsd = Math.max(
+    0,
+    Math.min(
+      HARD_MAX_FALLBACK_USD,
+      Number.isFinite(requestedUsd) ? requestedUsd : DEFAULT_FALLBACK_MAX_USD,
+    ),
+  );
   const queries = [];
   for (const service of seo.services) {
     const city = seo.primaryCity ? ` ${seo.primaryCity}` : "";
     queries.push(`${service}${city}`.trim());
   }
-  if (seo.businessName && seo.primaryCity) queries.push(`${seo.businessName} ${seo.primaryCity}`);
+  if (seo.businessName && seo.primaryCity)
+    queries.push(`${seo.businessName} ${seo.primaryCity}`);
   for (const seed of seeds) if (!queries.includes(seed)) queries.push(seed);
   const selected = queries.filter(Boolean).slice(0, maxQueries);
   const evidence = [];
+  const evidenceKeys = new Set();
   let failed = 0;
   let queriesAttempted = 0;
+  let providerSearchRequests = 0;
+  let providerSearchRequestsComplete = true;
   let costUsd = 0;
   let costComplete = true;
   let budgetExhausted = maxUsd <= 0;
-  if (budgetExhausted)
-    warnings.push("Fallback web search budget is zero; no online fallback requests were attempted.");
+  let stopReason = "completed";
+
+  if (maxQueries <= 0) {
+    stopReason = "query_limit_zero";
+    warnings.push(
+      "Fallback web search query limit is zero; no online fallback requests were attempted.",
+    );
+  } else if (budgetExhausted) {
+    stopReason = "budget_zero";
+    warnings.push(
+      "Fallback web search budget is zero; no online fallback requests were attempted.",
+    );
+  }
+
   for (const query of selected) {
     if (budgetExhausted) break;
     try {
-      const observed = await webSearch.search({ query, maxResults: FALLBACK_RESULTS_PER_QUERY });
+      const observed = await webSearch.search({
+        query,
+        maxResults: FALLBACK_RESULTS_PER_QUERY,
+      });
       queriesAttempted += 1;
+
+      const reportedSearchRequests = finiteMetric(observed?.searchRequests);
+      if (reportedSearchRequests === null) {
+        providerSearchRequestsComplete = false;
+      } else {
+        providerSearchRequests += Math.max(
+          0,
+          Math.trunc(reportedSearchRequests),
+        );
+      }
+
       const reportedCost = finiteMetric(observed?.costUsd);
       if (reportedCost === null) {
         costComplete = false;
-        warnings.push("Fallback web search did not report request cost; additional fallback queries were stopped to preserve the configured spend bound.");
+        stopReason = "cost_unreported";
+        warnings.push(
+          "Fallback web search did not report request cost; additional fallback queries were stopped to preserve the configured spend bound.",
+        );
       } else {
         costUsd = roundCost(costUsd + Math.max(0, reportedCost));
       }
+
       const retrievedAt = new Date().toISOString();
       for (const result of observed?.results || []) {
         const url = safeHttpsUrl(result?.url);
         if (!url) continue;
+        const key = `${query}\n${url}`;
+        if (evidenceKeys.has(key)) continue;
+        evidenceKeys.add(key);
         evidence.push({
           query,
           sourceUrl: url,
           title: text(result?.title, 300),
           snippet: text(result?.snippet, 1_200),
           retrievedAt,
-          provider: "OpenRouter web search (Parallel)",
-          provenance: "external_search_observation",
+          provider: FALLBACK_PROVIDER,
+          provenance: "openrouter_web_search_url_citation",
         });
       }
+
       if (!costComplete) break;
       if (costUsd > maxUsd) {
         budgetExhausted = true;
-        warnings.push(`Fallback web search exceeded the configured USD ${maxUsd.toFixed(3)} spend bound on the final completed request; no additional fallback queries were issued.`);
+        stopReason = "budget_exceeded";
+        warnings.push(
+          `Fallback web search exceeded the configured USD ${maxUsd.toFixed(3)} spend bound on the final completed request; no additional fallback queries were issued.`,
+        );
       } else if (costUsd >= maxUsd && queriesAttempted < selected.length) {
         budgetExhausted = true;
-        warnings.push(`Fallback web search stopped at the configured USD ${maxUsd.toFixed(3)} spend bound after ${queriesAttempted} query(s).`);
+        stopReason = "budget_reached";
+        warnings.push(
+          `Fallback web search stopped at the configured USD ${maxUsd.toFixed(3)} spend bound after ${queriesAttempted} query(s).`,
+        );
       }
     } catch (error) {
       queriesAttempted += 1;
       failed += 1;
       costComplete = false;
+      const errorName = text(error?.name, 80);
+      stopReason = /Timeout|Abort/iu.test(errorName) ? "timeout" : "request_failed";
       warnings.push(
         `Fallback web search unavailable for one bounded query: ${text(error instanceof Error ? error.message : error, 240)} Additional fallback queries were stopped because provider spend for the failed request is unknown.`,
       );
       break;
     }
   }
+
   const incomplete =
     failed > 0 ||
     budgetExhausted ||
     !costComplete ||
     queriesAttempted < selected.length;
+  const status = evidence.length
+    ? (incomplete ? "partial" : "complete")
+    : failed
+      ? "failed"
+      : queriesAttempted === 0
+        ? "unavailable"
+        : "empty";
+  if (
+    status === "empty" &&
+    stopReason === "completed"
+  ) stopReason = "no_citations";
+
   return {
     evidence,
-    status: evidence.length
-      ? (incomplete ? "partial" : "complete")
-      : failed
-        ? "failed"
-        : budgetExhausted
-          ? "budget-exhausted"
-          : "empty",
+    status,
+    stopReason,
     queriesAttempted,
     failedQueries: failed,
     maxQueries,
     maxResultsPerQuery: FALLBACK_RESULTS_PER_QUERY,
-    provider: "OpenRouter web search (Parallel)",
+    provider: FALLBACK_PROVIDER,
+    providerSearchRequests: providerSearchRequestsComplete
+      ? providerSearchRequests
+      : null,
+    providerSearchRequestsComplete,
     costUsd: roundCost(costUsd),
     maxUsd,
     costComplete,
@@ -520,11 +620,14 @@ export async function researchSiteContext(intake = {}, options = {}) {
     externalSearchEvidence: [],
     fallbackSearch: {
       status: options.webSearch ? "pending" : "unavailable",
-      provider: options.webSearch ? "OpenRouter web search (Parallel)" : null,
+      stopReason: options.webSearch ? null : "provider_unavailable",
+      provider: options.webSearch ? FALLBACK_PROVIDER : null,
       queriesAttempted: 0,
       failedQueries: 0,
-      maxQueries: Math.max(1, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES) || DEFAULT_FALLBACK_SEARCH_QUERIES)),
+      maxQueries: Math.max(0, Math.min(HARD_MAX_FALLBACK_SEARCH_QUERIES, Number.isFinite(Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES)) ? Number(options.maxFallbackSearchQueries ?? DEFAULT_FALLBACK_SEARCH_QUERIES) : DEFAULT_FALLBACK_SEARCH_QUERIES)),
       maxResultsPerQuery: FALLBACK_RESULTS_PER_QUERY,
+      providerSearchRequests: 0,
+      providerSearchRequestsComplete: true,
       costUsd: 0,
       maxUsd: (() => {
         const requested = Number(options.maxFallbackUsd ?? DEFAULT_FALLBACK_MAX_USD);
@@ -617,7 +720,50 @@ export async function researchSiteContext(intake = {}, options = {}) {
     }
   }
 
-  function returnPartialResearch() {
+  async function attachFallbackEvidenceAfterProviderFailure() {
+    const hasProviderFailure = stageCosts.some((stage) =>
+      stage.status === "failed" || stage.status === "unavailable"
+    );
+    if (base.fallbackSearch.status !== "pending") return;
+    if (!options.webSearch) {
+      base.fallbackSearch.status = "unavailable";
+      base.fallbackSearch.stopReason = "provider_unavailable";
+      return;
+    }
+    if (!hasProviderFailure) {
+      base.fallbackSearch.status = "not-needed";
+      base.fallbackSearch.stopReason = "measured_provider_sufficient";
+      return;
+    }
+
+    const fallback = await collectFallbackWebEvidence(
+      seo,
+      seeds,
+      options.webSearch,
+      options,
+      warnings,
+    );
+    base.externalSearchEvidence = fallback.evidence;
+    base.fallbackSearch = { ...fallback };
+    base.evidence.push(...fallback.evidence.map((item) => ({
+      type: "external_web_search",
+      query: item.query,
+      sourceUrl: item.sourceUrl,
+      title: item.title,
+      snippet: item.snippet,
+      retrievedAt: item.retrievedAt,
+      provider: item.provider,
+      provenance: item.provenance,
+    })));
+    warnings.push(
+      fallback.evidence.length
+        ? "Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts or production SEO readiness."
+        : "The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.",
+    );
+  }
+
+  async function returnPartialResearch() {
+    await attachFallbackEvidenceAfterProviderFailure();
     base.cost = { ...cost, limitUsd: limits.maxUsd, stageCosts };
     base.warnings = [...new Set(warnings)];
     return base;
@@ -854,6 +1000,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     ...relatedRows.map((item) => ({ type: "related_keyword", query: item.keyword, provenance: item.provenance })),
     ...(rankingStageComplete ? [{ type: "ranked_keywords", target: seo.existingWebsite, resultCount: quickWins.length, provenance: "DataForSEO" }] : []),
   ];
+  await attachFallbackEvidenceAfterProviderFailure();
   const requiredResearchComplete =
     Boolean(seo.primaryCity) &&
     base.completeness.keywordOverview &&
@@ -1022,9 +1169,11 @@ export function renderSeoMapMarkdown(dossier) {
     `Coverage communities (facts, not automatic pages): ${(dossier.marketSnapshot?.coverageAreas || []).join(", ") || "primary city only"}`,
     `Keyword metrics measured: ${dossier.marketSnapshot?.measuredKeywords || 0}/${dossier.marketSnapshot?.queriedKeywords || 0}`,
     `DataForSEO provider-reported spend: ${spendSummary} (cap ${Number(dossier.cost?.limitUsd || 0).toFixed(2)}).`,
-    dossier.fallbackSearch?.status && dossier.fallbackSearch.status !== "unavailable"
-      ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / USD ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations do not satisfy measured SEO publication requirements.`
-      : "Fallback web search: unavailable.",
+    dossier.fallbackSearch?.status === "not-needed"
+      ? "Fallback web search: not needed because measured provider research did not fail."
+      : dossier.fallbackSearch?.status && dossier.fallbackSearch.status !== "unavailable"
+        ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported search requests ${dossier.fallbackSearch.providerSearchRequests ?? "unavailable"}; provider-reported spend USD ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / USD ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap; stop reason ${dossier.fallbackSearch.stopReason || "completed"}${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations do not satisfy measured SEO publication requirements.`
+        : "Fallback web search: unavailable.",
     "",
     "## B. Competitors and structural observations",
     "",
@@ -1087,7 +1236,7 @@ async function main() {
   const password = process.env.DATAFORSEO_PASSWORD;
   const dataForSeo = login && password ? createDataForSeoClient({ login, password }) : undefined;
   const openRouterKey = process.env.OPENROUTER_API_KEY;
-  const webSearch = !dataForSeo && openRouterKey ? createOpenRouterWebSearchClient({ apiKey: openRouterKey }) : undefined;
+  const webSearch = openRouterKey ? createOpenRouterWebSearchClient({ apiKey: openRouterKey }) : undefined;
   const dossier = await researchSiteContext(intake, {
     dataForSeo,
     webSearch,
