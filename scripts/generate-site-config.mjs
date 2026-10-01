@@ -82,6 +82,51 @@ function seoResearchForConfig(value) {
     completeness: value.completeness || {},
     prohibitedClaims: list(value.prohibitedClaims),
     evidence: list(value.evidence, sourceVersion >= 2 ? 80 : 6),
+    externalSearchEvidence: list(value.externalSearchEvidence, 20).flatMap((item) => {
+      if (!item || typeof item !== "object") return [];
+      let sourceUrl = "";
+      try {
+        const url = new URL(String(item.sourceUrl || ""));
+        if (url.protocol !== "https:") return [];
+        url.username = "";
+        url.password = "";
+        url.hash = "";
+        sourceUrl = url.href;
+      } catch {
+        return [];
+      }
+      return [{
+        query: String(item.query || "").slice(0, 300),
+        sourceUrl,
+        title: String(item.title || "").slice(0, 300),
+        snippet: String(item.snippet || "").slice(0, 1_200),
+        retrievedAt: String(item.retrievedAt || "").slice(0, 80),
+        provider: String(item.provider || "").slice(0, 120),
+        provenance: String(item.provenance || "").slice(0, 120),
+      }];
+    }),
+    fallbackSearch: value.fallbackSearch && typeof value.fallbackSearch === "object"
+      ? {
+          status: ["complete", "partial", "empty", "failed", "unavailable", "not-needed"].includes(value.fallbackSearch.status)
+            ? value.fallbackSearch.status
+            : "unavailable",
+          stopReason: String(value.fallbackSearch.stopReason || "").slice(0, 120) || null,
+          provider: String(value.fallbackSearch.provider || "").slice(0, 120) || null,
+          queriesAttempted: Math.max(0, Number(value.fallbackSearch.queriesAttempted) || 0),
+          failedQueries: Math.max(0, Number(value.fallbackSearch.failedQueries) || 0),
+          maxQueries: Math.max(0, Number(value.fallbackSearch.maxQueries) || 0),
+          maxResultsPerQuery: Math.max(0, Number(value.fallbackSearch.maxResultsPerQuery) || 0),
+          providerSearchRequests: value.fallbackSearch.providerSearchRequests === null ||
+            value.fallbackSearch.providerSearchRequests === undefined
+            ? null
+            : Math.max(0, Number(value.fallbackSearch.providerSearchRequests) || 0),
+          providerSearchRequestsComplete: value.fallbackSearch.providerSearchRequestsComplete !== false,
+          costUsd: Math.max(0, Number(value.fallbackSearch.costUsd) || 0),
+          maxUsd: Math.max(0, Number(value.fallbackSearch.maxUsd) || 0),
+          costComplete: value.fallbackSearch.costComplete !== false,
+          budgetExhausted: value.fallbackSearch.budgetExhausted === true,
+        }
+      : undefined,
     cost: {
       tasks: Number(value.cost?.tasks) || 0,
       usd: Number(value.cost?.usd) || 0,
