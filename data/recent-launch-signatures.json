@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-10-01T01:08:36.885Z",
+  "updatedAt": "2026-10-01T06:20:57.011Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -295,6 +295,42 @@
         "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
         "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
       ]
+    },
+    {
+      "id": "2026-10-01-willowbridge-community-dental-fictional-preview-attempt-109-run-36824027964-attempt-1",
+      "launchedAt": "2026-10-01T06:20:57.010Z",
+      "stage": "attempt",
+      "reservationKey": "109-run-36824027964-attempt-1",
+      "businessName": "Willowbridge Community Dental - Fictional Preview",
+      "businessKind": "dental",
+      "recipe": "care-editorial",
+      "packId": "kinetic-poster",
+      "variantId": "full-bleed",
+      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "attested-dapper-dental-dark",
+        "cinematic-stage",
+        "guided-conversation",
+        "typographic-poster",
+        "web-dental-gartside-street-family",
+        "web-dental-glint-austin-family"
+      ],
+      "heroArchetypes": [
+        "image-led-editorial",
+        "image-overlay"
+      ],
+      "referenceIds": [
+        "attested-dapper-dental",
+        "web-dental-gartside-street",
+        "web-dental-glint-austin"
+      ],
+      "routeSignatures": [
+        "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+        "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+        "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -478,6 +514,42 @@
           "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
           "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
           "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+        ]
+      },
+      {
+        "id": "2026-10-01-willowbridge-community-dental-fictional-preview-attempt-109-run-36824027964-attempt-1",
+        "launchedAt": "2026-10-01T06:20:57.010Z",
+        "stage": "attempt",
+        "reservationKey": "109-run-36824027964-attempt-1",
+        "businessName": "Willowbridge Community Dental - Fictional Preview",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "cinematic-stage",
+          "guided-conversation",
+          "typographic-poster",
+          "web-dental-gartside-street-family",
+          "web-dental-glint-austin-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "web-dental-gartside-street",
+          "web-dental-glint-austin"
+        ],
+        "routeSignatures": [
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
         ]
       }
     ]
