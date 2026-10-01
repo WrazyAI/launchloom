@@ -627,6 +627,11 @@ const contentBoundRuntimeHelpers = new Set([
   "LocationMap",
   "SocialProof",
 ]);
+const optionalSealedImagePaths = new Set([
+  "content.hero.image",
+  "content.hero.secondaryImage",
+  "content.hero.tertiaryImage",
+]);
 
 function validateContentBoundRuntimeHelpers(source, route) {
   const { file, elements } = collectJsxElements(source);
@@ -1162,6 +1167,34 @@ function isSafeLocalHref(value) {
   return href.startsWith("/") && !href.startsWith("//");
 }
 
+function containsNode(ancestor, descendant, file) {
+  return (
+    ancestor.getStart(file) <= descendant.getStart(file) &&
+    ancestor.end >= descendant.end
+  );
+}
+
+function isGuardedOptionalImage(node, expression, file) {
+  const path = expressionPath(expression, file);
+  if (!optionalSealedImagePaths.has(path)) return false;
+  for (let parent = node.parent; parent; parent = parent.parent) {
+    if (
+      ts.isBinaryExpression(parent) &&
+      parent.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken &&
+      expressionPath(parent.left, file) === path &&
+      containsNode(parent.right, node, file)
+    )
+      return true;
+    if (
+      ts.isConditionalExpression(parent) &&
+      expressionPath(parent.condition, file) === path &&
+      containsNode(parent.whenTrue, node, file)
+    )
+      return true;
+  }
+  return false;
+}
+
 function unwrapUrlExpression(expression) {
   let current = expression;
   while (current && ts.isParenthesizedExpression(current))
@@ -1198,9 +1231,38 @@ function isSealedContactPath(expression, tokenPath, file, source) {
   return [...aliases].some((alias) => path === `${alias}.${member}`);
 }
 
-function isPrefixedContactExpression(expression, prefix, tokenPath, file, source) {
+function isPrefixedContactExpression(
+  expression,
+  prefix,
+  tokenPath,
+  file,
+  source,
+  seen = new Set(),
+) {
   const node = unwrapUrlExpression(expression);
   if (!node) return false;
+  if (ts.isIdentifier(node)) {
+    if (seen.has(node.text)) return false;
+    const binding = visibleBinding(node.text, node);
+    const declarations = binding?.node?.parent;
+    if (
+      binding?.kind !== "variable" ||
+      !ts.isVariableDeclarationList(declarations) ||
+      (declarations.flags & ts.NodeFlags.Const) === 0 ||
+      !binding.node.initializer
+    )
+      return false;
+    const nextSeen = new Set(seen);
+    nextSeen.add(node.text);
+    return isPrefixedContactExpression(
+      binding.node.initializer,
+      prefix,
+      tokenPath,
+      file,
+      source,
+      nextSeen,
+    );
+  }
   if (
     ts.isBinaryExpression(node) &&
     node.operatorToken.kind === ts.SyntaxKind.PlusToken
@@ -1208,13 +1270,13 @@ function isPrefixedContactExpression(expression, prefix, tokenPath, file, source
     return (
       ts.isStringLiteral(node.left) &&
       node.left.text === prefix &&
-      isSealedContactPath(node.right, tokenPath, file, source)
+      isSealedContactValueExpression(node.right, tokenPath, file, source)
     );
   return (
     ts.isTemplateExpression(node) &&
     node.head.text === prefix &&
     node.templateSpans.length === 1 &&
-    isSealedContactPath(
+    isSealedContactValueExpression(
       node.templateSpans[0].expression,
       tokenPath,
       file,
@@ -1302,6 +1364,69 @@ function visibleBinding(name, use) {
     if (declarations.length) return declarations.length === 1 ? declarations[0] : null;
   }
   return null;
+}
+
+function isSealedContactValueExpression(
+  expression,
+  tokenPath,
+  file,
+  source,
+  seen = new Set(),
+) {
+  const node = unwrapUrlExpression(expression);
+  if (!node) return false;
+  if (isSealedContactPath(node, tokenPath, file, source)) return true;
+  if (ts.isIdentifier(node)) {
+    if (seen.has(node.text)) return false;
+    const binding = visibleBinding(node.text, node);
+    const declarations = binding?.node?.parent;
+    if (
+      binding?.kind !== "variable" ||
+      !ts.isVariableDeclarationList(declarations) ||
+      (declarations.flags & ts.NodeFlags.Const) === 0 ||
+      !binding.node.initializer
+    )
+      return false;
+    const nextSeen = new Set(seen);
+    nextSeen.add(node.text);
+    return isSealedContactValueExpression(
+      binding.node.initializer,
+      tokenPath,
+      file,
+      source,
+      nextSeen,
+    );
+  }
+
+  if (
+    tokenPath !== "content.brand.phone" ||
+    !ts.isCallExpression(node) ||
+    !ts.isPropertyAccessExpression(node.expression) ||
+    node.expression.name.text !== "replace" ||
+    node.arguments.length !== 2 ||
+    !ts.isRegularExpressionLiteral(node.arguments[0]) ||
+    !ts.isStringLiteral(node.arguments[1]) ||
+    node.arguments[1].text !== ""
+  )
+    return false;
+
+  const pattern = node.arguments[0].getText(file).replace(/\s+/gu, "");
+  const safePhoneNormalizers = new Set([
+    "/[^0-9+]/g",
+    "/[^0-9+]/gu",
+    "/[^\\d+]/g",
+    "/[^\\d+]/gu",
+  ]);
+  return (
+    safePhoneNormalizers.has(pattern) &&
+    isSealedContactValueExpression(
+      node.expression.expression,
+      tokenPath,
+      file,
+      source,
+      seen,
+    )
+  );
 }
 
 function isSealedServiceCollectionExpression(expression, file, seen = new Set()) {
@@ -1426,7 +1551,7 @@ function staticSpreadUrlKey(property) {
 
 function validateAuthoredUrlAttributes(source, route, content) {
   const { file, elements } = collectJsxElements(source);
-  for (const { opening } of elements) {
+  for (const { opening, node } of elements) {
     const tag = jsxOpeningName(opening).toLowerCase();
     for (const property of jsxAttributes(opening)) {
       if (ts.isJsxSpreadAttribute(property)) {
@@ -1468,6 +1593,17 @@ function validateAuthoredUrlAttributes(source, route, content) {
             `Candidate ${route.id} image source must use a sealed image content token.`,
           );
         const value = resolvedImageValue(property, content);
+        const imagePath = expressionPath(expression, file);
+        if (
+          !value &&
+          optionalSealedImagePaths.has(imagePath) &&
+          isGuardedOptionalImage(node, expression, file)
+        )
+          continue;
+        if (!value && optionalSealedImagePaths.has(imagePath))
+          throw new Error(
+            `Candidate ${route.id} optional image token ${imagePath} may be empty; conditionally render the image only when that same sealed token is truthy.`,
+          );
         if (!isSafeSealedImageUrl(value))
           throw new Error(
             `Candidate ${route.id} image source must resolve to a safe local or LaunchLoom-hosted image asset.`,
@@ -2828,6 +2964,8 @@ function authorRules() {
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
+    "Phone and email links must use their sealed tokens. Telephone links may prefix content.brand.phone with tel: and may normalize it only with replace(/[^\\d+]/g, \"\") or replace(/[^0-9+]/g, \"\"); a local const href is allowed only when its initializer is that exact safe expression. Do not compute URLs from any other data.",
+    "The sealed hero image tokens may be empty. Render each optional image only inside a direct truthiness guard for that same token, such as {content.hero.secondaryImage && <img src={content.hero.secondaryImage} ... />}; do not emit an img with a blank src, remote URL, or a fallback that reuses the hero for a missing supporting image.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Do not silently reuse the primary hero image to fill missing secondary or tertiary image roles. When supporting image tokens are unavailable, keep the hero unique and adapt that chapter to a non-duplicative text-led or graphic treatment that still preserves the assigned reference mechanics.",
     "When the client visual brief explicitly requests a purposeful interaction, guide, selector, chooser, or navigator, implement a clearly labeled stateful native interaction marked with data-purposeful-interaction. Keep a useful visible default/static state. FAQ disclosure, LeadForm, ChatLauncher, ordinary navigation, or an image carousel alone do not satisfy that request; use only sealed service and decision-support content and never invent advice.",
