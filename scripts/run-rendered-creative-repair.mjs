@@ -892,6 +892,10 @@ export async function runRenderedCreativeRepair({
   const evidenceRoot = path.resolve(root, outDir);
   const cycleLimit = boundedCycles(maxCycles);
   const cycleUse = new Map();
+  // Contract rejections (an unapplicable edit, a broken marker, an invalid
+  // edit count) write nothing to the candidate, so they must not consume the
+  // candidate's applied-repair cycles. They are bounded separately.
+  const rejectionUse = new Map();
   const history = [];
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession
@@ -935,8 +939,9 @@ export async function runRenderedCreativeRepair({
     candidateDirectory,
     report,
   ) {
-    const used = cycleUse.get(candidateId) || 0;
-    if (used >= cycleLimit) return { status: "exhausted" };
+    const applied = cycleUse.get(candidateId) || 0;
+    if (applied >= cycleLimit) return { status: "exhausted" };
+    const rejections = rejectionUse.get(candidateId) || 0;
     const candidateDir = resolveCandidateDirectory(
       candidateRoot,
       candidateDirectory,
@@ -966,11 +971,9 @@ export async function runRenderedCreativeRepair({
     // A build failure can legitimately leave an ENOENT screenshot, but
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);
-    let attempt = used;
     let activeFindings = findings;
     const attempts = [];
-    while (attempt < cycleLimit) {
-      attempt += 1;
+    for (;;) {
       try {
         await repairCandidateImpl({
           candidateDir,
@@ -980,17 +983,17 @@ export async function runRenderedCreativeRepair({
           comparisonScreenshots,
           model: resolvedModel,
           creativeSession: frozenCreativeSession,
-          cycle: attempt,
+          cycle: applied + 1,
           maxCycles: cycleLimit,
         });
-        cycleUse.set(candidateId, attempt);
+        cycleUse.set(candidateId, applied + 1);
         await persistRepairEvidence({
           outDir: evidenceRoot,
           round,
           candidateId,
           reason,
           findings: activeFindings,
-          cyclesUsed: attempt,
+          cyclesUsed: applied + 1,
           attempts,
         });
         return { status: "repaired", attempts };
@@ -1002,10 +1005,15 @@ export async function runRenderedCreativeRepair({
         if (!mayRetryRepairOutputRejection) throw error;
 
         const message = safeRepairRejectionMessage(error);
-        const status = attempt < cycleLimit ? "retrying" : "rejected";
-        attempts.push({ cycle: attempt, status, error: message });
-        cycleUse.set(candidateId, attempt);
-        if (attempt >= cycleLimit) {
+        const rejectionCount = rejections + attempts.length + 1;
+        rejectionUse.set(candidateId, rejectionCount);
+        const contractRetriesExhausted = rejectionCount >= cycleLimit;
+        attempts.push({
+          cycle: attempts.length + 1,
+          status: contractRetriesExhausted ? "rejected" : "retrying",
+          error: message,
+        });
+        if (contractRetriesExhausted) {
           excludedCandidateIds.add(candidateId);
           rejectedCandidates[candidateId] = message;
           await persistRepairEvidence({
@@ -1014,7 +1022,7 @@ export async function runRenderedCreativeRepair({
             candidateId,
             reason,
             findings: activeFindings,
-            cyclesUsed: attempt,
+            cyclesUsed: applied + 1,
             status: "rejected",
             error: message,
             attempts,
@@ -1036,7 +1044,6 @@ export async function runRenderedCreativeRepair({
         ];
       }
     }
-    return { status: "exhausted" };
   }
 
   for (let round = 0; round < maxRounds; round += 1) {

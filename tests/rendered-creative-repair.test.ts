@@ -318,6 +318,57 @@ describe("rendered creative repair orchestration", () => {
     expect(excludedCandidates).toEqual([[], []]);
   });
 
+  it("keeps unspent applied-repair cycles after a contract rejection", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    let repairCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls <= 2
+            ? report({
+                selectedCandidateId: null,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: ["Rendered candidate needs repair."],
+                  }),
+                ],
+              })
+            : report({
+                selectedCandidateId: "candidate-a",
+                candidates: [candidate("candidate-a")],
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async () => {
+        repairCalls += 1;
+        if (repairCalls === 1) {
+          const error = new Error(
+            "Creative repair edit 7 source fragment must match exactly once in experience.",
+          );
+          Object.assign(error, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+          throw error;
+        }
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(repairCalls).toBe(3);
+    expect(result.rejectedCandidates).toEqual({});
+  });
+
   it("targets repairs with the rendered fidelity dimensions that miss their thresholds", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const repairFindings: any[][] = [];
