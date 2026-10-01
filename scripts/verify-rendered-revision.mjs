@@ -4,6 +4,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { chromium } from "playwright";
 import { contrast, parseCssColor } from "./color-contrast.mjs";
+import { revisionImageMatches } from "./revision-image-acceptance.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -411,10 +412,24 @@ try {
             );
           })
           .map((image) => ({
-            src: image.getAttribute("src") || "",
+            src: image.currentSrc || image.src,
+            placements: (() => {
+              const labels = [];
+              for (let region = image.parentElement; region; region = region.parentElement) {
+                labels.push([region.tagName === "HEADER" ? "header" : "", region.id, region.className, region.getAttribute("data-reference-section"), region.getAttribute("data-section-type"), region.hasAttribute("data-hero") ? "hero" : ""].join(" ").toLowerCase());
+              }
+              return labels;
+            })(),
             naturalWidth: image.naturalWidth,
             naturalHeight: image.naturalHeight,
-            visible: visible(image),
+            visible: visible(image) && (() => {
+              for (let parent = image; parent; parent = parent.parentElement) {
+                const style = getComputedStyle(parent);
+                if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0)
+                  return false;
+              }
+              return true;
+            })(),
           })),
       };
     });
@@ -512,13 +527,13 @@ try {
         failures.push(
           `${viewport.name}: requested text is not visible: ${artifact.value.slice(0, 70)}.`,
         );
-      if (artifact.type === "image") {
+      if (artifact.type === "image" || artifact.type === "asset") {
         const rendered = state.feedbackImages.find((image) =>
-          image.src.includes(artifact.path),
+          revisionImageMatches(image, artifact, url),
         );
-        if (!rendered || rendered.naturalWidth < 1 || !rendered.visible)
+        if (!rendered)
           failures.push(
-            `${viewport.name}: requested image is not rendered: ${artifact.path}.`,
+            `${viewport.name}: requested ${artifact.target || artifact.placement || "replacement"} image is not rendered in its requested placement: ${artifact.path || artifact.url}.`,
           );
       }
       if (

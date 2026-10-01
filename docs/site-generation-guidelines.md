@@ -301,3 +301,16 @@ Replacement images are reviewer-supplied assets:
 - Requested revision artifacts are visible in the rendered page.
 - Desktop and mobile layouts are readable and free of horizontal overflow.
 - Rendered output contains no em dashes or placeholder values.
+
+### Uploaded image revisions
+
+An explicit uploaded replacement for a named image slot is a deterministic asset
+change. Phrases such as “change the hero image to the one I uploaded” must not
+trigger copy rewriting, a page redesign, or another candidate bakeoff. Preserve
+the selected authored source, other images, business facts, copy, and services.
+Additional composition or copy requests remain separate bounded operations.
+
+A successful revision must show the exact replacement as a loaded, visible
+image in its requested placement on desktop and mobile. Serialized props,
+attachment thumbnails, hidden images, or use in another section are insufficient.
+Do not send a completion email until these rendered checks pass.

@@ -141,7 +141,7 @@ function scopeError(message) {
 
 /**
  * Persist only feedback items that enter the authored-source repair lane.
- * @param {{creativeRenderer?: boolean, feedback?: string[], results?: Array<{feedbackIndex?: number, feedback?: string, status?: string, intents?: string[]}>}} [options]
+ * @param {{creativeRenderer?: boolean, feedback?: string[], results?: Array<{feedbackIndex?: number, feedback?: string, status?: string, intents?: string[], sourceFeedback?: string}>}} [options]
  * @returns {{required: boolean, declaration: Record<string, any> | null, feedbackText: string}}
  */
 export function createCreativeRepairScopeDeclaration({
@@ -171,9 +171,12 @@ export function createCreativeRepairScopeDeclaration({
               typeof result.feedback === "string" &&
               result.feedback.trim().length > 0,
           )
-          .map(({ feedbackIndex, feedback: itemFeedback }) => ({
+          .map(({ feedbackIndex, feedback: itemFeedback, sourceFeedback }) => ({
             feedbackIndex,
             feedback: itemFeedback,
+            ...(typeof sourceFeedback === "string"
+              ? { scopeFeedback: sourceFeedback.trim() }
+              : {}),
           })),
       }
     : null;
@@ -490,7 +493,7 @@ export function resolveCreativeRevisionScope({
   const feedbackIndexes = [];
   let allowMotion = false;
   for (const item of feedbackItems) {
-    const text = String(item?.feedback || "").trim();
+    const text = String(item?.scopeFeedback ?? item?.feedback ?? "").trim();
     if (!text)
       throw scopeError("a creative feedback item has no request text.");
     if (broadScopeIsActionable(text)) {
