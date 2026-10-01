@@ -418,7 +418,7 @@ describe("SEO market map", () => {
     expect(dossier.warnings.join(" ")).toContain("without provider-reported spend");
   });
 
-  it("collects bounded cited web evidence without DataForSEO but keeps production SEO blocked", async () => {
+  it("collects bounded cited web evidence without DataForSEO and permits developer approval", async () => {
     const webSearch = {
       search: vi.fn(async ({ query }: { query: string }) => ({
         results: [
@@ -441,7 +441,7 @@ describe("SEO market map", () => {
 
     expect(webSearch.search).toHaveBeenCalledTimes(2);
     expect(dossier.mode).toBe("context-only");
-    expect(dossier.publishReady).toBe(false);
+    expect(dossier.publishReady).toBe(true);
     expect(dossier.fallbackSearch).toMatchObject({
       status: "complete",
       queriesAttempted: 2,
@@ -503,7 +503,7 @@ describe("SEO market map", () => {
       "veterinary diagnostic consultations Madison, WI",
     ]);
     expect(veterinary.mode).toBe("context-only");
-    expect(veterinary.publishReady).toBe(false);
+    expect(veterinary.publishReady).toBe(true);
     expect(veterinary.marketSnapshot.businessKind).toBe("veterinary");
     expect(veterinary.validatedQueries.every((item) =>
       item.volume === null && item.kd === null && item.cpc === null &&
@@ -555,7 +555,7 @@ describe("SEO market map", () => {
 
     expect(webSearch.search).toHaveBeenCalledTimes(2);
     expect(dossier.mode).toBe("context-only");
-    expect(dossier.publishReady).toBe(false);
+    expect(dossier.publishReady).toBe(true);
     expect(dossier.cost.stageCosts[0]).toMatchObject({
       stage: "local_search_volume",
       status: "failed",

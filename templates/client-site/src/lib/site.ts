@@ -297,6 +297,8 @@ export type SiteConfig = {
     quickWins?: Array<Record<string, unknown>>;
     marketSnapshot?: Record<string, unknown>;
     completeness?: Record<string, unknown>;
+    fallbackSearch?: Record<string, unknown>;
+    externalSearchEvidence?: Array<Record<string, unknown>>;
     prohibitedClaims: string[];
     evidence: Array<Record<string, unknown>>;
     cost: { tasks: number; usd: number; limitUsd: number };

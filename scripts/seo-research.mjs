@@ -1,3 +1,4 @@
+import { hasCompletedFallbackResearch } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import {
@@ -597,6 +598,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     const fallback = await collectFallbackWebEvidence(seo, seeds, options.webSearch, options, warnings);
     base.externalSearchEvidence = fallback.evidence;
     base.fallbackSearch = { ...fallback };
+    base.publishReady = hasCompletedFallbackResearch(base);
     base.evidence.push(...fallback.evidence.map((item) => ({
       type: "external_web_search",
       query: item.query,
@@ -608,7 +610,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
       provenance: item.provenance,
     })));
     if (fallback.evidence.length)
-      warnings.push("Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts or production SEO readiness.");
+      warnings.push("Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts.");
     else
       warnings.push("The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.");
     base.warnings = [...new Set(warnings)];
@@ -638,7 +640,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
         cost.unreportedTasks += 1;
         stoppedForBudget = true;
         stageCosts.push({ stage, tasks: 1, usd: null, status: "cost_unavailable" });
-        warnings.push(`${stage} returned data without provider-reported spend; no further paid tasks were started and production publishing remains blocked.`);
+        warnings.push(`${stage} returned data without provider-reported spend; no further paid tasks were started and measured SEO research remains incomplete.`);
         return { ok: true, skipped: false, value };
       }
       const providerCost = roundCost(rawCost);
@@ -684,6 +686,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     );
     base.externalSearchEvidence = fallback.evidence;
     base.fallbackSearch = { ...fallback };
+    base.publishReady = hasCompletedFallbackResearch(base);
     base.evidence.push(...fallback.evidence.map((item) => ({
       type: "external_web_search",
       query: item.query,
@@ -695,7 +698,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
       provenance: item.provenance,
     })));
     warnings.push(fallback.evidence.length
-      ? "Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts or production SEO readiness."
+      ? "Live web evidence was collected as external observations only. It is not measured keyword/ranking data and does not establish verified business facts."
       : "The online-search fallback returned no usable cited evidence; SEO research remains context-only and production approval stays blocked.");
   }
 
@@ -744,7 +747,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     };
   });
   base.marketSnapshot.measuredKeywords = base.validatedQueries.filter((item) => item.metricSources?.volume).length;
-  if (!volumeStage.ok) warnings.push("Required local keyword volume, CPC, and competition research is incomplete; publication remains blocked.");
+  if (!volumeStage.ok) warnings.push("Required local keyword volume, CPC, and competition research is incomplete.");
   if (volumeStage.ok && seeds.some((keyword) => !volumeByKeyword.has(keywordKey(keyword))))
     warnings.push("Some planned local keywords were absent from the provider response; their metrics remain null.");
   if (!volumeStage.ok || cost.overBudget || stoppedForBudget) return returnPartialResearch();
@@ -756,7 +759,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
     text(item.intent || item.keyword_intent?.label, 40) || null,
   ]).filter(([keyword]) => keyword));
   base.completeness.searchIntent = intentStage.ok && [...intentByKeyword.values()].some(Boolean);
-  if (!intentStage.ok) warnings.push("Required measured search intent research is incomplete; publication remains blocked.");
+  if (!intentStage.ok) warnings.push("Required measured search intent research is incomplete.");
   if (cost.overBudget || stoppedForBudget) {
     base.validatedQueries = seeds.map((keyword) => {
       const previous = base.validatedQueries.find((item) => keywordKey(item.keyword) === keywordKey(keyword));
@@ -780,7 +783,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
   const difficultyRows = difficultyStage.ok ? flattenItems(difficultyStage.value?.keywords || difficultyStage.value?.items || []) : [];
   const kdByKeyword = new Map(difficultyRows.map((item) => [keywordKey(item.keyword), finiteMetric(item.difficulty ?? item.keywordDifficulty ?? item.keyword_difficulty)]));
   base.completeness.keywordDifficulty = difficultyStage.ok && [...kdByKeyword.values()].some((value) => value !== null);
-  if (!difficultyStage.ok) warnings.push("Required Keyword Difficulty evidence is incomplete; publication remains blocked.");
+  if (!difficultyStage.ok) warnings.push("Required Keyword Difficulty evidence is incomplete.");
   const metrics = seeds.map((keyword) => {
     const local = volumeByKeyword.get(keywordKey(keyword));
     const intent = intentByKeyword.get(keywordKey(keyword)) ?? null;
@@ -817,7 +820,7 @@ export async function researchSiteContext(intake = {}, options = {}) {
   });
   base.completeness.serviceMetrics = serviceMetricCoverage;
   if (serviceMetricCoverage.some((item) => !item.complete))
-    warnings.push("One or more confirmed services lack a primary query with measured volume, CPC, competition, Keyword Difficulty, and intent; production publishing remains blocked.");
+    warnings.push("One or more confirmed services lack a primary query with measured volume, CPC, competition, Keyword Difficulty, and intent; measured SEO research remains incomplete.");
   if (cost.overBudget || stoppedForBudget) return returnPartialResearch();
 
   const allSerps = [];
@@ -947,10 +950,10 @@ export async function researchSiteContext(intake = {}, options = {}) {
     base.completeness.serviceSerps === seo.services.length &&
     base.completeness.competitors >= 3 &&
     !cost.overBudget && cost.complete && cost.unreportedTasks === 0;
-  base.publishReady = requiredResearchComplete;
+  base.publishReady = requiredResearchComplete || hasCompletedFallbackResearch(base);
   base.mode = requiredResearchComplete ? "researched" : "context-only";
   if (!requiredResearchComplete)
-    warnings.push("The complete measured market map is not ready for production publishing; this site may be reviewed but publish approval remains blocked.");
+    warnings.push("The complete measured market map is unavailable. Developer approval is available only if the bounded cited web research completed.");
   base.cost = { ...cost, limitUsd: limits.maxUsd, stageCosts };
   base.warnings = [...new Set(warnings)];
   return base;
@@ -1109,7 +1112,7 @@ export function renderSeoMapMarkdown(dossier) {
     dossier.fallbackSearch?.status === "not-needed"
       ? "Fallback web search: not needed (no provider stage failed)."
       : dossier.fallbackSearch?.status && dossier.fallbackSearch.status !== "unavailable"
-      ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / USD ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations do not satisfy measured SEO publication requirements.`
+      ? `Fallback web search: ${dossier.fallbackSearch.status}; ${dossier.externalSearchEvidence?.length || 0} cited observation(s) from ${dossier.fallbackSearch.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(dossier.fallbackSearch.costUsd || 0).toFixed(5)} / USD ${Number(dossier.fallbackSearch.maxUsd || 0).toFixed(2)} cap${dossier.fallbackSearch.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}. These observations are qualitative research; measured SEO metrics remain unavailable.`
       : "Fallback web search: unavailable.",
     "",
     "## B. Competitors and structural observations",

@@ -5,6 +5,8 @@ export function revisionTemplatePaths(config) {
   const files = new Set([
     "components/LeadForm.astro",
     "components/ReviewBanner.astro",
+    "lib/seo-readiness.mjs",
+    "lib/seo-readiness.d.mts",
     "pages/robots.txt.ts",
     "pages/sitemap.xml.ts",
   ]);

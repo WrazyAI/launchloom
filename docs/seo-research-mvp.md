@@ -60,20 +60,26 @@ Model-authored prose is discarded and is never treated as search evidence.
 Fallback web observations remain separate from confirmed business facts and
 measured SEO fields. They do not create search volume, Keyword Difficulty,
 intent, ranking positions, competitor-rank claims, services, or locations.
-A site with fallback web evidence is still `context-only` and
-`publishReady: false`; the preview can be reviewed, but the production SEO
-release gate remains blocked until the measured DataForSEO requirements pass.
+Completed bounded fallback research stays `context-only` and sets
+`publishReady: true` for developer approval. It must have usable HTTPS citations,
+no failed queries, complete provider-reported fallback cost within its cap, and
+no budget exhaustion. The review banner states: "Web research complete.
+Measured SEO data unavailable. Developer approval is available." Missing,
+empty, failed, partial, or unreported-cost fallback research remains blocked.
+The Worker, rendered review controls, and production build use the same evidence
+policy; the ready flag alone cannot unlock a new preview.
 If OpenRouter is unavailable or not configured, the result stays explicitly
 degraded/context-only and is not described as researched.
 
 Missing provider values stay `null` or are listed as unavailable. The report
 shows warnings, the configured task/cost limits, and DataForSEO-reported spend.
 The research task limit is hard-bounded to 32 and the USD limit to $2 even if
-an operator sets higher values. A provider-reported final-task overrun blocks
-publishing and prevents additional tasks from starting.
+an operator sets higher values. A provider-reported final-task overrun prevents additional measured tasks from
+starting and disqualifies the measured-research approval path.
 If a completed or failed provider task has no reported cost, the task cost is
-recorded as unavailable, further paid tasks stop, and production approval stays
-blocked rather than presenting an invented $0 total.
+recorded as unavailable and further measured tasks stop, rather than presenting
+an invented $0 total. A separately completed bounded cited fallback can still
+qualify for developer approval.
 
 ## Configuration
 
@@ -97,11 +103,14 @@ GitHub Actions variables:
 
 The generated client repository retains the JSON map, Markdown report,
 business enrichment, and canonical brief under `.launchloom/`. Production
-approval remains fail-closed unless the stored research map is version 2,
-`publishReady` is true, all required measurement stages completed, every
-confirmed service has a successful SERP snapshot, and at least three ranking
-domains were found. A preview can still be reviewed when provider data is
-missing, but it cannot be published as production.
+approval accepts either a complete measured map or completed cited fallback
+research. The measured path requires all measurement stages, service SERPs,
+three ranking domains, and reported cost. The fallback path verifies its own
+citations and completion/budget receipt without claiming measured metrics.
+Existing version-two fallback receipts can qualify even when their historical
+`publishReady` flag is false, provided those receipts are preserved in the site
+config. Incomplete research remains blocked. Creative, reference, content,
+indexability, signed-review, and exact-reviewed-head checks still apply.
 
 The operator Access setup and one-use invitation secret are documented in
 [`private-onboarding.md`](private-onboarding.md). No SEO metric, competitor

@@ -1,3 +1,4 @@
+import fallback from "../../fixtures/seo-research/fallback-complete.json";
 import { SELF } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -37,11 +38,7 @@ async function reviewToken() {
     ["sign"],
   );
   const signature = new Uint8Array(
-    await crypto.subtle.sign(
-      "HMAC",
-      key,
-      new TextEncoder().encode(encoded),
-    ),
+    await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(encoded)),
   );
   return `${encoded}.${base64url(signature)}`;
 }
@@ -103,9 +100,7 @@ describe("developer approval", () => {
         "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
         async ({ request }) => {
           dispatchAttempts += 1;
-          dispatchBodies.push(
-            (await request.json()) as Record<string, any>,
-          );
+          dispatchBodies.push((await request.json()) as Record<string, any>);
           if (dispatchAttempts === 1)
             return HttpResponse.json(
               { message: "temporary dispatch failure" },
@@ -143,86 +138,118 @@ describe("developer approval", () => {
       });
   });
 
-  it("publishes the exact merge commit returned for the reviewed PR head", async () => {
-    let mergeRequest: Record<string, unknown> = {};
-    let dispatchRequest: Record<string, any> = {};
+  it.each([
+    {
+      name: "measured research",
+      research: { mode: "researched", publishReady: true },
+      allowed: true,
+    },
+    { name: "completed cited fallback", research: fallback, allowed: true },
+    {
+      name: "partial fallback",
+      research: {
+        ...fallback,
+        fallbackSearch: { ...fallback.fallbackSearch, status: "partial" },
+      },
+      allowed: false,
+    },
+    {
+      name: "missing fallback citations",
+      research: { ...fallback, externalSearchEvidence: [] },
+      allowed: false,
+    },
+  ])(
+    "publishes only the reviewed head with $name",
+    async ({ research, allowed }) => {
+      let mergeRequest: Record<string, unknown> = {};
+      let dispatchRequest: Record<string, any> = {};
 
-    network.use(
-      http.get(
-        "https://api.github.com/repos/WrazyAI/example-client/pulls/7",
-        () =>
-          HttpResponse.json({
-            head: { sha: "review-head-sha" },
-            state: "open",
-            draft: false,
-          }),
-      ),
-      http.get(
-        "https://api.github.com/repos/WrazyAI/example-client/contents/src/site.config.json",
-        ({ request }) => {
-          expect(new URL(request.url).searchParams.get("ref")).toBe(
-            "review-head-sha",
-          );
-          const content = btoa(
-            JSON.stringify({
-              business: { name: "Example Client" },
-              seoResearch: { mode: "researched", publishReady: true },
+      network.use(
+        http.get(
+          "https://api.github.com/repos/WrazyAI/example-client/pulls/7",
+          () =>
+            HttpResponse.json({
+              head: { sha: "review-head-sha" },
+              state: "open",
+              draft: false,
             }),
-          );
-          return HttpResponse.json({ encoding: "base64", content });
-        },
-      ),
-      http.put(
-        "https://api.github.com/repos/WrazyAI/example-client/pulls/7/merge",
-        async ({ request }) => {
-          mergeRequest = (await request.json()) as Record<string, unknown>;
-          return HttpResponse.json({
-            merged: true,
-            sha: "approved-merge-sha",
-            message: "Pull Request successfully merged",
-          });
-        },
-      ),
-      http.post(
-        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
-        async ({ request }) => {
-          dispatchRequest = (await request.json()) as Record<string, any>;
-          return new HttpResponse(null, { status: 204 });
-        },
-      ),
-    );
+        ),
+        http.get(
+          "https://api.github.com/repos/WrazyAI/example-client/contents/src/site.config.json",
+          ({ request }) => {
+            expect(new URL(request.url).searchParams.get("ref")).toBe(
+              "review-head-sha",
+            );
+            const content = btoa(
+              JSON.stringify({
+                business: { name: "Example Client" },
+                seoResearch: research,
+              }),
+            );
+            return HttpResponse.json({ encoding: "base64", content });
+          },
+        ),
+        http.put(
+          "https://api.github.com/repos/WrazyAI/example-client/pulls/7/merge",
+          async ({ request }) => {
+            mergeRequest = (await request.json()) as Record<string, unknown>;
+            return HttpResponse.json({
+              merged: true,
+              sha: "approved-merge-sha",
+              message: "Pull Request successfully merged",
+            });
+          },
+        ),
+        http.post(
+          "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+          async ({ request }) => {
+            dispatchRequest = (await request.json()) as Record<string, any>;
+            return new HttpResponse(null, { status: 204 });
+          },
+        ),
+      );
 
-    const token = await reviewToken();
-    const response = await SELF.fetch(
-      "https://api.launchloom.test/api/approval",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Origin: origin,
+      const token = await reviewToken();
+      const response = await SELF.fetch(
+        "https://api.launchloom.test/api/approval",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Origin: origin,
+          },
+          body: JSON.stringify({
+            token,
+            email: "developer@example.com",
+            pageUrl: `${origin}/?review=${token}`,
+          }),
         },
-        body: JSON.stringify({
-          token,
-          email: "developer@example.com",
-          pageUrl: `${origin}/?review=${token}`,
-        }),
-      },
-    );
+      );
 
-    expect(response.status).toBe(200);
-    expect(mergeRequest).toMatchObject({
-      sha: "review-head-sha",
-      merge_method: "squash",
-    });
-    expect(dispatchRequest).toMatchObject({
-      event_type: "publish-site",
-      client_payload: {
-        repo: "WrazyAI/example-client",
-        siteId: "example-client",
-        clientEmail: "client@example.com",
-        feedbackIssue: 8,
-        approvedSha: "approved-merge-sha",
-      },
-    });
-  });
+      if (!allowed) {
+        expect(response.status).toBe(409);
+        expect(await response.json()).toMatchObject({
+          code: "seo_research_required",
+        });
+        expect(mergeRequest).toEqual({});
+        expect(dispatchRequest).toEqual({});
+        return;
+      }
+      expect(response.status).toBe(200);
+      expect(mergeRequest).toMatchObject({
+        sha: "review-head-sha",
+        merge_method: "squash",
+      });
+      expect(dispatchRequest).toMatchObject({
+        event_type: "publish-site",
+        client_payload: {
+          repo: "WrazyAI/example-client",
+          siteId: "example-client",
+          clientEmail: "client@example.com",
+          feedbackIssue: 8,
+          approvedSha: "approved-merge-sha",
+        },
+      });
+    },
+  );
 });

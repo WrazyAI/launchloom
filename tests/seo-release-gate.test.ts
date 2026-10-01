@@ -1,3 +1,4 @@
+import fallback from "../fixtures/seo-research/fallback-complete.json";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -104,6 +105,12 @@ describe("SEO release gate", () => {
     expect((await checkSeoRelease({ mode: "production", config: unreportedCost, dist, origin }))
       .some((error) => error.includes("SEO research is incomplete"))).toBe(true);
   });
+  it("allows completed cited fallback research for production without inventing measured metrics", async () => {
+    const dist = await fixture();
+    expect(await checkSeoRelease({ mode: "production", config: { ...config, seoResearch: fallback }, dist, origin })).toEqual([]);
+    expect((await checkSeoRelease({ mode: "production", config: { ...config, seoResearch: { ...fallback, externalSearchEvidence: [] } }, dist, origin })).some((error) => error.includes("SEO research is incomplete"))).toBe(true);
+  });
+
   it("accepts meta descriptions containing apostrophes", async () => {
     const dist = await fixture();
     const file = path.join(dist, "services/consultation/index.html");

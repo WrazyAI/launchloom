@@ -1,3 +1,4 @@
+import fallback from "../fixtures/seo-research/fallback-complete.json";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
@@ -1437,4 +1438,11 @@ describe("site configuration", () => {
     expect(exact.copy.contactHeading).toBe("Contact Harbor Bakery");
     expect(broad.conversion.quickAnswers.ctaTarget).toBe("#contact");
   });
+});
+
+
+it("preserves completed fallback receipts through generation config normalization", () => {
+  const prepared = prepareGenerationIntake({ seoResearch: fallback });
+  expect(prepared.seoResearch?.fallbackSearch).toEqual(fallback.fallbackSearch);
+  expect(prepared.seoResearch?.externalSearchEvidence).toEqual(fallback.externalSearchEvidence);
 });
