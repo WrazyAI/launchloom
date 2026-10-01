@@ -177,6 +177,42 @@ describe("SEO release gate", () => {
     expect(errors.some((error: string) => error.includes("structured business facts"))).toBe(true);
     expect(errors.some((error: string) => error.includes("research is incomplete"))).toBe(true);
   });
+  it("blocks production when only qualitative fallback citations are available", async () => {
+    const fallbackOnly = {
+      ...completeVersionTwoConfig,
+      seoResearch: {
+        ...completeVersionTwoConfig.seoResearch,
+        mode: "context-only",
+        publishReady: false,
+        externalSearchEvidence: [{
+          query: "drain cleaning Tacoma",
+          sourceUrl: "https://source.example/plumbing",
+          title: "Plumbing source",
+          snippet: "A public source excerpt.",
+          retrievedAt: "2026-10-01T12:00:00.000Z",
+          provider: "OpenRouter web search (Parallel)",
+          provenance: "openrouter_web_search_url_citation",
+        }],
+        fallbackSearch: {
+          status: "complete",
+          queriesAttempted: 1,
+          costUsd: 0.005,
+          maxUsd: 0.05,
+        },
+      },
+    };
+
+    const errors = await checkSeoRelease({
+      mode: "production",
+      config: fallbackOnly,
+      dist,
+      origin,
+    });
+    expect(errors).toContain(
+      "SEO research is incomplete; production publishing is blocked.",
+    );
+  });
+
   it("blocks rendered em dashes on production pages", async () => {
     const dist = await fixture();
     const file = path.join(dist, "index.html");
