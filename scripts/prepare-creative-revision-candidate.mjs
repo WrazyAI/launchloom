@@ -15,6 +15,52 @@ const args = Object.fromEntries(
     ),
 );
 
+const INNER_PAGE_TARGETS = {
+  servicePage: { sourceFile: "ServicePage.jsx", flag: "servicePage" },
+  locationPage: { sourceFile: "LocationPage.jsx", flag: "locationPage" },
+  servicesIndexPage: { sourceFile: "ServicesIndexPage.jsx", flag: "servicesIndex" },
+};
+
+function reviewedPageTarget(reviewedPage, config) {
+  if (!reviewedPage) return { key: "experience", sourceFile: "Experience.jsx", route: "/" };
+  let pathname;
+  try {
+    pathname = new URL(reviewedPage).pathname;
+  } catch {
+    throw new Error("Manual attention required: reviewed page URL is invalid.");
+  }
+  const normalized = pathname.replace(/\/{2,}/gu, "/");
+  if (normalized === "/" || normalized === "") 
+    return { key: "experience", sourceFile: "Experience.jsx", route: "/" };
+  if (normalized === "/services" || normalized === "/services/")
+    return { key: "servicesIndexPage", sourceFile: "ServicesIndexPage.jsx", route: "/services/" };
+  const serviceMatch = normalized.match(/^\/services\/([^/]+)\/?$/u);
+  if (serviceMatch) {
+    const slug = decodeURIComponent(serviceMatch[1]);
+    if (!(config.services || []).some((service) => String(service?.slug || "") === slug))
+      throw new Error(`Manual attention required: reviewed service route is not present in the verified config: ${normalized}`);
+    return {
+      key: "servicePage",
+      sourceFile: "ServicePage.jsx",
+      route: `/services/${slug}/`,
+    };
+  }
+  const locationMatch = normalized.match(/^\/locations\/([^/]+)\/?$/u);
+  if (locationMatch) {
+    const slug = decodeURIComponent(locationMatch[1]);
+    if (!(config.locations || []).some((location) => String(location?.slug || "") === slug))
+      throw new Error(`Manual attention required: reviewed location route is not present in the verified config: ${normalized}`);
+    return {
+      key: "locationPage",
+      sourceFile: "LocationPage.jsx",
+      route: `/locations/${slug}/`,
+    };
+  }
+  throw new Error(
+    `Manual attention required: reviewed route is not an authored creative page: ${normalized}`,
+  );
+}
+
 const clientArg = String(args.client || "").trim();
 const outArg = String(args.out || "").trim();
 if (!clientArg || !outArg)
@@ -89,11 +135,55 @@ if (repairRequired) {
     throw new Error(
       "Manual attention required: creative feedback has no declared source scope.",
     );
-  creativeRepairScope = resolveCreativeRevisionScope({
-    source: await fs.readFile(path.join(selectedDir, "Experience.jsx"), "utf8"),
-    feedbackItems: declaration.feedbackItems,
-    requestText: declaration.requestText,
-  });
+  const targets = declaration.feedbackItems.map((item) =>
+    reviewedPageTarget(item.reviewedPage || "", config),
+  );
+  const targetSignatures = new Set(
+    targets.map((target) => `${target.key}:${target.route}`),
+  );
+  if (targetSignatures.size !== 1)
+    throw new Error(
+      "Manual attention required: one creative revision batch cannot span multiple reviewed routes.",
+    );
+  const target = targets[0];
+  if (target.key === "experience") {
+    creativeRepairScope = {
+      ...resolveCreativeRevisionScope({
+        source: await fs.readFile(
+          path.join(selectedDir, "Experience.jsx"),
+          "utf8",
+        ),
+        feedbackItems: declaration.feedbackItems,
+        requestText: declaration.requestText,
+      }),
+      targetFile: "experience",
+      sourceFile: "Experience.jsx",
+      reviewedRoute: target.route,
+    };
+  } else {
+    const targetDefinition = INNER_PAGE_TARGETS[target.key];
+    if (!targetDefinition || experience[targetDefinition.flag] !== true)
+      throw new Error(
+        `Manual attention required: reviewed route requires unavailable authored source ${target.sourceFile}.`,
+      );
+    await fs.access(path.join(selectedDir, target.sourceFile));
+    creativeRepairScope = {
+      version: 1,
+      targetFile: target.key,
+      sourceFile: target.sourceFile,
+      reviewedRoute: target.route,
+      sectionIds: ["__authored_page__"],
+      allowMotion: false,
+      feedbackIndexes: [
+        ...new Set(
+          declaration.feedbackItems
+            .map((item) => item.feedbackIndex)
+            .filter(Number.isSafeInteger),
+        ),
+      ].sort((a, b) => a - b),
+      requestText: String(declaration.requestText || "").trim(),
+    };
+  }
 }
 
 await fs.rm(outDir, { recursive: true, force: true });
