@@ -950,7 +950,9 @@ export async function runRenderedCreativeRepair({
   const root = path.resolve(siteDir);
   const siteConfig = await readJson(path.join(root, "src/site.config.json"));
   const reviewedRoute = String(
-    siteConfig.revisionReport?.creativeRepairScope?.reviewedRoute || "",
+    siteConfig.revisionReport?.reviewedRoute ||
+      siteConfig.revisionReport?.creativeRepairScope?.reviewedRoute ||
+      "",
   ).trim();
   const candidateRoot = path.resolve(root, candidatesDir);
   const evidenceRoot = path.resolve(root, outDir);
