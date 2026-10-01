@@ -36,6 +36,17 @@ describe("revision feedback", () => {
     expect(JSON.stringify(feedbackRequestFromComment(body))).not.toContain(
       "signed-secret",
     );
+    expect(
+      feedbackReviewedPageFromComment(
+        [
+          "<!-- launchloom-feedback:developer -->",
+          "**Developer feedback**",
+          "Same route without a trailing slash.",
+          "",
+          "_Page: https://review.example.pages.dev/services/family-dentistry?review=another-secret_",
+        ].join("\n"),
+      ),
+    ).toBe("https://review.example.pages.dev/services/family-dentistry/");
   });
 
   it("removes review metadata and signed page URLs from feedback", () => {
