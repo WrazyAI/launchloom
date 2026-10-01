@@ -1123,8 +1123,12 @@ Return a complete replacement for only this requested file. Keep source non-empt
   if (sourceChars <= REPAIR_SOURCE_EDIT_THRESHOLD_CHARS)
     return requestModelRepair(files);
   // Preserve bounded candidate-specific edits for authored inner pages.
-  if (REPAIR_INNER_PAGE_KEYS.some((key) => typeof files[key] === "string" && files[key].trim()))
-    return requestModelRepair(files, { editsOnly: true });
+  if (REPAIR_INNER_PAGE_KEYS.some((key) => typeof files[key] === "string" && files[key].trim())) {
+    const repair = await requestModelRepair(files, { editsOnly: true });
+    // Automatic callers validate a complete bundle. Resolve the bounded patch
+    // against the exact sources before handing it to either repair runner.
+    return applyCreativeRepairEdits(files, repair.edits);
+  }
   let currentFiles = { ...files };
   for (const targetFile of repairTargetFiles(findings)) {
     if (String(currentFiles[targetFile] || "").length > MAX_REPAIR_FILE_SOURCE_CHARS)
