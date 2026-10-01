@@ -1204,8 +1204,8 @@ describe("creative repair loop", () => {
       },
       findings: [
         {
-          category: "motion-primitive",
-          message: "The motion primitive does not match Reference DNA.",
+          category: "motion-quality",
+          message: "Slow the reveal and keep the still state legible.",
         },
       ],
       files,
@@ -1235,6 +1235,75 @@ describe("creative repair loop", () => {
     expect(motionPrompt).toContain(
       "Clean up listeners, observers, timelines, and timers",
     );
+  });
+
+  it("repairs the JSX signature as well when a motion primitive mismatches its reference", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-reference-motion-repair-scope-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience: "x".repeat(21_000),
+      styles: ".hero { color: navy; }",
+      motion:
+        "export function mountExperienceMotion(runtime) { return () => {}; }",
+    };
+    const fetchMock = vi.fn(async (_url: string, options: RequestInit) => {
+      const body = JSON.parse(options.body as string);
+      const requestText = body.messages[1].content
+        .filter((part: { type: string; text?: string }) => part.type === "text")
+        .map((part: { text?: string }) => part.text || "")
+        .join("\n");
+      const targetFile = /TARGET CANDIDATE FILE: (experience|styles|motion)/u.exec(
+        requestText,
+      )?.[1];
+      return new Response(
+        JSON.stringify({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: {
+                content: JSON.stringify({
+                  file: targetFile,
+                  source: files[targetFile as keyof typeof files],
+                }),
+              },
+            },
+          ],
+        }),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        {
+          category: "motion-primitive",
+          message: "The motion primitive does not match Reference DNA.",
+        },
+      ],
+      files,
+      screenshots: [],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const prompts = fetchMock.mock.calls.map((call) => {
+      const body = JSON.parse(call[1].body as string);
+      return body.messages[1].content
+        .filter((part: { type: string; text?: string }) => part.type === "text")
+        .map((part: { text?: string }) => part.text || "")
+        .join("\n");
+    });
+    expect(prompts[0]).toContain("TARGET CANDIDATE FILE: experience");
+    expect(prompts[1]).toContain("TARGET CANDIDATE FILE: styles");
+    expect(prompts[2]).toContain("TARGET CANDIDATE FILE: motion");
   });
 
   it("treats sealed visitor-facing values as data and forbids hardcoding them in repairs", async () => {
