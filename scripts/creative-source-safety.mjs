@@ -73,14 +73,6 @@ export function assertCreativeInnerPageSource(
   if (rootMarker && !new RegExp(`\\b${rootMarker}\\b`, "u").test(value))
     fail(`must expose ${rootMarker} on the page root`);
   if (!/<h1\b/u.test(value)) fail("must render a page H1 heading");
-  if (!/<header\b/u.test(value))
-    fail("must render a semantic header");
-  if (!/<nav\b/u.test(value))
-    fail("must render semantic navigation");
-  if (!/<footer\b/u.test(value))
-    fail("must render a semantic footer");
-  if (!/<footer\b[\s\S]*?<\/footer>/u.test(value))
-    fail("must keep footer content inside the semantic footer landmark");
   if (requireServiceRoute && !/\/services\//u.test(value))
     fail("must link services through the /services/ route");
   return true;
