@@ -73,9 +73,13 @@ if (reviewedPages.length > 1)
     "One revision batch cannot mix feedback submitted from different reviewed pages.",
   );
 const reviewedPage = reviewedPages[0] || "";
-const reviewedRoute = reviewedPage
+const reviewedPath = reviewedPage
   ? new URL(reviewedPage).pathname.replace(/\/{2,}/gu, "/")
   : "/";
+const reviewedRoute =
+  reviewedPath === "/"
+    ? "/"
+    : `/${reviewedPath.replace(/^\/+|\/+$/gu, "")}/`;
 let summaries = requests
   .map((item) => feedbackRequestSummary(item))
   .filter(Boolean);
