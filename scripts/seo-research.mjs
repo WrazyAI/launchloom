@@ -974,6 +974,14 @@ function safeDomain(value) {
   try { return new URL(text(value, 1000)).hostname; } catch { return ""; }
 }
 
+function googleAdsCompetition(item) {
+  const index = finiteMetric(item.competition_index);
+  // Google Ads emits a label plus a 0-100 index. Store its numeric index on
+  // the dossier's fractional scale; never infer a number from HIGH/MEDIUM/LOW.
+  if (index !== null) return index >= 0 && index <= 100 ? index / 100 : null;
+  return finiteMetric(item.competition);
+}
+
 export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
   if (!login || !password) throw new Error("DataForSEO credentials are required.");
   const authorization = `Basic ${Buffer.from(`${login}:${password}`).toString("base64")}`;
@@ -1009,7 +1017,7 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
           keyword: item.keyword,
           searchVolume: item.search_volume,
           cpc: item.cpc,
-          competition: item.competition,
+          competition: googleAdsCompetition(item),
         })),
       };
     },
