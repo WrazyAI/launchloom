@@ -112,6 +112,18 @@ describe("rendered contrast independent of authored classes", () => {
     );
     expect(report.pass, JSON.stringify(report.findings)).toBe(true);
   });
+  it("audits a scroll-reachable fixed child inside a transformed container", async () => {
+    const report = await scan(
+      '<section style="margin-top:1400px;height:200px;transform:translateZ(0);background:white"><button style="position:fixed;top:20px;left:20px;color:#eee;background:white">Scroll reachable CTA</button></section>',
+      1440,
+      { states: false },
+    );
+    expect(
+      report.findings.some(
+        (f) => f.text === "Scroll reachable CTA" && f.status === "fail",
+      ),
+    ).toBe(true);
+  });
   it("does not try to hover a fixed control outside the reachable page", async () => {
     const report = await scan(
       '<button style="position:fixed;left:20000px;top:20px">Offscreen helper</button><p style="color:black">Visible copy</p>',

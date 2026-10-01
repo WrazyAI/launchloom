@@ -170,6 +170,7 @@ export function collectContrastTargets({
       const s = styleFor(p);
       if (
         s.position === "fixed" &&
+        p.offsetParent === null &&
         (rect.left >= innerWidth || rect.top >= innerHeight)
       )
         return false;
@@ -586,6 +587,7 @@ export async function inspectContrastPage(
         const style = getComputedStyle(parent);
         if (
           style.position === "fixed" &&
+          parent.offsetParent === null &&
           (rect.left >= innerWidth || rect.top >= innerHeight)
         )
           return false;
