@@ -181,6 +181,23 @@ async function inspect(page) {
       headingFontFamily: identityHeadingStyle?.fontFamily || "",
       headingFontWeight: identityHeadingStyle?.fontWeight || "",
       headingLetterSpacing: identityHeadingStyle?.letterSpacing || "",
+      creativeColors: Object.fromEntries(
+        [
+          "--ll-creative-page",
+          "--ll-creative-hero",
+          "--ll-creative-ink",
+          "--ll-creative-line",
+          "--ll-creative-primary",
+          "--ll-creative-accent",
+        ].map((variable) => [
+          variable,
+          window
+            .getComputedStyle(document.documentElement)
+            .getPropertyValue(variable)
+            .trim() ||
+            window.getComputedStyle(document.body).getPropertyValue(variable).trim(),
+        ]),
+      ),
     };
     return {
       identity,
@@ -278,7 +295,7 @@ export async function inspectAuthoredPage(page) {
       : null;
     const pageRoot = authored || host;
     const text = [document.title, document.body.innerText].join("\n");
-    const heading = document.querySelector("h1");
+    const heading = pageRoot?.querySelector("h1") || document.querySelector("h1");
     const headingStyle = heading ? window.getComputedStyle(heading) : null;
     const markerNames = new Set();
     for (const element of pageRoot?.querySelectorAll("*") || [])
@@ -286,6 +303,158 @@ export async function inspectAuthoredPage(page) {
         if (attribute.name.startsWith("data-")) markerNames.add(attribute.name);
     for (const attribute of pageRoot?.attributes || [])
       if (attribute.name.startsWith("data-")) markerNames.add(attribute.name);
+
+    const visible = (element) => {
+      if (!element) return false;
+      const bounds = element.getBoundingClientRect();
+      if (bounds.width < 1 || bounds.height < 1) return false;
+      for (let current = element; current; current = current.parentElement) {
+        const style = getComputedStyle(current);
+        if (
+          style.display === "none" ||
+          style.visibility === "hidden" ||
+          style.visibility === "collapse" ||
+          Number.parseFloat(style.opacity || "1") <= 0.02
+        )
+          return false;
+      }
+      return true;
+    };
+    const effectiveBackground = (element) => {
+      for (let current = element; current; current = current.parentElement) {
+        const value = getComputedStyle(current).backgroundColor;
+        const match = value.match(
+          /^rgba?\(\s*([\d.]+)[, ]+([\d.]+)[, ]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)$/iu,
+        );
+        if (!match || match[4] === undefined || Number(match[4]) > 0.02)
+          return value;
+      }
+      return "rgb(255, 255, 255)";
+    };
+    const rgb = (value) => {
+      const match = String(value || "").match(
+        /^rgba?\(\s*([\d.]+)[, ]+([\d.]+)[, ]+([\d.]+)/iu,
+      );
+      return match ? match.slice(1, 4).map(Number) : null;
+    };
+    const luminance = (channels) => {
+      const normalized = channels.map((channel) => {
+        const value = channel / 255;
+        return value <= 0.03928
+          ? value / 12.92
+          : Math.pow((value + 0.055) / 1.055, 2.4);
+      });
+      return (
+        0.2126 * normalized[0] +
+        0.7152 * normalized[1] +
+        0.0722 * normalized[2]
+      );
+    };
+    const contrastRatio = (foreground, background) => {
+      const fg = rgb(foreground);
+      const bg = rgb(background);
+      if (!fg || !bg) return null;
+      const light = Math.max(luminance(fg), luminance(bg));
+      const dark = Math.min(luminance(fg), luminance(bg));
+      return (light + 0.05) / (dark + 0.05);
+    };
+    const labelFor = (element) =>
+      (
+        element?.getAttribute("aria-label") ||
+        element?.textContent ||
+        element?.tagName ||
+        "element"
+      )
+        .replace(/\s+/gu, " ")
+        .trim()
+        .slice(0, 90);
+    const contrastFailures = [];
+    const contrastTargets = pageRoot
+      ? [
+          ...pageRoot.querySelectorAll(
+            "header a, header button, nav a, footer a, footer button, [data-service-hero] a, [data-location-hero] a, [data-services-index-hero] a, #contact a, #contact button, #contact label",
+          ),
+        ]
+      : [];
+    for (const element of contrastTargets) {
+      if (!visible(element)) continue;
+      const style = getComputedStyle(element);
+      const ratio = contrastRatio(style.color, effectiveBackground(element));
+      const size = Number.parseFloat(style.fontSize || "16");
+      const weight = Number.parseInt(style.fontWeight || "400", 10) || 400;
+      const minimum = size >= 24 || (size >= 18.66 && weight >= 700) ? 3 : 4.5;
+      if (ratio !== null && ratio + 0.01 < minimum)
+        contrastFailures.push(labelFor(element));
+    }
+    const clippedText = [];
+    if (pageRoot) {
+      const clipTargets = [
+        ...pageRoot.querySelectorAll(
+          "h1, header a, header button, nav a, footer a, footer button, [data-service-hero] a, [data-location-hero] a, [data-services-index-hero] a",
+        ),
+      ];
+      for (const element of clipTargets) {
+        if (!visible(element)) continue;
+        const style = getComputedStyle(element);
+        const clipsX = ["hidden", "clip"].includes(style.overflowX);
+        const clipsY = ["hidden", "clip"].includes(style.overflowY);
+        if (
+          (clipsX && element.scrollWidth > element.clientWidth + 1) ||
+          (clipsY && element.scrollHeight > element.clientHeight + 1)
+        )
+          clippedText.push(
+            element.tagName.toLowerCase() === "h1"
+              ? "h1"
+              : labelFor(element),
+          );
+      }
+    }
+    const visibleHeader = pageRoot?.querySelector("header");
+    const visibleNavigation = [
+      ...(pageRoot?.querySelectorAll("nav") || []),
+    ].find(visible);
+    const visibleFooter = pageRoot?.querySelector("footer");
+    const contactSection = pageRoot?.querySelector("#contact");
+    const leadForm = pageRoot?.querySelector('[data-runtime="lead-form"]');
+    const opening = pageRoot?.querySelector(
+      "[data-service-hero], [data-location-hero], [data-services-index-hero]",
+    );
+    const primaryAction = opening
+      ? [...opening.querySelectorAll("a, button")].find((element) => {
+          if (!visible(element)) return false;
+          const href = element.getAttribute("href") || "";
+          return (
+            href === "#contact" ||
+            href === "/contact/" ||
+            href.startsWith("tel:") ||
+            href.startsWith("mailto:") ||
+            element.tagName === "BUTTON"
+          );
+        })
+      : null;
+    const brokenNavigation = [];
+    for (const anchor of pageRoot?.querySelectorAll("nav a[href]") || []) {
+      if (!visible(anchor)) continue;
+      const href = anchor.getAttribute("href") || "";
+      if (href === "#" || (href.startsWith("#") && !document.querySelector(href)))
+        brokenNavigation.push(href || "(empty)");
+    }
+    const creativeColors = Object.fromEntries(
+      [
+        "--ll-creative-page",
+        "--ll-creative-hero",
+        "--ll-creative-ink",
+        "--ll-creative-line",
+        "--ll-creative-primary",
+        "--ll-creative-accent",
+      ].map((variable) => [
+        variable,
+        getComputedStyle(document.documentElement)
+          .getPropertyValue(variable)
+          .trim() ||
+          getComputedStyle(document.body).getPropertyValue(variable).trim(),
+      ]),
+    );
     return {
       kind,
       identity: {
@@ -294,23 +463,33 @@ export async function inspectAuthoredPage(page) {
         headingFontFamily: headingStyle?.fontFamily || "",
         headingFontWeight: headingStyle?.fontWeight || "",
         headingLetterSpacing: headingStyle?.letterSpacing || "",
+        creativeColors,
       },
       hasHost: Boolean(host),
       creativeRenderer: host?.getAttribute("data-creative-renderer") || "",
       hasAuthoredMarker: Boolean(authored),
       markers: [...markerNames],
       h1Count: pageRoot ? pageRoot.querySelectorAll("h1").length : 0,
-      hasContactSection: Boolean(pageRoot?.querySelector("#contact")),
-      hasLeadForm: Boolean(pageRoot?.querySelector('[data-runtime="lead-form"]')),
+      hasVisibleHeader: visible(visibleHeader),
+      hasVisibleNavigation: Boolean(visibleNavigation),
+      hasVisibleFooter: visible(visibleFooter),
+      hasVisibleContactSection: visible(contactSection),
+      hasVisibleLeadForm: visible(leadForm),
+      hasVisiblePrimaryAction: visible(primaryAction),
+      hasContactSection: Boolean(contactSection),
+      hasLeadForm: Boolean(leadForm),
       missingAlt: [...document.images].filter((image) => !image.hasAttribute("alt")).length,
-      unnamedControls: [...(pageRoot?.querySelectorAll("button, a") || [])].filter((element) => !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
+      unnamedControls: [...(pageRoot?.querySelectorAll("button, a") || [])].filter((element) => visible(element) && !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
+      brokenNavigation: [...new Set(brokenNavigation)],
+      contrastFailures: [...new Set(contrastFailures)],
+      clippedText: [...new Set(clippedText)],
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
+      imageCount: [...document.images].filter(visible).length,
       emDashes: (text.match(/—/gu) || []).length,
     };
   });
 }
-
 function normalizeColor(value) {
   return String(value || "").replace(/\s+/gu, "").toLowerCase();
 }
@@ -348,6 +527,21 @@ export function authoredPageIdentityFindings(home, page, label = "authored page"
     findings.push(
       `${label} heading weight drifts from the homepage weight`,
     );
+  for (const variable of [
+    "--ll-creative-page",
+    "--ll-creative-hero",
+    "--ll-creative-ink",
+    "--ll-creative-line",
+    "--ll-creative-primary",
+    "--ll-creative-accent",
+  ]) {
+    const homeValue = normalizeColor(home.creativeColors?.[variable]);
+    const pageValue = normalizeColor(page.creativeColors?.[variable]);
+    if (homeValue && pageValue && homeValue !== pageValue)
+      findings.push(
+        `${label} creative palette drifts from the homepage at ${variable}`,
+      );
+  }
   return findings;
 }
 
@@ -367,8 +561,23 @@ export function authoredPageFailures(evidence, kind) {
     !evidence.hasAuthoredMarker && `missing authored ${label} marker`,
     evidence.h1Count !== 1 && "expected one page H1",
     ...missingMarkers.map((marker) => `missing ${marker} region`),
+    evidence.hasVisibleHeader === false && "missing visible header",
+    evidence.hasVisibleNavigation === false && "missing visible navigation",
+    evidence.hasVisibleFooter === false && "missing visible footer",
     !evidence.hasContactSection && "missing contact section",
+    evidence.hasVisibleContactSection === false && "contact section is hidden",
     !evidence.hasLeadForm && "missing shared lead form runtime",
+    evidence.hasVisibleLeadForm === false && "shared lead form is hidden",
+    evidence.hasVisiblePrimaryAction === false && "missing visible primary action",
+    ...(evidence.brokenNavigation || []).map(
+      (target) => `broken navigation target ${target}`,
+    ),
+    ...(evidence.contrastFailures || []).map(
+      (target) => `text or action contrast is unreadable: ${target}`,
+    ),
+    ...(evidence.clippedText || []).map(
+      (target) => `visible text is clipped: ${target}`,
+    ),
     evidence.missingAlt > 0 && "image is missing alt text",
     evidence.unnamedControls > 0 && "interactive control has no accessible name",
     evidence.overflow && "horizontal overflow",
@@ -535,20 +744,44 @@ export async function runCreativeBakeoff({
   await fs.cp(selectedDir, selectedBackup, { recursive: true, force: true }).catch(() => {});
   const browser = await chromium.launch({ headless: true });
   const bakeoffConfig = JSON.parse(originalConfig);
-  const serviceSlug = String(
-    (Array.isArray(bakeoffConfig.services) ? bakeoffConfig.services : []).find(
-      (service) => service?.slug,
-    )?.slug || "",
-  );
-  const locationSlug =
+  const serviceRoutes = (Array.isArray(bakeoffConfig.services)
+    ? bakeoffConfig.services
+    : []
+  )
+    .filter((service) => service?.slug)
+    .map((service) => ({
+      kind: "service",
+      file: "ServicePage.jsx",
+      sourceFile: "ServicePage.jsx",
+      route: `/services/${String(service.slug)}/`,
+      routeKey: `service-${String(service.slug)}`,
+    }));
+  const locationRoutes =
     bakeoffConfig.industry === "home-services"
-      ? String(
-          (Array.isArray(bakeoffConfig.locations)
-            ? bakeoffConfig.locations
-            : []
-          ).find((location) => location?.slug)?.slug || "",
+      ? (Array.isArray(bakeoffConfig.locations)
+          ? bakeoffConfig.locations
+          : []
         )
-      : "";
+          .filter((location) => location?.slug)
+          .map((location) => ({
+            kind: "location",
+            file: "LocationPage.jsx",
+            sourceFile: "LocationPage.jsx",
+            route: `/locations/${String(location.slug)}/`,
+            routeKey: `location-${String(location.slug)}`,
+          }))
+      : [];
+  const authoredPageRoutes = [
+    ...serviceRoutes,
+    {
+      kind: "services-index",
+      file: "ServicesIndexPage.jsx",
+      sourceFile: "ServicesIndexPage.jsx",
+      route: "/services/",
+      routeKey: "services-index",
+    },
+    ...locationRoutes,
+  ];
   const results = [];
   await fs.mkdir(evidenceDir, { recursive: true });
 
@@ -687,23 +920,8 @@ export async function runCreativeBakeoff({
             await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}.png`), fullPage: true });
             await page.close();
           }
-          const authoredPages = [
-            {
-              kind: "service",
-              file: "ServicePage.jsx",
-              route: serviceSlug ? `/services/${serviceSlug}/` : "",
-            },
-            {
-              kind: "location",
-              file: "LocationPage.jsx",
-              route: locationSlug ? `/locations/${locationSlug}/` : "",
-            },
-            {
-              kind: "services-index",
-              file: "ServicesIndexPage.jsx",
-              route: "/services/",
-            },
-          ].filter((authoredPage) => authoredPage.route);
+          const authoredPages = authoredPageRoutes;
+          candidateResult.authoredPages = [];
           const homepageIdentity =
             candidateResult.viewports.find(
               (viewport) => viewport.name === "desktop",
@@ -722,11 +940,15 @@ export async function runCreativeBakeoff({
             const pageResult = {
               kind: authoredPage.kind,
               route: authoredPage.route,
+              routeKey: authoredPage.routeKey,
+              sourceFile: authoredPage.sourceFile,
+              candidateId: candidate.manifest.candidateId,
               viewports: [],
               failures: [],
             };
             for (const viewport of [
               { name: "desktop", width: 1536, height: 864 },
+              { name: "compact", width: 1366, height: 768 },
               { name: "mobile", width: 390, height: 844 },
             ]) {
               const page = await browser.newPage({ viewport });
@@ -760,13 +982,13 @@ export async function runCreativeBakeoff({
                 await page.screenshot({
                   path: path.join(
                     evidenceDir,
-                    `${candidate.manifest.candidateId}-${authoredPage.kind}-${viewport.name}-viewport.png`,
+                    `${candidate.manifest.candidateId}-${authoredPage.routeKey}-${viewport.name}-viewport.png`,
                   ),
                 });
                 await page.screenshot({
                   path: path.join(
                     evidenceDir,
-                    `${candidate.manifest.candidateId}-${authoredPage.kind}-${viewport.name}.png`,
+                    `${candidate.manifest.candidateId}-${authoredPage.routeKey}-${viewport.name}.png`,
                   ),
                   fullPage: true,
                 });
@@ -780,11 +1002,14 @@ export async function runCreativeBakeoff({
             }
             pageResult.failures = [...new Set(pageResult.failures)];
             pageResult.pass = pageResult.failures.length === 0;
-            candidateResult[AUTHORED_PAGE_EVIDENCE_KEYS[authoredPage.kind]] =
-              pageResult;
+            candidateResult.authoredPages.push(pageResult);
+            const evidenceKey = AUTHORED_PAGE_EVIDENCE_KEYS[authoredPage.kind];
+            if (!candidateResult[evidenceKey])
+              candidateResult[evidenceKey] = pageResult;
             candidateResult.failures.push(
               ...pageResult.failures.map(
-                (failure) => `${authoredPage.kind}-page ${failure}`,
+                (failure) =>
+                  `${authoredPage.sourceFile} ${authoredPage.route} ${failure}`,
               ),
             );
           }
