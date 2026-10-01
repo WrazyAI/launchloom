@@ -26,6 +26,10 @@ an unconfirmed service.
    and verified local facts. The blog routes are built when articles exist;
    the initial site does not create filler articles.
 
+Google Ads `competition_index` (0-100) is stored as a 0-1 fraction in the
+numeric competition field. Categorical `HIGH`, `MEDIUM`, and `LOW` labels never
+become invented numeric scores. Missing numeric competition remains unavailable.
+
 ## Research stages
 
 - **Market snapshot:** local Google Ads search volume, CPC, and competition for
