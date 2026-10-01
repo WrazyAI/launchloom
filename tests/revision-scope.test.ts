@@ -402,3 +402,29 @@ it("rejects a deleted tracked symlink even when its path is allowed", async () =
   await fs.unlink(path.join(client, "linked.txt"));
   await expect(run("--stage")).rejects.toThrow(/symlink/i);
 });
+
+it("keeps installed dependencies and build outputs out of the sealed source revision", async () => {
+  const {root, client, run} = await fixture();
+  await exec(process.execPath, [path.resolve("scripts/revision-checkpoint.mjs"), "--action", "prepare", "--repo", client, "--request-id", "build-output-canary", "--out", path.join(root,"checkpoint.json"), "--restore-dir", path.join(root,"restore")]);
+  for(const relative of ["node_modules/.bin/am-i-vibing", "dist/index.html", ".astro/types.d.ts"]) {
+    await fs.mkdir(path.dirname(path.join(client, relative)), {recursive:true});
+    await fs.writeFile(path.join(client, relative), "build artifact");
+  }
+  await fs.writeFile(path.join(client,"src/site.config.json"), '{"revised":true}\n');
+  await run("--stage");
+  const staged = await exec("git", ["-C",client,"diff","--cached","--name-only"]);
+  expect(staged.stdout.trim()).toBe("src/site.config.json");
+  await fs.writeFile(path.join(client,"src/unrelated.ts"), "unauthorized source change");
+  await expect(run()).rejects.toThrow("Path outside revision scope: src/unrelated.ts");
+});
+
+it("refuses linked clone-local ignore metadata without changing the external target", async () => {
+  const {root, client} = await fixture();
+  const target = path.join(root,"external-ignore.txt");
+  await fs.writeFile(target,"preserve external rules\n");
+  const exclude = path.join(client,".git/info/exclude");
+  await fs.unlink(exclude);
+  await fs.symlink(target,exclude);
+  await expect(exec(process.execPath,[path.resolve("scripts/revision-checkpoint.mjs"),"--action","prepare","--repo",client,"--request-id","linked-ignore-canary","--out",path.join(root,"checkpoint.json"),"--restore-dir",path.join(root,"restore")])).rejects.toThrow("exclude file must not be linked");
+  expect(await fs.readFile(target,"utf8")).toBe("preserve external rules\n");
+});

@@ -3,6 +3,8 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
+import { ensureClientBuildIgnores } from "./client-build-ignores.mjs";
+
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/u;
 const SCOPE_TRAILER = "LaunchLoom-Revision-Scope: ";
 
@@ -221,6 +223,7 @@ if (
     repo: args.repo,
     requestId: args["request-id"],
   });
+  await ensureClientBuildIgnores(args.repo);
   if (checkpoint)
     await prepareRevisionReplay({
       repo: args.repo,

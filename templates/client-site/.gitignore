@@ -1,0 +1,4 @@
+# Installed dependencies and generated Astro build output
+/node_modules/
+/dist/
+/.astro/
