@@ -28,6 +28,10 @@ export function feedbackReviewedPageFromComment(body) {
     const url = new URL(match[1].replace(/_$/u, ""));
     url.search = "";
     url.hash = "";
+    url.pathname =
+      url.pathname === "/"
+        ? "/"
+        : `/${url.pathname.replace(/^\/+|\/+$/gu, "")}/`;
     return url.toString();
   } catch {
     return "";
