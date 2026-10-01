@@ -1676,6 +1676,45 @@ describe("creative repair loop", () => {
     expect(result.cyclesUsed).toBe(2);
   });
 
+  it("applies a large candidate's model edit set before the generic repair loop evaluates it", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-large-loop-contract-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience: "<main>Experience</main>",
+      styles: `main { color: inherit; }\n/*${"x".repeat(21_000)}*/`,
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+      servicePage: '<main data-service-page><h1 className="service-old">Service</h1></main>',
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({
+      choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
+        edits: [{ file: "servicePage", find: 'className="service-old"', replace: 'className="service-new"' }],
+      }) } }],
+    })));
+    const referenceDna = {
+      familyId: "test-editorial",
+      sectionSequence: repairSectionSequence,
+      evidence: { desktopScreenshot: { path: desktop } },
+    };
+    const result = await runCreativeRepairLoop({
+      files,
+      referenceDna,
+      generate: (input: any) => requestRepair({ model: "test/model", ...input, logger: () => {} }),
+      evaluate: async (candidate: any) => ({
+        pass: candidate.servicePage.includes('className="service-new"'),
+        findings: ["service-page heading class needs repair"],
+      }),
+      maxCycles: 1,
+    });
+    expect(result.pass).toBe(true);
+    expect(result.generationFailures).toBe(0);
+    expect(result.authorAttempts).toBe(1);
+    expect(result.files.servicePage).toBe(files.servicePage.replace('className="service-old"', 'className="service-new"'));
+    for (const key of ["experience", "styles", "motion"] as const)
+      expect(result.files[key]).toBe(files[key]);
+  });
+
   it("updates authored inner pages through the repair loop and keeps unchanged pages", async () => {
     const result = await runCreativeRepairLoop({
       files: {

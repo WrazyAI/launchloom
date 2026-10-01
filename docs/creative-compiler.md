@@ -174,9 +174,13 @@ become client-site assets.
    through repairs so a repair cannot silently drop or break them. Each repair response has a
    48k completion ceiling and records its
    finish reason plus completion/reasoning token counts without logging source
-   content. When the combined authored source exceeds 20,000 characters, repair
-   is split into sequential JSX, CSS, and motion responses to keep each returned
-   bundle within the provider ceiling. Every file-scoped call reuses the same
+   content. When the combined authored source exceeds 20,000 characters,
+   candidates with authored inner pages use focused bounded edit sets. The
+   adapter applies those edits against the exact current sources and returns a
+   complete file bundle to both automatic repair runners, preserving unaffected
+   pages and all downstream source/rendered validation. Homepage-only candidates
+   use sequential JSX, CSS, and motion replacements to keep each returned bundle
+   within the provider ceiling. Every file-scoped call reuses the same
    frozen reasoning effort and creative session identity. Each candidate gets
    at most two repair cycles. Production promotion
    still requires `promotionReady`, including rendered candidate diversity, plus a

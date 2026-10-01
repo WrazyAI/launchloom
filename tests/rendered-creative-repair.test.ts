@@ -11,6 +11,7 @@ import {
   runVisualGateProcess,
   writeCandidate,
 } from "../scripts/run-rendered-creative-repair.mjs";
+import { requestRepair } from "../scripts/creative-repair-loop.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 
@@ -159,6 +160,45 @@ async function visualGate(options: any, verdict: "pass" | "revise") {
 }
 
 describe("rendered creative repair orchestration", () => {
+
+  it("passes a large inner-page repair through the real model adapter and rendered repair normalizer", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-large-repair-contract-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const files = {
+      experience: '<main><section data-reference-section="hero">Hero</section></main>',
+      styles: `.service-title { font-size: 4rem; }\n/*${"x".repeat(21_000)}*/`,
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+      servicePage: '<main data-service-page><h1 className="service-title">Service</h1></main>',
+    };
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => Response.json({
+      choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
+        edits: [{ file: "styles", find: "font-size: 4rem;", replace: "font-size: 3rem;" }],
+      }) } }],
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        familyId: "test-editorial",
+        sectionSequence: ["hero", "services", "faqs", "contact"],
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: ["service-page typography: reduce the oversized service heading"],
+      files,
+      screenshots: [],
+      logger: () => {},
+    });
+    const request = JSON.parse(fetchMock.mock.calls[0][1].body as string);
+    expect(request.response_format.json_schema.name).toBe("launchloom_creative_repair_edits");
+    const repaired = normalizeRepair(response, files);
+    expect(repaired.styles).toBe(files.styles.replace("font-size: 4rem;", "font-size: 3rem;"));
+    for (const key of ["experience", "motion", "servicePage"] as const)
+      expect(repaired[key]).toBe(files[key]);
+  });
+
   it("keeps authored inner pages when a repair response omits or empties them", () => {
     const current = {
       experience: "experience",
