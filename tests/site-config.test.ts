@@ -432,6 +432,69 @@ describe("site configuration", () => {
     expect(config.business.serviceAreas).toEqual(["Tacoma, WA", "Lakewood, WA"]);
   });
 
+  it("preserves bounded cited fallback evidence without making V2 research publish-ready", () => {
+    const prepared = prepareGenerationIntake({
+      seoResearch: {
+        version: 2,
+        mode: "context-only",
+        publishReady: false,
+        externalSearchEvidence: [{
+          query: "drain cleaning Tacoma",
+          sourceUrl: "https://source.example/plumbing#fragment",
+          title: "Plumbing source",
+          snippet: "A public source excerpt.",
+          retrievedAt: "2026-10-01T12:00:00.000Z",
+          provider: "OpenRouter web search (Parallel)",
+          provenance: "openrouter_web_search_url_citation",
+        }, {
+          query: "bad",
+          sourceUrl: "http://insecure.example/not-evidence",
+          title: "Rejected",
+          snippet: "Rejected insecure URL.",
+        }],
+        fallbackSearch: {
+          status: "partial",
+          stopReason: "cost_unreported",
+          provider: "OpenRouter web search (Parallel)",
+          queriesAttempted: 1,
+          failedQueries: 0,
+          maxQueries: 3,
+          maxResultsPerQuery: 4,
+          providerSearchRequests: 1,
+          providerSearchRequestsComplete: true,
+          costUsd: 0.005,
+          maxUsd: 0.05,
+          costComplete: false,
+          budgetExhausted: false,
+        },
+      },
+    });
+
+    expect(prepared.seoResearch).toMatchObject({
+      version: 2,
+      mode: "context-only",
+      publishReady: false,
+      fallbackSearch: {
+        status: "partial",
+        stopReason: "cost_unreported",
+        queriesAttempted: 1,
+        providerSearchRequests: 1,
+        costUsd: 0.005,
+        maxUsd: 0.05,
+        costComplete: false,
+      },
+    });
+    expect(prepared.seoResearch?.externalSearchEvidence).toEqual([{
+      query: "drain cleaning Tacoma",
+      sourceUrl: "https://source.example/plumbing",
+      title: "Plumbing source",
+      snippet: "A public source excerpt.",
+      retrievedAt: "2026-10-01T12:00:00.000Z",
+      provider: "OpenRouter web search (Parallel)",
+      provenance: "openrouter_web_search_url_citation",
+    }]);
+  });
+
   it("does not invent an argument value when an optional flag is absent", () => {
     expect(argumentValue(["node", "script.mjs"], "--research")).toBe("");
     expect(
