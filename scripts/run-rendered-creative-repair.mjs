@@ -216,6 +216,44 @@ function repairPriority(report, candidateId) {
   return scores.length ? Math.min(...scores) : Number.NEGATIVE_INFINITY;
 }
 
+/** Count of rendered measurements at or above their thresholds. */
+function passingDimensionCount(candidate) {
+  const audit = candidate?.renderedReferenceFidelity?.audit;
+  if (!audit || typeof audit !== "object") return 0;
+  let passing = 0;
+  for (const [key, value] of Object.entries(audit.scores || {})) {
+    const minimum = Number(RENDERED_REFERENCE_THRESHOLDS[key]);
+    const score = Number(value);
+    if (Number.isFinite(minimum) && Number.isFinite(score) && score >= minimum)
+      passing += 1;
+  }
+  const overall = Number(audit.overallScore);
+  if (
+    Number.isFinite(overall) &&
+    overall >= RENDERED_REFERENCE_THRESHOLDS.overall
+  )
+    passing += 1;
+  return passing;
+}
+
+/**
+ * Candidate states are compared by how many measurements pass first and by
+ * their weakest score second, so a state that fixes a dimension without
+ * dropping another is always preferred.
+ */
+function repairState(report, candidate) {
+  return {
+    metric: repairPriority(report, candidate?.candidateId),
+    passing: passingDimensionCount(candidate),
+  };
+}
+
+function isBetterState(next, existing) {
+  if (!existing) return true;
+  if (next.passing !== existing.passing) return next.passing > existing.passing;
+  return next.metric > existing.metric;
+}
+
 // The per-candidate repair budget is scarce, so the loop repairs the
 // candidate closest to passing the measured gates first. Repairing the
 // weakest candidate first historically spent every cycle on candidates that
@@ -661,13 +699,16 @@ function repairFindingText(finding) {
 
 /**
  * A repair may only repaint the candidate when a finding actually asks for a
- * palette, color, surface, or contrast change. Without one, repainted colors
- * count as a regression even when the findings were satisfied.
+ * palette, color, surface, or contrast change. The non-regression instruction
+ * names passing measurements (including paletteAdherence) and must not count
+ * as such an ask.
  */
 export function findingsRequirePaletteChange(findings) {
-  return (findings || []).some((finding) =>
-    PALETTE_FINDING_PATTERN.test(repairFindingText(finding)),
-  );
+  return (findings || []).some((finding) => {
+    const text = repairFindingText(finding);
+    if (/already at their thresholds must not regress/iu.test(text)) return false;
+    return PALETTE_FINDING_PATTERN.test(text);
+  });
 }
 
 /** Sorted color literals used to detect an unprompted repaint. */
@@ -1100,12 +1141,12 @@ export async function runRenderedCreativeRepair({
 
   async function rememberBestState(report, round) {
     for (const candidate of report?.candidates || []) {
-      const metric = repairPriority(report, candidate.candidateId);
+      const state = repairState(report, candidate);
       // A candidate measured at or above the rendered bar would have been
       // selected, so only below-bar states are worth keeping as baselines.
-      if (!(metric < RENDERED_REFERENCE_THRESHOLDS.overall)) continue;
+      if (!(state.metric < RENDERED_REFERENCE_THRESHOLDS.overall)) continue;
       const existing = bestState.get(candidate.candidateId);
-      if (existing && existing.metric >= metric) continue;
+      if (!isBetterState(state, existing)) continue;
       const directory = resolveCandidateDirectory(
         candidateRoot,
         candidate.directory,
@@ -1118,7 +1159,7 @@ export async function runRenderedCreativeRepair({
       await fs.rm(snapshotDir, { recursive: true, force: true });
       await fs.cp(directory, snapshotDir, { recursive: true });
       bestState.set(candidate.candidateId, {
-        metric,
+        ...state,
         directory: candidate.directory,
         snapshotDir,
         screenshotsDir: path.join(
@@ -1236,7 +1277,7 @@ export async function runRenderedCreativeRepair({
           const best = bestState.get(candidate.candidateId);
           if (
             best &&
-            best.metric > repairPriority(report, candidate.candidateId) &&
+            isBetterState(best, repairState(report, candidate)) &&
             (await restoreBestState(candidate.candidateId))
           )
             restored = true;
@@ -1252,7 +1293,7 @@ export async function runRenderedCreativeRepair({
 
       const best = target.finding ? null : bestState.get(target.candidateId);
       const regressed =
-        best && best.metric > repairPriority(report, target.candidateId);
+        best && isBetterState(best, repairState(report, target.candidate));
       if (regressed) await restoreBestState(target.candidateId);
       const diversity =
         previewDiversity?.pass === false

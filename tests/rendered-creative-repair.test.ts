@@ -265,6 +265,11 @@ describe("rendered creative repair orchestration", () => {
       ]),
     ).toBe(true);
     expect(
+      findingsRequirePaletteChange([
+        "Rendered-reference measurements already at their thresholds must not regress during this repair: paletteAdherence 91, imagery 88.",
+      ]),
+    ).toBe(false);
+    expect(
       colorLiterals("a { color: #FFF; background: rgb(1, 2, 3); }"),
     ).toEqual(["#fff", "rgb(1,2,3)"]);
   });
@@ -540,6 +545,86 @@ export default function Experience({ content, runtime }) { return <main><section
     expect(seenAtRepair[1]).toBe(originalSource);
     expect(repairFindings[1]).toContain("overall fidelity scored 78");
     expect(repairFindings[1]).not.toContain("scored 60");
+  });
+
+  it("prefers the snapshot with more passing measurements when scores tie", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const candidateDir = path.join(candidates, "candidate-a");
+    const experiencePath = path.join(candidateDir, "Experience.jsx");
+    let bakeoffCalls = 0;
+    const seenAtBakeoff: string[] = [];
+
+    const state = (
+      scores: Record<string, number>,
+      overall: number,
+    ) =>
+      report({
+        selectedCandidateId: null,
+        candidates: [
+          candidate("candidate-a", {
+            valid: false,
+            eligible: false,
+            failures: ["Rendered candidate needs repair."],
+            referenceFidelity: { pass: false, score: overall },
+            renderedReferenceFidelity: {
+              pass: false,
+              score: overall,
+              audit: {
+                verdict: "revise",
+                overallScore: overall,
+                scores,
+                findings: [],
+              },
+            },
+          }),
+        ],
+      });
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        seenAtBakeoff.push(await fs.readFile(experiencePath, "utf8"));
+        const outcome =
+          bakeoffCalls === 1
+            ? state({ spatialRhythm: 76, servicePresentation: 77, paletteAdherence: 32 }, 76)
+            : bakeoffCalls === 2
+              ? state(
+                  {
+                    spatialRhythm: 76,
+                    servicePresentation: 77,
+                    paletteAdherence: 91,
+                    interactionEvidence: 66,
+                  },
+                  76,
+                )
+              : bakeoffCalls === 3
+                ? state({ spatialRhythm: 60, paletteAdherence: 30 }, 70)
+                : report({
+                    selectedCandidateId: "candidate-a",
+                    candidates: [candidate("candidate-a")],
+                  });
+        return writeBakeoffEvidence(options, outcome);
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async () => {
+        const step = seenAtBakeoff.length;
+        await fs.writeFile(
+          experiencePath,
+          `export default () => "state-${step}";\n`,
+        );
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    // The third bakeoff regressed the candidate; the final restore must use
+    // the second state (three passing measurements), not the first (one).
+    expect(seenAtBakeoff[3]).toBe(`export default () => "state-1";\n`);
   });
 
   it("targets repairs with the rendered fidelity dimensions that miss their thresholds", async () => {
