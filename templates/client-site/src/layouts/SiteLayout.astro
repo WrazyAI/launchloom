@@ -53,7 +53,7 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
     <title>{title}</title>
   </head>
   <body style={`--brand:${site.style.primaryColor};--on-brand:${site.style.contrastColor || "#ffffff"};--brand-ink:${site.style.brandTextColor || site.style.primaryColor};--brand-surface:${site.style.brandSurfaceColor || site.style.primaryColor};--on-brand-surface:${site.style.brandSurfaceTextColor || site.style.contrastColor || "#ffffff"};--cream:${site.style.surfaceColor || "#f8f6f0"};--hero-surface:${site.style.heroColor || "#e8eee5"};--ink:${site.style.inkColor || "#14201d"};--muted:${site.style.mutedColor || "#5e6b66"};--line:${site.style.lineColor || "#d8ded7"}`}>
-    {site.demoNotice && (
+    {site.demoNotice && !judgePreview && (
       <aside class="ll-demo-notice" data-demo-notice role="note" aria-label={site.demoNotice}>
         <strong>{site.demoNotice}</strong>
         <span>This is not a real business or service offering.</span>

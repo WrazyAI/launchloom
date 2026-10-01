@@ -470,7 +470,7 @@ Evaluate geometry, typography scale and role, spacing rhythm, image occupancy an
 The candidate desktop, compact, and mobile images below are actual first-viewport captures. Browser-measured geometry: ${JSON.stringify(renderedGeometry)}. Use those measurements for viewport fit and hero occupancy, then inspect the viewport pixels for composition quality.
 ${candidateOverview ? `The candidate desktop page overview is ${overviewSize}. Use it only for section order and spatial rhythm; long-page scaling is not evidence of small typography or a shallow hero.` : ""}
 
-PLATFORM CHROME: the floating website-assistant launcher (a question-mark pill), the exit offer, and the review banner are platform features present on every site, not authored design. Ignore them completely when scoring and never report them as candidate findings. Judge only the candidate's authored page.`,
+PLATFORM CHROME: the floating website-assistant launcher (a question-mark pill), the exit offer, the review banner, and the fictional-demo notice are platform features present on every site, not authored design. Ignore them completely when scoring and never report them as candidate findings. Judge only the candidate's authored page.`,
     },
     {
       type: "text",
