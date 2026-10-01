@@ -103,10 +103,11 @@ export function feedbackStructureFromComment(body) {
 
 export function feedbackRequestFromComment(body) {
   const feedback = feedbackTextFromComment(body);
+  const reviewedPage = feedbackReviewedPageFromComment(body);
   return {
     text: feedback,
     structure: feedbackStructureFromComment(body),
-    reviewedPage: feedbackReviewedPageFromComment(body),
+    ...(reviewedPage ? { reviewedPage } : {}),
   };
 }
 
