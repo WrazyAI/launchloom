@@ -1638,6 +1638,7 @@ export async function planRevision(
         text: clean(item?.text, 4000),
         assets: Array.isArray(item?.assets) ? item.assets : [],
         colors: Array.isArray(item?.colors) ? item.colors : [],
+        reviewedPage: clean(item?.reviewedPage, 1000),
       };
   })
   .filter((item) => item.text || item.assets.length || item.colors.length);
@@ -1860,6 +1861,7 @@ export async function planRevision(
     return {
       feedbackIndex,
       feedback: item.text,
+      ...(item.reviewedPage ? { reviewedPage: item.reviewedPage } : {}),
       structuredColorOnly: item.colors.length > 0 &&
         !requestsColorChange(item.text.replace(/^\s*\[[^\]]+\]\s*/u, "")),
       ...(status === "creative" && item.assets.length

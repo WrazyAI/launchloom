@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   feedbackRequestSummary,
+  feedbackReviewedPageFromComment,
+  feedbackRequestFromComment,
   feedbackStructureFromComment,
   feedbackTextFromComment,
   nextClientFeedbackContext,
@@ -14,6 +16,39 @@ const structureMarker = (value: unknown) =>
   ).toString("base64url")} -->`;
 
 describe("revision feedback", () => {
+  it("preserves the reviewed route while stripping signed review credentials", () => {
+    const body = [
+      "<!-- launchloom-feedback:developer -->",
+      "**Developer feedback · Layout**",
+      "Make this service page footer feel integrated.",
+      "",
+      "_Page: https://review.example.pages.dev/services/family-dentistry/?review=signed-secret#contact_",
+    ].join("\n");
+
+    expect(feedbackReviewedPageFromComment(body)).toBe(
+      "https://review.example.pages.dev/services/family-dentistry/",
+    );
+    expect(feedbackRequestFromComment(body)).toMatchObject({
+      text: "[Layout] Make this service page footer feel integrated.",
+      reviewedPage:
+        "https://review.example.pages.dev/services/family-dentistry/",
+    });
+    expect(JSON.stringify(feedbackRequestFromComment(body))).not.toContain(
+      "signed-secret",
+    );
+    expect(
+      feedbackReviewedPageFromComment(
+        [
+          "<!-- launchloom-feedback:developer -->",
+          "**Developer feedback**",
+          "Same route without a trailing slash.",
+          "",
+          "_Page: https://review.example.pages.dev/services/family-dentistry?review=another-secret_",
+        ].join("\n"),
+      ),
+    ).toBe("https://review.example.pages.dev/services/family-dentistry/");
+  });
+
   it("removes review metadata and signed page URLs from feedback", () => {
     const feedback = feedbackTextFromComment(
       "<!-- launchloom-feedback:developer -->\n**Developer feedback · Logo**\n\nShow the company name beside the logo.\n\n_Page: https://review.example.pages.dev/?review=signed-value_",

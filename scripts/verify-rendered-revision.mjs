@@ -5,6 +5,11 @@ import sharp from "sharp";
 import { chromium } from "playwright";
 import { contrast, parseCssColor } from "./color-contrast.mjs";
 import { revisionImageMatches } from "./revision-image-acceptance.mjs";
+import {
+  authoredPageFailures,
+  authoredPageIdentityFindings,
+  inspectAuthoredPage,
+} from "./run-creative-bakeoff.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -24,6 +29,11 @@ const reviewMode = process.env.PUBLIC_REVIEW_MODE === "true";
 const dist = path.resolve(args.dist);
 const creativeExperience =
   config.design?.experience?.renderer === "creative-candidate";
+const reviewedRoute = String(
+  config.revisionReport?.reviewedRoute ||
+    config.revisionReport?.creativeRepairScope?.reviewedRoute ||
+    "/",
+).trim() || "/";
 const screenshotDir = path.resolve(
   args.screenshots || path.join(dist, "revision-screenshots"),
 );
@@ -121,6 +131,7 @@ try {
   }
   for (const viewport of [
     { name: "desktop", width: 1440, height: 1000 },
+    { name: "compact", width: 1366, height: 768 },
     { name: "mobile", width: 390, height: 844 },
   ]) {
     const page = await browser.newPage({
@@ -233,7 +244,7 @@ try {
         if (!(await firstOption.isChecked()))
           failures.push("desktop: qualifier answer was lost after going back.");
       }
-    } else {
+    } else if (viewport.name === "mobile") {
       const exitOffer = page.locator('[data-conversion-feature="exit-offer"]');
       if (
         (await exitOffer.count()) &&
@@ -556,6 +567,7 @@ try {
           `${viewport.name}: text contrast below ${target.minimum} for ${target.text}.`,
         );
     for (const artifact of config.revisionReport?.expectedArtifacts || []) {
+      if (reviewedRoute !== "/" && artifact.type !== "creative-color") continue;
       if (artifact.type === "creative-color") {
         if (
           state.creativeColors[artifact.variable]?.toLowerCase() !==
@@ -640,6 +652,222 @@ try {
       style: ".quick-answers, .mobile-call { visibility: hidden !important; }",
     });
     await page.close();
+  }
+
+  if (creativeExperience) {
+    const identityPage = await browser.newPage({
+      viewport: { width: 1536, height: 864 },
+      deviceScaleFactor: 1,
+    });
+    await identityPage.goto(url, { waitUntil: "networkidle" });
+    const homepageParity = await identityPage.evaluate(() => {
+      const heading = document.querySelector("h1");
+      const style = heading ? getComputedStyle(heading) : null;
+      const leadControls = [
+        ...document.querySelectorAll(
+          '[data-runtime="lead-form"] input, [data-runtime="lead-form"] textarea, [data-runtime="lead-form"] select, [data-runtime="lead-form"] button',
+        ),
+      ];
+      return {
+        identity: {
+          bodyBackground: getComputedStyle(document.body).backgroundColor,
+          htmlBackground: getComputedStyle(document.documentElement).backgroundColor,
+          headingFontFamily: style?.fontFamily || "",
+          headingFontWeight: style?.fontWeight || "",
+          headingLetterSpacing: style?.letterSpacing || "",
+          creativeColors: Object.fromEntries(
+            [
+              "--ll-creative-page",
+              "--ll-creative-hero",
+              "--ll-creative-ink",
+              "--ll-creative-line",
+              "--ll-creative-primary",
+              "--ll-creative-accent",
+            ].map((variable) => [
+              variable,
+              getComputedStyle(document.documentElement)
+                .getPropertyValue(variable)
+                .trim() ||
+                getComputedStyle(document.body).getPropertyValue(variable).trim(),
+            ]),
+          ),
+        },
+        reviewControls: Boolean(document.querySelector("#ll-review")),
+        leadControlsDisabled:
+          leadControls.length > 0 &&
+          leadControls.every((element) => element.disabled),
+      };
+    });
+    await identityPage.close();
+
+    const authoredRoutes = [
+      ...(config.services || [])
+        .filter((service) => service?.slug)
+        .map((service) => ({
+          kind: "service",
+          route: `/services/${service.slug}/`,
+          routeKey: `service-${service.slug}`,
+          sourceFile: "ServicePage.jsx",
+        })),
+      {
+        kind: "services-index",
+        route: "/services/",
+        routeKey: "services-index",
+        sourceFile: "ServicesIndexPage.jsx",
+      },
+      ...((config.industry === "home-services" ? config.locations || [] : [])
+        .filter((location) => location?.slug)
+        .map((location) => ({
+          kind: "location",
+          route: `/locations/${location.slug}/`,
+          routeKey: `location-${location.slug}`,
+          sourceFile: "LocationPage.jsx",
+        }))),
+    ];
+
+    for (const authoredRoute of authoredRoutes) {
+      const routeFile = path.join(
+        dist,
+        authoredRoute.route.replace(/^\//u, ""),
+        "index.html",
+      );
+      const routeExists = await fs
+        .access(routeFile)
+        .then(() => true)
+        .catch(() => false);
+      if (!routeExists) {
+        failures.push(
+          `${authoredRoute.route}: generated authored route is missing from dist.`,
+        );
+        continue;
+      }
+      for (const viewport of [
+        { name: "desktop", width: 1536, height: 864 },
+        { name: "compact", width: 1366, height: 768 },
+        { name: "mobile", width: 390, height: 844 },
+      ]) {
+        const page = await browser.newPage({
+          viewport: { width: viewport.width, height: viewport.height },
+          deviceScaleFactor: 1,
+        });
+        const routeUrl = new URL(authoredRoute.route, url).toString();
+        await page.goto(routeUrl, { waitUntil: "networkidle" });
+        await page
+          .waitForFunction(
+            () => [...document.images].every((image) => image.complete),
+            null,
+            { timeout: 5000 },
+          )
+          .catch(() => {});
+        const evidence = await inspectAuthoredPage(page);
+        for (const failure of authoredPageFailures(
+          evidence,
+          authoredRoute.kind,
+        ))
+          failures.push(
+            `${authoredRoute.route} ${viewport.name} ${authoredRoute.sourceFile}: ${failure}.`,
+          );
+        for (const finding of authoredPageIdentityFindings(
+          homepageParity.identity,
+          evidence.identity,
+          `${authoredRoute.route} ${viewport.name}`,
+        ))
+          failures.push(`${finding}.`);
+
+        const parity = await page.evaluate(() => {
+          const controls = [
+            ...document.querySelectorAll(
+              '[data-runtime="lead-form"] input, [data-runtime="lead-form"] textarea, [data-runtime="lead-form"] select, [data-runtime="lead-form"] button',
+            ),
+          ];
+          return {
+            reviewControls: Boolean(document.querySelector("#ll-review")),
+            leadControlsDisabled:
+              controls.length > 0 &&
+              controls.every((element) => element.disabled),
+            bodyText:
+              document.body.textContent?.replace(/\s+/gu, " ").trim() || "",
+            feedbackImages: [...document.images]
+              .filter((image) => {
+                const source = image.getAttribute("src") || "";
+                return (
+                  source.includes("/images/feedback/") ||
+                  source.includes("/client-replacements/")
+                );
+              })
+              .map((image) => ({
+                src: image.currentSrc || image.src,
+                placements: (() => {
+                  const labels = [];
+                  for (
+                    let region = image.parentElement;
+                    region;
+                    region = region.parentElement
+                  )
+                    labels.push(
+                      [
+                        region.tagName === "HEADER" ? "header" : "",
+                        region.id,
+                        region.className,
+                        region.getAttribute("data-reference-section"),
+                        region.getAttribute("data-section-type"),
+                        region.hasAttribute("data-hero") ? "hero" : "",
+                      ]
+                        .join(" ")
+                        .toLowerCase(),
+                    );
+                  return labels;
+                })(),
+                naturalWidth: image.naturalWidth,
+                naturalHeight: image.naturalHeight,
+                visible:
+                  image.getBoundingClientRect().width > 0 &&
+                  image.getBoundingClientRect().height > 0 &&
+                  image.naturalWidth > 0,
+              })),
+          };
+        });
+        if (parity.reviewControls !== homepageParity.reviewControls)
+          failures.push(
+            `${authoredRoute.route} ${viewport.name}: review/diagnostic controls leaked or disappeared relative to the homepage.`,
+          );
+        if (parity.leadControlsDisabled !== homepageParity.leadControlsDisabled)
+          failures.push(
+            `${authoredRoute.route} ${viewport.name}: lead-form disabled state differs from the homepage.`,
+          );
+
+        if (authoredRoute.route === reviewedRoute) {
+          for (const artifact of config.revisionReport?.expectedArtifacts || []) {
+            if (
+              artifact.type === "text" &&
+              !parity.bodyText.includes(artifact.value)
+            )
+              failures.push(
+                `${authoredRoute.route} ${viewport.name}: requested text is not visible: ${artifact.value.slice(0, 70)}.`,
+              );
+            if (artifact.type === "image" || artifact.type === "asset") {
+              const rendered = parity.feedbackImages.find((image) =>
+                revisionImageMatches(image, artifact, routeUrl),
+              );
+              if (!rendered)
+                failures.push(
+                  `${authoredRoute.route} ${viewport.name}: requested ${artifact.target || artifact.placement || "replacement"} image is not rendered in its requested placement: ${artifact.path || artifact.url}.`,
+                );
+            }
+          }
+        }
+        await page.screenshot({
+          path: path.join(
+            screenshotDir,
+            `${authoredRoute.routeKey}-${viewport.name}.png`,
+          ),
+          fullPage: true,
+          style:
+            ".quick-answers, .mobile-call { visibility: hidden !important; }",
+        });
+        await page.close();
+      }
+    }
   }
 
   const reviewPage = await browser.newPage({

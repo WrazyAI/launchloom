@@ -61,6 +61,25 @@ if (!requests.length) {
 }
 
 const config = JSON.parse(await fs.readFile(configPath, "utf8"));
+const reviewedPages = [
+  ...new Set(
+    requests
+      .map((request) => String(request?.reviewedPage || "").trim())
+      .filter(Boolean),
+  ),
+];
+if (reviewedPages.length > 1)
+  throw new Error(
+    "One revision batch cannot mix feedback submitted from different reviewed pages.",
+  );
+const reviewedPage = reviewedPages[0] || "";
+const reviewedPath = reviewedPage
+  ? new URL(reviewedPage).pathname.replace(/\/{2,}/gu, "/")
+  : "/";
+const reviewedRoute =
+  reviewedPath === "/"
+    ? "/"
+    : `/${reviewedPath.replace(/^\/+|\/+$/gu, "")}/`;
 let summaries = requests
   .map((item) => feedbackRequestSummary(item))
   .filter(Boolean);
@@ -152,6 +171,8 @@ const creativeIgnoredArtifactTypes = new Set([
 revised.revisionReport = {
   stage,
   revisionPr: String(pr),
+  reviewedPage,
+  reviewedRoute,
   feedback: summaries,
   clientFeedbackContext,
   operations: planned.operations,

@@ -131,8 +131,37 @@ stylesheet as the homepage, so they keep the same palette, typography,
 surfaces, navigation language, and composition rhythm; their rendered canvas
 and heading identity are verified against the homepage before promotion. The
 deterministic inner template remains only for legacy and experience-pack sites.
-Create location pages only for
-submitted service areas. Each location page must state coverage truthfully and
+
+Authored inner-page integrity is route-complete. Every generated service route,
+the services index, and each generated location route is rendered at desktop,
+compact-desktop, and mobile widths before promotion and after creative revisions.
+Each authored page must visibly provide a semantic header and navigation,
+page-specific opening and primary action, contact path, shared lead form, and a
+semantic footer that uses the candidate's existing design language rather than a
+generic template footer. The rendered gate also checks accessible names, broken
+fragment navigation, contrast, long-title clipping, overflow, broken supplied
+imagery, and creative palette/type continuity with the homepage. Deliberate
+image-free treatments are valid; a supplied image that fails to render is not.
+
+Inner-page failures and reviewer requests use the affected route's actual
+desktop, compact, and mobile screenshots for authored repair and final visual or
+human acceptance. A service-specific request may edit only ServicePage.jsx plus
+the shared stylesheet; services-index and location requests receive the
+corresponding authored file. Homepage, motion, and unrelated authored page
+sources stay frozen. Because styles.css is shared, any stylesheet revision
+reruns the complete route matrix before acceptance.
+
+Existing generated sites upgrade safely on their next creative rebuild or
+revision: an older creative candidate that lacks the new page chrome is still
+allowed to render so the route gate can detect it and the existing bounded
+repair loop can fix its authored source. The low-level source-safety contract is
+not tightened in a way that strands old candidates before screenshots exist.
+Legacy and experience-pack sites keep their deterministic header/footer path and
+are not silently converted to creative candidates. No footer is injected as a
+cross-site generic fallback, and the existing repair-cycle, model-cost,
+reference, SEO, safety, human-approval, and promotion gates remain authoritative.
+
+Create location pages only for submitted service areas. Each location page must state coverage truthfully and
 provide useful local context from verified facts. Do not multiply thin pages
 by combining every service with every city or create interchangeable city-swap
 copy.

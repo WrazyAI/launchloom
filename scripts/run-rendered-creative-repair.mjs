@@ -556,10 +556,16 @@ async function copySelectedScreenshots({
   screenshotsDir,
   candidateId,
   targetDir,
+  routeKey = "",
 }) {
   await fs.mkdir(targetDir, { recursive: true });
   for (const viewport of VIEWPORTS) {
-    const source = path.join(screenshotsDir, `${candidateId}-${viewport}.png`);
+    const source = path.join(
+      screenshotsDir,
+      routeKey
+        ? `${candidateId}-${routeKey}-${viewport}.png`
+        : `${candidateId}-${viewport}.png`,
+    );
     const target = path.join(targetDir, `${viewport}.png`);
     await fs.copyFile(source, target);
   }
@@ -599,6 +605,7 @@ export async function runVisualGateProcess({
   reportPath,
   configPath = path.join(siteDir, "src/site.config.json"),
   visualGateScript = path.resolve("scripts/visual-quality-gate.mjs"),
+  pageRoute = "/",
 } = {}) {
   await fs.rm(reportPath, { force: true });
   const result = await spawnCapture(
@@ -613,6 +620,8 @@ export async function runVisualGateProcess({
       screenshotsDir,
       "--report",
       reportPath,
+      "--page-route",
+      pageRoute,
     ],
     { cwd: siteDir },
   );
@@ -726,9 +735,23 @@ export async function defaultRepairCandidate({
   });
   let validated;
   try {
+    const scopedInnerPage =
+      humanReview &&
+      ["servicePage", "locationPage", "servicesIndexPage"].includes(
+        creativeRepairScope?.targetFile,
+      )
+        ? creativeRepairScope.targetFile
+        : "";
     const modelRepaired = humanReview
       ? applyCreativeRepairEdits(files, repairResponse?.edits, {
-          allowInnerPages: false,
+          allowInnerPages: Boolean(scopedInnerPage),
+          allowedFiles: scopedInnerPage
+            ? [scopedInnerPage, "styles"]
+            : [
+                "experience",
+                "styles",
+                ...(creativeRepairScope?.allowMotion ? ["motion"] : []),
+              ],
         })
       : normalizeRepair(repairResponse, files);
     if (humanReview)
@@ -925,6 +948,12 @@ export async function runRenderedCreativeRepair({
     process.env.CREATIVE_EXPERIENCE_MODEL ||
     "openai/gpt-6-luna";
   const root = path.resolve(siteDir);
+  const siteConfig = await readJson(path.join(root, "src/site.config.json"));
+  const reviewedRoute = String(
+    siteConfig.revisionReport?.reviewedRoute ||
+      siteConfig.revisionReport?.creativeRepairScope?.reviewedRoute ||
+      "",
+  ).trim();
   const candidateRoot = path.resolve(root, candidatesDir);
   const evidenceRoot = path.resolve(root, outDir);
   const cycleLimit = boundedCycles(maxCycles);
@@ -978,9 +1007,24 @@ export async function runRenderedCreativeRepair({
       candidateRoot,
       candidateDirectory,
     );
-    // Show Luna the real browser-scale desktop/mobile compositions first, then
-    // the full page for section rhythm. Older evidence sets fall back to the
-    // original full-page captures.
+    // Prefer the affected inner route's actual full-page captures when a
+    // rendered inner-page failure or reviewed-route repair is active. These
+    // captures include both the opening composition and footer integrity.
+    const candidateReport = reportCandidate(report, candidateId);
+    const authoredPages = Array.isArray(candidateReport?.authoredPages)
+      ? candidateReport.authoredPages
+      : [];
+    const routePages = reviewedRoute
+      ? authoredPages.filter((page) => page.route === reviewedRoute)
+      : authoredPages.filter((page) => (page.failures || []).length > 0);
+    const innerPageScreenshots = routePages.flatMap((page) =>
+      VIEWPORTS.map((viewport) =>
+        path.join(
+          screenshotsDir,
+          `${candidateId}-${page.routeKey}-${viewport}.png`,
+        ),
+      ),
+    );
     const viewportScreenshots = ["desktop", "mobile"].map((viewport) =>
       path.join(screenshotsDir, `${candidateId}-${viewport}-viewport.png`),
     );
@@ -994,8 +1038,9 @@ export async function runRenderedCreativeRepair({
       candidateId,
       screenshotsDir,
     );
-    const screenshots =
-      currentViewports.length === viewportScreenshots.length
+    const screenshots = innerPageScreenshots.length
+      ? innerPageScreenshots.slice(0, 6)
+      : currentViewports.length === viewportScreenshots.length
         ? comparisonScreenshots.length
           ? currentViewports
           : [...currentViewports, fullPageScreenshots[0]]
@@ -1296,16 +1341,105 @@ export async function runRenderedCreativeRepair({
       continue;
     }
 
+    const selectedCandidateReport = reportCandidate(report, selectedId);
+    const selectedAuthoredPages = Array.isArray(
+      selectedCandidateReport?.authoredPages,
+    )
+      ? selectedCandidateReport.authoredPages
+      : [];
+    record.innerPageVisualGates = [];
+    let innerPageNeedsRepair = false;
+    for (const authoredPage of selectedAuthoredPages) {
+      const innerGateScreenshots = path.join(
+        roundDir,
+        `selected-gate-${authoredPage.routeKey}`,
+      );
+      await copySelectedScreenshots({
+        screenshotsDir,
+        candidateId: selectedId,
+        targetDir: innerGateScreenshots,
+        routeKey: authoredPage.routeKey,
+      });
+      const innerReportPath = path.join(
+        roundDir,
+        `visual-gate-${authoredPage.routeKey}.json`,
+      );
+      const innerGate = await runVisualGateImpl({
+        siteDir: root,
+        screenshotsDir: innerGateScreenshots,
+        reportPath: innerReportPath,
+        candidateId: selectedId,
+        round,
+        configPath: gateConfigPath,
+        pageRoute: authoredPage.route,
+        ...(visualGateScript ? { visualGateScript } : {}),
+      });
+      record.innerPageVisualGates.push({
+        route: authoredPage.route,
+        routeKey: authoredPage.routeKey,
+        sourceFile: authoredPage.sourceFile,
+        verdict: innerGate.audit?.verdict || "error",
+        reportPath: innerReportPath,
+      });
+      if (!gatePass(innerGate)) {
+        const repaired = await repair(
+          selectedId,
+          [
+            ...candidateFindings(selectedCandidateReport),
+            ...gateFindings(innerGate).map((finding) =>
+              typeof finding === "string"
+                ? `${authoredPage.sourceFile} ${authoredPage.route}: ${finding}`
+                : finding,
+            ),
+          ],
+          `inner-page-visual-gate:${authoredPage.route}`,
+          round,
+          screenshotsDir,
+          selected.directory,
+          report,
+        );
+        if (repaired.status !== "repaired")
+          throw new Error(
+            `Authored route ${authoredPage.route} still fails visual acceptance after the ${cycleLimit}-cycle candidate repair budget.`,
+          );
+        record.repairs.push(selectedId);
+        innerPageNeedsRepair = true;
+        break;
+      }
+    }
+    if (innerPageNeedsRepair) continue;
+
     if (humanFeedback) {
       const humanGateReportPath = path.join(
         roundDir,
         "human-revision-gate.json",
       );
+      let humanGateScreenshots = gateScreenshots;
+      if (reviewedRoute) {
+        const reviewedPage = selectedAuthoredPages.find(
+          (page) => page.route === reviewedRoute,
+        );
+        if (!reviewedPage)
+          throw new Error(
+            `Human revision cannot accept reviewed route ${reviewedRoute}: no rendered authored-page evidence was captured.`,
+          );
+        humanGateScreenshots = path.join(
+          roundDir,
+          `human-gate-${reviewedPage.routeKey}`,
+        );
+        await copySelectedScreenshots({
+          screenshotsDir,
+          candidateId: selectedId,
+          targetDir: humanGateScreenshots,
+          routeKey: reviewedPage.routeKey,
+        });
+      }
       const humanGate = await runHumanGateImpl({
         configPath: gateConfigPath,
-        screenshotsDir: gateScreenshots,
+        screenshotsDir: humanGateScreenshots,
         feedback: humanFeedback,
         reportPath: humanGateReportPath,
+        reviewedRoute: reviewedRoute || "/",
       });
       record.humanRevisionVerdict = humanGate.audit?.verdict || "error";
       if (humanGate.audit?.verdict !== "pass") {

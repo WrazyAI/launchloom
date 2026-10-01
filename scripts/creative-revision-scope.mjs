@@ -175,13 +175,23 @@ export function createCreativeRepairScopeDeclaration({
               typeof result.feedback === "string" &&
               result.feedback.trim().length > 0,
           )
-          .map(({ feedbackIndex, feedback: itemFeedback, sourceFeedback }) => ({
-            feedbackIndex,
-            feedback: itemFeedback,
-            ...(typeof sourceFeedback === "string"
-              ? { scopeFeedback: sourceFeedback.trim() }
-              : {}),
-          })),
+          .map(
+            ({
+              feedbackIndex,
+              feedback: itemFeedback,
+              sourceFeedback,
+              reviewedPage,
+            }) => ({
+              feedbackIndex,
+              feedback: itemFeedback,
+              ...(typeof sourceFeedback === "string"
+                ? { scopeFeedback: sourceFeedback.trim() }
+                : {}),
+              ...(typeof reviewedPage === "string" && reviewedPage.trim()
+                ? { reviewedPage: reviewedPage.trim() }
+                : {}),
+            }),
+          ),
       }
     : null;
   return { required, declaration, feedbackText };
@@ -2377,6 +2387,38 @@ function assertApprovedMotionChange(before, after, scope) {
 export function assertCreativeRevisionScope(before, after, scope) {
   if (!before || !after || !scope || scope.version !== 1)
     throw scopeError("a versioned source scope is required for human repair.");
+  const innerPageKeys = [
+    "servicePage",
+    "locationPage",
+    "servicesIndexPage",
+  ];
+  if (innerPageKeys.includes(scope.targetFile)) {
+    const target = scope.targetFile;
+    if (
+      typeof before[target] !== "string" ||
+      !before[target].trim() ||
+      typeof after[target] !== "string" ||
+      !after[target].trim()
+    )
+      throw scopeError(
+        `reviewed inner-page repair requires existing ${scope.sourceFile || target} source.`,
+      );
+    for (const key of ["experience", "motion", ...innerPageKeys]) {
+      if (key === target) continue;
+      if (String(before[key] || "") !== String(after[key] || ""))
+        throw scopeError(
+          `human inner-page repair changed unrelated candidate source ${key}.`,
+        );
+    }
+    return {
+      sectionIds: ["__authored_page__"],
+      allowMotion: false,
+      targetFile: target,
+      sourceFile: scope.sourceFile || target,
+      reviewedRoute: scope.reviewedRoute || "",
+    };
+  }
+
   const sectionIds = Array.isArray(scope.sectionIds) ? scope.sectionIds : [];
   if (
     !sectionIds.length ||

@@ -135,6 +135,65 @@ describe("authored creative repair scope", () => {
     });
   });
 
+  it("limits service-specific feedback to ServicePage.jsx plus shared styles", () => {
+    const before = {
+      ...files,
+      servicePage:
+        '<main data-service-page><header>Header</header><section data-service-hero><h1>Service</h1></section><footer>Footer</footer></main>',
+      locationPage:
+        '<main data-location-page><header>Header</header><h1>Location</h1><footer>Footer</footer></main>',
+      servicesIndexPage:
+        '<main data-services-index><header>Header</header><h1>Services</h1><footer>Footer</footer></main>',
+    };
+    const scope = {
+      version: 1,
+      targetFile: "servicePage",
+      sourceFile: "ServicePage.jsx",
+      reviewedRoute: "/services/preventive-care/",
+      sectionIds: ["__authored_page__"],
+      allowMotion: false,
+    };
+    const after = {
+      ...before,
+      servicePage: before.servicePage.replace(
+        "<h1>Service</h1>",
+        "<h1>Preventive care</h1>",
+      ),
+      styles: before.styles + "\n[data-service-page] h1 { max-width: 18ch; }",
+    };
+
+    expect(assertCreativeRevisionScope(before, after, scope)).toMatchObject({
+      targetFile: "servicePage",
+      sourceFile: "ServicePage.jsx",
+      reviewedRoute: "/services/preventive-care/",
+    });
+
+    expect(() =>
+      assertCreativeRevisionScope(
+        before,
+        {
+          ...after,
+          locationPage: after.locationPage.replace("Location", "Changed"),
+        },
+        scope,
+      ),
+    ).toThrow(/unrelated candidate source locationPage/iu);
+
+    expect(() =>
+      applyCreativeRepairEdits(
+        before,
+        [
+          {
+            file: "experience",
+            oldText: "<h1>",
+            newText: "<h1 className=\"changed\">",
+          },
+        ],
+        { allowInnerPages: true, allowedFiles: ["servicePage", "styles"] },
+      ),
+    ).toThrow(/not an allowed creative repair target/iu);
+  });
+
   it("allows an unrelated scoped repair when the approved baseline already has unsafe patterns", () => {
     const experienceWithExistingFindings = experience.replace(
       "</section>",

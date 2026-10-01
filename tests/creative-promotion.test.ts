@@ -13,34 +13,37 @@ const tempRoots: string[] = [];
 const validServicePage = `import { LeadForm } from "@launchloom/runtime";
 export default function ServicePage({ content, runtime, service }) {
   return <main data-service-page data-service-slug={service.slug}>
-    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
-    <section data-service-hero><h1>{service.name}</h1><p>{service.description}</p></section>
+    <header><nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="/services/">Services</a><a href="#contact">Contact</a></nav></header>
+    <section data-service-hero><h1>{service.name}</h1><p>{service.description}</p><a href="#contact">{content.hero.primaryLabel}</a></section>
     <section data-service-support><p>{service.support.scope}</p><p>{service.support.preparation}</p><p>{service.support.nextStep}</p></section>
     <section data-service-related><ul>{service.related.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
     {service.process.length > 0 && <ol>{service.process.map((step) => <li key={step}>{step}</li>)}</ol>}
     {service.faqs.length > 0 && <section>{service.faqs.map((faq) => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</section>}
     <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+    <footer><nav aria-label="Footer navigation"><a href="/">Home</a><a href="/services/">Services</a><a href="#contact">Contact</a></nav></footer>
   </main>;
 }`;
 
 const validLocationPage = `import { LeadForm } from "@launchloom/runtime";
 export default function LocationPage({ content, runtime, location }) {
   return <main data-location-page data-location-slug={location.slug}>
-    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
-    <section data-location-hero><h1>{location.name}</h1><p>{location.description}</p></section>
+    <header><nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="/services/">Services</a><a href="#contact">Contact</a></nav></header>
+    <section data-location-hero><h1>{location.name}</h1><p>{location.description}</p><a href="#contact">{content.hero.primaryLabel}</a></section>
     <section data-location-coverage><p>{location.localNote}</p></section>
     <section data-location-related><ul>{location.services.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}{location.otherAreas.map((area) => <li key={area.slug}><a href={\`/locations/\${area.slug}/\`}>{area.name}</a></li>)}</ul></section>
     <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+    <footer><nav aria-label="Footer navigation"><a href="/">Home</a><a href="/services/">Services</a><a href="#contact">Contact</a></nav></footer>
   </main>;
 }`;
 
 const validServicesIndexPage = `import { LeadForm } from "@launchloom/runtime";
 export default function ServicesIndexPage({ content, runtime }) {
   return <main data-services-index>
-    <nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="#contact">{content.hero.primaryLabel}</a></nav>
-    <section data-services-index-hero><h1>{content.copy.servicesHeading || content.hero.heading}</h1><p>{content.copy.servicesIntro}</p></section>
+    <header><nav aria-label="Main navigation"><a href="/">{content.brand.name}</a><a href="/services/">Services</a><a href="#contact">Contact</a></nav></header>
+    <section data-services-index-hero><h1>{content.copy.servicesHeading || content.hero.heading}</h1><p>{content.copy.servicesIntro}</p><a href="#contact">{content.hero.primaryLabel}</a></section>
     <section data-services-index-list><ul>{content.services.map((item) => <li key={item.slug}><a href={\`/services/\${item.slug}/\`}>{item.name}</a></li>)}</ul></section>
     <section id="contact"><LeadForm content={content} runtime={runtime} /></section>
+    <footer><nav aria-label="Footer navigation"><a href="/">Home</a><a href="/services/">Services</a><a href="#contact">Contact</a></nav></footer>
   </main>;
 }`;
 
@@ -422,6 +425,23 @@ describe("creative candidate promotion", () => {
     const siteRoot = await makeTemplateCopy({
       industry: "home-services",
       businessKind: "plumbing",
+      services: [
+        {
+          name: "Drain cleaning",
+          slug: "drain-cleaning",
+          description: "Clear blocked household drains.",
+        },
+        {
+          name: "Water heater repair",
+          slug: "water-heater-repair",
+          description: "Diagnose and repair water heater problems.",
+        },
+        {
+          name: "Leak detection",
+          slug: "leak-detection",
+          description: "Find the source of hidden plumbing leaks.",
+        },
+      ],
       locations: [
         {
           name: "East Austin",
@@ -440,6 +460,28 @@ describe("creative candidate promotion", () => {
       requireDiversity: false,
     });
     const candidate = report.candidates[0];
+    expect(
+      candidate.authoredPages
+        ?.filter((page) => page.kind === "service")
+        .map((page) => page.route),
+    ).toEqual([
+      "/services/drain-cleaning/",
+      "/services/water-heater-repair/",
+      "/services/leak-detection/",
+    ]);
+    expect(
+      candidate.authoredPages?.find(
+        (page) => page.kind === "services-index",
+      )?.route,
+    ).toBe("/services/");
+    expect(
+      candidate.authoredPages?.every(
+        (page) =>
+          page.candidateId === "candidate-a" &&
+          Boolean(page.sourceFile) &&
+          page.viewports.length === 3,
+      ),
+    ).toBe(true);
     expect(candidate.servicePage?.failures).toEqual([]);
     expect(candidate.servicePage?.pass).toBe(true);
     expect(candidate.locationPage?.failures).toEqual([]);

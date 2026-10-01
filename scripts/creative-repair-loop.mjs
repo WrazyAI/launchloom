@@ -109,12 +109,28 @@ const REPAIR_EDIT_SCHEMA = {
  * homepage files because their section scope is declared against Experience.jsx;
  * automatic rendered repairs may also edit the authored inner pages.
  */
-function repairEditSchemaFor(files = {}, { includeInnerPages = true } = {}) {
-  if (!includeInnerPages) return REPAIR_EDIT_SCHEMA;
-  const innerKeys = REPAIR_INNER_PAGE_KEYS.filter(
+function repairEditSchemaFor(
+  files = {},
+  { includeInnerPages = true, allowedFiles = null } = {},
+) {
+  const availableInnerKeys = REPAIR_INNER_PAGE_KEYS.filter(
     (key) => typeof files[key] === "string" && files[key].trim(),
   );
-  if (!innerKeys.length) return REPAIR_EDIT_SCHEMA;
+  const defaultFiles = [
+    ...REPAIR_FILE_ORDER,
+    ...(includeInnerPages ? availableInnerKeys : []),
+  ];
+  const editableFiles = Array.isArray(allowedFiles)
+    ? allowedFiles.filter(
+        (key) =>
+          REPAIR_FILE_ORDER.includes(key) ||
+          availableInnerKeys.includes(key),
+      )
+    : defaultFiles;
+  if (!editableFiles.length)
+    throw repairOutputRejection(
+      "Creative repair scope exposes no editable candidate files.",
+    );
   return {
     ...REPAIR_EDIT_SCHEMA,
     schema: {
@@ -127,10 +143,7 @@ function repairEditSchemaFor(files = {}, { includeInnerPages = true } = {}) {
             ...REPAIR_EDIT_SCHEMA.schema.properties.edits.items,
             properties: {
               ...REPAIR_EDIT_SCHEMA.schema.properties.edits.items.properties,
-              file: {
-                type: "string",
-                enum: [...REPAIR_FILE_ORDER, ...innerKeys],
-              },
+              file: { type: "string", enum: editableFiles },
             },
           },
         },
@@ -292,7 +305,11 @@ function repairOutputRejection(message, cause) {
 }
 
 /** Apply exact, bounded source replacements; ambiguous edits fail closed. */
-export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true } = {}) {
+export function applyCreativeRepairEdits(
+  files,
+  edits,
+  { allowInnerPages = true, allowedFiles = null } = {},
+) {
   if (!files || typeof files !== "object" || Array.isArray(files))
     throw new Error("Creative repair edits require candidate files.");
   if (
@@ -312,7 +329,8 @@ export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true 
       !edit ||
       typeof edit !== "object" ||
       !REPAIR_EDITABLE_FILES.has(edit.file) ||
-      (!allowInnerPages && REPAIR_INNER_PAGE_KEYS.includes(edit.file))
+      (!allowInnerPages && REPAIR_INNER_PAGE_KEYS.includes(edit.file)) ||
+      (Array.isArray(allowedFiles) && !allowedFiles.includes(edit.file))
     )
       throw repairOutputRejection(
         `${label} targets an unsupported candidate file.`,
@@ -734,6 +752,14 @@ export async function requestRepair({
       "Manual creative repair requires a resolved, non-empty section scope.",
     );
   const scopedHumanRepair = humanReview;
+  const scopedInnerPageTarget =
+    scopedHumanRepair &&
+    REPAIR_INNER_PAGE_KEYS.includes(creativeRepairScope?.targetFile)
+      ? creativeRepairScope.targetFile
+      : "";
+  const humanEditableFiles = scopedInnerPageTarget
+    ? [scopedInnerPageTarget, "styles"]
+    : ["experience", "styles", ...(creativeRepairScope?.allowMotion ? ["motion"] : [])];
   const motionRepair = hasFinding(findings || [], MOTION_FINDING_PATTERN);
   const referenceMismatch = (findings || []).some((finding) => {
     const detail =
@@ -751,7 +777,9 @@ export async function requestRepair({
     return REFERENCE_MISMATCH_PATTERN.test(detail);
   });
   const repairInstruction = scopedHumanRepair
-    ? "Make the smallest safe source edit that satisfies the explicit human review request only inside the resolved section scope. Do not change unrelated sections, section order, global CSS, sealed content, factual claims, contact behavior, or the assigned Reference DNA outside that scope. Do not convert this candidate into a legacy renderer."
+    ? scopedInnerPageTarget
+      ? `Make the smallest safe source edit that satisfies the explicit human review request on ${creativeRepairScope.reviewedRoute || "the reviewed inner page"}. You may edit only ${creativeRepairScope.sourceFile || scopedInnerPageTarget} and styles.css. Keep Experience.jsx, motion.js, every unrelated authored page, sealed content, factual claims, contact behavior, and the assigned Reference DNA unchanged. Shared CSS changes will be revalidated across every generated route. Do not convert this candidate into a legacy renderer.`
+      : "Make the smallest safe source edit that satisfies the explicit human review request only inside the resolved section scope. Do not change unrelated sections, section order, global CSS, sealed content, factual claims, contact behavior, or the assigned Reference DNA outside that scope. Do not convert this candidate into a legacy renderer."
     : referenceMismatch
       ? "Repair this authored LaunchLoom candidate to address the measured rendered-reference and visual findings. You may change composition, layout, hierarchy, section rhythm, image placement or crop, navigation geometry, and motion where needed to fix those findings. Do not preserve any composition or design mechanic explicitly identified as failing. Preserve verified business facts, sealed content bindings, accessibility, required functionality, and the assigned Reference DNA family and signature intent. Do not convert it into a legacy renderer."
       : "Repair this authored LaunchLoom candidate in place. Preserve its composition and sealed content bindings. Do not convert it into a legacy renderer.";
@@ -838,7 +866,7 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     ),
   );
   const candidateEvidence = [];
-  for (const screenshot of screenshots.slice(0, 3)) {
+  for (const screenshot of screenshots.slice(0, 6)) {
     const dimensions = await imageSizeLabel(screenshot);
     const viewportCapture = /-viewport\.png$/u.test(screenshot);
     candidateEvidence.push({
@@ -877,15 +905,15 @@ Use these helpers instead of inventing network calls or duplicating platform beh
   }
 
   const sourcePrompt = (currentFiles, { editsOnly = false, targetFile = null } = {}) => {
-    const editableNames = [
-      ...REPAIR_FILE_ORDER,
-      ...(scopedHumanRepair
-        ? []
-        : REPAIR_INNER_PAGE_KEYS.filter(
+    const editableNames = scopedHumanRepair
+      ? humanEditableFiles
+      : [
+          ...REPAIR_FILE_ORDER,
+          ...REPAIR_INNER_PAGE_KEYS.filter(
             (key) =>
               typeof currentFiles[key] === "string" && currentFiles[key].trim(),
-          )),
-    ];
+          ),
+        ];
     return `${repairInstruction}
 
 
@@ -1032,7 +1060,10 @@ Return a complete replacement for only this requested file. Keep source non-empt
             json_schema:
               scopedHumanRepair || editsOnly
                 ? repairEditSchemaFor(currentFiles, {
-                    includeInnerPages: !scopedHumanRepair,
+                    includeInnerPages: !scopedHumanRepair || Boolean(scopedInnerPageTarget),
+                    ...(scopedHumanRepair
+                      ? { allowedFiles: humanEditableFiles }
+                      : {}),
                   })
                 : targetFile ? REPAIR_FILE_SCHEMA : repairSchemaFor(currentFiles),
 
@@ -1102,7 +1133,10 @@ Return a complete replacement for only this requested file. Keep source non-empt
         throw repairOutputRejection(
           "Human creative repair must return bounded literal edits, not complete files.",
         );
-      applyCreativeRepairEdits(currentFiles, parsed.edits, { allowInnerPages: !scopedHumanRepair });
+      applyCreativeRepairEdits(currentFiles, parsed.edits, {
+        allowInnerPages: !scopedHumanRepair || Boolean(scopedInnerPageTarget),
+        ...(scopedHumanRepair ? { allowedFiles: humanEditableFiles } : {}),
+      });
       return parsed;
     }
     if (targetFile) {
