@@ -1964,3 +1964,24 @@ it("preserves additional composition and copy requests beside an uploaded image"
   expect(copy.config.copy.heroHeading).toBe("A clearer plan");
   expect(copy.config.copy.aboutBody).toBe(baseline.copy.aboutBody);
 });
+
+it("keeps comma-separated copy changes beside a supplied image", async () => {
+  const planner = vi.fn(async () => [{ kind: "set_copy", field: "heroBody", value: "Updated description", feedbackIndex: 0 }]);
+  const planned = await planRevision([{ text: "Replace the hero image, revise the description.", assets: [{ target: "hero", path: "/images/feedback/hero-abc123def456.webp" }] }], config(), planner);
+  expect(planner).toHaveBeenCalled();
+  expect(planned.config.copy.heroBody).toBe("Updated description.");
+});
+
+it("accepts an uploaded hero in a marked div container", () => {
+  const image = "/images/feedback/hero-abc123def456.webp";
+  const draft = { ...config(), design: { experience: { renderer: "creative-candidate" } } };
+  const report = { results: [{ feedbackIndex: 0, status: "fulfilled" }], expectedArtifacts: [{ type: "image", target: "hero", path: image }] };
+  expect(verifyRevision(draft, report, `<main><div data-hero><div><img src="${image}" alt="" /></div></div></main>`).ok).toBe(true);
+});
+
+
+it("does not silently discard an unsupported second request after an image edit", async () => {
+  const planned = await planRevision([{ text: "Replace the hero image, update the phone to 555-0144.", assets: [{ target: "hero", path: "/images/feedback/hero-abc123def456.webp" }] }], config(), async () => []);
+  expect(planned.ok).toBe(false);
+  expect(planned.results[0].unresolved).toContain("unknown");
+});

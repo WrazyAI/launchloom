@@ -413,21 +413,12 @@ try {
           })
           .map((image) => ({
             src: image.currentSrc || image.src,
-            placement: (() => {
-              const region = image.closest(
-                "header, section, [data-reference-section], [data-hero], [data-section-type]",
-              );
-              if (!region) return "";
-              return [
-                region.tagName,
-                region.id,
-                region.className,
-                region.getAttribute("data-reference-section"),
-                region.getAttribute("data-section-type"),
-                region.hasAttribute("data-hero") ? "hero" : "",
-              ]
-                .join(" ")
-                .toLowerCase();
+            placements: (() => {
+              const labels = [];
+              for (let region = image.parentElement; region; region = region.parentElement) {
+                labels.push([region.tagName === "HEADER" ? "header" : "", region.id, region.className, region.getAttribute("data-reference-section"), region.getAttribute("data-section-type"), region.hasAttribute("data-hero") ? "hero" : ""].join(" ").toLowerCase());
+              }
+              return labels;
             })(),
             naturalWidth: image.naturalWidth,
             naturalHeight: image.naturalHeight,

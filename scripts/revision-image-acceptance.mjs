@@ -13,12 +13,16 @@ export function revisionImageMatches(image, artifact, pageUrl) {
     return false;
   const expected = artifact.type === "asset" ? artifact.url : artifact.path;
   const placement = artifact.placement || placements[artifact.target];
+  const region = image.placement || (image.placements || []).find((label) =>
+    String(label).split(/[^a-z0-9]+/iu).some((word) => Object.values(placements).includes(word.toLowerCase())),
+  ) || "";
   try {
     const actualUrl = new URL(image.src, pageUrl);
     const expectedUrl = new URL(expected, pageUrl);
     return actualUrl.origin === expectedUrl.origin &&
       actualUrl.pathname === expectedUrl.pathname &&
-      (!placement || String(image.placement || "").split(/\s+/u).some((word) =>
+      actualUrl.search === expectedUrl.search &&
+      (!placement || String(region).split(/\s+/u).some((word) =>
         word === placement || word.split(/[-_]/u).includes(placement),
       ));
   } catch {

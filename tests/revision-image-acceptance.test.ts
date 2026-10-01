@@ -24,3 +24,8 @@ describe("rendered revision image acceptance", () => {
     expect(revisionImageMatches({ ...image, src: url, placement: "section gallery" }, { type: "asset", placement: "hero", url }, page)).toBe(false);
   });
 });
+
+it("distinguishes image variants and skips unmarked nested containers", () => {
+  expect(revisionImageMatches({ ...image, src: `${image.src}?variant=old` }, artifact, page)).toBe(false);
+  expect(revisionImageMatches({ ...image, placement: undefined, placements: ["section media-frame", "section jg-hero illustrated-centered-hero"] }, artifact, page)).toBe(true);
+});

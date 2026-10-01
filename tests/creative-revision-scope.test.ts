@@ -445,6 +445,7 @@ it("limits mixed image-and-layout feedback to the remaining source request", () 
     feedback: [feedback],
     results: [{ feedbackIndex: 0, feedback, status: "creative", intents: ["image", "layout"], sourceFeedback: "make the services section more spacious." }],
   });
+  if (!declared.declaration) throw new Error("Missing creative scope declaration");
   expect(declared.declaration.feedbackItems[0].feedback).toBe(feedback);
   expect(resolveCreativeRevisionScope({ source: experience, feedbackItems: declared.declaration.feedbackItems }).sectionIds).toEqual(["services"]);
 });

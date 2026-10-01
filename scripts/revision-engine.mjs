@@ -354,11 +354,11 @@ const creativeVisualKeyword =
 function residualVisualRequest(feedback) {
   return clean(feedback, 4000)
     .replace(/^\s*\[[^\]]+\]\s*/u, "")
-    .split(/(?<=[.;!?])\s+|\s+and\s+|,\s*(?=keep\b|leave\b)/iu)
+    .split(/(?<=[.;!?])\s+|\s+and\s+|,\s*(?=(?:please\s+)?(?:change|revise|rewrite|update|make|add|remove|keep|leave)\b)/iu)
     .map((clause) =>
       (pureStructuredImageClause.test(clause.replace(/[.!?]$/u, "")) &&
         !creativeVisualKeyword.test(clause) &&
-        !/\b(?:but|also|then|remove|hide|add|move|resize|restyle|reorder)\b/iu.test(clause) &&
+        !/\b(?:but|also|then|remove|hide|add|move|resize|restyle|reorder|rewrite|revise)\b/iu.test(clause) &&
         !/\b(?:heading|headline|copy|text|wording|layout|background|crop|position|overlay)\b/iu.test(
           clause,
         )) ||
@@ -1033,6 +1033,10 @@ function intentsFor(item, config) {
     if (!structuredImageOnly && creativeVisualRequest.test(feedback))
       intents.push("layout");
   }
+  if (item?.assets?.length && feedback.trim() &&
+      intents.every((intent) => intent === "image") &&
+      /\b(?:change|revise|rewrite|update|make|add|remove|hide|move|adjust)\b/iu.test(feedback))
+    intents.push("unknown");
   return intents.length ? [...new Set(intents)] : ["unknown"];
 }
 function explicitContentTargets(feedback, config) {
@@ -2241,19 +2245,29 @@ function imageSourceMarkup(url) {
   ];
 }
 function assetPlacementHtml(html, placement) {
-  if (placement === "header")
-    return html.match(/<header\b[\s\S]*?<\/header>/iu)?.[0] || "";
-  if (["hero", "about", "gallery"].includes(placement)) {
-    const sections = [
-      ...html.matchAll(/<section\b([^>]*)>[\s\S]*?<\/section>/giu),
-    ];
-    return (
-      sections.find((match) =>
-        match[1].toLocaleLowerCase().includes(placement),
-      )?.[0] || ""
-    );
+  if (!placement) return html;
+  const stack = [];
+  const regions = [];
+  const voidTags = new Set(["img", "source", "input", "br", "hr", "meta", "link", "area", "base", "embed", "param", "track", "wbr"]);
+  const markup = String(html).replace(/<script\b[\s\S]*?<\/script>/giu, "").replace(/<!--[\s\S]*?-->/gu, "");
+  for (const match of markup.matchAll(/<(\/?)([a-z][a-z0-9:-]*)\b([^>]*)>/giu)) {
+    const [, closing, rawTag, attributes] = match;
+    const tag = rawTag.toLowerCase();
+    if (closing) {
+      const index = stack.findLastIndex((entry) => entry.tag === tag);
+      if (index < 0) continue;
+      for (const entry of stack.splice(index))
+        if (entry.matches) regions.push(markup.slice(entry.start, match.index + match[0].length));
+      continue;
+    }
+    if (voidTags.has(tag) || /\/\s*$/u.test(attributes)) continue;
+    const labels = [htmlAttributeValue(attributes, "id"), htmlAttributeValue(attributes, "class"), htmlAttributeValue(attributes, "data-reference-section"), htmlAttributeValue(attributes, "data-section-type")].join(" ").toLowerCase();
+    const matches = placement === "header" ? tag === "header" :
+      (placement === "hero" && /\bdata-hero(?:\s|=|$)/iu.test(attributes)) ||
+      labels.split(/[^a-z0-9]+/u).includes(placement);
+    stack.push({ tag, start: match.index, matches });
   }
-  return html;
+  return regions.join("\n");
 }
 function containsAsset(html, artifact) {
   const region = assetPlacementHtml(html, artifact.placement);
