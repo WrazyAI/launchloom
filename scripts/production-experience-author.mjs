@@ -2584,10 +2584,19 @@ function validateInnerPageSource({
   const embeddedFact = scalarContentValues(content).find((value) =>
     source.includes(value),
   );
-  if (embeddedFact)
+  if (embeddedFact) {
+    const matchAt = source.indexOf(embeddedFact);
+    const nearby = source
+      .slice(
+        Math.max(0, matchAt - 80),
+        matchAt + embeddedFact.length + 80,
+      )
+      .replace(/\s+/gu, " ")
+      .trim();
     throw new Error(
-      `Candidate ${route.id} ${file} hardcodes sealed content instead of using a token: ${embeddedFact}`,
+      `Candidate ${route.id} ${file} hardcodes sealed content instead of using a token: ${embeddedFact}. Replace that literal with the matching content binding. Nearby source: ${nearby}`,
     );
+  }
 }
 
 /**
@@ -2788,10 +2797,19 @@ function validateExperience(source, route, content, visualBrief = {}) {
   const embeddedFact = scalarContentValues(content).find((value) =>
     source.includes(value),
   );
-  if (embeddedFact)
+  if (embeddedFact) {
+    const matchAt = source.indexOf(embeddedFact);
+    const nearby = source
+      .slice(
+        Math.max(0, matchAt - 80),
+        matchAt + embeddedFact.length + 80,
+      )
+      .replace(/\s+/gu, " ")
+      .trim();
     throw new Error(
-      `Candidate ${route.id} hardcodes sealed content instead of using a token: ${embeddedFact}`,
+      `Candidate ${route.id} hardcodes sealed content instead of using a token: ${embeddedFact}. Replace that literal with the matching content binding. Nearby source: ${nearby}`,
     );
+  }
 }
 
 function validateStyles(source, route) {

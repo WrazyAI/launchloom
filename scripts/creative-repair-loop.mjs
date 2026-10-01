@@ -349,7 +349,7 @@ export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true 
       edit.replace.length > MAX_REPAIR_EDIT_FRAGMENT_CHARS
     )
       throw repairOutputRejection(
-        `${label} exceeds the bounded literal replacement contract.`,
+        `${label} exceeds the bounded literal replacement contract: each find and replace must stay under ${MAX_REPAIR_EDIT_FRAGMENT_CHARS} characters. Split the large replacement into several smaller edits that each target a distinct region of the file.`,
       );
     const replacement = edit.replace.replace(/[—–]/gu, "-");
     if (edit.find === replacement)
@@ -361,7 +361,7 @@ export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true 
     patchTextChars += edit.find.length + edit.replace.length;
     if (patchTextChars > MAX_REPAIR_PATCH_TEXT_CHARS)
       throw repairOutputRejection(
-        "Creative repair patch exceeds the bounded text budget.",
+        `Creative repair patch exceeds the bounded text budget of ${MAX_REPAIR_PATCH_TEXT_CHARS} characters. Split the repair into fewer or smaller edits and keep the total patch within the budget.`,
       );
 
     const source = repaired[edit.file];

@@ -563,6 +563,41 @@ export default function Experience`,
     );
   });
 
+  it("names the nearby source for a hardcoded sealed literal", () => {
+    const route = { id: "route-hardcode" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const sealedName = "Heirloom redesign services";
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    ).replace(
+      "<section data-hero>",
+      `<section data-hero><p>${sealedName}</p>`,
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "redesign", name: sealedName }],
+        },
+      }),
+    ).toThrow(
+      new RegExp(
+        `hardcodes sealed content.*${sealedName}.*Nearby source:.*${sealedName}`,
+        "iu",
+      ),
+    );
+  });
+
   it("keeps the client visual brief alongside sealed content", () => {
     const manifest = buildCreativeContentManifest({
       ...site,
