@@ -18,6 +18,22 @@ const COLOR_LABELS = {
   line: "line and border color",
 };
 
+
+export function feedbackReviewedPageFromComment(body) {
+  const match = String(body || "").match(
+    /(?:^|\n)_?Page:\s*(https?:\/\/\S+?)(?:_?\s*$|\n)/imu,
+  );
+  if (!match) return "";
+  try {
+    const url = new URL(match[1].replace(/_$/u, ""));
+    url.search = "";
+    url.hash = "";
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
 export function feedbackTextFromComment(body) {
   const withoutMetadata = String(body || "")
     .replace(/<!--[\s\S]*?-->/g, "")
@@ -90,6 +106,7 @@ export function feedbackRequestFromComment(body) {
   return {
     text: feedback,
     structure: feedbackStructureFromComment(body),
+    reviewedPage: feedbackReviewedPageFromComment(body),
   };
 }
 
