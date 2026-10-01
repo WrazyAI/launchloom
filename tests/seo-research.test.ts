@@ -367,6 +367,7 @@ describe("SEO market map", () => {
           },
         ],
         costUsd: 0.002,
+        searchRequests: 1,
       })),
     };
     const dossier = await researchSiteContext(intake, {
@@ -399,7 +400,7 @@ describe("SEO market map", () => {
       snippet: "Extracted search evidence from the public page.",
       retrievedAt: expect.any(String),
       provider: "OpenRouter web search (Parallel)",
-      provenance: "external_search_observation",
+      provenance: "openrouter_web_search_url_citation",
     });
     expect(dossier.validatedQueries.every((item) => item.volume === null && item.kd === null && item.cpc === null && item.competition === null && item.intent === null)).toBe(true);
     expect(dossier.competitors).toEqual([]);
@@ -438,7 +439,7 @@ describe("SEO market map", () => {
           ],
         },
       }],
-      usage: { cost: 0.003 },
+      usage: { cost: 0.003, server_tool_use: { web_search_requests: 1 } },
     }), { status: 200 }));
     const search = createOpenRouterWebSearchClient({
       apiKey: "test-key",
@@ -448,6 +449,7 @@ describe("SEO market map", () => {
     const observed = await search.search({ query: "drain cleaning Tacoma", maxResults: 4 });
 
     expect(observed.costUsd).toBe(0.003);
+    expect(observed.searchRequests).toBe(1);
     expect(observed.results).toEqual([{
       url: "https://source.example/plumbing",
       title: "Plumbing source",
@@ -467,6 +469,8 @@ describe("SEO market map", () => {
     }]);
     expect(request.max_tool_calls).toBe(1);
     expect(request.tool_choice).toBe("required");
+    expect(request.max_tokens).toBe(256);
+    expect(request.messages[0].content).toContain("Do not write or guess URLs yourself");
   });
 
   it("stops fallback research when the provider-reported spend bound is reached", async () => {
@@ -554,4 +558,147 @@ describe("SEO market map", () => {
       "returned no usable cited evidence",
     );
   });
+
+  it("uses the bounded citation fallback after DataForSEO returns HTTP 402", async () => {
+    const provider = researchProvider();
+    provider.googleSearchVolume.mockRejectedValueOnce(
+      new Error("DataForSEO returned HTTP 402."),
+    );
+    const webSearch = {
+      search: vi.fn(async ({ query }: { query: string }) => ({
+        results: [{
+          url: "https://example.test/observed",
+          title: `Observed result for ${query}`,
+          snippet: "A source excerpt returned by web search.",
+        }],
+        costUsd: 0.005,
+        searchRequests: 1,
+      })),
+    };
+
+    const dossier = await researchSiteContext(intake, {
+      dataForSeo: provider,
+      webSearch,
+      maxFallbackSearchQueries: 1,
+      maxFallbackUsd: 0.05,
+    });
+
+    expect(provider.googleSearchVolume).toHaveBeenCalledTimes(1);
+    expect(webSearch.search).toHaveBeenCalledTimes(1);
+    expect(dossier.cost.stageCosts[0]).toMatchObject({
+      stage: "local_search_volume",
+      status: "failed",
+    });
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "complete",
+      queriesAttempted: 1,
+      providerSearchRequests: 1,
+      costUsd: 0.005,
+      maxUsd: 0.05,
+    });
+    expect(dossier.externalSearchEvidence[0]).toMatchObject({
+      sourceUrl: "https://example.test/observed",
+      title: expect.stringContaining("Observed result"),
+      snippet: "A source excerpt returned by web search.",
+      provenance: "openrouter_web_search_url_citation",
+    });
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.publishReady).toBe(false);
+    expect(dossier.validatedQueries.every((item) =>
+      item.volume === null &&
+      item.kd === null &&
+      item.cpc === null &&
+      item.competition === null &&
+      item.intent === null
+    )).toBe(true);
+  });
+
+  it("records an empty fallback distinctly when a completed search returns no citations", async () => {
+    const webSearch = {
+      search: vi.fn(async () => ({
+        results: [],
+        costUsd: 0.005,
+        searchRequests: 1,
+      })),
+    };
+    const dossier = await researchSiteContext(intake, {
+      webSearch,
+      maxFallbackSearchQueries: 1,
+      maxFallbackUsd: 0.05,
+    });
+
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "empty",
+      stopReason: "no_citations",
+      queriesAttempted: 1,
+      providerSearchRequests: 1,
+      costComplete: true,
+    });
+    expect(dossier.externalSearchEvidence).toEqual([]);
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.publishReady).toBe(false);
+  });
+
+  it("rejects malformed OpenRouter citation envelopes instead of accepting model text", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({
+      choices: [{
+        message: {
+          content: "https://invented.example/not-evidence",
+          annotations: { type: "url_citation" },
+        },
+      }],
+      usage: { cost: 0.005, server_tool_use: { web_search_requests: 1 } },
+    }), { status: 200 }));
+    const search = createOpenRouterWebSearchClient({
+      apiKey: "test-key",
+      fetchImpl,
+      model: "test/model",
+    });
+
+    await expect(search.search({ query: "public query" })).rejects.toThrow(
+      "unexpected citation shape",
+    );
+  });
+
+  it("marks fallback timeouts as failed and never upgrades publishing readiness", async () => {
+    const timeout = new Error("The operation timed out");
+    timeout.name = "TimeoutError";
+    const search = vi.fn(async () => {
+      throw timeout;
+    });
+    const dossier = await researchSiteContext(intake, {
+      webSearch: { search },
+      maxFallbackSearchQueries: 3,
+      maxFallbackUsd: 0.05,
+    });
+
+    expect(search).toHaveBeenCalledTimes(1);
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "failed",
+      stopReason: "timeout",
+      queriesAttempted: 1,
+      costComplete: false,
+    });
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.publishReady).toBe(false);
+  });
+
+  it("does not start fallback requests when the fallback budget is exhausted before search", async () => {
+    const search = vi.fn();
+    const dossier = await researchSiteContext(intake, {
+      webSearch: { search },
+      maxFallbackSearchQueries: 3,
+      maxFallbackUsd: 0,
+    });
+
+    expect(search).not.toHaveBeenCalled();
+    expect(dossier.fallbackSearch).toMatchObject({
+      status: "unavailable",
+      stopReason: "budget_zero",
+      queriesAttempted: 0,
+      budgetExhausted: true,
+    });
+    expect(dossier.publishReady).toBe(false);
+  });
+
 });
