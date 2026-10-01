@@ -42,7 +42,13 @@ function run(command, commandArgs, cwd) {
     const child = spawn(command, commandArgs, {
       cwd,
       stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env, PUBLIC_REVIEW_MODE: "true" },
+      // Judge builds must show the authored candidate, not platform chrome
+      // such as the floating website-assistant launcher and the exit offer.
+      env: {
+        ...process.env,
+        PUBLIC_REVIEW_MODE: "true",
+        PUBLIC_CREATIVE_JUDGE: "true",
+      },
     });
     const tails = { stdout: "", stderr: "" };
     const appendTail = (key, chunk) => {
