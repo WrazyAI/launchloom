@@ -726,9 +726,23 @@ export async function defaultRepairCandidate({
   });
   let validated;
   try {
+    const scopedInnerPage =
+      humanReview &&
+      ["servicePage", "locationPage", "servicesIndexPage"].includes(
+        creativeRepairScope?.targetFile,
+      )
+        ? creativeRepairScope.targetFile
+        : "";
     const modelRepaired = humanReview
       ? applyCreativeRepairEdits(files, repairResponse?.edits, {
-          allowInnerPages: false,
+          allowInnerPages: Boolean(scopedInnerPage),
+          allowedFiles: scopedInnerPage
+            ? [scopedInnerPage, "styles"]
+            : [
+                "experience",
+                "styles",
+                ...(creativeRepairScope?.allowMotion ? ["motion"] : []),
+              ],
         })
       : normalizeRepair(repairResponse, files);
     if (humanReview)
