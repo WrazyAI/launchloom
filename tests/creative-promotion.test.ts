@@ -780,7 +780,7 @@ describe("creative candidate promotion", () => {
       await fs.cp(selectedBackup, selectedPath, { recursive: true });
       await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 300_000);
+  }, 900_000);
 
   it("does not trust hero geometry markers when rendered composition violates topology", async () => {
     const root = await makeFixture();

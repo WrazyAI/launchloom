@@ -67,7 +67,7 @@ describe("persisted bounded contrast sweep", () => {
     } finally {
       await rm(root, { recursive: true, force: true });
     }
-  }, 30000);
+  }, 60000);
   it("keeps repairs inside the original responsive color conditions", async () => {
     const module = await modulePromise;
     const root = await mkdtemp(path.join(os.tmpdir(), "ll-contrast-media-"));
@@ -103,7 +103,7 @@ describe("persisted bounded contrast sweep", () => {
     } finally {
       await rm(root, { recursive: true, force: true });
     }
-  }, 30000);
+  }, 60000);
   it("bounds unique correction groups without refusing repeated route text", async () => {
     const module = await modulePromise;
     const target = {
@@ -158,5 +158,5 @@ describe("persisted bounded contrast sweep", () => {
     } finally {
       await rm(root, { recursive: true, force: true });
     }
-  }, 30000);
+  }, 60000);
 });

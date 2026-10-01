@@ -7,6 +7,77 @@ export function collectContrastTargets({
   route = "/",
   state = "default",
 } = {}) {
+  // These caches live for this synchronous snapshot only. Every focus/hover
+  // state gets fresh computed paint and geometry, so no stale state can pass.
+  const styles = new Map(),
+    boxes = new Map(),
+    animations = new Map();
+  const properties = [
+    "color",
+    "backgroundColor",
+    "backgroundImage",
+    "opacity",
+    "display",
+    "visibility",
+    "overflow",
+    "filter",
+    "backdropFilter",
+    "mixBlendMode",
+    "fontSize",
+    "fontWeight",
+    "fill",
+    "fillOpacity",
+    "stroke",
+    "strokeWidth",
+    "strokeOpacity",
+    "position",
+    "appearance",
+    "outlineStyle",
+    "outlineWidth",
+    "outlineColor",
+    "webkitTextFillColor",
+    "content",
+    ...["Top", "Bottom", "Left", "Right"].flatMap((side) =>
+      ["Width", "Style", "Color"].map((field) => `border${side}${field}`),
+    ),
+  ];
+  const pseudoProperties = [
+    "content",
+    "display",
+    "visibility",
+    "opacity",
+    "backgroundImage",
+    "backgroundColor",
+    "fontSize",
+    "fontWeight",
+    "color",
+    "webkitTextFillColor",
+  ];
+  const styleFor = (el, pseudo = "") => {
+    if (!styles.has(el)) styles.set(el, new Map());
+    const cache = styles.get(el);
+    if (!cache.has(pseudo)) {
+      const computed = getComputedStyle(el, pseudo || undefined);
+      cache.set(
+        pseudo,
+        Object.fromEntries(
+          (pseudo ? pseudoProperties : properties).map((key) => [
+            key,
+            computed[key],
+          ]),
+        ),
+      );
+    }
+    return cache.get(pseudo);
+  };
+  const rectFor = (el) => {
+    if (!boxes.has(el)) boxes.set(el, el.getBoundingClientRect());
+    return boxes.get(el);
+  };
+  const animationsFor = (el) => {
+    if (!animations.has(el)) animations.set(el, el.getAnimations());
+    return animations.get(el);
+  };
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = 1;
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -89,8 +160,19 @@ export function collectContrastTargets({
       )
         return false;
     }
+    const root = document.scrollingElement;
+    if (
+      rect.left >= Math.max(innerWidth, root.scrollWidth) - scrollX ||
+      rect.top >= Math.max(innerHeight, root.scrollHeight) - scrollY
+    )
+      return false;
     for (let p = el; p; p = p.parentElement) {
-      const s = getComputedStyle(p);
+      const s = styleFor(p);
+      if (
+        s.position === "fixed" &&
+        (rect.left >= innerWidth || rect.top >= innerHeight)
+      )
+        return false;
       if (
         s.display === "none" ||
         s.visibility !== "visible" ||
@@ -98,41 +180,39 @@ export function collectContrastTargets({
       )
         return false;
       if (s.overflow === "hidden" || s.overflow === "clip") {
-        if (!intersects(rect, p.getBoundingClientRect())) return false;
+        if (!intersects(rect, rectFor(p))) return false;
       }
     }
     return true;
   };
   const images = [...document.querySelectorAll("img,video,canvas,iframe")].map(
-    (el) => ({ el, rect: el.getBoundingClientRect() }),
+    (el) => ({ el, rect: rectFor(el) }),
   );
   const backdrop = (el, rect) => {
     const chain = [];
     let effects = [];
     for (let p = el; p; p = p.parentElement) {
       chain.unshift(p);
-      const s = getComputedStyle(p);
+      const s = styleFor(p);
       if (
-        p
-          .getAnimations()
-          .some(
-            (a) =>
-              a.playState !== "finished" &&
-              a.playState !== "idle" &&
-              (a instanceof CSSTransition
-                ? /color|background|opacity|filter|shadow|outline|^all$/.test(
-                    a.transitionProperty,
-                  )
-                : a.effect
-                    ?.getKeyframes()
-                    .some((frame) =>
-                      Object.keys(frame).some((key) =>
-                        /color|background|opacity|filter|shadow|outline|fill|stroke/i.test(
-                          key,
-                        ),
+        animationsFor(p).some(
+          (a) =>
+            a.playState !== "finished" &&
+            a.playState !== "idle" &&
+            (a instanceof CSSTransition
+              ? /color|background|opacity|filter|shadow|outline|^all$/.test(
+                  a.transitionProperty,
+                )
+              : a.effect
+                  ?.getKeyframes()
+                  .some((frame) =>
+                    Object.keys(frame).some((key) =>
+                      /color|background|opacity|filter|shadow|outline|fill|stroke/i.test(
+                        key,
                       ),
-                    )),
-          )
+                    ),
+                  )),
+        )
       )
         effects.push("paint animation did not settle");
       if (
@@ -147,9 +227,9 @@ export function collectContrastTargets({
       variable = false,
       issues = [];
     for (const p of chain) {
-      const s = getComputedStyle(p),
+      const s = styleFor(p),
         bg = color(s.backgroundColor);
-      const box = p.getBoundingClientRect();
+      const box = rectFor(p);
       // Root backgrounds propagate to the document canvas. Other plates must
       // actually cover the glyph bounds; absolute children can escape parents.
       if (p !== document.body && p !== document.documentElement) {
@@ -189,7 +269,7 @@ export function collectContrastTargets({
       // Pseudo-element paint ordering/coverage cannot be inferred reliably
       // from backgroundColor alone. A local opaque plate below clears it.
       for (const pseudo of ["::before", "::after"]) {
-        const ps = getComputedStyle(p, pseudo);
+        const ps = styleFor(p, pseudo);
         if (
           ps.content !== "none" &&
           ps.content !== "normal" &&
@@ -219,7 +299,7 @@ export function collectContrastTargets({
     alpha = 1,
     paintProperty = "color",
   ) => {
-    const s = getComputedStyle(el);
+    const s = styleFor(el);
     const rgba = color(foreground);
     if (rgba) rgba[3] *= alpha;
     targets.push({
@@ -247,7 +327,7 @@ export function collectContrastTargets({
     range.selectNodeContents(node);
     const rect = range.getBoundingClientRect();
     if (!visible(el, rect)) continue;
-    const s = getComputedStyle(el),
+    const s = styleFor(el),
       fontSize = parseFloat(s.fontSize),
       weight = parseInt(s.fontWeight) || 400;
     add(
@@ -267,11 +347,11 @@ export function collectContrastTargets({
     );
   }
   for (const el of document.querySelectorAll("*")) {
-    const rect = el.getBoundingClientRect();
+    const rect = rectFor(el);
     if (!visible(el, rect) || el.getAttribute("aria-hidden") === "true")
       continue;
     for (const pseudo of ["::before", "::after"]) {
-      const ps = getComputedStyle(el, pseudo);
+      const ps = styleFor(el, pseudo);
       if (
         ps.content === "none" ||
         ps.content === "normal" ||
@@ -299,9 +379,9 @@ export function collectContrastTargets({
   for (const el of document.querySelectorAll(
     'input,textarea,select,button,[role="button"],a[href],svg[role="img"]',
   )) {
-    const rect = el.getBoundingClientRect();
+    const rect = rectFor(el);
     if (!visible(el, rect) || el.disabled) continue;
-    const s = getComputedStyle(el),
+    const s = styleFor(el),
       parentBg = backdrop(el.parentElement || el, rect);
     const label =
       el.getAttribute("aria-label") ||
@@ -310,7 +390,7 @@ export function collectContrastTargets({
       el.localName;
     if (el.matches("input,textarea,select")) {
       if (el.value || el.placeholder) {
-        const textStyle = el.value ? s : getComputedStyle(el, "::placeholder");
+        const textStyle = el.value ? s : styleFor(el, "::placeholder");
         const bg = backdrop(el, rect);
         if (Number(textStyle.opacity) !== 1)
           bg.issues.push("placeholder opacity");
@@ -333,13 +413,17 @@ export function collectContrastTargets({
         el.matches('input[type="checkbox"],input[type="radio"]') &&
         s.appearance !== "none";
       if (!nativeToggle) {
-        const hasBorder =
-          parseFloat(s.borderTopWidth) > 0 && s.borderTopStyle !== "none";
+        const borderSide = ["Bottom", "Top", "Right", "Left"].find(
+          (side) =>
+            parseFloat(s[`border${side}Width`]) > 0 &&
+            !["none", "hidden"].includes(s[`border${side}Style`]) &&
+            (color(s[`border${side}Color`])?.[3] || 0) > 0,
+        );
         add(
           el,
           "control",
           label,
-          hasBorder ? s.borderTopColor : s.backgroundColor,
+          borderSide ? s[`border${borderSide}Color`] : s.backgroundColor,
           parentBg,
           3,
           rect,
@@ -351,14 +435,14 @@ export function collectContrastTargets({
       el.getAttribute("aria-hidden") !== "true"
     ) {
       for (const part of el.querySelectorAll("path,circle,rect,polygon,line")) {
-        const ps = getComputedStyle(part);
+        const ps = styleFor(part);
         if (ps.fill !== "none")
           add(
             part,
             "icon",
             label,
             ps.fill,
-            backdrop(part, part.getBoundingClientRect()),
+            backdrop(part, rectFor(part)),
             3,
             rect,
             Number(ps.fillOpacity),
@@ -370,7 +454,7 @@ export function collectContrastTargets({
             "icon",
             label,
             ps.stroke,
-            backdrop(part, part.getBoundingClientRect()),
+            backdrop(part, rectFor(part)),
             3,
             rect,
             Number(ps.strokeOpacity),
@@ -403,12 +487,24 @@ function measure(target) {
     return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
   });
   let ratio = Math.min(...ratios);
-  // For opaque text, a possible backdrop luminance crossing the text's
-  // luminance makes the worst-case contrast 1, even if both endpoints pass.
+  // A variable backdrop can contain colored pixels between the channel
+  // bounds, not just grayscale endpoints. Bound the composited foreground and
+  // backdrop luminance independently; their overlap cannot prove contrast.
   if (variable) {
-    const lum = relativeLuminance(foreground),
-      values = backgrounds.map(relativeLuminance);
-    if (lum >= Math.min(...values) && lum <= Math.max(...values)) ratio = 1;
+    const foregroundValues = backgrounds.map((bg) =>
+      relativeLuminance(composite(foreground, bg)),
+    );
+    const backgroundValues = backgrounds.map(relativeLuminance);
+    const foregroundMin = Math.min(...foregroundValues),
+      foregroundMax = Math.max(...foregroundValues);
+    const backgroundMin = Math.min(...backgroundValues),
+      backgroundMax = Math.max(...backgroundValues);
+    ratio =
+      foregroundMin > backgroundMax
+        ? (foregroundMin + 0.05) / (backgroundMax + 0.05)
+        : backgroundMin > foregroundMax
+          ? (backgroundMin + 0.05) / (foregroundMax + 0.05)
+          : 1;
   }
   const pass = ratio >= target.minimum;
   return {
@@ -480,8 +576,19 @@ export async function inspectContrastPage(
       const rect = el.getBoundingClientRect();
       if (rect.right <= 0 || rect.bottom <= 0 || el.closest("[hidden],[inert]"))
         return false;
+      const root = document.scrollingElement;
+      if (
+        rect.left >= Math.max(innerWidth, root.scrollWidth) - scrollX ||
+        rect.top >= Math.max(innerHeight, root.scrollHeight) - scrollY
+      )
+        return false;
       for (let parent = el; parent; parent = parent.parentElement) {
         const style = getComputedStyle(parent);
+        if (
+          style.position === "fixed" &&
+          (rect.left >= innerWidth || rect.top >= innerHeight)
+        )
+          return false;
         if (
           Number(style.opacity) === 0 ||
           style.visibility !== "visible" ||

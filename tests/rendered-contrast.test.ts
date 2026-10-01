@@ -91,6 +91,35 @@ describe("rendered contrast independent of authored classes", () => {
     expect(report.pass).toBe(false);
     expect(report.findings[0].status).toBe("unresolved");
   });
+  it("does not prove translucent colored text from only grayscale image endpoints", async () => {
+    // Endpoints give 3.0436:1, but a red pixel behind this scrim gives 2.9663:1.
+    const report = await scan(
+      '<section style="background:linear-gradient(black,red)"><div style="background:rgba(0,0,0,.9)"><h1 style="font-size:32px;color:rgba(64,192,255,.5)">Colored translucent title</h1></div></section>',
+      1440,
+      { states: false },
+    );
+    expect(report.pass).toBe(false);
+    expect(report.findings[0].status).toBe("unresolved");
+  });
+  it.each([
+    "border-bottom:2px solid black",
+    "border-top:2px solid black;border-bottom:2px solid transparent",
+  ])("recognizes a visible field boundary: %s", async (boundary) => {
+    const report = await scan(
+      `<input aria-label="Name" value="Ada" style="background:white;color:black;border:0;${boundary}">`,
+      1440,
+      { states: false },
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
+  it("does not try to hover a fixed control outside the reachable page", async () => {
+    const report = await scan(
+      '<button style="position:fixed;left:20000px;top:20px">Offscreen helper</button><p style="color:black">Visible copy</p>',
+    );
+    expect(
+      report.findings.some((f) => f.text === "Hover target inaccessible"),
+    ).toBe(false);
+  });
   it("catches unclassified pale heading and ordinary body copy", async () => {
     const report = await scan(
       '<section style="background:white;color:#f8f6f0"><h1 style="font-size:64px">Willowbridge</h1><p>Visit preparation</p></section>',
