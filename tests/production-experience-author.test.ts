@@ -357,6 +357,170 @@ export default function Experience`,
     ).not.toThrow();
   });
 
+  it("allows only a const phone href normalized from the sealed phone token", () => {
+    const route = { id: "route-normalized-phone" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const experience = base
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        'export default function Experience({ content, runtime }) {\n  const phoneHref = `tel:${content.brand.phone.replace(/[^\\d+]/g, "")}`;',
+      )
+      .replace(
+        '<a href={"tel:" + content.brand.phone}>',
+        "<a href={phoneHref}>",
+      );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: { brand: { phone: "+1 (212) 555-0186" } },
+      }),
+    ).not.toThrow();
+
+    const unsafe = experience.replace(
+      '`tel:${content.brand.phone.replace(/[^\\d+]/g, "")}`',
+      '"https://example.test/"',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: unsafe, styles, motion },
+        route,
+        content: { brand: { phone: "+1 (212) 555-0186" } },
+      }),
+    ).toThrow(/forbidden remote URL|unsafe URL attribute/iu);
+
+    const unsafeTransform = experience.replace(
+      String.raw`replace(/[^\d+]/g, "")`,
+      'replace(/./g, "x")',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: unsafeTransform, styles, motion },
+        route,
+        content: { brand: { phone: "+1 (212) 555-0186" } },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
+
+    const mutableAlias = experience.replace("const phoneHref", "let phoneHref");
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: mutableAlias, styles, motion },
+        route,
+        content: { brand: { phone: "+1 (212) 555-0186" } },
+      }),
+    ).toThrow(/unsafe URL attribute/iu);
+  });
+
+  it("accepts an empty optional image only when its sealed token guards rendering", () => {
+    const route = { id: "route-optional-image" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const guarded = base.replace(
+      "<section data-hero>",
+      '<section data-hero>{content.hero.secondaryImage && <img src={content.hero.secondaryImage} alt="" />}',
+    );
+    const content = {
+      hero: {
+        image: "/images/hero.webp",
+        secondaryImage: "",
+        tertiaryImage: "",
+      },
+      brand: { phone: "+12125550186" },
+    };
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: guarded, styles, motion },
+        route,
+        content,
+      }),
+    ).not.toThrow();
+
+    const unguarded = guarded.replace(
+      "{content.hero.secondaryImage && <img src={content.hero.secondaryImage} alt=\"\" />}",
+      '<img src={content.hero.secondaryImage} alt="" />',
+    );
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: unguarded, styles, motion },
+        route,
+        content,
+      }),
+    ).toThrow(/optional image token.*conditionally render/iu);
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience: guarded, styles, motion },
+        route,
+        content: {
+          ...content,
+          hero: { ...content.hero, secondaryImage: "https://example.test/remote.webp" },
+        },
+      }),
+    ).toThrow(/safe local or LaunchLoom-hosted image asset/iu);
+  });
+
+  it("retries an empty optional image with the exact safe rendering rule", async () => {
+    const requests: AuthorStageRequest[] = [];
+    let retryRequest: AuthorStageRequest | undefined;
+    const result = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async (request) => {
+        requests.push(request);
+        const base = safeStage(request);
+        if (request.route.id !== "route-02" || request.stage !== "experience")
+          return base;
+        if (request.validationError) {
+          retryRequest = request;
+          return base;
+        }
+        return {
+          content: String(base.content).replace(
+            "<section data-hero>",
+            '<section data-hero><img src={content.hero.secondaryImage} alt="" />',
+          ),
+        };
+      },
+    });
+
+    expect(result.candidates).toHaveLength(3);
+    expect(retryRequest?.validationError).toMatch(
+      /optional image token content\.hero\.secondaryImage.*conditionally render/iu,
+    );
+    expect(
+      result.candidates.find((candidate) => candidate.metadata.routeId === "route-02")
+        ?.metadata.complianceRepaired,
+    ).toBe(true);
+    expect(requests.every((request) =>
+      request.rules.includes("The sealed hero image tokens may be empty"),
+    )).toBe(true);
+    expect(requests.every((request) =>
+      request.rules.includes("Phone and email links must use their sealed tokens"),
+    )).toBe(true);
+    expect(requests[0]?.rules).toContain(
+      String.raw`replace(/[^\d+]/g, "")`,
+    );
+  });
+
   it("retries unsafe candidate links with the deterministic validation finding", async () => {
     let repairRequest: AuthorStageRequest | undefined;
     const result = await authorExperienceCandidates({

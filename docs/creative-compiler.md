@@ -75,6 +75,15 @@ become client-site assets.
    GSAP, and ScrollTrigger, but not network access, remote code, canvas, or
    Three.js by default. Model stages are globally limited to two in-flight
    requests so a three-candidate bakeoff does not exhaust the provider budget.
+   Source validation permits telephone links only when they are prefixed from
+   the sealed phone token, including a const local alias and the two narrowly
+   allowlisted digit/plus normalizers. Every contact href still fails closed if
+   it contains any other dynamic or remote value. Sealed hero and supporting
+   image tokens may be empty; when an image is optional, its `<img>` must be
+   rendered only under a direct truthiness guard for that same token. A
+   populated token must still resolve to a safe local or LaunchLoom-hosted
+   asset. Invalid authored output gets bounded source-validation retries with
+   the exact validator finding before the candidate is rejected.
    The authoring budget defaults to 85 minutes and can be bounded with
    `CREATIVE_EXPERIENCE_AUTHOR_TIMEOUT_MS`; it never turns an expired author
    run into a legacy renderer. Completion ceilings are stage-specific: 24k
