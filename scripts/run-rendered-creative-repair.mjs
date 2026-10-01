@@ -59,22 +59,29 @@ function dimensionFindings(candidate) {
   const audit = candidate?.renderedReferenceFidelity?.audit;
   if (!audit) return [];
   const findings = [];
+  const passing = [];
   const overall = Number(audit.overallScore);
-  if (
-    Number.isFinite(overall) &&
-    overall < RENDERED_REFERENCE_THRESHOLDS.overall
-  )
-    findings.push(
-      `rendered-reference overall fidelity scored ${overall} and must reach ${RENDERED_REFERENCE_THRESHOLDS.overall}.`,
-    );
+  if (Number.isFinite(overall)) {
+    if (overall < RENDERED_REFERENCE_THRESHOLDS.overall)
+      findings.push(
+        `rendered-reference overall fidelity scored ${overall} and must reach ${RENDERED_REFERENCE_THRESHOLDS.overall}.`,
+      );
+    else passing.push(`overall ${overall}`);
+  }
   for (const [key, value] of Object.entries(audit.scores || {})) {
     const minimum = Number(RENDERED_REFERENCE_THRESHOLDS[key]);
     const score = Number(value);
-    if (Number.isFinite(minimum) && Number.isFinite(score) && score < minimum)
+    if (!Number.isFinite(minimum) || !Number.isFinite(score)) continue;
+    if (score < minimum)
       findings.push(
         `rendered-reference dimension ${key} scored ${score} and must reach ${minimum}.`,
       );
+    else passing.push(`${key} ${score}`);
   }
+  if (passing.length)
+    findings.push(
+      `Rendered-reference measurements already at their thresholds must not regress during this repair: ${passing.join(", ")}.`,
+    );
   return findings;
 }
 

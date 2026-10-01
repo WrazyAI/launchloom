@@ -66,6 +66,57 @@ describe("creative repair loop", () => {
     ).toThrow(/inline image data/iu);
   });
 
+  it("applies a unique fragment that only drifted in indentation", () => {
+    const files = {
+      experience: `<main>
+      <section className="practice-index">
+        <article>
+          <h3>{service.name}</h3>
+        </article>
+      </section>
+    </main>`,
+      styles: "",
+      motion: "",
+    };
+    const result = applyCreativeRepairEdits(files, [
+      {
+        file: "experience",
+        find: `<section className="practice-index">
+  <article>
+    <h3>{service.name}</h3>`,
+        replace: `<section className="practice-index">
+  <article data-repair-row="true">
+    <h3>{service.name}</h3>`,
+      },
+    ]);
+
+    expect(result.experience).toContain('<article data-repair-row="true">');
+    expect(result.experience).toContain("</article>");
+  });
+
+  it("still fails closed when the drifted fragment is not unique", () => {
+    const files = {
+      experience: `<main>
+      <p>Same line</p>
+    </main>
+    <aside>
+        <p>Same line</p>
+    </aside>`,
+      styles: "",
+      motion: "",
+    };
+
+    expect(() =>
+      applyCreativeRepairEdits(files, [
+        {
+          file: "experience",
+          find: "<p>\n        Same line\n      </p>",
+          replace: "<p>Replaced</p>",
+        },
+      ]),
+    ).toThrow(/must match exactly once/iu);
+  });
+
   it("requires developer human repairs to return edits for a resolved scope", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-scoped-repair-prompt-"),

@@ -390,7 +390,11 @@ describe("rendered creative repair orchestration", () => {
     expect(findings).toContain(
       "rendered-reference dimension servicePresentation scored 72 and must reach 80",
     );
-    expect(findings).not.toContain("heroGeometry");
+    expect(findings).not.toContain("dimension heroGeometry scored");
+    expect(findings).toContain(
+      "measurements already at their thresholds must not regress",
+    );
+    expect(findings).toContain("heroGeometry 87");
     expect(result.status).toBe("passed");
   });
 

@@ -165,7 +165,31 @@ function repairOutputRejection(message, cause) {
   return error;
 }
 
-/** Apply exact, bounded source replacements; ambiguous edits fail closed. */
+function locateUniqueFragment(source, fragment) {
+  const exact = source.indexOf(fragment);
+  if (exact >= 0 && source.indexOf(fragment, exact + fragment.length) < 0)
+    return { start: exact, end: exact + fragment.length };
+  const trimmed = String(fragment || "").trim();
+  if (!trimmed) return null;
+  const pattern = new RegExp(
+    trimmed
+      .split(/\s+/u)
+      .map((part) => part.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"))
+      .join("\\s+"),
+    "gu",
+  );
+  const matches = [...source.matchAll(pattern)];
+  if (matches.length !== 1) return null;
+  const match = matches[0];
+  return { start: match.index, end: match.index + match[0].length };
+}
+
+/**
+ * Apply bounded source replacements. Fragments must still be unique: the
+ * whitespace-tolerant fallback only rescues fragments whose wording matches
+ * one place in the file apart from indentation or line-wrap drift. Ambiguous
+ * or missing fragments fail closed.
+ */
 export function applyCreativeRepairEdits(files, edits) {
   if (!files || typeof files !== "object" || Array.isArray(files))
     throw new Error("Creative repair edits require candidate files.");
@@ -216,15 +240,15 @@ export function applyCreativeRepairEdits(files, edits) {
     const source = repaired[edit.file];
     if (typeof source !== "string")
       throw new Error(`${label} targets a missing candidate file.`);
-    const start = source.indexOf(edit.find);
-    if (start < 0 || source.indexOf(edit.find, start + edit.find.length) >= 0)
+    const location = locateUniqueFragment(source, edit.find);
+    if (!location)
       throw repairOutputRejection(
         `${label} source fragment must match exactly once in ${edit.file}.`,
       );
     repaired[edit.file] =
-      source.slice(0, start) +
+      source.slice(0, location.start) +
       replacement +
-      source.slice(start + edit.find.length);
+      source.slice(location.end);
   }
   return repaired;
 }
