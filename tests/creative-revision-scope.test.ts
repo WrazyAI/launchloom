@@ -449,3 +449,10 @@ it("limits mixed image-and-layout feedback to the remaining source request", () 
   expect(declared.declaration.feedbackItems[0].feedback).toBe(feedback);
   expect(resolveCreativeRevisionScope({ source: experience, feedbackItems: declared.declaration.feedbackItems }).sectionIds).toEqual(["services"]);
 });
+
+it("rejects an empty remaining source request instead of broadening back to the original feedback", () => {
+  const feedback = "Replace the hero image.";
+  const declared = createCreativeRepairScopeDeclaration({ creativeRenderer: true, feedback: [feedback], results: [{ feedbackIndex: 0, feedback, status: "creative", sourceFeedback: "" }] });
+  if (!declared.declaration) throw new Error("Missing creative scope declaration");
+  expect(() => resolveCreativeRevisionScope({ source: experience, feedbackItems: declared.declaration!.feedbackItems })).toThrow(/no request text/);
+});

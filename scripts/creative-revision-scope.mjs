@@ -174,7 +174,7 @@ export function createCreativeRepairScopeDeclaration({
           .map(({ feedbackIndex, feedback: itemFeedback, sourceFeedback }) => ({
             feedbackIndex,
             feedback: itemFeedback,
-            ...(typeof sourceFeedback === "string" && sourceFeedback.trim()
+            ...(typeof sourceFeedback === "string"
               ? { scopeFeedback: sourceFeedback.trim() }
               : {}),
           })),
