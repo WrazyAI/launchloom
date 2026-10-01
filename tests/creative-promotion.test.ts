@@ -425,6 +425,23 @@ describe("creative candidate promotion", () => {
     const siteRoot = await makeTemplateCopy({
       industry: "home-services",
       businessKind: "plumbing",
+      services: [
+        {
+          name: "Drain cleaning",
+          slug: "drain-cleaning",
+          description: "Clear blocked household drains.",
+        },
+        {
+          name: "Water heater repair",
+          slug: "water-heater-repair",
+          description: "Diagnose and repair water heater problems.",
+        },
+        {
+          name: "Leak detection",
+          slug: "leak-detection",
+          description: "Find the source of hidden plumbing leaks.",
+        },
+      ],
       locations: [
         {
           name: "East Austin",
@@ -443,6 +460,28 @@ describe("creative candidate promotion", () => {
       requireDiversity: false,
     });
     const candidate = report.candidates[0];
+    expect(
+      candidate.authoredPages
+        ?.filter((page) => page.kind === "service")
+        .map((page) => page.route),
+    ).toEqual([
+      "/services/drain-cleaning/",
+      "/services/water-heater-repair/",
+      "/services/leak-detection/",
+    ]);
+    expect(
+      candidate.authoredPages?.find(
+        (page) => page.kind === "services-index",
+      )?.route,
+    ).toBe("/services/");
+    expect(
+      candidate.authoredPages?.every(
+        (page) =>
+          page.candidateId === "candidate-a" &&
+          Boolean(page.sourceFile) &&
+          page.viewports.length === 3,
+      ),
+    ).toBe(true);
     expect(candidate.servicePage?.failures).toEqual([]);
     expect(candidate.servicePage?.pass).toBe(true);
     expect(candidate.locationPage?.failures).toEqual([]);
