@@ -171,9 +171,12 @@ export function createCreativeRepairScopeDeclaration({
               typeof result.feedback === "string" &&
               result.feedback.trim().length > 0,
           )
-          .map(({ feedbackIndex, feedback: itemFeedback }) => ({
+          .map(({ feedbackIndex, feedback: itemFeedback, sourceFeedback }) => ({
             feedbackIndex,
             feedback: itemFeedback,
+            ...(typeof sourceFeedback === "string" && sourceFeedback.trim()
+              ? { scopeFeedback: sourceFeedback.trim() }
+              : {}),
           })),
       }
     : null;
@@ -490,7 +493,7 @@ export function resolveCreativeRevisionScope({
   const feedbackIndexes = [];
   let allowMotion = false;
   for (const item of feedbackItems) {
-    const text = String(item?.feedback || "").trim();
+    const text = String(item?.scopeFeedback ?? item?.feedback ?? "").trim();
     if (!text)
       throw scopeError("a creative feedback item has no request text.");
     if (broadScopeIsActionable(text)) {

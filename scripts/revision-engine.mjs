@@ -1846,6 +1846,9 @@ export async function planRevision(
     return {
       feedbackIndex,
       feedback: item.text,
+      ...(status === "creative" && item.assets.length
+        ? { sourceFeedback: residualVisualRequest(item.text).trim() }
+        : {}),
       intents,
       status,
       fulfilled,

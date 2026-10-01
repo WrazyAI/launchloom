@@ -431,7 +431,14 @@ try {
             })(),
             naturalWidth: image.naturalWidth,
             naturalHeight: image.naturalHeight,
-            visible: visible(image),
+            visible: visible(image) && (() => {
+              for (let parent = image; parent; parent = parent.parentElement) {
+                const style = getComputedStyle(parent);
+                if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0)
+                  return false;
+              }
+              return true;
+            })(),
           })),
       };
     });

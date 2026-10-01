@@ -437,3 +437,14 @@ describe("authored creative repair scope", () => {
     ).toThrow(/global or unrelated CSS changed/iu);
   });
 });
+
+it("limits mixed image-and-layout feedback to the remaining source request", () => {
+  const feedback = "Replace the hero image and make the services section more spacious.";
+  const declared = createCreativeRepairScopeDeclaration({
+    creativeRenderer: true,
+    feedback: [feedback],
+    results: [{ feedbackIndex: 0, feedback, status: "creative", intents: ["image", "layout"], sourceFeedback: "make the services section more spacious." }],
+  });
+  expect(declared.declaration.feedbackItems[0].feedback).toBe(feedback);
+  expect(resolveCreativeRevisionScope({ source: experience, feedbackItems: declared.declaration.feedbackItems }).sectionIds).toEqual(["services"]);
+});

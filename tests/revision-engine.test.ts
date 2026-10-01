@@ -1959,6 +1959,7 @@ it("preserves additional composition and copy requests beside an uploaded image"
   const composition = await planRevision([{ text: "Replace the hero image and make the about section more spacious.", assets }], baseline, async () => []);
   expect(composition.results[0].intents).toContain("layout");
   expect(composition.results[0].status).toBe("creative");
+  expect(composition.results[0].sourceFeedback).toBe("make the about section more spacious.");
   const copy = await planRevision([{ text: 'Replace the hero image and change the hero heading to "A clearer plan".', assets }], baseline, async () => [{ kind: "set_copy", field: "heroHeading", value: "A clearer plan", feedbackIndex: 0 }]);
   expect(copy.config.copy.heroHeading).toBe("A clearer plan");
   expect(copy.config.copy.aboutBody).toBe(baseline.copy.aboutBody);
