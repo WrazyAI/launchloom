@@ -146,6 +146,7 @@ describe("authored creative repair scope", () => {
         '<main data-services-index><header>Header</header><h1>Services</h1><footer>Footer</footer></main>',
     };
     const scope = {
+      version: 1,
       targetFile: "servicePage",
       sourceFile: "ServicePage.jsx",
       reviewedRoute: "/services/preventive-care/",
