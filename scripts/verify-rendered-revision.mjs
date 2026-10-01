@@ -30,7 +30,9 @@ const dist = path.resolve(args.dist);
 const creativeExperience =
   config.design?.experience?.renderer === "creative-candidate";
 const reviewedRoute = String(
-  config.revisionReport?.creativeRepairScope?.reviewedRoute || "/",
+  config.revisionReport?.reviewedRoute ||
+    config.revisionReport?.creativeRepairScope?.reviewedRoute ||
+    "/",
 ).trim() || "/";
 const screenshotDir = path.resolve(
   args.screenshots || path.join(dist, "revision-screenshots"),
