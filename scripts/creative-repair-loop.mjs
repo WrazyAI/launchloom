@@ -30,22 +30,51 @@ import {
 import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
-const REPAIR_SCHEMA = {
-  name: "launchloom_creative_repair",
+const REPAIR_FILE_ORDER = ["experience", "styles", "motion"];
+const REPAIR_INNER_PAGE_KEYS = [
+  "servicePage",
+  "locationPage",
+  "servicesIndexPage",
+];
+
+/**
+ * Build the complete-file repair schema for the candidate's current files.
+ * Strict structured output requires every property to be required, so inner
+ * page fields are included only when the candidate actually carries them. An
+ * empty string means "keep the current page unchanged".
+ */
+function repairSchemaFor(files = {}) {
+  const innerKeys = REPAIR_INNER_PAGE_KEYS.filter(
+    (key) => typeof files[key] === "string" && files[key].trim(),
+  );
+  const keys = [...REPAIR_FILE_ORDER, ...innerKeys];
+  return {
+    name: "launchloom_creative_repair",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      required: keys,
+      properties: Object.fromEntries(
+        keys.map((key) => [key, { type: "string" }]),
+      ),
+    },
+  };
+}
+
+const REPAIR_FILE_SCHEMA = {
+  name: "launchloom_creative_file_repair",
   strict: true,
   schema: {
     type: "object",
     additionalProperties: false,
-    required: ["experience", "styles", "motion"],
+    required: ["file", "source"],
     properties: {
-      experience: { type: "string" },
-      styles: { type: "string" },
-      motion: { type: "string" },
+      file: { type: "string", enum: REPAIR_FILE_ORDER },
+      source: { type: "string" },
     },
   },
 };
-
-const REPAIR_FILE_ORDER = ["experience", "styles", "motion"];
 
 const REPAIR_EDIT_SCHEMA = {
   name: "launchloom_creative_repair_edits",
@@ -64,7 +93,7 @@ const REPAIR_EDIT_SCHEMA = {
           properties: {
             file: {
               type: "string",
-              enum: REPAIR_FILE_ORDER,
+              enum: [...REPAIR_FILE_ORDER, ...REPAIR_INNER_PAGE_KEYS],
             },
             find: { type: "string" },
             replace: { type: "string" },
@@ -74,13 +103,57 @@ const REPAIR_EDIT_SCHEMA = {
     },
   },
 };
+
+/**
+ * Bounded-edit repair schema. Scoped human repairs stay restricted to the
+ * homepage files because their section scope is declared against Experience.jsx;
+ * automatic rendered repairs may also edit the authored inner pages.
+ */
+function repairEditSchemaFor(files = {}, { includeInnerPages = true } = {}) {
+  if (!includeInnerPages) return REPAIR_EDIT_SCHEMA;
+  const innerKeys = REPAIR_INNER_PAGE_KEYS.filter(
+    (key) => typeof files[key] === "string" && files[key].trim(),
+  );
+  if (!innerKeys.length) return REPAIR_EDIT_SCHEMA;
+  return {
+    ...REPAIR_EDIT_SCHEMA,
+    schema: {
+      ...REPAIR_EDIT_SCHEMA.schema,
+      properties: {
+        ...REPAIR_EDIT_SCHEMA.schema.properties,
+        edits: {
+          ...REPAIR_EDIT_SCHEMA.schema.properties.edits,
+          items: {
+            ...REPAIR_EDIT_SCHEMA.schema.properties.edits.items,
+            properties: {
+              ...REPAIR_EDIT_SCHEMA.schema.properties.edits.items.properties,
+              file: {
+                type: "string",
+                enum: [...REPAIR_FILE_ORDER, ...innerKeys],
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+}
+
 const REPAIR_SOURCE_EDIT_THRESHOLD_CHARS = 20_000;
 const REPAIR_AFFORDABILITY_RETRY_MIN_TOKENS = 8_000;
 const REPAIR_AFFORDABILITY_RETRY_HEADROOM_TOKENS = 1_024;
-const REPAIR_EDITABLE_FILES = new Set(REPAIR_FILE_ORDER);
+const REPAIR_EDITABLE_FILES = new Set([
+  ...REPAIR_FILE_ORDER,
+  ...REPAIR_INNER_PAGE_KEYS,
+]);
 const MAX_REPAIR_EDITS = 12;
 const MAX_REPAIR_EDIT_FRAGMENT_CHARS = 6_000;
 const MAX_REPAIR_PATCH_TEXT_CHARS = 24_000;
+const MAX_REPAIR_FILE_SOURCE_CHARS = 80_000;
+const MOTION_FINDING_PATTERN =
+  /\b(?:motion|animation|animated|scrolltrigger|scroll-linked|parallax)\b/iu;
+const REFERENCE_MISMATCH_PATTERN =
+  /reference|composition|geometry|distinctiveness|diversity|generic|layout|section order|hero fit|image crop|visual mismatch/iu;
 
 function clean(value, limit = 900) {
   return String(value || "")
@@ -94,6 +167,7 @@ function findingText(finding) {
   if (!finding || typeof finding !== "object") return "";
   return [
     finding.category,
+    finding.code,
     finding.message,
     finding.evidence,
     finding.recommendation,
@@ -157,6 +231,58 @@ function isRepairEditSet(value) {
   );
 }
 
+function repairTargetFiles(findings) {
+  const texts = (Array.isArray(findings) ? findings : [findings])
+    .map(findingText)
+    .filter(Boolean);
+  const motionOnly =
+    texts.length > 0 &&
+    texts.every((text) => MOTION_FINDING_PATTERN.test(text)) &&
+    !texts.some((text) => REFERENCE_MISMATCH_PATTERN.test(text));
+  if (motionOnly) return ["motion"];
+
+  const targets = new Set();
+  const motionRequested = texts.some((text) =>
+    MOTION_FINDING_PATTERN.test(text),
+  );
+  const stylesOnly = texts.length > 0 && texts.every((text) =>
+    /\b(?:palette|color|colour|contrast|font|typography|spacing|density)\b/iu.test(
+      text,
+    ),
+  );
+  if (stylesOnly) targets.add("styles");
+  else {
+    targets.add("experience");
+    targets.add("styles");
+  }
+  if (motionRequested) targets.add("motion");
+  return REPAIR_FILE_ORDER.filter((file) => targets.has(file));
+}
+
+function validateCandidateFileReplacement(response, file) {
+  if (!response || typeof response !== "object" || Array.isArray(response))
+    throw repairOutputRejection(
+      `Large creative repair must return a complete ${file} file replacement.`,
+    );
+  if (response.file !== file)
+    throw repairOutputRejection(
+      `Large creative repair requested ${file} but returned ${String(response.file || "no file")}.`,
+    );
+  if (
+    typeof response.source !== "string" ||
+    !response.source.trim() ||
+    response.source.length > MAX_REPAIR_FILE_SOURCE_CHARS
+  )
+    throw repairOutputRejection(
+      `Large creative repair ${file} source must be non-empty and at most ${MAX_REPAIR_FILE_SOURCE_CHARS} characters.`,
+    );
+  if (/data:image\/[^;\s]+;base64,/iu.test(response.source))
+    throw repairOutputRejection(
+      `Large creative repair ${file} source cannot contain inline image data.`,
+    );
+  return response.source.replace(/[—–]/gu, "-").trim();
+}
+
 function repairOutputRejection(message, cause) {
   const error = new Error(message, {
     ...(cause instanceof Error ? { cause } : {}),
@@ -190,7 +316,7 @@ function locateUniqueFragment(source, fragment) {
  * one place in the file apart from indentation or line-wrap drift. Ambiguous
  * or missing fragments fail closed.
  */
-export function applyCreativeRepairEdits(files, edits) {
+export function applyCreativeRepairEdits(files, edits, { allowInnerPages = true } = {}) {
   if (!files || typeof files !== "object" || Array.isArray(files))
     throw new Error("Creative repair edits require candidate files.");
   if (
@@ -209,7 +335,8 @@ export function applyCreativeRepairEdits(files, edits) {
     if (
       !edit ||
       typeof edit !== "object" ||
-      !REPAIR_EDITABLE_FILES.has(edit.file)
+      !REPAIR_EDITABLE_FILES.has(edit.file) ||
+      (!allowInnerPages && REPAIR_INNER_PAGE_KEYS.includes(edit.file))
     )
       throw repairOutputRejection(
         `${label} targets an unsupported candidate file.`,
@@ -440,7 +567,7 @@ body:has([data-creative-host="true"]) .quick-answers {
  * Bounded author-owned repair loop. The evaluator is deliberately injected so
  * tests can prove the retry limit without contacting a model provider.
  *
- * @param {{files?: {experience?: string, styles?: string, motion?: string}, referenceDna?: any, referenceDossier?: any, findings?: any[], screenshots?: string[], comparisonScreenshots?: Array<{candidateId: string, viewport: string, path: string}>, generate?: (input: any) => Promise<any>, evaluate?: (files: any) => Promise<any>, maxCycles?: number}} options
+ * @param {{files?: {experience?: string, styles?: string, motion?: string, servicePage?: string, locationPage?: string, servicesIndexPage?: string}, referenceDna?: any, referenceDossier?: any, findings?: any[], screenshots?: string[], comparisonScreenshots?: Array<{candidateId: string, viewport: string, path: string}>, generate?: (input: any) => Promise<any>, evaluate?: (files: any) => Promise<any>, maxCycles?: number}} options
  */
 export async function runCreativeRepairLoop({
   files,
@@ -512,6 +639,7 @@ export async function runCreativeRepairLoop({
       continue;
     }
     authorAttempts += 1;
+    const previousFiles = current;
     current = {
       experience: clean(
         repaired.experience || current.experience,
@@ -520,6 +648,14 @@ export async function runCreativeRepairLoop({
       styles: clean(repaired.styles || current.styles, Number.MAX_SAFE_INTEGER),
       motion: clean(repaired.motion || current.motion, Number.MAX_SAFE_INTEGER),
     };
+    for (const key of REPAIR_INNER_PAGE_KEYS) {
+      const value =
+        typeof repaired[key] === "string" && repaired[key].trim()
+          ? repaired[key]
+          : previousFiles[key];
+      if (typeof value === "string" && value.trim())
+        current[key] = clean(value, Number.MAX_SAFE_INTEGER);
+    }
     current = applyCreativeVisualSafetyRepairs(current, cycleFindings);
     result = await evaluate(current);
     forcedRepair = false;
@@ -582,7 +718,7 @@ export async function resolveReferenceEvidencePath(record) {
  *   referenceDna?: Record<string, any>,
  *   referenceDossier?: Record<string, any>,
  *   findings?: any[],
- *   files?: {experience?: string, styles?: string, motion?: string},
+ *   files?: {experience?: string, styles?: string, motion?: string, servicePage?: string, locationPage?: string, servicesIndexPage?: string},
  *   screenshots?: string[],
  *   comparisonScreenshots?: Array<{candidateId: string, viewport: string, path: string}>,
  *   contentManifest?: Record<string, any>,
@@ -622,10 +758,7 @@ export async function requestRepair({
       "Manual creative repair requires a resolved, non-empty section scope.",
     );
   const scopedHumanRepair = humanReview;
-  const motionRepair = hasFinding(
-    findings || [],
-    /\b(?:motion|animation|animated|scrolltrigger|scroll-linked|parallax)\b/iu,
-  );
+  const motionRepair = hasFinding(findings || [], MOTION_FINDING_PATTERN);
   const referenceMismatch = (findings || []).some((finding) => {
     const detail =
       typeof finding === "string"
@@ -639,9 +772,7 @@ export async function requestRepair({
           ]
             .filter(Boolean)
             .join(" ");
-    return /reference|composition|geometry|distinctiveness|diversity|generic|layout|section order|hero fit|image crop|visual mismatch/iu.test(
-      detail,
-    );
+    return REFERENCE_MISMATCH_PATTERN.test(detail);
   });
   const repairInstruction = scopedHumanRepair
     ? "Make the smallest safe source edit that satisfies the explicit human review request only inside the resolved section scope. Do not change unrelated sections, section order, global CSS, sealed content, factual claims, contact behavior, or the assigned Reference DNA outside that scope. Do not convert this candidate into a legacy renderer."
@@ -772,10 +903,18 @@ Use these helpers instead of inventing network calls or duplicating platform beh
     candidateEvidence.push(await imagePart(comparison.path, { detail: "high" }));
   }
 
-  const sourcePrompt = (
-    currentFiles,
-    editsOnly = false,
-  ) => `${repairInstruction}
+  const sourcePrompt = (currentFiles, { editsOnly = false, targetFile = null } = {}) => {
+    const editableNames = [
+      ...REPAIR_FILE_ORDER,
+      ...(scopedHumanRepair
+        ? []
+        : REPAIR_INNER_PAGE_KEYS.filter(
+            (key) =>
+              typeof currentFiles[key] === "string" && currentFiles[key].trim(),
+          )),
+    ];
+    return `${repairInstruction}
+
 
 ${scopedHumanRepair ? `RESOLVED SECTION SCOPE\n${JSON.stringify(creativeRepairScope, null, 2)}\nOnly these section IDs may change.` : ""}
 
@@ -790,6 +929,25 @@ ${currentFiles.styles}
 
 CURRENT MOTION.JS
 ${currentFiles.motion}
+${
+  currentFiles.servicePage ||
+  currentFiles.locationPage ||
+  currentFiles.servicesIndexPage
+    ? `\nADDITIONAL AUTHORED PAGES\n${[
+        currentFiles.servicePage
+          ? `CURRENT SERVICEPAGE.JSX\n${currentFiles.servicePage}`
+          : "",
+        currentFiles.locationPage
+          ? `CURRENT LOCATIONPAGE.JSX\n${currentFiles.locationPage}`
+          : "",
+        currentFiles.servicesIndexPage
+          ? `CURRENT SERVICESINDEXPAGE.JSX\n${currentFiles.servicesIndexPage}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n")}\n\nThese pages render the service detail, location detail, and services index routes as additional pages of the same visual system. Findings that name a service-page, location-page, or services-index-page issue must be repaired in that page's own source, not by breaking shared classes or markers. Keep every data-* page marker, the single shared LeadForm on each page, the /services/ links, and their class hooks working. When you change styles.css, keep those page selectors styled.`
+    : ""
+}
 
 SOURCE SAFETY CONTRACT
 Experience.jsx is markup and className hooks only. Do not add style attributes or style props to Experience.jsx, including React style={{...}}, style variables, or spreads that supply a style prop. Do not add <style> elements or inline visual rules. Use className hooks in JSX and put all visual declarations in styles.css. When changing appearance, update the matching CSS selector and its Experience.jsx className hook; keep behavior in motion.js and do not use it to inject visual declarations into markup.
@@ -821,21 +979,39 @@ Every motion sequence must respect reduced-motion preferences: check runtime?.re
 
 ${
   scopedHumanRepair || editsOnly
-    ? `Return JSON with an "edits" array only, never complete files. Each edit must name one of experience, styles, or motion; its exact "find" fragment must occur once; its "replace" is the smallest correction that addresses a supplied finding. Return 1-12 edits, each fragment at most 6000 characters, total find-plus-replace text at most 24000 characters. Change only files and source regions needed for the measured findings. An empty edit list means the request cannot be safely fulfilled and must fail closed.`
-    : "Return complete files required by the response schema and no unrelated explanation."
-} Keep required reference signatures and safety/content contracts unless the explicit repair requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
+    ? `Return JSON with an "edits" array only, never complete files. Each edit must name one of ${editableNames.join(", ")}; its exact "find" fragment must occur once; its "replace" is the smallest correction that addresses a supplied finding. Return 1-12 edits, each fragment at most 6000 characters, total find-plus-replace text at most 24000 characters. Change only files and source regions needed for the measured findings. An empty edit list means the request cannot be safely fulfilled and must fail closed.`
+    : targetFile
+      ? `Return JSON with file="${targetFile}" and source containing the complete replacement for that file only. Keep every other candidate file unchanged and preserve all source-safety, sealed-content, and Reference DNA contracts.`
+      : "Return complete files required by the response schema and no unrelated explanation. Return the complete corrected source for any authored page named in the findings in its matching response field, and return an empty string for authored pages that should stay unchanged."
 
-  const buildRepairContent = (currentFiles, editsOnly = false) => {
+} Keep required reference signatures and safety/content contracts unless the explicit repair requires a safe visual rearrangement; never remove required host instrumentation or sealed token bindings. Do not add remote URLs, hardcoded business facts, or em dashes.`;
+  };
+
+  const buildRepairContent = (
+    currentFiles,
+    { targetFile = null, editsOnly = false } = {},
+  ) => {
     const requestContent = [
       ...referenceContext,
       ...candidateEvidence,
-      { type: "text", text: sourcePrompt(currentFiles, editsOnly) },
+      {
+        type: "text",
+        text: sourcePrompt(currentFiles, { targetFile, editsOnly }),
+      },
     ];
     if (editsOnly)
       requestContent.push({
         type: "text",
         text: `LARGE-CANDIDATE REPAIR MODE
-Return only the bounded literal edit set described above. Use exact, unique source fragments from CURRENT EXPERIENCE.JSX, CURRENT STYLES.CSS, or CURRENT MOTION.JS. Do not re-emit complete files. Keep each edit in the file it names, preserve unaffected source byte-for-byte, and make focused changes for the supplied findings while preserving the assigned reference, sealed content bindings, required markers, and safety contract.`,
+Return only the bounded literal edit set described above. Use exact, unique source fragments from the CURRENT authored sources shown above, including the additional authored pages when present. Do not re-emit complete files. Keep each edit in the file it names, preserve unaffected source byte-for-byte, and make focused changes for the supplied findings while preserving the assigned reference, sealed content bindings, required markers, and safety contract.`,
+
+      });
+    if (targetFile)
+      requestContent.push({
+        type: "text",
+        text: `LARGE-CANDIDATE FILE-SCOPED REPAIR MODE
+TARGET CANDIDATE FILE: ${targetFile}
+Return a complete replacement for only this requested file. Keep source non-empty, at most ${MAX_REPAIR_FILE_SOURCE_CHARS} characters, and free of inline image data. All other files remain immutable; the combined bundle must pass source validation, rebuild, and rendered gates.`,
       });
     assertModelPromptTextBudget(requestContent);
     return requestContent;
@@ -863,9 +1039,9 @@ Return only the bounded literal edit set described above. Use exact, unique sour
   );
   const requestModelRepair = async (
     currentFiles,
-    { editsOnly = false } = {},
+    { targetFile = null, editsOnly = false } = {},
   ) => {
-    const requestContent = buildRepairContent(currentFiles, editsOnly);
+    const requestContent = buildRepairContent(currentFiles, { targetFile, editsOnly });
     const sendRepairRequest = (maxCompletionTokens) =>
       openRouterChatCompletion({
         title: "LaunchLoom creative repair",
@@ -882,8 +1058,11 @@ Return only the bounded literal edit set described above. Use exact, unique sour
             type: "json_schema",
             json_schema:
               scopedHumanRepair || editsOnly
-                ? REPAIR_EDIT_SCHEMA
-                : REPAIR_SCHEMA,
+                ? repairEditSchemaFor(currentFiles, {
+                    includeInnerPages: !scopedHumanRepair,
+                  })
+                : targetFile ? REPAIR_FILE_SCHEMA : repairSchemaFor(currentFiles),
+
           },
           ...completionLimitRequestField(maxCompletionTokens),
           messages: [
@@ -930,7 +1109,7 @@ Return only the bounded literal edit set described above. Use exact, unique sour
     });
     const diagnosticText = formatAuthoringCompletionDiagnostics(diagnostics);
     logger(
-      `creative_completion stage=creative-repair ${diagnosticText}${editsOnly ? " mode=bounded-edits" : ""}`,
+      `creative_completion stage=creative-repair ${diagnosticText}${scopedHumanRepair ? " mode=bounded-edits" : targetFile ? ` mode=file-replacement file=${targetFile}` : ""}`,
     );
     if (["length", "max_tokens"].includes(diagnostics.finishReason))
       throw repairOutputRejection(
@@ -945,32 +1124,47 @@ Return only the bounded literal edit set described above. Use exact, unique sour
         cause,
       );
     }
-    if (scopedHumanRepair) {
+    if (scopedHumanRepair || editsOnly) {
       if (!isRepairEditSet(parsed))
         throw repairOutputRejection(
           "Human creative repair must return bounded literal edits, not complete files.",
         );
-      applyCreativeRepairEdits(files, parsed.edits);
+      applyCreativeRepairEdits(currentFiles, parsed.edits, { allowInnerPages: !scopedHumanRepair });
       return parsed;
     }
-    if (editsOnly) {
-      if (!isRepairEditSet(parsed))
-        throw repairOutputRejection(
-          "Large creative repair must return bounded literal edits, not complete files.",
-        );
-      return applyCreativeRepairEdits(currentFiles, parsed.edits);
+    if (targetFile) {
+      const source = validateCandidateFileReplacement(
+        parsed,
+        targetFile,
+      );
+      return { ...currentFiles, [targetFile]: source };
     }
     return parsed;
   };
 
-  const sourceChars = REPAIR_FILE_ORDER.reduce(
+  const sourceChars = [...REPAIR_FILE_ORDER, ...REPAIR_INNER_PAGE_KEYS].reduce(
     (total, file) => total + String(files?.[file] || "").length,
     0,
   );
   if (scopedHumanRepair) return requestModelRepair(files);
   if (sourceChars <= REPAIR_SOURCE_EDIT_THRESHOLD_CHARS)
     return requestModelRepair(files);
-  return requestModelRepair(files, { editsOnly: true });
+  // Preserve bounded candidate-specific edits for authored inner pages.
+  if (REPAIR_INNER_PAGE_KEYS.some((key) => typeof files[key] === "string" && files[key].trim())) {
+    const repair = await requestModelRepair(files, { editsOnly: true });
+    // Automatic callers validate a complete bundle. Resolve the bounded patch
+    // against the exact sources before handing it to either repair runner.
+    return applyCreativeRepairEdits(files, repair.edits);
+  }
+  let currentFiles = { ...files };
+  for (const targetFile of repairTargetFiles(findings)) {
+    if (String(currentFiles[targetFile] || "").length > MAX_REPAIR_FILE_SOURCE_CHARS)
+      throw repairOutputRejection(
+        `Large creative repair cannot replace ${targetFile}: current source exceeds ${MAX_REPAIR_FILE_SOURCE_CHARS} characters.`,
+      );
+    currentFiles = await requestModelRepair(currentFiles, { targetFile });
+  }
+  return currentFiles;
 }
 
 async function main() {
@@ -989,13 +1183,34 @@ async function main() {
   const metadata = JSON.parse(
     await fs.readFile(path.join(candidateDir, "metadata.json"), "utf8"),
   );
+  const [
+    experience,
+    styles,
+    motion,
+    servicePage,
+    locationPage,
+    servicesIndexPage,
+  ] = await Promise.all([
+    fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
+    fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
+    fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
+    fs
+      .readFile(path.join(candidateDir, "ServicePage.jsx"), "utf8")
+      .catch(() => ""),
+    fs
+      .readFile(path.join(candidateDir, "LocationPage.jsx"), "utf8")
+      .catch(() => ""),
+    fs
+      .readFile(path.join(candidateDir, "ServicesIndexPage.jsx"), "utf8")
+      .catch(() => ""),
+  ]);
   const files = {
-    experience: await fs.readFile(
-      path.join(candidateDir, "Experience.jsx"),
-      "utf8",
-    ),
-    styles: await fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
-    motion: await fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
+    experience,
+    styles,
+    motion,
+    ...(servicePage.trim() ? { servicePage } : {}),
+    ...(locationPage.trim() ? { locationPage } : {}),
+    ...(servicesIndexPage.trim() ? { servicesIndexPage } : {}),
   };
   const report = args.report
     ? JSON.parse(await fs.readFile(path.resolve(args.report), "utf8"))
@@ -1067,6 +1282,16 @@ async function main() {
       path.join(candidateDir, "motion.js"),
       `${result.files.motion.trim()}\n`,
     );
+    for (const [key, file] of [
+      ["servicePage", "ServicePage.jsx"],
+      ["locationPage", "LocationPage.jsx"],
+      ["servicesIndexPage", "ServicesIndexPage.jsx"],
+    ])
+      if (typeof result.files[key] === "string" && result.files[key].trim())
+        await fs.writeFile(
+          path.join(candidateDir, file),
+          `${result.files[key].trim()}\n`,
+        );
   }
   const out = path.resolve(
     args.out || path.join(candidateDir, "repair-report.json"),

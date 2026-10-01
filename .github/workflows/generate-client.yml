@@ -166,7 +166,7 @@ jobs:
           echo "research_mode=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(x.mode)')" >> "$GITHUB_OUTPUT"
           echo "research_cost=$(node -e 'const x=require("/tmp/seo-research.json"); console.log(Number(x.cost?.usd || 0).toFixed(5))')" >> "$GITHUB_OUTPUT"
           echo "research_queries=$(node -e 'const x=require("/tmp/seo-research.json"); console.log((x.validatedQueries || []).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "No measured queries")')" >> "$GITHUB_OUTPUT"
-          node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? "Measured SEO research is complete. Production approval is available." : observed ? "A live web-search fallback collected cited market observations, but measured SEO research is incomplete. This preview can be reviewed; production approval remains blocked until the measured SEO gate passes." : "SEO research is degraded and context-only. This preview can be reviewed; production approval remains blocked until the measured SEO gate passes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
+          node -e 'const x=require("/tmp/seo-research.json"); const web=x.fallbackSearch || {}; const observed=(x.externalSearchEvidence || []).length; const state=x.publishReady ? (x.mode === "researched" ? "Measured SEO research is complete. Production approval is available." : "Web research complete. Measured SEO data unavailable. Developer approval is available.") : "SEO research is incomplete. This preview can be reviewed; production approval remains blocked until research completes."; const fallback=web.status && web.status !== "unavailable" ? `\nFallback web search: ${web.status}; ${observed} cited observation(s) from ${web.queriesAttempted || 0} bounded query(s); provider-reported spend USD ${Number(web.costUsd || 0).toFixed(5)} / USD ${Number(web.maxUsd || 0).toFixed(2)} cap${web.costComplete === false ? " (cost reporting incomplete; further queries stopped)" : ""}.` : "\nFallback web search: unavailable."; require("node:fs").writeFileSync("/tmp/seo-research-email.txt", `${state}\nMode: ${x.mode}${fallback}\nMeasured queries: ${(x.validatedQueries || []).filter(item => item.volume !== null || item.kd !== null || item.intent !== null).map(item => item.keyword || item.query).slice(0, 6).join(", ") || "None"}\nRecorded DataForSEO cost: ${Number(x.cost?.usd || 0).toFixed(5)}`)'
       # Reserve visual routes against the latest main history before expensive
       # reference analysis or authoring. Branch preview-only canaries read the
       # same history without writing hypothetical attempts into production.
@@ -407,10 +407,12 @@ jobs:
           node -e 'const x=require("/tmp/site.config.json"); const generated=(x.assetReport?.used || []).filter(a => a.source === "fal-generated"); const skipped=x.assetReport?.skipped || []; console.log(`generated=${generated.length} skipped=${skipped.length}`); require("node:fs").appendFileSync(process.env.GITHUB_OUTPUT, `summary=${generated.map(a => `${a.asset} → ${a.placement}`).join(", ") || "No FAL image generated; reviewed fallback retained."}\n`)'
       - name: Author independent experience candidates
         id: authoring
-        # Luna authors three independent candidates in separate stages. Keep
-        # the runner timeout above the author's internal fail-closed budget
-        # so Actions cannot terminate a valid creative run early.
-        timeout-minutes: 55
+        # Luna authors three independent candidates in separate stages, now
+        # including the authored service, location, and services-index pages
+        # per candidate. Keep the runner timeout above the author's internal
+        # fail-closed budget so Actions cannot terminate a valid creative run
+        # early.
+        timeout-minutes: 100
         run: |
           SESSION_ARGS=()
           if [ -f /tmp/reasoning-preflight.json ]; then

@@ -81,7 +81,9 @@ stores the business, recipe, pack and variant, layout fingerprint, stage, and
 the inspiration route signatures and reference IDs that informed the design.
 
 - `scripts/launch-history.mjs` owns reading, validating, capping, and recording
-  entries.
+  entries. Version 2 preserves a global diagnostic window and an independently
+  bounded window for each canonical business kind, while reading and
+  migrating version 1 history.
 - `scripts/record-launch.mjs` writes an entry from the client config and
   inspiration pack. `generate-client.yml` runs it after a successful preview
   deployment, with `--stage preview`. Recording is best effort and never blocks

@@ -936,6 +936,26 @@ describe("inspiration registry", () => {
     );
   });
 
+  it("applies the history window after excluding launches from other niches", () => {
+    const homeCareReference = "attested-angels-on-call-homecare";
+    const pack = buildInspirationPack(
+      {
+        ...baseRequest,
+        recentLaunches: [
+          { businessKind: "home-care", referenceIds: [homeCareReference] },
+          ...Array.from({ length: 35 }, (_, index) => ({
+            businessKind: "hvac",
+            referenceIds: [`hvac-reference-${index}`],
+          })),
+        ],
+      },
+      registry,
+      { repositoryRoot: path.resolve("."), requireDossiers: true },
+    );
+
+    expect(pack.request.recentReferenceIds).toContain(homeCareReference);
+  });
+
   it("avoids repeating the recent trio when a niche has more core references", () => {
     const options = {
       repositoryRoot: path.resolve("."),
@@ -1775,6 +1795,9 @@ describe("inspiration registry", () => {
       "direct-casa-cedo-boutique-hotel",
       "direct-mahala-desert-boutique-hotel",
       "direct-fogo-island-inn-hospitality",
+      "web-hospitality-long-story-short-hudson",
+      "web-hospitality-six-bells-inn",
+      "web-hospitality-wm-farmer-and-sons",
     ];
     fs.mkdirSync(path.join(root, "data/reference-library"), {
       recursive: true,
@@ -1924,13 +1947,38 @@ describe("inspiration registry", () => {
     expect(pack.request.selectionHistory.selectedPatternExposure).toBe(0);
   });
 
-  it("fails clearly when the registry cannot supply three independent routes", () => {
+  it("fails clearly when fewer than six production references remain for a niche", () => {
     expect(() =>
       buildInspirationPack(baseRequest, {
         version: 1,
         records: registry.records.slice(0, 2),
       }),
-    ).toThrow("three structurally independent business-matched dossiers");
+    ).toThrow("six distinct production-eligible business-matched dossiers");
+  });
+
+  it("requires six eligible same-niche references before compiling production routes", () => {
+    const core = JSON.parse(
+      fs.readFileSync(
+        path.resolve("data/reference-library/core-collection.json"),
+        "utf8",
+      ),
+    );
+    const homeCare = core.niches.find(
+      (niche: any) => niche.businessKind === "home-care",
+    );
+    const fiveIds = new Set(homeCare.referenceIds.slice(0, 5));
+    const fiveReferenceRegistry = {
+      ...registry,
+      records: registry.records.filter((record: any) => fiveIds.has(record.id)),
+    };
+
+    expect(() =>
+      buildInspirationPack(
+        { ...baseRequest, industry: "home-care" },
+        fiveReferenceRegistry,
+        { repositoryRoot: path.resolve("."), requireDossiers: true },
+      ),
+    ).toThrow(/5 eligible dossier\(s\).*six distinct.*required/iu);
   });
 });
 

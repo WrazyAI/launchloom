@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "updatedAt": "2026-09-29T17:27:34.293Z",
+  "version": 2,
+  "updatedAt": "2026-10-01T15:25:11.041Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -151,6 +151,549 @@
         "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
         "Thin service-area utility line, white brand row, service links, call number and |A dark technician-at-condenser photograph supports a left-aligned plainspoken re|Start with what the system is doing, route to confirmed AC/heating/maintenance s|Large friendly sans headlines, compact status labels and concise visitor-centere|technician hero -> symptom-choice cards -> service photograph grid -> diagnosis |Authentic technician scenes fill a service photo grid, while a simple circular m"
       ]
+    },
+    {
+      "id": "2026-09-30-juniper-grove-estate-law-attempt-93",
+      "launchedAt": "2026-09-30T18:31:11.235Z",
+      "stage": "attempt",
+      "businessName": "Juniper Grove Estate Law",
+      "businessKind": "legal-services",
+      "recipe": "general-editorial",
+      "packId": "bold-utility",
+      "variantId": "standard",
+      "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "cinematic-stage",
+        "colorlib-caseworth-legal-ledger",
+        "direct-robins-kaplan-law",
+        "editorial-monument",
+        "guided-conversation",
+        "legal-coral-and-photo-split-opening"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form",
+        "split-media-copy"
+      ],
+      "referenceIds": [
+        "colorlib-caseworth-legal-ledger",
+        "direct-robins-kaplan-law",
+        "web-legal-flip-family-law"
+      ],
+      "routeSignatures": [
+        "White nameplate navigation with slim gold and coral utility buttons before the m|A coral text half and London building photograph half create a strict split hero|Organize services by the visitor's family-law problem in a dark contrast band, w|Soft serif narrative type paired with direct small sans labels and dark navy pra|split introduction and dual action -> navy issue/service matrix -> recommendatio|Architecture, team and editorial insight photographs punctuate large typography",
+        "clean-professional-navigation-with-search-action|angled-city-image-with-editorial-practice-statement|headline-led-practice-index-with-feature-story|large-clean-grotesk-with-editorial-serif-accent|city-hero-to-practice-index-to-feature-to-proof-to-contact|cityscape-and-editorial-portrait-crops",
+        "utility-strip-and-restrained-practice-navigation|editorial-professional-statement-beside-portrait-image|two-column-ruled-practice-area-ledger|refined-serif-with-humanist-sans|positioning-to-practices-to-people-to-fees-to-enquiry|portrait-and-professional-detail-crops"
+      ]
+    },
+    {
+      "id": "2026-10-01-pine-plumb-painting-co-attempt-92-run-36794315141-attempt-1",
+      "launchedAt": "2026-10-01T00:08:44.423Z",
+      "stage": "attempt",
+      "reservationKey": "92-run-36794315141-attempt-1",
+      "businessName": "Pine & Plumb Painting Co.",
+      "businessKind": "painting",
+      "recipe": "local-trades",
+      "packId": "kinetic-poster",
+      "variantId": "standard",
+      "layoutFingerprint": "kinetic-poster|standard|command-bar|poster-split|quick-request|diagnostic-list|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/coverage/process/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "editorial-monument",
+        "typographic-poster",
+        "web-painting-av",
+        "web-painting-house-doctor",
+        "web-painting-southern"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "web-painting-av",
+        "web-painting-house-doctor",
+        "web-painting-southern"
+      ],
+      "routeSignatures": [
+        "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+        "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+        "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+      ]
+    },
+    {
+      "id": "2026-10-01-willowbridge-community-clinic-fictional-canary-attempt-104-run-36795941269-attempt-1",
+      "launchedAt": "2026-10-01T00:25:52.979Z",
+      "stage": "attempt",
+      "reservationKey": "104-run-36795941269-attempt-1",
+      "businessName": "Willowbridge Community Clinic - Fictional Canary",
+      "businessKind": "dental",
+      "recipe": "care-editorial",
+      "packId": "bold-utility",
+      "variantId": "standard",
+      "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "attested-omp-dental-editorial",
+        "editorial-monument",
+        "guided-conversation",
+        "market-collage",
+        "web-dental-gartside-street-family",
+        "web-dental-smile-san-francisco-family"
+      ],
+      "heroArchetypes": [
+        "image-led-editorial",
+        "image-panel",
+        "split-media-copy"
+      ],
+      "referenceIds": [
+        "attested-one-manor-place-dental",
+        "web-dental-gartside-street",
+        "web-dental-smile-san-francisco"
+      ],
+      "routeSignatures": [
+        "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+        "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+        "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+      ]
+    },
+    {
+      "id": "2026-10-01-pine-plumb-painting-co-attempt-92-run-36799377613-attempt-1",
+      "launchedAt": "2026-10-01T01:08:36.883Z",
+      "stage": "attempt",
+      "reservationKey": "92-run-36799377613-attempt-1",
+      "businessName": "Pine & Plumb Painting Co.",
+      "businessKind": "painting",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "editorial-monument",
+        "utility-diagnostic",
+        "web-painting-concept-pro",
+        "web-painting-mfl",
+        "web-painting-novak"
+      ],
+      "heroArchetypes": [
+        "split-form"
+      ],
+      "referenceIds": [
+        "web-painting-concept-pro",
+        "web-painting-mfl",
+        "web-painting-novak"
+      ],
+      "routeSignatures": [
+        "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
+        "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
+        "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
+      ]
+    },
+    {
+      "id": "2026-10-01-willowbridge-community-dental-fictional-preview-attempt-109-run-36824027964-attempt-1",
+      "launchedAt": "2026-10-01T06:20:57.010Z",
+      "stage": "attempt",
+      "reservationKey": "109-run-36824027964-attempt-1",
+      "businessName": "Willowbridge Community Dental - Fictional Preview",
+      "businessKind": "dental",
+      "recipe": "care-editorial",
+      "packId": "kinetic-poster",
+      "variantId": "full-bleed",
+      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "attested-dapper-dental-dark",
+        "cinematic-stage",
+        "guided-conversation",
+        "typographic-poster",
+        "web-dental-gartside-street-family",
+        "web-dental-glint-austin-family"
+      ],
+      "heroArchetypes": [
+        "image-led-editorial",
+        "image-overlay"
+      ],
+      "referenceIds": [
+        "attested-dapper-dental",
+        "web-dental-gartside-street",
+        "web-dental-glint-austin"
+      ],
+      "routeSignatures": [
+        "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+        "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+        "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
+      ]
+    },
+    {
+      "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36881384874-attempt-1",
+      "launchedAt": "2026-10-01T15:06:15.255Z",
+      "stage": "attempt",
+      "reservationKey": "115-run-36881384874-attempt-1",
+      "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
+      "businessKind": "dental",
+      "recipe": "care-editorial",
+      "packId": "kinetic-poster",
+      "variantId": "full-bleed",
+      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "attested-omp-dental-editorial",
+        "cinematic-stage",
+        "editorial-monument",
+        "guided-conversation",
+        "html5up-dimension-clinic",
+        "web-dental-glint-austin-family"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-media-copy"
+      ],
+      "referenceIds": [
+        "attested-one-manor-place-dental",
+        "html5up-dental-dimension",
+        "web-dental-glint-austin"
+      ],
+      "routeSignatures": [
+        "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+        "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+        "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
+      ]
+    },
+    {
+      "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36883592916-attempt-1",
+      "launchedAt": "2026-10-01T15:25:11.040Z",
+      "stage": "attempt",
+      "reservationKey": "115-run-36883592916-attempt-1",
+      "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
+      "businessKind": "dental",
+      "recipe": "care-editorial",
+      "packId": "kinetic-poster",
+      "variantId": "full-bleed",
+      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "attested-dapper-dental-dark",
+        "guided-conversation",
+        "html5up-dimension-clinic",
+        "typographic-poster",
+        "web-dental-gartside-street-family"
+      ],
+      "heroArchetypes": [
+        "image-led-editorial",
+        "image-overlay"
+      ],
+      "referenceIds": [
+        "attested-dapper-dental",
+        "html5up-dental-dimension",
+        "web-dental-gartside-street"
+      ],
+      "routeSignatures": [
+        "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+        "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+        "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels"
+      ]
     }
-  ]
+  ],
+  "launchesByBusinessKind": {
+    "hvac": [
+      {
+        "id": "2026-09-29-apex-air-conditioning-heating-attempt-83",
+        "launchedAt": "2026-09-29T17:27:34.292Z",
+        "stage": "attempt",
+        "businessName": "Apex Air Conditioning & Heating",
+        "businessKind": "hvac",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "editorial-monument",
+          "hvac-local-aerial-hero",
+          "hvac-symptom-first-choice-grid",
+          "hvac-three-part-contact-ribbon",
+          "typographic-poster",
+          "utility-diagnostic"
+        ],
+        "referenceIds": [
+          "web-hvac-alamo-austin-air",
+          "web-hvac-allied-air-heat",
+          "web-hvac-city-wide-austin"
+        ],
+        "routeSignatures": [
+          "Blue service link line and a bright quote control above the hero, with contact r|A suburban-home photo carries the firm introduction while a conspicuous three-pa|Use a heating/cooling/air-quality/ductless service grid only for services the cl|Direct sans headings in saturated blue, slim body paragraphs and red underline/C|house-photo opening -> phone-and-quote ribbon -> service two-by-two image grid -|Technician action photos form a two-by-two service grid; family/team, financing,",
+          "Small company mark, phone number and practical service/product links share the d|An aerial Austin bridge photograph supports a centered white condensed service p|Lead with heating, cooling, maintenance and air quality as distinct confirmed se|Tall condensed uppercase display for section headings, short sans support copy a|local photo hero and service quartet -> crew introduction split -> customer proo|Local aerial imagery, technician group portrait, customer home scenes and a mapp",
+          "Thin service-area utility line, white brand row, service links, call number and |A dark technician-at-condenser photograph supports a left-aligned plainspoken re|Start with what the system is doing, route to confirmed AC/heating/maintenance s|Large friendly sans headlines, compact status labels and concise visitor-centere|technician hero -> symptom-choice cards -> service photograph grid -> diagnosis |Authentic technician scenes fill a service photo grid, while a simple circular m"
+        ]
+      }
+    ],
+    "legal-services": [
+      {
+        "id": "2026-09-30-juniper-grove-estate-law-attempt-93",
+        "launchedAt": "2026-09-30T18:31:11.235Z",
+        "stage": "attempt",
+        "businessName": "Juniper Grove Estate Law",
+        "businessKind": "legal-services",
+        "recipe": "general-editorial",
+        "packId": "bold-utility",
+        "variantId": "standard",
+        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "cinematic-stage",
+          "colorlib-caseworth-legal-ledger",
+          "direct-robins-kaplan-law",
+          "editorial-monument",
+          "guided-conversation",
+          "legal-coral-and-photo-split-opening"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "colorlib-caseworth-legal-ledger",
+          "direct-robins-kaplan-law",
+          "web-legal-flip-family-law"
+        ],
+        "routeSignatures": [
+          "White nameplate navigation with slim gold and coral utility buttons before the m|A coral text half and London building photograph half create a strict split hero|Organize services by the visitor's family-law problem in a dark contrast band, w|Soft serif narrative type paired with direct small sans labels and dark navy pra|split introduction and dual action -> navy issue/service matrix -> recommendatio|Architecture, team and editorial insight photographs punctuate large typography",
+          "clean-professional-navigation-with-search-action|angled-city-image-with-editorial-practice-statement|headline-led-practice-index-with-feature-story|large-clean-grotesk-with-editorial-serif-accent|city-hero-to-practice-index-to-feature-to-proof-to-contact|cityscape-and-editorial-portrait-crops",
+          "utility-strip-and-restrained-practice-navigation|editorial-professional-statement-beside-portrait-image|two-column-ruled-practice-area-ledger|refined-serif-with-humanist-sans|positioning-to-practices-to-people-to-fees-to-enquiry|portrait-and-professional-detail-crops"
+        ]
+      }
+    ],
+    "painting": [
+      {
+        "id": "2026-10-01-pine-plumb-painting-co-attempt-92-run-36794315141-attempt-1",
+        "launchedAt": "2026-10-01T00:08:44.423Z",
+        "stage": "attempt",
+        "reservationKey": "92-run-36794315141-attempt-1",
+        "businessName": "Pine & Plumb Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "kinetic-poster",
+        "variantId": "standard",
+        "layoutFingerprint": "kinetic-poster|standard|command-bar|poster-split|quick-request|diagnostic-list|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/coverage/process/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "editorial-monument",
+          "typographic-poster",
+          "web-painting-av",
+          "web-painting-house-doctor",
+          "web-painting-southern"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-av",
+          "web-painting-house-doctor",
+          "web-painting-southern"
+        ],
+        "routeSignatures": [
+          "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+          "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
+          "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+        ]
+      },
+      {
+        "id": "2026-10-01-pine-plumb-painting-co-attempt-92-run-36799377613-attempt-1",
+        "launchedAt": "2026-10-01T01:08:36.883Z",
+        "stage": "attempt",
+        "reservationKey": "92-run-36799377613-attempt-1",
+        "businessName": "Pine & Plumb Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "editorial-monument",
+          "utility-diagnostic",
+          "web-painting-concept-pro",
+          "web-painting-mfl",
+          "web-painting-novak"
+        ],
+        "heroArchetypes": [
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-concept-pro",
+          "web-painting-mfl",
+          "web-painting-novak"
+        ],
+        "routeSignatures": [
+          "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
+          "small white service navigation with a gold estimate action|a coastal-house image carries a navy overlay, stacked gold-and-white statement, |service list for interior, exterior, cabinetry, and wood staining followed by pr|large modern sans statements, small uppercase labels, and compact practical copy|coastal-home and form hero -> navy business introduction -> three audience cards|residential project photography with a few before-and-after work scenes",
+          "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
+        ]
+      }
+    ],
+    "dental": [
+      {
+        "id": "2026-10-01-willowbridge-community-clinic-fictional-canary-attempt-104-run-36795941269-attempt-1",
+        "launchedAt": "2026-10-01T00:25:52.979Z",
+        "stage": "attempt",
+        "reservationKey": "104-run-36795941269-attempt-1",
+        "businessName": "Willowbridge Community Clinic - Fictional Canary",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "bold-utility",
+        "variantId": "standard",
+        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-omp-dental-editorial",
+          "editorial-monument",
+          "guided-conversation",
+          "market-collage",
+          "web-dental-gartside-street-family",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-panel",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-one-manor-place-dental",
+          "web-dental-gartside-street",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+        ]
+      },
+      {
+        "id": "2026-10-01-willowbridge-community-dental-fictional-preview-attempt-109-run-36824027964-attempt-1",
+        "launchedAt": "2026-10-01T06:20:57.010Z",
+        "stage": "attempt",
+        "reservationKey": "109-run-36824027964-attempt-1",
+        "businessName": "Willowbridge Community Dental - Fictional Preview",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "cinematic-stage",
+          "guided-conversation",
+          "typographic-poster",
+          "web-dental-gartside-street-family",
+          "web-dental-glint-austin-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "web-dental-gartside-street",
+          "web-dental-glint-austin"
+        ],
+        "routeSignatures": [
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
+        ]
+      },
+      {
+        "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36881384874-attempt-1",
+        "launchedAt": "2026-10-01T15:06:15.255Z",
+        "stage": "attempt",
+        "reservationKey": "115-run-36881384874-attempt-1",
+        "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-omp-dental-editorial",
+          "cinematic-stage",
+          "editorial-monument",
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "web-dental-glint-austin-family"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-one-manor-place-dental",
+          "html5up-dental-dimension",
+          "web-dental-glint-austin"
+        ],
+        "routeSignatures": [
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
+        ]
+      },
+      {
+        "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36883592916-attempt-1",
+        "launchedAt": "2026-10-01T15:25:11.040Z",
+        "stage": "attempt",
+        "reservationKey": "115-run-36883592916-attempt-1",
+        "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "typographic-poster",
+          "web-dental-gartside-street-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "html5up-dental-dimension",
+          "web-dental-gartside-street"
+        ],
+        "routeSignatures": [
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels"
+        ]
+      }
+    ]
+  }
 }

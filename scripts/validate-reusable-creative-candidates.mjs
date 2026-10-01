@@ -76,6 +76,7 @@ function dossierBinding(dossier) {
 
 const ALL_CANDIDATE_NAMES = ["candidate-a", "candidate-b", "candidate-c"];
 const REQUIRED_AUTHORING_STAGES = ["contract", "experience", "styles", "motion"];
+const ALLOWED_AUTHORING_STAGES = [...REQUIRED_AUTHORING_STAGES, "service", "service-index", "location"];
 
 function candidateRouteIndex(candidateName) {
   return ALL_CANDIDATE_NAMES.indexOf(candidateName);
@@ -152,7 +153,7 @@ export function assertReusablePromptEvidence(
     assert(
       record.sessionId === creativeSession.sessionId &&
         record.effort === creativeSession.reasoningEffort &&
-        REQUIRED_AUTHORING_STAGES.includes(record.stage),
+        ALLOWED_AUTHORING_STAGES.includes(record.stage),
       `Prompt evidence for ${record.routeId} has an unexpected stage or frozen-session binding.`,
     );
     const suppliedEvidence = Array.isArray(record.evidence) ? record.evidence : [];
@@ -352,6 +353,14 @@ export async function validateAndCopyReusableCandidates({
     "motion.js",
     "styles.css",
   ];
+  // Authored candidates may carry service, location, and services-index page
+  // companions from newer runs. They are validated when present but stay
+  // optional for older frozen runs.
+  const optionalCandidateFiles = [
+    "ServicePage.jsx",
+    "LocationPage.jsx",
+    "ServicesIndexPage.jsx",
+  ];
   const copiedRootFiles = [
     "creative-run.json",
     "content-manifest.json",
@@ -394,15 +403,17 @@ export async function validateAndCopyReusableCandidates({
       },
     );
     const unexpectedFiles = sourceFiles.filter(
-      (item) => !item.isFile() || !candidateFiles.includes(item.name),
+      (item) =>
+        !item.isFile() ||
+        (!candidateFiles.includes(item.name) &&
+          !optionalCandidateFiles.includes(item.name)),
     );
     assert(
       unexpectedFiles.length === 0 &&
-        same(
-          sourceFiles.map((item) => item.name).sort(),
-          [...candidateFiles].sort(),
+        candidateFiles.every((name) =>
+          sourceFiles.some((item) => item.name === name),
         ),
-      `${candidateName} must contain exactly the six validated candidate files.`,
+      `${candidateName} must contain the validated candidate files and no unexpected source.`,
     );
   }
   const source = path.resolve(candidatesPath);
@@ -437,7 +448,8 @@ export async function validateAndCopyReusableCandidates({
     for (const candidateName of candidateNames) {
       const stagedCandidate = path.join(staging, candidateName);
       await fs.mkdir(stagedCandidate);
-      for (const file of candidateFiles)
+      const names = await fs.readdir(path.join(source, candidateName));
+      for (const file of names)
         await fs.copyFile(
           path.join(source, candidateName, file),
           path.join(stagedCandidate, file),
@@ -480,15 +492,33 @@ export async function validateAndCopyReusableCandidates({
     for (const candidateName of candidateNames) {
       const index = candidateRouteIndex(candidateName);
       const candidatePath = path.join(staging, candidateName);
-      const [metadata, contentManifest, contract, experience, styles, motion] =
-        await Promise.all([
-          readJson(path.join(candidatePath, "metadata.json")),
-          readJson(path.join(candidatePath, "content-manifest.json")),
-          readJson(path.join(candidatePath, "contract.json")),
-          fs.readFile(path.join(candidatePath, "Experience.jsx"), "utf8"),
-          fs.readFile(path.join(candidatePath, "styles.css"), "utf8"),
-          fs.readFile(path.join(candidatePath, "motion.js"), "utf8"),
-        ]);
+      const [
+        metadata,
+        contentManifest,
+        contract,
+        experience,
+        styles,
+        motion,
+        servicePage,
+        locationPage,
+        servicesIndexPage,
+      ] = await Promise.all([
+        readJson(path.join(candidatePath, "metadata.json")),
+        readJson(path.join(candidatePath, "content-manifest.json")),
+        readJson(path.join(candidatePath, "contract.json")),
+        fs.readFile(path.join(candidatePath, "Experience.jsx"), "utf8"),
+        fs.readFile(path.join(candidatePath, "styles.css"), "utf8"),
+        fs.readFile(path.join(candidatePath, "motion.js"), "utf8"),
+        fs
+          .readFile(path.join(candidatePath, "ServicePage.jsx"), "utf8")
+          .catch(() => ""),
+        fs
+          .readFile(path.join(candidatePath, "LocationPage.jsx"), "utf8")
+          .catch(() => ""),
+        fs
+          .readFile(path.join(candidatePath, "ServicesIndexPage.jsx"), "utf8")
+          .catch(() => ""),
+      ]);
       const route = inspiration.routes[index];
       const expectedManifest = buildCreativeContentManifest(config, route);
       const expectedDna = withoutAnalysisTime(route.referenceDna);
@@ -545,7 +575,14 @@ export async function validateAndCopyReusableCandidates({
       );
       sessionBinding(metadata, creativeSession, candidateName);
       validateProductionCandidateFiles({
-        files: { experience, styles, motion },
+        files: {
+          experience,
+          styles,
+          motion,
+          ...(servicePage.trim() ? { servicePage } : {}),
+          ...(locationPage.trim() ? { locationPage } : {}),
+          ...(servicesIndexPage.trim() ? { servicesIndexPage } : {}),
+        },
         route: { ...route, referenceDna: route.referenceDna },
         content: contentManifest.values,
       });

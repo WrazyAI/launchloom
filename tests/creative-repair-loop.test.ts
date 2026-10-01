@@ -66,6 +66,7 @@ describe("creative repair loop", () => {
     ).toThrow(/inline image data/iu);
   });
 
+
   it("applies a unique fragment that only drifted in indentation", () => {
     const files = {
       experience: `<main>
@@ -94,6 +95,7 @@ describe("creative repair loop", () => {
     expect(result.experience).toContain("</article>");
   });
 
+
   it("still fails closed when the drifted fragment is not unique", () => {
     const files = {
       experience: `<main>
@@ -115,6 +117,38 @@ describe("creative repair loop", () => {
         },
       ]),
     ).toThrow(/must match exactly once/iu);
+  });
+
+  it("applies bounded edits to authored inner pages and keeps scoped human repairs on the homepage files", () => {
+    const files = {
+      experience: "<main>Experience</main>",
+      styles: "main { color: inherit; }",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+      servicePage: '<main data-service-page><h1>Service</h1></main>',
+    };
+    const result = applyCreativeRepairEdits(files, [
+      {
+        file: "servicePage",
+        find: "<h1>Service</h1>",
+        replace: "<h1>Service page</h1>",
+      },
+    ]);
+    expect(result.servicePage).toContain("Service page");
+    expect(result.experience).toBe(files.experience);
+
+    expect(() =>
+      applyCreativeRepairEdits(
+        files,
+        [
+          {
+            file: "servicePage",
+            find: "<h1>Service</h1>",
+            replace: "<h1>Other</h1>",
+          },
+        ],
+        { allowInnerPages: false },
+      ),
+    ).toThrow(/unsupported candidate file/iu);
   });
 
   it("requires developer human repairs to return edits for a resolved scope", async () => {
@@ -596,7 +630,7 @@ describe("creative repair loop", () => {
     );
   });
 
-  it("repairs large candidates with bounded edits inside the affordable max-effort budget", async () => {
+  it("repairs large candidates with sequential file replacements inside the frozen reasoning session", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-repair-file-scope-"),
     );
@@ -615,6 +649,128 @@ describe("creative repair loop", () => {
         ".hero { color: #064e3b; }",
       ),
       motion: "complete motion",
+    };
+    const fileResponse = (file: "experience" | "styles" | "motion") => ({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: {
+            content: JSON.stringify({ file, source: repaired[file] }),
+          },
+        },
+      ],
+      usage: {
+        completion_tokens: 1400,
+        completion_tokens_details: { reasoning_tokens: 900 },
+      },
+    });
+    const responses = [
+      {
+        error: {
+          message:
+            "This request requires more credits, or fewer max_tokens. You requested up to 48000 tokens, but can only afford 14652.",
+        },
+      },
+      fileResponse("experience"),
+      fileResponse("styles"),
+      fileResponse("motion"),
+    ];
+    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => {
+      const response = responses.shift()!;
+      return new Response(JSON.stringify(response), {
+        status: "error" in response ? 402 : 200,
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const diagnostics: string[] = [];
+
+    const result = await requestRepair({
+      model: "openai/gpt-6-luna",
+      referenceDna: {
+        familyId: "editorial-architecture",
+        referenceName: "Editorial architecture",
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        { category: "service-presentation", evidence: "Use image-led service choices." },
+        { category: "imagery", evidence: "Carry the assigned image choreography into later chapters." },
+        { category: "spatial-rhythm", evidence: "Restore the reference section progression." },
+        { category: "interaction-evidence", evidence: "Make the gallery and FAQ interactions visible." },
+        { category: "motion-primitive", evidence: "Add the assigned masked image reveal." },
+      ],
+      files: sourceFiles,
+      screenshots: [],
+      creativeSession: {
+        sessionId:
+          "launchloom:creative:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        reasoningEffort: "max",
+        recommendedEffort: "max",
+        mode: "enforce",
+        reasoningPolicyVersion: "adaptive-reasoning-v1",
+        selectorModelVersion: "jev-1.13.0",
+      },
+      logger: (line: string) => diagnostics.push(line),
+    });
+
+    expect(result).toEqual(repaired);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    const bodies = fetchMock.mock.calls.map((call) =>
+      JSON.parse(call[1].body as string),
+    );
+    expect(bodies.map((body) => body.reasoning.effort)).toEqual([
+      "max",
+      "max",
+      "max",
+      "max",
+    ]);
+    expect(new Set(bodies.map((body) => body.session_id))).toEqual(
+      new Set(["launchloom:creative:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]),
+    );
+    expect(bodies.map((body) => body.response_format.json_schema.name)).toEqual(
+      Array(4).fill("launchloom_creative_file_repair"),
+    );
+    expect(bodies[0].max_completion_tokens).toBe(48000);
+    expect(bodies[1].max_completion_tokens).toBe(13628);
+    expect(bodies[2].max_completion_tokens).toBe(48000);
+    expect(bodies[3].max_completion_tokens).toBe(48000);
+    const repairPrompts = bodies.map((body) =>
+      body.messages[1].content
+        .filter((part: { type: string; text?: string }) => part.type === "text")
+        .map((part: { text?: string }) => part.text || "")
+        .join("\n"),
+    );
+    expect(repairPrompts[1]).toContain("TARGET CANDIDATE FILE: experience");
+    expect(repairPrompts[2]).toContain("TARGET CANDIDATE FILE: styles");
+    expect(repairPrompts[3]).toContain("TARGET CANDIDATE FILE: motion");
+    expect(diagnostics.join(" ")).toContain(
+      "creative_repair_retry reason=provider-affordability requested_max_completion_tokens=48000 retry_max_completion_tokens=13628",
+    );
+    expect(diagnostics.join(" ")).not.toContain("from=max to=xhigh");
+  });
+
+
+  it("repairs large candidates with bounded edits inside the affordable max-effort budget", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-file-scope-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const sourceFiles = {
+      experience: "original JSX",
+      styles: `.hero { color: navy; }\n${"x".repeat(21000)}`,
+      motion: "original motion",
+      servicePage: '<main data-service-page><h1>Service</h1></main>',
+    };
+    const repaired = {
+      experience: "complete JSX",
+      styles: sourceFiles.styles.replace(
+        ".hero { color: navy; }",
+        ".hero { color: #064e3b; }",
+      ),
+      motion: "complete motion",
+      servicePage: sourceFiles.servicePage,
     };
     const patchSet = {
       edits: [
@@ -709,6 +865,55 @@ describe("creative repair loop", () => {
     expect(diagnostics.join(" ")).not.toContain("from=max to=xhigh");
   });
 
+  it("marks an empty large-repair file replacement as a retryable model-output rejection", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-empty-repair-edits-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  finish_reason: "stop",
+                  message: {
+                    content: JSON.stringify({ file: "experience", source: "" }),
+                  },
+                },
+              ],
+              usage: { prompt_tokens: 1, completion_tokens: 1 },
+            }),
+          ),
+      ),
+    );
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: ["rendered-reference: hero composition is too generic"],
+        files: {
+          experience: "old JSX",
+          styles: `body { color: navy; }\n${"x".repeat(21_000)}`,
+          motion: "old motion",
+        },
+        screenshots: [],
+      }),
+    ).rejects.toMatchObject({
+      code: "CREATIVE_REPAIR_OUTPUT_REJECTED",
+      message: expect.stringContaining("source must be non-empty"),
+    });
+  });
+
+
   it("marks an empty bounded edit set as a retryable model-output rejection", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-empty-repair-edits-"),
@@ -746,6 +951,7 @@ describe("creative repair loop", () => {
           experience: "old JSX",
           styles: `body { color: navy; }\n${"x".repeat(21_000)}`,
           motion: "old motion",
+          servicePage: '<main data-service-page><h1>Service</h1></main>',
         },
         screenshots: [],
       }),
@@ -1175,7 +1381,17 @@ describe("creative repair loop", () => {
       motion:
         "export function mountExperienceMotion(runtime) { return () => {}; }",
     };
-    const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => {
+    const repairedMotion =
+      "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }";
+    const fetchMock = vi.fn(async (_url: string, options: RequestInit) => {
+      const body = JSON.parse(options.body as string);
+      const requestText = body.messages[1].content
+        .filter((part: { type: string; text?: string }) => part.type === "text")
+        .map((part: { text?: string }) => part.text || "")
+        .join("\n");
+      const targetFile = /TARGET CANDIDATE FILE: (experience|styles|motion)/u.exec(
+        requestText,
+      )?.[1];
       return new Response(
         JSON.stringify({
           choices: [
@@ -1183,13 +1399,92 @@ describe("creative repair loop", () => {
               finish_reason: "stop",
               message: {
                 content: JSON.stringify({
-                  edits: [
-                    {
-                      file: "motion",
-                      find: "return () => {};",
-                      replace: "return () => { stop(); };",
-                    },
-                  ],
+                  file: targetFile,
+                  source:
+                    targetFile === "motion"
+                      ? repairedMotion
+                      : files[targetFile as keyof typeof files],
+                }),
+              },
+            },
+          ],
+        }),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings: [
+        {
+          category: "motion-quality",
+          message: "Slow the reveal and keep the still state legible.",
+        },
+      ],
+      files,
+      screenshots: [],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const bodies = fetchMock.mock.calls.map((call) =>
+      JSON.parse(call[1].body as string),
+    );
+    const motionPrompt = bodies[0].messages[1].content
+      .filter((part: { type: string; text?: string }) => part.type === "text")
+      .map((part: { text?: string }) => part.text || "")
+      .join("\n");
+    expect(motionPrompt).toContain("LARGE-CANDIDATE FILE-SCOPED REPAIR MODE");
+    expect(motionPrompt).toContain("TARGET CANDIDATE FILE: motion");
+    expect(motionPrompt).toContain("MOTION REPAIR CONTRACT");
+    expect(motionPrompt).toContain("Treat motion.js as behavior-only");
+    expect(motionPrompt).toContain(
+      "Keep CURRENT EXPERIENCE.JSX byte-for-byte unchanged",
+    );
+    expect(motionPrompt).toContain("runtime?.reducedMotion");
+    expect(motionPrompt).toContain(
+      'matchMedia("(prefers-reduced-motion: reduce)")',
+    );
+    expect(motionPrompt).toContain("keep a still equivalent");
+    expect(motionPrompt).toContain(
+      "Clean up listeners, observers, timelines, and timers",
+    );
+  });
+
+  it("repairs the JSX signature as well when a motion primitive mismatches its reference", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-reference-motion-repair-scope-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience: "x".repeat(21_000),
+      styles: ".hero { color: navy; }",
+      motion:
+        "export function mountExperienceMotion(runtime) { return () => {}; }",
+    };
+    const fetchMock = vi.fn(async (_url: string, options: RequestInit) => {
+      const body = JSON.parse(options.body as string);
+      const requestText = body.messages[1].content
+        .filter((part: { type: string; text?: string }) => part.type === "text")
+        .map((part: { text?: string }) => part.text || "")
+        .join("\n");
+      const targetFile = /TARGET CANDIDATE FILE: (experience|styles|motion)/u.exec(
+        requestText,
+      )?.[1];
+      return new Response(
+        JSON.stringify({
+          choices: [
+            {
+              finish_reason: "stop",
+              message: {
+                content: JSON.stringify({
+                  file: targetFile,
+                  source: files[targetFile as keyof typeof files],
                 }),
               },
             },
@@ -1215,28 +1510,17 @@ describe("creative repair loop", () => {
       screenshots: [],
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const bodies = fetchMock.mock.calls.map((call) =>
-      JSON.parse(call[1].body as string),
-    );
-    const motionPrompt = bodies[0].messages[1].content
-      .filter((part: { type: string; text?: string }) => part.type === "text")
-      .map((part: { text?: string }) => part.text || "")
-      .join("\n");
-    expect(motionPrompt).toContain("LARGE-CANDIDATE REPAIR MODE");
-    expect(motionPrompt).toContain("MOTION REPAIR CONTRACT");
-    expect(motionPrompt).toContain("Treat motion.js as behavior-only");
-    expect(motionPrompt).toContain(
-      "Keep CURRENT EXPERIENCE.JSX byte-for-byte unchanged",
-    );
-    expect(motionPrompt).toContain("runtime?.reducedMotion");
-    expect(motionPrompt).toContain(
-      'matchMedia("(prefers-reduced-motion: reduce)")',
-    );
-    expect(motionPrompt).toContain("keep a still equivalent");
-    expect(motionPrompt).toContain(
-      "Clean up listeners, observers, timelines, and timers",
-    );
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const prompts = fetchMock.mock.calls.map((call) => {
+      const body = JSON.parse(call[1].body as string);
+      return body.messages[1].content
+        .filter((part: { type: string; text?: string }) => part.type === "text")
+        .map((part: { text?: string }) => part.text || "")
+        .join("\n");
+    });
+    expect(prompts[0]).toContain("TARGET CANDIDATE FILE: experience");
+    expect(prompts[1]).toContain("TARGET CANDIDATE FILE: styles");
+    expect(prompts[2]).toContain("TARGET CANDIDATE FILE: motion");
   });
 
   it("treats sealed visitor-facing values as data and forbids hardcoding them in repairs", async () => {
@@ -1305,6 +1589,51 @@ describe("creative repair loop", () => {
     expect(prompt).toContain("content.copy.appointmentPreparation");
   });
 
+  it("rejects an empty full-file response for a large candidate", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-empty-file-repair-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience: "x".repeat(21_000),
+      styles: ".hero { color: black; }",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+    const fetchMock = vi.fn(
+      async (_url: string, _options: RequestInit) =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: {
+                  content: JSON.stringify({ file: "experience", source: "" }),
+                },
+              },
+            ],
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      requestRepair({
+        model: "test/model",
+        referenceDna: {
+          sectionSequence: repairSectionSequence,
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+        findings: [{ category: "visual", message: "Fix the hero layout." }],
+        files,
+        screenshots: [],
+      }),
+    ).rejects.toThrow(/source must be non-empty/iu);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+
   it("rejects an empty bounded-edit response for a large candidate", async () => {
     const root = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-empty-file-repair-"),
@@ -1316,6 +1645,7 @@ describe("creative repair loop", () => {
       experience: "x".repeat(21_000),
       styles: ".hero { color: black; }",
       motion: "export function mountExperienceMotion() { return () => {}; }",
+      servicePage: '<main data-service-page><h1>Service</h1></main>',
     };
     const fetchMock = vi.fn(
       async (_url: string, _options: RequestInit) =>
@@ -1607,6 +1937,76 @@ describe("creative repair loop", () => {
     expect(calls).toBe(2);
     expect(result.pass).toBe(true);
     expect(result.cyclesUsed).toBe(2);
+  });
+
+  it("applies a large candidate's model edit set before the generic repair loop evaluates it", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-large-loop-contract-"));
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience: "<main>Experience</main>",
+      styles: `main { color: inherit; }\n/*${"x".repeat(21_000)}*/`,
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+      servicePage: '<main data-service-page><h1 className="service-old">Service</h1></main>',
+    };
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({
+      choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
+        edits: [{ file: "servicePage", find: 'className="service-old"', replace: 'className="service-new"' }],
+      }) } }],
+    })));
+    const referenceDna = {
+      familyId: "test-editorial",
+      sectionSequence: repairSectionSequence,
+      evidence: { desktopScreenshot: { path: desktop } },
+    };
+    const result = await runCreativeRepairLoop({
+      files,
+      referenceDna,
+      generate: (input: any) => requestRepair({ model: "test/model", ...input, logger: () => {} }),
+      evaluate: async (candidate: any) => ({
+        pass: candidate.servicePage.includes('className="service-new"'),
+        findings: ["service-page heading class needs repair"],
+      }),
+      maxCycles: 1,
+    });
+    expect(result.pass).toBe(true);
+    expect(result.generationFailures).toBe(0);
+    expect(result.authorAttempts).toBe(1);
+    expect(result.files.servicePage).toBe(files.servicePage.replace('className="service-old"', 'className="service-new"'));
+    for (const key of ["experience", "styles", "motion"] as const)
+      expect(result.files[key]).toBe(files[key]);
+  });
+
+  it("updates authored inner pages through the repair loop and keeps unchanged pages", async () => {
+    const result = await runCreativeRepairLoop({
+      files: {
+        experience: "old",
+        styles: "old",
+        motion: "old",
+        servicePage: "service-old",
+        locationPage: "location-old",
+      },
+      referenceDna: { familyId: "test" },
+      generate: async () => ({
+        experience: "fixed",
+        styles: "fixed",
+        motion: "fixed",
+        servicePage: "service-fixed",
+        locationPage: "",
+      }),
+      evaluate: async (files: any) => ({
+        pass:
+          files.experience === "fixed" &&
+          files.servicePage === "service-fixed" &&
+          files.locationPage === "location-old",
+        findings: ["service-page desktop: heading identity drift"],
+      }),
+      maxCycles: 1,
+    });
+    expect(result.pass).toBe(true);
+    expect(result.files.servicePage).toBe("service-fixed");
+    expect(result.files.locationPage).toBe("location-old");
   });
 
   it("fails closed after the retry budget", async () => {

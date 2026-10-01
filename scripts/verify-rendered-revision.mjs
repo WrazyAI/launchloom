@@ -1,8 +1,10 @@
 import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
+import sharp from "sharp";
 import { chromium } from "playwright";
 import { contrast, parseCssColor } from "./color-contrast.mjs";
+import { revisionImageMatches } from "./revision-image-acceptance.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -96,6 +98,27 @@ if (!/^User-agent: \*/mu.test(robotsTxt))
 
 try {
   await fs.mkdir(screenshotDir, { recursive: true });
+  // The mocked review-image responses point at these files so the attachment
+  // thumbnails render with real bytes during the browser flow.
+  const mockedThumbnail = await sharp({
+    create: {
+      width: 160,
+      height: 120,
+      channels: 3,
+      background: { r: 46, g: 89, b: 71 },
+    },
+  })
+    .png()
+    .toBuffer();
+  for (const relative of [
+    "images/feedback/hero-test.png",
+    "images/feedback-drafts/test.png",
+    "images/feedback-drafts/client.png",
+  ]) {
+    const file = path.join(dist, relative);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, mockedThumbnail);
+  }
   for (const viewport of [
     { name: "desktop", width: 1440, height: 1000 },
     { name: "mobile", width: 390, height: 844 },
@@ -261,15 +284,15 @@ try {
       const sectionRoot =
         document.querySelector("[data-creative-host]") ||
         document.querySelector("main");
-      const sections = [...(sectionRoot?.querySelectorAll("section") || [])].map(
-        (element) => ({
-          id: element.id,
-          classes: element.className,
-          sectionType: element.getAttribute("data-section-type"),
-          text: element.textContent?.replace(/\s+/g, " ").trim() || "",
-          visible: visible(element),
-        }),
-      );
+      const sections = [
+        ...(sectionRoot?.querySelectorAll("section") || []),
+      ].map((element) => ({
+        id: element.id,
+        classes: element.className,
+        sectionType: element.getAttribute("data-section-type"),
+        text: element.textContent?.replace(/\s+/g, " ").trim() || "",
+        visible: visible(element),
+      }));
       const effectiveBackground = (startingElement) => {
         let current = startingElement;
         while (current) {
@@ -370,6 +393,22 @@ try {
             document.body.scrollWidth,
           ) - innerWidth,
         css: getComputedStyle(document.body).cssText,
+        pageBackground: getComputedStyle(document.body).backgroundColor,
+        creativeColors: Object.fromEntries(
+          [
+            "--ll-creative-page",
+            "--ll-creative-hero",
+            "--ll-creative-ink",
+            "--ll-creative-line",
+            "--ll-creative-primary",
+            "--ll-creative-accent",
+          ].map((variable) => [
+            variable,
+            getComputedStyle(document.documentElement)
+              .getPropertyValue(variable)
+              .trim(),
+          ]),
+        ),
         locationMap: locationMap
           ? {
               visible: visible(locationMap),
@@ -389,10 +428,39 @@ try {
             );
           })
           .map((image) => ({
-            src: image.getAttribute("src") || "",
+            src: image.currentSrc || image.src,
+            placements: (() => {
+              const labels = [];
+              for (
+                let region = image.parentElement;
+                region;
+                region = region.parentElement
+              ) {
+                labels.push(
+                  [
+                    region.tagName === "HEADER" ? "header" : "",
+                    region.id,
+                    region.className,
+                    region.getAttribute("data-reference-section"),
+                    region.getAttribute("data-section-type"),
+                    region.hasAttribute("data-hero") ? "hero" : "",
+                  ]
+                    .join(" ")
+                    .toLowerCase(),
+                );
+              }
+              return labels;
+            })(),
             naturalWidth: image.naturalWidth,
             naturalHeight: image.naturalHeight,
-            visible: visible(image),
+            visible: visible(image) && (() => {
+              for (let parent = image; parent; parent = parent.parentElement) {
+                const style = getComputedStyle(parent);
+                if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0)
+                  return false;
+              }
+              return true;
+            })(),
           })),
       };
     });
@@ -405,7 +473,9 @@ try {
         config.design?.experience?.candidateId || "",
       );
       if (!state.creativeCandidateId)
-        failures.push(`${viewport.name}: authored creative candidate is not mounted.`);
+        failures.push(
+          `${viewport.name}: authored creative candidate is not mounted.`,
+        );
       else if (
         expectedCandidate &&
         state.creativeCandidateId !== expectedCandidate
@@ -486,17 +556,34 @@ try {
           `${viewport.name}: text contrast below ${target.minimum} for ${target.text}.`,
         );
     for (const artifact of config.revisionReport?.expectedArtifacts || []) {
+      if (artifact.type === "creative-color") {
+        if (
+          state.creativeColors[artifact.variable]?.toLowerCase() !==
+          artifact.value.toLowerCase()
+        )
+          failures.push(
+            `${viewport.name}: requested ${artifact.field} is not bound to the rendered candidate.`,
+          );
+        if (
+          artifact.field === "surfaceColor" &&
+          JSON.stringify(parseCssColor(state.pageBackground).slice(0, 3)) !==
+            JSON.stringify(parseCssColor(artifact.value).slice(0, 3))
+        )
+          failures.push(
+            `${viewport.name}: requested page background is not rendered: ${artifact.value}.`,
+          );
+      }
       if (artifact.type === "text" && !state.bodyText.includes(artifact.value))
         failures.push(
           `${viewport.name}: requested text is not visible: ${artifact.value.slice(0, 70)}.`,
         );
-      if (artifact.type === "image") {
+      if (artifact.type === "image" || artifact.type === "asset") {
         const rendered = state.feedbackImages.find((image) =>
-          image.src.includes(artifact.path),
+          revisionImageMatches(image, artifact, url),
         );
-        if (!rendered || rendered.naturalWidth < 1 || !rendered.visible)
+        if (!rendered)
           failures.push(
-            `${viewport.name}: requested image is not rendered: ${artifact.path}.`,
+            `${viewport.name}: requested ${artifact.target || artifact.placement || "replacement"} image is not rendered in its requested placement: ${artifact.path || artifact.url}.`,
           );
       }
       if (
@@ -581,7 +668,7 @@ try {
         body: JSON.stringify({
           ok: true,
           target: "hero",
-          url: `${new URL(url).origin}/images/feedback/hero-test.webp`,
+          url: `${new URL(url).origin}/images/feedback/hero-test.png`,
         }),
       });
       return;
@@ -593,7 +680,7 @@ try {
         ok: true,
         model: "fal-ai/minimax/image-01",
         images: [
-          { url: `${new URL(url).origin}/images/feedback-drafts/test.webp` },
+          { url: `${new URL(url).origin}/images/feedback-drafts/test.png` },
         ],
       }),
     });
@@ -678,6 +765,12 @@ try {
       .catch(() =>
         failures.push("review: uploaded replacement image shows no preview."),
       );
+    const heroThumbWidth = await reviewRoot
+      .locator('[data-part-preview="hero"] .ll-attachment__thumb img')
+      .evaluate((image) => image.naturalWidth)
+      .catch(() => 0);
+    if (!heroThumbWidth)
+      failures.push("review: uploaded replacement thumbnail did not load.");
     await reviewRoot.locator('[data-part="colors"]').click();
     const primaryColor = reviewRoot.locator(".ll-color").first();
     await primaryColor.locator('input[type="checkbox"]').check();
@@ -751,7 +844,7 @@ try {
         ok: true,
         model: "fal-ai/minimax/image-01",
         images: [
-          { url: `${new URL(url).origin}/images/feedback-drafts/client.webp` },
+          { url: `${new URL(url).origin}/images/feedback-drafts/client.png` },
         ],
       }),
     });
@@ -769,7 +862,7 @@ try {
   if (await clientRoot.isVisible()) {
     await clientRoot.locator(".ll-feedback-open").click();
     const categorySelect = clientRoot
-      .locator('.ll-client-fields select')
+      .locator(".ll-client-fields select")
       .first();
     if (!(await categorySelect.isVisible()))
       failures.push("review: client small-change categories are missing.");
@@ -785,11 +878,20 @@ try {
       .locator('.ll-client-fields button:has-text("Create an image")')
       .click();
     await clientRoot
-      .locator(".ll-client-fields .ll-part-preview")
+      .locator(".ll-client-fields .ll-attachment__thumb img")
       .waitFor({ state: "visible", timeout: 5_000 })
       .catch(() =>
         failures.push("review: client generated image shows no preview."),
       );
+    const clientThumbWidth = await clientRoot
+      .locator(".ll-client-fields .ll-attachment__thumb img")
+      .evaluate((image) => image.naturalWidth)
+      .catch(() => 0);
+    if (!clientThumbWidth)
+      failures.push("review: client generated thumbnail did not load.");
+    await clientReviewPage.screenshot({
+      path: path.join(screenshotDir, "client-feedback-image.png"),
+    });
     await categorySelect.selectOption("color");
     if (
       !(await clientRoot

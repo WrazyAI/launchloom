@@ -124,7 +124,14 @@ authentic customer proof, recent work, coverage, practical questions, quote.
 ## Local SEO pages
 
 Create substantive service pages that answer a real customer question and link
-to related services and the primary action. Create location pages only for
+to related services and the primary action. On a creative-candidate site,
+service detail pages, location pages for listed home-service areas, and the
+services index are authored from the same Reference DNA, design contract, and
+stylesheet as the homepage, so they keep the same palette, typography,
+surfaces, navigation language, and composition rhythm; their rendered canvas
+and heading identity are verified against the homepage before promotion. The
+deterministic inner template remains only for legacy and experience-pack sites.
+Create location pages only for
 submitted service areas. Each location page must state coverage truthfully and
 provide useful local context from verified facts. Do not multiply thin pages
 by combining every service with every city or create interchangeable city-swap
@@ -217,6 +224,14 @@ a new page recipe. Explicit requested colors take precedence over a generic
 preset palette, with readable action text selected for the resulting brand
 color.
 
+For `creative-candidate` pages, section-scoped color, spacing, typography, and
+variant requests belong to the authored-source repair lane; do not treat a
+page-wide legacy palette or section-variant config change as proof that the
+creative page changed. Adding, hiding, or reordering sections is not supported
+by the current creative-source scope contract, so classify those requests for
+manual attention without mutating the section configuration. Extend this only
+alongside a scoped source operation and rendered acceptance test.
+
 Revision acceptance checks both the built HTML and a real browser render at
 desktop and mobile widths. The requested section, order, variant, treatment,
 copy, and colors must be visible; calls and fragment links must work; primary
@@ -286,3 +301,16 @@ Replacement images are reviewer-supplied assets:
 - Requested revision artifacts are visible in the rendered page.
 - Desktop and mobile layouts are readable and free of horizontal overflow.
 - Rendered output contains no em dashes or placeholder values.
+
+### Uploaded image revisions
+
+An explicit uploaded replacement for a named image slot is a deterministic asset
+change. Phrases such as “change the hero image to the one I uploaded” must not
+trigger copy rewriting, a page redesign, or another candidate bakeoff. Preserve
+the selected authored source, other images, business facts, copy, and services.
+Additional composition or copy requests remain separate bounded operations.
+
+A successful revision must show the exact replacement as a loaded, visible
+image in its requested placement on desktop and mobile. Serialized props,
+attachment thumbnails, hidden images, or use in another section are insufficient.
+Do not send a completion email until these rendered checks pass.

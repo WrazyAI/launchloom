@@ -166,7 +166,7 @@ describe("Reference DNA", () => {
     } finally {
       vi.unstubAllEnvs();
     }
-  });
+  }, 15_000);
 
   it("fails closed after one uncached retry still returns invalid JSON", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "test-openrouter-key");

@@ -1,8 +1,11 @@
 ---
 import site from "../lib/site";
+import { seoResearchReadiness } from "../lib/seo-readiness.mjs";
 
 const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$/, "");
-const publishReady = !site.seoResearch || site.seoResearch.publishReady;
+const research = seoResearchReadiness(site);
+const publishReady = research.allowed;
+const webResearchComplete = research.allowed && research.mode === "context-only";
 const palette = {
   primary: site.style?.primaryColor || "",
   surface: site.style?.surfaceColor || "",
@@ -17,6 +20,7 @@ const { diagnosticPreview = false } = Astro.props;
 <aside class:list={["ll-review", diagnosticPreview && "ll-review--diagnostic"]} id="ll-review" data-diagnostic-preview={diagnosticPreview ? "true" : undefined} hidden aria-label="LaunchLoom website review">
   <div class="ll-review__bar">
     <p class="ll-review__summary"><span aria-hidden="true">▣</span> Review this website</p>
+    <p class="ll-review__research-notice" role="status" hidden></p>
     <p class="ll-review__field-notice" role="status" hidden></p>
     <div class="ll-review__actions">
       <button class="ll-approve" type="button" hidden>✓ Approve &amp; send to client</button>
@@ -109,60 +113,157 @@ const { diagnosticPreview = false } = Astro.props;
 </style>
 
 <style is:global>
+  /* The base modal width lives in the client stylesheet; override here so the
+     refreshed component carries the wider layout into every review build. */
+  .ll-review__bar {
+    flex-wrap: wrap;
+  }
+
+  .ll-review__research-notice {
+    border-left: 3px solid #a66b16;
+    padding: 6px 10px;
+    background: #fff4db;
+    color: #5b3d13;
+    font-size: 0.78rem;
+    line-height: 1.4;
+    max-width: min(440px, 100%);
+    min-width: 0;
+  }
+
+  .ll-review__modal .ll-review__dialog {
+    width: min(800px, 100%);
+    padding: clamp(22px, 3vw, 34px);
+  }
+
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .ll-parts {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin: 0 0 16px;
+    gap: 9px;
+    margin: 0 0 18px;
   }
 
   .ll-part-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 40px;
     border: 1px solid #cfd8cf;
     border-radius: 999px;
-    padding: 8px 13px;
-    background: transparent;
-    color: #40594e;
+    padding: 8px 15px;
+    background: #fff;
+    color: #38544a;
     font: inherit;
     font-size: 0.8rem;
     font-weight: 650;
     cursor: pointer;
+    transition:
+      border-color 120ms ease,
+      background 120ms ease,
+      color 120ms ease;
   }
 
-  .ll-part-chip[aria-pressed="true"] {
-    border-color: #367a65;
-    background: #eff7ee;
+  .ll-part-chip:hover {
+    border-color: #7fa891;
     color: #1e5b47;
   }
 
+  .ll-part-chip[aria-pressed="true"] {
+    border-color: #2f6b53;
+    background: #e9f4ec;
+    color: #17503b;
+    box-shadow: inset 0 0 0 1px #2f6b53;
+  }
+
+  .ll-part-chip__mark {
+    display: grid;
+    place-items: center;
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid #b9c8bd;
+    border-radius: 50%;
+    background: #eef4ee;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .ll-part-chip__mark::after {
+    content: "✓";
+    opacity: 0;
+  }
+
+  .ll-part-chip[aria-pressed="true"] .ll-part-chip__mark {
+    border-color: #2f6b53;
+    background: #2f6b53;
+  }
+
+  .ll-part-chip[aria-pressed="true"] .ll-part-chip__mark::after {
+    opacity: 1;
+  }
+
   .ll-part {
-    margin: 0 0 14px;
-    padding: 14px;
-    border: 1px solid #d9e2da;
-    border-radius: 12px;
+    margin: 0 0 16px;
+    padding: 18px;
+    border: 1px solid #dce5dd;
+    border-radius: 14px;
     background: #fbfdfb;
   }
 
-  .ll-part h3 {
-    margin: 0 0 8px;
+  .ll-part__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .ll-part h3,
+  .ll-client-fields h3 {
+    margin: 0;
     font-size: 0.95rem;
+    color: #1f3d33;
+  }
+
+  .ll-part__off {
+    border: 0;
+    padding: 2px 0;
+    background: none;
+    color: #75867c;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  .ll-part__off:hover {
+    color: #8f2118;
   }
 
   .ll-part label,
   .ll-client-fields label {
     display: block;
     margin-top: 10px;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 650;
     color: #304c43;
   }
 
-  .ll-part textarea,
   .ll-part input[type="file"],
-  .ll-part input[type="email"],
-  .ll-client-fields textarea,
-  .ll-client-fields input[type="file"],
-  .ll-client-fields input[type="email"],
-  .ll-client-fields select {
+  .ll-client-fields input[type="file"] {
     width: 100%;
     margin-top: 5px;
   }
@@ -170,6 +271,8 @@ const { diagnosticPreview = false } = Astro.props;
   .ll-part textarea,
   .ll-client-fields textarea,
   .ll-client-fields select {
+    width: 100%;
+    margin-top: 5px;
     font: inherit;
     font-weight: 400;
     padding: 8px 10px;
@@ -178,53 +281,205 @@ const { diagnosticPreview = false } = Astro.props;
     resize: vertical;
   }
 
-  .ll-part textarea,
-  .ll-client-fields textarea {
-    min-height: 58px;
+  .ll-part input[type="email"],
+  .ll-client-fields input[type="email"] {
+    width: 100%;
+    margin-top: 5px;
   }
 
-  .ll-part-preview {
+  .ll-part textarea,
+  .ll-client-fields textarea {
+    min-height: 76px;
+  }
+
+  .ll-part__choices {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+  }
+
+  .ll-choice {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 10px;
-    padding: 8px;
-    border: 1px solid #d9e2da;
-    border-radius: 10px;
+    flex-direction: column;
+    gap: 9px;
+    padding: 14px;
+    border: 1px solid #e0e8e1;
+    border-radius: 12px;
     background: #fff;
   }
 
-  .ll-part-preview img {
-    width: 84px;
-    height: 62px;
-    border-radius: 6px;
-    object-fit: cover;
-    background: #eef2ee;
+  .ll-choice__title {
+    font-size: 0.83rem;
+    font-weight: 750;
+    color: #24443a;
   }
 
-  .ll-part-preview strong {
-    display: block;
+  .ll-choice__hint {
+    font-size: 0.74rem;
+    color: #68766f;
+  }
+
+  .ll-choice__file {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    margin-top: auto;
+    padding: 11px 14px;
+    border: 1.5px dashed #b9cdbd;
+    border-radius: 10px;
+    background: #f6faf6;
+    color: #1e5b47;
     font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
   }
 
-  .ll-part-clear {
-    margin-top: 4px;
+  .ll-choice__file:hover {
+    border-color: #2f6b53;
+    background: #eef6ef;
+  }
+
+  .ll-choice__file:focus-within {
+    outline: 2px solid #2f6b53;
+    outline-offset: 2px;
+  }
+
+  .ll-choice__file input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .ll-choice label {
+    margin-top: 0;
+  }
+
+  .ll-choice .ll-generate {
+    margin-top: auto;
+    align-self: flex-start;
+  }
+
+  .ll-attachment {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin: 12px 0 0;
+    padding: 9px;
+    border: 1px solid #dce5dd;
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .ll-attachment__thumb {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 120px;
+    height: 90px;
+    border: 1px solid #e6ece6;
+    border-radius: 9px;
+    overflow: hidden;
+    background:
+      repeating-conic-gradient(#f0f3f0 0% 25%, #ffffff 0% 50%) 50% / 16px 16px;
+  }
+
+  .ll-attachment__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .ll-attachment__fallback {
+    padding: 4px;
+    color: #8a978f;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .ll-attachment__meta {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .ll-attachment__badge {
+    justify-self: start;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #e9f4ec;
+    color: #1e5b47;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .ll-attachment__name {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #33473f;
+    font-size: 0.85rem;
+    font-weight: 600;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .ll-attachment__remove {
+    justify-self: start;
+    margin-top: 2px;
     border: 0;
     padding: 0;
     background: none;
     color: #8f2118;
     font: inherit;
-    font-size: 0.76rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-decoration: underline;
     cursor: pointer;
   }
 
+  .ll-attachment--busy {
+    border-style: dashed;
+  }
+
+  .ll-attachment__thumb--skeleton {
+    background: linear-gradient(100deg, #eef2ee 30%, #f7faf7 50%, #eef2ee 70%);
+    background-size: 200% 100%;
+    animation: ll-shimmer 1.2s linear infinite;
+  }
+
+  @keyframes ll-shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
   .ll-part-status {
-    margin: 8px 0 0;
-    font-size: 0.76rem;
+    margin: 9px 0 0;
+    font-size: 0.78rem;
     font-weight: 550;
     color: #52645b;
+  }
+
+  .ll-part-status.is-success {
+    color: #1e5b47;
+  }
+
+  .ll-part-status.is-error {
+    color: #9a3412;
   }
 
   .ll-generate {
@@ -235,7 +490,7 @@ const { diagnosticPreview = false } = Astro.props;
     background: #eff7ee;
     color: #1e5b47;
     font: inherit;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 700;
     cursor: pointer;
   }
@@ -252,6 +507,12 @@ const { diagnosticPreview = false } = Astro.props;
     font-weight: 600 !important;
   }
 
+  .ll-toggle input {
+    width: 15px;
+    height: 15px;
+    accent-color: #2f6b53;
+  }
+
   .ll-colors {
     display: grid;
     gap: 8px;
@@ -264,13 +525,39 @@ const { diagnosticPreview = false } = Astro.props;
     grid-template-columns: auto 1fr auto auto;
     align-items: center;
     gap: 9px;
-    font-size: 0.8rem;
+    padding: 7px 9px;
+    border: 1px solid #e4ebe4;
+    border-radius: 9px;
+    background: #fff;
+    font-size: 0.78rem;
     font-weight: 600;
     color: #304c43;
   }
 
+  .ll-color input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: #2f6b53;
+  }
+
+  .ll-color input[type="color"] {
+    width: 34px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid #cfd8cf;
+    border-radius: 7px;
+    background: none;
+    cursor: pointer;
+  }
+
+  .ll-color input[type="color"]:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
   .ll-color code {
-    font-size: 0.72rem;
+    justify-self: end;
+    font-size: 0.7rem;
     color: #68766f;
   }
 
@@ -281,7 +568,7 @@ const { diagnosticPreview = false } = Astro.props;
     background: none;
     color: #1e5b47;
     font: inherit;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     font-weight: 700;
     text-decoration: underline;
     cursor: pointer;
@@ -296,13 +583,29 @@ const { diagnosticPreview = false } = Astro.props;
   .ll-part-sections[hidden],
   .ll-client-fields[hidden],
   .ll-part[hidden],
-  .ll-part-preview[hidden],
+  .ll-attachment[hidden],
   .ll-client-fields [hidden] {
     display: none !important;
   }
+
+  @media (max-width: 620px) {
+    .ll-review__research-notice {
+      flex: 1 1 100%;
+    }
+
+    .ll-part__choices {
+      grid-template-columns: 1fr;
+    }
+
+    .ll-review__modal .ll-review__dialog {
+      width: 100%;
+      padding: 20px 16px;
+    }
+  }
+
 </style>
 
-<script is:inline define:vars={{ launchloomUrl, publishReady, palette }}>
+<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, palette }}>
   const root = document.querySelector("#ll-review");
   const diagnosticPreview = root?.getAttribute("data-diagnostic-preview") === "true";
   const token = new URLSearchParams(window.location.search).get("review");
@@ -405,15 +708,26 @@ const { diagnosticPreview = false } = Astro.props;
     let clientGenerateButton = null;
     let clientPreview = null;
     let clientPreviewImage = null;
-    let clientPreviewLabel = null;
+    let clientPreviewBadge = null;
+    let clientPreviewName = null;
+    let clientPreviewFallback = null;
+    let clientBusyCard = null;
     let clientStatus = null;
     let clientPreviewUrl = "";
     let clientColorSection = null;
+    let clientGenerating = false;
 
     function setClientImageVisibility() {
       const imageCategory = clientCategory === "logo" || clientCategory === "photos";
       if (clientImageHost) clientImageHost.hidden = !imageCategory;
       if (clientColorSection) clientColorSection.hidden = clientCategory !== "color";
+    }
+
+    function setClientStatus(text, error = false) {
+      if (!clientStatus) return;
+      clientStatus.textContent = text;
+      clientStatus.classList.toggle("is-error", Boolean(error));
+      clientStatus.classList.toggle("is-success", Boolean(text) && !error);
     }
 
     function renderClientColors() {
@@ -474,20 +788,34 @@ const { diagnosticPreview = false } = Astro.props;
     function renderClientPreview() {
       if (!clientPreview) return;
       const chosen = Boolean(clientGenerated || clientFile);
-      clientPreview.hidden = !chosen;
+      clientPreview.hidden = !chosen || clientGenerating;
+      if (clientBusyCard) clientBusyCard.hidden = !(clientGenerating && !chosen);
       if (clientPreviewUrl) {
         URL.revokeObjectURL(clientPreviewUrl);
         clientPreviewUrl = "";
       }
       if (!chosen) return;
-      if (clientGenerated) {
-        clientPreviewImage.src = clientGenerated.url;
-        clientPreviewLabel.textContent = "Your new image is selected";
-        return;
+      let src = "";
+      if (clientGenerated) src = clientGenerated.url;
+      else {
+        clientPreviewUrl = URL.createObjectURL(clientFile);
+        src = clientPreviewUrl;
       }
-      clientPreviewUrl = URL.createObjectURL(clientFile);
-      clientPreviewImage.src = clientPreviewUrl;
-      clientPreviewLabel.textContent = `Uploaded image selected (${clientFile?.name || "file"})`;
+      if (clientPreviewImage.getAttribute("src") !== src) {
+        clientPreviewImage.hidden = false;
+        clientPreviewFallback.hidden = true;
+        clientPreviewImage.onerror = () => {
+          clientPreviewImage.hidden = true;
+          clientPreviewFallback.hidden = false;
+        };
+        clientPreviewImage.src = src;
+      }
+      clientPreviewBadge.textContent = clientGenerated
+        ? "Created for you"
+        : "Your photo";
+      clientPreviewName.textContent = clientGenerated
+        ? clientGenerated.prompt || ""
+        : clientFile?.name || "";
     }
 
     function buildClientForm() {
@@ -512,20 +840,40 @@ const { diagnosticPreview = false } = Astro.props;
 
       clientImageHost = document.createElement("div");
       clientImageHost.hidden = true;
+      const imageHead = document.createElement("header");
+      imageHead.className = "ll-part__head";
+      const imageHeading = document.createElement("h3");
+      imageHeading.textContent = "Which image?";
+      imageHead.append(imageHeading);
       const targetLabel = document.createElement("label");
-      targetLabel.textContent = "Which image?";
+      targetLabel.textContent = "Choose the image to replace";
       clientTargetSelect = document.createElement("select");
       targetLabel.append(clientTargetSelect);
+      const choices = document.createElement("div");
+      choices.className = "ll-part__choices";
+      const uploadChoice = document.createElement("div");
+      uploadChoice.className = "ll-choice";
+      const uploadTitle = document.createElement("span");
+      uploadTitle.className = "ll-choice__title";
+      uploadTitle.textContent = "Use your own photo";
+      const uploadHint = document.createElement("span");
+      uploadHint.className = "ll-choice__hint";
+      uploadHint.textContent = "PNG, JPG, or WebP up to 8 MB";
       const fileLabel = document.createElement("label");
-      fileLabel.textContent = "Upload your own image";
+      fileLabel.className = "ll-choice__file";
       clientFileInput = document.createElement("input");
       clientFileInput.type = "file";
       clientFileInput.accept = "image/png,image/jpeg,image/webp";
-      fileLabel.append(clientFileInput);
-      const fileNote = document.createElement("small");
-      fileNote.textContent = "PNG, JPEG, or WebP under 8 MB.";
+      const fileLabelText = document.createElement("span");
+      fileLabelText.textContent = "Choose a file";
+      fileLabel.append(clientFileInput, fileLabelText);
+      uploadChoice.append(uploadTitle, uploadHint, fileLabel);
+      const generateChoice = document.createElement("div");
+      generateChoice.className = "ll-choice ll-choice--generate";
+      const generateTitle = document.createElement("span");
+      generateTitle.className = "ll-choice__title";
+      generateTitle.textContent = "Or create one for me";
       const promptLabel = document.createElement("label");
-      promptLabel.textContent = "Or describe an image to generate";
       clientPrompt = document.createElement("textarea");
       clientPrompt.maxLength = 500;
       clientPrompt.placeholder = "For example: a warm photo of the finished work, no text.";
@@ -534,28 +882,55 @@ const { diagnosticPreview = false } = Astro.props;
       clientGenerateButton.type = "button";
       clientGenerateButton.className = "ll-generate";
       clientGenerateButton.textContent = "Create an image";
-      clientPreview = document.createElement("div");
-      clientPreview.className = "ll-part-preview";
+      generateChoice.append(generateTitle, promptLabel, clientGenerateButton);
+      choices.append(uploadChoice, generateChoice);
+      clientBusyCard = document.createElement("div");
+      clientBusyCard.className = "ll-attachment ll-attachment--busy";
+      clientBusyCard.hidden = true;
+      const busyThumb = document.createElement("span");
+      busyThumb.className = "ll-attachment__thumb ll-attachment__thumb--skeleton";
+      const busyMeta = document.createElement("div");
+      busyMeta.className = "ll-attachment__meta";
+      const busyBadge = document.createElement("span");
+      busyBadge.className = "ll-attachment__badge";
+      busyBadge.textContent = "Working…";
+      const busyName = document.createElement("span");
+      busyName.className = "ll-attachment__name";
+      busyName.textContent = "This can take a moment.";
+      busyMeta.append(busyBadge, busyName);
+      clientBusyCard.append(busyThumb, busyMeta);
+      clientPreview = document.createElement("figure");
+      clientPreview.className = "ll-attachment";
       clientPreview.hidden = true;
+      const previewThumb = document.createElement("span");
+      previewThumb.className = "ll-attachment__thumb";
       clientPreviewImage = document.createElement("img");
       clientPreviewImage.alt = "Selected image";
-      const previewCopy = document.createElement("div");
-      clientPreviewLabel = document.createElement("strong");
+      clientPreviewFallback = document.createElement("span");
+      clientPreviewFallback.className = "ll-attachment__fallback";
+      clientPreviewFallback.hidden = true;
+      clientPreviewFallback.textContent = "No preview";
+      previewThumb.append(clientPreviewImage, clientPreviewFallback);
+      const previewMeta = document.createElement("figcaption");
+      previewMeta.className = "ll-attachment__meta";
+      clientPreviewBadge = document.createElement("span");
+      clientPreviewBadge.className = "ll-attachment__badge";
+      clientPreviewName = document.createElement("span");
+      clientPreviewName.className = "ll-attachment__name";
       const removePreview = document.createElement("button");
       removePreview.type = "button";
-      removePreview.className = "ll-part-clear";
-      removePreview.textContent = "Remove image";
-      previewCopy.append(clientPreviewLabel, removePreview);
-      clientPreview.append(clientPreviewImage, previewCopy);
+      removePreview.className = "ll-attachment__remove";
+      removePreview.textContent = "Remove";
+      previewMeta.append(clientPreviewBadge, clientPreviewName, removePreview);
+      clientPreview.append(previewThumb, previewMeta);
       clientStatus = document.createElement("p");
       clientStatus.className = "ll-part-status";
       clientStatus.setAttribute("role", "status");
       clientImageHost.append(
+        imageHead,
         targetLabel,
-        fileLabel,
-        fileNote,
-        promptLabel,
-        clientGenerateButton,
+        choices,
+        clientBusyCard,
         clientPreview,
         clientStatus,
       );
@@ -580,7 +955,7 @@ const { diagnosticPreview = false } = Astro.props;
         clientGenerated = null;
         clientPrompt.value = "";
         if (clientFileInput) clientFileInput.value = "";
-        clientStatus.textContent = "";
+        setClientStatus("");
         commentInput.placeholder =
           clientCategory === "text"
             ? 'Quote the exact text and replacement, for example: Replace text "Same day service" with "Prompt scheduling".'
@@ -593,14 +968,14 @@ const { diagnosticPreview = false } = Astro.props;
       clientTargetSelect.addEventListener("change", () => {
         clientTarget = clientTargetSelect.value;
         clientGenerated = null;
-        clientStatus.textContent = "";
+        setClientStatus("");
         renderClientPreview();
         updateDraftHint();
       });
       clientFileInput.addEventListener("change", () => {
         clientFile = clientFileInput.files?.[0] || null;
         if (clientFile) clientGenerated = null;
-        clientStatus.textContent = "";
+        setClientStatus("");
         renderClientPreview();
         updateDraftHint();
       });
@@ -609,17 +984,18 @@ const { diagnosticPreview = false } = Astro.props;
         if (!submittedEmail) {
           emailInput.setCustomValidity("Enter the review email before generating an image.");
           emailInput.reportValidity();
-          clientStatus.textContent = "Enter the review email before generating an image.";
+          setClientStatus("Enter the review email before generating an image.", true);
           return;
         }
         emailInput.setCustomValidity("");
         const prompt = String(clientPrompt.value || "").trim();
         if (prompt.length < 3) {
-          clientStatus.textContent = "Describe the image first.";
+          setClientStatus("Describe the image first.", true);
           return;
         }
         clientGenerateButton.disabled = true;
-        clientStatus.textContent = "Creating an image…";
+        clientGenerating = true;
+        setClientStatus("Creating an image…");
         try {
           const response = await fetch(`${launchloomUrl}/api/feedback-image`, {
             method: "POST",
@@ -632,10 +1008,11 @@ const { diagnosticPreview = false } = Astro.props;
           clientGenerated = { url, prompt, model: result.model || "" };
           clientFile = null;
           if (clientFileInput) clientFileInput.value = "";
-          clientStatus.textContent = "Created. Use this image, or create another.";
+          setClientStatus("Created. Use this image, or create another.");
         } catch (error) {
-          clientStatus.textContent = error instanceof Error ? error.message : "We could not create the image.";
+          setClientStatus(error instanceof Error ? error.message : "We could not create the image.", true);
         } finally {
+          clientGenerating = false;
           clientGenerateButton.disabled = false;
           renderClientPreview();
           updateDraftHint();
@@ -645,7 +1022,7 @@ const { diagnosticPreview = false } = Astro.props;
         clientGenerated = null;
         clientFile = null;
         if (clientFileInput) clientFileInput.value = "";
-        clientStatus.textContent = "";
+        setClientStatus("");
         renderClientPreview();
         updateDraftHint();
       });
@@ -776,21 +1153,41 @@ const { diagnosticPreview = false } = Astro.props;
 
     const statusFor = (id) => root.querySelector(`[data-part-status="${id}"]`);
     const sectionFor = (id) => root.querySelector(`[data-part-section="${id}"]`);
-    const setStatus = (id, text) => {
+    const setStatus = (id, text, error = false) => {
       const target = statusFor(id);
-      if (target) target.textContent = text;
+      if (!target) return;
+      target.textContent = text;
+      target.classList.toggle("is-error", Boolean(error));
+      target.classList.toggle("is-success", Boolean(text) && !error);
     };
     const renderPreview = (id) => {
-      const preview = root.querySelector(`[data-part-preview="${id}"]`);
-      if (!preview) return;
       const draft = drafts[id];
+      const preview = root.querySelector(`[data-part-preview="${id}"]`);
+      const busy = root.querySelector(`[data-part-busy="${id}"]`);
       const chosen = draft.generated || draft.upload;
+      if (busy) busy.hidden = !(draft.busy && !chosen);
+      if (!preview) return;
       preview.toggleAttribute("hidden", !chosen);
       if (!chosen) return;
-      preview.querySelector("img").src = chosen.url;
-      preview.querySelector("[data-part-preview-label]").textContent = draft.generated
-        ? "Your new image is selected"
-        : "Your uploaded image is selected";
+      const image = preview.querySelector("img");
+      const fallback = preview.querySelector(".ll-attachment__fallback");
+      if (image && fallback && image.getAttribute("src") !== chosen.url) {
+        image.hidden = false;
+        fallback.hidden = true;
+        image.onerror = () => {
+          image.hidden = true;
+          fallback.hidden = false;
+        };
+        image.src = chosen.url;
+      }
+      const badge = preview.querySelector("[data-part-preview-badge]");
+      if (badge)
+        badge.textContent = draft.generated ? "Created for you" : "Your image";
+      const name = preview.querySelector("[data-part-preview-name]");
+      if (name)
+        name.textContent = draft.generated
+          ? draft.generated.prompt || ""
+          : draft.upload?.name || "";
     };
 
     function buildDeveloperForm() {
@@ -802,7 +1199,10 @@ const { diagnosticPreview = false } = Astro.props;
         button.className = "ll-part-chip";
         button.dataset.part = id;
         button.setAttribute("aria-pressed", "false");
-        button.textContent = label;
+        const mark = document.createElement("span");
+        mark.className = "ll-part-chip__mark";
+        mark.setAttribute("aria-hidden", "true");
+        button.append(mark, label);
         button.addEventListener("click", () => {
           if (selectedParts.has(id)) {
             selectedParts.delete(id);
@@ -864,11 +1264,13 @@ const { diagnosticPreview = false } = Astro.props;
           drafts[id].upload = { url: result.url, name: file.name };
           drafts[id].generated = undefined;
           drafts[id].status = "Uploaded. It will replace this image in the next update.";
+          drafts[id].error = false;
         } catch (error) {
           drafts[id].status = error instanceof Error ? error.message : "We could not upload the image.";
+          drafts[id].error = true;
         } finally {
           drafts[id].busy = false;
-          setStatus(id, drafts[id].status);
+          setStatus(id, drafts[id].status, drafts[id].error);
           renderPreview(id);
           updateDraftHint();
         }
@@ -887,12 +1289,14 @@ const { diagnosticPreview = false } = Astro.props;
         const prompt = String(promptInput?.value || "").trim();
         if (prompt.length < 3) {
           drafts[id].status = "Describe the image first.";
-          setStatus(id, drafts[id].status);
+          drafts[id].error = true;
+          setStatus(id, drafts[id].status, true);
           return;
         }
         drafts[id].busy = true;
         drafts[id].status = "Creating an image…";
-        setStatus(id, drafts[id].status);
+        setStatus(id, drafts[id].status, false);
+        renderPreview(id);
         try {
           const response = await fetch(`${launchloomUrl}/api/feedback-image`, {
             method: "POST",
@@ -905,11 +1309,13 @@ const { diagnosticPreview = false } = Astro.props;
           drafts[id].generated = { url, prompt, model: result.model || "" };
           drafts[id].upload = undefined;
           drafts[id].status = "Created. Use this image, or create another.";
+          drafts[id].error = false;
         } catch (error) {
           drafts[id].status = error instanceof Error ? error.message : "We could not create the image.";
+          drafts[id].error = true;
         } finally {
           drafts[id].busy = false;
-          setStatus(id, drafts[id].status);
+          setStatus(id, drafts[id].status, drafts[id].error);
           renderPreview(id);
           updateDraftHint();
         }
@@ -920,13 +1326,26 @@ const { diagnosticPreview = false } = Astro.props;
         section.className = "ll-part";
         section.dataset.partSection = part.id;
         section.hidden = true;
-        section.innerHTML = `<h3>${part.label}</h3>
-<label>Note (optional)<textarea data-part-note="${part.id}" maxlength="2000" placeholder="Anything else about this image?"></textarea></label>
-<label>Upload your own image<input type="file" accept="image/png,image/jpeg,image/webp" data-part-file="${part.id}"></label>
-<label>${part.prompt}<textarea data-part-prompt="${part.id}" maxlength="500" placeholder="For example: a calm, warm photo of the work in progress, no text."></textarea></label>
-<button type="button" class="ll-generate" data-part-generate="${part.id}">Create an image</button>
-<div class="ll-part-preview" data-part-preview="${part.id}" hidden><img alt="" /><div><strong data-part-preview-label></strong><button type="button" class="ll-part-clear" data-part-clear="${part.id}">Remove image</button></div></div>
-<p class="ll-part-status" data-part-status="${part.id}" role="status"></p>`;
+        section.innerHTML = `<header class="ll-part__head"><h3>${part.label}</h3><button type="button" class="ll-part__off" data-part-off="${part.id}">Turn off</button></header>
+<div class="ll-part__choices">
+  <div class="ll-choice">
+    <span class="ll-choice__title">Use your own image</span>
+    <span class="ll-choice__hint">PNG, JPG, or WebP up to 3 MB</span>
+    <label class="ll-choice__file"><input type="file" accept="image/png,image/jpeg,image/webp" data-part-file="${part.id}"><span>Choose a file</span></label>
+  </div>
+  <div class="ll-choice ll-choice--generate">
+    <span class="ll-choice__title">Or create one for me</span>
+    <label><span class="visually-hidden">${part.prompt}</span><textarea data-part-prompt="${part.id}" maxlength="500" placeholder="For example: a calm, warm photo of the work in progress, no text."></textarea></label>
+    <button type="button" class="ll-generate" data-part-generate="${part.id}">Create an image</button>
+  </div>
+</div>
+<div class="ll-attachment ll-attachment--busy" data-part-busy="${part.id}" hidden><span class="ll-attachment__thumb ll-attachment__thumb--skeleton"></span><div class="ll-attachment__meta"><span class="ll-attachment__badge">Working…</span><span class="ll-attachment__name">This can take a moment.</span></div></div>
+<figure class="ll-attachment" data-part-preview="${part.id}" hidden><span class="ll-attachment__thumb"><img alt="" /><span class="ll-attachment__fallback" hidden>No preview</span></span><figcaption class="ll-attachment__meta"><span class="ll-attachment__badge" data-part-preview-badge></span><span class="ll-attachment__name" data-part-preview-name></span><button type="button" class="ll-attachment__remove" data-part-clear="${part.id}">Remove</button></figcaption></figure>
+<p class="ll-part-status" data-part-status="${part.id}" role="status"></p>
+<label>Note (optional)<textarea data-part-note="${part.id}" maxlength="2000" placeholder="Anything else about this image?"></textarea></label>`;
+        section.querySelector(`[data-part-off="${part.id}"]`).addEventListener("click", () => {
+          root.querySelector(`[data-part="${part.id}"]`)?.click();
+        });
         const note = section.querySelector(`[data-part-note="${part.id}"]`);
         note.addEventListener("input", () => {
           notes[part.id] = note.value;
@@ -948,6 +1367,7 @@ const { diagnosticPreview = false } = Astro.props;
           drafts[part.id].upload = undefined;
           drafts[part.id].generated = undefined;
           drafts[part.id].status = "";
+          drafts[part.id].error = false;
           setStatus(part.id, "");
           renderPreview(part.id);
           updateDraftHint();
@@ -961,7 +1381,10 @@ const { diagnosticPreview = false } = Astro.props;
         section.className = "ll-part";
         section.dataset.partSection = part.id;
         section.hidden = true;
-        section.innerHTML = `<h3>${part.label}</h3>`;
+        section.innerHTML = `<header class="ll-part__head"><h3>${part.label}</h3><button type="button" class="ll-part__off" data-part-off="${part.id}">Turn off</button></header>`;
+        section.querySelector(`[data-part-off="${part.id}"]`).addEventListener("click", () => {
+          root.querySelector(`[data-part="${part.id}"]`)?.click();
+        });
         if (part.id === "navigation") {
           const toggle = document.createElement("label");
           toggle.className = "ll-toggle";
@@ -990,7 +1413,7 @@ const { diagnosticPreview = false } = Astro.props;
         section.className = "ll-part";
         section.dataset.partSection = "colors";
         section.hidden = true;
-        section.innerHTML = `<h3>Colors</h3><p class="ll-part-status">Pick the colors you like. We will adjust the rest so text stays easy to read.</p><div class="ll-colors"></div><button type="button" class="ll-advanced">More color options</button>`;
+        section.innerHTML = `<header class="ll-part__head"><h3>Colors</h3></header><p class="ll-part-status">Pick the colors you like. We will adjust the rest so text stays easy to read.</p><div class="ll-colors"></div><button type="button" class="ll-advanced">More color options</button>`;
         const host = section.querySelector(".ll-colors");
         const renderRoles = () => {
           host.innerHTML = "";
@@ -1184,6 +1607,12 @@ const { diagnosticPreview = false } = Astro.props;
         ? 'Quote the exact text and replacement, for example: Replace text "Same day service" with "Prompt scheduling".'
         : "Tell us what you would like changed. Bigger redesigns are handled separately.";
     approve.toggleAttribute("hidden", !developer);
+    if (developer && webResearchComplete) {
+      const researchNotice = root.querySelector(".ll-review__research-notice");
+      researchNotice.hidden = false;
+      researchNotice.textContent = "Web research complete. Measured SEO data unavailable. Developer approval is available.";
+      root.dataset.researchMode = "web-researched";
+    }
     if (diagnosticReview) {
       approve.setAttribute("hidden", "");
       fieldNotice.textContent = "No client release happens unless you confirm the not-recommended action.";

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "source": "LaunchLoom main 849ca939cef734fc19114dba1746669470cdb1f3; exact generated template bytes before creative palette bindings",
+  "files": {
+    "src/lib/site.ts": [
+      "5ef2cba26110bbc8ca3c0d2e6ee49d33751dfa2ce7a62622392b11d4ba4775a1"
+    ],
+    "src/components/CreativeExperience.astro": [
+      "b5db51a1854afee5c2a7f22b55479ae48b691b56d702439aeed95504ef1d10af"
+    ]
+  }
+}

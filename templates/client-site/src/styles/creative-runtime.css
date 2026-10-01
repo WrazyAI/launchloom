@@ -77,6 +77,58 @@
   gap: 0.75rem 1rem;
 }
 
+.launchloom-location-compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.85rem;
+  font-size: 0.875rem;
+}
+
+.launchloom-location-map {
+  display: grid;
+  grid-template-columns: minmax(13rem, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(1.25rem, 4vw, 3rem);
+  align-items: stretch;
+}
+
+.launchloom-location-map-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.launchloom-location-map-copy address {
+  font-style: normal;
+}
+
+.launchloom-location-map-frame {
+  min-height: 18rem;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.launchloom-location-map-frame iframe {
+  display: block;
+  width: 100%;
+  min-height: 18rem;
+  height: 100%;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .launchloom-location-map {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .launchloom-location-map-frame,
+  .launchloom-location-map-frame iframe {
+    min-height: 15rem;
+  }
+}
+
 .launchloom-chat-launcher {
   position: fixed;
   right: 1rem;

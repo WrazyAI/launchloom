@@ -22,6 +22,7 @@ import {
 } from "./rendered-reference-fidelity.mjs";
 import {
   countRecentCreativeFamilyUses,
+  launchesForSiteConfig,
   readLaunchHistory,
 } from "./launch-history.mjs";
 
@@ -176,7 +177,19 @@ async function inspect(page) {
     const text = [document.title, document.body.innerText].join("\n");
     const anchors = [...document.querySelectorAll("nav a")];
     const requiredTargets = ["#services", "#faqs", "#contact"];
+    const identityHeading = root?.querySelector("h1") || document.querySelector("h1");
+    const identityHeadingStyle = identityHeading
+      ? window.getComputedStyle(identityHeading)
+      : null;
+    const identity = {
+      bodyBackground: window.getComputedStyle(document.body).backgroundColor,
+      htmlBackground: window.getComputedStyle(document.documentElement).backgroundColor,
+      headingFontFamily: identityHeadingStyle?.fontFamily || "",
+      headingFontWeight: identityHeadingStyle?.fontWeight || "",
+      headingLetterSpacing: identityHeadingStyle?.letterSpacing || "",
+    };
     return {
+      identity,
       h1Count: document.querySelectorAll("h1").length,
       hasHero: Boolean(hero),
       hasEarlyConversion: Boolean(root?.querySelector("[data-early-conversion]")),
@@ -233,6 +246,140 @@ function hardFailures(evidence, viewport) {
     evidence.brokenImages > 0 && "broken image",
     evidence.emDashes > 0 && "em dash found",
     evidence.creativeRenderer !== "creative-candidate" && "creative renderer marker missing",
+  ].filter(Boolean);
+}
+
+const AUTHORED_PAGE_MARKERS = {
+  service: ["data-service-hero", "data-service-support", "data-service-related"],
+  location: ["data-location-hero", "data-location-coverage", "data-location-related"],
+  "services-index": ["data-services-index-hero", "data-services-index-list"],
+};
+
+const AUTHORED_PAGE_LABELS = {
+  service: "service page",
+  location: "location page",
+  "services-index": "services index",
+};
+
+const AUTHORED_PAGE_EVIDENCE_KEYS = {
+  service: "servicePage",
+  location: "locationPage",
+  "services-index": "servicesIndexPage",
+};
+
+export async function inspectAuthoredPage(page) {
+  return page.evaluate(() => {
+    const host = document.querySelector("[data-authored-page-host]");
+    const kind = host?.getAttribute("data-authored-page-kind") || "";
+    const rootMarker =
+      kind === "service"
+        ? "data-service-page"
+        : kind === "location"
+          ? "data-location-page"
+          : kind === "services-index"
+            ? "data-services-index"
+            : "";
+    const authored = rootMarker
+      ? host?.querySelector(`[${rootMarker}]`) || null
+      : null;
+    const pageRoot = authored || host;
+    const text = [document.title, document.body.innerText].join("\n");
+    const heading = document.querySelector("h1");
+    const headingStyle = heading ? window.getComputedStyle(heading) : null;
+    const markerNames = new Set();
+    for (const element of pageRoot?.querySelectorAll("*") || [])
+      for (const attribute of element.attributes || [])
+        if (attribute.name.startsWith("data-")) markerNames.add(attribute.name);
+    for (const attribute of pageRoot?.attributes || [])
+      if (attribute.name.startsWith("data-")) markerNames.add(attribute.name);
+    return {
+      kind,
+      identity: {
+        bodyBackground: window.getComputedStyle(document.body).backgroundColor,
+        htmlBackground: window.getComputedStyle(document.documentElement).backgroundColor,
+        headingFontFamily: headingStyle?.fontFamily || "",
+        headingFontWeight: headingStyle?.fontWeight || "",
+        headingLetterSpacing: headingStyle?.letterSpacing || "",
+      },
+      hasHost: Boolean(host),
+      creativeRenderer: host?.getAttribute("data-creative-renderer") || "",
+      hasAuthoredMarker: Boolean(authored),
+      markers: [...markerNames],
+      h1Count: pageRoot ? pageRoot.querySelectorAll("h1").length : 0,
+      hasContactSection: Boolean(pageRoot?.querySelector("#contact")),
+      hasLeadForm: Boolean(pageRoot?.querySelector('[data-runtime="lead-form"]')),
+      missingAlt: [...document.images].filter((image) => !image.hasAttribute("alt")).length,
+      unnamedControls: [...(pageRoot?.querySelectorAll("button, a") || [])].filter((element) => !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
+      emDashes: (text.match(/—/gu) || []).length,
+    };
+  });
+}
+
+function normalizeColor(value) {
+  return String(value || "").replace(/\s+/gu, "").toLowerCase();
+}
+
+/**
+ * Compare a rendered authored inner page against the same candidate's
+ * homepage. The page may recompose freely, but the canvas, heading typeface,
+ * and heading weight are identity anchors that must not drift to the generic
+ * inner-page template.
+ */
+export function authoredPageIdentityFindings(home, page, label = "authored page") {
+  const findings = [];
+  if (!home || !page) return findings;
+  const homeCanvas =
+    normalizeColor(home.bodyBackground) || normalizeColor(home.htmlBackground);
+  const pageCanvas =
+    normalizeColor(page.bodyBackground) || normalizeColor(page.htmlBackground);
+  if (homeCanvas && pageCanvas && homeCanvas !== pageCanvas)
+    findings.push(
+      `${label} canvas background drifts from the homepage (${homeCanvas} to ${pageCanvas})`,
+    );
+  if (
+    home.headingFontFamily &&
+    page.headingFontFamily &&
+    home.headingFontFamily !== page.headingFontFamily
+  )
+    findings.push(
+      `${label} heading typeface drifts from the homepage typeface`,
+    );
+  if (
+    home.headingFontWeight &&
+    page.headingFontWeight &&
+    home.headingFontWeight !== page.headingFontWeight
+  )
+    findings.push(
+      `${label} heading weight drifts from the homepage weight`,
+    );
+  return findings;
+}
+
+/**
+ * Deterministic rendered failures for one authored inner-page viewport.
+ */
+export function authoredPageFailures(evidence, kind) {
+  const label = AUTHORED_PAGE_LABELS[kind] || "authored page";
+  const expectedMarkers = AUTHORED_PAGE_MARKERS[kind] || [];
+  const missingMarkers = expectedMarkers.filter(
+    (marker) => !(evidence.markers || []).includes(marker),
+  );
+  return [
+    !evidence.hasHost && `missing ${label} host`,
+    evidence.creativeRenderer !== "creative-candidate" &&
+      "creative renderer marker missing",
+    !evidence.hasAuthoredMarker && `missing authored ${label} marker`,
+    evidence.h1Count !== 1 && "expected one page H1",
+    ...missingMarkers.map((marker) => `missing ${marker} region`),
+    !evidence.hasContactSection && "missing contact section",
+    !evidence.hasLeadForm && "missing shared lead form runtime",
+    evidence.missingAlt > 0 && "image is missing alt text",
+    evidence.unnamedControls > 0 && "interactive control has no accessible name",
+    evidence.overflow && "horizontal overflow",
+    evidence.brokenImages > 0 && "broken image",
+    evidence.emDashes > 0 && "em dash found",
   ].filter(Boolean);
 }
 
@@ -376,19 +523,38 @@ export async function runCreativeBakeoff({
     );
   }
   const diversity = diversityReport(candidates.map(({ metadata }) => metadata));
+  const originalConfigPath = path.join(root, "src/site.config.json");
+  const originalConfig = await fs.readFile(originalConfigPath, "utf8");
   let recentHistory = { launches: [] };
   try {
-    recentHistory = await readLaunchHistory();
+    const history = await readLaunchHistory();
+    recentHistory = {
+      ...history,
+      launches: launchesForSiteConfig(history, originalConfig),
+    };
   } catch {
     // Rotation history is advisory; missing history must not block a bakeoff.
   }
-  const originalConfigPath = path.join(root, "src/site.config.json");
-  const originalConfig = await fs.readFile(originalConfigPath, "utf8");
   const selectedDir = path.join(root, "src/generated-experiences/selected");
   const selectedBackup = `${selectedDir}.bakeoff-${process.pid}`;
   await fs.rm(selectedBackup, { recursive: true, force: true });
   await fs.cp(selectedDir, selectedBackup, { recursive: true, force: true }).catch(() => {});
   const browser = await chromium.launch({ headless: true });
+  const bakeoffConfig = JSON.parse(originalConfig);
+  const serviceSlug = String(
+    (Array.isArray(bakeoffConfig.services) ? bakeoffConfig.services : []).find(
+      (service) => service?.slug,
+    )?.slug || "",
+  );
+  const locationSlug =
+    bakeoffConfig.industry === "home-services"
+      ? String(
+          (Array.isArray(bakeoffConfig.locations)
+            ? bakeoffConfig.locations
+            : []
+          ).find((location) => location?.slug)?.slug || "",
+        )
+      : "";
   const results = [];
   await fs.mkdir(evidenceDir, { recursive: true });
 
@@ -430,6 +596,7 @@ export async function runCreativeBakeoff({
         await promoteCreativeCandidate({
           siteDir: root,
           candidateDir: path.relative(root, path.join(candidateRoot, candidate.directory)),
+          contentManifest: candidate.contentManifest,
           // Rendering a candidate for the bakeoff must remain available even
           // when source-level visual findings are present. Production
           // publication is enforced by the final promotion call below.
@@ -525,6 +692,107 @@ export async function runCreativeBakeoff({
               await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}-viewport.png`) });
             await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}.png`), fullPage: true });
             await page.close();
+          }
+          const authoredPages = [
+            {
+              kind: "service",
+              file: "ServicePage.jsx",
+              route: serviceSlug ? `/services/${serviceSlug}/` : "",
+            },
+            {
+              kind: "location",
+              file: "LocationPage.jsx",
+              route: locationSlug ? `/locations/${locationSlug}/` : "",
+            },
+            {
+              kind: "services-index",
+              file: "ServicesIndexPage.jsx",
+              route: "/services/",
+            },
+          ].filter((authoredPage) => authoredPage.route);
+          const homepageIdentity =
+            candidateResult.viewports.find(
+              (viewport) => viewport.name === "desktop",
+            )?.identity || null;
+          for (const authoredPage of authoredPages) {
+            const authoredPagePath = path.join(
+              candidateRoot,
+              candidate.directory,
+              authoredPage.file,
+            );
+            const hasAuthoredPage = await fs
+              .access(authoredPagePath)
+              .then(() => true)
+              .catch(() => false);
+            if (!hasAuthoredPage) continue;
+            const pageResult = {
+              kind: authoredPage.kind,
+              route: authoredPage.route,
+              viewports: [],
+              failures: [],
+            };
+            for (const viewport of [
+              { name: "desktop", width: 1536, height: 864 },
+              { name: "mobile", width: 390, height: 844 },
+            ]) {
+              const page = await browser.newPage({ viewport });
+              const browserErrors = [];
+              page.on("pageerror", (error) => browserErrors.push(error.message));
+              try {
+                await page.goto(`${origin}${authoredPage.route}`, {
+                  waitUntil: "networkidle",
+                });
+                await page.waitForTimeout(900);
+                const evidence = await inspectAuthoredPage(page);
+                const identityFindings = authoredPageIdentityFindings(
+                  homepageIdentity,
+                  evidence.identity,
+                  AUTHORED_PAGE_LABELS[authoredPage.kind] || "authored page",
+                );
+                const failures = [
+                  ...authoredPageFailures(evidence, authoredPage.kind),
+                  ...identityFindings,
+                  browserErrors.length > 0 && "browser error",
+                ].filter(Boolean);
+                pageResult.viewports.push({
+                  ...viewport,
+                  ...evidence,
+                  identityFindings,
+                  browserErrors,
+                });
+                pageResult.failures.push(
+                  ...failures.map((failure) => `${viewport.name}: ${failure}`),
+                );
+                await page.screenshot({
+                  path: path.join(
+                    evidenceDir,
+                    `${candidate.manifest.candidateId}-${authoredPage.kind}-${viewport.name}-viewport.png`,
+                  ),
+                });
+                await page.screenshot({
+                  path: path.join(
+                    evidenceDir,
+                    `${candidate.manifest.candidateId}-${authoredPage.kind}-${viewport.name}.png`,
+                  ),
+                  fullPage: true,
+                });
+              } catch (error) {
+                pageResult.failures.push(
+                  `${viewport.name}: ${error instanceof Error ? error.message : String(error)}`,
+                );
+              } finally {
+                await page.close();
+              }
+            }
+            pageResult.failures = [...new Set(pageResult.failures)];
+            pageResult.pass = pageResult.failures.length === 0;
+            candidateResult[AUTHORED_PAGE_EVIDENCE_KEYS[authoredPage.kind]] =
+              pageResult;
+            candidateResult.failures.push(
+              ...pageResult.failures.map(
+                (failure) => `${authoredPage.kind}-page ${failure}`,
+              ),
+            );
           }
         } finally {
           await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
@@ -980,6 +1248,9 @@ export async function runCreativeBakeoff({
         root,
         path.join(candidateRoot, winner.directory),
       ),
+      contentManifest: candidates.find(
+        (candidate) => candidate.directory === winner.directory,
+      )?.contentManifest,
       visualScore: winner.visualScore,
       distinctivenessScore: winner.distinctivenessScore,
       selectionMode: promote ? "creative-bakeoff" : "creative-preview",

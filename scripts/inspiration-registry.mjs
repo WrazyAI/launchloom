@@ -11,6 +11,14 @@ import {
   assertReferenceDossierMatchesRecord,
   loadReferenceDossier,
 } from "./reference-dossier.mjs";
+import {
+  GENERIC_BUSINESS_KINDS,
+  businessKindMatches,
+  canonicalBusinessKind,
+  normalizeBusinessKind,
+} from "./business-kind.mjs";
+
+export { businessKindMatches, canonicalBusinessKind };
 
 const REQUIRED_FIELDS = [
   "id",
@@ -34,14 +42,6 @@ const RIGHTS = new Set([
   "owned",
   "permission-cleared",
 ]);
-const GENERIC_BUSINESS_KINDS = new Set([
-  "all",
-  "general",
-  "local-business",
-  "local-service",
-  "local-services",
-  "small-business",
-]);
 // Keep the legacy route-signature fields stable for stored launch history.
 // Normalized hero archetypes are an additional selection dimension below.
 const STRUCTURAL_FIELDS = [
@@ -56,226 +56,6 @@ const MIN_PAIRWISE_STRUCTURAL_DISTANCE = 65;
 const MIN_SEEDED_ROTATION_POOL_SIZE = 9;
 const MAX_FAMILY_POOL_REFERENCE_SHARE = 0.7;
 const INITIAL_STYLE_FIT_SLACK = 8;
-const BUSINESS_KIND_GROUPS = [
-  [
-    "auto-repair",
-    "auto-repair-shop",
-    "auto-mechanic",
-    "mechanic",
-    "mechanic-shop",
-    "garage",
-    "independent-garage",
-    "local-auto-repair",
-    "independent-auto-service",
-    "vehicle-diagnostics",
-    "vehicle-servicing",
-    "vehicle-maintenance",
-    "brake-service",
-    "car-repair",
-    "automotive-repair",
-  ],
-  [
-    "hvac",
-    "hvac-contractor",
-    "heating-and-cooling",
-    "heating-cooling",
-    "heating-and-cooling-contractor",
-    "air-conditioning",
-    "air-conditioning-and-heating",
-    "heating-contractor",
-    "cooling-contractor",
-    "furnace-repair",
-    "ac-repair",
-  ],
-  [
-    "roofing",
-    "roofer",
-    "roofers",
-    "roofing-contractor",
-    "roofing-contractors",
-    "commercial-roofing",
-    "residential-roofing",
-    "roof-repair",
-    "roof-replacement",
-  ],
-  [
-    "painting",
-    "painter",
-    "painters",
-    "painting-contractor",
-    "painting-contractors",
-    "residential-painting",
-    "commercial-painting",
-    "residential-painter",
-    "commercial-painter",
-    "house-painter",
-    "house-painting",
-  ],
-  [
-    "home-services",
-    "local-trades",
-    "home-repair",
-    "handyman",
-    "plumbing",
-    "electrical",
-    "landscaping",
-    "garage-door",
-    "garage-door-repair",
-    "construction",
-    "civil-engineering",
-    "groundworks",
-    "storm-repair",
-    "contractor",
-  ],
-  [
-    "dental",
-    "dentist",
-    "dentistry",
-    "dental-clinic",
-    "dental-practice",
-    "oral-health",
-    "preventive-and-restorative-care",
-  ],
-  [
-    "home-care",
-    "homecare",
-    "home-care-provider",
-    "care-at-home",
-    "home-support",
-    "care",
-    "caregiving",
-    "elder-care",
-    "senior-care",
-    "elder-companionship",
-    "companionship",
-    "non-medical-home-support",
-    "family-support",
-    "specialized-homecare",
-    "private-duty-care",
-    "home-health-services",
-    "nursing-and-care-coordination",
-    "aging-in-place",
-  ],
-  [
-    "fitness",
-    "gym",
-    "strength-training",
-    "personal-training",
-    "sports-performance",
-    "fitness-studio",
-    "sports-club",
-    "pilates",
-    "yoga",
-  ],
-  [
-    "restaurant",
-    "dining",
-    "food",
-    "food-and-drink",
-    "indian-restaurant",
-    "greek-restaurant",
-    "mediterranean-restaurant",
-    "fine-dining",
-    "multi-location-dining",
-    "catering",
-    "cafe",
-    "bakery",
-  ],
-  [
-    "hospitality",
-    "hotel",
-    "boutique-hotel",
-    "resort",
-    "motel",
-    "lodging",
-    "inn",
-    "guesthouse",
-    "destination-stay",
-  ],
-  [
-    "architecture",
-    "architectural-design",
-    "architect",
-    "interior-design",
-    "residential-architecture",
-    "luxury-home-design",
-    "hospitality-design",
-    "restaurant-interiors",
-  ],
-  [
-    "legal-services",
-    "legal",
-    "law",
-    "law-firm",
-    "lawyer",
-    "attorney",
-    "solicitor",
-    "legal-practice",
-  ],
-  ["accounting", "accountant", "accountancy", "tax-accounting", "bookkeeping"],
-  [
-    "jewelry",
-    "jewellery",
-    "jewelery",
-    "jeweler",
-    "jeweller",
-    "fine-jewelry",
-    "fine-jewellery",
-    "independent-jewelry",
-    "designer-jewelry",
-    "luxury-retail",
-    "sculptural-accessories",
-    "wearable-product",
-  ],
-  [
-    "beauty",
-    "beauty-salon",
-    "salon",
-    "hair-salon",
-    "hair-stylist",
-    "hair-colorist",
-    "cosmetology",
-    "independent-beauty",
-    "barber",
-    "barbershop",
-    "mens-grooming",
-    "medical-spa",
-    "med-spa",
-    "clinical-beauty",
-    "cosmetic-treatment",
-    "spa",
-    "skincare",
-    "aesthetics",
-    "aesthetic-clinic",
-    "cosmetics",
-  ],
-  [
-    "automotive",
-    "auto",
-    "auto-services",
-    "auto-dealership",
-    "used-car-dealer",
-    "vehicle-sales",
-  ],
-  ["events", "event-venue", "wedding-venue", "wedding", "event-services"],
-  [
-    "real-estate",
-    "realtor",
-    "real-estate-agent",
-    "property",
-    "home-sales",
-    "property-management",
-  ],
-  [
-    "veterinary",
-    "veterinarian",
-    "vet",
-    "vet-clinic",
-    "animal-clinic",
-    "animal-hospital",
-    "pet-clinic",
-  ],
-];
 
 function cleanText(value, limit = 180) {
   return String(value || "")
@@ -295,27 +75,6 @@ function cleanList(value, limit = 12) {
   ].slice(0, limit);
 }
 
-function normalizeBusinessKind(value) {
-  return cleanText(value, 120)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/gu, "-")
-    .replace(/^-|-$/gu, "");
-}
-
-export function businessKindMatches(record, industry) {
-  const target = normalizeBusinessKind(industry);
-  if (!target || GENERIC_BUSINESS_KINDS.has(target)) return false;
-  const compatibleKinds = BUSINESS_KIND_GROUPS.find((group) =>
-    group.includes(target),
-  ) || [target];
-  const recordKinds = [
-    ...(Array.isArray(record?.industries) ? record.industries : []),
-    ...(Array.isArray(record?.referenceTags?.business)
-      ? record.referenceTags.business
-      : []),
-  ].map(normalizeBusinessKind);
-  return recordKinds.some((kind) => compatibleKinds.includes(kind));
-}
 
 function digest(value) {
   return crypto.createHash("sha256").update(value).digest("hex");
@@ -451,9 +210,9 @@ function referenceIdsForBusinessKind(repositoryRoot, industry) {
         businessKindMatches({ industries: [niche.businessKind] }, industry),
       );
   const referenceIds = matchingNiches.flatMap((niche) => {
-    if (!Array.isArray(niche.referenceIds) || niche.referenceIds.length < 3)
+    if (!Array.isArray(niche.referenceIds) || niche.referenceIds.length < 6)
       throw new Error(
-        `Canonical niche '${niche.id}' must list at least three reference dossiers.`,
+        `Canonical niche '${niche.id}' must list at least six reference dossiers.`,
       );
     return niche.referenceIds;
   });
@@ -1184,7 +943,16 @@ function selectionHistory(request, eligibleIds, eligibleSignatures, industry) {
   const exposure = new Map();
   const relevantLaunches = [];
   const launches = Array.isArray(request.recentLaunches)
-    ? request.recentLaunches.slice(-30)
+    ? request.recentLaunches
+        .filter(
+          (launch) =>
+            !launch?.businessKind ||
+            businessKindMatches(
+              { industries: [launch.businessKind] },
+              industry,
+            ),
+        )
+        .slice(-30)
     : [];
   for (const launch of launches) {
     if (
@@ -1307,9 +1075,9 @@ export function buildInspirationPack(
     const businessMatchedRecords = eligibleRecords.filter((record) =>
       businessKindMatches(record, industry),
     );
-    if (businessMatchedRecords.length < 3)
+    if (businessMatchedRecords.length < 6)
       throw new Error(
-        `The production library has ${businessMatchedRecords.length} eligible dossier(s) matched to '${industry}' out of ${eligibleRecords.length} eligible references; three structurally independent business-matched dossiers are required. Unrelated industries are not used as filler.`,
+        `The production library has ${businessMatchedRecords.length} eligible dossier(s) matched to '${industry}' out of ${eligibleRecords.length} eligible references; six distinct production-eligible business-matched dossiers are required. Unrelated industries are not used as filler.`,
       );
     registry = { ...registry, records: businessMatchedRecords };
   } else {

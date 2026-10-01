@@ -1039,6 +1039,145 @@ describe("revision operations", () => {
     expect(planned.operations).toEqual([]);
   });
 
+  it("defers section-scoped color changes without mutating the site-wide palette", async () => {
+    const draft = {
+      ...config(),
+      style: {
+        primaryColor: "#205d51",
+        surfaceColor: "#fbf6ed",
+        inkColor: "#17332b",
+        mutedColor: "#526760",
+        lineColor: "#d4ddd6",
+      },
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+        sections: [{ id: "opening", type: "hero", variant: "editorial" }],
+      },
+    };
+    const originalStyle = structuredClone(draft.style);
+    const planned = await planRevision(
+      ["Use teal in the hero."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.config.style).toEqual(originalStyle);
+    expect(planned.operations).toEqual([]);
+    expect(planned.results[0]).toMatchObject({
+      status: "creative",
+      intents: ["color"],
+      deferred: ["color"],
+      unresolved: [],
+    });
+  });
+
+  it("does not claim a creative section reorder was fulfilled when it cannot be applied", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+        sections: [
+          { id: "opening", type: "hero", variant: "editorial" },
+          { id: "service-list", type: "services", variant: "editorial" },
+          { id: "questions", type: "faq", variant: "editorial" },
+          { id: "contact", type: "contact", variant: "consultation" },
+        ],
+      },
+    };
+    const originalSections = structuredClone(draft.design.sections);
+    const planned = await planRevision(
+      ["Move the FAQ section above the services section."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(false);
+    expect(planned.config.design.sections).toEqual(originalSections);
+    expect(planned.operations).toEqual([]);
+    expect(planned.results[0]).toMatchObject({
+      status: "manual",
+      intents: ["layout"],
+      fulfilled: [],
+      deferred: [],
+      unresolved: ["layout"],
+      reason: expect.stringContaining("section structure"),
+    });
+  });
+
+  it("does not claim a creative section hide when only the legacy section config changes", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+        sections: [
+          { id: "opening", type: "hero", variant: "editorial" },
+          { id: "service-list", type: "services", variant: "editorial" },
+          { id: "questions", type: "faq", variant: "editorial" },
+          { id: "contact", type: "contact", variant: "consultation" },
+        ],
+      },
+    };
+    const originalSections = structuredClone(draft.design.sections);
+    const planned = await planRevision(
+      ["Hide the FAQ section."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(false);
+    expect(planned.config.design.sections).toEqual(originalSections);
+    expect(planned.operations).toEqual([]);
+    expect(planned.results[0]).toMatchObject({
+      status: "manual",
+      unresolved: ["layout"],
+      reason: expect.stringContaining("section structure"),
+    });
+  });
+
+  it("routes creative variant requests to authored repair instead of changing legacy config", async () => {
+    const draft = {
+      ...config(),
+      design: {
+        experience: {
+          renderer: "creative-candidate",
+          candidateId: "candidate-a",
+        },
+        sections: [
+          { id: "opening", type: "hero", variant: "editorial" },
+          { id: "service-list", type: "services", variant: "editorial" },
+          { id: "questions", type: "faq", variant: "editorial" },
+          { id: "contact", type: "contact", variant: "consultation" },
+        ],
+      },
+    };
+    const originalSections = structuredClone(draft.design.sections);
+    const planned = await planRevision(
+      ["Use the centered variant for the hero."],
+      draft,
+      async () => [],
+    );
+
+    expect(planned.ok).toBe(true);
+    expect(planned.config.design.sections).toEqual(originalSections);
+    expect(planned.operations).toEqual([]);
+    expect(planned.results[0]).toMatchObject({
+      status: "creative",
+      intents: ["layout"],
+      deferred: ["layout"],
+      unresolved: [],
+    });
+  });
+
   it("routes explicit creative feature changes to authored source refinement", async () => {
     const draft = {
       ...config(),
@@ -1742,4 +1881,122 @@ describe("structured image replacements on creative candidates", () => {
     );
     expect(planned.results[0].intents).toContain("layout");
   });
+});
+
+describe("hero replacement acceptance", () => {
+  const image = "/images/feedback/hero-abc123def456.webp";
+  const report = {
+    results: [{ feedbackIndex: 0, status: "fulfilled" }],
+    expectedArtifacts: [{ type: "image", path: image, target: "hero" }],
+    creativeSourceRepairRequired: false,
+  };
+
+  it("rejects an image present only in hydration data", () => {
+    const html = `<main><section data-reference-section="hero"><img src="/images/old.webp" alt="Clinic" /></section></main><script type="application/json">{"image":"${image}"}</script>`;
+    expect(verifyRevision(config(), report, html).ok).toBe(false);
+  });
+
+  it("rejects a hero image placed in an unrelated section", () => {
+    const html = `<main><section data-reference-section="hero"><img src="/images/old.webp" alt="Clinic" /></section><section data-reference-section="about"><img src="${image}" alt="Clinic" /></section></main>`;
+    expect(verifyRevision(config(), report, html).ok).toBe(false);
+  });
+});
+
+describe("plain uploaded hero-image requests", () => {
+  it.each([
+    "Please change the hero image to the one I uploaded.",
+    "Change hero image",
+    "Replace the hero photo with my upload, keep everything else exactly as it is.",
+  ])(
+    "applies only the uploaded image without requesting a source rewrite: %s",
+    async (text) => {
+      const baseline = {
+        ...config(),
+        images: { hero: "/images/old.webp", secondary: "/images/about.webp" },
+        design: {
+          experience: {
+            renderer: "creative-candidate",
+            candidateId: "candidate-c",
+          },
+        },
+      };
+      const planner = vi.fn(async () => []);
+      const planned = await planRevision(
+        [
+          {
+            text,
+            assets: [
+              {
+                target: "hero",
+                path: "/images/feedback/hero-abc123def456.webp",
+                source: "client",
+              },
+            ],
+          },
+        ],
+        baseline,
+        planner,
+      );
+      expect(planned.ok).toBe(true);
+      expect(planned.results[0]).toMatchObject({
+        status: "fulfilled",
+        intents: ["image"],
+      });
+      expect(planned.operations.map((operation) => operation.kind)).toEqual([
+        "set_image",
+      ]);
+      expect(planner).not.toHaveBeenCalled();
+      expect(planned.config.copy).toEqual(baseline.copy);
+      expect(planned.config.design).toEqual(baseline.design);
+      expect(planned.config.images.secondary).toBe(baseline.images.secondary);
+    },
+  );
+});
+
+it("preserves additional composition and copy requests beside an uploaded image", async () => {
+  const baseline = { ...config(), design: { experience: { renderer: "creative-candidate", candidateId: "candidate-c" } } };
+  const assets = [{ target: "hero", path: "/images/feedback/hero-abc123def456.webp" }];
+  const composition = await planRevision([{ text: "Replace the hero image and make the about section more spacious.", assets }], baseline, async () => []);
+  expect(composition.results[0].intents).toContain("layout");
+  expect(composition.results[0].status).toBe("creative");
+  expect(composition.results[0].sourceFeedback).toBe("make the about section more spacious.");
+  const copy = await planRevision([{ text: 'Replace the hero image and change the hero heading to "A clearer plan".', assets }], baseline, async () => [{ kind: "set_copy", field: "heroHeading", value: "A clearer plan", feedbackIndex: 0 }]);
+  expect(copy.config.copy.heroHeading).toBe("A clearer plan");
+  expect(copy.config.copy.aboutBody).toBe(baseline.copy.aboutBody);
+});
+
+it("keeps comma-separated copy changes beside a supplied image", async () => {
+  const planner = vi.fn(async () => [{ kind: "set_copy", field: "heroBody", value: "Updated description", feedbackIndex: 0 }]);
+  const planned = await planRevision([{ text: "Replace the hero image, revise the description.", assets: [{ target: "hero", path: "/images/feedback/hero-abc123def456.webp" }] }], config(), planner);
+  expect(planner).toHaveBeenCalled();
+  expect(planned.config.copy.heroBody).toBe("Updated description.");
+});
+
+it("accepts an uploaded hero in a marked div container", () => {
+  const image = "/images/feedback/hero-abc123def456.webp";
+  const draft = { ...config(), design: { experience: { renderer: "creative-candidate" } } };
+  const report = { results: [{ feedbackIndex: 0, status: "fulfilled" }], expectedArtifacts: [{ type: "image", target: "hero", path: image }] };
+  expect(verifyRevision(draft, report, `<main><div data-hero><div><img src="${image}" alt="" /></div></div></main>`).ok).toBe(true);
+});
+
+
+it("does not silently discard an unsupported second request after an image edit", async () => {
+  const planned = await planRevision([{ text: "Replace the hero image, update the phone to 555-0144.", assets: [{ target: "hero", path: "/images/feedback/hero-abc123def456.webp" }] }], config(), async () => []);
+  expect(planned.ok).toBe(false);
+  expect(planned.results[0].unresolved).toContain("unknown");
+});
+
+it("does not ask a model to rewrite a structured image and background request", async () => {
+  const planner = vi.fn(async () => []);
+  const planned = await planRevision([{text: "keep overall direction", assets: [{target: "hero", path: "/images/feedback/hero-abc123def456.webp"}], colors: [{role: "surface", hex: "#e8d391"}]}], config(), planner);
+  expect(planned.ok).toBe(true);
+  expect(planner).not.toHaveBeenCalled();
+  expect(planned.config.style.surfaceColor).toBe("#e8d391");
+});
+
+it("retains unsupported edits accompanying structured image and color choices", async () => {
+  const planner = vi.fn(async () => []);
+  const planned = await planRevision([{text: "Change the cursor into a dragon", assets: [{target: "hero", path: "/images/feedback/hero-abc123def456.webp"}], colors: [{role: "surface", hex: "#e8d391"}]}], config(), planner);
+  expect(planned.ok).toBe(false);
+  expect(planned.results[0].unresolved).toContain("unknown");
 });

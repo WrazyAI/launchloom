@@ -83,6 +83,12 @@ if (
 // this manifest may only adopt the current template as their baseline when the
 // file already matches byte-for-byte. Any other divergence is ambiguous and
 // requires manual review rather than a destructive template refresh.
+const knownBaselines = JSON.parse(
+  await fs.readFile(
+    path.join(repository, "scripts/revision-template-known-baselines.json"),
+    "utf8",
+  ),
+);
 const nextBaselineFiles = { ...baseline.files };
 const copyPlan = [];
 const unchangedFiles = [];
@@ -151,7 +157,11 @@ for (const relative of files) {
     baselineManagedFiles.add(relative);
     continue;
   }
-  if (baseline.files[relative] && existingHash === baseline.files[relative]) {
+  if (
+    (baseline.files[relative] && existingHash === baseline.files[relative]) ||
+    (!baseline.files[relative] &&
+      knownBaselines.files[relative]?.includes(existingHash))
+  ) {
     copyPlan.push({ relative, sourcePath, destination });
     nextBaselineFiles[relative] = sourceHash;
     baselineManagedFiles.add(relative);

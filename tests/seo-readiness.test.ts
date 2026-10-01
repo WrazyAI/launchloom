@@ -1,3 +1,4 @@
+import fallback from "../fixtures/seo-research/fallback-complete.json";
 import { describe, expect, it } from "vitest";
 import {
   isAffirmativeConfirmation,
@@ -37,25 +38,143 @@ describe("SEO publication readiness", () => {
         keywordDifficulty: true,
         serviceSerps: 1,
         serviceSerpsRequired: 1,
-        serviceMetrics: [{ service: "Consultation", complete: true, primaryKeyword: "consultation Testville" }],
+        serviceMetrics: [
+          {
+            service: "Consultation",
+            complete: true,
+            primaryKeyword: "consultation Testville",
+          },
+        ],
       },
-      competitors: [{ domain: "one.test" }, { domain: "two.test" }, { domain: "three.test" }],
-      cost: { usd: 0.1, limitUsd: 0.25, overBudget: false, complete: true, unreportedTasks: 0 },
-      pageMap: ["home", "services-hub", "service", "about", "contact"].map((pageType) => ({
-        pageType,
-        service: pageType === "service" ? "Consultation" : undefined,
-        primaryKeyword: pageType === "service" ? {
-          keyword: "consultation Testville", volume: 90, kd: 41, cpc: 4.1, competition: 0.7,
-          intent: "commercial", provenance: "dataforseo",
-          metricSources: { volume: "dataforseo_google_ads_location", kd: "dataforseo_labs_bulk_keyword_difficulty", cpc: "dataforseo_google_ads_location", competition: "dataforseo_google_ads_location", intent: "dataforseo_labs_search_intent" },
-        } : undefined,
-      })),
+      competitors: [
+        { domain: "one.test" },
+        { domain: "two.test" },
+        { domain: "three.test" },
+      ],
+      cost: {
+        usd: 0.1,
+        limitUsd: 0.25,
+        overBudget: false,
+        complete: true,
+        unreportedTasks: 0,
+      },
+      pageMap: ["home", "services-hub", "service", "about", "contact"].map(
+        (pageType) => ({
+          pageType,
+          service: pageType === "service" ? "Consultation" : undefined,
+          primaryKeyword:
+            pageType === "service"
+              ? {
+                  keyword: "consultation Testville",
+                  volume: 90,
+                  kd: 41,
+                  cpc: 4.1,
+                  competition: 0.7,
+                  intent: "commercial",
+                  provenance: "dataforseo",
+                  metricSources: {
+                    volume: "dataforseo_google_ads_location",
+                    kd: "dataforseo_labs_bulk_keyword_difficulty",
+                    cpc: "dataforseo_google_ads_location",
+                    competition: "dataforseo_google_ads_location",
+                    intent: "dataforseo_labs_search_intent",
+                  },
+                }
+              : undefined,
+        }),
+      ),
     };
-    const config = { services: [{ name: "Consultation" }], seoResearch: v2Research };
-    expect(seoResearchReadiness(config)).toEqual({ allowed: true, mode: "researched" });
-    expect(seoResearchReadiness({ ...config, seoResearch: { ...v2Research, completeness: { ...v2Research.completeness, serviceMetrics: [] } } }).allowed).toBe(false);
-    expect(seoResearchReadiness({ ...config, seoResearch: { ...v2Research, cost: { ...v2Research.cost, overBudget: true } } }).allowed).toBe(false);
-    expect(seoResearchReadiness({ ...config, seoResearch: { ...v2Research, cost: { ...v2Research.cost, complete: false, unreportedTasks: 1 } } }).allowed).toBe(false);
+    const config = {
+      services: [{ name: "Consultation" }],
+      seoResearch: v2Research,
+    };
+    expect(seoResearchReadiness(config)).toEqual({
+      allowed: true,
+      mode: "researched",
+    });
+    expect(
+      seoResearchReadiness({
+        ...config,
+        seoResearch: {
+          ...v2Research,
+          completeness: { ...v2Research.completeness, serviceMetrics: [] },
+        },
+      }).allowed,
+    ).toBe(false);
+    expect(
+      seoResearchReadiness({
+        ...config,
+        seoResearch: {
+          ...v2Research,
+          cost: { ...v2Research.cost, overBudget: true },
+        },
+      }).allowed,
+    ).toBe(false);
+    expect(
+      seoResearchReadiness({
+        ...config,
+        seoResearch: {
+          ...v2Research,
+          cost: { ...v2Research.cost, complete: false, unreportedTasks: 1 },
+        },
+      }).allowed,
+    ).toBe(false);
+  });
+
+  it("allows completed cited fallback research with its own mode", () => {
+    expect(seoResearchReadiness({ seoResearch: fallback })).toEqual({
+      allowed: true,
+      mode: "context-only",
+    });
+  });
+
+  it.each(["partial", "failed", "empty", "pending", "unavailable"])(
+    "blocks %s fallback research",
+    (status) => {
+      expect(
+        seoResearchReadiness({
+          seoResearch: {
+            ...fallback,
+            publishReady: true,
+            fallbackSearch: { ...fallback.fallbackSearch, status },
+          },
+        }).allowed,
+      ).toBe(false);
+    },
+  );
+
+  it("does not trust a complete label without cited evidence and bounded reported cost", () => {
+    for (const change of [
+      { externalSearchEvidence: [] },
+      {
+        externalSearchEvidence: [
+          {
+            ...fallback.externalSearchEvidence[0],
+            sourceUrl: "javascript:alert(1)",
+          },
+        ],
+      },
+      {
+        externalSearchEvidence: [
+          { ...fallback.externalSearchEvidence[0], provenance: "reasoned_gap" },
+        ],
+      },
+      ...[
+        { costComplete: false },
+        { costUsd: 1 },
+        { costUsd: null },
+        { budgetExhausted: true },
+        { failedQueries: 1 },
+        { queriesAttempted: 0 },
+      ].map((change) => ({
+        fallbackSearch: { ...fallback.fallbackSearch, ...change },
+      })),
+    ])
+      expect(
+        seoResearchReadiness({
+          seoResearch: { ...fallback, publishReady: true, ...change },
+        }).allowed,
+      ).toBe(false);
   });
 
   it("accepts only explicit confirmation values", () => {
