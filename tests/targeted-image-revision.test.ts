@@ -168,7 +168,7 @@ it("applies the saved hero and page background choices without a design rewrite"
     ).toString("base64url");
     const comment = {
       id: 123,
-      body: `<!-- launchloom-feedback:developer -->\n<!-- launchloom-feedback-structure:${structure} -->\n**Developer feedback · Hero image**\n\nkeep overall direction\n\n_Page: /_`,
+      body: `<!-- launchloom-feedback:developer -->\n<!-- launchloom-feedback-structure:${structure} -->\n**Developer feedback · Colors, Main image at the top**\n\nkeep overall direction\n\n_Page: /_`,
     };
     const preload = path.join(root, "fetch.mjs");
     await fs.writeFile(
