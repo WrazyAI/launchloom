@@ -3,13 +3,10 @@ import "../generated-experiences/selected/styles.css";
 import "../styles/creative-runtime.css";
 import CreativeCandidateHost from "./CreativeCandidateHost";
 import site from "../lib/site";
-import { creativeColorOverrideCss } from "../lib/creative-palette-bindings.mjs";
-const colorOverrides = creativeColorOverrideCss(site.style);
 
 const { experience } = Astro.props;
 const candidateId = site.design?.experience?.candidateId || "selected";
-const diagnostic = site.design?.experience?.selectionMode === "creative-diagnostic" ||
-  import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
+const diagnostic = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 const runtime = {
   candidateId,
   diagnostic,
@@ -39,5 +36,3 @@ const runtime = {
     runtime={runtime}
   />
 </div>
-
-{colorOverrides && <style is:inline set:html={`:root { ${colorOverrides} }`} />}

@@ -328,3 +328,49 @@ it("refreshes the shared experience media rail for pack-based revisions", async 
     ),
   ).toContain("xp-media-rail");
 });
+
+it("upgrades exact historical creative hosts and refuses edited ones", async () => {
+  const oldHost = await fs.readFile(path.resolve("tests/fixtures/revision/creative-host-before-palette.astro.txt"), "utf8");
+  for (const modified of [false, true]) {
+    const client = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-palette-migration-"),
+    );
+    dirs.push(client);
+    await fs.mkdir(path.join(client, "src/components"), { recursive: true });
+    await fs.writeFile(
+      path.join(client, "src/site.config.json"),
+      JSON.stringify({
+        design: { experience: { renderer: "creative-candidate" } },
+        revisionReport: { operations: [{ kind: "set_color_palette" }] },
+      }),
+    );
+    const source =
+      oldHost + (modified ? "\n<!-- private authored customization -->\n" : "");
+    await fs.writeFile(
+      path.join(client, "src/components/CreativeExperience.astro"),
+      source,
+    );
+    const operation = exec(process.execPath, [
+      path.resolve("scripts/sync-revision-template.mjs"),
+      "--client",
+      client,
+    ]);
+    if (modified) {
+      await expect(operation).rejects.toThrow("refusing to overwrite");
+      expect(
+        await fs.readFile(
+          path.join(client, "src/components/CreativeExperience.astro"),
+          "utf8",
+        ),
+      ).toBe(source);
+    } else {
+      await operation;
+      expect(
+        await fs.readFile(
+          path.join(client, "src/components/CreativeExperience.astro"),
+          "utf8",
+        ),
+      ).toContain("creativeColorOverrideCss");
+    }
+  }
+});

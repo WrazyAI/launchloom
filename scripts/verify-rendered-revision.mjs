@@ -284,15 +284,15 @@ try {
       const sectionRoot =
         document.querySelector("[data-creative-host]") ||
         document.querySelector("main");
-      const sections = [...(sectionRoot?.querySelectorAll("section") || [])].map(
-        (element) => ({
-          id: element.id,
-          classes: element.className,
-          sectionType: element.getAttribute("data-section-type"),
-          text: element.textContent?.replace(/\s+/g, " ").trim() || "",
-          visible: visible(element),
-        }),
-      );
+      const sections = [
+        ...(sectionRoot?.querySelectorAll("section") || []),
+      ].map((element) => ({
+        id: element.id,
+        classes: element.className,
+        sectionType: element.getAttribute("data-section-type"),
+        text: element.textContent?.replace(/\s+/g, " ").trim() || "",
+        visible: visible(element),
+      }));
       const effectiveBackground = (startingElement) => {
         let current = startingElement;
         while (current) {
@@ -393,6 +393,22 @@ try {
             document.body.scrollWidth,
           ) - innerWidth,
         css: getComputedStyle(document.body).cssText,
+        pageBackground: getComputedStyle(document.body).backgroundColor,
+        creativeColors: Object.fromEntries(
+          [
+            "--ll-creative-page",
+            "--ll-creative-hero",
+            "--ll-creative-ink",
+            "--ll-creative-line",
+            "--ll-creative-primary",
+            "--ll-creative-accent",
+          ].map((variable) => [
+            variable,
+            getComputedStyle(document.documentElement)
+              .getPropertyValue(variable)
+              .trim(),
+          ]),
+        ),
         locationMap: locationMap
           ? {
               visible: visible(locationMap),
@@ -415,8 +431,23 @@ try {
             src: image.currentSrc || image.src,
             placements: (() => {
               const labels = [];
-              for (let region = image.parentElement; region; region = region.parentElement) {
-                labels.push([region.tagName === "HEADER" ? "header" : "", region.id, region.className, region.getAttribute("data-reference-section"), region.getAttribute("data-section-type"), region.hasAttribute("data-hero") ? "hero" : ""].join(" ").toLowerCase());
+              for (
+                let region = image.parentElement;
+                region;
+                region = region.parentElement
+              ) {
+                labels.push(
+                  [
+                    region.tagName === "HEADER" ? "header" : "",
+                    region.id,
+                    region.className,
+                    region.getAttribute("data-reference-section"),
+                    region.getAttribute("data-section-type"),
+                    region.hasAttribute("data-hero") ? "hero" : "",
+                  ]
+                    .join(" ")
+                    .toLowerCase(),
+                );
               }
               return labels;
             })(),
@@ -442,7 +473,9 @@ try {
         config.design?.experience?.candidateId || "",
       );
       if (!state.creativeCandidateId)
-        failures.push(`${viewport.name}: authored creative candidate is not mounted.`);
+        failures.push(
+          `${viewport.name}: authored creative candidate is not mounted.`,
+        );
       else if (
         expectedCandidate &&
         state.creativeCandidateId !== expectedCandidate
@@ -523,6 +556,23 @@ try {
           `${viewport.name}: text contrast below ${target.minimum} for ${target.text}.`,
         );
     for (const artifact of config.revisionReport?.expectedArtifacts || []) {
+      if (artifact.type === "creative-color") {
+        if (
+          state.creativeColors[artifact.variable]?.toLowerCase() !==
+          artifact.value.toLowerCase()
+        )
+          failures.push(
+            `${viewport.name}: requested ${artifact.field} is not bound to the rendered candidate.`,
+          );
+        if (
+          artifact.field === "surfaceColor" &&
+          JSON.stringify(parseCssColor(state.pageBackground).slice(0, 3)) !==
+            JSON.stringify(parseCssColor(artifact.value).slice(0, 3))
+        )
+          failures.push(
+            `${viewport.name}: requested page background is not rendered: ${artifact.value}.`,
+          );
+      }
       if (artifact.type === "text" && !state.bodyText.includes(artifact.value))
         failures.push(
           `${viewport.name}: requested text is not visible: ${artifact.value.slice(0, 70)}.`,
@@ -812,7 +862,7 @@ try {
   if (await clientRoot.isVisible()) {
     await clientRoot.locator(".ll-feedback-open").click();
     const categorySelect = clientRoot
-      .locator('.ll-client-fields select')
+      .locator(".ll-client-fields select")
       .first();
     if (!(await categorySelect.isVisible()))
       failures.push("review: client small-change categories are missing.");

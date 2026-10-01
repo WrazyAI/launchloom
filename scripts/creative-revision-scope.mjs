@@ -141,7 +141,7 @@ function scopeError(message) {
 
 /**
  * Persist only feedback items that enter the authored-source repair lane.
- * @param {{creativeRenderer?: boolean, feedback?: string[], results?: Array<{feedbackIndex?: number, feedback?: string, status?: string, intents?: string[], sourceFeedback?: string}>}} [options]
+ * @param {{creativeRenderer?: boolean, feedback?: string[], results?: Array<{feedbackIndex?: number, feedback?: string, status?: string, intents?: string[], sourceFeedback?: string, fulfilled?: string[], creativePaletteBound?: boolean}>}} [options]
  * @returns {{required: boolean, declaration: Record<string, any> | null, feedbackText: string}}
  */
 export function createCreativeRepairScopeDeclaration({
@@ -155,7 +155,11 @@ export function createCreativeRepairScopeDeclaration({
   const relevant = (Array.isArray(results) ? results : []).filter(
     (result) =>
       result.status === "creative" ||
-      result.intents?.some((intent) => CREATIVE_REPAIR_INTENTS.has(intent)),
+      result.intents?.some(
+        (intent) =>
+          CREATIVE_REPAIR_INTENTS.has(intent) &&
+          !(intent === "color" && result.creativePaletteBound === true),
+      ),
   );
   const required = Boolean(creativeRenderer && relevant.length);
   const declaration = required
@@ -970,7 +974,11 @@ function findUnsafeJsxBehaviorIssues(source, scopedIds = null) {
               );
           } else if (ts.isJsxSpreadAttribute(attribute)) {
             if (!ts.isObjectLiteralExpression(attribute.expression)) {
-              addIssue(root.id, "dynamic JSX prop spread", attribute.expression);
+              addIssue(
+                root.id,
+                "dynamic JSX prop spread",
+                attribute.expression,
+              );
               continue;
             }
             for (const property of attribute.expression.properties) {
@@ -1003,7 +1011,9 @@ function findUnsafeJsxBehaviorIssues(source, scopedIds = null) {
     };
     visit(root.node);
   }
-  return issues.sort((left, right) => left.identity.localeCompare(right.identity));
+  return issues.sort((left, right) =>
+    left.identity.localeCompare(right.identity),
+  );
 }
 
 /**

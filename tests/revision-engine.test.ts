@@ -1985,3 +1985,18 @@ it("does not silently discard an unsupported second request after an image edit"
   expect(planned.ok).toBe(false);
   expect(planned.results[0].unresolved).toContain("unknown");
 });
+
+it("does not ask a model to rewrite a structured image and background request", async () => {
+  const planner = vi.fn(async () => []);
+  const planned = await planRevision([{text: "keep overall direction", assets: [{target: "hero", path: "/images/feedback/hero-abc123def456.webp"}], colors: [{role: "surface", hex: "#e8d391"}]}], config(), planner);
+  expect(planned.ok).toBe(true);
+  expect(planner).not.toHaveBeenCalled();
+  expect(planned.config.style.surfaceColor).toBe("#e8d391");
+});
+
+it("retains unsupported edits accompanying structured image and color choices", async () => {
+  const planner = vi.fn(async () => []);
+  const planned = await planRevision([{text: "Change the cursor into a dragon", assets: [{target: "hero", path: "/images/feedback/hero-abc123def456.webp"}], colors: [{role: "surface", hex: "#e8d391"}]}], config(), planner);
+  expect(planned.ok).toBe(false);
+  expect(planned.results[0].unresolved).toContain("unknown");
+});
