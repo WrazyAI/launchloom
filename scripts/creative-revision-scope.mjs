@@ -175,13 +175,23 @@ export function createCreativeRepairScopeDeclaration({
               typeof result.feedback === "string" &&
               result.feedback.trim().length > 0,
           )
-          .map(({ feedbackIndex, feedback: itemFeedback, sourceFeedback }) => ({
-            feedbackIndex,
-            feedback: itemFeedback,
-            ...(typeof sourceFeedback === "string"
-              ? { scopeFeedback: sourceFeedback.trim() }
-              : {}),
-          })),
+          .map(
+            ({
+              feedbackIndex,
+              feedback: itemFeedback,
+              sourceFeedback,
+              reviewedPage,
+            }) => ({
+              feedbackIndex,
+              feedback: itemFeedback,
+              ...(typeof sourceFeedback === "string"
+                ? { scopeFeedback: sourceFeedback.trim() }
+                : {}),
+              ...(typeof reviewedPage === "string" && reviewedPage.trim()
+                ? { reviewedPage: reviewedPage.trim() }
+                : {}),
+            }),
+          ),
       }
     : null;
   return { required, declaration, feedbackText };
