@@ -354,11 +354,15 @@ const creativeVisualKeyword =
 function residualVisualRequest(feedback) {
   return clean(feedback, 4000)
     .replace(/^\s*\[[^\]]+\]\s*/u, "")
-    .split(/(?<=[.;!?])\s+|\s+and\s+|,\s*(?=(?:please\s+)?(?:change|revise|rewrite|update|make|add|remove|keep|leave)\b)/iu)
+    .split(
+      /(?<=[.;!?])\s+|\s+and\s+|,\s*(?=(?:please\s+)?(?:change|revise|rewrite|update|make|add|remove|keep|leave)\b)/iu,
+    )
     .map((clause) =>
       (pureStructuredImageClause.test(clause.replace(/[.!?]$/u, "")) &&
         !creativeVisualKeyword.test(clause) &&
-        !/\b(?:but|also|then|remove|hide|add|move|resize|restyle|reorder|rewrite|revise)\b/iu.test(clause) &&
+        !/\b(?:but|also|then|remove|hide|add|move|resize|restyle|reorder|rewrite|revise)\b/iu.test(
+          clause,
+        ) &&
         !/\b(?:heading|headline|copy|text|wording|layout|background|crop|position|overlay)\b/iu.test(
           clause,
         )) ||
@@ -975,6 +979,9 @@ export function structuredOperations(item, config) {
       kind: "set_color_palette",
       palette,
       requestedColors: selectedColors.map((color) => color.hex.toLowerCase()),
+      requestedFields: selectedColors.map(
+        (color) => COLOR_ROLE_KEYS[color.role],
+      ),
     });
   }
   return operations;
@@ -1033,9 +1040,15 @@ function intentsFor(item, config) {
     if (!structuredImageOnly && creativeVisualRequest.test(feedback))
       intents.push("layout");
   }
-  if (item?.assets?.length && feedback.trim() &&
-      intents.every((intent) => intent === "image") &&
-      /\b(?:change|revise|rewrite|update|make|add|remove|hide|move|adjust)\b/iu.test(feedback))
+  if (
+    (item?.assets?.length || item?.colors?.length) &&
+    feedback.trim() &&
+    intents.every((intent) => intent === "image" || intent === "color") &&
+    feedback.split(/[.!?;,]|\band\b/iu).some((clause) =>
+      /\b(?:change|revise|rewrite|update|make|add|remove|hide|move|adjust|enable|disable)\b/iu.test(clause) &&
+      !requestsColorChange(clause),
+    )
+  )
     intents.push("unknown");
   return intents.length ? [...new Set(intents)] : ["unknown"];
 }
@@ -1631,39 +1644,44 @@ export async function planRevision(
   const textItems = items.map((item) => item.text);
   const creativeCandidate =
     config.design?.experience?.renderer === "creative-candidate";
-  const sectionScopedCreativeColor = items.map(
-    (item) => {
-      if (!creativeCandidate || globalLayoutScope.test(item.text))
-        return false;
-      return item.text
-        .split(/[.!?;]|\band\b/iu)
-        .some(
-          (clause) =>
-            requestsColorChange(clause) && mentionedSection(clause),
-        );
-    },
-  );
-  const deterministic = items.flatMap((item, feedbackIndex) =>
-    [
-      ...deterministicOperations(item.text, config),
-      // Explicit image and color choices are applied after text-derived
-      // operations so the reviewer's selection always wins.
-      ...structuredOperations(item, config),
-    ].map((operation) => ({ ...operation, feedbackIndex })),
-  ).filter(
-    (operation) =>
-      !(
-        sectionScopedCreativeColor[operation.feedbackIndex] &&
-        operation.kind === "set_color_palette"
-      ),
-  );
+  const sectionScopedCreativeColor = items.map((item) => {
+    if (!creativeCandidate || globalLayoutScope.test(item.text)) return false;
+    return item.text
+      .split(/[.!?;]|\band\b/iu)
+      .some(
+        (clause) => requestsColorChange(clause) && mentionedSection(clause),
+      );
+  });
+  const deterministic = items
+    .flatMap((item, feedbackIndex) =>
+      [
+        ...deterministicOperations(item.text, config),
+        // Explicit image and color choices are applied after text-derived
+        // operations so the reviewer's selection always wins.
+        ...structuredOperations(item, config),
+      ].map((operation) => ({ ...operation, feedbackIndex })),
+    )
+    .filter(
+      (operation) =>
+        !(
+          sectionScopedCreativeColor[operation.feedbackIndex] &&
+          operation.kind === "set_color_palette"
+        ),
+    );
   const contentTargets = items.map((feedback) =>
     explicitContentTargets(feedback.text, config),
   );
-  const imageOnly = items.every((item) =>
-    intentsFor(item, config).every((intent) => intent === "image"),
+  const structuredOnly = items.every(
+    (item, index) =>
+      !sectionScopedCreativeColor[index] &&
+      intentsFor(item, config).every(
+        (intent) =>
+          intent === "image" || (intent === "color" && item.colors.length > 0),
+      ),
   );
-  const modeledOperations = imageOnly ? [] : await planner(textItems, config);
+  const modeledOperations = structuredOnly
+    ? []
+    : await planner(textItems, config);
   const modeled = modeledOperations.filter((operation) => {
     if (!MODEL_OPERATION_KINDS.has(operation.kind)) return false;
     const item = items[operation.feedbackIndex];
@@ -1776,32 +1794,24 @@ export async function planRevision(
     creativeCandidate
       ? proposedCandidates
           .filter((operation) =>
-            ["set_section_enabled", "reorder_section"].includes(
-              operation.kind,
-            ),
+            ["set_section_enabled", "reorder_section"].includes(operation.kind),
           )
           .map((operation) => operation.feedbackIndex)
       : [],
   );
-  const candidates = proposedCandidates.filter(
-    (operation) => {
-      if (!creativeCandidate) return true;
-      if (
-        ["set_section_enabled", "reorder_section"].includes(operation.kind)
-      )
-        return false;
-      if (
-        ["set_section_variant", "set_design_treatment"].includes(
-          operation.kind,
-        )
-      )
-        return false;
-      return !(
-        sectionScopedCreativeColor[operation.feedbackIndex] &&
-        operation.kind === "set_color_palette"
-      );
-    },
-  );
+  const candidates = proposedCandidates.filter((operation) => {
+    if (!creativeCandidate) return true;
+    if (["set_section_enabled", "reorder_section"].includes(operation.kind))
+      return false;
+    if (
+      ["set_section_variant", "set_design_treatment"].includes(operation.kind)
+    )
+      return false;
+    return !(
+      sectionScopedCreativeColor[operation.feedbackIndex] &&
+      operation.kind === "set_color_palette"
+    );
+  });
   const draft = structuredClone(config);
   const applied = [];
   for (const operation of candidates)
@@ -1850,6 +1860,7 @@ export async function planRevision(
     return {
       feedbackIndex,
       feedback: item.text,
+      structuredColorOnly: item.colors.length > 0 && !requestsColorChange(item.text),
       ...(status === "creative" && item.assets.length
         ? { sourceFeedback: residualVisualRequest(item.text).trim() }
         : {}),
@@ -2248,23 +2259,54 @@ function assetPlacementHtml(html, placement) {
   if (!placement) return html;
   const stack = [];
   const regions = [];
-  const voidTags = new Set(["img", "source", "input", "br", "hr", "meta", "link", "area", "base", "embed", "param", "track", "wbr"]);
-  const markup = String(html).replace(/<script\b[\s\S]*?<\/script>/giu, "").replace(/<!--[\s\S]*?-->/gu, "");
-  for (const match of markup.matchAll(/<(\/?)([a-z][a-z0-9:-]*)\b([^>]*)>/giu)) {
+  const voidTags = new Set([
+    "img",
+    "source",
+    "input",
+    "br",
+    "hr",
+    "meta",
+    "link",
+    "area",
+    "base",
+    "embed",
+    "param",
+    "track",
+    "wbr",
+  ]);
+  const markup = String(html)
+    .replace(/<script\b[\s\S]*?<\/script>/giu, "")
+    .replace(/<!--[\s\S]*?-->/gu, "");
+  for (const match of markup.matchAll(
+    /<(\/?)([a-z][a-z0-9:-]*)\b([^>]*)>/giu,
+  )) {
     const [, closing, rawTag, attributes] = match;
     const tag = rawTag.toLowerCase();
     if (closing) {
       const index = stack.findLastIndex((entry) => entry.tag === tag);
       if (index < 0) continue;
       for (const entry of stack.splice(index))
-        if (entry.matches) regions.push(markup.slice(entry.start, match.index + match[0].length));
+        if (entry.matches)
+          regions.push(
+            markup.slice(entry.start, match.index + match[0].length),
+          );
       continue;
     }
     if (voidTags.has(tag) || /\/\s*$/u.test(attributes)) continue;
-    const labels = [htmlAttributeValue(attributes, "id"), htmlAttributeValue(attributes, "class"), htmlAttributeValue(attributes, "data-reference-section"), htmlAttributeValue(attributes, "data-section-type")].join(" ").toLowerCase();
-    const matches = placement === "header" ? tag === "header" :
-      (placement === "hero" && /\bdata-hero(?:\s|=|$)/iu.test(attributes)) ||
-      labels.split(/[^a-z0-9]+/u).includes(placement);
+    const labels = [
+      htmlAttributeValue(attributes, "id"),
+      htmlAttributeValue(attributes, "class"),
+      htmlAttributeValue(attributes, "data-reference-section"),
+      htmlAttributeValue(attributes, "data-section-type"),
+    ]
+      .join(" ")
+      .toLowerCase();
+    const matches =
+      placement === "header"
+        ? tag === "header"
+        : (placement === "hero" &&
+            /\bdata-hero(?:\s|=|$)/iu.test(attributes)) ||
+          labels.split(/[^a-z0-9]+/u).includes(placement);
     stack.push({ tag, start: match.index, matches });
   }
   return regions.join("\n");

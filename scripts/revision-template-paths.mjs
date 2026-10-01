@@ -68,6 +68,13 @@ export function revisionTemplatePaths(config) {
       "lib/site.ts",
     ])
       files.add(relative);
+  if (
+    config.design?.experience?.renderer === "creative-candidate" &&
+    kinds.has("set_color_palette")
+  ) {
+    files.add("components/CreativeExperience.astro");
+    files.add("lib/creative-palette-bindings.mjs");
+  }
   if (kinds.has("set_conversion_feature"))
     for (const relative of [
       "components/QuickAnswers.astro",

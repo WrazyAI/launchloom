@@ -141,6 +141,10 @@ export type SiteConfig = {
     visualDirection?: string;
     showBrandName?: boolean;
     surfaceColor?: string;
+    creativeColorOverrides?: Record<
+      string,
+      { variable: string; value: string }
+    >;
     heroColor?: string;
     inkColor?: string;
     mutedColor?: string;
@@ -242,7 +246,7 @@ export type SiteConfig = {
       distinctivenessScore?: number;
       candidatePackIds?: string[];
       avoidPackIds?: string[];
-      selectionMode?: "internal-bakeoff" | "requested" | "legacy" | "creative-bakeoff";
+      selectionMode?: "internal-bakeoff" | "requested" | "legacy" | "creative-bakeoff" | "creative-diagnostic";
       fingerprint?: string;
       servicePage?: boolean;
       locationPage?: boolean;
