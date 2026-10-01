@@ -896,6 +896,11 @@ export async function runRenderedCreativeRepair({
   // edit count) write nothing to the candidate, so they must not consume the
   // candidate's applied-repair cycles. They are bounded separately.
   const rejectionUse = new Map();
+  // Hill-climbing baseline: keep each candidate's best measured state so a
+  // regressing repair never becomes the base for the next repair, and the
+  // final selection can fall back to it.
+  const bestState = new Map();
+  let restoredFinalState = false;
   const history = [];
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession
@@ -1046,6 +1051,48 @@ export async function runRenderedCreativeRepair({
     }
   }
 
+  async function rememberBestState(report, round) {
+    for (const candidate of report?.candidates || []) {
+      const metric = repairPriority(report, candidate.candidateId);
+      // A candidate measured at or above the rendered bar would have been
+      // selected, so only below-bar states are worth keeping as baselines.
+      if (!(metric < RENDERED_REFERENCE_THRESHOLDS.overall)) continue;
+      const existing = bestState.get(candidate.candidateId);
+      if (existing && existing.metric >= metric) continue;
+      const directory = resolveCandidateDirectory(
+        candidateRoot,
+        candidate.directory,
+      );
+      const snapshotDir = path.join(
+        evidenceRoot,
+        "best",
+        candidate.candidateId,
+      );
+      await fs.rm(snapshotDir, { recursive: true, force: true });
+      await fs.cp(directory, snapshotDir, { recursive: true });
+      bestState.set(candidate.candidateId, {
+        metric,
+        directory: candidate.directory,
+        snapshotDir,
+        screenshotsDir: path.join(
+          evidenceRoot,
+          `round-${String(round).padStart(2, "0")}`,
+          "screenshots",
+        ),
+        findings: candidateFindings(candidate),
+      });
+    }
+  }
+
+  async function restoreBestState(candidateId) {
+    const best = bestState.get(candidateId);
+    if (!best) return false;
+    const target = resolveCandidateDirectory(candidateRoot, best.directory);
+    await fs.rm(target, { recursive: true, force: true });
+    await fs.cp(best.snapshotDir, target, { recursive: true });
+    return true;
+  }
+
   for (let round = 0; round < maxRounds; round += 1) {
     const roundDir = path.join(
       evidenceRoot,
@@ -1097,6 +1144,7 @@ export async function runRenderedCreativeRepair({
       rejectedCandidates: [],
     };
     history.push(record);
+    await rememberBestState(report, round);
 
     if (humanRepairPending && (report.candidates || []).length !== 1)
       throw new Error(
@@ -1133,11 +1181,32 @@ export async function runRenderedCreativeRepair({
             }))
             .filter((target) => target.candidate);
       const target = closestToPassingFirst(report, repairTargets)[0];
-      if (!target)
+      if (!target) {
+        // No candidate has repair budget left. Before giving up, put every
+        // candidate back to its best measured state and judge once more.
+        let restored = false;
+        for (const candidate of report.candidates || []) {
+          const best = bestState.get(candidate.candidateId);
+          if (
+            best &&
+            best.metric > repairPriority(report, candidate.candidateId) &&
+            (await restoreBestState(candidate.candidateId))
+          )
+            restored = true;
+        }
+        if (restored && !restoredFinalState) {
+          restoredFinalState = true;
+          continue;
+        }
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
         );
+      }
 
+      const best = target.finding ? null : bestState.get(target.candidateId);
+      const regressed =
+        best && best.metric > repairPriority(report, target.candidateId);
+      if (regressed) await restoreBestState(target.candidateId);
       const diversity =
         previewDiversity?.pass === false
           ? previewDiversity
@@ -1150,7 +1219,9 @@ export async function runRenderedCreativeRepair({
       const findings = target.finding
         ? [target.finding]
         : [
-            ...candidateFindings(target.candidate),
+            ...(regressed
+              ? best.findings
+              : candidateFindings(target.candidate)),
             ...(diversityFinding ? [diversityFinding] : []),
             ...(humanRepairPending ? humanFindings : []),
           ];
@@ -1165,7 +1236,7 @@ export async function runRenderedCreativeRepair({
             ? "human-review-feedback"
             : "candidate-render-failure",
         round,
-        screenshotsDir,
+        regressed ? best.screenshotsDir : screenshotsDir,
         target.directory,
         report,
       );

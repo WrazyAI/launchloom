@@ -369,6 +369,77 @@ describe("rendered creative repair orchestration", () => {
     expect(result.rejectedCandidates).toEqual({});
   });
 
+  it("repairs a regressed candidate from its best measured state", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const candidateDir = path.join(candidates, "candidate-a");
+    const experiencePath = path.join(candidateDir, "Experience.jsx");
+    const originalSource = await fs.readFile(experiencePath, "utf8");
+    let bakeoffCalls = 0;
+    const seenAtRepair: string[] = [];
+    const repairFindings: string[] = [];
+
+    const failing = (score: number) =>
+      report({
+        selectedCandidateId: null,
+        candidates: [
+          candidate("candidate-a", {
+            valid: false,
+            eligible: false,
+            failures: ["Rendered candidate needs repair."],
+            referenceFidelity: { pass: false, score },
+            renderedReferenceFidelity: {
+              pass: false,
+              score,
+              audit: {
+                verdict: "revise",
+                overallScore: score,
+                scores: { servicePresentation: score, spatialRhythm: score },
+                findings: [],
+              },
+            },
+          }),
+        ],
+      });
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? failing(78)
+            : bakeoffCalls === 2
+              ? failing(60)
+              : report({
+                  selectedCandidateId: "candidate-a",
+                  candidates: [candidate("candidate-a")],
+                }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ findings }: any) => {
+        seenAtRepair.push(await fs.readFile(experiencePath, "utf8"));
+        repairFindings.push(findings.join("\n"));
+        await fs.writeFile(
+          experiencePath,
+          `export default () => "repaired-${seenAtRepair.length}";\n`,
+        );
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(seenAtRepair).toHaveLength(2);
+    expect(seenAtRepair[1]).toBe(originalSource);
+    expect(repairFindings[1]).toContain("overall fidelity scored 78");
+    expect(repairFindings[1]).not.toContain("scored 60");
+  });
+
   it("targets repairs with the rendered fidelity dimensions that miss their thresholds", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const repairFindings: any[][] = [];
