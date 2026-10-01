@@ -45,17 +45,24 @@ an unconfirmed service.
 - **Blog opportunities:** up to five evidence-backed informational topics are
   proposed. They are not generated as articles during initial site creation.
 
-When DataForSEO credentials are absent, the generation workflow can use the
+When DataForSEO credentials are absent, or a configured DataForSEO stage fails
+before the measured map can be completed, the generation workflow can use the
 already-configured `OPENROUTER_API_KEY` for a bounded live-search fallback.
 That path runs at most the configured number of queries (default 3, hard maximum
-5), caps each query at four web results, and stops when provider-reported spend
-reaches the fallback budget (default $0.05, hard maximum $0.25). If a completed
+5), caps each query at four web results and one model-visible web-search tool
+call, records provider-reported search-request usage when available, and stops
+when provider-reported spend reaches the fallback budget (default $0.05, hard
+maximum $0.25). If a completed
 request does not report cost, LaunchLoom keeps that request's cited evidence but
 does not issue another fallback query because the budget can no longer be
 enforced. The dossier records fallback spend and budget state separately from
 DataForSEO cost. It stores only provider-returned URL citations: query, source
 URL, title, extracted snippet, retrieval time, provider, and provenance.
-Model-authored prose is discarded and is never treated as search evidence.
+Model-authored prose is discarded and is never treated as search evidence. The
+fallback status is explicit: `complete`, `partial`, `empty`, `failed`, or
+`unavailable` (with `not-needed` when measured research succeeds without a
+fallback); a separate stop reason records timeout, budget, cost-reporting, or
+empty-citation conditions.
 
 Fallback web observations remain separate from confirmed business facts and
 measured SEO fields. They do not create search volume, Keyword Difficulty,
