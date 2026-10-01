@@ -1860,7 +1860,8 @@ export async function planRevision(
     return {
       feedbackIndex,
       feedback: item.text,
-      structuredColorOnly: item.colors.length > 0 && !requestsColorChange(item.text),
+      structuredColorOnly: item.colors.length > 0 &&
+        !requestsColorChange(item.text.replace(/^\s*\[[^\]]+\]\s*/u, "")),
       ...(status === "creative" && item.assets.length
         ? { sourceFeedback: residualVisualRequest(item.text).trim() }
         : {}),
