@@ -141,7 +141,7 @@ function scopeError(message) {
 
 /**
  * Persist only feedback items that enter the authored-source repair lane.
- * @param {{creativeRenderer?: boolean, feedback?: string[], results?: Array<{feedbackIndex?: number, feedback?: string, status?: string, intents?: string[]}>}} [options]
+ * @param {{creativeRenderer?: boolean, feedback?: string[], results?: Array<{feedbackIndex?: number, feedback?: string, status?: string, intents?: string[], sourceFeedback?: string}>}} [options]
  * @returns {{required: boolean, declaration: Record<string, any> | null, feedbackText: string}}
  */
 export function createCreativeRepairScopeDeclaration({
