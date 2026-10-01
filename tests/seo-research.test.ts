@@ -735,11 +735,26 @@ describe("SEO market map", () => {
 });
 
 it("maps real Google Ads competition indexes without inventing values from categorical labels", async () => {
-  const client = createDataForSeoClient({ login: "fixture", password: "fixture", fetchImpl: vi.fn(async () => Response.json({status_code:20000,tasks_error:0,cost:0.09,tasks:[{status_code:20000,result:[
-    {keyword:"dental checkups",search_volume:170,cpc:4.8,competition:"LOW",competition_index:14},
-    {keyword:"zero competition",search_volume:10,cpc:1,competition:"LOW",competition_index:0},
-    {keyword:"missing index",search_volume:10,cpc:null,competition:"LOW",competition_index:null}
-  ]}]})) });
-  const result = await client.googleSearchVolume({keywords:["dental checkups","zero competition","missing index"],locationName:"Austin,Texas,United States"});
-  expect(result.keywords.map(item=>item.competition)).toEqual([0.14,0,null]);
+  const client = createDataForSeoClient({
+    login: "fixture",
+    password: "fixture",
+    fetchImpl: vi.fn(async () => Response.json({
+      status_code: 20000,
+      tasks_error: 0,
+      cost: 0.09,
+      tasks: [{
+        status_code: 20000,
+        result: [
+          { keyword: "dental checkups", search_volume: 170, cpc: 4.8, competition: "LOW", competition_index: 14 },
+          { keyword: "zero competition", search_volume: 10, cpc: 1, competition: "LOW", competition_index: 0 },
+          { keyword: "missing index", search_volume: 10, cpc: null, competition: "LOW", competition_index: null },
+        ],
+      }],
+    })),
+  });
+  const result = await client.googleSearchVolume({
+    keywords: ["dental checkups", "zero competition", "missing index"],
+    locationName: "Austin,Texas,United States",
+  });
+  expect(result.keywords.map(item => item.competition)).toEqual([0.14, 0, null]);
 });
