@@ -89,6 +89,8 @@ function seoResearchForConfig(value) {
     copyVocabulary: list(value.copyVocabulary, 16),
     pageDecisions: list(value.pageDecisions),
     pageMap: list(value.pageMap, 80),
+    fallbackSearch: value.fallbackSearch || {},
+    externalSearchEvidence: list(value.externalSearchEvidence, 20),
     competitors: list(value.competitors, 6),
     questionEvidence: list(value.questionEvidence, 120),
     fanOutQuestionGroups: list(value.fanOutQuestionGroups, 80),
