@@ -19,7 +19,7 @@ const DEFAULT_FALLBACK_MAX_USD = 0.05;
 const HARD_MAX_FALLBACK_USD = 0.25;
 const FALLBACK_RESULTS_PER_QUERY = 4;
 const FALLBACK_SEARCH_TIMEOUT_MS = 45_000;
-const FALLBACK_PROVIDER = "OpenRouter web search (Parallel fast)";
+const FALLBACK_PROVIDER = "OpenRouter web search (Parallel)";
 const US_STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming", DC: "District of Columbia",
 };
@@ -368,9 +368,7 @@ export function createOpenRouterWebSearchClient({
             type: "openrouter:web_search",
             parameters: {
               engine: "parallel",
-              mode: "fast",
               max_results: boundedMaxResults,
-              max_uses: 1,
               max_total_results: boundedMaxResults,
               max_characters: 1200,
             },
