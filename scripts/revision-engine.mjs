@@ -344,7 +344,7 @@ const conversionFeatureRequest =
 const creativeVisualRequest =
   /\b(premium|high[- ]end|polished|cinematic|editorial|distinctive|generic|visual|composition|layout|hierarchy|spacing|whitespace|asymmetr(?:y|ical)|full[- ]bleed|motion|animation|reveal|scroll|mobile|responsive|typography|font|serif|sans|bold|minimal|modern|immersive|prominent|understated|simpler)\b|\b(move|place|reposition|resize|restyle|hide|remove|show|add|replace|change|swap)\b.{0,70}\b(hero|navigation|navbar|nav|cta|button|card|grid|image|imagery|photo|gallery|section|services?|feature|widget|calculator|carousel|tabs?|comparison|timeline|panel)\b|\b(larger|smaller|taller|shorter|wider|narrower)\b.{0,50}\b(hero|cta|button|image|imagery|photo|gallery|section|services?|feature|widget|panel)\b/i;
 const pureStructuredImageClause =
-  /^\s*(?:please\s+)?(?:smoke test:?\s*)?(?:replace|swap|change|update|use|choose|generate|regenerate|select)\b[^.;!?]{0,90}?\b(image|images|photo|photos|picture|pictures|logo|gallery|hero|opening|team photo)\b(?:\s+(?:instead|please|now))?[.!?]?\s*$/iu;
+  /^\s*(?:please\s+)?(?:smoke test:?\s*)?(?:replace|swap|change|update|use|choose|generate|regenerate|select)\b[^.;!?]{0,160}?\b(image|images|photo|photos|picture|pictures|logo|gallery|hero|opening|team photo)\b[^.;!?]{0,160}$/iu;
 const creativeVisualKeyword =
   /\b(premium|high[- ]end|polished|cinematic|editorial|distinctive|generic|visual|composition|layout|hierarchy|spacing|whitespace|asymmetr(?:y|ical)|full[- ]bleed|motion|animation|reveal|scroll|mobile|responsive|typography|font|serif|sans|bold|minimal|modern|immersive|prominent|understated|simpler|larger|smaller|taller|shorter|wider|narrower|video|icon|illustration|graphic)\b/iu;
 
@@ -354,10 +354,17 @@ const creativeVisualKeyword =
 function residualVisualRequest(feedback) {
   return clean(feedback, 4000)
     .replace(/^\s*\[[^\]]+\]\s*/u, "")
-    .split(/(?<=[.;!?])\s+/u)
+    .split(/(?<=[.;!?])\s+|\s+and\s+|,\s*(?=keep\b|leave\b)/iu)
     .map((clause) =>
-      pureStructuredImageClause.test(clause) &&
-      !creativeVisualKeyword.test(clause)
+      (pureStructuredImageClause.test(clause.replace(/[.!?]$/u, "")) &&
+        !creativeVisualKeyword.test(clause) &&
+        !/\b(?:but|also|then|remove|hide|add|move|resize|restyle|reorder)\b/iu.test(clause) &&
+        !/\b(?:heading|headline|copy|text|wording|layout|background|crop|position|overlay)\b/iu.test(
+          clause,
+        )) ||
+      /^(?:keep|leave)\b.{0,100}\b(?:unchanged|same|as it is|as is|alone)[.!?]?\s*$/iu.test(
+        clause,
+      )
         ? " "
         : clause,
     )
@@ -973,7 +980,12 @@ export function structuredOperations(item, config) {
   return operations;
 }
 function intentsFor(item, config) {
-  const feedback = typeof item === "string" ? item : clean(item?.text, 4000);
+  const originalFeedback =
+    typeof item === "string" ? item : clean(item?.text, 4000);
+  const feedback =
+    Array.isArray(item?.assets) && item.assets.length
+      ? residualVisualRequest(originalFeedback)
+      : originalFeedback;
   const intents = [];
   if (socialProofRequest.test(feedback)) intents.push("social-proof");
   if (requestsColorChange(feedback)) intents.push("color");
@@ -1644,7 +1656,11 @@ export async function planRevision(
   const contentTargets = items.map((feedback) =>
     explicitContentTargets(feedback.text, config),
   );
-  const modeled = (await planner(textItems, config)).filter((operation) => {
+  const imageOnly = items.every((item) =>
+    intentsFor(item, config).every((intent) => intent === "image"),
+  );
+  const modeledOperations = imageOnly ? [] : await planner(textItems, config);
+  const modeled = modeledOperations.filter((operation) => {
     if (!MODEL_OPERATION_KINDS.has(operation.kind)) return false;
     const item = items[operation.feedbackIndex];
     const feedback = item?.text;
@@ -2242,6 +2258,31 @@ function containsAsset(html, artifact) {
     region.includes(marker),
   );
 }
+function containsRequestedImage(html, artifact, config) {
+  const markup = String(html || "")
+    .replace(/<script\b[\s\S]*?<\/script>/giu, "")
+    .replace(/<!--[\s\S]*?-->/gu, "");
+  const placement = {
+    logo: "header",
+    hero: "hero",
+    secondary: "about",
+    tertiary: "gallery",
+    team: "team",
+  }[artifact.target];
+  let region = placement ? assetPlacementHtml(markup, placement) : markup;
+  // Older deterministic pages may have no section markers. Authored pages
+  // must prove the requested role, rather than merely serialize the URL.
+  if (
+    !region &&
+    config.design?.experience?.renderer !== "creative-candidate" &&
+    !/<section\b/iu.test(markup)
+  )
+    region = markup;
+  return [...region.matchAll(/<img\b[^>]*>/giu)].some(([image]) =>
+    imageSourceMarkup(artifact.path).some((source) => image.includes(source)),
+  );
+}
+
 /** @param {Record<string, string> | null} [htmlPages=null] */
 export function verifyRevision(
   config,
@@ -2381,7 +2422,7 @@ export function verifyRevision(
       failures.push(
         `Missing rendered color: ${artifact.field}=${artifact.value}`,
       );
-    if (artifact.type === "image" && !html.includes(artifact.path))
+    if (artifact.type === "image" && !containsRequestedImage(html, artifact, config))
       failures.push(`Missing rendered image: ${artifact.path}`);
     if (
       artifact.type === "variant" &&

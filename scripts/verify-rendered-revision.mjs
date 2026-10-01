@@ -4,6 +4,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { chromium } from "playwright";
 import { contrast, parseCssColor } from "./color-contrast.mjs";
+import { revisionImageMatches } from "./revision-image-acceptance.mjs";
 
 const args = Object.fromEntries(
   process.argv
@@ -411,7 +412,23 @@ try {
             );
           })
           .map((image) => ({
-            src: image.getAttribute("src") || "",
+            src: image.currentSrc || image.src,
+            placement: (() => {
+              const region = image.closest(
+                "header, section, [data-reference-section], [data-hero], [data-section-type]",
+              );
+              if (!region) return "";
+              return [
+                region.tagName,
+                region.id,
+                region.className,
+                region.getAttribute("data-reference-section"),
+                region.getAttribute("data-section-type"),
+                region.hasAttribute("data-hero") ? "hero" : "",
+              ]
+                .join(" ")
+                .toLowerCase();
+            })(),
             naturalWidth: image.naturalWidth,
             naturalHeight: image.naturalHeight,
             visible: visible(image),
@@ -512,13 +529,13 @@ try {
         failures.push(
           `${viewport.name}: requested text is not visible: ${artifact.value.slice(0, 70)}.`,
         );
-      if (artifact.type === "image") {
+      if (artifact.type === "image" || artifact.type === "asset") {
         const rendered = state.feedbackImages.find((image) =>
-          image.src.includes(artifact.path),
+          revisionImageMatches(image, artifact, url),
         );
-        if (!rendered || rendered.naturalWidth < 1 || !rendered.visible)
+        if (!rendered)
           failures.push(
-            `${viewport.name}: requested image is not rendered: ${artifact.path}.`,
+            `${viewport.name}: requested ${artifact.target || artifact.placement || "replacement"} image is not rendered in its requested placement: ${artifact.path || artifact.url}.`,
           );
       }
       if (

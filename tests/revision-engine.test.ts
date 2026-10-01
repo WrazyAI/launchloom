@@ -1882,3 +1882,84 @@ describe("structured image replacements on creative candidates", () => {
     expect(planned.results[0].intents).toContain("layout");
   });
 });
+
+describe("hero replacement acceptance", () => {
+  const image = "/images/feedback/hero-abc123def456.webp";
+  const report = {
+    results: [{ feedbackIndex: 0, status: "fulfilled" }],
+    expectedArtifacts: [{ type: "image", path: image, target: "hero" }],
+    creativeSourceRepairRequired: false,
+  };
+
+  it("rejects an image present only in hydration data", () => {
+    const html = `<main><section data-reference-section="hero"><img src="/images/old.webp" alt="Clinic" /></section></main><script type="application/json">{"image":"${image}"}</script>`;
+    expect(verifyRevision(config(), report, html).ok).toBe(false);
+  });
+
+  it("rejects a hero image placed in an unrelated section", () => {
+    const html = `<main><section data-reference-section="hero"><img src="/images/old.webp" alt="Clinic" /></section><section data-reference-section="about"><img src="${image}" alt="Clinic" /></section></main>`;
+    expect(verifyRevision(config(), report, html).ok).toBe(false);
+  });
+});
+
+describe("plain uploaded hero-image requests", () => {
+  it.each([
+    "Please change the hero image to the one I uploaded.",
+    "Change hero image",
+    "Replace the hero photo with my upload, keep everything else exactly as it is.",
+  ])(
+    "applies only the uploaded image without requesting a source rewrite: %s",
+    async (text) => {
+      const baseline = {
+        ...config(),
+        images: { hero: "/images/old.webp", secondary: "/images/about.webp" },
+        design: {
+          experience: {
+            renderer: "creative-candidate",
+            candidateId: "candidate-c",
+          },
+        },
+      };
+      const planner = vi.fn(async () => []);
+      const planned = await planRevision(
+        [
+          {
+            text,
+            assets: [
+              {
+                target: "hero",
+                path: "/images/feedback/hero-abc123def456.webp",
+                source: "client",
+              },
+            ],
+          },
+        ],
+        baseline,
+        planner,
+      );
+      expect(planned.ok).toBe(true);
+      expect(planned.results[0]).toMatchObject({
+        status: "fulfilled",
+        intents: ["image"],
+      });
+      expect(planned.operations.map((operation) => operation.kind)).toEqual([
+        "set_image",
+      ]);
+      expect(planner).not.toHaveBeenCalled();
+      expect(planned.config.copy).toEqual(baseline.copy);
+      expect(planned.config.design).toEqual(baseline.design);
+      expect(planned.config.images.secondary).toBe(baseline.images.secondary);
+    },
+  );
+});
+
+it("preserves additional composition and copy requests beside an uploaded image", async () => {
+  const baseline = { ...config(), design: { experience: { renderer: "creative-candidate", candidateId: "candidate-c" } } };
+  const assets = [{ target: "hero", path: "/images/feedback/hero-abc123def456.webp" }];
+  const composition = await planRevision([{ text: "Replace the hero image and make the about section more spacious.", assets }], baseline, async () => []);
+  expect(composition.results[0].intents).toContain("layout");
+  expect(composition.results[0].status).toBe("creative");
+  const copy = await planRevision([{ text: 'Replace the hero image and change the hero heading to "A clearer plan".', assets }], baseline, async () => [{ kind: "set_copy", field: "heroHeading", value: "A clearer plan", feedbackIndex: 0 }]);
+  expect(copy.config.copy.heroHeading).toBe("A clearer plan");
+  expect(copy.config.copy.aboutBody).toBe(baseline.copy.aboutBody);
+});
