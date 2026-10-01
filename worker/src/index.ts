@@ -7,6 +7,7 @@ import {
   RevisionCoordinator,
   type CreativeRepairFinding,
   type CreativeRepairSessionInput,
+  type CreativeRepairSessionView,
   type RevisionRequestInput,
 } from "./revision-coordinator";
 import {
@@ -1747,6 +1748,122 @@ function validClientRepository(value: unknown) {
   return /^WrazyAI\/launchloom-[0-9]+-[a-z0-9-]+$/iu.test(repo);
 }
 
+// Feedback may follow a signed current review on the same deployed alias.
+// Publication and repair requests retain their original exact-head checks.
+async function currentDiagnosticFeedbackReview(
+  request: Request,
+  env: Env,
+  claims: ReviewClaims,
+  status: CreativeRepairSessionView,
+  pageUrl: string,
+  currentHead: string,
+) {
+  const coordinator = env.REVISION_COORDINATOR.getByName(
+    claims.repo.toLowerCase(),
+  );
+  const resolve = async (url: string) => {
+    try {
+      const resultUrl = new URL(url);
+      const token =
+        resultUrl.searchParams.get("token") ||
+        resultUrl.searchParams.get("review");
+      if (!token || token.length > 4096) return null;
+      const latest = await verifyHmac<ReviewClaims>(
+        token,
+        env.REVIEW_SIGNING_SECRET,
+      );
+      if (
+        latest.stage !== "developer" ||
+        latest.repo !== claims.repo ||
+        latest.pr !== claims.pr ||
+        latest.siteId !== claims.siteId ||
+        latest.feedbackIssue !== claims.feedbackIssue ||
+        latest.reviewerEmail.toLowerCase() !==
+          claims.reviewerEmail.toLowerCase() ||
+        latest.clientEmail.toLowerCase() !== claims.clientEmail.toLowerCase() ||
+        latest.headSha !== currentHead ||
+        latest.expiresAt < Date.now() ||
+        !/^[a-f0-9]{32}$/iu.test(latest.creativeRepairSessionId || "") ||
+        !latest.allowedOrigins?.length
+      )
+        return null;
+      assertClaimOrigin(request, latest.allowedOrigins, pageUrl);
+      const registered = await coordinator.getCreativeRepair(
+        latest.creativeRepairSessionId!,
+        latest.repo,
+        latest.pr!,
+        latest.headSha!,
+      );
+      if (
+        !registered?.previewUrl ||
+        ["dispatching", "queued", "running"].includes(registered.status)
+      )
+        return null;
+      const preview = new URL(registered.previewUrl);
+      const page = new URL(pageUrl);
+      const platformReview =
+        platformOrigins(env).includes(page.origin) &&
+        page.pathname === "/review";
+      const viewedPreview = platformReview
+        ? new URL(status.resultPreviewUrl || status.previewUrl || "")
+        : page;
+      if (
+        viewedPreview.origin !== preview.origin ||
+        viewedPreview.pathname !== preview.pathname
+      )
+        return null;
+      return { claims: latest, status: registered };
+    } catch {
+      return null;
+    }
+  };
+  if (status.status === "completed" && status.resultReviewUrl) {
+    const result = await resolve(status.resultReviewUrl);
+    if (result) return result;
+  }
+  // Regeneration can reuse the alias without completing the older repair.
+  // Only signed links from the private review handoff are candidates, and a
+  // registered deployed preview must match the actual page being reviewed.
+  try {
+    const route = `/repos/${claims.repo}/issues/${claims.pr}/comments`;
+    let response = await github(env, `${route}?per_page=100`);
+    let comments = (await response.json()) as Array<{ body?: string }>;
+    const last = response.headers
+      .get("Link")
+      ?.match(/<([^>]+)>;\s*rel="last"/u)?.[1];
+    if (last) {
+      const lastUrl = new URL(last);
+      const page = Number(lastUrl.searchParams.get("page"));
+      if (
+        lastUrl.origin === "https://api.github.com" &&
+        lastUrl.pathname === route &&
+        Number.isSafeInteger(page) &&
+        page > 1
+      ) {
+        response = await github(env, `${route}?per_page=100&page=${page}`);
+        comments = (await response.json()) as Array<{ body?: string }>;
+      }
+    }
+    const links = comments
+      .reverse()
+      .flatMap(({ body }) =>
+        String(body || "").includes("<!-- launchloom-creative-recovery -->")
+          ? String(body).match(
+              /https:\/\/[^\s)]+\?(?:token|review)=[A-Za-z0-9_.-]+/gu,
+            ) || []
+          : [],
+      )
+      .slice(0, 5);
+    for (const link of links) {
+      const result = await resolve(link);
+      if (result) return result;
+    }
+  } catch {
+    // No proven current link means no permission to rebind the request.
+  }
+  return null;
+}
+
 async function creativeRepair(request: Request, env: Env) {
   const headers = cors(request, platformOrigins(env));
   if (request.method === "OPTIONS")
@@ -1881,10 +1998,21 @@ async function creativeRepair(request: Request, env: Env) {
           cors(request, claims.allowedOrigins),
         );
       const current = await currentReviewPr(env, claims);
+      let feedbackClaims = claims;
+      let feedbackStatus = status;
+      if (current.state === "open" && !current.draft && current.head.sha !== reviewedHeadSha) {
+        const refreshed = await currentDiagnosticFeedbackReview(
+          request, env, claims, status, clean(body.pageUrl, 4_000), current.head.sha,
+        );
+        if (refreshed) {
+          feedbackClaims = refreshed.claims;
+          feedbackStatus = refreshed.status;
+        }
+      }
       if (
         current.state !== "open" ||
         current.draft ||
-        current.head.sha !== reviewedHeadSha
+        current.head.sha !== feedbackClaims.headSha
       )
         return json(
           {
@@ -1907,7 +2035,7 @@ async function creativeRepair(request: Request, env: Env) {
           ? `creative-feedback:${requestId}`
           : [
               claims.repo,
-              reviewedHeadSha,
+              feedbackClaims.headSha,
               note,
               category,
               reviewedPage,
@@ -1920,14 +2048,14 @@ async function creativeRepair(request: Request, env: Env) {
         stage: "developer",
         repo: claims.repo,
         pr: reviewedPr,
-        feedbackIssue: claims.feedbackIssue,
+        feedbackIssue: feedbackClaims.feedbackIssue,
         siteId: claims.siteId,
         clientEmail: claims.clientEmail,
         reviewedPage: clean(reviewedPage, 1_000),
         category,
         feedback: note,
         ...(structureJson ? { structure: structureJson } : {}),
-        creativeRepairSessionId: sessionId,
+        creativeRepairSessionId: feedbackClaims.creativeRepairSessionId,
       } satisfies RevisionRequestInput);
       if (!queued.ok)
         return json(
@@ -1936,12 +2064,12 @@ async function creativeRepair(request: Request, env: Env) {
           cors(request, claims.allowedOrigins),
         );
       await coordinator.recordCreativeDisposition({
-        decisionId: `feedback:${sessionId}:${requestId}`,
-        sessionId,
+        decisionId: `feedback:${feedbackClaims.creativeRepairSessionId}:${requestId}`,
+        sessionId: feedbackClaims.creativeRepairSessionId!,
         repo: claims.repo,
         pr: reviewedPr,
-        headSha: reviewedHeadSha,
-        candidateId: status.candidateId,
+        headSha: feedbackClaims.headSha!,
+        candidateId: feedbackStatus.candidateId,
         disposition: "accepted-with-feedback",
         reviewerEmail: claims.reviewerEmail,
         feedbackRequestId: queued.requestId,

@@ -1,8 +1,9 @@
 import { env } from "cloudflare:workers";
-import { SELF } from "cloudflare:test";
+import { SELF, runInDurableObject } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { network } from "./network";
+import type { RevisionCoordinator } from "../src/revision-coordinator";
 
 const reviewOrigin = "https://launchloom.wrazyos.com";
 const previewOrigin = "https://creative-diagnostic.example-client.pages.dev";
@@ -53,6 +54,7 @@ async function signedToken(overrides: Record<string, unknown> = {}) {
 async function registerSession(
   previewUrl: string | null = "https://review-initial.example-client.pages.dev",
   registeredSessionId = sessionId,
+  registeredHeadSha = reviewedSha,
 ) {
   return SELF.fetch(`${api}/api/internal/creative-repairs`, {
     method: "POST",
@@ -69,7 +71,7 @@ async function registerSession(
         repo,
         pr: 7,
         siteId: "example-client",
-        headSha: reviewedSha,
+        headSha: registeredHeadSha,
         candidateId: "candidate-a",
         repairAvailable: true,
         previewUrl,
@@ -580,4 +582,178 @@ describe("developer-triggered creative repair", () => {
     });
     expect(response.status).toBe(401);
   });
+});
+
+
+let completedScenarioIndex = 0;
+
+async function completedFeedbackScenario(
+  options: {
+    linkClaims?: Record<string, unknown>;
+    currentHead?: string;
+    pagePath?: string;
+    missingRegistration?: boolean;
+    tamperedSignature?: boolean;
+    regenerated?: boolean;
+  } = {},
+) {
+  const suffix = (++completedScenarioIndex).toString(16).padStart(31, "0");
+  const oldSession = `a${suffix}`;
+  const newSession = `b${suffix}`;
+  const latestSha = "b".repeat(40);
+  const latestToken = await signedToken({
+    headSha: latestSha,
+    creativeRepairSessionId: newSession,
+    ...options.linkClaims,
+  });
+  const oldToken = await signedToken({ creativeRepairSessionId: oldSession });
+  await registerSession(previewOrigin, oldSession);
+  if (!options.missingRegistration)
+    await registerSession(previewOrigin, newSession, latestSha);
+  const coordinator = env.REVISION_COORDINATOR.getByName(repo.toLowerCase());
+  await runInDurableObject(coordinator, async (untypedInstance) => {
+    const instance = untypedInstance as RevisionCoordinator;
+    if (options.regenerated) return;
+    await instance.beginCreativeRepair(oldSession, repo, 7, reviewedSha);
+    await instance.creativeRepairDispatched(oldSession);
+    await instance.claimCreativeRepair(oldSession);
+    await instance.completeCreativeRepair(oldSession, {
+      outcome: "needs-attention",
+      previewUrl: previewOrigin,
+      reviewUrl: `${reviewOrigin}/review?token=${options.tamperedSignature ? latestToken + "x" : latestToken}`,
+    });
+  });
+  const comments: Array<{ body: string }> = [];
+  const dispatches: Array<Record<string, any>> = [];
+  network.use(
+    http.get(`https://api.github.com/repos/${repo}/pulls/7`, () =>
+      HttpResponse.json({
+        head: { sha: options.currentHead || latestSha },
+        state: "open",
+        draft: false,
+      }),
+    ),
+    http.get(`https://api.github.com/repos/${repo}/issues/7/comments`, () =>
+      HttpResponse.json(
+        options.regenerated
+          ? [
+              {
+                body: `<!-- launchloom-creative-recovery -->\n${reviewOrigin}/review?token=${latestToken}`,
+              },
+              ...comments,
+            ]
+          : comments,
+      ),
+    ),
+    http.post(
+      `https://api.github.com/repos/${repo}/issues/7/comments`,
+      async ({ request }) => {
+        const comment = (await request.json()) as { body: string };
+        comments.push(comment);
+        return HttpResponse.json({ id: 9901 }, { status: 201 });
+      },
+    ),
+    http.post(
+      "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+      async ({ request }) => {
+        dispatches.push((await request.json()) as Record<string, any>);
+        return new HttpResponse(null, { status: 204 });
+      },
+    ),
+  );
+  const details = {
+    attachments: [
+      {
+        target: "hero",
+        kind: "upload",
+        url: "https://assets.launchloom.wrazyos.com/feedback/test-client/hero.webp",
+      },
+    ],
+    colors: [{ role: "surface", hex: "#e8d391" }],
+  };
+  const response = await userRequest(
+    oldToken,
+    "feedback",
+    "developer@example.com",
+    {
+      origin: previewOrigin,
+      pageUrl: `${previewOrigin}${options.pagePath || "/"}?review=${oldToken}`,
+      comment: "keep overall direction",
+      details,
+      submissionId: `version-refresh-feedback-${suffix}`,
+    },
+  );
+  return { response, dispatches, comments, details, oldToken, latestToken };
+}
+
+it("accepts feedback from the completed repair alias with the authoritative current token and preserves the draft", async () => {
+  const { response, dispatches, comments, details, latestToken } =
+    await completedFeedbackScenario();
+  expect(response.status).toBe(202);
+  expect(dispatches).toHaveLength(1);
+  expect(dispatches[0].event_type).toBe("process-developer-feedback");
+  expect(comments[0].body).toContain("keep overall direction");
+  const encoded = comments[0].body.match(
+    /launchloom-feedback-structure:([A-Za-z0-9_-]+)/,
+  )?.[1];
+  expect(
+    JSON.parse(atob(encoded!.replace(/-/g, "+").replace(/_/g, "/"))),
+  ).toEqual(details);
+  expect(await (await userRequest(latestToken, "status")).json()).toMatchObject(
+    { humanDisposition: "accepted-with-feedback" },
+  );
+  const result = (await response.clone().json()) as { requestId: string };
+  await env.REVISION_COORDINATOR.getByName(repo.toLowerCase()).complete(
+    result.requestId,
+  );
+});
+
+it.each([
+  { linkClaims: { reviewerEmail: "other@example.com" } },
+  { linkClaims: { repo: "WrazyAI/launchloom-999-other-client" } },
+  { linkClaims: { pr: 99 } },
+  { linkClaims: { expiresAt: Date.now() - 1000 } },
+  { currentHead: "c".repeat(40) },
+  { pagePath: "/previous-version/" },
+  { missingRegistration: true },
+  { tamperedSignature: true },
+])("rejects a stale result without queuing feedback: %j", async (options) => {
+  const { response, dispatches, comments } =
+    await completedFeedbackScenario(options);
+  expect(response.status).toBe(409);
+  expect(dispatches).toHaveLength(0);
+  expect(comments).toHaveLength(0);
+});
+
+it("never refreshes a stale publication request through a completed feedback receipt", async () => {
+  const { oldToken } = await completedFeedbackScenario({
+    currentHead: "c".repeat(40),
+  });
+  let merges = 0;
+  network.use(
+    http.put(`https://api.github.com/repos/${repo}/pulls/7/merge`, () => {
+      merges++;
+      return HttpResponse.json({ merged: true });
+    }),
+  );
+  const response = await userRequest(
+    oldToken,
+    "send-anyway",
+    "developer@example.com",
+    {
+      origin: previewOrigin,
+      pageUrl: `${previewOrigin}/?review=${oldToken}`,
+      confirmed: true,
+    },
+  );
+  expect(response.status).toBe(409);
+  expect(merges).toBe(0);
+});
+
+it("accepts feedback on a regenerated live alias only when a signed current review is registered", async () => {
+  const { response, dispatches } = await completedFeedbackScenario({
+    regenerated: true,
+  });
+  expect(response.status).toBe(202);
+  expect(dispatches).toHaveLength(1);
 });
