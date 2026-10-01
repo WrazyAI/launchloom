@@ -5,7 +5,9 @@ import os from "node:os";
 import path from "node:path";
 import {
   collectAvailableScreenshots,
+  colorLiterals,
   defaultRepairCandidate,
+  findingsRequirePaletteChange,
   runRenderedCreativeRepair,
   runVisualGateProcess,
   writeCandidate,
@@ -249,6 +251,106 @@ describe("rendered creative repair orchestration", () => {
       expect(await fs.readFile(path.join(candidateDir, name), "utf8")).toBe(
         value,
       );
+  });
+
+  it("scopes palette changes to findings that ask for them", () => {
+    expect(
+      findingsRequirePaletteChange([
+        { category: "imagery", message: "The later image is generic." },
+      ]),
+    ).toBe(false);
+    expect(
+      findingsRequirePaletteChange([
+        "rendered-reference dimension paletteAdherence scored 32 and must reach 80.",
+      ]),
+    ).toBe(true);
+    expect(
+      colorLiterals("a { color: #FFF; background: rgb(1, 2, 3); }"),
+    ).toEqual(["#fff", "rgb(1,2,3)"]);
+  });
+
+  it("rejects an automated repair that repaints a passing palette", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-palette-guard-"),
+    );
+    roots.push(root);
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const desktop = path.join(root, "reference.png");
+    await fs.writeFile(desktop, "reference-evidence");
+    const candidateDir = path.join(root, "candidate-a");
+    await fs.mkdir(candidateDir);
+    const originalFiles = {
+      experience: `import { LeadForm } from "@launchloom/runtime";
+export default function Experience({ content, runtime }) { return <main><section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section><section id="services" data-reference-section="services">Services</section><section id="faqs" data-reference-section="faqs">FAQs</section><section id="contact" data-reference-section="contact"><LeadForm content={content} runtime={runtime} /></section></main>; }`,
+      styles:
+        ':root { --ll-creative-paper: #f8f6f0; } [data-reference-section="hero"] h1 { color: #14201d; }',
+      motion:
+        "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
+    };
+    await fs.writeFile(
+      path.join(candidateDir, "metadata.json"),
+      JSON.stringify({
+        candidateId: "candidate-a",
+        referenceDna: {
+          familyId: "test-editorial",
+          sectionSequence: ["hero", "services", "faqs", "contact"],
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+      }),
+    );
+    await fs.writeFile(
+      path.join(candidateDir, "content-manifest.json"),
+      JSON.stringify({ values: {}, tokens: [] }),
+    );
+    for (const [name, value] of Object.entries({
+      "Experience.jsx": originalFiles.experience,
+      "styles.css": originalFiles.styles,
+      "motion.js": originalFiles.motion,
+    }))
+      await fs.writeFile(path.join(candidateDir, name), value);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  finish_reason: "stop",
+                  message: {
+                    content: JSON.stringify({
+                      experience: originalFiles.experience,
+                      styles:
+                        ':root { --ll-creative-paper: #101010; } [data-reference-section="hero"] h1 { color: #000000; }',
+                      motion: originalFiles.motion,
+                    }),
+                  },
+                },
+              ],
+            }),
+          ),
+      ),
+    );
+
+    await expect(
+      defaultRepairCandidate({
+        candidateDir,
+        findings: [
+          {
+            category: "imagery",
+            message:
+              "A generic stock image appears on an image-independent reference.",
+          },
+        ],
+        screenshots: [],
+        model: "test/model",
+      }),
+    ).rejects.toThrow(/palette/iu);
+
+    expect(await fs.readFile(path.join(candidateDir, "styles.css"), "utf8")).toBe(
+      originalFiles.styles,
+    );
   });
 
   it("retries a rejected repair output once within the candidate's cycle budget", async () => {

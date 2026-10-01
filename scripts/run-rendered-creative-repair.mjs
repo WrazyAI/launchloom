@@ -644,6 +644,43 @@ async function validateCandidateReasoningBindings(
   return candidateCount;
 }
 
+const PALETTE_FINDING_PATTERN =
+  /\bpalette|\bcolou?r|\bsurface|\bcontrast|\bbrand[-\s]?band/iu;
+
+function repairFindingText(finding) {
+  if (typeof finding === "string") return finding;
+  return [
+    finding?.category,
+    finding?.message,
+    finding?.evidence,
+    finding?.recommendation,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * A repair may only repaint the candidate when a finding actually asks for a
+ * palette, color, surface, or contrast change. Without one, repainted colors
+ * count as a regression even when the findings were satisfied.
+ */
+export function findingsRequirePaletteChange(findings) {
+  return (findings || []).some((finding) =>
+    PALETTE_FINDING_PATTERN.test(repairFindingText(finding)),
+  );
+}
+
+/** Sorted color literals used to detect an unprompted repaint. */
+export function colorLiterals(source) {
+  return [
+    ...String(source || "").matchAll(
+      /#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)|\b(?:oklch|oklab|lab|lch|color-mix)\([^)]*\)/giu,
+    ),
+  ]
+    .map((match) => match[0].replace(/\s+/gu, "").toLowerCase())
+    .sort();
+}
+
 /**
  * Validate and atomically persist one authored candidate repair.
  * @param {{candidateDir: string, findings: any[], screenshots: string[], comparisonScreenshots?: Array<{candidateId: string, viewport: string, path: string}>, model: string, creativeSession?: Record<string, any> | null}} options
@@ -713,6 +750,16 @@ export async function defaultRepairCandidate({
         content,
       ),
     };
+    if (!findingsRequirePaletteChange(findings)) {
+      const existing = new Set(colorLiterals(repaired.styles));
+      const removed = colorLiterals(files.styles).filter(
+        (value) => !existing.has(value),
+      );
+      if (removed.length)
+        throw new Error(
+          "Repair removed or replaced palette color declarations while no palette, surface, or contrast finding was failing. Restore the existing color values and change only what the failing findings require.",
+        );
+    }
     validated = validateProductionCandidateFiles({
       files: repaired,
       route: {
