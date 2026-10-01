@@ -1836,7 +1836,7 @@ async function currentDiagnosticFeedbackReview(
       const page = Number(lastUrl.searchParams.get("page"));
       if (
         lastUrl.origin === "https://api.github.com" &&
-        lastUrl.pathname === route &&
+        (lastUrl.pathname === route || /^\/repositories\/[1-9]\d*\/issues\/([1-9]\d*)\/comments$/u.exec(lastUrl.pathname)?.[1] === String(claims.pr)) &&
         Number.isSafeInteger(page) &&
         page > 1
       ) {

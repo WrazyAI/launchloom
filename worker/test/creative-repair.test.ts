@@ -595,6 +595,7 @@ async function completedFeedbackScenario(
     missingRegistration?: boolean;
     tamperedSignature?: boolean;
     regenerated?: boolean;
+  lastPage?: boolean;
   } = {},
 ) {
   const suffix = (++completedScenarioIndex).toString(16).padStart(31, "0");
@@ -661,6 +662,14 @@ async function completedFeedbackScenario(
       },
     ),
   );
+  if (options.lastPage) {
+    network.use(http.get(`https://api.github.com/repos/${repo}/issues/7/comments`, ({ request }) => {
+      const page = new URL(request.url).searchParams.get("page");
+      return page === "2"
+        ? HttpResponse.json([{ body: `<!-- launchloom-creative-recovery -->\n${reviewOrigin}/review?token=${latestToken}` }])
+        : HttpResponse.json([], { headers: { Link: '<https://api.github.com/repositories/123/issues/7/comments?per_page=100&page=2>; rel="last"' } });
+    }));
+  }
   const details = {
     attachments: [
       {
@@ -756,4 +765,10 @@ it("accepts feedback on a regenerated live alias only when a signed current revi
   });
   expect(response.status).toBe(202);
   expect(dispatches).toHaveLength(1);
+});
+
+
+it("resolves the last handoff page from GitHub's canonical repository pagination URL", async () => {
+  const { response } = await completedFeedbackScenario({ regenerated: true, lastPage: true });
+  expect(response.status).toBe(202);
 });
