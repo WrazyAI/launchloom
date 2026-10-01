@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-10-01T15:06:15.257Z",
+  "updatedAt": "2026-10-01T15:25:11.041Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -367,6 +367,41 @@
         "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
         "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
       ]
+    },
+    {
+      "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36883592916-attempt-1",
+      "launchedAt": "2026-10-01T15:25:11.040Z",
+      "stage": "attempt",
+      "reservationKey": "115-run-36883592916-attempt-1",
+      "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
+      "businessKind": "dental",
+      "recipe": "care-editorial",
+      "packId": "kinetic-poster",
+      "variantId": "full-bleed",
+      "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "attested-dapper-dental-dark",
+        "guided-conversation",
+        "html5up-dimension-clinic",
+        "typographic-poster",
+        "web-dental-gartside-street-family"
+      ],
+      "heroArchetypes": [
+        "image-led-editorial",
+        "image-overlay"
+      ],
+      "referenceIds": [
+        "attested-dapper-dental",
+        "html5up-dental-dimension",
+        "web-dental-gartside-street"
+      ],
+      "routeSignatures": [
+        "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+        "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+        "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -622,6 +657,41 @@
           "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
           "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
           "small cream navigation with one rounded booking control|a muted cinematic city image with very large warm-white type|four large photographic treatment choices with short supporting labels|oversized contemporary sans with selective italic emphasis|cinematic opening -> editorial proposition -> photographic treatment tiles -> cl|warm treatment and clinician photography with generous rounded crops"
+        ]
+      },
+      {
+        "id": "2026-10-01-cedarbrook-family-dental-fictional-seo-canary-attempt-115-run-36883592916-attempt-1",
+        "launchedAt": "2026-10-01T15:25:11.040Z",
+        "stage": "attempt",
+        "reservationKey": "115-run-36883592916-attempt-1",
+        "businessName": "Cedarbrook Family Dental - Fictional SEO Canary",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "kinetic-poster",
+        "variantId": "full-bleed",
+        "layoutFingerprint": "kinetic-poster|full-bleed|command-bar|poster-full-bleed|quick-request|problem-grid|evidence-strip|action-poster|graphic-impact|bold-documentary|kinetic|still|css|0|poster-stack|hero/conversion/services/process/coverage/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-dapper-dental-dark",
+          "guided-conversation",
+          "html5up-dimension-clinic",
+          "typographic-poster",
+          "web-dental-gartside-street-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-overlay"
+        ],
+        "referenceIds": [
+          "attested-dapper-dental",
+          "html5up-dental-dimension",
+          "web-dental-gartside-street"
+        ],
+        "routeSignatures": [
+          "centered-segmented-care-menu|single-screen-full-bleed-clinic-interior-with-centered-wordmark|segmented-index-opening-detail-panels|high-contrast-editorial-serif-with-tracked-sans-labels|one-screen-opening-to-selectable-service-panels-to-enquiry|full-bleed-generated-clinical-interior-and-panel-editorial-image",
+          "compact-dark-practice-utility-nav|wide-treatment-room-photo-with-outline-type-promise|alternating-image-and-typographic-treatment-chapters|condensed-display-grotesk-with-outline-accent|hero-to-founder-story-to-experience-chapters-to-visit-close|dark-practice-photography-and-large-treatment-scene-crops",
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels"
         ]
       }
     ]
