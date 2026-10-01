@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-10-01T00:08:44.424Z",
+  "updatedAt": "2026-10-01T00:25:52.981Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -223,6 +223,43 @@
         "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
         "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
       ]
+    },
+    {
+      "id": "2026-10-01-willowbridge-community-clinic-fictional-canary-attempt-104-run-36795941269-attempt-1",
+      "launchedAt": "2026-10-01T00:25:52.979Z",
+      "stage": "attempt",
+      "reservationKey": "104-run-36795941269-attempt-1",
+      "businessName": "Willowbridge Community Clinic - Fictional Canary",
+      "businessKind": "dental",
+      "recipe": "care-editorial",
+      "packId": "bold-utility",
+      "variantId": "standard",
+      "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "attested-omp-dental-editorial",
+        "editorial-monument",
+        "guided-conversation",
+        "market-collage",
+        "web-dental-gartside-street-family",
+        "web-dental-smile-san-francisco-family"
+      ],
+      "heroArchetypes": [
+        "image-led-editorial",
+        "image-panel",
+        "split-media-copy"
+      ],
+      "referenceIds": [
+        "attested-one-manor-place-dental",
+        "web-dental-gartside-street",
+        "web-dental-smile-san-francisco"
+      ],
+      "routeSignatures": [
+        "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+        "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+        "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -332,6 +369,45 @@
           "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
           "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
           "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+        ]
+      }
+    ],
+    "dental": [
+      {
+        "id": "2026-10-01-willowbridge-community-clinic-fictional-canary-attempt-104-run-36795941269-attempt-1",
+        "launchedAt": "2026-10-01T00:25:52.979Z",
+        "stage": "attempt",
+        "reservationKey": "104-run-36795941269-attempt-1",
+        "businessName": "Willowbridge Community Clinic - Fictional Canary",
+        "businessKind": "dental",
+        "recipe": "care-editorial",
+        "packId": "bold-utility",
+        "variantId": "standard",
+        "layoutFingerprint": "bold-utility|standard|utility-pill|editorial-dialogue|embedded-qualifier|service-chapters|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/trust/about/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "attested-omp-dental-editorial",
+          "editorial-monument",
+          "guided-conversation",
+          "market-collage",
+          "web-dental-gartside-street-family",
+          "web-dental-smile-san-francisco-family"
+        ],
+        "heroArchetypes": [
+          "image-led-editorial",
+          "image-panel",
+          "split-media-copy"
+        ],
+        "referenceIds": [
+          "attested-one-manor-place-dental",
+          "web-dental-gartside-street",
+          "web-dental-smile-san-francisco"
+        ],
+        "routeSignatures": [
+          "dark bar with direct consultation and contact routes|deep navy welcome panel balancing a large portrait or clinic image|distinct treatment groups after the opening narrative|elegant high-contrast serif headlines with clear sans body|dark opening -> welcome statement -> practice story -> treatment index -> facili|practice rooms and people arranged as editorial panels",
+          "quiet-dental-utility-links|stacked-neighborhood-promise-beside-clinic-portrait|ruled-dental-service-index-with-expandable-scope|botanical-editorial-serif|intro-to-practice-to-team-to-services-to-family-questions|practice-and-team-photography-with-an-illustrated-detail",
+          "thin white utility header with visible appointment and phone actions|a city panorama behind a centered translucent text panel|small named treatments gathered into a restrained matrix|restrained serif headlines with compact blue sans labels|city-photo opening -> human-scale practice video -> asymmetric clinician and tre|wide city context and authentic practice scenes"
         ]
       }
     ]
