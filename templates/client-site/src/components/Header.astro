@@ -13,7 +13,7 @@ const contactId = sectionId("contact", "contact");
 const { family = page.family } = Astro.props as { family?: DesignFamily };
 ---
 
-<header class:list={["header-shell", `header-${recipe}`, `header-family-${family}`]}><div class="header wrap">
+<header data-ll-surface="nav" class:list={["header-shell", `header-${recipe}`, `header-family-${family}`]}><div class="header wrap">
   <a class:list={["wordmark", { "wordmark--logo": Boolean(site.assets?.logo) }]} href="/">
     {site.assets?.logo
       ? <img src={site.assets.logo} alt={site.business.name} />

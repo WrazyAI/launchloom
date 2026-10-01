@@ -216,7 +216,9 @@ describe("production experience author", () => {
             brand: { phone: "+12125550186" },
           },
         }),
-      ).toThrow(/unsafe URL attribute|image source must use a sealed image content token/iu);
+      ).toThrow(
+        /unsafe URL attribute|image source must use a sealed image content token/iu,
+      );
   });
 
   it("allows local navigation, sealed image tokens, and prefixed contact tokens", () => {
@@ -225,7 +227,7 @@ describe("production experience author", () => {
     const experience = String(
       safeStage({ ...request, stage: "experience" }).content || "",
     ).replace(
-      '<section data-hero>',
+      "<section data-hero>",
       '<section data-hero><img src={content.hero.image} alt="A reviewed image" /><a href="/services/repair/">Service details</a>',
     );
     const styles = String(
@@ -248,7 +250,7 @@ describe("production experience author", () => {
 
     const serviceDetail = experience.replace(
       "<article key={service.name}>",
-      '<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>',
+      "<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>",
     );
     expect(serviceDetail).not.toBe(experience);
     expect(() =>
@@ -268,12 +270,11 @@ describe("production experience author", () => {
         "{content.services.map((service) =>",
         "{(() => { const serviceItems = content.services; return serviceItems.map((service) =>",
       )
-      .replace(
-        "</article>)}</section>",
-        "</article>); })()}</section>",
-      );
+      .replace("</article>)}</section>", "</article>); })()}</section>");
     expect(aliasedServiceDetail).toContain("serviceItems.map((service) =>");
-    expect(aliasedServiceDetail).not.toContain("content.services.map((service) =>");
+    expect(aliasedServiceDetail).not.toContain(
+      "content.services.map((service) =>",
+    );
     expect(() =>
       validateProductionCandidateFiles({
         files: { experience: aliasedServiceDetail, styles, motion },
@@ -288,7 +289,7 @@ describe("production experience author", () => {
 
     const unsealedServiceDetail = aliasedServiceDetail.replace(
       "const serviceItems = content.services",
-      "const boundServices = content.services; const serviceItems = [{ slug: \"outside-content\" }]",
+      'const boundServices = content.services; const serviceItems = [{ slug: "outside-content" }]',
     );
     expect(() =>
       validateProductionCandidateFiles({
@@ -343,7 +344,7 @@ export default function Experience`,
         files: {
           experience: experience.replace(
             '<a href="/services/repair/">',
-            '<a href={`tel:${content.brand.phone}`}>',
+            "<a href={`tel:${content.brand.phone}`}>",
           ),
           styles,
           motion,
@@ -455,7 +456,7 @@ export default function Experience`,
     ).not.toThrow();
 
     const unguarded = guarded.replace(
-      "{content.hero.secondaryImage && <img src={content.hero.secondaryImage} alt=\"\" />}",
+      '{content.hero.secondaryImage && <img src={content.hero.secondaryImage} alt="" />}',
       '<img src={content.hero.secondaryImage} alt="" />',
     );
     expect(() =>
@@ -472,7 +473,10 @@ export default function Experience`,
         route,
         content: {
           ...content,
-          hero: { ...content.hero, secondaryImage: "https://example.test/remote.webp" },
+          hero: {
+            ...content.hero,
+            secondaryImage: "https://example.test/remote.webp",
+          },
         },
       }),
     ).toThrow(/safe local or LaunchLoom-hosted image asset/iu);
@@ -507,18 +511,23 @@ export default function Experience`,
       /optional image token content\.hero\.secondaryImage.*conditionally render/iu,
     );
     expect(
-      result.candidates.find((candidate) => candidate.metadata.routeId === "route-02")
-        ?.metadata.complianceRepaired,
+      result.candidates.find(
+        (candidate) => candidate.metadata.routeId === "route-02",
+      )?.metadata.complianceRepaired,
     ).toBe(true);
-    expect(requests.every((request) =>
-      request.rules.includes("The sealed hero image tokens may be empty"),
-    )).toBe(true);
-    expect(requests.every((request) =>
-      request.rules.includes("Phone and email links must use their sealed tokens"),
-    )).toBe(true);
-    expect(requests[0]?.rules).toContain(
-      String.raw`replace(/[^\d+]/g, "")`,
-    );
+    expect(
+      requests.every((request) =>
+        request.rules.includes("The sealed hero image tokens may be empty"),
+      ),
+    ).toBe(true);
+    expect(
+      requests.every((request) =>
+        request.rules.includes(
+          "Phone and email links must use their sealed tokens",
+        ),
+      ),
+    ).toBe(true);
+    expect(requests[0]?.rules).toContain(String.raw`replace(/[^\d+]/g, "")`);
   });
 
   it("retries unsafe candidate links with the deterministic validation finding", async () => {
@@ -542,12 +551,9 @@ export default function Experience`,
             )
             .replace(
               "<article key={service.name}>",
-              '<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>',
+              "<article key={service.name}><a href={`/services/${service.slug}/`}>{service.name}</a>",
             )
-            .replace(
-              "</article>)}</section>",
-              "</article>); })()}</section>",
-            ),
+            .replace("</article>)}</section>", "</article>); })()}</section>"),
         };
       },
     });
@@ -1368,23 +1374,36 @@ export default function Experience`,
     );
   });
 
-  it("keeps shared creative form helper text on the candidate contrast palette", () => {
-    const styles = readFileSync(
-      "templates/client-site/src/styles/creative-runtime.css",
-      "utf8",
-    );
-
-    expect(styles).toContain(
-      '[data-creative-host="true"] .launchloom-lead-form {',
-    );
-    expect(styles).toContain("color: var(--ll-creative-ink, currentColor);");
-    expect(styles).toContain(
-      '[data-creative-host="true"] .launchloom-lead-form small {\n  color: var(--ll-creative-muted, currentColor);',
-    );
-    expect(styles).toContain('[data-creative-host="true"] {\n  width: 100%;');
-    expect(styles).toMatch(
-      /\[data-creative-host="true"\]\s*\{[^}]*overflow-x:\s*clip;/u,
-    );
+  it("keeps shared creative form helper text on the candidate contrast palette", async () => {
+    const { chromium } = await import("playwright");
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const page = await browser.newPage();
+      const styles = readFileSync(
+        "templates/client-site/src/styles/creative-runtime.css",
+        "utf8",
+      );
+      await page.setContent(
+        `<style>${styles}</style><body style="--ink:#14201d"><div data-creative-host="true" style="--ll-creative-ink:#ffffff;--ll-creative-muted:#cccccc;background:#14201d"><form class="launchloom-lead-form"><label>Name<input></label><small>Prepare for your visit</small></form></div></body>`,
+      );
+      expect(
+        await page
+          .locator("label")
+          .evaluate((el) => getComputedStyle(el).color),
+      ).toBe("rgb(255, 255, 255)");
+      expect(
+        await page
+          .locator("small")
+          .evaluate((el) => getComputedStyle(el).color),
+      ).toBe("rgb(204, 204, 204)");
+      expect(
+        await page
+          .locator("[data-creative-host]")
+          .evaluate((el) => getComputedStyle(el).overflowX),
+      ).toBe("clip");
+    } finally {
+      await browser.close();
+    }
   });
 
   it("fails closed when a repair route carries present-but-incomplete Reference DNA", () => {
@@ -1681,12 +1700,13 @@ export default function Experience`,
       ),
     ).toBe(true);
     expect(
-      requests.every((request) =>
-        request.rules.includes("EARLY CONVERSION INVARIANT") &&
-        request.rules.includes("native anchor to #contact") &&
-        request.rules.includes("data-early-conversion") &&
-        request.rules.includes("REFERENCE PROVENANCE BOUNDARY") &&
-        !request.rules.includes("anchor or button"),
+      requests.every(
+        (request) =>
+          request.rules.includes("EARLY CONVERSION INVARIANT") &&
+          request.rules.includes("native anchor to #contact") &&
+          request.rules.includes("data-early-conversion") &&
+          request.rules.includes("REFERENCE PROVENANCE BOUNDARY") &&
+          !request.rules.includes("anchor or button"),
       ),
     ).toBe(true);
   });
@@ -1727,7 +1747,7 @@ export default function Experience`,
             };
           return {
             content: String(value.content).replace(
-              '<div data-model-experience=',
+              "<div data-model-experience=",
               '<div style="color:red" data-model-experience=',
             ),
           };
@@ -2278,7 +2298,9 @@ export default function Experience`,
     expect(source).toContain("stagePromptDigest");
     expect(source).toContain("referenceDossierDigest");
     expect(source).toContain("evidenceManifest");
-    expect(source).toContain("compositionTopology: request.route.compositionTopology");
+    expect(source).toContain(
+      "compositionTopology: request.route.compositionTopology",
+    );
     expect(source).toContain("data-hero-copy");
     expect(source).toContain("data-hero-media");
   });
@@ -2678,4 +2700,25 @@ export default function ServicePage({ content, runtime, service: { name, slug, d
       ),
     ).toThrow(/remote URL/u);
   });
+});
+
+it("supplies safe local color pairings before creative authorship", () => {
+  const manifest = buildCreativeContentManifest({
+    ...site,
+    style: {
+      primaryColor: "#e8d590",
+      surfaceColor: "#ffffff",
+      inkColor: "#f8f6f0",
+    },
+  });
+  expect(manifest.visualBrief.palette).toHaveProperty("surfaces.nav");
+  expect(manifest.visualBrief.palette.inkColor).not.toBe("#f8f6f0");
+});
+it("preserves canonical semantic color properties while isolating arbitrary authored tokens", () => {
+  const css = namespaceCreativeCss(
+    '[data-ll-surface="nav"]{--ll-text:#14201d;--ink:white;color:var(--ll-text);background:var(--ink)}',
+  );
+  expect(css).toContain("color:var(--ll-text)");
+  expect(css).toContain("--ll-text:#14201d");
+  expect(css).toContain("--ll-creative-ink:white");
 });

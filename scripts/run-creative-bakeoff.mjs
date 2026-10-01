@@ -1,7 +1,9 @@
+import { contrastFailureMessages } from "./rendered-contrast.mjs";
 import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
+import { enforceBuiltContrast } from "./contrast-sweep.mjs";
 import { chromium } from "playwright";
 import {
   CREATIVE_PROMOTION_THRESHOLDS,
@@ -28,13 +30,15 @@ import {
 
 function argsFrom(argv) {
   return Object.fromEntries(
-    argv.slice(2).reduce(
-      (pairs, value, index, all) =>
-        index % 2 === 0
-          ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
-          : pairs,
-      [],
-    ),
+    argv
+      .slice(2)
+      .reduce(
+        (pairs, value, index, all) =>
+          index % 2 === 0
+            ? [...pairs, [value.replace(/^--/u, ""), all[index + 1]]]
+            : pairs,
+        [],
+      ),
   );
 }
 
@@ -104,7 +108,8 @@ async function startServer(root) {
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
-  if (!address || typeof address === "string") throw new Error("Could not start candidate server");
+  if (!address || typeof address === "string")
+    throw new Error("Could not start candidate server");
   return { server, origin: `http://127.0.0.1:${address.port}` };
 }
 
@@ -121,9 +126,17 @@ async function inspect(page) {
       let right = Math.min(window.innerWidth, bounds.right);
       let bottom = Math.min(window.innerHeight, bounds.bottom);
       let opacity = 1;
-      for (let ancestor = element; ancestor; ancestor = ancestor.parentElement) {
+      for (
+        let ancestor = element;
+        ancestor;
+        ancestor = ancestor.parentElement
+      ) {
         const style = window.getComputedStyle(ancestor);
-        if (style.display === "none" || style.visibility === "hidden" || style.visibility === "collapse")
+        if (
+          style.display === "none" ||
+          style.visibility === "hidden" ||
+          style.visibility === "collapse"
+        )
           return null;
         opacity *= Number.isFinite(Number.parseFloat(style.opacity))
           ? Number.parseFloat(style.opacity)
@@ -145,23 +158,24 @@ async function inspect(page) {
     };
     const visible = (element) => Boolean(rect(element));
     const copyRegions = hero
-      ? [...hero.querySelectorAll("[data-hero-copy]")]
-          .filter(visible)
-          .map(rect)
+      ? [...hero.querySelectorAll("[data-hero-copy]")].filter(visible).map(rect)
       : [];
     const mediaRegions = hero
       ? [...hero.querySelectorAll("[data-hero-media]")]
           .filter(visible)
           .map((element) => {
-            const visualNodes = [element, ...element.querySelectorAll("*")]
-              .filter((node) => {
-                if (!visible(node)) return false;
-                if (node instanceof HTMLImageElement)
-                  return node.complete && node.naturalWidth > 0;
-                if (node instanceof HTMLVideoElement)
-                  return node.readyState >= 2;
-                return hasImageBackground.test(window.getComputedStyle(node).backgroundImage);
-              });
+            const visualNodes = [
+              element,
+              ...element.querySelectorAll("*"),
+            ].filter((node) => {
+              if (!visible(node)) return false;
+              if (node instanceof HTMLImageElement)
+                return node.complete && node.naturalWidth > 0;
+              if (node instanceof HTMLVideoElement) return node.readyState >= 2;
+              return hasImageBackground.test(
+                window.getComputedStyle(node).backgroundImage,
+              );
+            });
             return {
               container: rect(element),
               visuals: visualNodes.map(rect),
@@ -171,13 +185,15 @@ async function inspect(page) {
     const text = [document.title, document.body.innerText].join("\n");
     const anchors = [...document.querySelectorAll("nav a")];
     const requiredTargets = ["#services", "#faqs", "#contact"];
-    const identityHeading = root?.querySelector("h1") || document.querySelector("h1");
+    const identityHeading =
+      root?.querySelector("h1") || document.querySelector("h1");
     const identityHeadingStyle = identityHeading
       ? window.getComputedStyle(identityHeading)
       : null;
     const identity = {
       bodyBackground: window.getComputedStyle(document.body).backgroundColor,
-      htmlBackground: window.getComputedStyle(document.documentElement).backgroundColor,
+      htmlBackground: window.getComputedStyle(document.documentElement)
+        .backgroundColor,
       headingFontFamily: identityHeadingStyle?.fontFamily || "",
       headingFontWeight: identityHeadingStyle?.fontWeight || "",
       headingLetterSpacing: identityHeadingStyle?.letterSpacing || "",
@@ -186,37 +202,96 @@ async function inspect(page) {
       identity,
       h1Count: document.querySelectorAll("h1").length,
       hasHero: Boolean(hero),
-      hasEarlyConversion: Boolean(root?.querySelector("[data-early-conversion]")),
+      hasEarlyConversion: Boolean(
+        root?.querySelector("[data-early-conversion]"),
+      ),
       hasServices: Boolean(document.querySelector("#services")),
       hasFaqs: Boolean(document.querySelector("#faqs")),
       hasContact: Boolean(document.querySelector("#contact")),
-      navTargets: anchors.map((anchor) => anchor.getAttribute("href")).filter(Boolean),
-      missingFragments: requiredTargets.filter((target) => !document.querySelector(target)).length,
-      missingNavTargets: requiredTargets.filter((target) => !anchors.some((anchor) => anchor.getAttribute("href") === target)).length,
-      hasLeadForm: Boolean(document.querySelector('[data-runtime="lead-form"]')),
+      navTargets: anchors
+        .map((anchor) => anchor.getAttribute("href"))
+        .filter(Boolean),
+      missingFragments: requiredTargets.filter(
+        (target) => !document.querySelector(target),
+      ).length,
+      missingNavTargets: requiredTargets.filter(
+        (target) =>
+          !anchors.some((anchor) => anchor.getAttribute("href") === target),
+      ).length,
+      hasLeadForm: Boolean(
+        document.querySelector('[data-runtime="lead-form"]'),
+      ),
       // Empty alt text is the sanctioned decorative treatment in the authoring
       // and repair contracts; only a missing alt attribute fails this gate.
-      missingAlt: [...document.images].filter((image) => !image.hasAttribute("alt")).length,
-      unnamedControls: [...document.querySelectorAll("button, a")].filter((element) => !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
+      missingAlt: [...document.images].filter(
+        (image) => !image.hasAttribute("alt"),
+      ).length,
+      unnamedControls: [...document.querySelectorAll("button, a")].filter(
+        (element) =>
+          !(
+            element.textContent ||
+            element.getAttribute("aria-label") ||
+            element.getAttribute("title") ||
+            ""
+          ).trim(),
+      ).length,
       heroBottom: Math.round(heroBounds?.bottom || 0),
       viewportHeight: window.innerHeight,
-      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-      brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
+      overflow:
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+      brokenImages: [...document.images].filter(
+        (image) => image.complete && image.naturalWidth === 0,
+      ).length,
       emDashes: (text.match(/—/gu) || []).length,
-      referenceSignatures: [...new Set([...document.querySelectorAll("[data-reference-signature]")].map((element) => element.getAttribute("data-reference-signature")).filter(Boolean))],
-      referenceSections: [...document.querySelectorAll("[data-reference-section]")].map((element) => element.getAttribute("data-reference-section")).filter(Boolean),
-      heroGeometry: root?.querySelector("[data-hero]")?.getAttribute("data-hero-geometry") || "",
-      navigationGeometry: root?.querySelector("[data-navigation-geometry]")?.getAttribute("data-navigation-geometry") || "",
-      servicePresentation: root?.querySelector("[data-service-presentation]")?.getAttribute("data-service-presentation") || "",
-      ctaPlacement: root?.querySelector("[data-cta-placement]")?.getAttribute("data-cta-placement") || "",
-      mobileRecomposition: root?.querySelector("[data-mobile-recomposition]")?.getAttribute("data-mobile-recomposition") || "",
-      motionPrimitive: root?.querySelector("[data-motion-primitive]")?.getAttribute("data-motion-primitive") || "",
-      creativeRenderer: document.querySelector("[data-creative-renderer]")?.getAttribute("data-creative-renderer") || "",
+      referenceSignatures: [
+        ...new Set(
+          [...document.querySelectorAll("[data-reference-signature]")]
+            .map((element) => element.getAttribute("data-reference-signature"))
+            .filter(Boolean),
+        ),
+      ],
+      referenceSections: [
+        ...document.querySelectorAll("[data-reference-section]"),
+      ]
+        .map((element) => element.getAttribute("data-reference-section"))
+        .filter(Boolean),
+      heroGeometry:
+        root
+          ?.querySelector("[data-hero]")
+          ?.getAttribute("data-hero-geometry") || "",
+      navigationGeometry:
+        root
+          ?.querySelector("[data-navigation-geometry]")
+          ?.getAttribute("data-navigation-geometry") || "",
+      servicePresentation:
+        root
+          ?.querySelector("[data-service-presentation]")
+          ?.getAttribute("data-service-presentation") || "",
+      ctaPlacement:
+        root
+          ?.querySelector("[data-cta-placement]")
+          ?.getAttribute("data-cta-placement") || "",
+      mobileRecomposition:
+        root
+          ?.querySelector("[data-mobile-recomposition]")
+          ?.getAttribute("data-mobile-recomposition") || "",
+      motionPrimitive:
+        root
+          ?.querySelector("[data-motion-primitive]")
+          ?.getAttribute("data-motion-primitive") || "",
+      creativeRenderer:
+        document
+          .querySelector("[data-creative-renderer]")
+          ?.getAttribute("data-creative-renderer") || "",
       compositionEvidence: {
         hero: heroBounds ? rect(hero) : null,
         copy: copyRegions,
         media: mediaRegions,
-        utilityCount: hero?.querySelectorAll('form, input, select, textarea, [role="search"], [role="combobox"]').length || 0,
+        utilityCount:
+          hero?.querySelectorAll(
+            'form, input, select, textarea, [role="search"], [role="combobox"]',
+          ).length || 0,
       },
     };
   }, CSS_IMAGE_URL_PATTERN.source);
@@ -231,21 +306,34 @@ function hardFailures(evidence, viewport) {
     !evidence.hasFaqs && "missing FAQs section",
     !evidence.hasContact && "missing contact section",
     evidence.missingFragments > 0 && "missing required fragment target",
-    evidence.missingNavTargets > 0 && "navigation does not expose required targets",
+    evidence.missingNavTargets > 0 &&
+      "navigation does not expose required targets",
     !evidence.hasLeadForm && "missing shared lead form runtime",
     evidence.missingAlt > 0 && "image is missing alt text",
-    evidence.unnamedControls > 0 && "interactive control has no accessible name",
-    viewport.name !== "mobile" && evidence.heroBottom > evidence.viewportHeight + 1 && "hero exceeds desktop viewport",
+    evidence.unnamedControls > 0 &&
+      "interactive control has no accessible name",
+    viewport.name !== "mobile" &&
+      evidence.heroBottom > evidence.viewportHeight + 1 &&
+      "hero exceeds desktop viewport",
     evidence.overflow && "horizontal overflow",
     evidence.brokenImages > 0 && "broken image",
     evidence.emDashes > 0 && "em dash found",
-    evidence.creativeRenderer !== "creative-candidate" && "creative renderer marker missing",
+    evidence.creativeRenderer !== "creative-candidate" &&
+      "creative renderer marker missing",
   ].filter(Boolean);
 }
 
 const AUTHORED_PAGE_MARKERS = {
-  service: ["data-service-hero", "data-service-support", "data-service-related"],
-  location: ["data-location-hero", "data-location-coverage", "data-location-related"],
+  service: [
+    "data-service-hero",
+    "data-service-support",
+    "data-service-related",
+  ],
+  location: [
+    "data-location-hero",
+    "data-location-coverage",
+    "data-location-related",
+  ],
   "services-index": ["data-services-index-hero", "data-services-index-list"],
 };
 
@@ -290,7 +378,8 @@ export async function inspectAuthoredPage(page) {
       kind,
       identity: {
         bodyBackground: window.getComputedStyle(document.body).backgroundColor,
-        htmlBackground: window.getComputedStyle(document.documentElement).backgroundColor,
+        htmlBackground: window.getComputedStyle(document.documentElement)
+          .backgroundColor,
         headingFontFamily: headingStyle?.fontFamily || "",
         headingFontWeight: headingStyle?.fontWeight || "",
         headingLetterSpacing: headingStyle?.letterSpacing || "",
@@ -301,18 +390,38 @@ export async function inspectAuthoredPage(page) {
       markers: [...markerNames],
       h1Count: pageRoot ? pageRoot.querySelectorAll("h1").length : 0,
       hasContactSection: Boolean(pageRoot?.querySelector("#contact")),
-      hasLeadForm: Boolean(pageRoot?.querySelector('[data-runtime="lead-form"]')),
-      missingAlt: [...document.images].filter((image) => !image.hasAttribute("alt")).length,
-      unnamedControls: [...(pageRoot?.querySelectorAll("button, a") || [])].filter((element) => !(element.textContent || element.getAttribute("aria-label") || element.getAttribute("title") || "").trim()).length,
-      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-      brokenImages: [...document.images].filter((image) => image.complete && image.naturalWidth === 0).length,
+      hasLeadForm: Boolean(
+        pageRoot?.querySelector('[data-runtime="lead-form"]'),
+      ),
+      missingAlt: [...document.images].filter(
+        (image) => !image.hasAttribute("alt"),
+      ).length,
+      unnamedControls: [
+        ...(pageRoot?.querySelectorAll("button, a") || []),
+      ].filter(
+        (element) =>
+          !(
+            element.textContent ||
+            element.getAttribute("aria-label") ||
+            element.getAttribute("title") ||
+            ""
+          ).trim(),
+      ).length,
+      overflow:
+        document.documentElement.scrollWidth >
+        document.documentElement.clientWidth,
+      brokenImages: [...document.images].filter(
+        (image) => image.complete && image.naturalWidth === 0,
+      ).length,
       emDashes: (text.match(/—/gu) || []).length,
     };
   });
 }
 
 function normalizeColor(value) {
-  return String(value || "").replace(/\s+/gu, "").toLowerCase();
+  return String(value || "")
+    .replace(/\s+/gu, "")
+    .toLowerCase();
 }
 
 /**
@@ -321,7 +430,11 @@ function normalizeColor(value) {
  * and heading weight are identity anchors that must not drift to the generic
  * inner-page template.
  */
-export function authoredPageIdentityFindings(home, page, label = "authored page") {
+export function authoredPageIdentityFindings(
+  home,
+  page,
+  label = "authored page",
+) {
   const findings = [];
   if (!home || !page) return findings;
   const homeCanvas =
@@ -345,9 +458,7 @@ export function authoredPageIdentityFindings(home, page, label = "authored page"
     page.headingFontWeight &&
     home.headingFontWeight !== page.headingFontWeight
   )
-    findings.push(
-      `${label} heading weight drifts from the homepage weight`,
-    );
+    findings.push(`${label} heading weight drifts from the homepage weight`);
   return findings;
 }
 
@@ -370,7 +481,8 @@ export function authoredPageFailures(evidence, kind) {
     !evidence.hasContactSection && "missing contact section",
     !evidence.hasLeadForm && "missing shared lead form runtime",
     evidence.missingAlt > 0 && "image is missing alt text",
-    evidence.unnamedControls > 0 && "interactive control has no accessible name",
+    evidence.unnamedControls > 0 &&
+      "interactive control has no accessible name",
     evidence.overflow && "horizontal overflow",
     evidence.brokenImages > 0 && "broken image",
     evidence.emDashes > 0 && "em dash found",
@@ -422,9 +534,7 @@ function renderedPairMetrics(visualDiversity, candidateIds) {
           relevant.every((pair) => pair.pass !== false)),
       failedPeers: relevant
         .filter((pair) => pair.pass === false)
-        .map((pair) =>
-          pair.left === candidateId ? pair.right : pair.left,
-        )
+        .map((pair) => (pair.left === candidateId ? pair.right : pair.left))
         .sort(),
     };
   }
@@ -447,6 +557,7 @@ export async function runCreativeBakeoff({
   renderedReferenceEvaluator = evaluateRenderedReferenceFidelity,
   renderedDiversityEvaluator = evaluateRenderedDiversity,
   requireDiversity = true,
+  allowContrastRepair = true,
 } = {}) {
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
@@ -458,11 +569,17 @@ export async function runCreativeBakeoff({
     root,
     screenshotsDir || ".launchloom/creative-bakeoff-screenshots",
   );
-  const entries = (await fs.readdir(candidateRoot, { withFileTypes: true }).catch(() => []))
-    .filter((entry) => entry.isDirectory() && /^candidate-[a-z0-9]+$/u.test(entry.name))
+  const entries = (
+    await fs.readdir(candidateRoot, { withFileTypes: true }).catch(() => [])
+  )
+    .filter(
+      (entry) =>
+        entry.isDirectory() && /^candidate-[a-z0-9]+$/u.test(entry.name),
+    )
     .map((entry) => entry.name)
     .sort();
-  if (!entries.length) throw new Error(`No creative candidates found in ${candidateRoot}.`);
+  if (!entries.length)
+    throw new Error(`No creative candidates found in ${candidateRoot}.`);
 
   const excludedIds = new Set(
     Array.isArray(excludedCandidateIds)
@@ -478,7 +595,10 @@ export async function runCreativeBakeoff({
   const candidates = [];
   for (const directory of entries) {
     const metadata = JSON.parse(
-      await fs.readFile(path.join(candidateRoot, directory, "metadata.json"), "utf8"),
+      await fs.readFile(
+        path.join(candidateRoot, directory, "metadata.json"),
+        "utf8",
+      ),
     );
     const contentManifest = await fs
       .readFile(
@@ -532,7 +652,9 @@ export async function runCreativeBakeoff({
   const selectedDir = path.join(root, "src/generated-experiences/selected");
   const selectedBackup = `${selectedDir}.bakeoff-${process.pid}`;
   await fs.rm(selectedBackup, { recursive: true, force: true });
-  await fs.cp(selectedDir, selectedBackup, { recursive: true, force: true }).catch(() => {});
+  await fs
+    .cp(selectedDir, selectedBackup, { recursive: true, force: true })
+    .catch(() => {});
   const browser = await chromium.launch({ headless: true });
   const bakeoffConfig = JSON.parse(originalConfig);
   const serviceSlug = String(
@@ -578,18 +700,49 @@ export async function runCreativeBakeoff({
       try {
         if (candidate.contentManifestError)
           throw new Error(candidate.contentManifestError);
-        const experienceSource = await fs.readFile(path.join(candidateRoot, candidate.directory, "Experience.jsx"), "utf8");
-        const stylesSource = await fs.readFile(path.join(candidateRoot, candidate.directory, "styles.css"), "utf8");
-        const motionSource = await fs.readFile(path.join(candidateRoot, candidate.directory, "motion.js"), "utf8");
-        const sourceFidelity = candidate.manifest.version >= 2
-          ? validateReferenceCandidate({ referenceDna: candidate.manifest.referenceDna, experienceSource, stylesSource, motionSource })
-          : { version: 1, pass: true, visualPass: true, score: 100, findings: [], hardFindings: [], visualFindings: [], requiredSignatures: [] };
+        const experienceSource = await fs.readFile(
+          path.join(candidateRoot, candidate.directory, "Experience.jsx"),
+          "utf8",
+        );
+        let stylesSource = await fs.readFile(
+          path.join(candidateRoot, candidate.directory, "styles.css"),
+          "utf8",
+        );
+        const motionSource = await fs.readFile(
+          path.join(candidateRoot, candidate.directory, "motion.js"),
+          "utf8",
+        );
+        const sourceFidelity =
+          candidate.manifest.version >= 2
+            ? validateReferenceCandidate({
+                referenceDna: candidate.manifest.referenceDna,
+                experienceSource,
+                stylesSource,
+                motionSource,
+              })
+            : {
+                version: 1,
+                pass: true,
+                visualPass: true,
+                score: 100,
+                findings: [],
+                hardFindings: [],
+                visualFindings: [],
+                requiredSignatures: [],
+              };
         candidateResult.referenceFidelity = sourceFidelity;
         if (!sourceFidelity.pass)
-          candidateResult.failures.push(...sourceFidelity.hardFindings.map((item) => `source: ${item.message}`));
+          candidateResult.failures.push(
+            ...sourceFidelity.hardFindings.map(
+              (item) => `source: ${item.message}`,
+            ),
+          );
         await promoteCreativeCandidate({
           siteDir: root,
-          candidateDir: path.relative(root, path.join(candidateRoot, candidate.directory)),
+          candidateDir: path.relative(
+            root,
+            path.join(candidateRoot, candidate.directory),
+          ),
           contentManifest: candidate.contentManifest,
           // Rendering a candidate for the bakeoff must remain available even
           // when source-level visual findings are present. Production
@@ -597,6 +750,50 @@ export async function runCreativeBakeoff({
           preview: true,
         });
         await run("npm", ["run", "build"], root);
+        candidateResult.contrast = await enforceBuiltContrast({
+          dist: path.join(root, "dist"),
+          browser,
+          stylesPath: path.join(
+            candidateRoot,
+            candidate.directory,
+            "styles.css",
+          ),
+          deployedStylesPath: path.join(
+            root,
+            "src/generated-experiences/selected/styles.css",
+          ),
+          reportPath: path.join(
+            evidenceDir,
+            `${candidate.manifest.candidateId}-contrast.json`,
+          ),
+          repair: allowContrastRepair,
+          build: () => run("npm", ["run", "build"], root),
+        });
+        if (!candidateResult.contrast.pass)
+          candidateResult.failures.push(
+            ...contrastFailureMessages(candidateResult.contrast.after),
+          );
+        if (candidateResult.contrast.repairs.length) {
+          stylesSource = await fs.readFile(
+            path.join(candidateRoot, candidate.directory, "styles.css"),
+            "utf8",
+          );
+          candidateResult.referenceFidelity =
+            candidate.manifest.version >= 2
+              ? validateReferenceCandidate({
+                  referenceDna: candidate.manifest.referenceDna,
+                  experienceSource,
+                  stylesSource,
+                  motionSource,
+                })
+              : sourceFidelity;
+          if (!candidateResult.referenceFidelity.pass)
+            candidateResult.failures.push(
+              ...candidateResult.referenceFidelity.hardFindings.map(
+                (item) => `repaired source: ${item.message}`,
+              ),
+            );
+        }
         const { server, origin } = await startServer(path.join(root, "dist"));
         try {
           for (const viewport of [
@@ -612,30 +809,40 @@ export async function runCreativeBakeoff({
             // opacity-sensitive visual evidence or taking the viewport shot.
             await page.waitForTimeout(900);
             const evidence = await inspect(page);
-            const failures = [...hardFailures(evidence, viewport), browserErrors.length > 0 && "browser error"].filter(Boolean);
-            const compositionTopology = candidate.manifest.version >= 2
-              ? candidate.manifest.referenceDna?.compositionTopology
-              : null;
+            const failures = [
+              ...hardFailures(evidence, viewport),
+              browserErrors.length > 0 && "browser error",
+            ].filter(Boolean);
+            const compositionTopology =
+              candidate.manifest.version >= 2
+                ? candidate.manifest.referenceDna?.compositionTopology
+                : null;
             const compositionGeometry = compositionTopology
               ? validateRenderedCompositionTopology(
-                compositionTopology,
-                evidence.compositionEvidence,
-                { viewportKind: viewport.name === "mobile" ? "mobile" : "desktop" },
-              )
+                  compositionTopology,
+                  evidence.compositionEvidence,
+                  {
+                    viewportKind:
+                      viewport.name === "mobile" ? "mobile" : "desktop",
+                  },
+                )
               : candidate.manifest.version >= 2
                 ? {
                     pass: true,
                     skipped: true,
-                    reason: "Reference DNA predates the normalized composition topology contract.",
+                    reason:
+                      "Reference DNA predates the normalized composition topology contract.",
                   }
                 : null;
             if (compositionGeometry && !compositionGeometry.pass)
               failures.push(
-                ...compositionGeometry.findings.map((finding) =>
-                  `rendered composition: ${finding.message}`,
+                ...compositionGeometry.findings.map(
+                  (finding) => `rendered composition: ${finding.message}`,
                 ),
               );
-            candidateResult.failures.push(...failures.map((failure) => `${viewport.name}: ${failure}`));
+            candidateResult.failures.push(
+              ...failures.map((failure) => `${viewport.name}: ${failure}`),
+            );
             candidateResult.viewports.push({
               ...viewport,
               ...evidence,
@@ -652,7 +859,9 @@ export async function runCreativeBakeoff({
                 experienceSource,
                 stylesSource,
                 motionSource,
-                renderedDom: await page.locator("[data-creative-host]").evaluate((element) => element.outerHTML),
+                renderedDom: await page
+                  .locator("[data-creative-host]")
+                  .evaluate((element) => element.outerHTML),
               });
               const viewportVisualFindings =
                 renderedFidelity.visualFindings.map((item) => ({
@@ -677,14 +886,29 @@ export async function runCreativeBakeoff({
                   renderedFidelity.pass,
               };
               if (!renderedFidelity.pass)
-                candidateResult.failures.push(...renderedFidelity.hardFindings.map((item) => `${viewport.name}: ${item.message}`));
+                candidateResult.failures.push(
+                  ...renderedFidelity.hardFindings.map(
+                    (item) => `${viewport.name}: ${item.message}`,
+                  ),
+                );
             }
             // The reference judge needs the actual first viewport for hero
             // geometry. Keep a separate full-page capture for section rhythm,
             // lower content, and the final visual-quality gate.
             if (candidate.manifest.version >= 2)
-              await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}-viewport.png`) });
-            await page.screenshot({ path: path.join(evidenceDir, `${candidate.manifest.candidateId}-${viewport.name}.png`), fullPage: true });
+              await page.screenshot({
+                path: path.join(
+                  evidenceDir,
+                  `${candidate.manifest.candidateId}-${viewport.name}-viewport.png`,
+                ),
+              });
+            await page.screenshot({
+              path: path.join(
+                evidenceDir,
+                `${candidate.manifest.candidateId}-${viewport.name}.png`,
+              ),
+              fullPage: true,
+            });
             await page.close();
           }
           const authoredPages = [
@@ -731,7 +955,9 @@ export async function runCreativeBakeoff({
             ]) {
               const page = await browser.newPage({ viewport });
               const browserErrors = [];
-              page.on("pageerror", (error) => browserErrors.push(error.message));
+              page.on("pageerror", (error) =>
+                browserErrors.push(error.message),
+              );
               try {
                 await page.goto(`${origin}${authoredPage.route}`, {
                   waitUntil: "networkidle",
@@ -789,28 +1015,48 @@ export async function runCreativeBakeoff({
             );
           }
         } finally {
-          await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+          await new Promise((resolve, reject) =>
+            server.close((error) => (error ? reject(error) : resolve())),
+          );
         }
         if (candidate.manifest.version >= 2) {
           const renderedReference = await renderedReferenceEvaluator({
             referenceDna: candidate.manifest.referenceDna,
             visualBrief: candidate.contentManifest?.visualBrief || {},
             candidateScreenshots: {
-              desktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop-viewport.png`),
-              compact: path.join(evidenceDir, `${candidate.manifest.candidateId}-compact-viewport.png`),
-              mobile: path.join(evidenceDir, `${candidate.manifest.candidateId}-mobile-viewport.png`),
-              fullDesktop: path.join(evidenceDir, `${candidate.manifest.candidateId}-desktop.png`),
+              desktop: path.join(
+                evidenceDir,
+                `${candidate.manifest.candidateId}-desktop-viewport.png`,
+              ),
+              compact: path.join(
+                evidenceDir,
+                `${candidate.manifest.candidateId}-compact-viewport.png`,
+              ),
+              mobile: path.join(
+                evidenceDir,
+                `${candidate.manifest.candidateId}-mobile-viewport.png`,
+              ),
+              fullDesktop: path.join(
+                evidenceDir,
+                `${candidate.manifest.candidateId}-desktop.png`,
+              ),
             },
-            renderedGeometry: Object.fromEntries(candidateResult.viewports.map((viewport) => [viewport.name, {
-              viewportWidth: viewport.width,
-              viewportHeight: viewport.viewportHeight,
-              heroBottom: viewport.heroBottom,
-            }])),
+            renderedGeometry: Object.fromEntries(
+              candidateResult.viewports.map((viewport) => [
+                viewport.name,
+                {
+                  viewportWidth: viewport.width,
+                  viewportHeight: viewport.viewportHeight,
+                  heroBottom: viewport.heroBottom,
+                },
+              ]),
+            ),
           });
           candidateResult.renderedReferenceFidelity = renderedReference;
           candidateResult.referenceFidelity = {
             ...candidateResult.referenceFidelity,
-            sourceContractScore: candidateResult.referenceFidelity?.score ?? 100,
+            sourceContractScore:
+              candidateResult.referenceFidelity?.score ?? 100,
             sourceVisualFindings:
               candidateResult.referenceFidelity?.visualFindings || [],
             pixelScore: renderedReference.score,
@@ -833,12 +1079,18 @@ export async function runCreativeBakeoff({
           }
         }
       } catch (error) {
-        candidateResult.failures.push(error instanceof Error ? error.message : String(error));
+        candidateResult.failures.push(
+          error instanceof Error ? error.message : String(error),
+        );
       }
       candidateResult.failures = [...new Set(candidateResult.failures)];
       candidateResult.valid = candidateResult.failures.length === 0;
-      const desktopEvidence = candidateResult.viewports.filter((viewport) => viewport.name !== "mobile");
-      const mobileEvidence = candidateResult.viewports.find((viewport) => viewport.name === "mobile");
+      const desktopEvidence = candidateResult.viewports.filter(
+        (viewport) => viewport.name !== "mobile",
+      );
+      const mobileEvidence = candidateResult.viewports.find(
+        (viewport) => viewport.name === "mobile",
+      );
       const allEvidence = candidateResult.viewports;
       candidateResult.visualFingerprint = allEvidence[0]
         ? [
@@ -879,8 +1131,8 @@ export async function runCreativeBakeoff({
             ? Number(pixelScores.mobileRecomposition || 0)
             : Boolean(
                   mobileEvidence &&
-                    !mobileEvidence.overflow &&
-                    mobileEvidence.hasHero,
+                  !mobileEvidence.overflow &&
+                  mobileEvidence.hasHero,
                 )
               ? 100
               : 0,
@@ -892,15 +1144,13 @@ export async function runCreativeBakeoff({
                   2,
               )
             : 80,
-        conversion:
-          allEvidence.every(
-            (viewport) =>
-              viewport.hasEarlyConversion && viewport.hasLeadForm,
-          )
-            ? candidateResult.manifest.version >= 2
-              ? Number(pixelScores.ctaPlacement || 0)
-              : 100
-            : 0,
+        conversion: allEvidence.every(
+          (viewport) => viewport.hasEarlyConversion && viewport.hasLeadForm,
+        )
+          ? candidateResult.manifest.version >= 2
+            ? Number(pixelScores.ctaPlacement || 0)
+            : 100
+          : 0,
         referenceFidelity: candidateResult.referenceFidelity?.score ?? 0,
         motionEvidence:
           candidateResult.manifest.version >= 2
@@ -908,18 +1158,31 @@ export async function runCreativeBakeoff({
             : allEvidence.every((viewport) => viewport.motionPrimitive)
               ? 100
               : 0,
-        imageRelevance:
-          allEvidence.every((viewport) => viewport.brokenImages === 0)
-            ? candidateResult.manifest.version >= 2
-              ? Number(pixelScores.imagery || 0)
-              : 100
-            : 0,
+        imageRelevance: allEvidence.every(
+          (viewport) => viewport.brokenImages === 0,
+        )
+          ? candidateResult.manifest.version >= 2
+            ? Number(pixelScores.imagery || 0)
+            : 100
+          : 0,
       };
       const technical = {
-        accessibility: allEvidence.every((viewport) => viewport.missingAlt === 0 && viewport.unnamedControls === 0 && viewport.browserErrors.length === 0) ? 100 : 0,
+        accessibility:
+          candidateResult.contrast?.pass &&
+          allEvidence.every(
+            (viewport) =>
+              viewport.missingAlt === 0 &&
+              viewport.unnamedControls === 0 &&
+              viewport.browserErrors.length === 0,
+          )
+            ? 100
+            : 0,
       };
       const peerDistances = candidates
-        .filter((peer) => peer.manifest.candidateId !== candidate.manifest.candidateId)
+        .filter(
+          (peer) =>
+            peer.manifest.candidateId !== candidate.manifest.candidateId,
+        )
         // The compact creative manifest intentionally carries the route
         // fingerprint hash, but not every structural dimension. Compare the
         // authored metadata so pairwise diversity reflects the actual route
@@ -932,10 +1195,15 @@ export async function runCreativeBakeoff({
           : 0;
       const distinctivenessScore = Math.min(
         100,
-        Math.round((minimumDistance / CREATIVE_PROMOTION_THRESHOLDS.minimumFingerprintDistance) * 100),
+        Math.round(
+          (minimumDistance /
+            CREATIVE_PROMOTION_THRESHOLDS.minimumFingerprintDistance) *
+            100,
+        ),
       );
       candidateResult.visualScore = Math.round(
-        Object.values(visual).reduce((sum, value) => sum + value, 0) / Object.keys(visual).length,
+        Object.values(visual).reduce((sum, value) => sum + value, 0) /
+          Object.keys(visual).length,
       );
       candidateResult.technicalScore = technical.accessibility;
       candidateResult.distinctivenessScore = distinctivenessScore;
@@ -953,10 +1221,7 @@ export async function runCreativeBakeoff({
       });
       const candidateFamilyIds = [
         ...new Set(
-          [
-            candidate.metadata.familyId,
-            candidate.metadata.referenceFamilyId,
-          ]
+          [candidate.metadata.familyId, candidate.metadata.referenceFamilyId]
             .map((value) => String(value || "").trim())
             .filter(Boolean),
         ),
@@ -965,10 +1230,9 @@ export async function runCreativeBakeoff({
         recentHistory,
         candidateFamilyIds,
       );
-      candidateResult.rotationPenalty =
-        candidateResult.explicitReferenceMatch
-          ? 0
-          : Math.min(18, recentFamilyUses * 6);
+      candidateResult.rotationPenalty = candidateResult.explicitReferenceMatch
+        ? 0
+        : Math.min(18, recentFamilyUses * 6);
       candidateResult.rawScore = rawScore;
       candidateResult.score =
         rawScore < 0 ? rawScore : rawScore - candidateResult.rotationPenalty;
@@ -1007,7 +1271,9 @@ export async function runCreativeBakeoff({
     (candidate) =>
       candidate.valid &&
       candidate.referenceFidelity?.pass !== false &&
-      (candidate.manifest.version < 2 || candidate.referenceFidelity?.score >= CREATIVE_PROMOTION_THRESHOLDS.referenceFidelityScore) &&
+      (candidate.manifest.version < 2 ||
+        candidate.referenceFidelity?.score >=
+          CREATIVE_PROMOTION_THRESHOLDS.referenceFidelityScore) &&
       candidate.visualScore >= CREATIVE_PROMOTION_THRESHOLDS.visualScore &&
       candidate.technicalScore >= 100,
   );
@@ -1040,9 +1306,7 @@ export async function runCreativeBakeoff({
       minimumDistance: judged.minimumPairDistance,
       score: judged.score,
       pairs: judged.audit?.pairs || [],
-      genericFallbackDetected: Boolean(
-        judged.audit?.genericFallbackDetected,
-      ),
+      genericFallbackDetected: Boolean(judged.audit?.genericFallbackDetected),
       summary: judged.audit?.summary || "",
       pass: judged.pass,
     };
@@ -1090,14 +1354,15 @@ export async function runCreativeBakeoff({
   );
   for (const candidate of results)
     if (candidate.manifest?.version >= 2)
-      candidate.renderedHeroDistinctiveness =
-        renderedHeroDistinctiveness[candidate.candidateId] || {
-          peerCount: 0,
-          minimumDistance: 0,
-          averageDistance: 0,
-          allPairsPass: false,
-          failedPeers: [],
-        };
+      candidate.renderedHeroDistinctiveness = renderedHeroDistinctiveness[
+        candidate.candidateId
+      ] || {
+        peerCount: 0,
+        minimumDistance: 0,
+        averageDistance: 0,
+        allPairsPass: false,
+        failedPeers: [],
+      };
 
   let previewSelectionPool = previewEligible;
   let previewDiversity = {
@@ -1184,36 +1449,33 @@ export async function runCreativeBakeoff({
     ? visualDiversity.pass
     : diversity.pass && visualDiversity.pass;
   const diversityPass = !requireDiversity || measuredDiversityPass;
-  const valid = preview && !promote
-    ? previewSelectionPool
-    : diversityPass
-      ? results.filter((candidate) => candidate.eligible)
-      : [];
+  const valid =
+    preview && !promote
+      ? previewSelectionPool
+      : diversityPass
+        ? results.filter((candidate) => candidate.eligible)
+        : [];
   const winner =
     valid.sort(
       (left, right) =>
         Number(right.explicitReferenceMatch) -
           Number(left.explicitReferenceMatch) ||
-        Number(
-          right.renderedHeroDistinctiveness?.minimumDistance || 0,
-        ) -
-          Number(
-            left.renderedHeroDistinctiveness?.minimumDistance || 0,
-          ) ||
+        Number(right.renderedHeroDistinctiveness?.minimumDistance || 0) -
+          Number(left.renderedHeroDistinctiveness?.minimumDistance || 0) ||
         right.score - left.score ||
         right.intakeFitScore - left.intakeFitScore ||
         left.candidateId.localeCompare(right.candidateId),
     )[0] || null;
   const selectionPass = Boolean(
-    winner &&
-      (preview && !promote ? previewDiversity.pass : diversityPass),
+    winner && (preview && !promote ? previewDiversity.pass : diversityPass),
   );
 
   const report = {
     version: 1,
     mode: promote ? "promote" : preview ? "preview" : "review",
     thresholds: CREATIVE_PROMOTION_THRESHOLDS,
-    scoreSource: "rendered-structure-and-contract; multimodal visual gate remains required",
+    scoreSource:
+      "rendered-structure-and-contract; multimodal visual gate remains required",
     diversity,
     visualDiversity,
     previewDiversity,
@@ -1225,9 +1487,7 @@ export async function runCreativeBakeoff({
     // distinctiveness as a real objective. A converged v2 pool stays blocked
     // for bounded repair instead of silently publishing a generic winner.
     fallback: !selectionPass,
-    promotionReady: Boolean(
-      winner && measuredDiversityPass && winner.eligible,
-    ),
+    promotionReady: Boolean(winner && measuredDiversityPass && winner.eligible),
   };
   await fs.mkdir(path.dirname(reportFile), { recursive: true });
   await fs.writeFile(reportFile, `${JSON.stringify(report, null, 2)}\n`);
@@ -1264,10 +1524,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     promote: args.promote === "true",
     preview: args.preview === "true",
   });
-  console.log(JSON.stringify({
-    selectedCandidateId: report.selectedCandidateId,
-    fallback: report.fallback,
-    diversityPass: report.diversity.pass,
-    report: args.report || ".launchloom/creative-bakeoff.json",
-  }));
+  console.log(
+    JSON.stringify({
+      selectedCandidateId: report.selectedCandidateId,
+      fallback: report.fallback,
+      diversityPass: report.diversity.pass,
+      report: args.report || ".launchloom/creative-bakeoff.json",
+    }),
+  );
 }

@@ -62,14 +62,20 @@ async function makeTemplateCopy(configOverrides = {}) {
       !source.includes(`${path.sep}dist`) &&
       !source.includes(`${path.sep}.astro`),
   });
-  const templateNodeModules = path.resolve("templates/client-site/node_modules");
+  const templateNodeModules = path.resolve(
+    "templates/client-site/node_modules",
+  );
   if (
     await fs
       .access(templateNodeModules)
       .then(() => true)
       .catch(() => false)
   ) {
-    await fs.symlink(templateNodeModules, path.join(root, "node_modules"), "dir");
+    await fs.symlink(
+      templateNodeModules,
+      path.join(root, "node_modules"),
+      "dir",
+    );
   }
   if (Object.keys(configOverrides).length) {
     const configPath = path.join(root, "src/site.config.json");
@@ -106,8 +112,14 @@ async function makeFixture() {
     contentManifestDigest: "content-digest",
     assets: ["content.hero.image"],
   });
-  await fs.writeFile(path.join(root, "src/site.config.json"), JSON.stringify({ design: { recipe: "general-editorial", sections: [] } }));
-  await fs.writeFile(path.join(root, "candidate-a/metadata.json"), JSON.stringify({ ...manifest, creativeManifest: manifest }));
+  await fs.writeFile(
+    path.join(root, "src/site.config.json"),
+    JSON.stringify({ design: { recipe: "general-editorial", sections: [] } }),
+  );
+  await fs.writeFile(
+    path.join(root, "candidate-a/metadata.json"),
+    JSON.stringify({ ...manifest, creativeManifest: manifest }),
+  );
   await fs.writeFile(
     path.join(root, "candidate-a/Experience.jsx"),
     `import { LeadForm } from "@launchloom/runtime";
@@ -118,16 +130,19 @@ export default function Experience({ content, runtime }) {
     <section id="contact"><LeadForm content={content} runtime={runtime} /></section></main>;
 }`,
   );
-  await fs.writeFile(path.join(root, "candidate-a/styles.css"), "[data-hero]{min-height:40rem}");
-  await fs.writeFile(path.join(root, "candidate-a/motion.js"), "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {}; return () => {}; }");
+  await fs.writeFile(
+    path.join(root, "candidate-a/styles.css"),
+    "[data-hero]{min-height:40rem}",
+  );
+  await fs.writeFile(
+    path.join(root, "candidate-a/motion.js"),
+    "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {}; return () => {}; }",
+  );
   await writeV2ContentManifest(root);
   return root;
 }
 
-async function writeV2ContentManifest(
-  root: string,
-  directory = "candidate-a",
-) {
+async function writeV2ContentManifest(root: string, directory = "candidate-a") {
   await fs.writeFile(
     path.join(root, directory, "content-manifest.json"),
     JSON.stringify({
@@ -155,7 +170,11 @@ async function writeV2ContentManifest(
 }
 
 afterEach(async () => {
-  await Promise.all(tempRoots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })));
+  await Promise.all(
+    tempRoots
+      .splice(0)
+      .map((root) => fs.rm(root, { recursive: true, force: true })),
+  );
 });
 
 describe("creative candidate promotion", () => {
@@ -211,10 +230,20 @@ describe("creative candidate promotion", () => {
 
   it("copies a validated candidate and switches the site renderer", async () => {
     const root = await makeFixture();
-    const result = await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+    const result = await promoteCreativeCandidate({
+      siteDir: root,
+      candidateDir: "candidate-a",
+    });
     expect(result.candidateId).toBe("candidate-a");
-    expect(await fs.readFile(path.join(root, "src/generated-experiences/selected/Experience.jsx"), "utf8")).toContain("LeadForm");
-    const config = JSON.parse(await fs.readFile(path.join(root, "src/site.config.json"), "utf8"));
+    expect(
+      await fs.readFile(
+        path.join(root, "src/generated-experiences/selected/Experience.jsx"),
+        "utf8",
+      ),
+    ).toContain("LeadForm");
+    const config = JSON.parse(
+      await fs.readFile(path.join(root, "src/site.config.json"), "utf8"),
+    );
     expect(config.design.experience.renderer).toBe("creative-candidate");
     expect(config.design.experience.familyId).toBe("editorial-monument");
   });
@@ -231,7 +260,10 @@ describe("creative candidate promotion", () => {
       ),
     );
 
-    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+    await promoteCreativeCandidate({
+      siteDir: root,
+      candidateDir: "candidate-a",
+    });
 
     const selected = await fs.readFile(
       path.join(root, "src/generated-experiences/selected/Experience.jsx"),
@@ -248,7 +280,10 @@ describe("creative candidate promotion", () => {
       "```jsx\n" + validServicePage + "\n```",
     );
 
-    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+    await promoteCreativeCandidate({
+      siteDir: root,
+      candidateDir: "candidate-a",
+    });
 
     const selected = await fs.readFile(
       path.join(root, "src/generated-experiences/selected/ServicePage.jsx"),
@@ -266,7 +301,10 @@ describe("creative candidate promotion", () => {
   it("keeps the fallback service page for a candidate that predates it", async () => {
     const root = await makeFixture();
 
-    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+    await promoteCreativeCandidate({
+      siteDir: root,
+      candidateDir: "candidate-a",
+    });
 
     const selected = await fs.readFile(
       path.join(root, "src/generated-experiences/selected/ServicePage.jsx"),
@@ -290,14 +328,20 @@ describe("creative candidate promotion", () => {
       validServicesIndexPage,
     );
 
-    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+    await promoteCreativeCandidate({
+      siteDir: root,
+      candidateDir: "candidate-a",
+    });
 
     const selectedLocation = await fs.readFile(
       path.join(root, "src/generated-experiences/selected/LocationPage.jsx"),
       "utf8",
     );
     const selectedIndex = await fs.readFile(
-      path.join(root, "src/generated-experiences/selected/ServicesIndexPage.jsx"),
+      path.join(
+        root,
+        "src/generated-experiences/selected/ServicesIndexPage.jsx",
+      ),
       "utf8",
     );
     expect(selectedLocation).toContain("data-location-page");
@@ -312,17 +356,25 @@ describe("creative candidate promotion", () => {
   it("keeps the fallback location and services-index pages when absent", async () => {
     const root = await makeFixture();
 
-    await promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" });
+    await promoteCreativeCandidate({
+      siteDir: root,
+      candidateDir: "candidate-a",
+    });
 
     const selectedLocation = await fs.readFile(
       path.join(root, "src/generated-experiences/selected/LocationPage.jsx"),
       "utf8",
     );
     const selectedIndex = await fs.readFile(
-      path.join(root, "src/generated-experiences/selected/ServicesIndexPage.jsx"),
+      path.join(
+        root,
+        "src/generated-experiences/selected/ServicesIndexPage.jsx",
+      ),
       "utf8",
     );
-    expect(selectedLocation).toContain("export default function LocationPage(_props)");
+    expect(selectedLocation).toContain(
+      "export default function LocationPage(_props)",
+    );
     expect(selectedIndex).toContain(
       "export default function ServicesIndexPage(_props)",
     );
@@ -352,8 +404,13 @@ describe("creative candidate promotion", () => {
     const root = await makeFixture();
     const file = path.join(root, "candidate-a/Experience.jsx");
     const source = await fs.readFile(file, "utf8");
-    await fs.writeFile(file, source.replace('import { LeadForm } from "@launchloom/runtime";\n', ""));
-    await expect(promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" })).rejects.toThrow(/shared (?:LeadForm|LaunchLoom) runtime/iu);
+    await fs.writeFile(
+      file,
+      source.replace('import { LeadForm } from "@launchloom/runtime";\n', ""),
+    );
+    await expect(
+      promoteCreativeCandidate({ siteDir: root, candidateDir: "candidate-a" }),
+    ).rejects.toThrow(/shared (?:LeadForm|LaunchLoom) runtime/iu);
   });
 
   it("revalidates URL safety at the promotion boundary", async () => {
@@ -374,8 +431,14 @@ describe("creative candidate promotion", () => {
   });
 
   it.each([
-    ["style element", (source: string) => source.replace("<main>", "<main><style></style>")],
-    ["inline style", (source: string) => source.replace("<main>", '<main style="color:red">')],
+    [
+      "style element",
+      (source: string) => source.replace("<main>", "<main><style></style>"),
+    ],
+    [
+      "inline style",
+      (source: string) => source.replace("<main>", '<main style="color:red">'),
+    ],
   ])("rejects a candidate with an Experience.jsx %s", async (_label, edit) => {
     const root = await makeFixture();
     const file = path.join(root, "candidate-a/Experience.jsx");
@@ -390,16 +453,21 @@ describe("creative candidate promotion", () => {
   it("renders a candidate in the real Astro shell before reporting diversity fallback", async () => {
     const root = await makeFixture();
     const report = await runCreativeBakeoff({
-      siteDir: path.resolve("templates/client-site"),
+      siteDir: await makeTemplateCopy(),
       candidatesDir: root,
       reportPath: path.join(root, "report.json"),
       screenshotsDir: path.join(root, "screenshots"),
     });
+    expect(report.candidates[0].failures).toEqual([]);
     expect(report.candidates[0].valid).toBe(true);
+    expect(report.candidates[0].contrast.after.routes).toContain("/services/");
+    expect(report.candidates[0].contrast.after.pages).toHaveLength(
+      report.candidates[0].contrast.after.routes.length * 3,
+    );
     expect(report.candidates[0].eligible).toBe(false);
     expect(report.fallback).toBe(true);
     expect(report.selectedCandidateId).toBeNull();
-  }, 45_000);
+  }, 300_000);
 
   it("renders authored service, location, and services-index pages with the homepage visual identity", async () => {
     const root = await makeFixture();
@@ -446,7 +514,7 @@ describe("creative candidate promotion", () => {
     expect(candidate.locationPage?.pass).toBe(true);
     expect(candidate.servicesIndexPage?.failures).toEqual([]);
     expect(candidate.servicesIndexPage?.pass).toBe(true);
-  }, 240_000);
+  }, 300_000);
 
   it("rejects a version-two candidate before rendering when its content manifest is missing", async () => {
     const root = await makeFixture();
@@ -473,7 +541,7 @@ describe("creative candidate promotion", () => {
     await fs.writeFile(metadataPath, JSON.stringify(metadata));
 
     const report = await runCreativeBakeoff({
-      siteDir: path.resolve("templates/client-site"),
+      siteDir: await makeTemplateCopy(),
       candidatesDir: root,
       reportPath: path.join(root, "missing-brief-report.json"),
       screenshotsDir: path.join(root, "missing-brief-screenshots"),
@@ -530,7 +598,7 @@ describe("creative candidate promotion", () => {
     };
     await fs.writeFile(secondMetadataPath, JSON.stringify(secondMetadata));
 
-    const siteRoot = path.resolve("templates/client-site");
+    const siteRoot = await makeTemplateCopy();
     const configPath = path.join(siteRoot, "src/site.config.json");
     const selectedPath = path.join(
       siteRoot,
@@ -547,24 +615,24 @@ describe("creative candidate promotion", () => {
     const renderedReferenceEvaluator = async (input: any) => {
       fidelityEvidence.push(input);
       return {
-      version: 1,
-      model: "test/model",
-      score: 100,
-      pass: true,
-      audit: {
-        scores: {
-          heroGeometry: 100,
-          typography: 100,
-          spatialRhythm: 100,
-          imagery: 100,
-          servicePresentation: 100,
-          navigation: 100,
-          ctaPlacement: 100,
-          mobileRecomposition: 100,
-          interactionEvidence: 100,
+        version: 1,
+        model: "test/model",
+        score: 100,
+        pass: true,
+        audit: {
+          scores: {
+            heroGeometry: 100,
+            typography: 100,
+            spatialRhythm: 100,
+            imagery: 100,
+            servicePresentation: 100,
+            navigation: 100,
+            ctaPlacement: 100,
+            mobileRecomposition: 100,
+            interactionEvidence: 100,
+          },
+          findings: [],
         },
-        findings: [],
-      },
       };
     };
 
@@ -602,9 +670,16 @@ describe("creative candidate promotion", () => {
 
       expect(report.diversity.pass).toBe(false);
       const firstEvidence = fidelityEvidence[0];
-      const viewportImage = await sharp(firstEvidence.candidateScreenshots.desktop).metadata();
-      const pageOverview = await sharp(firstEvidence.candidateScreenshots.fullDesktop).metadata();
-      expect({ width: viewportImage.width, height: viewportImage.height }).toEqual({ width: 1536, height: 864 });
+      const viewportImage = await sharp(
+        firstEvidence.candidateScreenshots.desktop,
+      ).metadata();
+      const pageOverview = await sharp(
+        firstEvidence.candidateScreenshots.fullDesktop,
+      ).metadata();
+      expect({
+        width: viewportImage.width,
+        height: viewportImage.height,
+      }).toEqual({ width: 1536, height: 864 });
       expect(pageOverview.width).toBe(1536);
       expect(pageOverview.height).toBeGreaterThanOrEqual(864);
       expect(firstEvidence.renderedGeometry.desktop.viewportHeight).toBe(864);
@@ -618,9 +693,9 @@ describe("creative candidate promotion", () => {
         ]),
       );
       expect(report.visualDiversity.pass).toBe(true);
-      expect(report.candidates.every((candidate: any) => candidate.eligible)).toBe(
-        true,
-      );
+      expect(
+        report.candidates.every((candidate: any) => candidate.eligible),
+      ).toBe(true);
       expect(report.selectedCandidateId).not.toBeNull();
       expect(report.promotionReady).toBe(true);
 
@@ -697,9 +772,7 @@ describe("creative candidate promotion", () => {
       });
       expect(blocked.selectedCandidateId).not.toBeNull();
       expect(blocked.promotionReady).toBe(false);
-      const blockedConfig = JSON.parse(
-        await fs.readFile(configPath, "utf8"),
-      );
+      const blockedConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
       expect(blockedConfig).toEqual(JSON.parse(originalConfig));
     } finally {
       await fs.writeFile(configPath, originalConfig);
@@ -707,7 +780,7 @@ describe("creative candidate promotion", () => {
       await fs.cp(selectedBackup, selectedPath, { recursive: true });
       await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 180_000);
+  }, 300_000);
 
   it("does not trust hero geometry markers when rendered composition violates topology", async () => {
     const root = await makeFixture();
@@ -744,16 +817,33 @@ describe("creative candidate promotion", () => {
     await fs.writeFile(
       experiencePath,
       experience
-        .replace("<main>", '<main data-mobile-recomposition="wrong-layout" data-motion-primitive="wrong-motion">')
+        .replace(
+          "<main>",
+          '<main data-mobile-recomposition="wrong-layout" data-motion-primitive="wrong-motion">',
+        )
         .replace("<nav>", '<nav data-navigation-geometry="wrong-navigation">')
-        .replace("<section data-hero>", '<section data-hero data-hero-geometry="wrong-hero"><img src={content.hero.image} alt={content.hero.heading} data-hero-media hidden />')
-        .replace('<section id="services">', '<section id="services" data-service-presentation="wrong-services">')
-        .replace("<button data-early-conversion>", '<button data-early-conversion data-cta-placement="wrong-cta">'),
+        .replace(
+          "<section data-hero>",
+          '<section data-hero data-hero-geometry="wrong-hero"><img src={content.hero.image} alt={content.hero.heading} data-hero-media hidden />',
+        )
+        .replace(
+          '<section id="services">',
+          '<section id="services" data-service-presentation="wrong-services">',
+        )
+        .replace(
+          "<button data-early-conversion>",
+          '<button data-early-conversion data-cta-placement="wrong-cta">',
+        ),
     );
-    const siteRoot = path.resolve("templates/client-site");
+    const siteRoot = await makeTemplateCopy();
     const configPath = path.join(siteRoot, "src/site.config.json");
-    const selectedPath = path.join(siteRoot, "src/generated-experiences/selected");
-    const selectedBackup = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-selected-"));
+    const selectedPath = path.join(
+      siteRoot,
+      "src/generated-experiences/selected",
+    );
+    const selectedBackup = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-selected-"),
+    );
     const originalConfig = await fs.readFile(configPath, "utf8");
     await fs.cp(selectedPath, selectedBackup, { recursive: true });
     try {
@@ -793,7 +883,9 @@ describe("creative candidate promotion", () => {
           (finding: any) => finding.code,
         ),
       ).toContain("media-overlay-image");
-      expect(report.candidates[0].referenceFidelity.sourceVisualFindings.length).toBeGreaterThan(0);
+      expect(
+        report.candidates[0].referenceFidelity.sourceVisualFindings.length,
+      ).toBeGreaterThan(0);
       expect(
         new Set(
           report.candidates[0].referenceFidelity.renderedVisualFindings.map(
@@ -811,7 +903,7 @@ describe("creative candidate promotion", () => {
       await fs.cp(selectedBackup, selectedPath, { recursive: true });
       await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 90_000);
+  }, 300_000);
 
   it("selects one valid version-two candidate for preview without a pairwise comparison", async () => {
     const root = await makeFixture();
@@ -837,10 +929,15 @@ describe("creative candidate promotion", () => {
     await fs.writeFile(metadataPath, JSON.stringify(metadata));
     await writeV2ContentManifest(root);
 
-    const siteRoot = path.resolve("templates/client-site");
+    const siteRoot = await makeTemplateCopy();
     const configPath = path.join(siteRoot, "src/site.config.json");
-    const selectedPath = path.join(siteRoot, "src/generated-experiences/selected");
-    const selectedBackup = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-selected-"));
+    const selectedPath = path.join(
+      siteRoot,
+      "src/generated-experiences/selected",
+    );
+    const selectedBackup = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-selected-"),
+    );
     const originalConfig = await fs.readFile(configPath, "utf8");
     await fs.cp(selectedPath, selectedBackup, { recursive: true });
     try {
@@ -884,5 +981,5 @@ describe("creative candidate promotion", () => {
       await fs.cp(selectedBackup, selectedPath, { recursive: true });
       await fs.rm(selectedBackup, { recursive: true, force: true });
     }
-  }, 90_000);
+  }, 300_000);
 });

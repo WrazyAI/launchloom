@@ -1,9 +1,10 @@
+import { contrastFailureMessages } from "./rendered-contrast.mjs";
 import fs from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
+import { auditBuiltContrast } from "./contrast-sweep.mjs";
 import sharp from "sharp";
 import { chromium } from "playwright";
-import { contrast, parseCssColor } from "./color-contrast.mjs";
 import { revisionImageMatches } from "./revision-image-acceptance.mjs";
 
 const args = Object.fromEntries(
@@ -86,7 +87,11 @@ if (!indexHtml.includes('name="description"'))
   failures.push("seo: homepage description metadata is missing.");
 if (!indexHtml.includes('type="application/ld+json"'))
   failures.push("seo: LocalBusiness structured data is missing.");
-if (!reviewMode && config.business?.domain && !indexHtml.includes('rel="canonical"'))
+if (
+  !reviewMode &&
+  config.business?.domain &&
+  !indexHtml.includes('rel="canonical"')
+)
   failures.push("seo: configured public domain is missing a canonical URL.");
 if (!sitemapXml.includes("<urlset"))
   failures.push("seo: sitemap.xml is missing or invalid.");
@@ -98,6 +103,13 @@ if (!/^User-agent: \*/mu.test(robotsTxt))
 
 try {
   await fs.mkdir(screenshotDir, { recursive: true });
+  const contrastReport = await auditBuiltContrast({ dist, browser });
+  await fs.writeFile(
+    path.join(screenshotDir, "contrast-report.json"),
+    JSON.stringify(contrastReport, null, 2) + "\n",
+  );
+  if (!contrastReport.pass)
+    failures.push(...contrastFailureMessages(contrastReport));
   // The mocked review-image responses point at these files so the attachment
   // thumbnails render with real bytes during the browser flow.
   const mockedThumbnail = await sharp({
@@ -293,56 +305,6 @@ try {
         text: element.textContent?.replace(/\s+/g, " ").trim() || "",
         visible: visible(element),
       }));
-      const effectiveBackground = (startingElement) => {
-        let current = startingElement;
-        while (current) {
-          const background = getComputedStyle(current).backgroundColor;
-          const alpha = background.match(
-            /rgba?\([^)]*[,/]\s*([\d.]+)\s*\)$/,
-          )?.[1];
-          if (!background.startsWith("rgba") || Number(alpha) > 0)
-            return background;
-          current = current.parentElement;
-        }
-        return "rgb(255, 255, 255)";
-      };
-      const contrastDetails = (element) => {
-        const style = getComputedStyle(element);
-        const fontSize = Number.parseFloat(style.fontSize);
-        const fontWeight = Number.parseInt(style.fontWeight, 10) || 400;
-        return {
-          text: element.textContent?.trim(),
-          color: style.color,
-          background: effectiveBackground(element),
-          minimum:
-            fontSize >= 24 || (fontSize >= 18.66 && fontWeight >= 700)
-              ? 3
-              : 4.5,
-        };
-      };
-      const actions = [
-        ...document.querySelectorAll(".cta, .lead-form button, .mobile-call"),
-      ]
-        .filter(visible)
-        .map(contrastDetails);
-      const contrastTargets = [
-        ...document.querySelectorAll(
-          [
-            ".kicker, .offer, .contact-phone, .split-section h2, .split-section p, .split-section li",
-            // Experience packs own their own surfaces, so their headings and
-            // accents must be checked independently of the classic selectors.
-            ".xp-folio h1, .xp-folio h2, .xp-folio h3, .xp-folio__eyebrow, .xp-folio__intro p, .xp-folio__service-index p, .xp-folio__faqs details p",
-            ".xp-guide h1, .xp-guide h2, .xp-guide h3, .xp-guide__eyebrow, .xp-guide__hero-copy > p, .xp-guide__services article p, .xp-guide__about p:last-child, .xp-guide__faqs details p",
-            ".xp-service h1, .xp-service h2, .xp-service h3, .xp-service__eyebrow, .xp-service__services a > p, .xp-service__process li p, .xp-service__faqs details p",
-            // Shared conversion and proof surfaces can sit on either a light or
-            // a dark pack, so they are verified on their own backgrounds.
-            ".social-proof__intro, .proof-points p, .google-review > p:not(.google-review__rating)",
-            ".qualifier-option span, .qualifier-heading h3, .qualifier-heading > p, .qualifier-step legend, .lead-form small",
-          ].join(","),
-        ),
-      ]
-        .filter(visible)
-        .map(contrastDetails);
       const brokenLinks = [...document.querySelectorAll("a[href]")]
         .map((element) => element.getAttribute("href"))
         .filter(
@@ -370,8 +332,6 @@ try {
       );
       return {
         sections,
-        actions,
-        contrastTargets,
         brokenLinks,
         mainClasses: main?.className || "",
         experiencePack:
@@ -453,14 +413,24 @@ try {
             })(),
             naturalWidth: image.naturalWidth,
             naturalHeight: image.naturalHeight,
-            visible: visible(image) && (() => {
-              for (let parent = image; parent; parent = parent.parentElement) {
-                const style = getComputedStyle(parent);
-                if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0)
-                  return false;
-              }
-              return true;
-            })(),
+            visible:
+              visible(image) &&
+              (() => {
+                for (
+                  let parent = image;
+                  parent;
+                  parent = parent.parentElement
+                ) {
+                  const style = getComputedStyle(parent);
+                  if (
+                    style.display === "none" ||
+                    style.visibility === "hidden" ||
+                    Number(style.opacity) === 0
+                  )
+                    return false;
+                }
+                return true;
+              })(),
           })),
       };
     });
@@ -537,24 +507,6 @@ try {
       failures.push(
         `${viewport.name}: one or more configured sections are not visible.`,
       );
-    for (const action of state.actions)
-      if (
-        parseCssColor(action.color).length &&
-        parseCssColor(action.background).length &&
-        contrast(action.color, action.background) < action.minimum
-      )
-        failures.push(
-          `${viewport.name}: action contrast below ${action.minimum} for ${action.text}.`,
-        );
-    for (const target of state.contrastTargets)
-      if (
-        parseCssColor(target.color).length &&
-        parseCssColor(target.background).length &&
-        contrast(target.color, target.background) < target.minimum
-      )
-        failures.push(
-          `${viewport.name}: text contrast below ${target.minimum} for ${target.text}.`,
-        );
     for (const artifact of config.revisionReport?.expectedArtifacts || []) {
       if (artifact.type === "creative-color") {
         if (
@@ -778,7 +730,9 @@ try {
       input.value = "#123456";
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
-    if (!(await primaryColor.locator("code").textContent())?.includes("#123456"))
+    if (
+      !(await primaryColor.locator("code").textContent())?.includes("#123456")
+    )
       failures.push("review: color choice did not update its swatch value.");
     await reviewPage.screenshot({
       path: path.join(screenshotDir, "developer-feedback-structured.png"),
@@ -819,9 +773,7 @@ try {
       )
     )
       failures.push("review: uploaded replacement was not submitted.");
-    if (
-      !structured.details?.colors?.some((color) => color.role === "primary")
-    )
+    if (!structured.details?.colors?.some((color) => color.role === "primary"))
       failures.push("review: color choice was not submitted.");
     if (!uploadedFeedbackImage)
       failures.push("review: image upload endpoint was not called.");
@@ -866,9 +818,7 @@ try {
       .first();
     if (!(await categorySelect.isVisible()))
       failures.push("review: client small-change categories are missing.");
-    await clientRoot
-      .locator('input[name="email"]')
-      .fill("client@example.com");
+    await clientRoot.locator('input[name="email"]').fill("client@example.com");
     await categorySelect.selectOption("logo");
     await clientRoot
       .locator(".ll-client-fields textarea")

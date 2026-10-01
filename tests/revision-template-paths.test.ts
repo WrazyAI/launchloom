@@ -60,3 +60,13 @@ it("allows exactly the feedback replacements named by set_image operations", () 
   expect(paths).not.toContain("public/images/generated/logo-old.webp");
   expect(paths.some((entry) => entry.includes("escape"))).toBe(false);
 });
+
+it("refreshes paired surface owners and math together for a palette revision", () => {
+  const paths = revisionTemplatePaths({revisionReport:{operations:[{kind:"set_color_palette"}]}});
+  expect(paths).toEqual(expect.arrayContaining([
+    "src/lib/color-contrast.mjs", "src/lib/color-policy.mjs",
+    "src/components/Header.astro", "src/components/Footer.astro",
+    "src/components/PageSections.astro", "src/pages/contact.astro",
+    "src/pages/services/[slug].astro", "src/pages/locations/[slug].astro",
+  ]));
+});
