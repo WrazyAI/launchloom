@@ -29,6 +29,10 @@ import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 import { RENDERED_REFERENCE_THRESHOLDS } from "./rendered-reference-fidelity.mjs";
 
 const VIEWPORTS = ["desktop", "compact", "mobile"];
+// Visual-gate repairs run after selection and outside the reference-fidelity
+// cycle budget: content-integrity blockers such as duplicated sections are
+// only observable once a selected candidate is rendered as the page.
+const MAX_GATE_REPAIRS = 2;
 
 function cliArgs(argv) {
   return Object.fromEntries(
@@ -668,10 +672,26 @@ export async function runVisualGateProcess({
     throw new Error(
       `Creative visual gate produced no report (exit ${result.code}): ${result.stderr.slice(-1200)}`,
     );
-  if (result.code !== 0 || report.status === "error")
+  if (report.status === "error")
     throw new Error(
       `Creative visual gate could not run: ${report.error || result.stderr.slice(-1200) || `process exited ${result.code}`}`,
     );
+  if (result.code !== 0) {
+    const audit = report.audit || {};
+    const blockingReport =
+      (Array.isArray(report.blockers) ? report.blockers.length : 0) > 0 ||
+      audit.verdict !== "pass" ||
+      (audit.findings || []).some((finding) =>
+        ["critical", "major"].includes(finding?.severity),
+      );
+    if (!blockingReport)
+      throw new Error(
+        `Creative visual gate could not run: process exited ${result.code} with a passing report. That combination is inconsistent and fails closed.`,
+      );
+  }
+  // A nonzero exit with a blocking report is expected when the gate finds
+  // blockers. The repair loop acts on the report's gate findings instead of
+  // failing the run.
   return { ...report, processExitCode: result.code };
 }
 
@@ -1030,6 +1050,7 @@ export async function runRenderedCreativeRepair({
   // edit count) write nothing to the candidate, so they must not consume the
   // candidate's applied-repair cycles. They are bounded separately.
   const rejectionUse = new Map();
+  const gateUse = new Map();
   // Hill-climbing baseline: keep each candidate's best measured state so a
   // regressing repair never becomes the base for the next repair, and the
   // final selection can fall back to it.
@@ -1077,9 +1098,13 @@ export async function runRenderedCreativeRepair({
     screenshotsDir,
     candidateDirectory,
     report,
+    { gate = false } = {},
   ) {
     const applied = cycleUse.get(candidateId) || 0;
-    if (applied >= cycleLimit) return { status: "exhausted" };
+    const gateApplied = gateUse.get(candidateId) || 0;
+    const appliedSoFar = gate ? gateApplied : applied;
+    const appliedLimit = gate ? MAX_GATE_REPAIRS : cycleLimit;
+    if (appliedSoFar >= appliedLimit) return { status: "exhausted" };
     const rejections = rejectionUse.get(candidateId) || 0;
     const candidateDir = resolveCandidateDirectory(
       candidateRoot,
@@ -1122,17 +1147,18 @@ export async function runRenderedCreativeRepair({
           comparisonScreenshots,
           model: resolvedModel,
           creativeSession: frozenCreativeSession,
-          cycle: applied + 1,
-          maxCycles: cycleLimit,
+          cycle: appliedSoFar + 1,
+          maxCycles: appliedLimit,
         });
-        cycleUse.set(candidateId, applied + 1);
+        if (gate) gateUse.set(candidateId, appliedSoFar + 1);
+        else cycleUse.set(candidateId, appliedSoFar + 1);
         await persistRepairEvidence({
           outDir: evidenceRoot,
           round,
           candidateId,
           reason,
           findings: activeFindings,
-          cyclesUsed: applied + 1,
+          cyclesUsed: appliedSoFar + 1,
           attempts,
         });
         return { status: "repaired", attempts };
@@ -1161,7 +1187,7 @@ export async function runRenderedCreativeRepair({
             candidateId,
             reason,
             findings: activeFindings,
-            cyclesUsed: applied + 1,
+            cyclesUsed: appliedSoFar + 1,
             status: "rejected",
             error: message,
             attempts,
@@ -1231,6 +1257,13 @@ export async function runRenderedCreativeRepair({
     await fs.rm(target, { recursive: true, force: true });
     await fs.cp(best.snapshotDir, target, { recursive: true });
     return true;
+  }
+
+  function combinedRepairCycles() {
+    const combined = new Map(cycleUse);
+    for (const [candidateId, count] of gateUse)
+      combined.set(candidateId, (combined.get(candidateId) || 0) + count);
+    return Object.fromEntries(combined);
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
@@ -1464,6 +1497,7 @@ export async function runRenderedCreativeRepair({
         screenshotsDir,
         selected.directory,
         report,
+        { gate: true },
       );
       if (repaired.status === "rejected") {
         record.rejectedCandidates.push(selectedId);
@@ -1471,7 +1505,7 @@ export async function runRenderedCreativeRepair({
       }
       if (repaired.status !== "repaired")
         throw new Error(
-          `Selected candidate ${selectedId} still fails rendered visual QA after ${cycleLimit} repair cycles.`,
+          `Selected candidate ${selectedId} still fails rendered visual QA after ${MAX_GATE_REPAIRS} gate repairs.`,
         );
       record.repairs.push(selectedId);
       continue;
@@ -1607,7 +1641,7 @@ export async function runRenderedCreativeRepair({
           ? null
           : Boolean(report.previewDiversity.pass),
       previewDiversityStrategy: report.previewDiversity?.strategy || null,
-      repairCycles: Object.fromEntries(cycleUse),
+      repairCycles: combinedRepairCycles(),
       rejectedCandidates,
       history,
       final: {
@@ -1661,7 +1695,7 @@ export async function runRenderedCreativeRepair({
           pass: true,
           candidateId: selectedId,
           feedbackResults: verifiedHumanFeedback,
-          repairCycles: Object.fromEntries(cycleUse),
+          repairCycles: combinedRepairCycles(),
         };
         await fs.writeFile(
           liveConfigPath,
