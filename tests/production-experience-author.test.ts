@@ -2764,3 +2764,114 @@ it("preserves canonical semantic color properties while isolating arbitrary auth
   expect(css).toContain("--ll-text:#14201d");
   expect(css).toContain("--ll-creative-ink:white");
 });
+
+describe("client typography and accent conformance", () => {
+  it("carries chosen families and accent into the visual brief", () => {
+    const manifest = buildCreativeContentManifest({
+      ...site,
+      style: {
+        primaryColor: "#245a4c",
+        headingFont: "fraunces",
+        bodyFont: "inter",
+        accentColor: "#b45309",
+      },
+    });
+    expect(manifest.visualBrief.typography).toMatchObject({
+      heading: { id: "fraunces", name: "Fraunces" },
+      body: { id: "inter", name: "Inter" },
+    });
+    expect(String(manifest.visualBrief.typography.heading.stack)).toContain(
+      "Fraunces",
+    );
+    expect(String(manifest.visualBrief.typography.body.stack)).toContain(
+      "Inter",
+    );
+    expect(manifest.visualBrief.accent).toMatchObject({ color: "#b45309" });
+    expect(String(manifest.visualBrief.accent.contrastColor)).toMatch(
+      /^#[a-f0-9]{6}$/u,
+    );
+  });
+
+  it("keeps typography and accent null when the client made no choice", () => {
+    const manifest = buildCreativeContentManifest({
+      ...site,
+      style: { primaryColor: "#245a4c" },
+    });
+    expect(manifest.visualBrief.typography).toEqual({
+      heading: null,
+      body: null,
+    });
+    expect(manifest.visualBrief.accent).toBeNull();
+  });
+
+  it("requires authored styles to bind chosen families through the shared variables", () => {
+    const route = { id: "route-font-binding" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const experience = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const fontBrief = {
+      typography: {
+        heading: {
+          id: "fraunces",
+          name: "Fraunces",
+          stack: '"Fraunces", Georgia, serif',
+        },
+        body: {
+          id: "inter",
+          name: "Inter",
+          stack: '"Inter", Arial, sans-serif',
+        },
+      },
+    };
+    const content = {
+      hero: { image: "/images/hero.webp" },
+      brand: { phone: "+12125550186" },
+    };
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content,
+        visualBrief: fontBrief,
+      }),
+    ).toThrow(/font-heading/u);
+
+    const headingOnly = `${styles}\nh1 { font-family: var(--font-heading, Georgia, serif); }`;
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles: headingOnly, motion },
+        route,
+        content,
+        visualBrief: fontBrief,
+      }),
+    ).toThrow(/font-body/u);
+
+    const boundStyles = `${styles}\nh1, h2, h3 { font-family: var(--font-heading, "Iowan Old Style", Georgia, serif); }\nbody, p { font-family: var(--font-body, Avenir, Arial, sans-serif); }`;
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles: boundStyles, motion },
+        route,
+        content,
+        visualBrief: fontBrief,
+      }),
+    ).not.toThrow();
+
+    const redeclared = `${boundStyles}\n:root { --accent: #b45309; }`;
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles: redeclared, motion },
+        route,
+        content,
+        visualBrief: fontBrief,
+      }),
+    ).toThrow(/redeclare/u);
+  });
+});
