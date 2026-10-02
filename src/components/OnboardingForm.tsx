@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
+import { MAX_ADDITIONAL_PLACES } from "../lib/coverage-contract.mjs";
 import { compressImage } from "../lib/compress-image";
 import { createClientIntakeV2Submission } from "../lib/client-intake-v2.mjs";
 import {
@@ -65,6 +66,7 @@ type StoredCoverage = {
   inputs: { city: string; radius: string };
   response: CoverageSuccess;
   selectedIds: string[];
+  manualAreas?: string[];
   confirmed: boolean;
 };
 type InviteState = "loading" | "valid" | "invalid" | "accepted";
@@ -283,6 +285,9 @@ export default function OnboardingForm() {
     status: "idle",
   });
   const [coverageSelectedIds, setCoverageSelectedIds] = useState<string[]>([]);
+  const [coverageManualAreas, setCoverageManualAreas] = useState<string[]>([]);
+  const [coverageEntry, setCoverageEntry] = useState("");
+  const [coverageEditMessage, setCoverageEditMessage] = useState("");
   const [coverageConfirmed, setCoverageConfirmed] = useState(false);
   const [coverageFallback, setCoverageFallback] = useState(false);
   const [coverageRetryNonce, setCoverageRetryNonce] = useState(0);
@@ -318,7 +323,7 @@ export default function OnboardingForm() {
       const selected = coverageState.response.candidates
         .filter((candidate) => coverageSelectedIds.includes(candidate.id))
         .map((candidate) => candidate.label);
-      return [primary, ...selected];
+      return [primary, ...selected, ...coverageManualAreas];
     }
     return [resolvedPrimaryCity || coverageCity.trim()];
   }, [
@@ -326,6 +331,7 @@ export default function OnboardingForm() {
     coverageFallback,
     coverageState,
     coverageSelectedIds,
+    coverageManualAreas,
     resolvedPrimaryCity,
     coverageCity,
   ]);
@@ -335,6 +341,7 @@ export default function OnboardingForm() {
       return JSON.stringify({
         status: "confirmed",
         reference: coverageState.response.reference,
+        ...(coverageManualAreas.length ? { manualAreas: coverageManualAreas } : {}),
         selectedIds: coverageState.response.candidates
           .filter((candidate) => coverageSelectedIds.includes(candidate.id))
           .map((candidate) => candidate.id),
@@ -346,7 +353,7 @@ export default function OnboardingForm() {
           ? coverageFallbackReason(coverageState.failure.code)
           : "provider_failure",
     });
-  }, [coverageConfirmed, coverageFallback, coverageState, coverageSelectedIds]);
+  }, [coverageConfirmed, coverageFallback, coverageState, coverageSelectedIds, coverageManualAreas]);
   const draftValue = (name: string) => draftRef.current[name] || "Not provided";
 
   function applyCoverageResponse(
@@ -360,9 +367,11 @@ export default function OnboardingForm() {
       ? stored.selectedIds.filter((id) =>
           response.candidates.some((candidate) => candidate.id === id),
         )
-      : response.candidates.map((candidate) => candidate.id);
-    setCoverageSelectedIds(selectedIds);
-    setCoverageConfirmed(Boolean(stored?.confirmed));
+      : response.candidates.slice(0, MAX_ADDITIONAL_PLACES).map((candidate) => candidate.id);
+    const manual = (stored?.manualAreas || []).slice(0, MAX_ADDITIONAL_PLACES);
+    setCoverageManualAreas(manual);
+    setCoverageSelectedIds(selectedIds.slice(0, MAX_ADDITIONAL_PLACES - manual.length));
+    setCoverageConfirmed(Boolean(stored?.confirmed) && selectedIds.length + manual.length <= MAX_ADDITIONAL_PLACES);
     setCoverageFallback(false);
   }
 
@@ -434,10 +443,33 @@ export default function OnboardingForm() {
     setCoverageRetryNonce((value) => value + 1);
   }
 
-  function toggleCoverageCandidate(id: string, selected: boolean) {
-    setCoverageSelectedIds((current) =>
-      selected ? [...current, id] : current.filter((value) => value !== id),
-    );
+  function removeCoveragePlace(id: string, manual = false) {
+    if (manual) setCoverageManualAreas(current => current.filter(area => area !== id));
+    else setCoverageSelectedIds(current => current.filter(value => value !== id));
+    setCoverageConfirmed(false);
+    setCoverageEditMessage("");
+    setError("");
+  }
+
+  function addCoveragePlace() {
+    if (coverageState.status !== "ready" || !coverageEntry.trim()) return;
+    const label = coverageEntry.trim();
+    const candidate = coverageState.response.candidates.find(item => item.label.toLocaleLowerCase() === label.toLocaleLowerCase());
+    const existing = [coverageState.response.primary.label, ...coverageState.response.candidates.filter(item => coverageSelectedIds.includes(item.id)).map(item => item.label), ...coverageManualAreas];
+    if (existing.some(area => area.toLocaleLowerCase() === label.toLocaleLowerCase())) {
+      setCoverageEditMessage("That place is already included."); return;
+    }
+    if (coverageSelectedIds.length + coverageManualAreas.length >= MAX_ADDITIONAL_PLACES) {
+      setCoverageEditMessage("Remove a place before adding another. You can choose five additional places."); return;
+    }
+    if (label.length > 160 || /[\x00-\x1f\x7f]/u.test(label) || !/^[^,]+,\s*[^,]+$/u.test(label)) {
+      setCoverageEditMessage("Include the city and state or country, for example Algood, TN."); return;
+    }
+    if (candidate) setCoverageSelectedIds(current => [...current, candidate.id]);
+    else setCoverageManualAreas(current => [...current, label]);
+    setCoverageConfirmed(false);
+    setCoverageEntry("");
+    setCoverageEditMessage("");
     setError("");
   }
 
@@ -451,6 +483,9 @@ export default function OnboardingForm() {
       coverageAppliedKeyRef.current = "";
       setCoverageState({ status: "idle" });
       setCoverageSelectedIds([]);
+      setCoverageManualAreas([]);
+      setCoverageEntry("");
+      setCoverageEditMessage("");
       setCoverageConfirmed(false);
       setCoverageFallback(false);
       return;
@@ -461,6 +496,9 @@ export default function OnboardingForm() {
     setCoverageConfirmed(false);
     setCoverageFallback(false);
     setCoverageSelectedIds([]);
+    setCoverageManualAreas([]);
+    setCoverageEntry("");
+    setCoverageEditMessage("");
     const stored = readStoredCoverage(coverageStorageKey);
     if (
       stored &&
@@ -505,6 +543,7 @@ export default function OnboardingForm() {
         inputs: { city: coverageCity.trim(), radius: coverageRadius },
         response: coverageState.response,
         selectedIds: coverageSelectedIds,
+        manualAreas: coverageManualAreas,
         confirmed: coverageConfirmed && !coverageFallback,
       };
       sessionStorage.setItem(coverageStorageKey, JSON.stringify(stored));
@@ -516,6 +555,7 @@ export default function OnboardingForm() {
     coverageStorageKey,
     coverageState,
     coverageSelectedIds,
+    coverageManualAreas,
     coverageConfirmed,
     coverageFallback,
   ]);
@@ -718,6 +758,10 @@ export default function OnboardingForm() {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >("input, select, textarea") || [])
       if (!field.disabled && !field.reportValidity()) return;
+    if (step === 1 && coverageEntry.trim()) {
+      setError("Add your typed place using Add place, or clear the input before continuing.");
+      return;
+    }
     if (step === 1 && !coverageConfirmed) {
       setError(
         "Review and confirm the cities and towns you serve before continuing.",
@@ -1272,11 +1316,11 @@ export default function OnboardingForm() {
             className="field full coverage-review"
             aria-describedby="coverage-help"
           >
-            <legend>Confirm the places you serve</legend>
+            <legend>Additional places served</legend>
             <p className="coverage-help" id="coverage-help">
-              Google Maps lists cities and towns inside your travel radius. Your
-              main city is always included. Uncheck any nearby place you do not
-              serve.
+              We prefill up to five nearby places from your travel radius. Remove
+              any place you do not serve, or type a replacement. Your main city
+              is always included and does not count toward the five-place limit.
             </p>
             {coverageState.status === "idle" && (
               <p className="coverage-status" role="status">
@@ -1298,51 +1342,34 @@ export default function OnboardingForm() {
                     Always included · {coverageState.response.radius.label}
                   </small>
                 </div>
-                {coverageState.response.candidates.length > 0 ? (
-                  <ul
-                    className="coverage-pills"
-                    aria-label={`Nearby cities and towns within ${coverageState.response.radius.label}`}
-                  >
-                    {coverageState.response.candidates.map((candidate) => {
-                      const checked = coverageSelectedIds.includes(candidate.id);
-                      return (
-                        <li key={candidate.id}>
-                          <label
-                            className={`coverage-pill${checked ? " is-selected" : ""}`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={(event) =>
-                                toggleCoverageCandidate(
-                                  candidate.id,
-                                  event.currentTarget.checked,
-                                )
-                              }
-                            />
-                            <span className="coverage-pill-name">
-                              {candidate.name}
-                            </span>
-                            {candidate.state && (
-                              <span className="coverage-pill-state">
-                                {candidate.state}
-                              </span>
-                            )}
-                            <small>
-                              {candidate.distanceMiles.toFixed(1)} mi
-                            </small>
-                          </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="coverage-empty" role="status">
-                    No other cities or towns were found within{" "}
-                    {coverageState.response.radius.label} of{" "}
-                    {coverageState.response.primary.label}.
-                  </p>
-                )}
+                <div className="service-chips coverage-pills" role="list" aria-label="Additional places served">
+                  {coverageState.response.candidates.filter(candidate => coverageSelectedIds.includes(candidate.id)).map(candidate => (
+                    <span className="service-chip coverage-pill" role="listitem" key={candidate.id}>
+                      <span>{candidate.label}</span>
+                      <button type="button" aria-label={`Remove ${candidate.label}`} onClick={() => removeCoveragePlace(candidate.id)}><span aria-hidden="true">×</span></button>
+                    </span>
+                  ))}
+                  {coverageManualAreas.map(area => (
+                    <span className="service-chip coverage-pill" role="listitem" key={area}>
+                      <span>{area}</span>
+                      <button type="button" aria-label={`Remove ${area}`} onClick={() => removeCoveragePlace(area, true)}><span aria-hidden="true">×</span></button>
+                    </span>
+                  ))}
+                  {coverageSelectedIds.length + coverageManualAreas.length === 0 && <span className="service-chips-empty">Add places you serve, or confirm your main city only.</span>}
+                </div>
+                <div className="service-entry-row">
+                  <input id="coverage-entry" aria-label="Add an additional place served" aria-describedby="coverage-picker-help" type="text" maxLength={160} value={coverageEntry}
+                    disabled={coverageSelectedIds.length + coverageManualAreas.length >= MAX_ADDITIONAL_PLACES}
+                    placeholder={coverageSelectedIds.length + coverageManualAreas.length >= MAX_ADDITIONAL_PLACES ? "Remove a place to add another" : "City, State or Country"}
+                    list="coverage-city-suggestions" onChange={event => setCoverageEntry(event.currentTarget.value)}
+                    onKeyDown={event => { if(event.key === "Enter") {event.preventDefault(); addCoveragePlace();} }} />
+                  <button className="button secondary service-add-button" type="button" onClick={addCoveragePlace} disabled={!coverageEntry.trim() || coverageSelectedIds.length + coverageManualAreas.length >= MAX_ADDITIONAL_PLACES}>Add place</button>
+                </div>
+                <datalist id="coverage-city-suggestions">
+                  {coverageState.response.candidates.filter(candidate => !coverageSelectedIds.includes(candidate.id)).map(candidate => <option key={candidate.id} value={candidate.label} />)}
+                </datalist>
+                <small id="coverage-picker-help">{coverageSelectedIds.length + coverageManualAreas.length} of {MAX_ADDITIONAL_PLACES} additional places selected. Typed places are supplied by you and may be outside the suggested radius.</small>
+                {coverageEditMessage && <p role="status">{coverageEditMessage}</p>}
                 {coverageState.response.warnings.map((warning) => (
                   <p className="coverage-warning" role="status" key={warning}>
                     {warning}
@@ -1361,7 +1388,7 @@ export default function OnboardingForm() {
                   />
                   <span>
                     I confirm these are the cities and towns we serve
-                    {coverageState.response.candidates.length === 0
+                    {coverageSelectedIds.length + coverageManualAreas.length === 0
                       ? " (my main city only)"
                       : ""}
                     .

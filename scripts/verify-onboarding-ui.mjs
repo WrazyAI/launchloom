@@ -140,6 +140,7 @@ try {
       { id: "city-north-charleston", name: "North Charleston", state: "SC", label: "North Charleston, SC", distanceMiles: 5.2 },
       { id: "city-mount-pleasant", name: "Mount Pleasant", state: "SC", label: "Mount Pleasant, SC", distanceMiles: 6.8 },
       { id: "city-summmerville", name: "Summerville", state: "SC", label: "Summerville, SC", distanceMiles: 18.4 },
+      ...(radiusSelection === "10" ? Array.from({length: 5}, (_, index) => ({id:`synthetic-${index}`, name:`Nearby ${index}`,state:"SC",label:`Nearby ${index}, SC`,distanceMiles:8 + index / 10})) : []),
     ],
     reference: "browser-fixture-coverage-reference",
     source: "google_places_locality",
@@ -270,7 +271,7 @@ try {
   const confirmBox = page.locator("#coverage-confirmation");
   if (!(await confirmBox.isVisible()))
     failures.push("Coverage review does not render the single confirmation checkbox.");
-  if (!(await coveragePills.first().getByRole("checkbox").isChecked()))
+  if (!(await coveragePills.first().getByRole("button", {name: /Remove/}).isVisible()))
     failures.push("Suggested nearby cities did not start selected for review.");
 
   // Leaving during the debounce must allow the same inputs to load on return.
@@ -283,6 +284,7 @@ try {
   const lookupsBeforeRadiusChange = coverageLookups;
   await page.locator('[name="serviceRadius"]').selectOption("10");
   await page.locator(".coverage-pill").first().waitFor({ state: "visible" });
+  if ((await coveragePills.count()) !== 5) failures.push("Discovery with more than five cities did not cap the prefilled pills at five.");
   if (coverageLookups <= lookupsBeforeRadiusChange)
     failures.push("Changing the travel radius did not refresh the nearby city lookup.");
   if (await confirmBox.isChecked())
@@ -297,18 +299,29 @@ try {
   if (!(await page.locator(".stepper").innerText()).includes("Step 2 of 3"))
     failures.push("The form advanced past coverage without explicit confirmation.");
 
-  // Keyboard operation on a focused pill.
-  const summmerville = page.getByRole("checkbox", { name: /Summerville/ });
+  // The city picker uses removable chips, keyboard entry and a five-place cap.
+  const entry = page.locator("#coverage-entry");
+  await entry.fill("Awendaw, SC");
+  await entry.press("Enter");
+  await entry.fill("Huger, SC");
+  await page.getByRole("button", { name: "Add place", exact: true }).click();
+  if ((await coveragePills.count()) !== 5 || !(await entry.isDisabled()))
+    failures.push("Additional-place entry did not enforce the five-place limit.");
+  await confirmBox.check();
+  await page.getByRole("button", { name: "Remove Huger, SC", exact: true }).click();
+  if (await confirmBox.isChecked()) failures.push("Removing a place did not invalidate confirmation.");
+  if (await entry.isDisabled()) failures.push("Removing a place did not re-enable entry.");
+  await page.getByRole("button", { name: "Remove Awendaw, SC", exact: true }).click();
+  const summmerville = page.getByRole("button", { name: "Remove Summerville, SC", exact: true });
   await summmerville.focus();
   await page.keyboard.press("Space");
-  if (await summmerville.isChecked())
-    failures.push("Space did not uncheck the focused coverage pill.");
-  await page.keyboard.press("Space");
-  if (!(await summmerville.isChecked()))
-    failures.push("Space did not restore the focused coverage pill.");
-
-  // Deselect one nearby city and confirm the reviewed list.
-  await summmerville.uncheck();
+  if ((await coveragePills.count()) !== 2) failures.push("Keyboard did not remove the focused city pill.");
+  await entry.fill("Mount Pleasant, SC");
+  await entry.press("Enter");
+  if ((await coveragePills.count()) !== 2) failures.push("Duplicate city was added to the selection.");
+  await entry.fill("Sparta, TN");
+  await entry.press("Enter");
+  if (!(await page.getByRole("button", {name:"Remove Sparta, TN",exact:true}).isVisible())) failures.push("Typed replacement did not become a removable city pill.");
   await confirmBox.check();
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -422,8 +435,9 @@ try {
     failures.push("Service radius was lost after backward navigation.");
   if (!(await page.locator("#coverage-confirmation").isChecked()))
     failures.push("Coverage confirmation was lost after backward navigation.");
-  if (!(await page.getByRole("checkbox", { name: /Summerville/ }).isChecked() === false))
+  if (await page.getByRole("button", { name: "Remove Summerville, SC", exact: true }).count())
     failures.push("Coverage deselection was lost after backward navigation.");
+  if (!(await page.getByRole("button", { name: "Remove Sparta, TN", exact: true }).isVisible())) failures.push("Typed coverage was lost after backward navigation.");
   await page.getByRole("button", { name: "Continue" }).click();
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -487,7 +501,7 @@ try {
     failures.push("The intake did not preserve the client-confirmed city and travel radius.");
   if (acceptedIntake?.primaryCity !== "Charleston, SC")
     failures.push("The intake did not preserve the resolved primary city.");
-  if (acceptedIntake?.coverageAreas !== "Charleston, SC\nNorth Charleston, SC\nMount Pleasant, SC")
+  if (acceptedIntake?.coverageAreas !== "Charleston, SC\nNorth Charleston, SC\nMount Pleasant, SC\nSparta, TN")
     failures.push(`The intake did not persist exactly the confirmed coverage: ${JSON.stringify(acceptedIntake?.coverageAreas)}.`);
   if ((acceptedIntake?.coverageAreas || "").includes("Summerville"))
     failures.push("A deselected nearby city reached the submitted intake.");
@@ -495,6 +509,7 @@ try {
   if (
     submittedCoverage.status !== "confirmed" ||
     submittedCoverage.reference !== "browser-fixture-coverage-reference" ||
+    JSON.stringify(submittedCoverage.manualAreas) !== JSON.stringify(["Sparta, TN"]) ||
     submittedCoverage.selectedIds?.length !== 2
   )
     failures.push("The intake did not carry the explicit confirmed coverage selection and signed reference.");

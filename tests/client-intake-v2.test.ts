@@ -343,8 +343,7 @@ describe("ClientIntakeV2 normalization", () => {
 });
 
 
-it("preserves more than 30 newline-joined confirmed city labels before per-entry cleanup", () => {
+it("rejects more than five additional cities in a new confirmed intake", () => {
   const areas = ["Cookeville, TN", ...Array.from({length: 35}, (_, i) => `Confirmed Municipality ${i}, TN`)];
-  const normalized = normalizeClientIntake({ ...required, intakeVersion:"2", industry:"home-services", services:"Drain cleaning", primaryCity:"Cookeville, TN",serviceRadius:"10", coverageAreas:areas.join("\n"),coverageSelection:JSON.stringify({status:"confirmed",reference:"signed-test-reference",selectedIds:areas.slice(1).map((_,i)=>`city-${i}`)}),confirmAccuracy:"yes" });
-  expect(normalized.coverageAreas).toEqual(areas);
+  expect(() => normalizeClientIntake({ ...required, intakeVersion:"2", industry:"home-services", services:"Drain cleaning", primaryCity:"Cookeville, TN",serviceRadius:"10", coverageAreas:areas.join("\n"),coverageSelection:JSON.stringify({status:"confirmed",reference:"signed-test-reference",selectedIds:areas.slice(1).map((_,i)=>`city-${i}`)}),confirmAccuracy:"yes" })).toThrow();
 });
