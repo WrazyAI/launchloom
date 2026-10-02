@@ -1,3 +1,6 @@
+import { compileCanonicalSiteBrief } from "../scripts/compile-canonical-site-brief.mjs";
+import { normalise } from "../scripts/generate-site-config.mjs";
+import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { describe, expect, it, vi } from "vitest";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
@@ -792,7 +795,9 @@ it("shares fallback query and USD caps across confirmed cities instead of multip
   expect(dossier.coverageResearch!.fallbackQueries).toBe(3);
   expect(dossier.coverageResearch!.fallbackCostUsd).toBe(0.006);
   expect(dossier.coverageResearch!.cities.slice(1).map(item=>item.status)).toEqual(["pending","pending"]);
-  expect(dossier.publishReady).toBe(false);
+  expect(dossier.publishReady).toBe(true);
+  expect(dossier.coverageResearch!.complete).toBe(false);
+  expect(dossier.coverageResearch!.approvalPolicy).toBe("primary-city");
 });
 
 it("stops further measured city calls when the primary provider task has unreported spend", async () => {
@@ -803,4 +808,18 @@ it("stops further measured city calls when the primary provider task has unrepor
   expect(provider.organicSerp).not.toHaveBeenCalled();
   expect(dossier.cost.complete).toBe(false);
   expect(dossier.coverageResearch!.cities[1].status).toBe("pending");
+});
+
+
+it("keeps primary approval and pending coverage visible through the canonical brief and generated config", async () => {
+  const selected={...intake,website:"",coverageAreas:["Tacoma, WA","Lakewood, WA"],coverageConfirmation:{status:"confirmed",primaryCity:"Tacoma, WA",radiusSelection:"20",selectedCount:1}};
+  const provider=researchProvider();
+  const research=await researchSiteContext(selected,{dataForSeo:provider,maxTasks:7,maxUsd:0.25});
+  expect(research.coverageResearch!.complete).toBe(false);
+  expect(research.publishReady).toBe(true);
+  const brief=compileCanonicalSiteBrief({intake:selected,enrichment:{coverageAreas:["Tacoma, WA","Seattle, WA"]},research});
+  const config=normalise({},brief);
+  expect(config.business.serviceAreas).toEqual(selected.coverageAreas);
+  expect(config.seoResearch.coverageResearch.cities[1].status).toBe("pending");
+  expect(seoResearchReadiness(config).allowed).toBe(true);
 });

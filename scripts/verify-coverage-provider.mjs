@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { lookupCoverageAreas } from "../worker/src/coverage-areas.ts";
 const providerFetch = async (url, options) => {
   const response = await fetch(url, options);
-  const payload = await response.clone().json();
+  const payload = await response.clone().json().catch(() => ({}));
   if (!response.ok || (payload.status && !["OK", "ZERO_RESULTS"].includes(payload.status))) {
     const key = process.env.GOOGLE_PLACES_API_KEY || "";
     const rawMessage = String(payload.error_message || payload.error?.message || "");

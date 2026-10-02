@@ -12,24 +12,31 @@ export function seoResearchReadiness(config) {
     const coverage = research.coverageResearch;
     const areas = research.coverageAreas;
     const cities = coverage?.cities;
+    const requireAll = coverage?.approvalPolicy === "all-confirmed-cities";
     const valid = research.version === 2 && ["researched", "context-only"].includes(research.mode) &&
-      research.publishReady === true && coverage?.version === 1 && coverage.complete === true &&
+      research.publishReady === true && coverage?.version === 1 &&
+      ["primary-city", "all-confirmed-cities"].includes(coverage.approvalPolicy) &&
       Array.isArray(areas) && areas.length > 1 && areas.length <= 251 &&
       new Set(areas).size === areas.length && Array.isArray(coverage.areas) &&
       coverage.areas.length === areas.length && coverage.areas.every((city, index) => city === areas[index]) &&
       Array.isArray(cities) && cities.length === areas.length &&
-      cities.every((entry, index) => entry.city === areas[index] && entry.status === "complete" &&
+      cities.every((entry, index) => entry.city === areas[index] && ["complete", "partial", "pending"].includes(entry.status)) &&
+      coverage.complete === cities.every(entry => entry.status === "complete") &&
+      cities[0].status === "complete" &&
+      (!requireAll || coverage.complete === true) &&
+      (research.mode !== "researched" || (research.cost?.complete === true && research.cost.overBudget !== true)) &&
+      cities.filter((entry, index) => requireAll || index === 0 || entry.status === "complete").every(entry =>
         entry.research && entry.research.coverageResearch === undefined &&
         entry.research.marketSnapshot?.primaryCity === entry.city &&
         seoResearchReadiness({ ...config, locations: [], seoResearch: entry.research }).allowed);
-    const measuredModeMatches = research.mode !== "researched" || (valid && cities.every(entry => entry.research.mode === "researched"));
-    return valid && measuredModeMatches ? { allowed: true, mode: research.mode } : {
+    return valid ? { allowed: true, mode: research.mode } : {
       allowed: false,
       mode: "context-only",
       code: "seo_research_required",
-      error: "Research for the confirmed service cities is incomplete. Complete each selected city's research before publishing.",
+      error: "Required local research is incomplete. The preview remains available, but publishing is blocked until research succeeds.",
     };
   }
+
   const { version, mode, publishReady } = research;
   const schemaVersion = version === undefined ? 1 : Number(version);
   if (!Number.isFinite(schemaVersion) || schemaVersion < 1 || schemaVersion > 2)

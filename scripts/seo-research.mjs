@@ -587,17 +587,19 @@ export async function researchSiteContext(intake = {}, options = {}) {
   const primary = cities[0]?.research;
   if (!primary) throw new Error("Primary-city research result is missing.");
   const complete = cities.every(item => item.status === "complete");
+  const requireAll = options.requireAllCoverageCities === true;
+  const primaryReady = primary.publishReady && (primary.mode !== "researched" || (total.complete && !total.overBudget));
   return {
     ...primary,
     coverageAreas: confirmed.coverageAreas,
     coverageEvidence: confirmed.coverageEvidence,
     coverageConfirmation: confirmed.coverageConfirmation,
-    coverageResearch: { version: 1, areas: confirmed.coverageAreas, complete, cities, fallbackCostUsd: fallbackUsd, fallbackQueries, fallbackCostComplete, fallbackMaxUsd: fallbackLimit, fallbackMaxQueries: queryLimit },
+    coverageResearch: { version: 1, areas: confirmed.coverageAreas, complete, approvalPolicy: requireAll ? "all-confirmed-cities" : "primary-city", cities, fallbackCostUsd: fallbackUsd, fallbackQueries, fallbackCostComplete, fallbackMaxUsd: fallbackLimit, fallbackMaxQueries: queryLimit },
     marketSnapshot: { ...primary.marketSnapshot, coverageAreas: confirmed.coverageAreas },
     cost: total,
-    mode: complete && cities.every(item => item.research.mode === "researched") ? "researched" : "context-only",
-    publishReady: complete,
-    warnings: [...new Set([...primary.warnings, ...confirmed.warnings, ...cities.filter(item => item.status !== "complete").map(item => `${item.city}: coverage research ${item.status}; approval remains blocked until all selected cities have completed research.`)])],
+    mode: primary.mode,
+    publishReady: primaryReady && (!requireAll || complete),
+    warnings: [...new Set([...primary.warnings, ...confirmed.warnings, ...cities.filter(item => item.status !== "complete").map(item => `${item.city}: coverage research ${item.status}; no completed or measured research is claimed for this city.`)])],
   };
 }
 

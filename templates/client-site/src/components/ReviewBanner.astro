@@ -6,6 +6,10 @@ const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.
 const research = seoResearchReadiness(site);
 const publishReady = research.allowed;
 const webResearchComplete = research.allowed && research.mode === "context-only";
+const cityResearch = site.seoResearch?.coverageResearch;
+const pendingCoverage = cityResearch && cityResearch.complete !== true;
+const completedCityCount = cityResearch?.cities?.filter((city) => city.status === "complete").length || 0;
+const confirmedCityCount = cityResearch?.areas?.length || 0;
 const palette = {
   primary: site.style?.primaryColor || "",
   surface: site.style?.surfaceColor || "",
@@ -605,7 +609,7 @@ const { diagnosticPreview = false } = Astro.props;
 
 </style>
 
-<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, palette }}>
+<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, pendingCoverage, completedCityCount, confirmedCityCount, palette }}>
   const root = document.querySelector("#ll-review");
   const diagnosticPreview = root?.getAttribute("data-diagnostic-preview") === "true";
   const token = new URLSearchParams(window.location.search).get("review");
@@ -1612,6 +1616,12 @@ const { diagnosticPreview = false } = Astro.props;
       researchNotice.hidden = false;
       researchNotice.textContent = "Web research complete. Measured SEO data unavailable. Developer approval is available.";
       root.dataset.researchMode = "web-researched";
+    }
+    if (developer && pendingCoverage) {
+      const researchNotice = root.querySelector(".ll-review__research-notice");
+      researchNotice.hidden = false;
+      researchNotice.textContent = `${completedCityCount} of ${confirmedCityCount} confirmed cities have completed research. Remaining city research is pending within the shared budget. ${publishReady ? "Primary-city research passed the approval checks." : "Required primary-city research is incomplete; publishing is blocked."}`;
+      root.dataset.coverageResearch = "partial";
     }
     if (diagnosticReview) {
       approve.setAttribute("hidden", "");

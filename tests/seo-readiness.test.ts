@@ -191,7 +191,7 @@ it("requires completed research for every confirmed city even when the primary f
   const cityResearch = (city: string) => ({ ...fallback, marketSnapshot: { primaryCity: city } });
   const areas = ["Cookeville, TN", "Algood, TN"];
   const research = { ...fallback, publishReady: true, coverageAreas: areas, coverageResearch: {
-    version: 1, areas, complete: true,
+    version: 1, areas, complete: true, approvalPolicy:"all-confirmed-cities",
     cities: areas.map(city => ({ city, status: "complete", research: cityResearch(city) })),
   } };
   expect(seoResearchReadiness({ seoResearch: research }).allowed).toBe(true);
@@ -206,4 +206,12 @@ it("requires completed research for every confirmed city even when the primary f
 
 it("blocks a confirmed multi-city dossier whose per-city evidence was stripped", () => {
   expect(seoResearchReadiness({seoResearch:{...fallback,publishReady:true,coverageAreas:["Cookeville, TN","Algood, TN"],coverageConfirmation:{status:"confirmed",selectedCount:1}}}).allowed).toBe(false);
+});
+
+
+it("preserves primary-city approval while reporting budget-pending secondary city research", () => {
+  const areas=["Cookeville, TN","Algood, TN"];
+  const research={...fallback,publishReady:true,coverageAreas:areas,coverageResearch:{version:1,areas,complete:false,approvalPolicy:"primary-city",cities:[{city:areas[0],status:"complete",research:{...fallback,marketSnapshot:{primaryCity:areas[0]}}},{city:areas[1],status:"pending",research:null}]}};
+  expect(seoResearchReadiness({seoResearch:research}).allowed).toBe(true);
+  expect(seoResearchReadiness({seoResearch:{...research,coverageResearch:{...research.coverageResearch,approvalPolicy:"all-confirmed-cities"}}}).allowed).toBe(false);
 });

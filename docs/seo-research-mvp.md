@@ -137,9 +137,13 @@ caps. Caps are not multiplied by the city count. Unknown provider cost stops
 further measured requests across the run. Cities that cannot be researched
 remain visibly pending; no confirmed cities are silently dropped by the old
 20-area limit. Both measured and completed cited fallback qualify per city
-under the existing evidence policy. Approval stays blocked until every selected
-city qualifies. Mixed measured/fallback results remain `context-only`, and
-incomplete coverage is listed in the operator report and generated config.
+under the existing evidence policy. The default `primary-city` approval policy
+preserves existing primary-city release requirements, including complete
+reported measured spend; secondary pending research is disclosed rather than
+silently promoted as complete. Strict `all-confirmed-cities` policy is supported
+by the research API and requires every selected city to qualify. The mode
+refers to the primary city's research, and per-city modes remain explicit.
+Incomplete coverage is listed in the operator report, review banner and config.
 
 Server-confirmed coverage takes priority over legacy enrichment at every seam.
 Deselected cities cannot return through the enrichment merge, service-area text,
