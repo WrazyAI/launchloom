@@ -3,11 +3,14 @@ import SiteLayout from "../layouts/SiteLayout.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import site, { phoneHref } from "../lib/site";
+import { resolvePageRecipe } from "../lib/page-recipe";
+
+const { treatment } = resolvePageRecipe(site);
 ---
 
 <SiteLayout title={`About ${site.business.name}`} description={site.copy?.aboutBody || site.business.description}>
   <Header />
-  <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`]}>
+  <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`, `type-${treatment.typography}`]}>
     <section class="inner-hero">
       <div class="wrap inner-hero-grid">
         <div>

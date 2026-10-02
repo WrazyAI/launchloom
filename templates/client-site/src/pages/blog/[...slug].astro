@@ -3,6 +3,7 @@ import SiteLayout from "../../layouts/SiteLayout.astro";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
 import site, { type BlogArticle } from "../../lib/site";
+import { resolvePageRecipe } from "../../lib/page-recipe";
 
 export function getStaticPaths() {
   const articles = site.blogArticles || [];
@@ -13,6 +14,7 @@ export function getStaticPaths() {
   ];
 }
 const { article } = Astro.props as { article: BlogArticle | null };
+const { treatment } = resolvePageRecipe(site);
 const articles = site.blogArticles || [];
 const title = article?.title || `Guides | ${site.business.name}`;
 const description = article?.description || `Practical information from ${site.business.name}.`;
@@ -21,7 +23,7 @@ const paragraphs = article?.body.split(/\n\s*\n/u).map((paragraph) => paragraph.
 
 <SiteLayout title={title} description={description}>
   <Header />
-  <main class="inner-page blog-page">
+  <main class:list={["inner-page", "blog-page", `type-${treatment.typography}`]}>
     <section class="inner-hero"><div class="wrap inner-hero-grid"><div>
       <a class="breadcrumb" href="/">Home</a>
       <span class="kicker">{article ? "Guide" : "Articles and guides"}</span>
