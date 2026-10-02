@@ -92,4 +92,10 @@ private-location omission and developer notices. Public-address and blocker
 fixtures are separate negative/compatibility controls. Actual results and
 artifact locations are recorded in the daily progress ledger.
 
-This work remains local until a separate merge/deployment authorization.
+Stage 1 shipped with user authorization through PR #129 at source merge
+`7f361c8fc43eeaa864eb1284f3b488bd5f412a16`. CI passed 1162 application tests,
+109 Worker tests, type checks, and the production build. Deployment workflow
+`37042047431` succeeded for that exact SHA. Live onboarding assets and synthetic
+desktop/mobile preference controls were verified without real submission.
+Existing client sites were not regenerated; paid provider canaries remain outside
+this release scope.

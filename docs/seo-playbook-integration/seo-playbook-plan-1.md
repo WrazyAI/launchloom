@@ -1,6 +1,6 @@
 # Stage 1 of 4: Confirmed facts and research evidence
 
-Status: approved by the user for implementation on 2026-10-02. Local implementation and verification are recorded in [the fact contract](../business-facts-contract.md) and the daily progress ledger. Merge, deployment, and paid provider canaries still require separate authorization.
+Status: implemented and deployed with user authorization on 2026-10-02 through PR #129, source merge `7f361c8`. Verification is recorded in [the fact contract](../business-facts-contract.md) and the daily progress ledger. Paid provider canaries remain outside this release scope.
 
 ## Purpose and sequence
 
