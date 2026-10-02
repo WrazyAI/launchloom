@@ -8,6 +8,8 @@ The observed page flows through 1. mountain repair hero; 2. service taxonomy; 3.
 
 # Responsive translation
 
+Keep the mobile opening image-backed, with the headline, contact actions and compact reassurance units layered over the same full-width field. Preserve readable contrast and the distinct control layers; do not flatten the opening into a text-only panel or put its image beside the copy. Transfer the composition, not the source mountain photograph, geography, emergency availability or pricing claims.
+
 At a 390 by 844 viewport, Break the long service page into short named chapters, stack process cards, and keep the form and FAQ usable without nested horizontal scrolling. Recheck the opening at 1440 by 1000 so the main promise, first action and focal image are legible at normal zoom. On both sizes, use real links, an accessible menu, readable contrast, reachable form controls, and no horizontal overflow. Honor reduced-motion preference by presenting equivalent static information; a video or reveal may never be required to discover the next action.
 
 # Signature elements

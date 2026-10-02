@@ -8,6 +8,8 @@ The observed home-page rhythm is care-photo opening; independence explanation; b
 
 # Responsive translation
 
+Keep the mobile care opening photograph-backed: the headline, supporting copy and stacked actions sit over the same image field. Use a responsive focal crop and a quiet overlay for readable text. Do not turn it into a text-only opening or move its hero photograph into an adjacent column. Client assets take priority; representative imagery must not imply actual staff or customers.
+
 At 1440 px, establish the opening and broad image-to-text rhythm without making every chapter the same card grid. At 390 px, turn the desktop multi-column support menu into paired or single-column rows. Let headlines wrap naturally, keep body text at a comfortable measure, and place buttons after the content they act on. Re-crop new imagery around its subject rather than scaling a desktop crop blindly. Check both full-page states for overlays, hidden reveal content, clipped navigation, horizontal overflow, readable contrast, and working booking or enquiry controls. Motion is optional; all text and actions must be present when motion is reduced or disabled.
 
 # Signature elements
