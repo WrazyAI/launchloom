@@ -46,6 +46,12 @@ export async function prepareCreativeRecovery({
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
   const evidenceRoot = path.resolve(root, repairRoot);
+  const authorship = await readJson(path.join(candidateRoot, "creative-run.json")).catch((error) => {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  });
+  if (authorship?.status === "failed")
+    throw new Error("Current authorship failed; prior rendered candidates cannot be offered for recovery.");
   const latest = await latestRenderedRound(evidenceRoot);
   if (!latest) throw new Error("No complete rendered candidate report is available for recovery.");
   const candidate = candidateId

@@ -1869,6 +1869,25 @@ export default function Experience`,
     ]);
   });
 
+  it("retains bounded per-route failures without credentials or image bytes when every author fails", async () => {
+    const error: any = await authorExperienceCandidates({
+      site,
+      inspirationPack,
+      generate: async () => {
+        throw new Error(`Provider/source failure sk-or-v1-${"d".repeat(64)} data:image/webp;base64,${"A".repeat(16000)} ${"x".repeat(8000)}`);
+      },
+    }).catch((failure) => failure);
+    expect(error).toBeInstanceOf(Error);
+    expect(error.failures).toHaveLength(3);
+    expect(error.failures.map((failure: any) => failure.candidateId)).toEqual(["candidate-a", "candidate-b", "candidate-c"]);
+    for (const failure of error.failures) {
+      expect(failure.error.length).toBeLessThanOrEqual(2000);
+      expect(failure.error).not.toContain("sk-or-v1-");
+      expect(failure.error).not.toContain("data:image");
+    }
+    expect(error.message.length).toBeLessThanOrEqual(4000);
+  });
+
   it("accepts sealed content destructured in the component parameter", async () => {
     const result = await authorExperienceCandidates({
       site,
