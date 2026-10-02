@@ -1,3 +1,4 @@
+import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import crypto from "node:crypto";
 import { redactPromptValue } from "./author-prompt-budget.mjs";
@@ -304,6 +305,7 @@ function visualBrief(site) {
 }
 
 function contentShape(site, route) {
+  site = routeLinkedContent(site);
   const business = site.business || {};
   const copy = site.copy || {};
   const assets = site.assets || {};
@@ -3319,7 +3321,7 @@ export async function authorExperienceCandidates({
       });
       const servicePage = servicePageOutput.source;
       complianceRepaired ||= servicePageOutput.repaired;
-      const locations = Array.isArray(site.locations) ? site.locations : [];
+      const locations = content.locations || [];
       const authorLocationPage =
         site.industry === "home-services" && locations.length > 0;
       let locationPage = "";
@@ -3517,9 +3519,11 @@ export async function authorExperienceCandidates({
     failures.push(failure);
   }
   if (!candidates.length) {
-    const error = new Error(safeAuthorFailureText(
-      `All creative candidates failed: ${failures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
-    ));
+    const error = new Error(
+      safeAuthorFailureText(
+        `All creative candidates failed: ${failures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
+      ),
+    );
     error.failures = failures;
     throw error;
   }

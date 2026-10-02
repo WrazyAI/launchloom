@@ -1,6 +1,6 @@
 # Stage 2 of 4: Approved route inventory and page admission
 
-Status: proposed, awaiting user approval. Depends on [Stage 1](seo-playbook-plan-1.md). Next: [Stage 3](seo-playbook-plan-3.md).
+Status: approved and implemented locally on 2026-10-02. See [the route contract](../route-inventory-contract.md) and daily progress ledger for schema, migration and verification evidence. Local acceptance: 343 focused tests, 110 Worker tests and 72 desktop/mobile route views passed; Astro/types/build checks passed. The broad run had one stale-module failure, with the complete authoring file green on the frozen-source rerun; no clean final full CI pass is claimed. TestSprite service results were passed but trace coverage was inconclusive. Merge, deployment and domain activation remain outside this stage. Depends on [Stage 1](seo-playbook-plan-1.md). Next: [Stage 3](seo-playbook-plan-3.md).
 
 ## Intended outcome
 
@@ -16,13 +16,13 @@ Authored inner-page support exists. Existing blog routes render when articles ex
 
 ## Proposed route record
 
-| Field group | Required meaning |
-| --- | --- |
-| Identity | Stable route ID, page type, normalized path, configuration/content source |
-| Purpose | Visitor question, search-intent cluster, related service/location, admission reason |
-| Approval | Proposed, approved, deferred, or explicitly omitted; evidence references |
-| Discovery | Navigation placement, internal-link relationships, sitemap inclusion, indexability |
-| Delivery | Canonical origin/path, required acceptance checks, optional legacy redirect mapping |
+| Field group | Required meaning                                                                    |
+| ----------- | ----------------------------------------------------------------------------------- |
+| Identity    | Stable route ID, page type, normalized path, configuration/content source           |
+| Purpose     | Visitor question, search-intent cluster, related service/location, admission reason |
+| Approval    | Proposed, approved, deferred, or explicitly omitted; evidence references            |
+| Discovery   | Navigation placement, internal-link relationships, sitemap inclusion, indexability  |
+| Delivery    | Canonical origin/path, required acceptance checks, optional legacy redirect mapping |
 
 Record approval separately from generated/rendered/verified status. A proposed route must never become public merely because it appears in a research suggestion.
 

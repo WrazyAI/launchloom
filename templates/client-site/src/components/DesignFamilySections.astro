@@ -1,5 +1,5 @@
 ---
-import site, {
+import site, { serviceHref,
   phoneHref,
   primaryCtaHref,
   isDirectionsPrimary,
@@ -136,7 +136,7 @@ const contactHeading =
             </header>
             <div class="family-service-list">
               {site.services.map((service) => (
-                <a class="family-service" href={`/services/${service.slug}/`}>
+                <a class="family-service" href={serviceHref(service.slug)}>
                   <div class="family-service__title">
                     <h3>{service.name}</h3>
                     <span aria-hidden="true">↗</span>

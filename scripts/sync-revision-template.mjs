@@ -6,6 +6,7 @@ import { ensureLegacySocialProofMarkup } from "./revision-engine.mjs";
 import {
   REVISION_TEMPLATE_BASELINE_PATH,
   revisionTemplatePaths,
+  retiredRouteTemplatePaths,
 } from "./revision-template-paths.mjs";
 
 const args = Object.fromEntries(
@@ -91,6 +92,7 @@ const knownBaselines = JSON.parse(
 );
 const nextBaselineFiles = { ...baseline.files };
 const copyPlan = [];
+const removalPlan = [];
 const unchangedFiles = [];
 const narrowPatchFiles = [];
 const baselineManagedFiles = new Set();
@@ -178,6 +180,24 @@ for (const relative of files) {
   conflicts.push(relative);
 }
 
+// Retire only exact known generated routes. Client edits require manual review.
+for (const relative of retiredRouteTemplatePaths) {
+  const destination = path.join(client, relative);
+  const existing = await fs.readFile(destination).catch((error) => {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  });
+  if (existing === null) continue;
+  const hash = digest(existing);
+  if (
+    hash === baseline.files[relative] ||
+    knownBaselines.files[relative]?.includes(hash)
+  ) {
+    removalPlan.push(destination);
+    delete nextBaselineFiles[relative];
+  } else conflicts.push(relative);
+}
+
 if (conflicts.length) {
   throw new Error(
     `Manual attention required: refusing to overwrite existing revision template files that differ from the known generated baseline (current LaunchLoom template). No template files were copied. Review: ${conflicts.join(", ")}`,
@@ -203,6 +223,7 @@ for (const { sourcePath, destination } of copyPlan) {
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(sourcePath, destination);
 }
+for (const destination of removalPlan) await fs.unlink(destination);
 // Upgrade only the known legacy canonical expression. Preserve any other
 // client-authored layout changes; an unknown layout must fail the release gate
 // rather than be overwritten during unrelated feedback.

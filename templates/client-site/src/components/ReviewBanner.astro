@@ -5,6 +5,8 @@ import { seoResearchReadiness } from "../lib/seo-readiness.mjs";
 const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$/, "");
 const research = seoResearchReadiness(site);
 const publishReady = research.allowed;
+const routeBlocked = !research.allowed && research.code === "route_approval_required";
+const routeNotice = routeBlocked ? research.error : "";
 const factBlocked = !research.allowed && research.code === "business_facts_required";
 const factReport = site.factReadiness;
 const deferredFactCount = factReport?.facts.filter((fact) => fact.state === "missing-deferrable").length || 0;
@@ -618,7 +620,7 @@ const { diagnosticPreview = false } = Astro.props;
 
 </style>
 
-<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, pendingCoverage, completedCityCount, confirmedCityCount, factNotice, factBlocked, palette }}>
+<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, pendingCoverage, completedCityCount, confirmedCityCount, factNotice, factBlocked, routeBlocked, routeNotice, palette }}>
   const root = document.querySelector("#ll-review");
   const diagnosticPreview = root?.getAttribute("data-diagnostic-preview") === "true";
   const token = new URLSearchParams(window.location.search).get("review");
@@ -1671,12 +1673,12 @@ const { diagnosticPreview = false } = Astro.props;
         })
         .catch(() => root.setAttribute("hidden", ""));
     } else if (developer && !publishReady) {
-      root.querySelector(".ll-review__summary").textContent = factBlocked
+      root.querySelector(".ll-review__summary").textContent = routeBlocked ? routeNotice : factBlocked
         ? "Internal review. Business facts need confirmation, so publishing is blocked."
         : "Internal review. SEO research is incomplete, so publishing is blocked.";
       approve.disabled = true;
-      approve.textContent = factBlocked ? "Business facts required" : "SEO research required";
-      approve.title = factBlocked ? "Resolve the missing or contradictory facts in the client brief." : "Rerun the intake after SEO research succeeds.";
+      approve.textContent = routeBlocked ? "Route approvals required" : factBlocked ? "Business facts required" : "SEO research required";
+      approve.title = routeBlocked ? routeNotice : factBlocked ? "Resolve the missing or contradictory facts in the client brief." : "Rerun the intake after SEO research succeeds.";
     }
     const setModal = (visible) => {
       modal.toggleAttribute("hidden", !visible);

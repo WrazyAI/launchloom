@@ -7,9 +7,29 @@ export function revisionTemplatePaths(config) {
     "components/ReviewBanner.astro",
     "lib/seo-readiness.mjs",
     "lib/seo-readiness.d.mts",
+    "lib/business-facts.mjs",
+    "lib/business-facts.d.mts",
+    "lib/route-inventory.mjs",
+    "lib/route-inventory.d.mts",
+    "lib/site.ts",
+    "components/Header.astro",
+    "components/Footer.astro",
+    "components/PageSections.astro",
+    "components/DesignFamilySections.astro",
+    "components/experiences/EditorialFolioExperience.astro",
+    "components/experiences/GuidedConversationExperience.astro",
+    "components/experiences/ServiceLedExperience.astro",
+    "pages/about/[...page].astro",
+    "pages/contact/[...page].astro",
+    "pages/services/[...overview].astro",
+    "pages/services/[slug].astro",
+    "pages/locations/[slug].astro",
+    "pages/blog/[...slug].astro",
+    "pages/[support].astro",
     "pages/robots.txt.ts",
     "pages/sitemap.xml.ts",
   ]);
+  if (config.routePolicy !== undefined) files.add("layouts/SiteLayout.astro");
   if (config.design?.experience?.packId) {
     for (const relative of [
       "components/ExperiencePage.astro",
@@ -69,7 +89,7 @@ export function revisionTemplatePaths(config) {
       "components/Header.astro",
       "components/Footer.astro",
       "components/PageSections.astro",
-      "pages/contact.astro",
+      "pages/contact/[...page].astro",
       "pages/services/[slug].astro",
       "pages/locations/[slug].astro",
     ])
@@ -149,8 +169,15 @@ export function revisionAssetWritePaths(config) {
     .map((operation) => `public${operation.path}`);
 }
 
+export const retiredRouteTemplatePaths = [
+  "src/pages/about.astro",
+  "src/pages/contact.astro",
+  "src/pages/services/index.astro",
+];
+
 export function revisionTemplateWritePaths(config) {
   const files = new Set(revisionTemplatePaths(config));
+  for (const relative of retiredRouteTemplatePaths) files.add(relative);
   files.add(REVISION_TEMPLATE_BASELINE_PATH);
   files.add("src/layouts/SiteLayout.astro");
   if (

@@ -3,13 +3,18 @@ export type SeoResearchReadiness =
   | {
       allowed: false;
       mode: "context-only" | "baseline";
-      code: "seo_research_required" | "business_facts_required";
+      code:
+        | "seo_research_required"
+        | "business_facts_required"
+        | "route_approval_required";
       error: string;
     };
 export function isAffirmativeConfirmation(value: unknown): boolean;
 export function seoResearchReadiness(config: {
   business?: Record<string, unknown>;
   factReadiness?: unknown;
+  routePolicy?: unknown;
+  routeInventory?: unknown;
   seoResearch?: unknown;
   services?: unknown;
   locations?: unknown;

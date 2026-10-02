@@ -485,23 +485,51 @@ export default function Experience`,
   it("allows an absent optional logo only behind that same sealed logo guard", () => {
     const route = { id: "route-optional-logo" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
-    const base = String(safeStage({ ...request, stage: "experience" }).content || "");
-    const styles = String(safeStage({ ...request, stage: "styles" }).content || "");
-    const motion = String(safeStage({ ...request, stage: "motion" }).content || "");
-    const guard = '{content.brand.logo && <img src={content.brand.logo} alt="" />}';
-    const guarded = base.replace("<section data-hero>", `<section data-hero>${guard}`);
-    const content = { hero: { image: "/images/hero.webp" }, brand: { logo: "", phone: "+12125550186" } };
-    const validate = (experience: string, logo = "") => validateProductionCandidateFiles({
-      files: { experience, styles, motion }, route, content: { ...content, brand: { ...content.brand, logo } },
-    });
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+    const guard =
+      '{content.brand.logo && <img src={content.brand.logo} alt="" />}';
+    const guarded = base.replace(
+      "<section data-hero>",
+      `<section data-hero>${guard}`,
+    );
+    const content = {
+      hero: { image: "/images/hero.webp" },
+      brand: { logo: "", phone: "+12125550186" },
+    };
+    const validate = (experience: string, logo = "") =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: { ...content, brand: { ...content.brand, logo } },
+      });
     expect(() => validate(guarded)).not.toThrow();
     expect(() => validate(guarded, "/images/client-logo.svg")).not.toThrow();
-    expect(() => validate(guarded, " ")).toThrow(/safe local or LaunchLoom-hosted/iu);
-    expect(() => validate(guarded, true as any)).toThrow(/safe local or LaunchLoom-hosted/iu);
-    expect(() => validate(guarded, "https://unapproved.test/logo.webp")).toThrow(/safe local or LaunchLoom-hosted/iu);
-    const unguarded = guarded.replace(guard, '<img src={content.brand.logo} alt="" />');
+    expect(() => validate(guarded, " ")).toThrow(
+      /safe local or LaunchLoom-hosted/iu,
+    );
+    expect(() => validate(guarded, true as any)).toThrow(
+      /safe local or LaunchLoom-hosted/iu,
+    );
+    expect(() =>
+      validate(guarded, "https://unapproved.test/logo.webp"),
+    ).toThrow(/safe local or LaunchLoom-hosted/iu);
+    const unguarded = guarded.replace(
+      guard,
+      '<img src={content.brand.logo} alt="" />',
+    );
     expect(() => validate(unguarded)).toThrow(/conditionally render/iu);
-    const unrelatedGuard = guarded.replace('content.brand.logo &&', 'content.hero.image &&');
+    const unrelatedGuard = guarded.replace(
+      "content.brand.logo &&",
+      "content.hero.image &&",
+    );
     expect(() => validate(unrelatedGuard)).toThrow(/conditionally render/iu);
   });
 
@@ -1876,12 +1904,18 @@ export default function Experience`,
       site,
       inspirationPack,
       generate: async () => {
-        throw new Error(`Provider/source failure sk-or-v1-${"d".repeat(64)} data:image/webp;base64,${"A".repeat(16000)} ${"x".repeat(8000)}`);
+        throw new Error(
+          `Provider/source failure sk-or-v1-${"d".repeat(64)} data:image/webp;base64,${"A".repeat(16000)} ${"x".repeat(8000)}`,
+        );
       },
     }).catch((failure) => failure);
     expect(error).toBeInstanceOf(Error);
     expect(error.failures).toHaveLength(3);
-    expect(error.failures.map((failure: any) => failure.candidateId)).toEqual(["candidate-a", "candidate-b", "candidate-c"]);
+    expect(error.failures.map((failure: any) => failure.candidateId)).toEqual([
+      "candidate-a",
+      "candidate-b",
+      "candidate-c",
+    ]);
     for (const failure of error.failures) {
       expect(failure.error.length).toBeLessThanOrEqual(2000);
       expect(failure.error).not.toContain("sk-or-v1-");
@@ -2763,4 +2797,17 @@ it("preserves canonical semantic color properties while isolating arbitrary auth
   expect(css).toContain("color:var(--ll-text)");
   expect(css).toContain("--ll-text:#14201d");
   expect(css).toContain("--ll-creative-ink:white");
+});
+
+it("seals only route-approved location links in new explicit configurations", () => {
+  const config = {
+    business: { name: "Fixture", serviceAreas: ["Testville"] },
+    services: [],
+    locations: [{ name: "Testville", slug: "testville" }],
+    routePolicy: { version: 1, decisions: [] },
+  };
+  const manifest = buildCreativeContentManifest(config, { id: "fixture" });
+  expect(manifest.values.locations).toEqual([]);
+  expect(manifest.values.brand.serviceAreas).toEqual(["Testville"]);
+  expect(config.locations).toHaveLength(1);
 });
