@@ -94,8 +94,10 @@ become client-site assets.
    bounds, not reserved spend. The author logs finish reason,
    completion/reasoning token usage, and returned content length on every
    response so output truncation is distinguishable from input-context errors.
-   A failed reference-fidelity check gets at most two author-owned repairs and
-   then fails closed.
+   Initial intake generation permits at most three applied author-owned repairs
+   per candidate, rerendering and revalidating after each. Invalid responses
+   have a separate bounded retry budget and do not count as applied repairs.
+   Exhausted candidates still fail closed.
    The inner-page companions are authored against the same sealed content, the
    same Reference DNA, and the same design contract as the homepage.
    `ServicePage.jsx` renders `/services/<slug>/` with one service record
@@ -181,8 +183,11 @@ become client-site assets.
    pages and all downstream source/rendered validation. Homepage-only candidates
    use sequential JSX, CSS, and motion replacements to keep each returned bundle
    within the provider ceiling. Every file-scoped call reuses the same
-   frozen reasoning effort and creative session identity. Each candidate gets
-   at most two repair cycles. Production promotion
+   frozen reasoning effort and creative session identity. Initial intake
+   generation allows at most three applied repair cycles per candidate; other
+   callers default to two unless explicitly configured within that cap. A
+   regressing repair restores the best measured state before another repair
+   and rerenders before acceptance. Production promotion
    still requires `promotionReady`, including rendered candidate diversity, plus a
    passing final visual gate. The loop never falls back to a legacy renderer.
 
