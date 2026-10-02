@@ -2207,3 +2207,12 @@ h2 {
 }
 
 }
+
+.ll-page-media img { display:block; width:100%; max-width:64rem; height:auto; border-radius:var(--radius,0); }
+
+/* The trades inner hero owns a dark surface, including label and focus paint. */
+.recipe-local-trades .inner-hero .kicker { color: #d4dfdc; }
+.recipe-local-trades .inner-hero :is(a,button):focus-visible {
+  outline: 2px solid #d4dfdc;
+  outline-offset: 3px;
+}

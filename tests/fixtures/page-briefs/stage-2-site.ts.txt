@@ -1,4 +1,3 @@
-import { compilePageBriefs } from "./page-briefs.mjs";
 import { resolvePageRecipe } from "./page-recipe";
 import {
   compileRouteInventory,
@@ -120,9 +119,6 @@ export type ExperiencePackId =
   | "guided-conversation"
   | "service-led";
 export type SiteConfig = {
-  pageContent?: Record<string, any>;
-  pageEvidence?: Array<Record<string, any>>;
-  pageBriefs?: ReturnType<typeof compilePageBriefs>;
   routePolicy?: import("./route-inventory.mjs").RoutePolicy;
   routeInventory?: import("./route-inventory.mjs").RouteInventory;
   supportingPages?: Record<
@@ -396,8 +392,6 @@ const site = {
 
 // Always compile from current content/policy; stored reports cannot authorize routes.
 export const routeInventory = compileRouteInventory(site);
-export const pageBriefs = compilePageBriefs(site);
-export const routePageBrief = (routeId: string) => pageBriefs.briefs.find(brief => brief.routeId === routeId.trim().toLowerCase().replace(/\s+/gu, " ")) || null;
 export const renderedRoutes = approvedRoutes(routeInventory, {
   production: productionRouteMode(import.meta.env),
 });

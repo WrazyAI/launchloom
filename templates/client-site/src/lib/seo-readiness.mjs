@@ -1,3 +1,4 @@
+import { pageBriefReadiness } from "./page-briefs.mjs";
 import { routeReadiness } from "./route-inventory.mjs";
 import { businessFactReadiness } from "./business-facts.mjs";
 export function isAffirmativeConfirmation(value) {
@@ -8,6 +9,8 @@ export function seoResearchReadiness(config) {
   if (!facts.allowed) return { ...facts, mode: "baseline" };
   const routes = routeReadiness(config);
   if (!routes.allowed) return { ...routes, mode: "baseline" };
+  const pages = pageBriefReadiness(config);
+  if (!pages.allowed) return { ...pages, mode: "baseline" };
   const research = config.seoResearch;
   if (!research || typeof research !== "object")
     return { allowed: true, mode: "legacy" };
@@ -70,6 +73,9 @@ export function seoResearchReadiness(config) {
               // documents are evidence, not separate site configurations.
               routePolicy: undefined,
               routeInventory: undefined,
+              pageContent: undefined,
+              pageBriefs: undefined,
+              pageEvidence: undefined,
               locations: entry.city === areas[0] ? config.locations : [],
               seoResearch: entry.research,
             }).allowed,

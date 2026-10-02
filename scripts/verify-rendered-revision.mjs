@@ -1,3 +1,4 @@
+import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { contrastFailureMessages } from "./rendered-contrast.mjs";
 import fs from "node:fs/promises";
 import http from "node:http";
@@ -95,9 +96,8 @@ if (
   failures.push("seo: configured public domain is missing a canonical URL.");
 if (!sitemapXml.includes("<urlset"))
   failures.push("seo: sitemap.xml is missing or invalid.");
-for (const service of config.services || [])
-  if (!sitemapXml.includes(`/services/${service.slug}/`))
-    failures.push(`seo: sitemap omits service route ${service.slug}.`);
+for (const route of compileRouteInventory(config).records.filter(route=>route.discovery.sitemap && !reviewMode))
+  if (!sitemapXml.includes(route.path)) failures.push(`seo: sitemap omits approved route ${route.path}.`);
 if (!/^User-agent: \*/mu.test(robotsTxt))
   failures.push("seo: robots.txt is missing or invalid.");
 
@@ -130,6 +130,27 @@ try {
     const file = path.join(dist, relative);
     await fs.mkdir(path.dirname(file), { recursive: true });
     await fs.writeFile(file, mockedThumbnail);
+  }
+  const scopedArtifacts = (config.revisionReport?.expectedArtifacts || []).filter(artifact => artifact.route && artifact.route !== "/");
+  for (const route of [...new Set(scopedArtifacts.map(artifact=>artifact.route))]) {
+    for (const width of [1440,390]) {
+      const page=await browser.newPage({viewport:{width,height:900}});
+      await page.goto(new URL(route,url).href,{waitUntil:"networkidle"});
+      await page.locator("details").evaluateAll(nodes=>nodes.forEach(node=>node.open=true));
+      const body=await page.locator("body").innerText();
+      for (const artifact of scopedArtifacts.filter(artifact=>artifact.route===route)) {
+        if(artifact.type==="text" && (!body.includes(artifact.value) || !(await page.getByText(artifact.value,{exact:true}).first().isVisible().catch(()=>false)))) failures.push(`${route} ${width}: route-targeted text is not visible.`);
+        if(artifact.type==="page-meta" && await page.locator('meta[name="description"]').getAttribute("content")!==artifact.value) failures.push(`${route} ${width}: route-targeted metadata is missing.`);
+        if(artifact.type==="asset") {
+          const image=page.locator("img");
+          const images=await image.evaluateAll(nodes=>nodes.map(node=>({src:node.getAttribute("src"),loaded:node.complete&&node.naturalWidth>0&&node.getBoundingClientRect().width>0&&node.getBoundingClientRect().height>0&&getComputedStyle(node).visibility!=="hidden"&&getComputedStyle(node).opacity!=="0"})));
+          if(!images.some(image=>image.src===artifact.url&&image.loaded))failures.push(`${route} ${width}: route-targeted image is not visible/loaded.`);
+        }
+      }
+      if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))failures.push(`${route} ${width}: route-targeted revision overflows.`);
+      await page.screenshot({path:path.join(screenshotDir,`route-${route.replace(/[^a-z0-9]/giu,"-")}-${width}.png`),fullPage:true});
+      await page.close();
+    }
   }
   for (const viewport of [
     { name: "desktop", width: 1440, height: 1000 },
@@ -508,6 +529,7 @@ try {
         `${viewport.name}: one or more configured sections are not visible.`,
       );
     for (const artifact of config.revisionReport?.expectedArtifacts || []) {
+      if (artifact.route && artifact.route !== "/") continue;
       if (artifact.type === "creative-color") {
         if (
           state.creativeColors[artifact.variable]?.toLowerCase() !==

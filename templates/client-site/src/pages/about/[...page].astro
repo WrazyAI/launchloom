@@ -1,13 +1,16 @@
 ---
 import SiteLayout from "../../layouts/SiteLayout.astro";
+import PageBriefSections from "../../components/PageBriefSections";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
-import site, { routeIsRendered, pageHref, homeSectionHref, phoneHref } from "../../lib/site";
+import site, { routePageBrief, routeIsRendered, pageHref, homeSectionHref, phoneHref } from "../../lib/site";
+const brief = routePageBrief("about:");
+const supported = brief?.mode === "supported";
 export function getStaticPaths() { return routeIsRendered("/about/") ? [{ params: { page: undefined } }] : []; }
 
 ---
 
-<SiteLayout title={`About ${site.business.name}`} description={site.copy?.aboutBody || site.business.description}>
+<SiteLayout title={supported ? brief.metadata.title : `About ${site.business.name}`} description={supported ? brief.metadata.description : site.copy?.aboutBody || site.business.description}>
   <Header />
   <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`]}>
     <section class="inner-hero">
@@ -16,7 +19,7 @@ export function getStaticPaths() { return routeIsRendered("/about/") ? [{ params
           <a class="breadcrumb" href="/">Home</a>
           <span class="kicker">{site.copy?.aboutKicker || "About the business"}</span>
           <h1>{site.copy?.aboutHeading || `About ${site.business.name}`}</h1>
-          <p>{site.copy?.aboutBody || site.business.description}</p>
+          <p>{supported ? brief.introduction : site.copy?.aboutBody || site.business.description}</p>
           <div class="hero-actions">
             <a class="cta" href={pageHref("/contact/", homeSectionHref("contact"))}>{site.business.primaryCta}</a>
             {site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}
@@ -25,6 +28,7 @@ export function getStaticPaths() { return routeIsRendered("/about/") ? [{ params
         {(site.assets?.teamPhoto || site.images.secondary) && <img src={site.assets?.teamPhoto || site.images.secondary} alt={site.assets?.teamPhoto ? `Owner or team at ${site.business.name}` : `${site.business.name} service context`} fetchpriority="high" />}
       </div>
     </section>
+    {supported && <PageBriefSections brief={brief} />}
     <section class="section wrap">
       <div class="section-heading"><span class="kicker">What customers can expect</span><h2>Clear information for a confident next step.</h2></div>
       <ul class="proof-list">{site.differentiators.map((item) => <li>{item}</li>)}</ul>

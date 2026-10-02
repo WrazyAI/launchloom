@@ -1,3 +1,4 @@
+import { compilePageBriefs } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
 import {
   publicGenerationIntake,
@@ -1897,6 +1898,8 @@ export function normalise(candidate, intake) {
       existingUrls: intake.existingUrls || [],
     },
     supportingPages: intake.supportingPages || {},
+    pageContent: intake.pageContent || {},
+    pageEvidence: intake.pageEvidence || [],
     excludedServices: lines(intake.excludedServices),
     seoPageMap: seoResearch?.pageMap || [],
     style: {
@@ -1967,6 +1970,7 @@ export function normalise(candidate, intake) {
       : {}),
   });
   normalized.routeInventory = compileRouteInventory(normalized);
+  normalized.pageBriefs = compilePageBriefs(normalized);
   return normalized;
 }
 

@@ -1,3 +1,4 @@
+import { pageBriefReadiness, pageBriefFor, pageBriefExpectedContent } from "../templates/client-site/src/lib/page-briefs.mjs";
 import {
   compileRouteInventory,
   approvedRoutes,
@@ -61,6 +62,8 @@ const textWords = (html) =>
 
 export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
   const failures = [];
+  const pages = pageBriefReadiness(config);
+  if (mode === "production" && !pages.allowed) failures.push(pages.error);
   const facts = businessFactReadiness(config);
   if (mode === "production" && !facts.allowed) failures.push(facts.error);
   if (
@@ -149,6 +152,13 @@ export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
     }
     if (html.includes("—"))
       failures.push(`${route}: rendered page contains a prohibited em dash.`);
+    const brief = pageBriefFor(config, records.find(record=>record.path===route)?.id);
+    if (brief?.mode === "supported") {
+      const bodyText = decodeHtmlText(html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/giu," ").replace(/<[^>]*>/gu," ")).replace(/\s+/gu," ");
+      for(const value of pageBriefExpectedContent(brief))if(!bodyText.includes(value.replace(/\s+/gu," ")))failures.push(`${route}: supported page brief content is missing from initial HTML.`);
+      for(const media of brief.media)if(!tags(html,"img").some(tag=>attribute(tag,"src")===media.src&&decodeHtmlText(attribute(tag,"alt"))===media.alt))failures.push(`${route}: supported page media is missing from initial HTML.`);
+      if(decodeHtmlText(attribute(meta(html,"description")||"","content"))!==brief.metadata.description)failures.push(`${route}: supported page metadata differs from the brief.`);
+    }
     const title = decodeHtmlText(
       html.match(/<title>([^<]+)<\/title>/iu)?.[1],
     ).trim();

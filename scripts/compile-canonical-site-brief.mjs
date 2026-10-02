@@ -257,6 +257,8 @@ export function compileCanonicalSiteBrief({
       existingUrls: intake.existingUrls || [],
     },
     supportingPages: intake.supportingPages || {},
+    pageContent: intake.pageContent || {},
+    pageEvidence: intake.pageEvidence || [],
     seoResearch,
     coverageConfirmation: confirmedCoverage?.coverageConfirmation || null,
     coverage: {
