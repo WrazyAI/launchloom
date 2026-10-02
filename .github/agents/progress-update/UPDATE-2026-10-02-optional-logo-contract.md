@@ -36,3 +36,15 @@
 - Fresh Vitest run87828 passed185 tests across five matching author/output/source-fidelity/rendered-fidelity/failure-evidence suites in13.69 seconds. Full final-state suite12790 remains running, so its outcome is still pending. git diff --check is clean.
 - Detected independently dispatched cloud generation37020176870 on old convergence branch codex/launchloom-creative-pipeline-fix at1bf0f0d, currently authoring. Do not cancel or duplicate another agent's paid run; its result is separate from this current-main-based patch. No broad E2E success is claimed.
 - Commit the bounded falsy-value guard and ledger, then push for immutable-head CI. Keep merge and scoped task completion gated on full validation. No unsafe source allowances or promotion-gate changes.
+
+## 14:47 UTC - Final local suite and complete branch review passed
+
+- Pushed bfe9d7640ad93cdfea1b96f80f47b1988e164b12 and opened PR126. Fresh final-state suite12790 completed:1,107 tests across82 files passed, zero failures. The durable JSON report independently reads success=true, numPassedTests=1107 and numFailedTests=0.
+- Full-branch CodeRabbit review83041 against origin/main completed with findings=0 across both changed source/test files and this ledger. GitHub review threads are empty. Exact-head CI37021005988 is still in application tests; do not merge until it passes.
+- Independent cloud run37020176870 passed its authoring step and is now rendering/repairing candidates in the production shell. Its older convergence-branch head is not this patch and cannot prove current-main deployment or promotion. Broad cloud preview/email/revision/SEO completion remains unproven.
+
+## 14:56 UTC - Exact-head CI, merge and deployment verified
+
+- CI37021005988 passed at bfe9d764:1,107 application tests,91 Worker tests, Astro/TypeScript0errors/0warnings, production build passed. CodeRabbit commit status SUCCESS; zero unresolved threads. Merged PR126 at07abbcc01e3c1c383c523de97b33586f02acdd50.
+- Deployment37023100078 succeeded at that exact merge SHA. Platform https://b35f71d6.launchloom-bhl.pages.dev/ and onboarding https://35999105.launchloom-onboarding.pages.dev/onboard/ returned HTTP200. Worker version1fafa579-c64c-492e-bb75-fef82b14d6d5. This proves scoped patch deployment, not full creative E2E success.
+- Read actual estate-law creative-run manifest: one authored candidate, route01; route02 and route03 failed safe-image-source validation. Its cloud run remains in rendering/repair. Do not describe all three as successful or port that branch's permissive service-binding check without adversarial tests. Next controlled current-main canary should rerun painting intake92, preview_only=true, reuse_authored_candidates=false.
