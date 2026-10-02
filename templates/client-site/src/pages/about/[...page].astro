@@ -1,8 +1,10 @@
 ---
-import SiteLayout from "../layouts/SiteLayout.astro";
-import Header from "../components/Header.astro";
-import Footer from "../components/Footer.astro";
-import site, { phoneHref } from "../lib/site";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import site, { routeIsRendered, pageHref, homeSectionHref, phoneHref } from "../../lib/site";
+export function getStaticPaths() { return routeIsRendered("/about/") ? [{ params: { page: undefined } }] : []; }
+
 ---
 
 <SiteLayout title={`About ${site.business.name}`} description={site.copy?.aboutBody || site.business.description}>
@@ -16,7 +18,7 @@ import site, { phoneHref } from "../lib/site";
           <h1>{site.copy?.aboutHeading || `About ${site.business.name}`}</h1>
           <p>{site.copy?.aboutBody || site.business.description}</p>
           <div class="hero-actions">
-            <a class="cta" href="/contact/">{site.business.primaryCta}</a>
+            <a class="cta" href={pageHref("/contact/", homeSectionHref("contact"))}>{site.business.primaryCta}</a>
             {site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}
           </div>
         </div>

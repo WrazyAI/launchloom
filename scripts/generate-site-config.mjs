@@ -1,4 +1,8 @@
-import { publicGenerationIntake, redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
+import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
+import {
+  publicGenerationIntake,
+  redactPrivateLocation,
+} from "../templates/client-site/src/lib/business-facts.mjs";
 import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { parseModelJson } from "./model-json.mjs";
@@ -26,12 +30,19 @@ import {
 } from "../templates/client-site/src/lib/experience-pack.ts";
 
 const referenceCoverage = JSON.parse(
-  readFileSync(new URL("../data/reference-library/core-collection.json", import.meta.url), "utf8"),
+  readFileSync(
+    new URL("../data/reference-library/core-collection.json", import.meta.url),
+    "utf8",
+  ),
 );
 const unsupportedBusinessKinds = new Set(
   (referenceCoverage.unsupportedBusinessKinds || []).flatMap((entry) =>
-    (Array.isArray(entry.businessKinds) ? entry.businessKinds : []).map((kind) =>
-      String(kind).toLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, ""),
+    (Array.isArray(entry.businessKinds) ? entry.businessKinds : []).map(
+      (kind) =>
+        String(kind)
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/gu, "-")
+          .replace(/^-|-$/gu, ""),
     ),
   ),
 );
@@ -75,7 +86,10 @@ function seoResearchForConfig(value) {
     publishReady:
       value.publishReady === true ||
       (sourceVersion < 2 && mode === "researched"),
-    validatedQueries: list(value.validatedQueries, sourceVersion >= 2 ? 120 : 12).map((item) => ({
+    validatedQueries: list(
+      value.validatedQueries,
+      sourceVersion >= 2 ? 120 : 12,
+    ).map((item) => ({
       ...item,
       keyword: item.keyword || item.query || "",
       query: item.query || item.keyword || "",
@@ -186,7 +200,8 @@ const STOCK_PACKS = {
         creator: "LaunchLoom",
         sourceUrl: "/images/packs/professional-services-advisory-v1.png",
         license: "LaunchLoom-owned generated fallback",
-        subject: "illustrative professional consultation; pictured people are not client staff",
+        subject:
+          "illustrative professional consultation; pictured people are not client staff",
       },
     },
   },
@@ -206,22 +221,52 @@ function normaliseBlogArticles(value) {
   if (!Array.isArray(value)) return [];
   const seenSlugs = new Set();
   return value.slice(0, 50).flatMap((article) => {
-    if (!article || typeof article !== "object" || Array.isArray(article)) return [];
+    if (!article || typeof article !== "object" || Array.isArray(article))
+      return [];
     const slug = typeof article.slug === "string" ? article.slug.trim() : "";
-    const title = typeof article.title === "string" ? article.title.replace(/\s+/gu, " ").trim() : "";
-    const body = typeof article.body === "string" ? article.body.replace(/—/gu, "-").trim() : "";
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(slug) || slug.length > 90 || !title || !body || seenSlugs.has(slug)) return [];
+    const title =
+      typeof article.title === "string"
+        ? article.title.replace(/\s+/gu, " ").trim()
+        : "";
+    const body =
+      typeof article.body === "string"
+        ? article.body.replace(/—/gu, "-").trim()
+        : "";
+    if (
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(slug) ||
+      slug.length > 90 ||
+      !title ||
+      !body ||
+      seenSlugs.has(slug)
+    )
+      return [];
     seenSlugs.add(slug);
-    const description = typeof article.description === "string"
-      ? article.description.replace(/—/gu, "-").replace(/\s+/gu, " ").trim().slice(0, 320)
-      : "";
-    const dateValue = typeof article.publishedAt === "string" ? article.publishedAt.trim() : "";
-    const publishedAt = /^\d{4}-\d{2}-\d{2}$/u.test(dateValue) &&
+    const description =
+      typeof article.description === "string"
+        ? article.description
+            .replace(/—/gu, "-")
+            .replace(/\s+/gu, " ")
+            .trim()
+            .slice(0, 320)
+        : "";
+    const dateValue =
+      typeof article.publishedAt === "string" ? article.publishedAt.trim() : "";
+    const publishedAt =
+      /^\d{4}-\d{2}-\d{2}$/u.test(dateValue) &&
       !Number.isNaN(Date.parse(`${dateValue}T00:00:00Z`)) &&
-      new Date(`${dateValue}T00:00:00Z`).toISOString().slice(0, 10) === dateValue
-      ? dateValue
-      : "";
-    return [{ slug, title: title.slice(0, 180), description, publishedAt, body: body.slice(0, 30_000) }];
+      new Date(`${dateValue}T00:00:00Z`).toISOString().slice(0, 10) ===
+        dateValue
+        ? dateValue
+        : "";
+    return [
+      {
+        slug,
+        title: title.slice(0, 180),
+        description,
+        publishedAt,
+        body: body.slice(0, 30_000),
+      },
+    ];
   });
 }
 
@@ -255,7 +300,12 @@ function serviceMatchScore(first, second) {
 
 function lines(value) {
   if (Array.isArray(value))
-    return value.flatMap((item) => String(item || "").split(/\r?\n/u).map((line) => line.trim()).filter(Boolean));
+    return value.flatMap((item) =>
+      String(item || "")
+        .split(/\r?\n/u)
+        .map((line) => line.trim())
+        .filter(Boolean),
+    );
   const input = String(value || "");
   const splitCommas = !input.includes("\n");
   const items = [];
@@ -340,9 +390,8 @@ function matchesWritingSystem(value, clientSource) {
   if (family === "Japanese") {
     const allowed = new Set(["Latin", "Han", "Hiragana", "Katakana"]);
     return (
-      ["Han", "Hiragana", "Katakana"].some((system) =>
-        candidate.has(system),
-      ) && [...candidate].every((system) => allowed.has(system))
+      ["Han", "Hiragana", "Katakana"].some((system) => candidate.has(system)) &&
+      [...candidate].every((system) => allowed.has(system))
     );
   }
   if (family === "Korean") {
@@ -526,14 +575,28 @@ const BUSINESS_KIND_PROFILES = [
   {
     businessKind: "auto-repair",
     industry: "home-services",
-    aliases: ["auto-repair", "auto-repair-shop", "automotive-repair", "mechanic", "mechanic-shop"],
-    facts: /\b(?:auto repair|automotive repair|auto mechanic|mechanic shop|vehicle diagnostics|car repair|brake service|auto service)\b/iu,
+    aliases: [
+      "auto-repair",
+      "auto-repair-shop",
+      "automotive-repair",
+      "mechanic",
+      "mechanic-shop",
+    ],
+    facts:
+      /\b(?:auto repair|automotive repair|auto mechanic|mechanic shop|vehicle diagnostics|car repair|brake service|auto service)\b/iu,
   },
   {
     businessKind: "hvac",
     industry: "home-services",
-    aliases: ["hvac", "hvac-contractor", "heating-and-cooling", "heating-cooling", "air-conditioning"],
-    facts: /\b(?:hvac|heating(?: and)? cooling|air conditioning|furnace|heat pump|ac repair)\b/iu,
+    aliases: [
+      "hvac",
+      "hvac-contractor",
+      "heating-and-cooling",
+      "heating-cooling",
+      "air-conditioning",
+    ],
+    facts:
+      /\b(?:hvac|heating(?: and)? cooling|air conditioning|furnace|heat pump|ac repair)\b/iu,
   },
   {
     businessKind: "roofing",
@@ -545,7 +608,8 @@ const BUSINESS_KIND_PROFILES = [
     businessKind: "painting",
     industry: "home-services",
     aliases: ["painting", "painter", "painting-contractor"],
-    facts: /\b(?:painting contractor|painter|(?:interior|exterior|residential|commercial|house|home|cabinet|wall|fence|trim) painting)\b/iu,
+    facts:
+      /\b(?:painting contractor|painter|(?:interior|exterior|residential|commercial|house|home|cabinet|wall|fence|trim) painting)\b/iu,
   },
   {
     businessKind: "dental",
@@ -556,14 +620,22 @@ const BUSINESS_KIND_PROFILES = [
   {
     businessKind: "home-care",
     industry: "wellness",
-    aliases: ["home-care", "homecare", "home-care-provider", "senior-care", "elder-care"],
-    facts: /\b(?:home care|home health|caregiver|senior care|elder care|personal care|respite care)\b/iu,
+    aliases: [
+      "home-care",
+      "homecare",
+      "home-care-provider",
+      "senior-care",
+      "elder-care",
+    ],
+    facts:
+      /\b(?:home care|home health|caregiver|senior care|elder care|personal care|respite care)\b/iu,
   },
   {
     businessKind: "fitness",
     industry: "wellness",
     aliases: ["fitness", "gym", "fitness-studio", "personal-training"],
-    facts: /\b(?:athletic club|fitness|gym|strength training|personal training|sports performance|pilates|yoga)\b/iu,
+    facts:
+      /\b(?:athletic club|fitness|gym|strength training|personal training|sports performance|pilates|yoga)\b/iu,
   },
   {
     businessKind: "restaurant",
@@ -574,44 +646,79 @@ const BUSINESS_KIND_PROFILES = [
   {
     businessKind: "hospitality",
     industry: "hospitality",
-    aliases: ["hospitality", "hotel", "boutique-hotel", "resort", "lodging", "inn"],
+    aliases: [
+      "hospitality",
+      "hotel",
+      "boutique-hotel",
+      "resort",
+      "lodging",
+      "inn",
+    ],
     facts: /\b(?:hotel|resort|guesthouse|lodging|boutique hotel|inn)\b/iu,
   },
   {
     businessKind: "architecture",
     industry: "professional-services",
     aliases: ["architecture", "architect", "interior-design"],
-    facts: /\b(?:architecture|architect|interior design|architectural design)\b/iu,
+    facts:
+      /\b(?:architecture|architect|interior design|architectural design)\b/iu,
   },
   {
     businessKind: "legal-services",
     industry: "professional-services",
-    aliases: ["legal-services", "legal", "law", "law-firm", "lawyer", "attorney"],
-    facts: /\b(?:law firm|legal services|attorney|lawyer|solicitor|legal practice)\b/iu,
+    aliases: [
+      "legal-services",
+      "legal",
+      "law",
+      "law-firm",
+      "lawyer",
+      "attorney",
+    ],
+    facts:
+      /\b(?:law firm|legal services|attorney|lawyer|solicitor|legal practice)\b/iu,
   },
   {
     businessKind: "beauty",
     industry: "wellness",
     aliases: ["beauty", "beauty-salon", "salon", "barber", "barbershop", "spa"],
-    facts: /\b(?:beauty salon|hair salon|barber|barbershop|hair stylist|hair colorist|skincare|cosmetology|medical spa)\b/iu,
+    facts:
+      /\b(?:beauty salon|hair salon|barber|barbershop|hair stylist|hair colorist|skincare|cosmetology|medical spa)\b/iu,
   },
   {
     businessKind: "accounting",
     industry: "professional-services",
     aliases: ["accounting", "accountant", "accountancy", "bookkeeping"],
-    facts: /\b(?:accounting|accountant|accountancy|bookkeeping|tax accounting)\b/iu,
+    facts:
+      /\b(?:accounting|accountant|accountancy|bookkeeping|tax accounting)\b/iu,
   },
   {
     businessKind: "real-estate",
     industry: "real-estate",
-    aliases: ["real-estate", "real-estate-agent", "real-estate-brokerage", "realty", "realtor", "property-management"],
-    facts: /\b(?:real estate|realty|realtor|property management|real estate agent|real estate broker|property development|real estate development)\b/iu,
+    aliases: [
+      "real-estate",
+      "real-estate-agent",
+      "real-estate-brokerage",
+      "realty",
+      "realtor",
+      "property-management",
+    ],
+    facts:
+      /\b(?:real estate|realty|realtor|property management|real estate agent|real estate broker|property development|real estate development)\b/iu,
   },
   {
     businessKind: "veterinary",
     industry: "wellness",
-    aliases: ["veterinary", "veterinarian", "vet", "vet-clinic", "animal-clinic", "animal-hospital", "pet-clinic"],
-    facts: /\b(?:veterinar\w*|vet clinic|animal clinic|animal hospital|animal medical center|pet clinic|pet hospital)\b/iu,
+    aliases: [
+      "veterinary",
+      "veterinarian",
+      "vet",
+      "vet-clinic",
+      "animal-clinic",
+      "animal-hospital",
+      "pet-clinic",
+    ],
+    facts:
+      /\b(?:veterinar\w*|vet clinic|animal clinic|animal hospital|animal medical center|pet clinic|pet hospital)\b/iu,
   },
 ];
 
@@ -671,7 +778,8 @@ function intakeFacts(intake) {
 function industryFor(intake) {
   const selected = industryKey(intake.industry);
   const specificProfile = profileForAmbiguousIndustry(intake, selected);
-  if (unsupportedBusinessKinds.has(selected) && !specificProfile) return "other";
+  if (unsupportedBusinessKinds.has(selected) && !specificProfile)
+    return "other";
   const explicitProfile = explicitBusinessProfile(intake) || specificProfile;
   if (explicitProfile) return explicitProfile.industry;
   if (BROAD_INDUSTRIES.has(selected) && selected !== "other") return selected;
@@ -689,13 +797,25 @@ function industryFor(intake) {
   const factProfile = veterinaryProfile || businessProfileFromFacts(intake);
   if (factProfile) return factProfile.industry;
   if (selected === "other") return "other";
-  if (/\b(?:health|care|wellness|clinic|therapy|dental|medspa|medical|beauty)\b/u.test(facts))
+  if (
+    /\b(?:health|care|wellness|clinic|therapy|dental|medspa|medical|beauty)\b/u.test(
+      facts,
+    )
+  )
     return "wellness";
-  if (/\b(?:repair|plumb\w*|electric\w*|roof|garage|cleaning|landscap\w*|hvac|contractor)\b/u.test(facts))
+  if (
+    /\b(?:repair|plumb\w*|electric\w*|roof|garage|cleaning|landscap\w*|hvac|contractor)\b/u.test(
+      facts,
+    )
+  )
     return "home-services";
-  if (/\b(?:software|technology|tech|saas|app|digital|automation)\b/u.test(facts))
+  if (
+    /\b(?:software|technology|tech|saas|app|digital|automation)\b/u.test(facts)
+  )
     return "technology";
-  if (/\b(?:law|legal|account|consult|financial|insurance|agency)\b/u.test(facts))
+  if (
+    /\b(?:law|legal|account|consult|financial|insurance|agency)\b/u.test(facts)
+  )
     return "professional-services";
   return "other";
 }
@@ -703,9 +823,12 @@ function industryFor(intake) {
 function businessKindFor(intake, industry) {
   const selected = industryKey(intake.industry);
   const specificProfile = profileForAmbiguousIndustry(intake, selected);
-  if (unsupportedBusinessKinds.has(selected) && !specificProfile) return selected;
+  if (unsupportedBusinessKinds.has(selected) && !specificProfile)
+    return selected;
   const profile =
-    explicitBusinessProfile(intake) || specificProfile || businessProfileFromFacts(intake);
+    explicitBusinessProfile(intake) ||
+    specificProfile ||
+    businessProfileFromFacts(intake);
   return profile?.industry === industry ? profile.businessKind : industry;
 }
 
@@ -836,7 +959,9 @@ function designFor(kind, industry, intake = {}) {
     seed,
     requested: requestedPack,
     recentFingerprints: recentFingerprintsForSelection(kind),
-    hasImage: Boolean(intake.heroImage || intake.photoOne || intake.photoTwo || intake.logo),
+    hasImage: Boolean(
+      intake.heroImage || intake.photoOne || intake.photoTwo || intake.logo,
+    ),
     avoidPackIds,
   });
   const typography = requestedTypography(intake, selected.typography);
@@ -907,7 +1032,13 @@ function qualificationFor(industry, kind = industry, services = []) {
         label: "What do you need help with?",
         placeholder: "Select a service",
         options: [
-          ...[...new Set(services.map((service) => text(service?.name || service, 100)).filter(Boolean))].slice(0, 5),
+          ...[
+            ...new Set(
+              services
+                .map((service) => text(service?.name || service, 100))
+                .filter(Boolean),
+            ),
+          ].slice(0, 5),
           "Not sure yet",
         ],
       },
@@ -1282,7 +1413,11 @@ function fallback(intake) {
       : "wellness";
   const businessKind = businessKindFor(intake, industry);
   const areas = Array.isArray(intake.coverageAreas)
-    ? [...new Set(intake.coverageAreas.map((area) => text(area, 160)).filter(Boolean))]
+    ? [
+        ...new Set(
+          intake.coverageAreas.map((area) => text(area, 160)).filter(Boolean),
+        ),
+      ]
     : lines(intake.serviceAreas);
   const services = lines(intake.services)
     .slice(0, 8)
@@ -1400,7 +1535,10 @@ export function normalise(candidate, intake) {
   const value = candidate && typeof candidate === "object" ? candidate : {};
   const preset =
     value.preset === "home-services" ? "home-services" : base.preset;
-  const submittedServiceNames = lines(intake.services).slice(0, MAX_CORE_SERVICES);
+  const submittedServiceNames = lines(intake.services).slice(
+    0,
+    MAX_CORE_SERVICES,
+  );
   const proposedServices = Array.isArray(value.services) ? value.services : [];
   const proposedServiceBySlug = new Map(
     proposedServices
@@ -1435,53 +1573,55 @@ export function normalise(candidate, intake) {
     : Array.isArray(value.services)
       ? value.services
       : base.services;
-  const services = serviceInput.slice(0, MAX_CORE_SERVICES).map((service, index) => {
-    const name = String(
-      service.name || base.services[index]?.name || "Our service",
-    ).slice(0, 120);
-    const proposedSupport =
-      service.decisionSupport && typeof service.decisionSupport === "object"
-        ? service.decisionSupport
-        : {};
-    const fallbackSupport = decisionSupportFor(base.businessKind, name);
-    return {
-      name,
-      description: safeGeneratedText(
-        usefulServiceDescription(
-          service.description || base.services[index]?.description,
-          name,
-        ),
-        usefulServiceDescription(base.services[index]?.description, name),
-        clientSource,
-        180,
-        clientLanguageFallback,
-      ),
-      slug: slugify(service.slug || service.name || `service-${index + 1}`),
-      decisionSupport: {
-        scope: safeGeneratedText(
-          proposedSupport.scope || fallbackSupport.scope,
-          fallbackSupport.scope,
+  const services = serviceInput
+    .slice(0, MAX_CORE_SERVICES)
+    .map((service, index) => {
+      const name = String(
+        service.name || base.services[index]?.name || "Our service",
+      ).slice(0, 120);
+      const proposedSupport =
+        service.decisionSupport && typeof service.decisionSupport === "object"
+          ? service.decisionSupport
+          : {};
+      const fallbackSupport = decisionSupportFor(base.businessKind, name);
+      return {
+        name,
+        description: safeGeneratedText(
+          usefulServiceDescription(
+            service.description || base.services[index]?.description,
+            name,
+          ),
+          usefulServiceDescription(base.services[index]?.description, name),
           clientSource,
-          260,
+          180,
           clientLanguageFallback,
         ),
-        nextStep: safeGeneratedText(
-          proposedSupport.nextStep || fallbackSupport.nextStep,
-          fallbackSupport.nextStep,
-          clientSource,
-          260,
-          clientLanguageFallback,
-        ),
-        preparation: safeGeneratedText(
-          proposedSupport.preparation || fallbackSupport.preparation,
-          fallbackSupport.preparation,
-          clientSource,
-          260,
-          clientLanguageFallback,
-        ),
-      },
-    };
-  });
+        slug: slugify(service.slug || service.name || `service-${index + 1}`),
+        decisionSupport: {
+          scope: safeGeneratedText(
+            proposedSupport.scope || fallbackSupport.scope,
+            fallbackSupport.scope,
+            clientSource,
+            260,
+            clientLanguageFallback,
+          ),
+          nextStep: safeGeneratedText(
+            proposedSupport.nextStep || fallbackSupport.nextStep,
+            fallbackSupport.nextStep,
+            clientSource,
+            260,
+            clientLanguageFallback,
+          ),
+          preparation: safeGeneratedText(
+            proposedSupport.preparation || fallbackSupport.preparation,
+            fallbackSupport.preparation,
+            clientSource,
+            260,
+            clientLanguageFallback,
+          ),
+        },
+      };
+    });
   // Only model-authored marketing copy may change. Contact details, offers,
   // places, and services remain verified client data.
   const proposedBusiness =
@@ -1607,15 +1747,15 @@ export function normalise(candidate, intake) {
   );
   const copy = Object.fromEntries(
     Object.entries(defaultSiteCopy).map(([key, fallbackValue]) => [
-        key,
-        safeGeneratedText(
-          suppliedCopy[key] || fallbackValue,
-          fallbackValue,
-          clientSource,
-          180,
-          clientLanguageFallback,
-        ),
-      ]),
+      key,
+      safeGeneratedText(
+        suppliedCopy[key] || fallbackValue,
+        fallbackValue,
+        clientSource,
+        180,
+        clientLanguageFallback,
+      ),
+    ]),
   );
   copy.heroHeading = conciseHeadline(
     suppliedCopy.heroHeading || copy.heroHeading || business.tagline,
@@ -1711,33 +1851,53 @@ export function normalise(candidate, intake) {
     ...featureConfig,
   };
   const seoResearch = seoResearchForConfig(intake.seoResearch);
-  const selectedLocations = seoResearch?.version >= 2
-    ? seoResearch.pageMap
-        .filter((page) => page?.pageType === "location")
-        .map((page) => slugify(String(page.location || page.title || "")))
-    : seoResearch?.mode === "researched"
-      ? seoResearch.pageDecisions
-        .filter((decision) => decision?.type === "location")
-        .map((decision) => slugify(String(decision.title || "")))
-      : [];
-  const researchedLocations = seoResearch?.version >= 2
-    ? new Set(selectedLocations)
-    : selectedLocations.length
+  const selectedLocations =
+    seoResearch?.version >= 2
+      ? seoResearch.pageMap
+          .filter((page) => page?.pageType === "location")
+          .map((page) => slugify(String(page.location || page.title || "")))
+      : seoResearch?.mode === "researched"
+        ? seoResearch.pageDecisions
+            .filter((decision) => decision?.type === "location")
+            .map((decision) => slugify(String(decision.title || "")))
+        : [];
+  const researchedLocations =
+    seoResearch?.version >= 2
       ? new Set(selectedLocations)
-      : null;
+      : selectedLocations.length
+        ? new Set(selectedLocations)
+        : null;
+  const explicitLocationTargets = new Set(
+    (intake.routePolicy?.decisions || [])
+      .filter(
+        (decision) =>
+          decision.pageType === "location" &&
+          ["approved", "proposed", "deferred"].includes(decision.status),
+      )
+      .map((decision) => slugify(String(decision.target || ""))),
+  );
   const locationNames = researchedLocations
-    ? business.serviceAreas.filter((name) =>
-        researchedLocations.has(slugify(name)),
+    ? business.serviceAreas.filter(
+        (name) =>
+          researchedLocations.has(slugify(name)) ||
+          explicitLocationTargets.has(slugify(name)),
       )
     : business.serviceAreas;
   const demoNotice = fictionalPipelineDemoNotice(intake);
-  return removeEmDashes({
+  const normalized = removeEmDashes({
     preset,
     industry: base.industry,
     businessKind: base.businessKind,
     ...(demoNotice ? { demoNotice } : {}),
     business,
     factReadiness: intake.factReadiness,
+    routePolicy: intake.routePolicy || {
+      version: 1,
+      decisions: [],
+      existingUrls: intake.existingUrls || [],
+    },
+    supportingPages: intake.supportingPages || {},
+    excludedServices: lines(intake.excludedServices),
     seoPageMap: seoResearch?.pageMap || [],
     style: {
       ...resolvePalette({ ...(value.style || {}), ...base.style }),
@@ -1761,6 +1921,17 @@ export function normalise(candidate, intake) {
                   (location) => slugify(location?.name || "") === slugify(name),
                 ) || value.locations[index]
               : undefined;
+            const admission = (intake.routePolicy?.decisions || []).find(
+              (decision) =>
+                decision.pageType === "location" &&
+                slugify(String(decision.target || "")) === slugify(name),
+            )?.admission;
+            const suppliedLocalNote = (
+              Array.isArray(admission?.localFacts) ? admission.localFacts : []
+            )
+              .map((fact) => fact.value)
+              .filter(Boolean)
+              .join(" ");
             return {
               name,
               slug: slugify(name),
@@ -1773,7 +1944,8 @@ export function normalise(candidate, intake) {
                 clientLanguageFallback,
               ),
               localNote: safeGeneratedText(
-                proposed?.localNote ||
+                suppliedLocalNote ||
+                  proposed?.localNote ||
                   `Share the ${name} service address and the issue you are seeing so the team can confirm coverage and the next available step.`,
                 `Share the ${name} service address and the issue you are seeing so the team can confirm coverage and the next available step.`,
                 clientSource,
@@ -1794,6 +1966,8 @@ export function normalise(candidate, intake) {
       ? { lead: intake.lead }
       : {}),
   });
+  normalized.routeInventory = compileRouteInventory(normalized);
+  return normalized;
 }
 
 export function removeEmDashes(value) {
@@ -1813,10 +1987,7 @@ async function askModel(intake, effort, model = MODEL) {
     email: intake.email || intake.business?.email || "",
     phone: intake.phone || intake.business?.phone || "",
     domain:
-      intake.desiredDomain ||
-      intake.domain ||
-      intake.business?.domain ||
-      "",
+      intake.desiredDomain || intake.domain || intake.business?.domain || "",
   };
   const sessionId = openRouterSessionId("site-copy", model, identity);
   const promptCacheKey = openRouterPromptCacheKey(
@@ -1864,10 +2035,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
     email: intake.email || intake.business?.email || "",
     phone: intake.phone || intake.business?.phone || "",
     domain:
-      intake.desiredDomain ||
-      intake.domain ||
-      intake.business?.domain ||
-      "",
+      intake.desiredDomain || intake.domain || intake.business?.domain || "",
   };
   const sessionId = openRouterSessionId("site-copy", model, identity);
   const promptCacheKey = openRouterPromptCacheKey(
@@ -1919,7 +2087,11 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       groundedIntake,
     );
   } catch (firstError) {
-    if (/^OpenRouter returned 402\b/u.test(String(firstError?.message || firstError)))
+    if (
+      /^OpenRouter returned 402\b/u.test(
+        String(firstError?.message || firstError),
+      )
+    )
       throw firstError;
     console.warn(
       "Low-effort generation failed; retrying once with high effort.",
@@ -1943,8 +2115,10 @@ export async function generateSiteConfigWithModel(intake, model = MODEL) {
       groundedIntake,
     );
     const finalReport = evaluateDraft(refined);
-    const initialHasProhibitedClaim = initialReport.issues.includes(REPAIR_OUTCOME_ISSUE);
-    const refinedHasProhibitedClaim = finalReport.issues.includes(REPAIR_OUTCOME_ISSUE);
+    const initialHasProhibitedClaim =
+      initialReport.issues.includes(REPAIR_OUTCOME_ISSUE);
+    const refinedHasProhibitedClaim =
+      finalReport.issues.includes(REPAIR_OUTCOME_ISSUE);
     const selected =
       initialHasProhibitedClaim && !refinedHasProhibitedClaim
         ? refined

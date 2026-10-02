@@ -1,3 +1,4 @@
+import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { contrastFailureMessages } from "./rendered-contrast.mjs";
 import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
@@ -656,7 +657,7 @@ export async function runCreativeBakeoff({
     .cp(selectedDir, selectedBackup, { recursive: true, force: true })
     .catch(() => {});
   const browser = await chromium.launch({ headless: true });
-  const bakeoffConfig = JSON.parse(originalConfig);
+  const bakeoffConfig = routeLinkedContent(JSON.parse(originalConfig));
   const serviceSlug = String(
     (Array.isArray(bakeoffConfig.services) ? bakeoffConfig.services : []).find(
       (service) => service?.slug,

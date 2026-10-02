@@ -330,7 +330,12 @@ it("refreshes the shared experience media rail for pack-based revisions", async 
 });
 
 it("upgrades exact historical creative hosts and refuses edited ones", async () => {
-  const oldHost = await fs.readFile(path.resolve("tests/fixtures/revision/creative-host-before-palette.astro.txt"), "utf8");
+  const oldHost = await fs.readFile(
+    path.resolve(
+      "tests/fixtures/revision/creative-host-before-palette.astro.txt",
+    ),
+    "utf8",
+  );
   for (const modified of [false, true]) {
     const client = await fs.mkdtemp(
       path.join(os.tmpdir(), "launchloom-palette-migration-"),
@@ -373,4 +378,72 @@ it("upgrades exact historical creative hosts and refuses edited ones", async () 
       ).toContain("creativeColorOverrideCss");
     }
   }
+});
+
+it("retires only exact known generated static route hosts", async () => {
+  const client = await fs.mkdtemp(
+    path.join(os.tmpdir(), "launchloom-sync-routes-"),
+  );
+  dirs.push(client);
+  await fs.mkdir(path.join(client, "src/pages"), { recursive: true });
+  await fs.writeFile(
+    path.join(client, "src/site.config.json"),
+    JSON.stringify({
+      business: { primaryCta: "Contact us" },
+      routePolicy: { version: 1, decisions: [] },
+    }),
+  );
+  const previous = await fs.readFile(
+    path.resolve("tests/fixtures/route-inventory/legacy-contact.astro.txt"),
+    "utf8",
+  );
+  await fs.writeFile(path.join(client, "src/pages/contact.astro"), previous);
+  await exec("node", [
+    path.resolve("scripts/sync-revision-template.mjs"),
+    "--client",
+    client,
+  ]);
+  await expect(
+    fs.access(path.join(client, "src/pages/contact.astro")),
+  ).rejects.toThrow();
+  expect(
+    await fs.readFile(
+      path.join(client, "src/pages/contact/[...page].astro"),
+      "utf8",
+    ),
+  ).toContain("getStaticPaths");
+  const baseline = JSON.parse(
+    await fs.readFile(
+      path.join(client, ".launchloom/revision-template-baseline.json"),
+      "utf8",
+    ),
+  );
+  expect(baseline.files["src/pages/contact.astro"]).toBeUndefined();
+});
+
+it("preserves an edited retired route and refuses the complete migration before writes", async () => {
+  const client = await fs.mkdtemp(
+    path.join(os.tmpdir(), "launchloom-sync-routes-"),
+  );
+  dirs.push(client);
+  await fs.mkdir(path.join(client, "src/pages"), { recursive: true });
+  await fs.writeFile(
+    path.join(client, "src/site.config.json"),
+    JSON.stringify({ business: { primaryCta: "Contact us" } }),
+  );
+  const source = "<main>Client authored contact page</main>";
+  await fs.writeFile(path.join(client, "src/pages/contact.astro"), source);
+  await expect(
+    exec("node", [
+      path.resolve("scripts/sync-revision-template.mjs"),
+      "--client",
+      client,
+    ]),
+  ).rejects.toThrow("Manual attention required");
+  expect(
+    await fs.readFile(path.join(client, "src/pages/contact.astro"), "utf8"),
+  ).toBe(source);
+  await expect(
+    fs.access(path.join(client, "src/lib/route-inventory.mjs")),
+  ).rejects.toThrow();
 });

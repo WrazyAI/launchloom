@@ -1,3 +1,4 @@
+import { routeLinkedContent, productionRouteMode } from "./route-inventory.mjs";
 import { publicBusiness } from "./business-facts.mjs";
 import type {
   DesignTypography,
@@ -14,9 +15,7 @@ export type LegacyExperiencePackId =
 export type ExperienceSection = PageSectionType | "conversion" | "location-map";
 
 export type ExperienceNavigation =
-  | "minimal-inline"
-  | "utility-pill"
-  | "command-bar";
+  "minimal-inline" | "utility-pill" | "command-bar";
 export type ExperienceHero =
   | "image-narrative"
   | "centered-monument"
@@ -25,9 +24,7 @@ export type ExperienceHero =
   | "poster-split"
   | "poster-full-bleed";
 export type ExperienceConversion =
-  | "discovery-ribbon"
-  | "embedded-qualifier"
-  | "quick-request";
+  "discovery-ribbon" | "embedded-qualifier" | "quick-request";
 export type ExperienceServices =
   | "editorial-index"
   | "chaptered-index"
@@ -36,26 +33,16 @@ export type ExperienceServices =
   | "diagnostic-list"
   | "problem-grid";
 export type ExperienceProof =
-  | "principle-line"
-  | "quiet-ledger"
-  | "evidence-strip";
+  "principle-line" | "quiet-ledger" | "evidence-strip";
 export type ExperienceClosing =
-  | "cinematic-inquiry"
-  | "conversation-handoff"
-  | "action-poster";
+  "cinematic-inquiry" | "conversation-handoff" | "action-poster";
 export type ExperienceTypography =
-  | "editorial-contrast"
-  | "humanist-calm"
-  | "graphic-impact";
+  "editorial-contrast" | "humanist-calm" | "graphic-impact";
 export type ExperienceImageStrategy =
-  | "narrative-crops"
-  | "human-context"
-  | "bold-documentary";
+  "narrative-crops" | "human-context" | "bold-documentary";
 export type ExperienceRhythm = "cinematic" | "conversational" | "kinetic";
 export type ExperienceMobile =
-  | "editorial-stack"
-  | "guided-stack"
-  | "poster-stack";
+  "editorial-stack" | "guided-stack" | "poster-stack";
 export type ExperienceMotion = Readonly<{
   profile: "still" | "restrained" | "cinematic";
   engine: "css" | "native-scroll";
@@ -564,7 +551,10 @@ function routeBonus(
 ) {
   return routes.reduce(
     (best, route) =>
-      Math.max(best, Math.min(routeAffinity(blueprint, route), ROUTE_BONUS_LIMIT)),
+      Math.max(
+        best,
+        Math.min(routeAffinity(blueprint, route), ROUTE_BONUS_LIMIT),
+      ),
     0,
   );
 }
@@ -753,7 +743,14 @@ function validate(program: ExperienceBlueprintV2) {
 }
 
 function contentFor(site: SiteConfig): ExperienceContent {
-  site = { ...site, business: publicBusiness(site.business) };
+  site = routeLinkedContent(
+    { ...site, business: publicBusiness(site.business) },
+    {
+      production: productionRouteMode(
+        import.meta.env || (typeof process !== "undefined" ? process.env : {}),
+      ),
+    },
+  );
   const copy = site.copy || {};
   const socialProofPoints = (site.socialProof?.points || []).filter(Boolean);
   const fallbackProofPoints = (site.socialProof?.fallback?.points || []).filter(
@@ -761,11 +758,13 @@ function contentFor(site: SiteConfig): ExperienceContent {
   );
   const hasLiveGoogleProof = Boolean(
     site.socialProof?.source === "google_reviews" &&
-      site.socialProof.google?.apiUrl &&
-      site.socialProof.google?.token,
+    site.socialProof.google?.apiUrl &&
+    site.socialProof.google?.token,
   );
   const hospitalityArea =
-    site.business.primaryCity || site.business.serviceAreas[0] || "the local area";
+    site.business.primaryCity ||
+    site.business.serviceAreas[0] ||
+    "the local area";
   const eventOrderServices = site.services
     .filter((service) => /cater|cake|event/iu.test(service.name))
     .map((service) => service.name.toLocaleLowerCase());
@@ -790,10 +789,7 @@ function contentFor(site: SiteConfig): ExperienceContent {
       heading: copy.heroHeading || site.business.tagline,
       body: copy.heroBody || site.business.description,
       primaryLabel: site.business.primaryCta,
-      image:
-        site.assets?.photoOne ||
-        site.images.hero ||
-        site.images.secondary,
+      image: site.assets?.photoOne || site.images.hero || site.images.secondary,
       secondaryImage: site.assets?.photoTwo || site.images.secondary,
       tertiaryImage: site.assets?.photoThree || site.images.tertiary || "",
       offer: site.business.offer,
@@ -807,18 +803,22 @@ function contentFor(site: SiteConfig): ExperienceContent {
       ...locationMap,
       hours: site.business.hours,
     },
-    coverageHeading: site.industry === "home-services"
-      ? (site.business.serviceAreas.length > 1 ? "Service in nearby communities." : "Service area.")
-      : site.industry === "wellness"
-        ? "Areas the practice serves."
-        : site.industry === "hospitality"
-          ? `Local to ${hospitalityArea}.`
-          : "Support across the local area.",
-    coverageIntro: site.industry === "hospitality"
-      ? eventOrderServices.length
-        ? `Ask about ${eventOrderServices.join(" or ")} for a gathering.`
-        : "Ask about location details and current availability."
-      : "Share the address you have in mind so the team can confirm service for your location.",
+    coverageHeading:
+      site.industry === "home-services"
+        ? site.business.serviceAreas.length > 1
+          ? "Service in nearby communities."
+          : "Service area."
+        : site.industry === "wellness"
+          ? "Areas the practice serves."
+          : site.industry === "hospitality"
+            ? `Local to ${hospitalityArea}.`
+            : "Support across the local area.",
+    coverageIntro:
+      site.industry === "hospitality"
+        ? eventOrderServices.length
+          ? `Ask about ${eventOrderServices.join(" or ")} for a gathering.`
+          : "Ask about location details and current availability."
+        : "Share the address you have in mind so the team can confirm service for your location.",
     copy,
     businessDescription: site.business.description,
     showLocationMap:
@@ -836,13 +836,10 @@ function contentFor(site: SiteConfig): ExperienceContent {
             site.socialProof.fallback?.heading ||
             "",
           intro:
-            site.socialProof.intro ||
-            site.socialProof.fallback?.intro ||
-            "",
-          points: (
-            site.socialProof.source === "google_reviews"
-              ? fallbackProofPoints
-              : socialProofPoints
+            site.socialProof.intro || site.socialProof.fallback?.intro || "",
+          points: (site.socialProof.source === "google_reviews"
+            ? fallbackProofPoints
+            : socialProofPoints
           ).slice(0, 4),
         }
       : null,
