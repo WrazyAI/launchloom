@@ -482,6 +482,29 @@ export default function Experience`,
     ).toThrow(/safe local or LaunchLoom-hosted image asset/iu);
   });
 
+  it("allows an absent optional logo only behind that same sealed logo guard", () => {
+    const route = { id: "route-optional-logo" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(safeStage({ ...request, stage: "experience" }).content || "");
+    const styles = String(safeStage({ ...request, stage: "styles" }).content || "");
+    const motion = String(safeStage({ ...request, stage: "motion" }).content || "");
+    const guard = '{content.brand.logo && <img src={content.brand.logo} alt="" />}';
+    const guarded = base.replace("<section data-hero>", `<section data-hero>${guard}`);
+    const content = { hero: { image: "/images/hero.webp" }, brand: { logo: "", phone: "+12125550186" } };
+    const validate = (experience: string, logo = "") => validateProductionCandidateFiles({
+      files: { experience, styles, motion }, route, content: { ...content, brand: { ...content.brand, logo } },
+    });
+    expect(() => validate(guarded)).not.toThrow();
+    expect(() => validate(guarded, "/images/client-logo.svg")).not.toThrow();
+    expect(() => validate(guarded, " ")).toThrow(/safe local or LaunchLoom-hosted/iu);
+    expect(() => validate(guarded, true as any)).toThrow(/safe local or LaunchLoom-hosted/iu);
+    expect(() => validate(guarded, "https://unapproved.test/logo.webp")).toThrow(/safe local or LaunchLoom-hosted/iu);
+    const unguarded = guarded.replace(guard, '<img src={content.brand.logo} alt="" />');
+    expect(() => validate(unguarded)).toThrow(/conditionally render/iu);
+    const unrelatedGuard = guarded.replace('content.brand.logo &&', 'content.hero.image &&');
+    expect(() => validate(unrelatedGuard)).toThrow(/conditionally render/iu);
+  });
+
   it("retries an empty optional image with the exact safe rendering rule", async () => {
     const requests: AuthorStageRequest[] = [];
     let retryRequest: AuthorStageRequest | undefined;
