@@ -29,6 +29,11 @@ export type NormalizedClientIntake = Record<string, unknown> & {
    * the Worker verifies the signed coverage reference.
    */
   coverageConfirmation: CoverageConfirmation | null;
+  /** Client-selected self-hosted font family ids, empty when not chosen. */
+  headingFont: string;
+  bodyFont: string;
+  /** Optional secondary accent color, empty when the client keeps one color. */
+  accentColor: string;
   confirmation: { businessFactsAndAssetRights: true };
 };
 

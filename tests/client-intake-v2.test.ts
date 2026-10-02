@@ -31,6 +31,9 @@ const onlineFormStringFields = [
   "brandNotes",
   "brandColorPicker",
   "brandColor",
+  "headingFont",
+  "bodyFont",
+  "accentColor",
   "leadEmail",
   "confirmRights",
   "confirmSeoResearch",
@@ -68,6 +71,9 @@ describe("ClientIntakeV2 normalization", () => {
       primaryCta: "Request a plumbing visit",
       confirmAccuracy: "yes",
       brandColor: "#235d57",
+      headingFont: "fraunces",
+      bodyFont: "inter",
+      accentColor: "#C86D51",
       unexpectedAgentField: "must not be submitted",
     });
     const payload = createClientIntakeV2Submission(formFields, {
@@ -85,6 +91,9 @@ describe("ClientIntakeV2 normalization", () => {
       inviteToken: "local-fixture-only",
       services: "Drain cleaning\nWater heater repair",
       brandColor: "#235d57",
+      headingFont: "fraunces",
+      bodyFont: "inter",
+      accentColor: "#C86D51",
       assets: { photoOne: "./assets/rainline-hero.svg" },
     });
     expect(payload).not.toHaveProperty("unexpectedAgentField");
@@ -93,7 +102,28 @@ describe("ClientIntakeV2 normalization", () => {
       primaryCity: "Eugene, OR",
       serviceRadius: 20,
       confirmedServices: ["Drain cleaning", "Water heater repair"],
+      headingFont: "fraunces",
+      bodyFont: "inter",
+      accentColor: "#C86D51",
     });
+  });
+
+  it("drops unknown font ids and malformed accents from intake", () => {
+    const normalized = normalizeClientIntake({
+      ...required,
+      intakeVersion: "2",
+      services: "Drain cleaning",
+      industry: "home-services",
+      serviceAreas: "Tacoma, WA",
+      serviceRadius: "10",
+      confirmAccuracy: "yes",
+      headingFont: "not-a-font",
+      bodyFont: "inter",
+      accentColor: "burgundy",
+    });
+    expect(normalized.headingFont).toBe("");
+    expect(normalized.bodyFont).toBe("inter");
+    expect(normalized.accentColor).toBe("");
   });
 
   it("normalizes v2 services, city, radius, and single confirmation", () => {

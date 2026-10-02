@@ -7,6 +7,7 @@ import {
   boundedRadiusSelection,
   parseCoverageSelection,
 } from "./coverage-contract.mjs";
+import { fontFamilyById } from "../../templates/client-site/src/lib/font-catalog.mjs";
 
 /**
  * String controls serialized by the current three-step online intake form.
@@ -38,6 +39,9 @@ export const CLIENT_INTAKE_V2_FORM_FIELDS = Object.freeze([
   "brandNotes",
   "brandColorPicker",
   "brandColor",
+  "headingFont",
+  "bodyFont",
+  "accentColor",
   "leadEmail",
   "confirmRights",
   "confirmSeoResearch",
@@ -86,6 +90,9 @@ export const CLIENT_INTAKE_V2_ISSUE_FIELDS = Object.freeze([
   "brandNotes",
   "brandColor",
   "primaryColor",
+  "headingFont",
+  "bodyFont",
+  "accentColor",
   "leadEmail",
   "assets",
   "placeId",
@@ -267,6 +274,7 @@ export function normalizeClientIntake(raw) {
     const color = clean(value, 1000);
     return /^#[0-9a-f]{6}$/iu.test(color) ? color : "";
   };
+  const normalizedFont = (value) => fontFamilyById(clean(value, 60))?.id || "";
 
   return {
     ...raw,
@@ -288,6 +296,9 @@ export function normalizeClientIntake(raw) {
     brandNotes: clean(raw.brandNotes, 2000),
     brandColor: normalizedHex(raw.brandColor),
     primaryColor: normalizedHex(raw.primaryColor),
+    headingFont: normalizedFont(raw.headingFont),
+    bodyFont: normalizedFont(raw.bodyFont),
+    accentColor: normalizedHex(raw.accentColor),
     leadEmail,
     placeId: clean(raw.placeId, 200),
     googleMapsUrl: clean(raw.googleMapsUrl, 1000),
