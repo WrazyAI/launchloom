@@ -5,6 +5,30 @@ export function seoResearchReadiness(config) {
   const research = config.seoResearch;
   if (!research || typeof research !== "object")
     return { allowed: true, mode: "legacy" };
+  // New confirmed-city dossiers must prove readiness for every selected city.
+  // Preserve the original policy for older single-city dossiers.
+  if (research.coverageResearch !== undefined) {
+    const coverage = research.coverageResearch;
+    const areas = research.coverageAreas;
+    const cities = coverage?.cities;
+    const valid = research.version === 2 && ["researched", "context-only"].includes(research.mode) &&
+      research.publishReady === true && coverage?.version === 1 && coverage.complete === true &&
+      Array.isArray(areas) && areas.length > 1 && areas.length <= 251 &&
+      new Set(areas).size === areas.length && Array.isArray(coverage.areas) &&
+      coverage.areas.length === areas.length && coverage.areas.every((city, index) => city === areas[index]) &&
+      Array.isArray(cities) && cities.length === areas.length &&
+      cities.every((entry, index) => entry.city === areas[index] && entry.status === "complete" &&
+        entry.research && entry.research.coverageResearch === undefined &&
+        entry.research.marketSnapshot?.primaryCity === entry.city &&
+        seoResearchReadiness({ ...config, locations: [], seoResearch: entry.research }).allowed);
+    const measuredModeMatches = research.mode !== "researched" || (valid && cities.every(entry => entry.research.mode === "researched"));
+    return valid && measuredModeMatches ? { allowed: true, mode: research.mode } : {
+      allowed: false,
+      mode: "context-only",
+      code: "seo_research_required",
+      error: "Research for the confirmed service cities is incomplete. Complete each selected city's research before publishing.",
+    };
+  }
   const { version, mode, publishReady } = research;
   const schemaVersion = version === undefined ? 1 : Number(version);
   if (!Number.isFinite(schemaVersion) || schemaVersion < 1 || schemaVersion > 2)

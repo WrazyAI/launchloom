@@ -10,9 +10,12 @@ an unconfirmed service.
 1. A private one-use invitation opens the three-step Business, Services, and
    Brand intake. Google Places can prefill business details and category.
    Suggestions remain unchecked until the client confirms them.
-2. `scripts/coverage-areas.mjs` resolves a bounded list of nearby communities
-   from the confirmed city and radius. Those communities are coverage facts,
-   not automatic location pages.
+2. The intake discovers nearby city/town candidates and persists the exact
+   client-confirmed selection after server signature verification.
+   `scripts/coverage-areas.mjs` preserves that list without another provider
+   lookup. Unconfirmed legacy intakes retain their previous enrichment path.
+   An old v2 intake explicitly marked `legacy_unconfirmed` stays primary-only.
+   Service coverage does not imply an office or an automatic location page.
 3. `scripts/seo-research.mjs` researches only confirmed services and the
    confirmed primary city. It writes `.launchloom/seo-research.json` as the
    machine-authoritative map and `.launchloom/seo-map.md` as its operator
@@ -119,3 +122,26 @@ indexability, signed-review, and exact-reviewed-head checks still apply.
 The operator Access setup and one-use invitation secret are documented in
 [`private-onboarding.md`](private-onboarding.md). No SEO metric, competitor
 rank, or search intent is fabricated to make a map appear complete.
+
+## Confirmed-city research
+
+For a new multi-city confirmation, the pipeline researches each selected city
+independently, with its own local metric location, keywords, SERPs and provider
+provenance. `coverageResearch.cities` stores each result and its status. The
+primary city's service page map stays the site page map; nearby cities do not
+silently become location pages. A location page still requires search evidence
+and trusted local facts.
+
+All cities share the configured DataForSEO task/USD caps and fallback query/USD
+caps. Caps are not multiplied by the city count. Unknown provider cost stops
+further measured requests across the run. Cities that cannot be researched
+remain visibly pending; no confirmed cities are silently dropped by the old
+20-area limit. Both measured and completed cited fallback qualify per city
+under the existing evidence policy. Approval stays blocked until every selected
+city qualifies. Mixed measured/fallback results remain `context-only`, and
+incomplete coverage is listed in the operator report and generated config.
+
+Server-confirmed coverage takes priority over legacy enrichment at every seam.
+Deselected cities cannot return through the enrichment merge, service-area text,
+or canonical page filtering. Primary-only fallback is preserved as an explicit
+selection and does not trigger nearby discovery during generation.

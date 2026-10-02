@@ -98,6 +98,9 @@ function seoResearchForConfig(value) {
     quickWins: list(value.quickWins, 10),
     marketSnapshot: value.marketSnapshot || {},
     completeness: value.completeness || {},
+    coverageAreas: value.coverageAreas || [],
+    coverageResearch: value.coverageResearch,
+    coverageConfirmation: value.coverageConfirmation,
     prohibitedClaims: list(value.prohibitedClaims),
     evidence: list(value.evidence, sourceVersion >= 2 ? 80 : 6),
     cost: {

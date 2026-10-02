@@ -185,3 +185,20 @@ describe("SEO publication readiness", () => {
     expect(isAffirmativeConfirmation(false)).toBe(false);
   });
 });
+
+
+it("requires completed research for every confirmed city even when the primary fallback is ready", () => {
+  const cityResearch = (city: string) => ({ ...fallback, marketSnapshot: { primaryCity: city } });
+  const areas = ["Cookeville, TN", "Algood, TN"];
+  const research = { ...fallback, publishReady: true, coverageAreas: areas, coverageResearch: {
+    version: 1, areas, complete: true,
+    cities: areas.map(city => ({ city, status: "complete", research: cityResearch(city) })),
+  } };
+  expect(seoResearchReadiness({ seoResearch: research }).allowed).toBe(true);
+  for (const coverageResearch of [
+    { ...research.coverageResearch, complete: false },
+    { ...research.coverageResearch, cities: research.coverageResearch.cities.slice(0, 1) },
+    { ...research.coverageResearch, cities: [research.coverageResearch.cities[0], { city: areas[1], status: "pending", research: null }] },
+    { ...research.coverageResearch, cities: [research.coverageResearch.cities[0], { city: areas[1], status: "complete", research: { ...cityResearch(areas[1]), fallbackSearch: { ...fallback.fallbackSearch, status: "failed" } } }] },
+  ]) expect(seoResearchReadiness({ seoResearch: { ...research, coverageResearch } }).allowed).toBe(false);
+});
