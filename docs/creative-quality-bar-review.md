@@ -19,6 +19,19 @@ hard gate (accessibility, overflow, forms, diversity, visual gate) changed.
 Review plan: revisit after ten successful or near-miss runs at the new bar,
 or immediately if a promoted candidate regresses in developer review.
 
+## Selection rule changes (approved 2026-10-02)
+
+1. **Single-eligible promotion.** Preview selection may proceed when exactly
+   one candidate is eligible even if two or more were authored. Two or more
+   eligible candidates still require distinct rendered grammar before one can
+   be selected, and the generic-fallback and convergence blocks remain.
+2. **Graded promotion for minor-only findings.** The rendered-reference judge
+   may pass a `revise` verdict when every calibrated dimension and the overall
+   bar are met and no major or critical finding remains. Minor findings stay
+   in the audit and travel with the promoted candidate to developer review. An
+   explicit `block` verdict, a missed bar, or any major or critical finding
+   still fails.
+
 ## Context
 
 `generate-client` cannot promote an authored creative candidate through the

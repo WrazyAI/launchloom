@@ -1137,7 +1137,7 @@ export async function runCreativeBakeoff({
       distinctCandidateIds,
       summary: visualDiversity.summary || "",
     };
-    if (requireDiversity && eligibleIds.length < 2) {
+    if (requireDiversity && eligibleIds.length === 0) {
       previewSelectionPool = [];
       previewDiversity = {
         ...previewDiversity,
@@ -1155,6 +1155,18 @@ export async function runCreativeBakeoff({
         pass: false,
         strategy: "generic-fallback-blocked",
         convergenceDetected: true,
+      };
+    } else if (requireDiversity && eligibleIds.length === 1) {
+      // Graded promotion (approved 2026-10-02): a single eligible candidate
+      // has no eligible sibling to converge with, so it may proceed to
+      // developer review. The generic-fallback block above still applies, and
+      // two or more eligible candidates still require distinct rendered
+      // grammar before one can be selected.
+      previewSelectionPool = versionTwoPreviewEligible;
+      previewDiversity = {
+        ...previewDiversity,
+        pass: true,
+        strategy: "single-eligible",
       };
     } else if (requireDiversity && allEligiblePairsPass) {
       previewSelectionPool = versionTwoPreviewEligible;

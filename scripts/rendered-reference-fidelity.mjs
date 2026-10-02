@@ -399,8 +399,15 @@ function scorePass(audit, thresholds = RENDERED_REFERENCE_THRESHOLDS) {
     ["paletteAdherence", thresholds.paletteAdherence],
     ["artDirection", thresholds.artDirection],
   ];
+  const verdictAllows =
+    audit?.verdict === "pass" ||
+    // Graded promotion (approved 2026-10-02): a revise verdict with only
+    // minor findings passes when every calibrated bar is met. The minor
+    // findings stay in the audit for developer review. An explicit block
+    // verdict still fails.
+    (audit?.verdict === "revise" && major.length === 0);
   return (
-    audit?.verdict === "pass" &&
+    verdictAllows &&
     Number(audit?.overallScore || 0) >= thresholds.overall &&
     required.every(([key, minimum]) => Number(scores[key] || 0) >= minimum) &&
     major.length === 0

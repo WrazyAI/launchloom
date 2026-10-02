@@ -776,6 +776,89 @@ describe("rendered reference fidelity", () => {
     expect(result.audit.findings[0].category).toBe("generic-grammar");
   });
 
+  it("passes a minor-only revise when every calibrated bar is met", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const result = await evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      fetchImpl: async () =>
+        response({
+          verdict: "revise",
+          overallScore: 80,
+          scores: passingScores,
+          findings: [
+            {
+              severity: "minor",
+              category: "spatial-rhythm",
+              viewport: "desktop",
+              evidence: "The hero leaves more empty space than the reference.",
+              repair: "Tighten the opening rhythm.",
+            },
+          ],
+          summary: "Meets every calibrated bar with minor polish remaining.",
+        }),
+    });
+    expect(result.pass).toBe(true);
+    expect(result.audit.findings).toHaveLength(1);
+  });
+
+  it("still fails a revise with a major finding at passing scores", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const result = await evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      fetchImpl: async () =>
+        response({
+          verdict: "revise",
+          overallScore: 90,
+          scores: passingScores,
+          findings: [
+            {
+              severity: "major",
+              category: "spatial-rhythm",
+              viewport: "desktop",
+              evidence: "The hero rhythm collapses at desktop.",
+              repair: "Restore the reference opening rhythm.",
+            },
+          ],
+          summary: "One major spatial-rhythm finding remains.",
+        }),
+    });
+    expect(result.pass).toBe(false);
+  });
+
+  it("still fails an explicit block verdict without major findings", async () => {
+    process.env.OPENROUTER_API_KEY = "test";
+    const files = await evidence();
+    const result = await evaluateRenderedReferenceFidelity({
+      referenceDna: dna(files),
+      candidateScreenshots: {
+        desktop: files.candidateDesktop,
+        compact: files.candidateCompact,
+        mobile: files.candidateMobile,
+      },
+      fetchImpl: async () =>
+        response({
+          verdict: "block",
+          overallScore: 90,
+          scores: passingScores,
+          findings: [],
+          summary: "The judge blocked this candidate.",
+        }),
+    });
+    expect(result.pass).toBe(false);
+  });
+
   it("gives the diversity judge a larger output budget for pairwise screenshot analysis", async () => {
     process.env.OPENROUTER_API_KEY = "test";
     const files = await evidence();
