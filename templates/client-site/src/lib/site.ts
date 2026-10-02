@@ -166,6 +166,9 @@ export type SiteConfig = {
     brandTextColor?: string;
     brandSurfaceColor?: string;
     brandSurfaceTextColor?: string;
+    accentColor?: string;
+    accentTextColor?: string;
+    accentContrastColor?: string;
   };
   services: Service[];
   seoPageMap?: SeoPageMap[];
