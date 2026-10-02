@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { chromium, type Browser } from "playwright";
 import { semanticColorCss } from "../scripts/palette-policy.mjs";
@@ -28,6 +29,68 @@ async function scan(html: string, width = 1440, options = {}) {
 }
 
 describe("rendered contrast independent of authored classes", () => {
+  it("proves fully inset focus on a rounded opaque floating action", async () => {
+    const report = await scan(
+      '<style>body{background:white}.under{position:absolute;inset:0;background:black}a{position:fixed;top:50px;left:50px;z-index:2;background:black;color:white;padding:14px 18px;border-radius:999px}a:focus-visible{outline:2px solid white;outline-offset:-4px}</style><div class="under"></div><a href="#">Call us</a>',
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
+
+  it.each(["#f8f6f0", "#17251f"])(
+    "keeps the template floating action focus readable over %s",
+    async (background) => {
+      const css = readFileSync(
+        new URL(
+          "../templates/client-site/src/styles/site.css",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      const page = await browser.newPage({
+        viewport: { width: 390, height: 844 },
+      });
+      try {
+        await page.setContent(
+          `<style>${css}:root{--brand:#205d51;--on-brand:#fff}body{background:${background}}</style><a class="mobile-call" href="#">Call us</a>`,
+        );
+        await page.keyboard.press("Tab");
+        const paint = await page.locator("a").evaluate((el) => {
+          const s = getComputedStyle(el);
+          return {
+            outline: s.outlineColor,
+            offset: parseFloat(s.outlineOffset),
+            width: parseFloat(s.outlineWidth),
+            surface: s.backgroundColor,
+          };
+        });
+        expect(
+          contrast(
+            paint.outline,
+            paint.offset + paint.width <= 0 ? paint.surface : background,
+          ),
+        ).toBeGreaterThanOrEqual(3);
+      } finally {
+        await page.close();
+      }
+    },
+  );
+  it("does not use the fill beneath an inset outline painted on a border", async () => {
+    const report = await scan(
+      "<style>body{background:white}button{background:black;color:white;border:10px solid white;padding:20px}button:focus-visible{outline:2px solid white;outline-offset:-4px}</style><button>Border focus</button>",
+    );
+    expect(report.pass).toBe(false);
+  });
+
+  it("centers reachable focused controls clear of a fixed edge overlay", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:white;color:black}.space{height:1400px}input{display:block;width:100%;height:80px;background:white;color:black;border:2px solid black}input:focus-visible{outline:2px solid black;outline-offset:2px}.edge{position:fixed;bottom:0;right:0;width:100px;height:80px;background:black;z-index:2}</style><div class="space"></div><input value="First field"><div style="height:280px"></div><input value="Reachable field"><div style="height:500px"></div><div class="edge"></div>',
+      390,
+    );
+    expect(report.findings.filter((f) => f.text === "Reachable field")).toEqual(
+      [],
+    );
+  });
+
   it("uses keyboard focus modality after clicking a menu toggle", async () => {
     const report = await scan(
       `<style>body{background:white;color:black}a{color:black}a:focus-visible{color:#eee;outline:2px solid black}button:focus-visible{outline:2px solid black}</style><button type="button" aria-expanded="false" aria-controls="menu" onclick="document.getElementById('menu').hidden=!document.getElementById('menu').hidden;this.setAttribute('aria-expanded',String(!document.getElementById('menu').hidden))">Menu</button><div id="menu" hidden><a href="#answer">Keyboard menu action</a></div>`,

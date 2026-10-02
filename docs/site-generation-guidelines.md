@@ -93,6 +93,11 @@ Composited alpha is measured; unsupported effects and ambiguous image backdrops
 are unresolved, not presumed readable. Image overlays may use a local opaque
 plate or a scrim whose worst-case backdrop passes. Text shadows alone do not
 prove contrast. Existing visual, source and reference-fidelity gates still run.
+Interaction audits include summary controls and links revealed by disclosures
+and menus. Inset focus indicators use their local paint and block unmeasured
+border overlap. Unrelated paint remains unresolved unless bounded geometry
+and stacking prove an opaque plate or opaque occlusion. Obstruction remains
+subject to the visual gate.
 
 Initial candidates may receive one bounded local text-color sweep. Corrections
 are scoped to a verified route, actual stylesheet media conditions and exact rendered element;
