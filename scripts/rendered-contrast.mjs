@@ -16,6 +16,8 @@ export function collectContrastTargets({
     "color",
     "backgroundColor",
     "backgroundImage",
+    "backgroundClip",
+    "boxShadow",
     "opacity",
     "display",
     "visibility",
@@ -31,10 +33,27 @@ export function collectContrastTargets({
     "strokeWidth",
     "strokeOpacity",
     "position",
+    "zIndex",
+    "transform",
+    "translate",
+    "rotate",
+    "scale",
+    "perspective",
+    "isolation",
+    "contain",
+    "containerType",
+    "willChange",
+    "clipPath",
+    "maskImage",
+    "borderTopLeftRadius",
+    "borderTopRightRadius",
+    "borderBottomLeftRadius",
+    "borderBottomRightRadius",
     "appearance",
     "outlineStyle",
     "outlineWidth",
     "outlineColor",
+    "outlineOffset",
     "webkitTextFillColor",
     "content",
     ...["Top", "Bottom", "Left", "Right"].flatMap((side) =>
@@ -189,7 +208,225 @@ export function collectContrastTargets({
   const images = [...document.querySelectorAll("img,video,canvas,iframe")].map(
     (el) => ({ el, rect: rectFor(el) }),
   );
-  const backdrop = (el, rect) => {
+  // Ancestor backgrounds do not describe positioned/transformed sibling paint.
+  // Conservatively reject overlapping unrelated paint rather than guessing its
+  // stacking order. Descendant media inside a control is not its outer backdrop.
+  const paintedLayers = [...document.querySelectorAll("*")].filter((el) => {
+    const s = styleFor(el);
+    return (
+      color(s.backgroundColor)?.[3] > 0 ||
+      s.backgroundImage !== "none" ||
+      el.matches("svg,img,video,canvas,iframe") ||
+      ["::before", "::after"].some((pseudo) => {
+        const ps = styleFor(el, pseudo);
+        return (
+          ps.content !== "none" &&
+          ps.content !== "normal" &&
+          ps.display !== "none" &&
+          ps.visibility === "visible" &&
+          Number(ps.opacity) > 0 &&
+          (color(ps.backgroundColor)?.[3] > 0 || ps.backgroundImage !== "none")
+        );
+      })
+    );
+  });
+  const contextCache = new Map();
+  const createsContext = (el) => {
+    if (contextCache.has(el)) return contextCache.get(el);
+    const s = styleFor(el);
+    const parentDisplay = el.parentElement
+      ? styleFor(el.parentElement).display
+      : "";
+    const context =
+      el.matches(":modal,:popover-open") ||
+      ["fixed", "sticky"].includes(s.position) ||
+      (s.zIndex !== "auto" &&
+        (s.position !== "static" || /flex|grid/.test(parentDisplay))) ||
+      Number(s.opacity) !== 1 ||
+      [
+        s.transform,
+        s.translate,
+        s.rotate,
+        s.scale,
+        s.perspective,
+        s.filter,
+        s.backdropFilter,
+        s.clipPath,
+        s.maskImage,
+      ].some((value) => value !== "none") ||
+      s.mixBlendMode !== "normal" ||
+      s.isolation === "isolate" ||
+      /layout|paint|strict|content/.test(s.contain) ||
+      s.containerType !== "normal" ||
+      s.willChange !== "auto";
+    contextCache.set(el, context);
+    return context;
+  };
+  const rootContextCache = new Map();
+  const rootContext = (el) => {
+    if (rootContextCache.has(el)) return rootContextCache.get(el);
+    let outer = document.documentElement;
+    for (let p = el; p && p !== document.documentElement; p = p.parentElement) {
+      if (p.matches(":modal,:popover-open")) {
+        outer = null;
+        break;
+      }
+      if (createsContext(p)) outer = p;
+    }
+    rootContextCache.set(el, outer);
+    return outer;
+  };
+  const stackZ = (el) => {
+    if (el === document.documentElement) return 0;
+    const s = styleFor(el);
+    const parentDisplay = el.parentElement
+      ? styleFor(el.parentElement).display
+      : "";
+    return s.position !== "static" || /flex|grid/.test(parentDisplay)
+      ? Number.parseInt(s.zIndex) || 0
+      : 0;
+  };
+  const hasPaintPseudo = (el) =>
+    ["::before", "::after"].some((pseudo) => {
+      const ps = styleFor(el, pseudo);
+      return (
+        ps.content !== "none" &&
+        ps.content !== "normal" &&
+        ps.display !== "none" &&
+        ps.visibility === "visible" &&
+        Number(ps.opacity) > 0 &&
+        (color(ps.backgroundColor)?.[3] > 0 || ps.backgroundImage !== "none")
+      );
+    });
+  const opaqueRootPlate = (plate) => {
+    const s = styleFor(plate);
+    return (
+      color(s.backgroundColor)?.[3] === 1 &&
+      s.backgroundImage === "none" &&
+      s.backgroundClip === "border-box" &&
+      Number(s.opacity) === 1 &&
+      s.mixBlendMode === "normal" &&
+      [
+        s.clipPath,
+        s.maskImage,
+        s.transform,
+        s.translate,
+        s.rotate,
+        s.scale,
+        s.perspective,
+        s.filter,
+        s.backdropFilter,
+      ].every((value) => value === "none") &&
+      stackZ(plate) > 0 &&
+      rootContext(plate) === plate &&
+      !hasPaintPseudo(plate) &&
+      !animationsFor(plate).some(
+        (animation) =>
+          animation.playState !== "finished" && animation.playState !== "idle",
+      )
+    );
+  };
+  const roundedFillCovers = (plate, rect) => {
+    const box = rectFor(plate),
+      s = styleFor(plate);
+    if (
+      box.width <= 0 ||
+      box.height <= 0 ||
+      rect.left < box.left ||
+      rect.top < box.top ||
+      rect.right > box.right ||
+      rect.bottom > box.bottom
+    )
+      return false;
+    // Glyphs on a painted border have a different local surface.
+    if (
+      rect.left < box.left + parseFloat(s.borderLeftWidth) ||
+      rect.top < box.top + parseFloat(s.borderTopWidth) ||
+      rect.right > box.right - parseFloat(s.borderRightWidth) ||
+      rect.bottom > box.bottom - parseFloat(s.borderBottomWidth)
+    )
+      return false;
+    const length = (value, size) => {
+      if (!/^(?:\d+(?:\.\d+)?|\.\d+)(?:px|%)$/.test(value)) return NaN;
+      return parseFloat(value) * (value.endsWith("%") ? size / 100 : 1);
+    };
+    const radii = [
+      s.borderTopLeftRadius,
+      s.borderTopRightRadius,
+      s.borderBottomRightRadius,
+      s.borderBottomLeftRadius,
+    ].map((radius) => {
+      const values = radius.split(/\s+/);
+      return [
+        length(values[0], box.width),
+        length(values[1] || values[0], box.height),
+      ];
+    });
+    if (radii.flat().some((v) => !Number.isFinite(v))) return false;
+    // CSS scales every corner by the same factor when adjacent radii overlap.
+    const factor = Math.min(
+      1,
+      box.width / (radii[0][0] + radii[1][0]),
+      box.width / (radii[3][0] + radii[2][0]),
+      box.height / (radii[0][1] + radii[3][1]),
+      box.height / (radii[1][1] + radii[2][1]),
+    );
+    const normalized = radii.map(([x, y]) => [x * factor, y * factor]);
+    const inside = (x, y) =>
+      normalized.every(([rx, ry], corner) => {
+        if (!rx || !ry) return true;
+        const dx = corner === 1 || corner === 2 ? box.width - x : x;
+        const dy = corner >= 2 ? box.height - y : y;
+        return (
+          dx >= rx ||
+          dy >= ry ||
+          ((dx - rx) / rx) ** 2 + ((dy - ry) / ry) ** 2 <= 1
+        );
+      });
+    return [
+      [rect.left, rect.top],
+      [rect.right, rect.top],
+      [rect.right, rect.bottom],
+      [rect.left, rect.bottom],
+    ].every(([x, y]) => inside(x - box.left, y - box.top));
+  };
+  const provenSeparatePaint = (
+    el,
+    rect,
+    layer,
+    { ownRoundedContour = false } = {},
+  ) => {
+    // Root stacking contexts are atomic. Equal/unknown ordering, top layers,
+    // pseudo-elements and nonrectangular/translucent plates remain unresolved.
+    if (hasPaintPseudo(layer)) return false;
+    const layerContext = rootContext(layer),
+      targetContext = rootContext(el);
+    if (!layerContext || !targetContext) return false;
+    if (
+      opaqueRootPlate(layer) &&
+      styleFor(layer).boxShadow === "none" &&
+      stackZ(layer) > stackZ(targetContext)
+    ) {
+      // Opaque paint above glyphs occludes them; it does not composite their
+      // backdrop. Obstruction remains owned by the mandatory visual gate.
+      return true;
+    }
+    for (
+      let plate = el;
+      plate && plate !== document.documentElement;
+      plate = plate.parentElement
+    ) {
+      if (!opaqueRootPlate(plate)) continue;
+      if (
+        ((ownRoundedContour && plate === el) ||
+          roundedFillCovers(plate, rect)) &&
+        stackZ(layerContext) < stackZ(plate)
+      )
+        return true;
+    }
+    return false;
+  };
+  const backdrop = (el, rect, options = {}) => {
     const chain = [];
     let effects = [];
     for (let p = el; p; p = p.parentElement) {
@@ -245,6 +482,12 @@ export function collectContrastTargets({
           continue;
         }
       }
+      // Text-clipped backgrounds paint glyphs, not the rectangular surface
+      // behind them. Their antialiasing cannot establish an opaque plate.
+      if (s.backgroundClip.split(",").some((clip) => clip.trim() === "text")) {
+        issues.push("text-clipped background is not a provable backdrop");
+        continue;
+      }
       if (!bg) issues.push("unsupported background color");
       else {
         backgrounds = backgrounds.map((b) => over(bg, b));
@@ -282,6 +525,18 @@ export function collectContrastTargets({
           issues.push("pseudo-element backdrop requires rendered review");
       }
     }
+    const overlap = paintedLayers.some((layer) => {
+      if (layer === el || layer.contains(el) || el.contains(layer))
+        return false;
+      const box = rectFor(layer);
+      return (
+        intersects(box, rect) &&
+        visible(layer, box) &&
+        !provenSeparatePaint(el, rect, layer, options)
+      );
+    });
+    if (overlap)
+      issues.push("overlapping non-ancestor paint requires rendered review");
     return {
       backgrounds,
       variable,
@@ -378,7 +633,7 @@ export function collectContrastTargets({
     }
   }
   for (const el of document.querySelectorAll(
-    'input,textarea,select,button,[role="button"],a[href],svg[role="img"]',
+    'input,textarea,select,button,summary,[tabindex]:not([tabindex="-1"]),[role="button"],a[href],svg[role="img"]',
   )) {
     const rect = rectFor(el);
     if (!visible(el, rect) || el.disabled) continue;
@@ -464,7 +719,31 @@ export function collectContrastTargets({
       }
     }
     if (el.matches(":focus-visible")) {
-      const bg = parentBg;
+      const offset = parseFloat(s.outlineOffset) || 0;
+      const width = parseFloat(s.outlineWidth) || 0;
+      const borderWidth = Math.max(
+        ...["Top", "Bottom", "Left", "Right"].map(
+          (side) => parseFloat(s[`border${side}Width`]) || 0,
+        ),
+      );
+      const ownRoundedContour =
+        width > 0 && offset <= -width && -offset - width >= borderWidth;
+      const localBg =
+        offset < 0 ? backdrop(el, rect, { ownRoundedContour }) : null;
+      // An inset outline paints over the control, while a partially inset
+      // outline touches both surfaces. Prove contrast against both in that case.
+      const bg =
+        offset <= -width && width > 0
+          ? localBg
+          : offset < 0
+            ? {
+                backgrounds: [...parentBg.backgrounds, ...localBg.backgrounds],
+                issues: [...parentBg.issues, ...localBg.issues],
+                variable: parentBg.variable || localBg.variable,
+              }
+            : parentBg;
+      if (offset < 0 && -offset - width < borderWidth)
+        bg.issues.push("inset focus outline overlaps unmeasured border paint");
       if (s.outlineStyle === "none" || parseFloat(s.outlineWidth) === 0)
         bg.issues.push("focus indicator absent or uses unmeasured shadow");
       add(el, "focus", label, s.outlineColor, bg, 3, rect);
@@ -602,54 +881,90 @@ export async function inspectContrastPage(
     });
   await collect("default");
   if (states) {
-    const controls = page.locator(
-      'a[href],button,input,textarea,select,[role="button"]',
-    );
-    const count = await controls.count();
-    await page.keyboard.press("Tab");
-    for (let i = 0; i < count; i++) {
-      const control = controls.nth(i);
-      if (!(await control.isVisible()) || !(await control.isEnabled()))
-        continue;
-      if (!(await isPainted(control))) continue;
-      await control.focus();
-      await collect("focus");
-      if (!(await isPainted(control))) continue;
-      await control
-        .hover({ timeout: 1500 })
-        .then(() => collect("hover"))
-        .catch((error) => {
-          targets.push({
-            route,
-            state: "hover",
-            kind: "control",
-            selector: "control index " + i,
-            text: "Hover target inaccessible",
-            issues: [error.message],
-            minimum: 3,
-            status: "unresolved",
-            ratio: null,
-            repairEligible: false,
+    const controlSelector =
+      'a[href],button,input,textarea,select,summary,[tabindex]:not([tabindex="-1"]),[role="button"]';
+    const exerciseControls = async (scope = null) => {
+      // Menu clicks switch to pointer modality. Re-enter keyboard modality so
+      // programmatic focus still exercises the authored :focus-visible paint.
+      await page.keyboard.press("Tab");
+      const controls = scope
+        ? await scope.$$(controlSelector)
+        : await page.locator(controlSelector).elementHandles();
+      for (const control of controls) {
+        if (!(await control.isVisible()) || !(await control.isEnabled()))
+          continue;
+        if (!(await isPainted(control))) continue;
+        // Check a reachable, unobscured state instead of leaving nearby controls
+        // at the viewport edge under persistent floating actions.
+        await control.evaluate((el) =>
+          el.scrollIntoView({
+            block: "center",
+            inline: "center",
+            behavior: "instant",
+          }),
+        );
+        await control.focus();
+        await collect("focus");
+        if (!(await isPainted(control))) continue;
+        await control
+          .hover({ timeout: 1500 })
+          .then(() => collect("hover"))
+          .catch((error) => {
+            targets.push({
+              route,
+              state: "hover",
+              kind: "control",
+              selector: "control",
+              text: "Hover target inaccessible",
+              issues: [error.message],
+              minimum: 3,
+              status: "unresolved",
+              ratio: null,
+              repairEligible: false,
+            });
           });
-        });
-      await control.evaluate((el) => el.blur());
-    }
+        await control.evaluate((el) => el.blur());
+      }
+      await page.mouse.move(0, 0);
+    };
+    await exerciseControls();
     await page.mouse.move(0, 0);
-    const details = await page.evaluate(() =>
-      [...document.querySelectorAll("details")].map((el) => {
-        const was = el.open;
-        el.open = true;
-        return was;
-      }),
+    const details = await page.locator("details").elementHandles();
+    const initialOpen = await Promise.all(
+      details.map((el) => el.evaluate((node) => node.open)),
     );
-    await collect("open");
-    await page.evaluate(
-      (values) =>
-        [...document.querySelectorAll("details")].forEach(
-          (el, i) => (el.open = values[i]),
-        ),
-      details,
-    );
+    try {
+      // Snapshot before mutation: named disclosure groups close their peers.
+      await page.evaluate(() => {
+        for (const el of document.querySelectorAll("details")) {
+          if (!el.name) el.open = true;
+        }
+      });
+      await collect("open");
+      for (const detail of details) {
+        if (await detail.evaluate((el) => !el.name && el.open))
+          await exerciseControls(detail);
+      }
+      for (const detail of details) {
+        if (!(await detail.evaluate((el) => Boolean(el.name)))) continue;
+        await detail.evaluate((el) => {
+          el.open = true;
+        });
+        await collect("open");
+        await exerciseControls(detail);
+      }
+    } finally {
+      for (const detail of details)
+        await detail.evaluate((el) => {
+          el.open = false;
+        });
+      for (let i = 0; i < details.length; i++) {
+        if (initialOpen[i])
+          await details[i].evaluate((el) => {
+            el.open = true;
+          });
+      }
+    }
     await page.evaluate(() => window.scrollTo(0, 0));
     await settle();
     const toggles = await page
@@ -682,6 +997,15 @@ export async function inspectContrastPage(
       await toggle.click({ timeout: 1500 });
       try {
         await collect("menu-open");
+        const menu = await page.evaluateHandle(
+          (id) => document.getElementById(id),
+          id,
+        );
+        try {
+          if (menu.asElement()) await exerciseControls(menu.asElement());
+        } finally {
+          await menu.dispose();
+        }
       } finally {
         await toggle.click({ timeout: 1500 });
       }

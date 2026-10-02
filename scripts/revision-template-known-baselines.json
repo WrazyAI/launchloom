@@ -35,6 +35,9 @@
     ],
     "src/components/ReviewBanner.astro": [
       "37b793a0060aae4a97962b95ab907d0b5032bb0b9e9d28274642782ce0e003eb"
+    ],
+    "src/styles/site.css": [
+      "2f1f4d5e8f4a74d2849ed6110041261771e5864b5aeb35d66dd3491c03589810"
     ]
   }
 }

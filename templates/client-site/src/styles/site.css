@@ -802,6 +802,10 @@ h2 {
 .mobile-call {
   display: none;
 }
+.mobile-call:focus-visible {
+  outline: 2px solid var(--on-brand, #fff);
+  outline-offset: -4px;
+}
 .layout-editorial-authority .hero-image {
   border-radius: 140px 4px 4px 4px;
 }
@@ -2027,7 +2031,7 @@ h2 {
     color: var(--on-brand, #fff);
     z-index: 2;
     font-weight: 800;
-    box-shadow: 0 8px 28px #0004;
+    box-shadow: none;
   }
   .contact-section {
     padding: 70px 0;
