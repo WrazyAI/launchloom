@@ -1499,9 +1499,48 @@ function isSealedServiceSlug(expression, file) {
   return false;
 }
 
+/**
+ * Accept a `something.slug` route segment when the bound variable is
+ * initialized from sealed services, such as
+ * `const [selectedService] = useState(content.services[0])`. A local array of
+ * fabricated slugs does not qualify.
+ */
+function isSealedServiceSlugBinding(expression, file) {
+  const node = unwrapUrlExpression(expression);
+  if (!node || !ts.isPropertyAccessExpression(node)) return false;
+  if (node.name.text !== "slug") return false;
+  const identifier = node.expression;
+  if (!ts.isIdentifier(identifier)) return false;
+  const binding = visibleBinding(identifier.text, identifier);
+  if (!binding || binding.kind === "other" || !binding.node.initializer)
+    return false;
+  return expressionContainsSealedServices(binding.node.initializer, file);
+}
+
+function expressionContainsSealedServices(node, file) {
+  if (!node) return false;
+  if (isSealedServiceCollectionExpression(node, file)) return true;
+  let found = false;
+  ts.forEachChild(node, (child) => {
+    if (!found && expressionContainsSealedServices(child, file)) found = true;
+  });
+  return found;
+}
+
 function isServiceRouteExpression(expression, file) {
   const node = unwrapUrlExpression(expression);
   if (!node) return false;
+  // Same-page fragment anchors such as `#practice-${service.slug}` cannot
+  // resolve to an external URL, so a fragment expression is acceptable.
+  if (ts.isTemplateExpression(node) && node.head.text.startsWith("#"))
+    return true;
+  if (
+    ts.isBinaryExpression(node) &&
+    node.operatorToken.kind === ts.SyntaxKind.PlusToken &&
+    ts.isStringLiteral(node.left) &&
+    node.left.text.startsWith("#")
+  )
+    return true;
   let valid = false;
   let slugExpression = null;
   if (ts.isTemplateExpression(node))
@@ -1526,7 +1565,14 @@ function isServiceRouteExpression(expression, file) {
     ts.isBinaryExpression(node.left)
   )
     slugExpression = node.left.right;
-  return valid && isSealedServiceSlug(slugExpression, file);
+  if (!valid || !slugExpression) return false;
+  // The literal /services/ prefix pins the route to this origin; the slug must
+  // still trace to sealed services, either as a sealed map parameter or as a
+  // binding initialized from the sealed service collection.
+  return (
+    isSealedServiceSlug(slugExpression, file) ||
+    isSealedServiceSlugBinding(slugExpression, file)
+  );
 }
 
 function staticSpreadUrlKey(property) {

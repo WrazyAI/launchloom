@@ -563,8 +563,46 @@ export default function Experience`,
     );
   });
 
-  it("names the nearby source for a hardcoded sealed literal", () => {
-    const route = { id: "route-hardcode" };
+  it("allows fragment anchors and local service routes built from slugs", () => {
+    const route = { id: "route-service-links" };
+    const request = { route, contentTokens: [], contentShape: {}, rules: "" };
+    const base = String(
+      safeStage({ ...request, stage: "experience" }).content || "",
+    );
+    const experience = base
+      .replace(
+        "export default function Experience({ content, runtime }) {",
+        "export default function Experience({ content, runtime }) {\n  const selectedService = content.services[0];",
+      )
+      .replace(
+        "<article key={service.name}>",
+        "<article key={service.name}><a href={`#practice-${service.slug}`}>{service.name}</a>",
+      )
+      .replace(
+        '<section id="services">',
+        '<section id="services"><a href={`/services/${selectedService.slug}/`}>Selected service</a>',
+      );
+    const styles = String(
+      safeStage({ ...request, stage: "styles" }).content || "",
+    );
+    const motion = String(
+      safeStage({ ...request, stage: "motion" }).content || "",
+    );
+
+    expect(() =>
+      validateProductionCandidateFiles({
+        files: { experience, styles, motion },
+        route,
+        content: {
+          hero: { image: "/images/hero.webp" },
+          brand: { phone: "+12125550186" },
+          services: [{ slug: "repair", name: "repair" }],
+        },
+      }),
+    ).not.toThrow();
+  });
+
+  it("names the nearby source for a hardcoded sealed literal", () => {    const route = { id: "route-hardcode" };
     const request = { route, contentTokens: [], contentShape: {}, rules: "" };
     const sealedName = "Heirloom redesign services";
     const experience = String(
