@@ -34,6 +34,14 @@ import {
   CLIENT_INTAKE_V2_ISSUE_FIELDS,
   normalizeClientIntake,
 } from "../../src/lib/client-intake-v2.mjs";
+import {
+  deriveCoverageConfirmation,
+  verifyCoverageReference,
+} from "../../src/lib/coverage-contract.mjs";
+import {
+  coverageLookupRateLimited,
+  lookupCoverageAreas,
+} from "./coverage-areas";
 
 export { RevisionCoordinator } from "./revision-coordinator";
 export { OnboardingInvites } from "./onboarding-invites";
@@ -602,6 +610,60 @@ async function mergeReviewedPr(
   return mergeResult.sha;
 }
 
+/**
+ * Verify a submitted coverage selection against its signed lookup reference
+ * and replace the client-submitted coverage labels with server-derived ones.
+ * A v2 intake with no coverageSelection keeps the documented legacy contract.
+ */
+async function applyCoverageConfirmation(
+  normalized: ReturnType<typeof normalizeClientIntake>,
+  inviteId: string,
+  env: Env,
+) {
+  const selection = normalized.coverageSelection;
+  if (!selection) return { ok: true as const };
+  const serviceRadius =
+    normalized.serviceRadius === null ? "" : String(normalized.serviceRadius);
+  if (selection.status === "confirmed") {
+    const reference = await verifyCoverageReference(
+      selection.reference,
+      env.ONBOARDING_INVITE_SIGNING_SECRET || "",
+    );
+    if (!reference || clean(reference.i, 100) !== inviteId)
+      return {
+        ok: false as const,
+        code: "coverage_reference_invalid",
+        message:
+          "Your nearby city list expired. Refresh it and confirm your coverage again.",
+      };
+    const referenceHash = (await digest(selection.reference)).slice(0, 16);
+    const derived = deriveCoverageConfirmation({
+      selection,
+      reference,
+      primaryCity: normalized.primaryCity,
+      serviceRadius,
+      coverageAreas: normalized.coverageAreas,
+      referenceHash,
+    });
+    if (!derived.ok) return derived;
+    normalized.coverageAreas = derived.coverageAreas;
+    normalized.coverageConfirmation = derived.confirmation;
+    return { ok: true as const };
+  }
+  const derived = deriveCoverageConfirmation({
+    selection,
+    reference: null,
+    primaryCity: normalized.primaryCity,
+    serviceRadius,
+    coverageAreas: normalized.coverageAreas,
+    referenceHash: "",
+  });
+  if (!derived.ok) return derived;
+  normalized.coverageAreas = derived.coverageAreas;
+  normalized.coverageConfirmation = derived.confirmation;
+  return { ok: true as const };
+}
+
 async function intake(request: Request, env: Env) {
   const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
   const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
@@ -641,6 +703,13 @@ async function intake(request: Request, env: Env) {
         headers,
       );
     }
+    const coverage = await applyCoverageConfirmation(
+      normalized,
+      invite.claims.inviteId,
+      env,
+    );
+    if (!coverage.ok)
+      return json({ error: coverage.message, code: coverage.code }, 400, headers);
     if (invite.clientEmail && invite.clientEmail.toLowerCase() !== normalized.email.toLowerCase())
       return json({ error: "Use the email address that received this invitation." }, 403, headers);
     const allowedIntakeFields = new Set(CLIENT_INTAKE_V2_ISSUE_FIELDS);
@@ -1160,6 +1229,76 @@ async function feedbackImage(request: Request, env: Env) {
             : "The image request failed. Please try again.",
       },
       status,
+      headers,
+    );
+  }
+}
+
+async function coverageAreas(request: Request, env: Env) {
+  const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
+  const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
+  const headers = cors(request, allowed);
+  if (request.method === "OPTIONS")
+    return new Response(null, { status: 204, headers });
+  if (request.method !== "POST")
+    return new Response("Method not allowed", { status: 405, headers });
+  try {
+    assertOrigin(request, allowed);
+    const body = (await request.json().catch(() => ({}))) as {
+      inviteToken?: unknown;
+      primaryCity?: unknown;
+      serviceRadius?: unknown;
+    };
+    let invite: Awaited<ReturnType<typeof verifiedInvite>>;
+    try {
+      invite = await verifiedInvite(request, env, body.inviteToken);
+    } catch {
+      return json(
+        { ok: false, code: "invalid_invite", message: "This invitation is invalid or no longer available.", retryable: false },
+        403,
+        headers,
+      );
+    }
+    if (coverageLookupRateLimited(invite.claims.inviteId))
+      return json(
+        {
+          ok: false,
+          code: "rate_limited",
+          message: "Too many nearby-city lookups. Wait a moment, then retry.",
+          retryable: true,
+        },
+        429,
+        { ...headers, "Cache-Control": "no-store" },
+      );
+    const result = await lookupCoverageAreas({
+      env,
+      inviteId: invite.claims.inviteId,
+      primaryCity: clean(body.primaryCity, 160),
+      serviceRadius: body.serviceRadius,
+    });
+    const status = result.ok
+      ? 200
+      : result.code === "not_configured"
+        ? 503
+        : result.code === "unsupported_radius"
+          ? 400
+          : result.code === "provider_failure"
+            ? 502
+            : 200;
+    return json(result, status, { ...headers, "Cache-Control": "no-store" });
+  } catch (error) {
+    console.error(
+      "Coverage lookup failed",
+      error instanceof Error ? error.message : "Unknown error",
+    );
+    return json(
+      {
+        ok: false,
+        code: "provider_failure",
+        message: "The map provider is unavailable right now. Retry or confirm only your main city.",
+        retryable: true,
+      },
+      500,
       headers,
     );
   }
@@ -2851,6 +2990,7 @@ export default {
     if (path === "/api/intake") return intake(request, env);
     if (path === "/api/upload") return upload(request, env);
     if (path === "/api/places") return places(request, env);
+    if (path === "/api/coverage-areas") return coverageAreas(request, env);
     if (path === "/api/service-suggestions") return serviceSuggestions(request, env);
     if (path === "/api/google-reviews") return googleReviews(request, env);
     if (path === "/api/feedback") return feedback(request, env);

@@ -127,6 +127,35 @@ try {
       body: JSON.stringify({ suggestions: ["Exterior painting", "Interior painting", "Cabinet refinishing", "Surface prep, priming and coating"], provenance: "model_suggestion_unconfirmed" }),
     });
   });
+  let coverageLookups = 0;
+  const coverageFixture = (radiusSelection) => ({
+    ok: true,
+    primary: { label: "Charleston, SC", city: "Charleston", state: "SC", country: "US", placeId: "city-charleston", latitude: 32.7765, longitude: -79.9311 },
+    radius: {
+      selection: radiusSelection,
+      miles: radiusSelection === "50+" ? 50 : Number(radiusSelection),
+      label: `${radiusSelection === "50+" ? 50 : Number(radiusSelection)} miles`,
+    },
+    candidates: [
+      { id: "city-north-charleston", name: "North Charleston", state: "SC", label: "North Charleston, SC", distanceMiles: 5.2 },
+      { id: "city-mount-pleasant", name: "Mount Pleasant", state: "SC", label: "Mount Pleasant, SC", distanceMiles: 6.8 },
+      { id: "city-summmerville", name: "Summerville", state: "SC", label: "Summerville, SC", distanceMiles: 18.4 },
+    ],
+    reference: "browser-fixture-coverage-reference",
+    source: "google_places_locality",
+    truncated: false,
+    partial: false,
+    warnings: [],
+  });
+  await page.route("**/api/coverage-areas", async (route) => {
+    coverageLookups += 1;
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(coverageFixture(body.serviceRadius)),
+    });
+  });
   await page.route("**/api/intake", async (route) => {
     acceptedIntake = route.request().postDataJSON();
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, issue: 66 }) });
@@ -228,6 +257,72 @@ try {
     .locator('[name="differentiators"]')
     .fill("Careful prep, tidy work, and clear communication.");
 
+  await page.locator(".coverage-pills").waitFor({ state: "visible" });
+  const coveragePills = page.locator(".coverage-pill");
+  if ((await coveragePills.count()) !== 3)
+    failures.push("Coverage discovery did not render the three nearby city pills.");
+  if (!(await page.locator(".coverage-primary").getByText("Charleston, SC", { exact: true }).isVisible()))
+    failures.push("Coverage review does not show the resolved primary city.");
+  const pillLabels = (await coveragePills.allInnerTexts()).join(" | ");
+  if (!pillLabels.includes("North Charleston") || !pillLabels.includes("Mount Pleasant"))
+    failures.push("Coverage pills do not use canonical city, state labels.");
+
+  const confirmBox = page.locator("#coverage-confirmation");
+  if (!(await confirmBox.isVisible()))
+    failures.push("Coverage review does not render the single confirmation checkbox.");
+  if (!(await coveragePills.first().getByRole("checkbox").isChecked()))
+    failures.push("Suggested nearby cities did not start selected for review.");
+
+  // Changing the radius refreshes suggestions and invalidates the confirmation.
+  const lookupsBeforeRadiusChange = coverageLookups;
+  await page.locator('[name="serviceRadius"]').selectOption("10");
+  await page.locator(".coverage-pill").first().waitFor({ state: "visible" });
+  if (coverageLookups <= lookupsBeforeRadiusChange)
+    failures.push("Changing the travel radius did not refresh the nearby city lookup.");
+  if (await confirmBox.isChecked())
+    failures.push("Changing the travel radius kept the previous coverage confirmation.");
+  await page.locator('[name="serviceRadius"]').selectOption("30");
+  await page.locator(".coverage-pill").first().waitFor({ state: "visible" });
+
+  // The form cannot advance without explicit coverage confirmation.
+  await page.getByRole("button", { name: "Continue" }).click();
+  if (!(await page.getByText("Review and confirm the cities and towns you serve", { exact: false }).isVisible()))
+    failures.push("Continuing without confirming coverage did not surface a clear error.");
+  if (!(await page.locator(".stepper").innerText()).includes("Step 2 of 3"))
+    failures.push("The form advanced past coverage without explicit confirmation.");
+
+  // Keyboard operation on a focused pill.
+  const summmerville = page.getByRole("checkbox", { name: /Summerville/ });
+  await summmerville.focus();
+  await page.keyboard.press("Space");
+  if (await summmerville.isChecked())
+    failures.push("Space did not uncheck the focused coverage pill.");
+  await page.keyboard.press("Space");
+  if (!(await summmerville.isChecked()))
+    failures.push("Space did not restore the focused coverage pill.");
+
+  // Deselect one nearby city and confirm the reviewed list.
+  await summmerville.uncheck();
+  await confirmBox.check();
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    window.scrollTo(0, 0);
+  });
+  await page.screenshot({
+    path: path.join(screenshotDir, "coverage-review-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(100);
+  const coverageMobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  if (coverageMobileOverflow > 1)
+    failures.push(`Coverage pills cause ${coverageMobileOverflow}px of horizontal overflow on mobile.`);
+  await page.screenshot({
+    path: path.join(screenshotDir, "coverage-review-mobile.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+
   const callNow = page.getByRole("radio", { name: "Call now", exact: true });
   if (await callNow.getAttribute("value") !== "Call now")
     failures.push("The Call now option label and submitted value do not match.");
@@ -282,6 +377,15 @@ try {
   )
     failures.push("Confirmation does not show the service radius.");
 
+  const coverageReview = page
+    .locator("dl > div")
+    .filter({ has: page.getByText("Confirmed coverage", { exact: true }) })
+    .getByRole("definition");
+  if (!(await coverageReview.getByText("North Charleston, SC", { exact: false }).isVisible()))
+    failures.push("Confirmation does not show the confirmed nearby coverage list.");
+  if (await coverageReview.getByText("Summerville", { exact: false }).count())
+    failures.push("Confirmation still shows a deselected nearby city.");
+
   if (
     !(await page
       .locator("dl > div")
@@ -310,6 +414,10 @@ try {
     failures.push("Service choices were lost after backward navigation.");
   if ((await page.locator('[name="serviceRadius"]').inputValue()) !== "30")
     failures.push("Service radius was lost after backward navigation.");
+  if (!(await page.locator("#coverage-confirmation").isChecked()))
+    failures.push("Coverage confirmation was lost after backward navigation.");
+  if (!(await page.getByRole("checkbox", { name: /Summerville/ }).isChecked() === false))
+    failures.push("Coverage deselection was lost after backward navigation.");
   await page.getByRole("button", { name: "Continue" }).click();
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -371,6 +479,19 @@ try {
     failures.push("The client-supplied existing brand colour was not included in the intake.");
   if (acceptedIntake?.serviceAreas !== "Charleston, SC" || acceptedIntake?.serviceRadius !== "30")
     failures.push("The intake did not preserve the client-confirmed city and travel radius.");
+  if (acceptedIntake?.primaryCity !== "Charleston, SC")
+    failures.push("The intake did not preserve the resolved primary city.");
+  if (acceptedIntake?.coverageAreas !== "Charleston, SC\nNorth Charleston, SC\nMount Pleasant, SC")
+    failures.push(`The intake did not persist exactly the confirmed coverage: ${JSON.stringify(acceptedIntake?.coverageAreas)}.`);
+  if ((acceptedIntake?.coverageAreas || "").includes("Summerville"))
+    failures.push("A deselected nearby city reached the submitted intake.");
+  const submittedCoverage = JSON.parse(acceptedIntake?.coverageSelection || "{}");
+  if (
+    submittedCoverage.status !== "confirmed" ||
+    submittedCoverage.reference !== "browser-fixture-coverage-reference" ||
+    submittedCoverage.selectedIds?.length !== 2
+  )
+    failures.push("The intake did not carry the explicit confirmed coverage selection and signed reference.");
 
   const retryPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
   const retryInviteId = "browser-invite-retry-002";
@@ -388,6 +509,26 @@ try {
         : retryValidationCount === 1
           ? { valid: true, clientEmail: "retry@example.com" }
           : { valid: false, accepted: true }),
+    });
+  });
+  await retryPage.route("**/api/coverage-areas", async (route) => {
+    const body = route.request().postDataJSON();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        primary: { label: "Tacoma, WA", city: "Tacoma", state: "WA", country: "US", placeId: "city-tacoma", latitude: 47.2529, longitude: -122.4443 },
+        radius: { selection: body.serviceRadius, miles: Number(body.serviceRadius), label: `${Number(body.serviceRadius)} miles` },
+        candidates: [
+          { id: "city-lakewood", name: "Lakewood", state: "WA", label: "Lakewood, WA", distanceMiles: 5.4 },
+        ],
+        reference: "browser-fixture-retry-coverage-reference",
+        source: "google_places_locality",
+        truncated: false,
+        partial: false,
+        warnings: [],
+      }),
     });
   });
   await retryPage.route("**/api/intake", async (route) => {
@@ -412,6 +553,8 @@ try {
   await retryPage.locator('[name="serviceAreas"]').fill("Tacoma, WA");
   await retryPage.locator('[name="serviceRadius"]').selectOption("20");
   await retryPage.locator('[name="differentiators"]').fill("Clear communication and careful work areas.");
+  await retryPage.locator(".coverage-pills").waitFor({ state: "visible" });
+  await retryPage.locator("#coverage-confirmation").check();
   await retryPage.getByRole("button", { name: "Continue" }).click();
   await retryPage.locator('[name="leadEmail"]').fill("leads-retry@example.com");
   await retryPage.locator('[name="confirmAccuracy"]').check();
@@ -424,6 +567,54 @@ try {
   else if (JSON.stringify(retryIntakes[0]) !== JSON.stringify(retryIntakes[1]))
     failures.push("An accepted intake retry changed the original submission payload.");
   await retryPage.close();
+
+  const fallbackPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const fallbackInviteId = "browser-invite-fallback-003";
+  const fallbackToken = `${Buffer.from(JSON.stringify({ inviteId: fallbackInviteId })).toString("base64url")}.browser-fixture-signature`;
+  await fallbackPage.route("**/api/onboarding-invites/validate", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ valid: true, clientEmail: "fallback@example.com" }),
+    }),
+  );
+  await fallbackPage.route("**/api/coverage-areas", (route) =>
+    route.fulfill({
+      status: 502,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: false,
+        code: "provider_failure",
+        message: "The map provider is unavailable right now. Retry or confirm only your main city.",
+        retryable: true,
+      }),
+    }),
+  );
+  await fallbackPage.goto(`${origin}/onboard/#invite=${encodeURIComponent(fallbackToken)}`, { waitUntil: "networkidle" });
+  await fallbackPage.getByRole("heading", { name: "Let’s meet the business." }).waitFor();
+  await fallbackPage.getByRole("button", { name: "Enter details manually" }).click();
+  await fallbackPage.locator('[name="businessName"]').fill("Offline Services");
+  await fallbackPage.locator('[name="contactName"]').fill("Alex Owner");
+  await fallbackPage.locator('[name="phone"]').fill("(555) 555-0103");
+  await fallbackPage.locator('[name="address"]').fill("9 Main Street, Columbia, SC");
+  await fallbackPage.getByRole("button", { name: "Continue" }).click();
+  const fallbackServiceEntry = fallbackPage.getByRole("textbox", { name: "Add a core service" });
+  await fallbackServiceEntry.fill("Drain cleaning");
+  await fallbackServiceEntry.press("Enter");
+  await fallbackPage.locator('[name="industry"]').selectOption("home-services");
+  await fallbackPage.locator('[name="serviceAreas"]').fill("Columbia, SC");
+  await fallbackPage.locator('[name="serviceRadius"]').selectOption("20");
+  await fallbackPage.locator('[name="differentiators"]').fill("Clear communication and careful work areas.");
+  await fallbackPage.getByText("Retry nearby places").waitFor({ state: "visible" });
+  if (!(await fallbackPage.getByText("The map provider is unavailable right now", { exact: false }).isVisible()))
+    failures.push("A provider failure did not stay visible with a retry action.");
+  await fallbackPage.locator("#coverage-confirmation").check();
+  await fallbackPage.getByRole("button", { name: "Continue" }).click();
+  if (!(await fallbackPage.locator(".stepper").innerText()).includes("Step 3 of 3"))
+    failures.push("A confirmed primary-city-only fallback could not continue.");
+  if (!(await fallbackPage.locator('[name="coverageSelection"]').inputValue()).includes("primary_city_only"))
+    failures.push("The primary-city-only fallback did not serialize an explicit confirmation.");
+  await fallbackPage.close();
 } finally {
   await browser.close();
   server.close();
