@@ -668,7 +668,41 @@ export async function runVisualGateProcess({
     throw new Error(
       `Creative visual gate produced no report (exit ${result.code}): ${result.stderr.slice(-1200)}`,
     );
-  if (result.code !== 0 || report.status === "error")
+  // Exit 2 is reserved for a successfully completed, blocked quality audit.
+  // It never denotes a pass; the caller must consume findings and rerender.
+  const audit = report.audit;
+  const findings = audit?.findings;
+  const blockers = report.blockers;
+  const blockedQualityReport =
+    result.code === 2 &&
+    report.version === 1 &&
+    report.mode === "verify" &&
+    report.status === "quality-blocked" &&
+    !report.error &&
+    report.changed === false &&
+    Array.isArray(report.appliedOperations) &&
+    report.appliedOperations.length === 0 &&
+    ["revise", "block"].includes(audit?.verdict) &&
+    Array.isArray(findings) &&
+    Array.isArray(audit?.operations) &&
+    findings.every(
+      (finding) =>
+        finding &&
+        ["critical", "major", "minor"].includes(finding.severity) &&
+        ["desktop", "compact", "mobile", "both"].includes(finding.viewport) &&
+        typeof finding.category === "string" &&
+        typeof finding.evidence === "string" &&
+        typeof finding.recommendation === "string",
+    ) &&
+    Array.isArray(blockers) &&
+    JSON.stringify(blockers) ===
+      JSON.stringify(
+        findings.filter((finding) =>
+          ["critical", "major"].includes(finding.severity),
+        ),
+      ) &&
+    (blockers.length > 0 || audit.verdict === "block");
+  if ((result.code !== 0 && !blockedQualityReport) || report.status === "error")
     throw new Error(
       `Creative visual gate could not run: ${report.error || result.stderr.slice(-1200) || `process exited ${result.code}`}`,
     );

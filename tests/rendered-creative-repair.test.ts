@@ -1400,9 +1400,33 @@ export default function Experience({ content, runtime }) {
       },
       runVisualGateImpl: async (options: any) => {
         gateCalls += 1;
-        return visualGate(options, gateCalls === 1 ? "revise" : "pass");
+        const audit = {
+          summary: "Controlled rendered QA observation",
+          verdict: gateCalls === 1 ? "revise" : "pass",
+          findings: gateCalls === 1 ? [{
+            category: "content-integrity",
+            severity: "major",
+            viewport: "both",
+            evidence: "Process content appears twice",
+            recommendation: "Keep one process section",
+          }] : [],
+          operations: [],
+        };
+        const script = path.join(root, "qa-process.mjs");
+        await fs.writeFile(script, `import fs from 'node:fs';
+const i=process.argv.indexOf('--report');
+fs.writeFileSync(process.argv[i+1], ${JSON.stringify(JSON.stringify({
+          version: 1, mode: "verify", status: gateCalls === 1 ? "quality-blocked" : "ok",
+          changed: false, appliedOperations: [], blockers: audit.findings, audit,
+        }))});
+process.exit(${gateCalls === 1 ? 2 : 0});`);
+        return runVisualGateProcess({...options, visualGateScript: script});
       },
-      repairCandidateImpl: async ({ candidateId }: any) => {
+      repairCandidateImpl: async ({ candidateId, findings }: any) => {
+        expect(promotions).toHaveLength(0);
+        expect(findings).toEqual(expect.arrayContaining([
+          expect.objectContaining({category: "content-integrity", severity: "major"}),
+        ]));
         repairs.push(candidateId);
       },
       promoteImpl: async (options: any) => {
