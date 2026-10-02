@@ -1,3 +1,4 @@
+import { compilePageBriefs, pageBriefExpectedContent } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { contrastFailureMessages } from "./rendered-contrast.mjs";
 import { spawn } from "node:child_process";
@@ -658,6 +659,7 @@ export async function runCreativeBakeoff({
     .catch(() => {});
   const browser = await chromium.launch({ headless: true });
   const bakeoffConfig = routeLinkedContent(JSON.parse(originalConfig));
+  const pageBriefReport = compilePageBriefs(bakeoffConfig);
   const serviceSlug = String(
     (Array.isArray(bakeoffConfig.services) ? bakeoffConfig.services : []).find(
       (service) => service?.slug,
@@ -964,6 +966,14 @@ export async function runCreativeBakeoff({
                   waitUntil: "networkidle",
                 });
                 await page.waitForTimeout(900);
+                const brief = pageBriefReport.briefs.find(brief=>brief.path===authoredPage.route);
+                if(brief?.mode === "supported") {
+                  const disclosureStates = await page.locator("details").evaluateAll(nodes=>nodes.map(node=>{const open=node.open;node.open=true;return open;}));
+                  const visibleText = await page.locator("body").innerText();
+                  await page.locator("details").evaluateAll((nodes,states)=>nodes.forEach((node,index)=>node.open=states[index]),disclosureStates);
+                  if(pageBriefExpectedContent(brief).some(value=>!visibleText.includes(value)))pageResult.failures.push(`${viewport.name}: supported page brief content is missing after hydration.`);
+                }
+
                 const evidence = await inspectAuthoredPage(page);
                 const identityFindings = authoredPageIdentityFindings(
                   homepageIdentity,

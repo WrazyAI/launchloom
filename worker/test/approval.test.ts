@@ -269,6 +269,73 @@ describe("developer approval", () => {
     expect(externalWrites).toBe(0);
   });
 
+  it("blocks unsupported page claims before merge or publication dispatch", async () => {
+    let externalWrites = 0;
+    network.use(
+      http.get(
+        "https://api.github.com/repos/WrazyAI/example-client/pulls/7",
+        () =>
+          HttpResponse.json({
+            head: { sha: "review-head-sha" },
+            state: "open",
+            draft: false,
+          }),
+      ),
+      http.get(
+        "https://api.github.com/repos/WrazyAI/example-client/contents/src/site.config.json",
+        () =>
+          HttpResponse.json({
+            encoding: "base64",
+            content: btoa(
+              JSON.stringify({
+                business: { description: "Supplied client description." },
+                services: [{name:"Drain cleaning",slug:"drain-cleaning",description:"A short service card."}],
+                locations: [],
+                routePolicy: {
+                  version: 1,
+                  decisions: [],
+                },
+                pageContent: {"service:drain cleaning":{introduction:{text:"Invented claim.",evidenceIds:[]}}},
+                seoResearch: { mode: "researched", publishReady: true },
+              }),
+            ),
+          }),
+      ),
+      http.put(
+        "https://api.github.com/repos/WrazyAI/example-client/pulls/7/merge",
+        () => {
+          externalWrites++;
+          return HttpResponse.json({ merged: true });
+        },
+      ),
+      http.post(
+        "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
+        () => {
+          externalWrites++;
+          return new HttpResponse(null, { status: 204 });
+        },
+      ),
+    );
+    const token = await reviewToken();
+    const response = await SELF.fetch(
+      "https://api.launchloom.test/api/approval",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Origin: origin },
+        body: JSON.stringify({
+          token,
+          email: "developer@example.com",
+          pageUrl: `${origin}/?review=${token}`,
+        }),
+      },
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      code: "page_content_required",
+    });
+    expect(externalWrites).toBe(0);
+  });
+
   it.each([
     {
       name: "measured research",

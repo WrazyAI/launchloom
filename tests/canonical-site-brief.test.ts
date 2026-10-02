@@ -440,3 +440,9 @@ it("carries explicit route decisions and migration URLs through canonical and co
     active: false,
   });
 });
+
+it('carries approved page inputs through canonical generation and rejects model replacement',()=>{
+ const routeId='service:drain cleaning';const introduction='Describe which drain is affected before discussing the requested service scope.';const metadata='Discuss drainage symptoms and preparation before making a drain cleaning enquiry.';const pageEvidence=[{id:'intro',value:introduction},{id:'meta',value:metadata}].map(record=>({...record,source:'synthetic client confirmation',kind:'client_supplied',confirmed:true,public:true,routeIds:[routeId]}));const pageContent={[routeId]:{introduction:{text:introduction,evidenceIds:['intro']},metadata:{description:{text:metadata,evidenceIds:['meta']}}}};
+ const brief=compileCanonicalSiteBrief({intake:{businessName:'Fixture Plumbing',industry:'home-services',services:'Drain cleaning',businessDescription:'Fictional plumbing fixture.',pageContent,pageEvidence},research:{pageMap:[]}});expect(brief.pageContent).toEqual(pageContent);expect(brief.pageEvidence).toEqual(pageEvidence);
+ const result=normalise({pageContent:{[routeId]:{introduction:'Invented model claim.'}},pageEvidence:[]},brief);expect(result.pageContent).toEqual(pageContent);expect(result.pageEvidence).toEqual(pageEvidence);expect(result.pageBriefs.briefs.find((page:any)=>page.routeId===routeId)).toMatchObject({mode:'supported',ready:true,introduction});
+});

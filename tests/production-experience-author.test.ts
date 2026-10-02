@@ -2811,3 +2811,15 @@ it("seals only route-approved location links in new explicit configurations", ()
   expect(manifest.values.brand.serviceAreas).toEqual(["Testville"]);
   expect(config.locations).toHaveLength(1);
 });
+
+it('requires the shared route-bound page primitive for a rich service source',()=>{
+ const rich=readFileSync('tests/fixtures/page-briefs/ServicePage.jsx.txt','utf8');
+ expect(()=>validateServicePage(rich,{id:'synthetic-rich'}, {pageBriefContractVersion:1})).not.toThrow();
+ expect(()=>validateServicePage(rich.replace('<PageBriefSections brief={service.brief} />',''),{id:'synthetic-rich'},{pageBriefContractVersion:1})).toThrow('PageBriefSections');
+ expect(()=>validateServicePage(rich.replace('brief={service.brief}','brief={content}'),{id:'synthetic-rich'},{pageBriefContractVersion:1})).toThrow('PageBriefSections');
+});
+it('requires the shared route-bound page primitive for a rich location source',()=>{
+ const rich=readFileSync('tests/fixtures/page-briefs/LocationPage.jsx.txt','utf8');
+ expect(()=>validateLocationPage(rich,{id:'synthetic-rich'},{pageBriefContractVersion:1})).not.toThrow();
+ expect(()=>validateLocationPage(rich.replace('<PageBriefSections brief={location.brief} />',''),{id:'synthetic-rich'},{pageBriefContractVersion:1})).toThrow('PageBriefSections');
+});

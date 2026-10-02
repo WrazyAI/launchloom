@@ -1,0 +1,11 @@
+import { LeadForm, ContactLinks, PageBriefSections } from "@launchloom/runtime";
+export default function LocationPage({ content, runtime, location }) {
+ return <main className="inner-page recipe-local-trades" data-location-page data-location-slug={location.slug}>
+  <nav className="wrap" aria-label="Main navigation"><a href="/">{content.brand.name}</a><ContactLinks content={content} /></nav>
+  <section className="inner-hero" data-location-hero><div className="wrap inner-hero-grid"><div><h1>{location.name}</h1><p>{location.description}</p></div>{location.images.context && <img src={location.images.context} alt={location.images.alt || location.name} />}</div></section>
+  <section data-ll-surface="light" className="section wrap" data-location-coverage><p>{location.localNote}</p></section>
+  <section data-ll-surface="light" className="section wrap" data-location-related>{location.services.map(item => <a key={item.slug} href={`/services/${item.slug}/`}>{item.name}</a>)}{location.otherAreas.map(area => <a key={area.slug} href={`/locations/${area.slug}/`}>{area.name}</a>)}</section>
+  <PageBriefSections brief={location.brief} />
+  <section data-ll-surface="contact" className="contact-section" id="contact"><div className="wrap contact-grid"><h2>{content.hero.primaryLabel}</h2><LeadForm content={content} runtime={runtime} /></div></section>
+ </main>;
+}

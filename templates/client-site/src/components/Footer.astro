@@ -3,6 +3,7 @@ import site, { footerRoutes, directionsHref, hasExactBusinessLocation, phoneHref
 ---
 
 <footer data-ll-surface="footer" class="footer"><div class="wrap footer-grid"><div><a class:list={["wordmark", { "wordmark--logo": Boolean(site.assets?.logo) }]} href="/">{site.assets?.logo ? <img src={site.assets.logo} alt={site.business.name} /> : <span class="wordmark__name">{site.business.name}</span>}</a><p>{site.business.description}</p><nav aria-label="More pages">{footerRoutes.map(route => <a href={route.path}>{route.title}</a>)}</nav></div>
+  {site.locations.length > 0 && <nav aria-label="Service areas"><strong>Service areas</strong>{site.locations.map(location => <a href={`/locations/${location.slug}/`}>{location.name}</a>)}</nav>}
   {(site.business.phone || site.business.email) && <div><strong>Contact</strong>{site.business.phone && <a href={phoneHref(site.business.phone)}>{site.business.phone}</a>}{site.business.email && <a href={`mailto:${site.business.email}`}>{site.business.email}</a>}</div>}
   {(site.business.address || site.business.hours || hasExactBusinessLocation()) && <div><strong>Visit</strong>{site.business.address && <p>{site.business.address}</p>}{site.business.hours && <p>{site.business.hours}</p>}{hasExactBusinessLocation() && <a href={directionsHref()} target="_blank" rel="noopener noreferrer">Get directions</a>}</div>}
 </div><div class="wrap legal">© {new Date().getFullYear()} {site.business.name}. All rights reserved.</div></footer>

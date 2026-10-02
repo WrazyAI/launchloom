@@ -1,0 +1,13 @@
+import { LeadForm, ContactLinks, PageBriefSections } from "@launchloom/runtime";
+export default function ServicePage({ content, runtime, service }) {
+ return <main className="inner-page recipe-local-trades" data-service-page data-service-slug={service.slug}>
+  <nav className="wrap" aria-label="Main navigation"><a href="/">{content.brand.name}</a><ContactLinks content={content} /></nav>
+  <section className="inner-hero" data-service-hero><div className="wrap inner-hero-grid"><div><h1>{service.name}</h1><p>{service.description}</p><a className="cta" href="#contact">{content.hero.primaryLabel}</a></div>{service.images.context && <img src={service.images.context} alt={service.images.alt || service.name} />}</div></section>
+  <section data-ll-surface="light" className="section wrap" data-service-support><h2>{service.name}</h2>{service.support.scope && <p>{service.support.scope}</p>}{service.support.preparation && <p>{service.support.preparation}</p>}{service.support.nextStep && <p>{service.support.nextStep}</p>}</section>
+  <PageBriefSections brief={service.brief} />
+  <section data-ll-surface="light" className="section wrap" data-service-related>{service.related.map(item => <div key={item.slug}><a href={`/services/${item.slug}/`}>{item.name}</a><p>{item.description}</p></div>)}</section>
+  {service.process.length > 0 && <section data-ll-surface="light" className="section wrap"><ol>{service.process.map(step => <li key={step}>{step}</li>)}</ol></section>}
+  {service.faqs.length > 0 && <section data-ll-surface="light" className="section wrap faq-section"><div className="faq-list">{service.faqs.map(faq => <details key={faq.question}><summary>{faq.question}</summary><p>{faq.answer}</p></details>)}</div></section>}
+  <section data-ll-surface="contact" className="contact-section" id="contact"><div className="wrap contact-grid"><h2>{content.hero.primaryLabel}</h2><LeadForm content={content} runtime={runtime} /></div></section>
+ </main>;
+}

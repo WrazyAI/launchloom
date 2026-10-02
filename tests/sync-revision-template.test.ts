@@ -447,3 +447,11 @@ it("preserves an edited retired route and refuses the complete migration before 
     fs.access(path.join(client, "src/lib/route-inventory.mjs")),
   ).rejects.toThrow();
 });
+
+it("migrates exact shipped Stage 2 bytes and brings the rich page runtime dependencies",async()=>{
+ const client=await fs.mkdtemp(path.join(os.tmpdir(),"launchloom-stage3-sync-"));dirs.push(client);await fs.mkdir(path.join(client,"src/lib"),{recursive:true});
+ await fs.writeFile(path.join(client,"src/site.config.json"),JSON.stringify({business:{primaryCta:"Contact us"}}));
+ const previous=await fs.readFile(path.resolve("tests/fixtures/page-briefs/stage-2-site.ts.txt"),"utf8");await fs.writeFile(path.join(client,"src/lib/site.ts"),previous);
+ await exec("node",[path.resolve("scripts/sync-revision-template.mjs"),"--client",client]);
+ for(const relative of ["lib/site.ts","lib/page-briefs.mjs","lib/creative-runtime.tsx","components/PageBriefSections.tsx","styles/site.css"]){expect(await fs.readFile(path.join(client,"src",relative),"utf8")).toBe(await fs.readFile(path.resolve("templates/client-site/src",relative),"utf8"));}
+});

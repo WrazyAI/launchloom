@@ -538,3 +538,14 @@ it("preserves normalized sRGB precision near a contrast threshold", async () => 
   );
   expect(report.pass).toBe(true);
 });
+
+it("keeps trades inner-hero labels and keyboard focus readable on the dark surface", async () => {
+  const css = readFileSync(
+    new URL("../templates/client-site/src/styles/site.css", import.meta.url),
+    "utf8",
+  );
+  const report = await scan(
+    `<style>${css}:root{--brand:#205d51;--on-brand:#fff;--muted:#5e6b66;--ink:#14201d;--cream:#f8f6f0}</style><main class="inner-page recipe-local-trades"><section class="inner-hero"><div class="wrap"><span class="kicker">Service details</span><h1>Drain cleaning</h1><a class="breadcrumb" href="/">Home</a><a class="cta" href="#contact">Discuss your request</a></div></section></main>`,
+  );
+  expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+});

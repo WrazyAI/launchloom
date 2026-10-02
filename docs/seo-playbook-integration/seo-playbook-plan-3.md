@@ -1,6 +1,6 @@
 # Stage 3 of 4: Substantive page briefs and authored inner pages
 
-Status: proposed, awaiting user approval. Depends on [Stage 2](seo-playbook-plan-2.md). Next: [Stage 4](seo-playbook-plan-4.md).
+Status: approved and implemented locally on branch `codex/launchloom-seo-page-briefs-stage-3`; local verification complete on 2026-10-02. See [the page-brief contract](page-brief-contract.md). Publishing and paid authoring remain outside this approval. Depends on [Stage 2](seo-playbook-plan-2.md). Next: [Stage 4](seo-playbook-plan-4.md).
 
 ## Intended outcome
 
@@ -45,3 +45,13 @@ The three creative homepage alternatives remain a design bakeoff. They are not c
 Keep care/editorial and trades/problem-led language distinct. Do not mandate video, 1920×1080 imagery, full-height heroes, four local reasons, or uniform layouts across all sites. Existing reference fidelity, diversity, visual, source, and promotion gates remain in force.
 
 Use synthetic business fixtures and mocked provider responses first. A bounded real authoring experiment requires an approved client or synthetic brief, explicit budget, and recorded model/session provenance. No large paid bakeoff or publishing is authorized by this plan.
+
+## Local implementation evidence
+
+- Approved route-keyed page briefs, supporting hosts, sealed service/location bindings and bounded route/field revisions are implemented. See [the contract](page-brief-contract.md).
+- Frozen full application suite: 1226/1226. Final affected suite after the added hero contrast regression: 405/405; Worker full suite 111/111 and approval replay 8/8. Astro/Worker types/platform build passed. The shallow-checkout migration fixture was verified separately after final review.
+- Three synthetic matrices passed 36 initial/hydrated desktop/mobile views plus six revised-FAQ views. Other service input and rendered HTML stayed byte-identical; supplied policy text stayed intact; deferred city remained 404. Corrected contrast/focus acceptance rejects definite failures and unresolved findings. All Stage 3 routes passed at 1536/1366/390 widths.
+- TestSprite stable replay passed with 11 inspected trace steps. CodeRabbit findings were reproduced/verified and resolved, including the final shallow-history migration test dependency.
+- Trades/care legacy homepages retain recorded contrast/focus findings; full production readiness is blocked for those fixtures. The synthetic authored fixture passed its full contrast sweep, but it has no real-model authoring, reference-fidelity or promotion evidence. No merge, deployment, paid authoring or client regeneration was performed.
+
+Review the contract and screenshots before authorizing shipping. Stage 4 remains unapproved.
