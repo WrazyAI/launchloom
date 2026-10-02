@@ -172,9 +172,9 @@
     ],
     "compositionTopology": {
       "hero": "media-overlay",
-      "mobileHero": "type-led-statement",
+      "mobileHero": "media-overlay",
       "mediaRelation": "copy-over-media",
-      "mobileMediaRelation": "copy-leads-opening",
+      "mobileMediaRelation": "copy-over-media",
       "basis": "curated-screenshots",
       "confidence": "high",
       "secondaryPatterns": [],
