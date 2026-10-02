@@ -634,6 +634,7 @@ const contentBoundRuntimeHelpers = new Set([
   "SocialProof",
 ]);
 const optionalSealedImagePaths = new Set([
+  "content.brand.logo",
   "content.hero.image",
   "content.hero.secondaryImage",
   "content.hero.tertiaryImage",
