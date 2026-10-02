@@ -289,8 +289,13 @@ Rules:
 - do not copy branding, copy, proprietary fonts, logos, or trade dress`
     },
     { type: "text", text: "Desktop reference:" },
-    await promptImagePart(desktop),
-    ...(mobile ? [{ type: "text", text: "Mobile reference:" }, await promptImagePart(mobile)] : [])
+    await promptImagePart(desktop, { detail: "high" }),
+    ...(mobile
+      ? [
+          { type: "text", text: "Mobile reference:" },
+          await promptImagePart(mobile, { detail: "high" }),
+        ]
+      : [])
   ];
   const sessionId = openRouterSessionId(
     "reference-dna",

@@ -5,13 +5,16 @@ import os from "node:os";
 import path from "node:path";
 import {
   collectAvailableScreenshots,
+  colorLiterals,
   defaultRepairCandidate,
   normalizeRepair,
+  findingsRequirePaletteChange,
   runRenderedCreativeRepair,
   runVisualGateProcess,
   writeCandidate,
 } from "../scripts/run-rendered-creative-repair.mjs";
 import { requestRepair } from "../scripts/creative-repair-loop.mjs";
+import { RENDERED_REFERENCE_THRESHOLDS } from "../scripts/rendered-reference-fidelity.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 
@@ -321,6 +324,117 @@ describe("rendered creative repair orchestration", () => {
       );
   });
 
+  it("scopes palette changes to findings that ask for them", () => {
+    expect(findingsRequirePaletteChange([
+      { category: "repair-output-rejected", evidence: "Restore the passing palette color values and fix source validation." },
+    ])).toBe(false);
+    expect(findingsRequirePaletteChange([
+      { category: "human-review-feedback", message: "Make this warmer." },
+    ])).toBe(true);
+    expect(
+      findingsRequirePaletteChange([
+        { category: "imagery", message: "The later image is generic." },
+      ]),
+    ).toBe(false);
+    expect(
+      findingsRequirePaletteChange([
+        "rendered-reference dimension paletteAdherence scored 32 and must reach 80.",
+      ]),
+    ).toBe(true);
+    expect(
+      findingsRequirePaletteChange([
+        "Rendered-reference measurements already at their thresholds must not regress during this repair: paletteAdherence 91, imagery 88.",
+      ]),
+    ).toBe(false);
+    expect(
+      colorLiterals("a { color: #FFF; background: rgb(1, 2, 3); }"),
+    ).toEqual(["#fff", "rgb(1,2,3)"]);
+  });
+
+  it("rejects an automated repair that repaints a passing palette", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-palette-guard-"),
+    );
+    roots.push(root);
+    process.env.OPENROUTER_API_KEY = "test-openrouter-key";
+    const desktop = path.join(root, "reference.png");
+    await fs.writeFile(desktop, "reference-evidence");
+    const candidateDir = path.join(root, "candidate-a");
+    await fs.mkdir(candidateDir);
+    const originalFiles = {
+      experience: `import { LeadForm } from "@launchloom/runtime";
+export default function Experience({ content, runtime }) { return <main><section data-reference-section="hero" data-hero><h1>{content.hero.heading}</h1><a href="#contact" data-early-conversion>{content.hero.primaryLabel}</a></section><section id="services" data-reference-section="services">Services</section><section id="faqs" data-reference-section="faqs">FAQs</section><section id="contact" data-reference-section="contact"><LeadForm content={content} runtime={runtime} /></section></main>; }`,
+      styles:
+        ':root { --ll-creative-paper: #f8f6f0; } [data-reference-section="hero"] h1 { color: #14201d; }',
+      motion:
+        "export function mountExperienceMotion(runtime) { if (runtime?.reducedMotion) return () => {}; return () => {}; }",
+    };
+    await fs.writeFile(
+      path.join(candidateDir, "metadata.json"),
+      JSON.stringify({
+        candidateId: "candidate-a",
+        referenceDna: {
+          familyId: "test-editorial",
+          sectionSequence: ["hero", "services", "faqs", "contact"],
+          evidence: { desktopScreenshot: { path: desktop } },
+        },
+      }),
+    );
+    await fs.writeFile(
+      path.join(candidateDir, "content-manifest.json"),
+      JSON.stringify({ values: {}, tokens: [] }),
+    );
+    for (const [name, value] of Object.entries({
+      "Experience.jsx": originalFiles.experience,
+      "styles.css": originalFiles.styles,
+      "motion.js": originalFiles.motion,
+    }))
+      await fs.writeFile(path.join(candidateDir, name), value);
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  finish_reason: "stop",
+                  message: {
+                    content: JSON.stringify({
+                      experience: originalFiles.experience,
+                      styles:
+                        ':root { --ll-creative-paper: #101010; } [data-reference-section="hero"] h1 { color: #000000; }',
+                      motion: originalFiles.motion,
+                    }),
+                  },
+                },
+              ],
+            }),
+          ),
+      ),
+    );
+
+    await expect(
+      defaultRepairCandidate({
+        candidateDir,
+        findings: [
+          {
+            category: "imagery",
+            message:
+              "A generic stock image appears on an image-independent reference.",
+          },
+        ],
+        screenshots: [],
+        model: "test/model",
+      }),
+    ).rejects.toThrow(/palette/iu);
+
+    expect(await fs.readFile(path.join(candidateDir, "styles.css"), "utf8")).toBe(
+      originalFiles.styles,
+    );
+  });
+
   it("retries a rejected repair output once within the candidate's cycle budget", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const repairFindings: any[][] = [];
@@ -388,6 +502,237 @@ describe("rendered creative repair orchestration", () => {
     expect(excludedCandidates).toEqual([[], []]);
   });
 
+  it.each([3, 99])("caps an exhausted requested %i-cycle repair budget at three applied repairs", async (requested) => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let repairCalls = 0;
+    let bakeoffCalls = 0;
+    await expect(runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: requested,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        expect(options.allowContrastRepair).toBe(true);
+        return writeBakeoffEvidence(options, report({
+          selectedCandidateId: null,
+          candidates: [candidate("candidate-a", {
+            valid: false, eligible: false,
+            failures: ["Rendered candidate needs repair."],
+          })],
+        }));
+      },
+      repairCandidateImpl: async () => { repairCalls += 1; },
+      promoteImpl: async () => { throw new Error("Must not promote an exhausted candidate"); },
+    })).rejects.toThrow("3-cycle repair budget is exhausted");
+    expect(repairCalls).toBe(3);
+    expect(bakeoffCalls).toBe(4);
+  });
+
+  it("keeps unspent applied-repair cycles after a contract rejection", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let bakeoffCalls = 0;
+    let repairCalls = 0;
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls <= 2
+            ? report({
+                selectedCandidateId: null,
+                candidates: [
+                  candidate("candidate-a", {
+                    valid: false,
+                    eligible: false,
+                    failures: ["Rendered candidate needs repair."],
+                  }),
+                ],
+              })
+            : report({
+                selectedCandidateId: "candidate-a",
+                candidates: [candidate("candidate-a")],
+              }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async () => {
+        repairCalls += 1;
+        if (repairCalls === 1) {
+          const error = new Error(
+            "Creative repair edit 7 source fragment must match exactly once in experience.",
+          );
+          Object.assign(error, { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+          throw error;
+        }
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(repairCalls).toBe(3);
+    expect(result.rejectedCandidates).toEqual({});
+  });
+
+  it("repairs a regressed candidate from its best measured state", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const candidateDir = path.join(candidates, "candidate-a");
+    const experiencePath = path.join(candidateDir, "Experience.jsx");
+    const originalSource = await fs.readFile(experiencePath, "utf8");
+    let bakeoffCalls = 0;
+    const seenAtRepair: string[] = [];
+    const repairFindings: string[] = [];
+
+    const failing = (score: number) =>
+      report({
+        selectedCandidateId: null,
+        candidates: [
+          candidate("candidate-a", {
+            valid: false,
+            eligible: false,
+            failures: ["Rendered candidate needs repair."],
+            referenceFidelity: { pass: false, score },
+            renderedReferenceFidelity: {
+              pass: false,
+              score,
+              audit: {
+                verdict: "revise",
+                overallScore: score,
+                scores: { servicePresentation: score, spatialRhythm: score },
+                findings: [],
+              },
+            },
+          }),
+        ],
+      });
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        return writeBakeoffEvidence(
+          options,
+          bakeoffCalls === 1
+            ? failing(RENDERED_REFERENCE_THRESHOLDS.overall)
+            : bakeoffCalls === 2
+              ? failing(60)
+              : report({
+                  selectedCandidateId: "candidate-a",
+                  candidates: [candidate("candidate-a")],
+                }),
+        );
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async ({ findings }: any) => {
+        seenAtRepair.push(await fs.readFile(experiencePath, "utf8"));
+        repairFindings.push(findings.join("\n"));
+        await fs.writeFile(
+          experiencePath,
+          `export default () => "repaired-${seenAtRepair.length}";\n`,
+        );
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    expect(seenAtRepair).toHaveLength(2);
+    expect(seenAtRepair[1]).toBe(originalSource);
+    expect(repairFindings[1]).toContain("must not regress");
+    expect(repairFindings[1]).toContain(`overall ${RENDERED_REFERENCE_THRESHOLDS.overall}`);
+    expect(repairFindings[1]).not.toContain("scored 60");
+  });
+
+  it("prefers the snapshot with more passing measurements when scores tie", async () => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    const candidateDir = path.join(candidates, "candidate-a");
+    const experiencePath = path.join(candidateDir, "Experience.jsx");
+    let bakeoffCalls = 0;
+    const seenAtBakeoff: string[] = [];
+
+    const state = (
+      scores: Record<string, number>,
+      overall: number,
+    ) =>
+      report({
+        selectedCandidateId: null,
+        candidates: [
+          candidate("candidate-a", {
+            valid: false,
+            eligible: false,
+            failures: ["Rendered candidate needs repair."],
+            referenceFidelity: { pass: false, score: overall },
+            renderedReferenceFidelity: {
+              pass: false,
+              score: overall,
+              audit: {
+                verdict: "revise",
+                overallScore: overall,
+                scores,
+                findings: [],
+              },
+            },
+          }),
+        ],
+      });
+
+    const result = await runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: 2,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        seenAtBakeoff.push(await fs.readFile(experiencePath, "utf8"));
+        const outcome =
+          bakeoffCalls === 1
+            ? state({ spatialRhythm: 76, servicePresentation: 77, paletteAdherence: 32 }, 76)
+            : bakeoffCalls === 2
+              ? state(
+                  {
+                    spatialRhythm: 76,
+                    servicePresentation: 77,
+                    paletteAdherence: 91,
+                    interactionEvidence: 66,
+                  },
+                  76,
+                )
+              : bakeoffCalls === 3
+                ? state({ spatialRhythm: 60, paletteAdherence: 30 }, 70)
+                : report({
+                    selectedCandidateId: "candidate-a",
+                    candidates: [candidate("candidate-a")],
+                  });
+        return writeBakeoffEvidence(options, outcome);
+      },
+      runVisualGateImpl: (options: any) => visualGate(options, "pass"),
+      repairCandidateImpl: async () => {
+        const step = seenAtBakeoff.length;
+        await fs.writeFile(
+          experiencePath,
+          `export default () => "state-${step}";\n`,
+        );
+      },
+      promoteImpl: async () => ({ candidateId: "candidate-a" }),
+    });
+
+    expect(result.status).toBe("passed");
+    // The third bakeoff regressed the candidate; the final restore must use
+    // the second state (three passing measurements), not the first (one).
+    expect(seenAtBakeoff[3]).toBe(`export default () => "state-1";\n`);
+  });
+
   it("targets repairs with the rendered fidelity dimensions that miss their thresholds", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     const repairFindings: any[][] = [];
@@ -415,7 +760,7 @@ describe("rendered creative repair orchestration", () => {
                       pass: false,
                       audit: {
                         verdict: "revise",
-                        overallScore: 78,
+                        overallScore: 74,
                         scores: {
                           heroGeometry: 87,
                           typography: 82,
@@ -452,15 +797,19 @@ describe("rendered creative repair orchestration", () => {
 
     const findings = repairFindings[0].join("\n");
     expect(findings).toContain(
-      "rendered-reference overall fidelity scored 78 and must reach 82",
+      `rendered-reference overall fidelity scored 74 and must reach ${RENDERED_REFERENCE_THRESHOLDS.overall}`,
     );
     expect(findings).toContain(
       "rendered-reference dimension paletteAdherence scored 56 and must reach 80",
     );
     expect(findings).toContain(
-      "rendered-reference dimension servicePresentation scored 72 and must reach 80",
+      `rendered-reference dimension servicePresentation scored 72 and must reach ${RENDERED_REFERENCE_THRESHOLDS.servicePresentation}`,
     );
-    expect(findings).not.toContain("heroGeometry");
+    expect(findings).not.toContain("dimension heroGeometry scored");
+    expect(findings).toContain(
+      "measurements already at their thresholds must not regress",
+    );
+    expect(findings).toContain("heroGeometry 87");
     expect(result.status).toBe("passed");
   });
 
@@ -703,6 +1052,7 @@ export default function Experience({ content, runtime }) {
       ),
     ).toMatchObject({
       status: "rejected",
+      cycle: 0,
       error: expect.stringMatching(/FAQList.*content=\{content\}/iu),
     });
   });

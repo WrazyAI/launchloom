@@ -47,7 +47,9 @@ function cliArgs(argv) {
 function boundedCycles(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 2;
-  return Math.max(0, Math.min(2, Math.trunc(parsed)));
+  // Applied repairs are hill-climbed: a regressing cycle restores the best
+  // measured state, so the extra budget can only cost model spend.
+  return Math.max(0, Math.min(3, Math.trunc(parsed)));
 }
 
 function unique(values) {
@@ -58,22 +60,29 @@ function dimensionFindings(candidate) {
   const audit = candidate?.renderedReferenceFidelity?.audit;
   if (!audit) return [];
   const findings = [];
+  const passing = [];
   const overall = Number(audit.overallScore);
-  if (
-    Number.isFinite(overall) &&
-    overall < RENDERED_REFERENCE_THRESHOLDS.overall
-  )
-    findings.push(
-      `rendered-reference overall fidelity scored ${overall} and must reach ${RENDERED_REFERENCE_THRESHOLDS.overall}.`,
-    );
+  if (Number.isFinite(overall)) {
+    if (overall < RENDERED_REFERENCE_THRESHOLDS.overall)
+      findings.push(
+        `rendered-reference overall fidelity scored ${overall} and must reach ${RENDERED_REFERENCE_THRESHOLDS.overall}.`,
+      );
+    else passing.push(`overall ${overall}`);
+  }
   for (const [key, value] of Object.entries(audit.scores || {})) {
     const minimum = Number(RENDERED_REFERENCE_THRESHOLDS[key]);
     const score = Number(value);
-    if (Number.isFinite(minimum) && Number.isFinite(score) && score < minimum)
+    if (!Number.isFinite(minimum) || !Number.isFinite(score)) continue;
+    if (score < minimum)
       findings.push(
         `rendered-reference dimension ${key} scored ${score} and must reach ${minimum}.`,
       );
+    else passing.push(`${key} ${score}`);
   }
+  if (passing.length)
+    findings.push(
+      `Rendered-reference measurements already at their thresholds must not regress during this repair: ${passing.join(", ")}.`,
+    );
   return findings;
 }
 
@@ -206,6 +215,44 @@ function repairPriority(report, candidateId) {
     candidate?.visualScore,
   ].filter((score) => typeof score === "number" && Number.isFinite(score));
   return scores.length ? Math.min(...scores) : Number.NEGATIVE_INFINITY;
+}
+
+/** Count of rendered measurements at or above their thresholds. */
+function passingDimensionCount(candidate) {
+  const audit = candidate?.renderedReferenceFidelity?.audit;
+  if (!audit || typeof audit !== "object") return 0;
+  let passing = 0;
+  for (const [key, value] of Object.entries(audit.scores || {})) {
+    const minimum = Number(RENDERED_REFERENCE_THRESHOLDS[key]);
+    const score = Number(value);
+    if (Number.isFinite(minimum) && Number.isFinite(score) && score >= minimum)
+      passing += 1;
+  }
+  const overall = Number(audit.overallScore);
+  if (
+    Number.isFinite(overall) &&
+    overall >= RENDERED_REFERENCE_THRESHOLDS.overall
+  )
+    passing += 1;
+  return passing;
+}
+
+/**
+ * Candidate states are compared by how many measurements pass first and by
+ * their weakest score second, so a state that fixes a dimension without
+ * dropping another is always preferred.
+ */
+function repairState(report, candidate) {
+  return {
+    metric: repairPriority(report, candidate?.candidateId),
+    passing: passingDimensionCount(candidate),
+  };
+}
+
+function isBetterState(next, existing) {
+  if (!existing) return true;
+  if (next.passing !== existing.passing) return next.passing > existing.passing;
+  return next.metric > existing.metric;
 }
 
 // The per-candidate repair budget is scarce, so the loop repairs the
@@ -375,15 +422,9 @@ async function readCandidate(candidateDir) {
     fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
     fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
     fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
-    fs
-      .readFile(path.join(candidateDir, "ServicePage.jsx"), "utf8")
-      .catch(() => ""),
-    fs
-      .readFile(path.join(candidateDir, "LocationPage.jsx"), "utf8")
-      .catch(() => ""),
-    fs
-      .readFile(path.join(candidateDir, "ServicesIndexPage.jsx"), "utf8")
-      .catch(() => ""),
+    fs.readFile(path.join(candidateDir, "ServicePage.jsx"), "utf8").catch(() => ""),
+    fs.readFile(path.join(candidateDir, "LocationPage.jsx"), "utf8").catch(() => ""),
+    fs.readFile(path.join(candidateDir, "ServicesIndexPage.jsx"), "utf8").catch(() => ""),
   ]);
   return {
     metadata,
@@ -685,6 +726,51 @@ async function validateCandidateReasoningBindings(
   return candidateCount;
 }
 
+const PALETTE_FINDING_PATTERN =
+  /\bpalette|\bcolou?r|\bsurface|\bcontrast|\bbrand[-\s]?band/iu;
+
+function repairFindingText(finding) {
+  if (typeof finding === "string") return finding;
+  return [
+    finding?.category,
+    finding?.message,
+    finding?.evidence,
+    finding?.recommendation,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
+ * A repair may only repaint the candidate when a finding actually asks for a
+ * palette, color, surface, or contrast change. The non-regression instruction
+ * names passing measurements (including paletteAdherence) and must not count
+ * as such an ask.
+ */
+export function findingsRequirePaletteChange(findings) {
+  return (findings || []).some((finding) => {
+    // Human repairs are already constrained by the resolved section scope.
+    // Do not make requested design changes depend on palette keywords.
+    if (finding?.category === "human-review-feedback") return true;
+    // A rejected response's diagnostic wording is not a new design request.
+    if (finding?.category === "repair-output-rejected") return false;
+    const text = repairFindingText(finding);
+    if (/already at their thresholds must not regress/iu.test(text)) return false;
+    return PALETTE_FINDING_PATTERN.test(text);
+  });
+}
+
+/** Sorted color literals used to detect an unprompted repaint. */
+export function colorLiterals(source) {
+  return [
+    ...String(source || "").matchAll(
+      /#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)|\b(?:oklch|oklab|lab|lch|color-mix)\([^)]*\)/giu,
+    ),
+  ]
+    .map((match) => match[0].replace(/\s+/gu, "").toLowerCase())
+    .sort();
+}
+
 /**
  * Validate and atomically persist one authored candidate repair.
  * @param {{candidateDir: string, findings: any[], screenshots: string[], comparisonScreenshots?: Array<{candidateId: string, viewport: string, path: string}>, model: string, creativeSession?: Record<string, any> | null}} options
@@ -756,6 +842,16 @@ export async function defaultRepairCandidate({
         content,
       ),
     };
+    if (!findingsRequirePaletteChange(findings)) {
+      const existing = new Set(colorLiterals(repaired.styles));
+      const removed = colorLiterals(files.styles).filter(
+        (value) => !existing.has(value),
+      );
+      if (removed.length)
+        throw new Error(
+          "Repair removed or replaced palette color declarations while no palette, surface, or contrast finding was failing. Restore the existing color values and change only what the failing findings require.",
+        );
+    }
     validated = validateProductionCandidateFiles({
       files: repaired,
       route: {
@@ -935,6 +1031,15 @@ export async function runRenderedCreativeRepair({
   const evidenceRoot = path.resolve(root, outDir);
   const cycleLimit = boundedCycles(maxCycles);
   const cycleUse = new Map();
+  // Contract rejections (an unapplicable edit, a broken marker, an invalid
+  // edit count) write nothing to the candidate, so they must not consume the
+  // candidate's applied-repair cycles. They are bounded separately.
+  const rejectionUse = new Map();
+  // Hill-climbing baseline: keep each candidate's best measured state so a
+  // regressing repair never becomes the base for the next repair, and the
+  // final selection can fall back to it.
+  const bestState = new Map();
+  let restoredFinalState = false;
   const history = [];
   const requestedMode = mode === "promote" ? "promote" : "preview";
   const frozenCreativeSession = creativeSession
@@ -978,8 +1083,9 @@ export async function runRenderedCreativeRepair({
     candidateDirectory,
     report,
   ) {
-    const used = cycleUse.get(candidateId) || 0;
-    if (used >= cycleLimit) return { status: "exhausted" };
+    const applied = cycleUse.get(candidateId) || 0;
+    if (applied >= cycleLimit) return { status: "exhausted" };
+    const rejections = rejectionUse.get(candidateId) || 0;
     const candidateDir = resolveCandidateDirectory(
       candidateRoot,
       candidateDirectory,
@@ -1009,11 +1115,9 @@ export async function runRenderedCreativeRepair({
     // A build failure can legitimately leave an ENOENT screenshot, but
     // permissions and I/O errors must fail closed instead of weakening evidence.
     const availableScreenshots = await collectAvailableScreenshots(screenshots);
-    let attempt = used;
     let activeFindings = findings;
     const attempts = [];
-    while (attempt < cycleLimit) {
-      attempt += 1;
+    for (;;) {
       try {
         await repairCandidateImpl({
           candidateDir,
@@ -1023,17 +1127,17 @@ export async function runRenderedCreativeRepair({
           comparisonScreenshots,
           model: resolvedModel,
           creativeSession: frozenCreativeSession,
-          cycle: attempt,
+          cycle: applied + 1,
           maxCycles: cycleLimit,
         });
-        cycleUse.set(candidateId, attempt);
+        cycleUse.set(candidateId, applied + 1);
         await persistRepairEvidence({
           outDir: evidenceRoot,
           round,
           candidateId,
           reason,
           findings: activeFindings,
-          cyclesUsed: attempt,
+          cyclesUsed: applied + 1,
           attempts,
         });
         return { status: "repaired", attempts };
@@ -1045,10 +1149,15 @@ export async function runRenderedCreativeRepair({
         if (!mayRetryRepairOutputRejection) throw error;
 
         const message = safeRepairRejectionMessage(error);
-        const status = attempt < cycleLimit ? "retrying" : "rejected";
-        attempts.push({ cycle: attempt, status, error: message });
-        cycleUse.set(candidateId, attempt);
-        if (attempt >= cycleLimit) {
+        const rejectionCount = rejections + attempts.length + 1;
+        rejectionUse.set(candidateId, rejectionCount);
+        const contractRetriesExhausted = rejectionCount >= cycleLimit;
+        attempts.push({
+          cycle: attempts.length + 1,
+          status: contractRetriesExhausted ? "rejected" : "retrying",
+          error: message,
+        });
+        if (contractRetriesExhausted) {
           excludedCandidateIds.add(candidateId);
           rejectedCandidates[candidateId] = message;
           await persistRepairEvidence({
@@ -1057,7 +1166,7 @@ export async function runRenderedCreativeRepair({
             candidateId,
             reason,
             findings: activeFindings,
-            cyclesUsed: attempt,
+            cyclesUsed: applied,
             status: "rejected",
             error: message,
             attempts,
@@ -1079,7 +1188,54 @@ export async function runRenderedCreativeRepair({
         ];
       }
     }
-    return { status: "exhausted" };
+  }
+
+  async function rememberBestState(report, round) {
+    for (const candidate of report?.candidates || []) {
+      const state = repairState(report, candidate);
+      // Only states judged by the rendered measurements are comparable as
+      // repair baselines. The candidate is failing in this branch, so even a
+      // state at the overall bar can still be the best available baseline.
+      if (
+        !Number.isFinite(
+          Number(candidate?.renderedReferenceFidelity?.audit?.overallScore),
+        )
+      )
+        continue;
+      const existing = bestState.get(candidate.candidateId);
+      if (!isBetterState(state, existing)) continue;
+      const directory = resolveCandidateDirectory(
+        candidateRoot,
+        candidate.directory,
+      );
+      const snapshotDir = path.join(
+        evidenceRoot,
+        "best",
+        candidate.candidateId,
+      );
+      await fs.rm(snapshotDir, { recursive: true, force: true });
+      await fs.cp(directory, snapshotDir, { recursive: true });
+      bestState.set(candidate.candidateId, {
+        ...state,
+        directory: candidate.directory,
+        snapshotDir,
+        screenshotsDir: path.join(
+          evidenceRoot,
+          `round-${String(round).padStart(2, "0")}`,
+          "screenshots",
+        ),
+        findings: candidateFindings(candidate),
+      });
+    }
+  }
+
+  async function restoreBestState(candidateId) {
+    const best = bestState.get(candidateId);
+    if (!best) return false;
+    const target = resolveCandidateDirectory(candidateRoot, best.directory);
+    await fs.rm(target, { recursive: true, force: true });
+    await fs.cp(best.snapshotDir, target, { recursive: true });
+    return true;
   }
 
   for (let round = 0; round < maxRounds; round += 1) {
@@ -1134,6 +1290,7 @@ export async function runRenderedCreativeRepair({
       rejectedCandidates: [],
     };
     history.push(record);
+    await rememberBestState(report, round);
 
     if (humanRepairPending && (report.candidates || []).length !== 1)
       throw new Error(
@@ -1170,11 +1327,32 @@ export async function runRenderedCreativeRepair({
             }))
             .filter((target) => target.candidate);
       const target = closestToPassingFirst(report, repairTargets)[0];
-      if (!target)
+      if (!target) {
+        // No candidate has repair budget left. Before giving up, put every
+        // candidate back to its best measured state and judge once more.
+        let restored = false;
+        for (const candidate of report.candidates || []) {
+          const best = bestState.get(candidate.candidateId);
+          if (
+            best &&
+            isBetterState(best, repairState(report, candidate)) &&
+            (await restoreBestState(candidate.candidateId))
+          )
+            restored = true;
+        }
+        if (restored && !restoredFinalState) {
+          restoredFinalState = true;
+          continue;
+        }
         throw new Error(
           `No authored creative candidate passed and the ${cycleLimit}-cycle repair budget is exhausted.`,
         );
+      }
 
+      const best = target.finding ? null : bestState.get(target.candidateId);
+      const regressed =
+        best && isBetterState(best, repairState(report, target.candidate));
+      if (regressed) await restoreBestState(target.candidateId);
       const diversity =
         previewDiversity?.pass === false
           ? previewDiversity
@@ -1187,7 +1365,9 @@ export async function runRenderedCreativeRepair({
       const findings = target.finding
         ? [target.finding]
         : [
-            ...candidateFindings(target.candidate),
+            ...(regressed
+              ? best.findings
+              : candidateFindings(target.candidate)),
             ...(diversityFinding ? [diversityFinding] : []),
             ...(humanRepairPending ? humanFindings : []),
           ];
@@ -1202,7 +1382,7 @@ export async function runRenderedCreativeRepair({
             ? "human-review-feedback"
             : "candidate-render-failure",
         round,
-        screenshotsDir,
+        regressed ? best.screenshotsDir : screenshotsDir,
         target.directory,
         report,
       );
