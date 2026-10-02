@@ -1446,9 +1446,8 @@ export default function OnboardingForm() {
           </label>
         </fieldset>
         <p className="form-note">
-          We&apos;ll use your main city and travel radius to research nearby
-          coverage areas. That does not automatically create a page for every
-          nearby town.
+          We&apos;ll use the places you confirm to plan your website&apos;s local
+          coverage. That does not automatically create a page for every town.
         </p>
       </section>
       <section
