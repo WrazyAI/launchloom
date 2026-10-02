@@ -71,13 +71,15 @@ describe("private onboarding invitations", () => {
     let dispatches = 0;
     let receiptAttempts = 0;
     const receiptKeys: Array<string | null> = [];
+    let savedIssueBody = "";
     network.use(
       http.get("https://api.github.com/repos/WrazyAI/launchloom/issues", () =>
         HttpResponse.json([]),
       ),
-      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", () =>
-        HttpResponse.json({ number: 981 }, { status: 201 }),
-      ),
+      http.post("https://api.github.com/repos/WrazyAI/launchloom/issues", async ({ request }) => {
+        savedIssueBody = String(((await request.json()) as { body?: string }).body || "");
+        return HttpResponse.json({ number: 981 }, { status: 201 });
+      }),
       http.post(
         "https://api.github.com/repos/WrazyAI/launchloom/dispatches",
         () => {
@@ -108,6 +110,10 @@ describe("private onboarding invitations", () => {
       email: "sam@example.test",
       phone: "555-0100",
       address: "1 Main Street, Tacoma, WA",
+      addressVisibility: "private",
+      hours: "Monday to Friday, 9 to 5",
+      researchLanguageCode: "ES",
+      excludedServices: "Septic pumping",
       industry: "home-services",
       services: ["Drain cleaning"],
       primaryCity: "Tacoma, WA",
@@ -130,6 +136,10 @@ describe("private onboarding invitations", () => {
 
     const accepted = await submit();
     expect(accepted.status).toBe(200);
+    expect(savedIssueBody).toContain('"addressVisibility": "private"');
+    expect(savedIssueBody).toContain('"researchLanguageCode": "es"');
+    expect(savedIssueBody).toContain('"hours": "Monday to Friday, 9 to 5"');
+    expect(savedIssueBody).toContain('"Septic pumping"');
     await expect(accepted.json()).resolves.toMatchObject({
       ok: true,
       issue: 981,

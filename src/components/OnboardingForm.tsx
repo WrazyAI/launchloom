@@ -1159,12 +1159,33 @@ export default function OnboardingForm() {
             <input required name="phone" placeholder="(555) 555-5555" />
           </label>
           <label className="field full">
-            Street address
+            Street address, if applicable
             <input
-              required
               name="address"
               placeholder="123 Main Street, City, ST 00000"
             />
+          </label>
+          <label className="field full">
+            Address visibility on your website
+            <select name="addressVisibility" defaultValue="public">
+              <option value="public">Show my business address</option>
+              <option value="private">Keep my address private</option>
+            </select>
+            <small>A private address stays in your brief and is omitted from website text, maps, and search data.</small>
+          </label>
+          <label className="field">
+            Business hours, if confirmed
+            <input name="hours" placeholder="Leave blank if not confirmed" />
+          </label>
+          <label className="field">
+            Customer search language
+            <select name="researchLanguageCode" defaultValue="en">
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="pt">Portuguese</option>
+            </select>
           </label>
           <label className="field">
             Current website, if replacing
@@ -1265,6 +1286,10 @@ export default function OnboardingForm() {
               </fieldset>
             )}
           </div>
+          <label className="field full">
+            Services you do not offer, if any
+            <textarea name="excludedServices" placeholder="One service per line" />
+          </label>
           <label className="field">
             What kind of business is this?
             <select required name="industry" defaultValue="">
@@ -1576,6 +1601,10 @@ export default function OnboardingForm() {
           <div>
             <dt>Business</dt>
             <dd>{draftValue("businessName")}</dd>
+          </div>
+          <div>
+            <dt>Address visibility</dt>
+            <dd>{draftRef.current.addressVisibility === "private" ? "Private: omitted from the website and maps" : "Public: shown on the website"}</dd>
           </div>
           <div>
             <dt>Core services</dt>

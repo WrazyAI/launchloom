@@ -19,6 +19,14 @@ stay outside deployed public assets. Visual review remains mandatory.
 
 ## Shared standard
 
+The canonical brief records fact status and provenance. Missing optional facts
+are omitted; unresolved contradictions and missing required contact/service
+facts block publication while a review preview remains available. A private
+business address stays in the protected operational brief and must not enter
+public copy, configuration, hydrated props, JSON-LD, maps, or directions links.
+Client confirmation records testimony, not independent credential verification.
+See `business-facts-contract.md` for the versioned contract and legacy migration.
+
 Every site should make four things clear near the top of the page: who the
 business helps, what it provides, where it operates when location matters, and
 what the visitor should do next. Use one primary action and one useful

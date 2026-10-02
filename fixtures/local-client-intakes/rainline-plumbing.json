@@ -29,5 +29,9 @@
   "confirmSeoResearch": "yes",
   "confirmAccuracy": "yes",
   "intakeVersion": "2",
-  "assets": {}
+  "assets": {},
+  "addressVisibility": "public",
+  "hours": "",
+  "researchLanguageCode": "en",
+  "excludedServices": ""
 }

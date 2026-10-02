@@ -5,6 +5,14 @@ import { seoResearchReadiness } from "../lib/seo-readiness.mjs";
 const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$/, "");
 const research = seoResearchReadiness(site);
 const publishReady = research.allowed;
+const factBlocked = !research.allowed && research.code === "business_facts_required";
+const factReport = site.factReadiness;
+const deferredFactCount = factReport?.facts.filter((fact) => fact.state === "missing-deferrable").length || 0;
+const factNotice = factReport ? [
+  ...(factReport.addressVisibility === "private" ? ["Business address is private and omitted from public pages and maps."] : []),
+  ...factReport.facts.filter((fact) => ["contradictory", "launch-blocking"].includes(fact.state)).map((fact) => fact.reason),
+  ...(deferredFactCount > 0 ? [`${deferredFactCount} optional business facts are deferred.`] : []),
+].join(" ") : "";
 const webResearchComplete = research.allowed && research.mode === "context-only";
 const cityResearch = site.seoResearch?.coverageResearch;
 const pendingCoverage = cityResearch && cityResearch.complete !== true;
@@ -25,6 +33,7 @@ const { diagnosticPreview = false } = Astro.props;
   <div class="ll-review__bar">
     <p class="ll-review__summary"><span aria-hidden="true">▣</span> Review this website</p>
     <p class="ll-review__research-notice" role="status" hidden></p>
+    <p class="ll-review__fact-notice" role="status" hidden></p>
     <p class="ll-review__field-notice" role="status" hidden></p>
     <div class="ll-review__actions">
       <button class="ll-approve" type="button" hidden>✓ Approve &amp; send to client</button>
@@ -609,7 +618,7 @@ const { diagnosticPreview = false } = Astro.props;
 
 </style>
 
-<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, pendingCoverage, completedCityCount, confirmedCityCount, palette }}>
+<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, pendingCoverage, completedCityCount, confirmedCityCount, factNotice, factBlocked, palette }}>
   const root = document.querySelector("#ll-review");
   const diagnosticPreview = root?.getAttribute("data-diagnostic-preview") === "true";
   const token = new URLSearchParams(window.location.search).get("review");
@@ -1611,6 +1620,11 @@ const { diagnosticPreview = false } = Astro.props;
         ? 'Quote the exact text and replacement, for example: Replace text "Same day service" with "Prompt scheduling".'
         : "Tell us what you would like changed. Bigger redesigns are handled separately.";
     approve.toggleAttribute("hidden", !developer);
+    const factNoticeElement = root.querySelector(".ll-review__fact-notice");
+    if (developer && factNotice && factNoticeElement) {
+      factNoticeElement.textContent = factNotice;
+      factNoticeElement.hidden = false;
+    }
     if (developer && webResearchComplete) {
       const researchNotice = root.querySelector(".ll-review__research-notice");
       researchNotice.hidden = false;
@@ -1629,7 +1643,7 @@ const { diagnosticPreview = false } = Astro.props;
       sendAnyway.removeAttribute("hidden");
       if (!publishReady) {
         sendAnyway.disabled = true;
-        sendAnyway.title = "SEO research is incomplete. Publishing remains blocked.";
+        sendAnyway.title = "Business facts or SEO research are incomplete. Publishing remains blocked.";
       }
       fetch(`${launchloomUrl}/api/creative-repair`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, action: "status", pageUrl: window.location.href }) })
         .then(async (response) => {
@@ -1639,8 +1653,8 @@ const { diagnosticPreview = false } = Astro.props;
           root.removeAttribute("hidden");
           if (!publishReady) {
             sendAnyway.disabled = true;
-            sendAnyway.title = "SEO research is incomplete. Publishing remains blocked.";
-            fieldNotice.textContent = "This preview missed the visual checks. SEO research is incomplete, so client release remains blocked.";
+            sendAnyway.title = "Business facts or SEO research are incomplete. Publishing remains blocked.";
+            fieldNotice.textContent = "This preview missed the visual checks. Business facts or SEO research are incomplete, so client release remains blocked.";
           } else if (["dispatching", "queued", "running"].includes(result.status) || (result.reviewQueue && result.reviewQueue !== "clear")) {
             open.disabled = true;
             sendAnyway.disabled = true;
@@ -1657,11 +1671,12 @@ const { diagnosticPreview = false } = Astro.props;
         })
         .catch(() => root.setAttribute("hidden", ""));
     } else if (developer && !publishReady) {
-      root.querySelector(".ll-review__summary").innerHTML =
-        "<span aria-hidden=\"true\">▣</span> Internal review. SEO research is incomplete, so publishing is blocked.";
+      root.querySelector(".ll-review__summary").textContent = factBlocked
+        ? "Internal review. Business facts need confirmation, so publishing is blocked."
+        : "Internal review. SEO research is incomplete, so publishing is blocked.";
       approve.disabled = true;
-      approve.textContent = "SEO research required";
-      approve.title = "Rerun the intake after SEO research succeeds.";
+      approve.textContent = factBlocked ? "Business facts required" : "SEO research required";
+      approve.title = factBlocked ? "Resolve the missing or contradictory facts in the client brief." : "Rerun the intake after SEO research succeeds.";
     }
     const setModal = (visible) => {
       modal.toggleAttribute("hidden", !visible);

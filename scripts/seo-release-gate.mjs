@@ -1,3 +1,4 @@
+import { businessFactReadiness } from "../templates/client-site/src/lib/business-facts.mjs";
 import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -48,6 +49,11 @@ const textWords = (html) =>
 
 export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
   const failures = [];
+  const facts = businessFactReadiness(config);
+  if (mode === "production" && !facts.allowed) failures.push(facts.error);
+  if (config.business?.addressVisibility === "private" &&
+      [config.business.address, config.business.placeId, config.business.googleMapsUrl].some(Boolean))
+    failures.push("Private location fields remain in the public site configuration.");
   if (!["review", "production"].includes(mode))
     return ["SEO release mode must be review or production."];
   const originUrl = mode === "production" ? new URL(origin) : null;

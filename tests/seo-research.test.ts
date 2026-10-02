@@ -70,6 +70,26 @@ function researchProvider(options: { searchVolumeCost?: number; serpFailure?: bo
 }
 
 describe("SEO market map", () => {
+  it("retains an explicit research language through every relevant provider request", async () => {
+    const provider = researchProvider();
+    const dossier = await researchSiteContext({ ...intake, researchLanguageCode: "es" }, { dataForSeo: provider, maxUsd: 0.5 });
+    expect(dossier.languageCode).toBe("es");
+    for (const request of [provider.googleSearchVolume, provider.bulkKeywordDifficulty, provider.organicSerp, provider.relatedKeywords, provider.rankedKeywords])
+      for (const [payload] of request.mock.calls) expect(payload).toMatchObject({ languageCode: "es" });
+  });
+
+  it("does not append the primary city to a service query that already contains it", async () => {
+    const provider = researchProvider();
+    await researchSiteContext({ ...intake, services: "Drain cleaning Tacoma WA", website: "" }, { dataForSeo: provider });
+    expect(provider.organicSerp.mock.calls[0][0].keyword).toBe("Drain cleaning Tacoma WA");
+  });
+
+  it("keeps empty successful measured responses incomplete", async () => {
+    const empty = async () => ({ cost: 0, keywords: [], results: [] });
+    const dossier = await researchSiteContext(intake, { dataForSeo: { googleSearchVolume: empty, searchIntent: empty, bulkKeywordDifficulty: empty, organicSerp: empty, relatedKeywords: empty, rankedKeywords: empty } });
+    expect(dossier.mode).toBe("context-only");
+    expect(dossier.publishReady).toBe(false);
+  });
   it("normalizes client-confirmed service and city facts without treating them as measured metrics", () => {
     expect(normaliseSeoIntake(intake)).toMatchObject({
       services: ["Drain cleaning", "Water heater repair"],
@@ -306,6 +326,7 @@ describe("SEO market map", () => {
     expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual([{
       keywords: ["drain cleaning tacoma"],
       location_name: "Tacoma,Washington,United States",
+      language_code: "en",
     }]);
   });
 
@@ -812,7 +833,7 @@ it("stops further measured city calls when the primary provider task has unrepor
 
 
 it("keeps primary approval and pending coverage visible through the canonical brief and generated config", async () => {
-  const selected={...intake,website:"",coverageAreas:["Tacoma, WA","Lakewood, WA"],coverageConfirmation:{status:"confirmed",primaryCity:"Tacoma, WA",radiusSelection:"20",selectedCount:1}};
+  const selected={...intake,phone:"555-0100",email:"owner@example.test",leadEmail:"leads@example.test",website:"",coverageAreas:["Tacoma, WA","Lakewood, WA"],coverageConfirmation:{status:"confirmed",primaryCity:"Tacoma, WA",radiusSelection:"20",selectedCount:1}};
   const provider=researchProvider();
   const research=await researchSiteContext(selected,{dataForSeo:provider,maxTasks:7,maxUsd:0.25});
   expect(research.coverageResearch!.complete).toBe(false);

@@ -1,3 +1,4 @@
+import { publicBusiness } from "./business-facts.mjs";
 import type {
   DesignTypography,
   PageRecipe,
@@ -752,6 +753,7 @@ function validate(program: ExperienceBlueprintV2) {
 }
 
 function contentFor(site: SiteConfig): ExperienceContent {
+  site = { ...site, business: publicBusiness(site.business) };
   const copy = site.copy || {};
   const socialProofPoints = (site.socialProof?.points || []).filter(Boolean);
   const fallbackProofPoints = (site.socialProof?.fallback?.points || []).filter(
