@@ -1,3 +1,6 @@
+import { compileCanonicalSiteBrief } from "../scripts/compile-canonical-site-brief.mjs";
+import { normalise } from "../scripts/generate-site-config.mjs";
+import { seoResearchReadiness } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import { describe, expect, it, vi } from "vitest";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
@@ -25,7 +28,7 @@ const intake = {
 
 function researchProvider(options: { searchVolumeCost?: number; serpFailure?: boolean } = {}) {
   type SearchVolumeResponse = { cost?: number; keywords: Array<{ keyword: string; searchVolume: number | null; cpc: number | null; competition: number | null }> };
-  const googleSearchVolume = vi.fn(async ({ keywords }: { keywords: string[] }): Promise<SearchVolumeResponse> => ({
+  const googleSearchVolume = vi.fn(async ({ keywords }: { keywords: string[]; locationName?: string }): Promise<SearchVolumeResponse> => ({
     cost: options.searchVolumeCost ?? 0.04,
     keywords: keywords.map((keyword) => ({
       keyword,
@@ -757,4 +760,68 @@ it("maps real Google Ads competition indexes without inventing values from categ
     locationName: "Austin,Texas,United States",
   });
   expect(result.keywords.map(item => item.competition)).toEqual([0.14, 0, null]);
+});
+
+
+it("researches only explicitly confirmed cities with city-specific metrics and a shared budget", async () => {
+  const provider = researchProvider();
+  const confirmed = { ...intake, website: "", primaryCity: "Cookeville, TN", serviceAreas: "Cookeville, TN; Baxter, TN", coverageAreas: ["Cookeville, TN", "Algood, TN"], serviceRadius: "10", coverageConfirmation: { status: "confirmed", primaryCity: "Cookeville, TN", radiusSelection: "10", selectedCount: 1 } };
+  const dossier = await researchSiteContext(confirmed, { dataForSeo: provider, maxTasks: 32, maxUsd: 2 });
+  expect(dossier.coverageAreas).toEqual(["Cookeville, TN", "Algood, TN"]);
+  expect(provider.googleSearchVolume.mock.calls.map(([args]) => args.locationName)).toEqual(["Cookeville,Tennessee,United States", "Algood,Tennessee,United States"]);
+  expect(dossier.coverageResearch!.cities.map(item => item.city)).toEqual(confirmed.coverageAreas);
+  expect(dossier.coverageResearch!.complete).toBe(true);
+  expect(dossier.cost.tasks).toBeLessThanOrEqual(32);
+  expect(JSON.stringify(dossier)).not.toContain("Baxter");
+});
+
+it("keeps every confirmed city planned and blocks readiness when the shared budget cannot research them", async () => {
+  const provider = researchProvider();
+  const areas = ["Tacoma, WA", ...Array.from({length: 24}, (_, i) => `Town ${i}, WA`)];
+  const dossier = await researchSiteContext({ ...intake, website: "", coverageAreas: areas, coverageConfirmation: { status: "confirmed", primaryCity: "Tacoma, WA", radiusSelection: "20", selectedCount: 24 } }, { dataForSeo: provider, maxTasks: 1, maxUsd: 0.25 });
+  expect(dossier.coverageAreas).toEqual(areas);
+  expect(dossier.coverageResearch!.cities).toHaveLength(25);
+  expect(dossier.coverageResearch!.complete).toBe(false);
+  expect(dossier.publishReady).toBe(false);
+  expect(provider.googleSearchVolume).toHaveBeenCalledTimes(1);
+  expect(dossier.cost.tasks).toBe(1);
+});
+
+
+it("shares fallback query and USD caps across confirmed cities instead of multiplying them", async () => {
+  const search = vi.fn(async ({ query }: {query: string}) => ({costUsd: 0.002, results:[{url:"https://evidence.test/local", title:query, snippet:"Cited local service observation"}]}));
+  const dossier = await researchSiteContext({ ...intake, website:"", coverageAreas:["Tacoma, WA","Lakewood, WA","Puyallup, WA"], coverageConfirmation:{status:"confirmed",primaryCity:"Tacoma, WA",radiusSelection:"20",selectedCount:2} }, {webSearch:{search},maxFallbackSearchQueries:3,maxFallbackUsd:0.05});
+  expect(search).toHaveBeenCalledTimes(3);
+  expect(dossier.coverageResearch!.fallbackQueries).toBe(3);
+  expect(dossier.coverageResearch!.fallbackCostUsd).toBe(0.006);
+  expect(dossier.coverageResearch!.cities.slice(1).map(item=>item.status)).toEqual(["pending","pending"]);
+  expect(dossier.publishReady).toBe(true);
+  expect(dossier.coverageResearch!.complete).toBe(false);
+  expect(dossier.coverageResearch!.approvalPolicy).toBe("primary-city");
+});
+
+it("stops further measured city calls when the primary provider task has unreported spend", async () => {
+  const provider = researchProvider();
+  provider.googleSearchVolume.mockImplementation(async ({keywords})=>({keywords:keywords.map(keyword=>({keyword,searchVolume:20,cpc:1,competition:0.2}))}));
+  const dossier = await researchSiteContext({...intake,website:"",coverageAreas:["Tacoma, WA","Lakewood, WA"],coverageConfirmation:{status:"confirmed",primaryCity:"Tacoma, WA",radiusSelection:"20",selectedCount:1}}, {dataForSeo:provider,maxUsd:2,maxTasks:32});
+  expect(provider.googleSearchVolume).toHaveBeenCalledTimes(1);
+  expect(provider.organicSerp).not.toHaveBeenCalled();
+  expect(dossier.cost.complete).toBe(false);
+  expect(dossier.coverageResearch!.cities[1].status).toBe("pending");
+});
+
+
+it("keeps primary approval and pending coverage visible through the canonical brief and generated config", async () => {
+  const selected={...intake,website:"",coverageAreas:["Tacoma, WA","Lakewood, WA"],coverageConfirmation:{status:"confirmed",primaryCity:"Tacoma, WA",radiusSelection:"20",selectedCount:1}};
+  const provider=researchProvider();
+  const research=await researchSiteContext(selected,{dataForSeo:provider,maxTasks:7,maxUsd:0.25});
+  expect(research.coverageResearch!.complete).toBe(false);
+  expect(research.publishReady).toBe(true);
+  const brief=compileCanonicalSiteBrief({intake:selected,enrichment:{coverageAreas:["Tacoma, WA","Seattle, WA"]},research});
+  const config=normalise({},brief);
+  expect(config.business.serviceAreas).toEqual(selected.coverageAreas);
+  expect(config.seoResearch.coverageResearch.cities[1].status).toBe("pending");
+  expect(seoResearchReadiness(config).allowed).toBe(true);
+  expect(seoResearchReadiness({...config,locations:[{name:"Unmapped city",slug:"unmapped"}]}).allowed).toBe(false);
+  expect(seoResearchReadiness({...config,seoResearch:{...config.seoResearch,completeness:{...config.seoResearch.completeness,keywordOverview:false}}}).allowed).toBe(false);
 });

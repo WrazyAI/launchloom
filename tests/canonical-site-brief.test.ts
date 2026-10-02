@@ -250,3 +250,15 @@ describe("canonical site brief compilation", () => {
     ]));
   });
 });
+
+
+it("does not re-add excluded cities to a confirmed coverage list or location pages", () => {
+  const brief = compileCanonicalSiteBrief({
+    intake: { intakeVersion: "2", services: "Drain cleaning", primaryCity: "Cookeville, TN", serviceRadius: "10", coverageAreas: ["Cookeville, TN", "Algood, TN"], coverageConfirmation: { status: "confirmed", primaryCity: "Cookeville, TN", radiusSelection: "10", selectedCount: 1 } },
+    enrichment: { coverageAreas: ["Cookeville, TN", "Baxter, TN"] },
+    research: { pageMap: [{ id: "location:baxter", pageType: "location", location: "Baxter, TN", evidence: [{type:"serp"}], localFacts: [{value:"Client serves Baxter", provenance:"client_confirmed_coverage"}] }] },
+  });
+  expect(brief.coverageAreas).toEqual(["Cookeville, TN", "Algood, TN"]);
+  expect(brief.pageMap).toEqual([]);
+  expect(brief.businessTruth.coverageAreas[1].provenance).toBe("client_confirmed_coverage");
+});

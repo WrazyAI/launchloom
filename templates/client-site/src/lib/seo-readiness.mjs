@@ -5,6 +5,43 @@ export function seoResearchReadiness(config) {
   const research = config.seoResearch;
   if (!research || typeof research !== "object")
     return { allowed: true, mode: "legacy" };
+  // New confirmed-city dossiers must prove readiness for every selected city.
+  // Preserve the original policy for older single-city dossiers.
+  if (research.coverageResearch !== undefined ||
+      (research.coverageConfirmation?.status === "confirmed" && research.coverageConfirmation.selectedCount > 0)) {
+    const coverage = research.coverageResearch;
+    const areas = research.coverageAreas;
+    const cities = coverage?.cities;
+    const requireAll = coverage?.approvalPolicy === "all-confirmed-cities";
+    const valid = research.version === 2 && ["researched", "context-only"].includes(research.mode) &&
+      research.publishReady === true && coverage?.version === 1 &&
+      ["primary-city", "all-confirmed-cities"].includes(coverage.approvalPolicy) &&
+      Array.isArray(areas) && areas.length > 1 && areas.length <= 251 &&
+      areas.every(city => typeof city === "string" && city.trim()) && new Set(areas).size === areas.length && Array.isArray(coverage.areas) &&
+      coverage.areas.length === areas.length && coverage.areas.every((city, index) => city === areas[index]) &&
+      Array.isArray(cities) && cities.length === areas.length &&
+      cities.every((entry, index) => entry && typeof entry === "object" && entry.city === areas[index] && ["complete", "partial", "pending"].includes(entry.status)) &&
+      coverage.complete === cities.every(entry => entry.status === "complete") &&
+      cities[0].status === "complete" &&
+      (!requireAll || coverage.complete === true) &&
+      (research.mode !== "researched" || (research.cost?.complete === true && research.cost.overBudget !== true)) &&
+      cities.filter((entry, index) => requireAll || index === 0 || entry.status === "complete").every(entry =>
+        entry.research && entry.research.coverageResearch === undefined &&
+        entry.research.marketSnapshot?.primaryCity === entry.city &&
+        seoResearchReadiness({ ...config, locations: entry.city === areas[0] ? config.locations : [], seoResearch: entry.research }).allowed);
+    // Retain the original top-level release checks as well as city provenance.
+    // Nested proof must not bypass the actual site's page map or spend checks.
+    const primaryPolicyReady = research.mode === "researched"
+      ? hasCompleteVersionTwoMap(config, research)
+      : hasCompletedFallbackResearch(research);
+    return valid && primaryPolicyReady ? { allowed: true, mode: research.mode } : {
+      allowed: false,
+      mode: "context-only",
+      code: "seo_research_required",
+      error: "Required local research is incomplete. The preview remains available, but publishing is blocked until research succeeds.",
+    };
+  }
+
   const { version, mode, publishReady } = research;
   const schemaVersion = version === undefined ? 1 : Number(version);
   if (!Number.isFinite(schemaVersion) || schemaVersion < 1 || schemaVersion > 2)

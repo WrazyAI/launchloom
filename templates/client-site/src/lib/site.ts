@@ -320,6 +320,20 @@ export type SiteConfig = {
     blogOpportunities?: Array<Record<string, unknown>>;
     quickWins?: Array<Record<string, unknown>>;
     marketSnapshot?: Record<string, unknown>;
+    coverageAreas?: string[];
+    coverageConfirmation?: Record<string, unknown>;
+    coverageResearch?: {
+      version: number;
+      areas: string[];
+      complete: boolean;
+      approvalPolicy: "primary-city" | "all-confirmed-cities";
+      cities: Array<{
+        city: string;
+        status: "complete" | "partial" | "pending";
+        research: Record<string, unknown> | null;
+        reason?: string;
+      }>;
+    };
     completeness?: Record<string, unknown>;
     fallbackSearch?: Record<string, unknown>;
     externalSearchEvidence?: Array<Record<string, unknown>>;

@@ -1,3 +1,4 @@
+import { confirmedCoverageFromIntake } from "./confirmed-coverage.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -49,6 +50,8 @@ function confirmedPageMap(research, services, coverageAreas) {
 
 /** @returns {{ type: string, version: number, legacy: boolean, pageMap: Array<Record<string, any>>, seoResearch: { pageMap: Array<Record<string, any>>, publishReady?: boolean, [key: string]: any }, businessTruth: { services: Array<{ value: string, provenance: string }>, [key: string]: any }, coverage: Record<string, any>, coverageAreas: string[], services: string[], primaryCity: string, [key: string]: any }} */
 export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, research = {} }) {
+  const confirmedCoverage = confirmedCoverageFromIntake(intake);
+  const coverageLimit = confirmedCoverage ? 251 : 20;
   const legacy = text(intake.intakeVersion, 10) !== "2";
   const allConfirmedServices = values(intake.confirmedServices || intake.services, 100, legacy);
   const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
@@ -65,7 +68,7 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
   const unsupportedRadiusWarning = submittedRadius && serviceRadius === null
     ? "The submitted travel radius is not supported; only explicitly confirmed coverage areas are retained."
     : "";
-  const enrichmentAreas = unsupportedRadiusWarning
+  const enrichmentAreas = unsupportedRadiusWarning || confirmedCoverage
     ? []
     : values(enrichment.coverageAreas, 20);
   const clientConfirmedAreas = parseServiceAreas(
@@ -74,13 +77,14 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
         ? intake.coverageAreas
         : intake.serviceAreas
       : intake.coverageAreas || intake.serviceAreas,
+    { limit: coverageLimit },
   );
   const clientAreaKeys = new Set(
     [...clientConfirmedAreas, rawPrimaryCity].map(cityKey),
   );
   const suppliedAreas = [
     ...new Set([...clientConfirmedAreas, ...enrichmentAreas]),
-  ].slice(0, 20);
+  ].slice(0, coverageLimit);
   const coverageAreas = rawPrimaryCity
     ? [rawPrimaryCity, ...suppliedAreas.filter((area) => cityKey(area) !== cityKey(rawPrimaryCity))]
     : suppliedAreas;
@@ -148,13 +152,14 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
     businessTruth,
     pageMap,
     seoResearch,
+    coverageConfirmation: confirmedCoverage?.coverageConfirmation || null,
     coverage: {
       primaryCity,
       serviceRadius,
       coverageAreas,
       evidence: unsupportedRadiusWarning
         ? { source: primaryCity ? "client_confirmed_primary_city" : "unavailable", lookups: 0 }
-        : enrichment.coverageEvidence || { source: primaryCity ? "client_confirmed_primary_city" : "unavailable", lookups: 0 },
+        : confirmedCoverage?.coverageEvidence || enrichment.coverageEvidence || { source: primaryCity ? "client_confirmed_primary_city" : "unavailable", lookups: 0 },
       warnings: [...new Set([
         ...(Array.isArray(enrichment.warnings) ? enrichment.warnings : []),
         ...(unsupportedRadiusWarning ? [unsupportedRadiusWarning] : []),

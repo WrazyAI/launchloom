@@ -1,0 +1,21 @@
+name: Verify coverage city provider
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: launchloom-coverage-provider-verification
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Verify bounded real city lookup for supported radii
+        env:
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+        run: node --experimental-strip-types scripts/verify-coverage-provider.mjs
