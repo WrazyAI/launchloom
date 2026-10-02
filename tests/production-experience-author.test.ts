@@ -496,6 +496,8 @@ export default function Experience`,
     });
     expect(() => validate(guarded)).not.toThrow();
     expect(() => validate(guarded, "/images/client-logo.svg")).not.toThrow();
+    expect(() => validate(guarded, " ")).toThrow(/safe local or LaunchLoom-hosted/iu);
+    expect(() => validate(guarded, true as any)).toThrow(/safe local or LaunchLoom-hosted/iu);
     expect(() => validate(guarded, "https://unapproved.test/logo.webp")).toThrow(/safe local or LaunchLoom-hosted/iu);
     const unguarded = guarded.replace(guard, '<img src={content.brand.logo} alt="" />');
     expect(() => validate(unguarded)).toThrow(/conditionally render/iu);

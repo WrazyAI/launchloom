@@ -1610,13 +1610,16 @@ function validateAuthoredUrlAttributes(source, route, content) {
           );
         const value = resolvedImageValue(property, content);
         const imagePath = expressionPath(expression, file);
+        const tokenValue = resolveSealedImageExpression(expression, content);
+        const tokenIsFalsy = tokenValue.resolved && !tokenValue.value;
         if (
           !value &&
+          tokenIsFalsy &&
           optionalSealedImagePaths.has(imagePath) &&
           isGuardedOptionalImage(node, expression, file)
         )
           continue;
-        if (!value && optionalSealedImagePaths.has(imagePath))
+        if (!value && tokenIsFalsy && optionalSealedImagePaths.has(imagePath))
           throw new Error(
             `Candidate ${route.id} optional image token ${imagePath} may be empty; conditionally render the image only when that same sealed token is truthy.`,
           );

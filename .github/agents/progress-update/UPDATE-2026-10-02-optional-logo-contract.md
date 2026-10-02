@@ -23,3 +23,16 @@
 
 - Full suite45346 completed with 1,100 passing application tests across81 files on original base556483a. Focused138 passed; Worker91/typecheck and root/client Astro checks/builds passed. CodeRabbit review completed with zero findings.
 - Commit the coherent one-line optional-token fix and its regression/ledger before reconciling newer main40207cc (including shipped PR125 diagnostics). Re-run the affected authoring/recovery/fidelity tests on the combined state and obtain immutable-head cloud CI before merge. No source URL allowlist or visual gate changes.
+
+## 14:33 UTC - Final optional-value safety checks and durable verification
+
+- Integrated main40207cc without conflicts in ab673ec. Added regressions rejecting whitespace and truthy non-string logo values; the whitespace regression failed before the tightening. A guarded token now qualifies for optional absence only when its actual resolved value is falsy. Safe URL rules and same-token guard proof remain mandatory.
+- Combined authoring/output/fidelity/failure-evidence/recovery suites passed159 tests. Final CodeRabbit tightening review88445 completed with zero findings. Earlier Worker91/typecheck and root/client Astro checks/builds passed; no Worker or template code changed in this tightening.
+- The subsequent full-suite process33684 lost its terminal handle/result during the session interruption. No pass is claimed for that run. Fresh final-state full suite12790 is running with both default and JSON reporters, retaining the result at /tmp/launchloom-optional-logo-final-vitest.json. Do not restart it while active.
+- Nifty r35o472LSr freshly read back as open. Latest remote main remains40207cc. No task-branch push, merge, deployment or paid canary has occurred for this optional-logo work yet. Painting issue92 has no completed-generation handoff marker; its next controlled run can request fresh authorship with preview_only=true and reuse_authored_candidates=false.
+
+## 14:35 UTC - Fresh focused verification before PR
+
+- Fresh Vitest run87828 passed185 tests across five matching author/output/source-fidelity/rendered-fidelity/failure-evidence suites in13.69 seconds. Full final-state suite12790 remains running, so its outcome is still pending. git diff --check is clean.
+- Detected independently dispatched cloud generation37020176870 on old convergence branch codex/launchloom-creative-pipeline-fix at1bf0f0d, currently authoring. Do not cancel or duplicate another agent's paid run; its result is separate from this current-main-based patch. No broad E2E success is claimed.
+- Commit the bounded falsy-value guard and ledger, then push for immutable-head CI. Keep merge and scoped task completion gated on full validation. No unsafe source allowances or promotion-gate changes.
