@@ -822,4 +822,6 @@ it("keeps primary approval and pending coverage visible through the canonical br
   expect(config.business.serviceAreas).toEqual(selected.coverageAreas);
   expect(config.seoResearch.coverageResearch.cities[1].status).toBe("pending");
   expect(seoResearchReadiness(config).allowed).toBe(true);
+  expect(seoResearchReadiness({...config,locations:[{name:"Unmapped city",slug:"unmapped"}]}).allowed).toBe(false);
+  expect(seoResearchReadiness({...config,seoResearch:{...config.seoResearch,completeness:{...config.seoResearch.completeness,keywordOverview:false}}}).allowed).toBe(false);
 });

@@ -17,10 +17,10 @@ export function seoResearchReadiness(config) {
       research.publishReady === true && coverage?.version === 1 &&
       ["primary-city", "all-confirmed-cities"].includes(coverage.approvalPolicy) &&
       Array.isArray(areas) && areas.length > 1 && areas.length <= 251 &&
-      new Set(areas).size === areas.length && Array.isArray(coverage.areas) &&
+      areas.every(city => typeof city === "string" && city.trim()) && new Set(areas).size === areas.length && Array.isArray(coverage.areas) &&
       coverage.areas.length === areas.length && coverage.areas.every((city, index) => city === areas[index]) &&
       Array.isArray(cities) && cities.length === areas.length &&
-      cities.every((entry, index) => entry.city === areas[index] && ["complete", "partial", "pending"].includes(entry.status)) &&
+      cities.every((entry, index) => entry && typeof entry === "object" && entry.city === areas[index] && ["complete", "partial", "pending"].includes(entry.status)) &&
       coverage.complete === cities.every(entry => entry.status === "complete") &&
       cities[0].status === "complete" &&
       (!requireAll || coverage.complete === true) &&
@@ -28,8 +28,13 @@ export function seoResearchReadiness(config) {
       cities.filter((entry, index) => requireAll || index === 0 || entry.status === "complete").every(entry =>
         entry.research && entry.research.coverageResearch === undefined &&
         entry.research.marketSnapshot?.primaryCity === entry.city &&
-        seoResearchReadiness({ ...config, locations: [], seoResearch: entry.research }).allowed);
-    return valid ? { allowed: true, mode: research.mode } : {
+        seoResearchReadiness({ ...config, locations: entry.city === areas[0] ? config.locations : [], seoResearch: entry.research }).allowed);
+    // Retain the original top-level release checks as well as city provenance.
+    // Nested proof must not bypass the actual site's page map or spend checks.
+    const primaryPolicyReady = research.mode === "researched"
+      ? hasCompleteVersionTwoMap(config, research)
+      : hasCompletedFallbackResearch(research);
+    return valid && primaryPolicyReady ? { allowed: true, mode: research.mode } : {
       allowed: false,
       mode: "context-only",
       code: "seo_research_required",

@@ -136,5 +136,6 @@ invalid.
 
 Confirmed coverage now reaches generation through the canonical-confirmation
 reader. Enrichment cannot re-add unselected cities. Per-city SEO results share
-the configured research budget, and pending cities block approval. See
+the configured research budget. Existing primary-city approval rules remain in
+place, and pending secondary-city research is disclosed in the review banner. See
 `docs/seo-research-mvp.md` for the integrated evidence and readiness contract.

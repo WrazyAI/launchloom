@@ -200,6 +200,7 @@ Integration resolution: `confirmedCoverageFromIntake` validates the canonical
 Worker-persisted selection; `applyCoverageEnrichment` preserves it in the SEO
 CLI; the coverage CLI avoids rediscovery for confirmed intakes; canonical brief
 compilation excludes suggestions when a confirmation exists. Multi-city research
-uses a shared budget and the Worker/template readiness validator checks every
-city's evidence. See `docs/seo-research-mvp.md`. The original seam descriptions
+uses a shared budget and the Worker/template readiness validator preserves
+primary-city approval rules while checking any city claimed complete. Pending
+secondary-city research is disclosed rather than silently marked complete. See `docs/seo-research-mvp.md`. The original seam descriptions
 above are retained as historical context for the incoming branch.

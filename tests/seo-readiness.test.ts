@@ -197,6 +197,7 @@ it("requires completed research for every confirmed city even when the primary f
   expect(seoResearchReadiness({ seoResearch: research }).allowed).toBe(true);
   for (const coverageResearch of [
     { ...research.coverageResearch, complete: false },
+    { ...research.coverageResearch, cities: [null, null] },
     { ...research.coverageResearch, cities: research.coverageResearch.cities.slice(0, 1) },
     { ...research.coverageResearch, cities: [research.coverageResearch.cities[0], { city: areas[1], status: "pending", research: null }] },
     { ...research.coverageResearch, cities: [research.coverageResearch.cities[0], { city: areas[1], status: "complete", research: { ...cityResearch(areas[1]), fallbackSearch: { ...fallback.fallbackSearch, status: "failed" } } }] },
