@@ -396,3 +396,9 @@ describe("coverage selection contract", () => {
     expect(BOUNDED_50_PLUS_WARNING).toMatch(/bounded 50-mile/u);
   });
 });
+
+
+it("keeps the resolved country fallback in signed primary-city labels without a state", () => {
+  const reference = createCoverageReferencePayload({inviteId:"invite-test",primary:{name:"Singapore",state:"",country:"SG",placeId:"singapore"},radiusSelection:"10",radiusMiles:10,candidates:[],truncated:false,partial:false,issuedAt:100000});
+  expect(reference.pc).toBe("Singapore, SG");
+});

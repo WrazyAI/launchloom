@@ -202,3 +202,8 @@ it("requires completed research for every confirmed city even when the primary f
     { ...research.coverageResearch, cities: [research.coverageResearch.cities[0], { city: areas[1], status: "complete", research: { ...cityResearch(areas[1]), fallbackSearch: { ...fallback.fallbackSearch, status: "failed" } } }] },
   ]) expect(seoResearchReadiness({ seoResearch: { ...research, coverageResearch } }).allowed).toBe(false);
 });
+
+
+it("blocks a confirmed multi-city dossier whose per-city evidence was stripped", () => {
+  expect(seoResearchReadiness({seoResearch:{...fallback,publishReady:true,coverageAreas:["Cookeville, TN","Algood, TN"],coverageConfirmation:{status:"confirmed",selectedCount:1}}}).allowed).toBe(false);
+});

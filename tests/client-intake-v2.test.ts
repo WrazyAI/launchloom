@@ -341,3 +341,10 @@ describe("ClientIntakeV2 normalization", () => {
     })).toThrow(/city and a supported travel radius/u);
   });
 });
+
+
+it("preserves more than 30 newline-joined confirmed city labels before per-entry cleanup", () => {
+  const areas = ["Cookeville, TN", ...Array.from({length: 35}, (_, i) => `Confirmed Municipality ${i}, TN`)];
+  const normalized = normalizeClientIntake({ ...required, intakeVersion:"2", industry:"home-services", services:"Drain cleaning", primaryCity:"Cookeville, TN",serviceRadius:"10", coverageAreas:areas.join("\n"),coverageSelection:JSON.stringify({status:"confirmed",reference:"signed-test-reference",selectedIds:areas.slice(1).map((_,i)=>`city-${i}`)}),confirmAccuracy:"yes" });
+  expect(normalized.coverageAreas).toEqual(areas);
+});

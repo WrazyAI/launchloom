@@ -184,14 +184,21 @@ export function resolvePrimaryCityFromGeocode(
   if (!resolutions.length) return { code: "unresolved_city" };
   const top = resolutions[0];
   const normalizedQuery = query.toLocaleLowerCase();
+  const namesRegion = (name: string) => {
+    const words = name.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) || [];
+    const queryWords = normalizedQuery.match(/[\p{L}\p{N}]+/gu) || [];
+    return words.length > 0 && queryWords.some((_, index) =>
+      words.every((word, offset) => queryWords[index + offset] === word),
+    );
+  };
   const namesState =
     Boolean(top.state) &&
-    (normalizedQuery.includes(top.state.toLocaleLowerCase()) ||
-      (top.stateLong ? normalizedQuery.includes(top.stateLong.toLocaleLowerCase()) : false));
+    (namesRegion(top.state) ||
+      (top.stateLong ? namesRegion(top.stateLong) : false));
   const namesCountry =
     Boolean(top.countryLong) &&
-    (normalizedQuery.includes(top.country.toLocaleLowerCase()) ||
-      normalizedQuery.includes(top.countryLong.toLocaleLowerCase()));
+    (namesRegion(top.country) ||
+      namesRegion(top.countryLong));
   const otherStates = new Set(
     resolutions
       .slice(1)

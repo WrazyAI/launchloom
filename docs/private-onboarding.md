@@ -133,3 +133,8 @@ variables. The onboarding route is `noindex, nofollow`; public navigation does
 not link to it. The Worker denies validation, upload, and intake requests when
 the invite, origin, expiry, email binding, or persistent invite state is
 invalid.
+
+Confirmed coverage now reaches generation through the canonical-confirmation
+reader. Enrichment cannot re-add unselected cities. Per-city SEO results share
+the configured research budget, and pending cities block approval. See
+`docs/seo-research-mvp.md` for the integrated evidence and readiness contract.

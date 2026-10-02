@@ -191,7 +191,7 @@ export function normalizeClientIntake(raw) {
     if (!affirmative(raw.confirmAccuracy))
       throw new Error("Confirm the business details and files before submitting.");
     coverageSelection = parseCoverageSelection(raw.coverageSelection);
-    const submittedAreas = list(raw.coverageAreas, MAX_COVERAGE_CANDIDATES + 1);
+    const submittedAreas = list(typeof raw.coverageAreas === "string" ? raw.coverageAreas.split(/\r?\n/u) : raw.coverageAreas, MAX_COVERAGE_CANDIDATES + 1);
     if (coverageSelection?.status === "confirmed") {
       // The client must submit the primary city followed by exactly the
       // confirmed nearby selections in provider order; the Worker re-derives

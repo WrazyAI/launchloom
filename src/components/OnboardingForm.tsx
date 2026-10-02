@@ -482,6 +482,9 @@ export default function OnboardingForm() {
     return () => {
       window.clearTimeout(timer);
       coverageAbortRef.current?.abort();
+      coverageRequestRef.current += 1;
+      if (!coverageCacheRef.current.has(key) && coverageAppliedKeyRef.current === key)
+        coverageAppliedKeyRef.current = "";
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

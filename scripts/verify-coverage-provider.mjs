@@ -2,7 +2,6 @@
 // prints only public city labels and bounded lookup results, never signed refs.
 import { randomUUID } from "node:crypto";
 import { lookupCoverageAreas } from "../worker/src/coverage-areas.ts";
-const results = [];
 const providerFetch = async (url, options) => {
   const response = await fetch(url, options);
   const payload = await response.clone().json();
@@ -27,7 +26,6 @@ for (const radius of ["10", "20", "30", "50", "50+"]) {
     cities: result.candidates.map(city => ({ label: city.label, distanceMiles: city.distanceMiles })),
     partial: result.partial, truncated: result.truncated, warnings: result.warnings,
   } : { radius, ok: false, code: result.code, message: result.message };
-  results.push(summary);
   console.log(JSON.stringify(summary));
   if (!result.ok || result.partial) process.exitCode = 1;
 }

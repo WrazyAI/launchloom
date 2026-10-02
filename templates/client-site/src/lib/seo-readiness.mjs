@@ -7,7 +7,8 @@ export function seoResearchReadiness(config) {
     return { allowed: true, mode: "legacy" };
   // New confirmed-city dossiers must prove readiness for every selected city.
   // Preserve the original policy for older single-city dossiers.
-  if (research.coverageResearch !== undefined) {
+  if (research.coverageResearch !== undefined ||
+      (research.coverageConfirmation?.status === "confirmed" && research.coverageConfirmation.selectedCount > 0)) {
     const coverage = research.coverageResearch;
     const areas = research.coverageAreas;
     const cities = coverage?.cities;

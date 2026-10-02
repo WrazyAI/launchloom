@@ -1,9 +1,11 @@
 # Confirmed service coverage: implementation handoff
 
-Status: reviewable implementation complete on `codex/launchloom-confirmed-coverage-intake`
-(commit `b7ced97`), base `origin/main` `23e3712`. No merge, PR, or deploy was
-performed. SEO research, canonical-brief enrichment, location-page generation
-and generation workflows are intentionally untouched for the integrating agent.
+Original intake implementation: `codex/launchloom-confirmed-coverage-intake`
+(commit `b7ced97`), base `origin/main` `23e3712`. Integration is now implemented
+in PR #127 on `codex/launchloom-coverage-seo-integration`. Confirmed coverage is
+preserved through enrichment, per-city SEO research, the canonical brief and
+site configuration. Verification and deployment status are recorded in the
+current daily progress ledger.
 
 ## What changed
 
@@ -170,7 +172,7 @@ responses are mocked in automated tests to bound spend.
 - No live provider call was made locally during this task; the integration
   agent should run one bounded real lookup per supported radius during review.
 
-## Downstream seams that must consume confirmed coverage
+## Integrated downstream seams
 
 1. `scripts/coverage-areas.mjs` still enumerates by reverse-geocoding ring
    samples with a 15-area cap and no confirmation. It is called by
@@ -193,3 +195,11 @@ responses are mocked in automated tests to bound spend.
 Completion means the form discovers cities, lets the client confirm coverage,
 and persists that selection exactly; it does not mean SEO already researches
 every confirmed city.
+
+Integration resolution: `confirmedCoverageFromIntake` validates the canonical
+Worker-persisted selection; `applyCoverageEnrichment` preserves it in the SEO
+CLI; the coverage CLI avoids rediscovery for confirmed intakes; canonical brief
+compilation excludes suggestions when a confirmation exists. Multi-city research
+uses a shared budget and the Worker/template readiness validator checks every
+city's evidence. See `docs/seo-research-mvp.md`. The original seam descriptions
+above are retained as historical context for the incoming branch.

@@ -313,7 +313,7 @@ export function createCoverageReferencePayload({
     v: COVERAGE_REFERENCE_VERSION,
     p: COVERAGE_REFERENCE_PURPOSE,
     i: clean(inviteId, 100),
-    pc: coveragePlaceLabel(clean(primary.name, 160), clean(primary.state, 60)),
+    pc: coveragePlaceLabel(clean(primary.name, 160), clean(primary.state, 60) || clean(primary.country, 60).toUpperCase()),
     pid: clean(primary.placeId, 200),
     cc: clean(primary.country, 60).toUpperCase(),
     rs: radiusSelection,

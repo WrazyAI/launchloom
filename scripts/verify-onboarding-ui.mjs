@@ -273,6 +273,12 @@ try {
   if (!(await coveragePills.first().getByRole("checkbox").isChecked()))
     failures.push("Suggested nearby cities did not start selected for review.");
 
+  // Leaving during the debounce must allow the same inputs to load on return.
+  await page.locator('[name="serviceRadius"]').selectOption("20");
+  await page.getByRole("button", { name: "Back", exact: true }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.locator(".coverage-pill").first().waitFor({ state: "visible", timeout: 5000 });
+
   // Changing the radius refreshes suggestions and invalidates the confirmation.
   const lookupsBeforeRadiusChange = coverageLookups;
   await page.locator('[name="serviceRadius"]').selectOption("10");
