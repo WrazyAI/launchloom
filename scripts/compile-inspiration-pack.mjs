@@ -1,3 +1,4 @@
+import { publicGenerationIntake } from "../templates/client-site/src/lib/business-facts.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { launchesForBusinessKind } from "./launch-history.mjs";
@@ -133,8 +134,8 @@ const industry = ["", "all", "general", "other"].includes(normalizedIndustry)
   : normalizedIndustry;
 const recent = launchesForBusinessKind(history, industry);
 const styleText = [
-  intake.stylePreference,
-  intake.brandNotes,
+  publicGenerationIntake(intake).stylePreference,
+  publicGenerationIntake(intake).brandNotes,
   config.style?.preference,
   config.style?.visualDirection,
   config.style?.artDirection,

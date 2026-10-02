@@ -13,7 +13,7 @@ function boundedText(value, limit) {
 export function fictionalPipelineDemoNotice(intake = {}) {
   if (
     intake.type === "CanonicalSiteBrief" &&
-    intake.version === 1 &&
+    [1, 2].includes(intake.version) &&
     intake.demoNotice === SYNTHETIC_DEMO_NOTICE
   )
     return SYNTHETIC_DEMO_NOTICE;

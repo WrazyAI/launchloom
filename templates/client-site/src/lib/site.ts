@@ -1,3 +1,4 @@
+import { publicBusiness } from "./business-facts.mjs";
 import config from "../site.config.json";
 
 export type Service = {
@@ -112,6 +113,7 @@ export type ExperiencePackId =
   | "guided-conversation"
   | "service-led";
 export type SiteConfig = {
+  factReadiness?: import("./business-facts.mjs").FactReadiness;
   preset: "wellness" | "home-services";
   industry?: string;
   businessKind?: string;
@@ -123,6 +125,7 @@ export type SiteConfig = {
     phone: string;
     email: string;
     address: string;
+    addressVisibility?: "public" | "private";
     serviceAreas: string[];
     primaryCity?: string;
     serviceRadiusMiles?: number | "50+" | null;
@@ -369,7 +372,7 @@ export type SiteConfig = {
   lead?: { apiUrl: string; token: string };
 };
 
-const site = config as SiteConfig;
+const site = { ...config, business: publicBusiness(config.business) } as SiteConfig;
 
 export default site;
 

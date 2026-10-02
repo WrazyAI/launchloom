@@ -14,6 +14,8 @@ export type NormalizedClientIntake = Record<string, unknown> & {
   email: string;
   phone: string;
   address: string;
+  addressVisibility: "public" | "private";
+  researchLanguageCode: string;
   services: string[];
   confirmedServices: string[];
   primaryCity: string;

@@ -1,7 +1,10 @@
+import { businessFactReadiness } from "./business-facts.mjs";
 export function isAffirmativeConfirmation(value) {
   return value === true || value === "yes" || value === "on";
 }
 export function seoResearchReadiness(config) {
+  const facts = businessFactReadiness(config);
+  if (!facts.allowed) return { ...facts, mode: "baseline" };
   const research = config.seoResearch;
   if (!research || typeof research !== "object")
     return { allowed: true, mode: "legacy" };

@@ -1,3 +1,4 @@
+import { publicGenerationIntake, redactPrivateLocation } from "../templates/client-site/src/lib/business-facts.mjs";
 import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { parseModelJson } from "./model-json.mjs";
@@ -70,6 +71,7 @@ function seoResearchForConfig(value) {
   return {
     version: sourceVersion,
     mode,
+    languageCode: value.languageCode || "en",
     publishReady:
       value.publishReady === true ||
       (sourceVersion < 2 && mode === "researched"),
@@ -116,9 +118,10 @@ function seoResearchForConfig(value) {
 }
 
 export function prepareGenerationIntake(intake = {}) {
+  const projection = publicGenerationIntake(intake);
   return {
-    ...intake,
-    seoResearch: seoResearchForConfig(intake.seoResearch || {}),
+    ...projection,
+    seoResearch: seoResearchForConfig(projection.seoResearch || {}),
   };
 }
 
@@ -1312,6 +1315,7 @@ function fallback(intake) {
       phone: intake.phone || "",
       email: intake.email || "",
       address: suppressUnverifiedLocation ? "" : intake.address || "",
+      addressVisibility: intake.addressVisibility || "public",
       serviceAreas: areas,
       primaryCity: text(intake.primaryCity, 180) || areas[0] || "",
       serviceRadiusMiles:
@@ -1321,7 +1325,7 @@ function fallback(intake) {
               [10, 20, 30, 50].includes(Number(intake.serviceRadius))
             ? Number(intake.serviceRadius)
             : null,
-      hours: "Hours available on request",
+      hours: intake.hours || "",
       primaryCta: suppressUnverifiedLocation
         ? "Contact us"
         : intake.primaryCta ||
@@ -1383,6 +1387,8 @@ function fallback(intake) {
 }
 
 export function normalise(candidate, intake) {
+  candidate = redactPrivateLocation(candidate, intake);
+  intake = publicGenerationIntake(intake);
   const base = fallback(intake);
   const clientSource = Object.values(intake || {})
     .filter((value) => typeof value === "string")
@@ -1731,6 +1737,7 @@ export function normalise(candidate, intake) {
     businessKind: base.businessKind,
     ...(demoNotice ? { demoNotice } : {}),
     business,
+    factReadiness: intake.factReadiness,
     seoPageMap: seoResearch?.pageMap || [],
     style: {
       ...resolvePalette({ ...(value.style || {}), ...base.style }),

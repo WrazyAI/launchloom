@@ -78,6 +78,16 @@ async function fixture(review = false) {
   return dist;
 }
 
+it("blocks unresolved facts and private fields in a public configuration", async () => {
+  const dist = await fixture();
+  const failures = await checkSeoRelease({ mode: "production", origin, dist, config: {
+    ...config, business: { ...config.business, addressVisibility: "private" },
+    factReadiness: { version: 1, launchReady: false, facts: [] },
+  } });
+  expect(failures).toContain("Private location fields remain in the public site configuration.");
+  expect(failures.some((failure) => failure.includes("Business facts need confirmation"))).toBe(true);
+});
+
 describe("SEO release gate", () => {
   it("accepts a factual, indexable production build", async () => {
     const dist = await fixture();

@@ -1,3 +1,4 @@
+import { compileFactBrief, factReadinessSummary, factText, normalizeResearchLanguageCode } from "../templates/client-site/src/lib/business-facts.mjs";
 import { confirmedCoverageFromIntake } from "./confirmed-coverage.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -14,7 +15,7 @@ const values = (value, limit = 20, splitCommas = false) => {
     for (const item of text(entry, 1000).split(/\r?\n/u)) {
       const candidates = splitCommas && !Array.isArray(value) ? item.split(",") : [item];
       for (const candidate of candidates) {
-        const normalized = text(candidate, 240);
+        const normalized = factText(candidate, 240);
         if (normalized && !result.some((known) => known.toLowerCase() === normalized.toLowerCase())) result.push(normalized);
       }
     }
@@ -48,8 +49,9 @@ function confirmedPageMap(research, services, coverageAreas) {
   });
 }
 
-/** @returns {{ type: string, version: number, legacy: boolean, pageMap: Array<Record<string, any>>, seoResearch: { pageMap: Array<Record<string, any>>, publishReady?: boolean, [key: string]: any }, businessTruth: { services: Array<{ value: string, provenance: string }>, [key: string]: any }, coverage: Record<string, any>, coverageAreas: string[], services: string[], primaryCity: string, [key: string]: any }} */
+/** @returns {{ factBrief: import("../templates/client-site/src/lib/business-facts.mjs").FactBrief, factReadiness: import("../templates/client-site/src/lib/business-facts.mjs").FactReadiness, type: string, version: number, legacy: boolean, pageMap: Array<Record<string, any>>, seoResearch: { pageMap: Array<Record<string, any>>, publishReady?: boolean, [key: string]: any }, businessTruth: { services: Array<{ value: string, provenance: string }>, [key: string]: any }, coverage: Record<string, any>, coverageAreas: string[], services: string[], primaryCity: string, [key: string]: any }} */
 export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, research = {} }) {
+  const factBrief = compileFactBrief(intake);
   const confirmedCoverage = confirmedCoverageFromIntake(intake);
   const coverageLimit = confirmedCoverage ? 251 : 20;
   const legacy = text(intake.intakeVersion, 10) !== "2";
@@ -109,12 +111,15 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
     })),
   };
   const businessTruth = {
-    name: text(intake.businessName, 120),
+    name: factText(intake.businessName, 120),
     category: text(intake.industry, 120),
     contactName: text(intake.contactName, 120),
-    previewEmail: text(intake.email, 240),
-    phone: text(intake.phone, 80),
-    address: text(intake.address, 300),
+    previewEmail: factText(intake.email, 240),
+    phone: factText(intake.phone, 80),
+    address: factText(intake.address, 300),
+    addressVisibility: factBrief.addressVisibility,
+    placeId: text(intake.placeId, 200),
+    googleMapsUrl: text(intake.googleMapsUrl, 1000),
     website: text(intake.website, 500),
     desiredDomain: text(intake.domain || intake.desiredDomain, 180),
     services: services.map((value) => ({ value, provenance: "client_confirmed" })),
@@ -132,7 +137,7 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
     })),
     serviceRadius: serviceRadius === null ? null : { value: serviceRadius, provenance: "client_confirmed" },
     differentiators: values(intake.differentiators, 12).map((value) => ({ value, provenance: "client_supplied" })),
-    leadEmail: text(intake.leadEmail || intake.email, 240),
+    leadEmail: factText(intake.leadEmail || intake.email, 240),
     primaryAction: text(intake.primaryCta, 120),
   };
   const assets = intake.assets && typeof intake.assets === "object" ? intake.assets : {};
@@ -144,7 +149,9 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
 
   return {
     type: "CanonicalSiteBrief",
-    version: 1,
+    version: 2,
+    factBrief,
+    factReadiness: factReadinessSummary(factBrief),
     createdAt: new Date().toISOString(),
     legacy,
     submissionId: text(intake.submissionId, 100),
@@ -176,7 +183,14 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
     contactName: businessTruth.contactName,
     email: businessTruth.previewEmail,
     phone: businessTruth.phone,
-    address: businessTruth.address,
+    addressVisibility: factBrief.addressVisibility,
+    address: factBrief.addressVisibility === "private" ? "" : businessTruth.address,
+    placeId: factBrief.addressVisibility === "private" ? "" : businessTruth.placeId,
+    googleMapsUrl: factBrief.addressVisibility === "private" ? "" : businessTruth.googleMapsUrl,
+    hours: factText(intake.hours, 240),
+    yearEstablished: factText(intake.yearEstablished, 40),
+    credentials: factText(intake.credentials, 1000),
+    excludedServices: values(intake.excludedServices, 20),
     website: businessTruth.website,
     domain: businessTruth.desiredDomain,
     desiredDomain: businessTruth.desiredDomain,
@@ -186,6 +200,9 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
     confirmedServices: services,
     serviceAreas: coverageAreas.join("\n"),
     primaryCity,
+    researchLanguageCode: normalizeResearchLanguageCode(intake.researchLanguageCode),
+    metricLocation: text(intake.metricLocation, 180),
+    labsLocation: text(intake.labsLocation, 180),
     serviceRadius,
     coverageAreas,
     differentiators: businessTruth.differentiators.map((fact) => fact.value).join("\n"),

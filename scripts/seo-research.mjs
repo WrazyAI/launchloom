@@ -1,3 +1,4 @@
+import { publicGenerationIntake, normalizeResearchLanguageCode } from "../templates/client-site/src/lib/business-facts.mjs";
 import { confirmedCoverageFromIntake, applyCoverageEnrichment } from "./confirmed-coverage.mjs";
 import { hasCompletedFallbackResearch } from "../templates/client-site/src/lib/seo-readiness.mjs";
 import fs from "node:fs/promises";
@@ -82,6 +83,7 @@ function metricLocationForCity(city, fallback = process.env.SEO_RESEARCH_LOCATIO
 }
 
 export function normaliseSeoIntake(intake = {}) {
+  intake = publicGenerationIntake(intake);
   const legacy = text(intake.intakeVersion, 10) !== "2";
   const allConfirmedServices = splitList(intake.confirmedServices || intake.services, 100, legacy);
   const services = allConfirmedServices.slice(0, MAX_CORE_SERVICES);
@@ -110,6 +112,7 @@ export function normaliseSeoIntake(intake = {}) {
   } catch { /* no existing site to inspect */ }
   return {
     services,
+    languageCode: normalizeResearchLanguageCode(intake.researchLanguageCode),
     omittedServices,
     primaryCity,
     serviceRadius,
@@ -139,13 +142,19 @@ function searchServiceTerm(seo, service) {
   return `${businessKind} ${service.toLocaleLowerCase()}`;
 }
 
+function localServiceQuery(service, city) {
+  const cityTerm = text(city, 160).replace(/\s+/gu, " ").trim();
+  const cityKey = keywordKey(cityTerm);
+  return !cityKey || ` ${keywordKey(service)} `.includes(` ${cityKey} `) ? service : `${service} ${cityTerm}`;
+}
+
 function variantsFor(service, city, industry) {
   const variants = [service, `${service} near me`];
   const cityTerm = text(city, 160).replace(/,/gu, " ").replace(/\s+/gu, " ").trim();
-  if (cityTerm) variants.push(`${service} ${cityTerm}`);
+  if (cityTerm) variants.push(localServiceQuery(service, cityTerm));
   variants.push(`${service} cost`);
   const urgent = /plumb|drain|electric|hvac|water damage|restor|garage door|locksmith|roof leak|tree removal|pest/iu.test(`${service} ${industry}`);
-  if (urgent) variants.push(`emergency ${service}${cityTerm ? ` ${cityTerm}` : ""}`);
+  if (urgent) variants.push(`emergency ${localServiceQuery(service, cityTerm)}`);
   if (/home-services|professional-services/iu.test(industry) || /repair|installation|painting|restoration|tax preparation|bookkeeping/iu.test(service))
     variants.push(`${service} quote`);
   if (/wellness|care|health/iu.test(industry) && /consultation|treatment|therapy|session|care/iu.test(service))
@@ -452,8 +461,7 @@ async function collectFallbackWebEvidence(seo, seeds, webSearch, options, warnin
   const maxUsd = Math.max(0, Math.min(HARD_MAX_FALLBACK_USD, Number.isFinite(requestedUsd) ? requestedUsd : DEFAULT_FALLBACK_MAX_USD));
   const queries = [];
   for (const service of seo.services) {
-    const city = seo.primaryCity ? ` ${seo.primaryCity}` : "";
-    queries.push(`${searchServiceTerm(seo, service)}${city}`.trim());
+    queries.push(localServiceQuery(searchServiceTerm(seo, service), seo.primaryCity));
   }
   if (seo.businessName && seo.primaryCity) queries.push(`${seo.businessName} ${seo.primaryCity}`);
   for (const seed of seeds) if (!queries.includes(seed)) queries.push(seed);
@@ -619,6 +627,7 @@ async function researchSingleCity(intake = {}, options = {}) {
     publishReady: false,
     generatedAt: new Date().toISOString(),
     metricLocation: seo.metricLocation,
+    languageCode: seo.languageCode,
     labsMetricLocation: seo.labsLocation,
     coverageAreas: seo.coverageAreas,
     coverageConfirmation: seo.coverageConfirmation,
@@ -784,6 +793,7 @@ async function researchSingleCity(intake = {}, options = {}) {
   const volumeStage = await paidTask("local_search_volume", options.dataForSeo.googleSearchVolume, {
     keywords: seeds,
     locationName: seo.metricLocation,
+    languageCode: seo.languageCode,
   });
   const volumeRows = volumeStage.ok ? flattenItems(volumeStage.value?.keywords || volumeStage.value?.items || []) : [];
   const volumeByKeyword = new Map(volumeRows.map((item) => {
@@ -850,7 +860,7 @@ async function researchSingleCity(intake = {}, options = {}) {
   const difficultyStage = await paidTask("bulk_keyword_difficulty", options.dataForSeo.bulkKeywordDifficulty, {
     keywords: seeds,
     locationName: seo.labsLocation,
-    languageCode: "en",
+    languageCode: seo.languageCode,
   });
   const difficultyRows = difficultyStage.ok ? flattenItems(difficultyStage.value?.keywords || difficultyStage.value?.items || []) : [];
   const kdByKeyword = new Map(difficultyRows.map((item) => [keywordKey(item.keyword), finiteMetric(item.difficulty ?? item.keywordDifficulty ?? item.keyword_difficulty)]));
@@ -898,11 +908,11 @@ async function researchSingleCity(intake = {}, options = {}) {
   const allSerps = [];
   const servicesForSerp = seo.services.slice(0, 5);
   for (const service of servicesForSerp) {
-    const query = `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`;
+    const query = localServiceQuery(service, seo.primaryCity);
     const stage = await paidTask(`organic_serp:${slugify(service)}`, options.dataForSeo.organicSerp, {
       keyword: query,
       locationName: metricLocationForCity(seo.primaryCity, seo.metricLocation),
-      languageCode: "en",
+      languageCode: seo.languageCode,
     });
     if (!stage.ok) continue;
     const value = stage.value || {};
@@ -928,11 +938,11 @@ async function researchSingleCity(intake = {}, options = {}) {
   const relatedRows = [];
   for (const service of seo.services.slice(0, 5)) {
     if (stoppedForBudget) break;
-    const query = `${service}${seo.primaryCity ? ` ${seo.primaryCity}` : ""}`;
+    const query = localServiceQuery(service, seo.primaryCity);
     const stage = await paidTask(`related_keywords:${slugify(service)}`, options.dataForSeo.relatedKeywords, {
       keyword: query,
       locationName: seo.labsLocation,
-      languageCode: "en",
+      languageCode: seo.languageCode,
     });
     if (!stage.ok) continue;
     for (const item of flattenItems(stage.value?.keywords || stage.value?.items || [])) {
@@ -951,7 +961,7 @@ async function researchSingleCity(intake = {}, options = {}) {
     const stage = await paidTask("ranked_keywords", options.dataForSeo.rankedKeywords, {
       target: seo.existingWebsite,
       locationName: seo.labsLocation,
-      languageCode: "en",
+      languageCode: seo.languageCode,
     });
     if (stage.ok) {
       rankingStageComplete = true;
@@ -1078,10 +1088,11 @@ export function createDataForSeoClient({ login, password, fetchImpl = fetch }) {
     language_code: languageCode || "en",
   });
   return {
-    async googleSearchVolume({ keywords, locationName }) {
+    async googleSearchVolume({ keywords, locationName, languageCode = "en" }) {
       const { task, cost } = await post("/v3/keywords_data/google_ads/search_volume/live", {
         keywords,
         location_name: locationName,
+        language_code: languageCode || "en",
       });
       return {
         cost,
@@ -1182,6 +1193,7 @@ export function renderSeoMapMarkdown(dossier) {
     "",
     `Research status: **${dossier.mode}**${dossier.publishReady ? " (ready for publication approval)" : " (publication blocked)"}`,
     `Metric location: ${dossier.metricLocation || "unavailable"}`,
+    `Research language: ${dossier.languageCode || "en"}`,
     "",
     "## A. Market snapshot",
     "",

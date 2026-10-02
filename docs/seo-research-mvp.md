@@ -5,6 +5,12 @@ owns query selection, research, competitor structure, page architecture, and
 content opportunity selection. Research never changes a business fact or adds
 an unconfirmed service.
 
+Business fact status, public-address permission, and research language are
+specified in [the Stage 1 contract](business-facts-contract.md). Fact blockers
+are enforced by the same shared readiness path as research blockers. Optional
+missing facts remain omitted, and pending additional-city research keeps the
+existing primary-city approval policy.
+
 ## Pipeline
 
 1. A private one-use invitation opens the three-step Business, Services, and
