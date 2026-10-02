@@ -135,6 +135,19 @@ export type SiteConfig = {
     googleMapsUrl?: string;
   };
   style: {
+    surfaces?: Record<
+      string,
+      {
+        surface: string;
+        text: string;
+        mutedText: string;
+        link: string;
+        action: string;
+        onAction: string;
+        border: string;
+        focus: string;
+      }
+    >;
     primaryColor: string;
     tone: string;
     preference?: string;
@@ -246,7 +259,12 @@ export type SiteConfig = {
       distinctivenessScore?: number;
       candidatePackIds?: string[];
       avoidPackIds?: string[];
-      selectionMode?: "internal-bakeoff" | "requested" | "legacy" | "creative-bakeoff" | "creative-diagnostic";
+      selectionMode?:
+        | "internal-bakeoff"
+        | "requested"
+        | "legacy"
+        | "creative-bakeoff"
+        | "creative-diagnostic";
       fingerprint?: string;
       servicePage?: boolean;
       locationPage?: boolean;
@@ -284,7 +302,9 @@ export type SiteConfig = {
     publishReady: boolean;
     metricLocation?: string;
     labsMetricLocation?: string;
-    validatedQueries: Array<SeoKeyword & { query?: string; searchVolume?: number | null }>;
+    validatedQueries: Array<
+      SeoKeyword & { query?: string; searchVolume?: number | null }
+    >;
     customerQuestions: string[];
     copyVocabulary: string[];
     pageDecisions: Array<{

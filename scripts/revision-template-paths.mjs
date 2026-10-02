@@ -66,6 +66,12 @@ export function revisionTemplatePaths(config) {
       "layouts/SiteLayout.astro",
       "styles/site.css",
       "lib/site.ts",
+      "components/Header.astro",
+      "components/Footer.astro",
+      "components/PageSections.astro",
+      "pages/contact.astro",
+      "pages/services/[slug].astro",
+      "pages/locations/[slug].astro",
     ])
       files.add(relative);
   if (
@@ -116,6 +122,10 @@ export function revisionTemplatePaths(config) {
       "styles/site.css",
     ])
       files.add(relative);
+  }
+  if (files.has("layouts/SiteLayout.astro")) {
+    files.add("lib/color-policy.mjs");
+    files.add("lib/color-contrast.mjs");
   }
   return [...files].map((relative) => `src/${relative}`);
 }

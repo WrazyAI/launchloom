@@ -28,6 +28,10 @@ export const REFERENCE_PROVENANCE_OUTPUT_CONTRACT = [
 export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "CLIENT PALETTE ROLE CONTRACT",
   "Map the client visual brief palette to page surfaces by role:",
+  "Use data-ll-surface=page|light|dark|hero|brand|nav on each owned surface, including navigation and inner-page content. visualBrief.palette.surfaces supplies validated pairs. The runtime defines --ll-surface, --ll-text, --ll-muted-text, --ll-link, --ll-action, --ll-on-action, --ll-border and --ll-focus locally for each marked surface.",
+  "Use these local role variables for foreground/background CSS; never inherit a light text token across a transition onto a light surface. Mark muted copy data-ll-muted and actions data-ll-action. Preserve the chosen primary as brand identity; use derived readable variants for links and text.",
+  "Ordinary copy, navigation and button text require 4.5:1; large text requires 3:1; required control boundaries and focus indicators require 3:1. Hover, focus, open menus and mobile must retain readable pairings. Decorative rules need not be forced to 3:1.",
+  "Image text needs a local contrasting plate or independently verified scrim. Do not rely on a dark average photo or text shadow. Unknown image, pseudo-element, blend and filter backdrops are unresolved until proved or repaired. The same deterministic rendered contrast gate applies to all pages.",
   "- surfaceColor is the dominant page surface. The page body and the large content fields use it.",
   "- heroColor is the opening hero surface. It stays distinct from the page surface.",
   "- brandSurfaceColor and brandSurfaceTextColor are limited brand bands, such as one conversion band or the footer, and never the dominant page surface.",
@@ -39,7 +43,9 @@ export const CLIENT_PALETTE_ROLE_CONTRACT = [
 
 export function completionLimitRequestField(tokens) {
   if (!Number.isSafeInteger(tokens) || tokens < 1)
-    throw new Error("OpenRouter completion-token limit must be a positive integer.");
+    throw new Error(
+      "OpenRouter completion-token limit must be a positive integer.",
+    );
   return { max_completion_tokens: tokens };
 }
 
@@ -63,16 +69,17 @@ export function referenceImplementationChecklist(referenceDna) {
         `Responsive translation guardrail: mobile may use ${topology.mobileHero}, but do not mirror that mobile image treatment into a desktop side-by-side media field.`,
       );
   }
-  const viewportTopology = topology.hero || topology.mobileHero
-    ? [
-        `Desktop hero topology: ${topology.hero || "unclassified"}`,
-        `Desktop media relation: ${topology.mediaRelation || "unclassified"}`,
-        `Mobile hero topology: ${topology.mobileHero || "unclassified"}`,
-        `Mobile media relation: ${topology.mobileMediaRelation || "unclassified"}`,
-        "Implement desktop and mobile hero topology as separate responsive layout contracts. When they differ, do not carry desktop image occupancy into mobile or force the desktop overlay onto the mobile opening.",
-        ...topologyGuardrails,
-      ].join("\n")
-    : "";
+  const viewportTopology =
+    topology.hero || topology.mobileHero
+      ? [
+          `Desktop hero topology: ${topology.hero || "unclassified"}`,
+          `Desktop media relation: ${topology.mediaRelation || "unclassified"}`,
+          `Mobile hero topology: ${topology.mobileHero || "unclassified"}`,
+          `Mobile media relation: ${topology.mobileMediaRelation || "unclassified"}`,
+          "Implement desktop and mobile hero topology as separate responsive layout contracts. When they differ, do not carry desktop image occupancy into mobile or force the desktop overlay onto the mobile opening.",
+          ...topologyGuardrails,
+        ].join("\n")
+      : "";
   const sectionIds = sections.map((section) => {
     const id = String(section || "")
       .toLowerCase()
@@ -138,20 +145,46 @@ export function referenceImplementationChecklist(referenceDna) {
     );
   const referenceMarkers = [
     ["data-hero-geometry", referenceDna.heroGeometry?.mode, "the hero element"],
-    ["data-navigation-geometry", referenceDna.navigationGeometry?.mode, "the visible nav element"],
-    ["data-service-presentation", referenceDna.servicePresentation?.pattern, 'the section with id="services"'],
-    ["data-cta-placement", referenceDna.ctaPlacement?.early, "the early conversion anchor"],
-    ["data-mobile-recomposition", referenceDna.mobileRecomposition?.strategy, "the page's primary layout element"],
-    ["data-motion-primitive", referenceDna.motion?.primitive, "the element that owns the reference interaction"],
+    [
+      "data-navigation-geometry",
+      referenceDna.navigationGeometry?.mode,
+      "the visible nav element",
+    ],
+    [
+      "data-service-presentation",
+      referenceDna.servicePresentation?.pattern,
+      'the section with id="services"',
+    ],
+    [
+      "data-cta-placement",
+      referenceDna.ctaPlacement?.early,
+      "the early conversion anchor",
+    ],
+    [
+      "data-mobile-recomposition",
+      referenceDna.mobileRecomposition?.strategy,
+      "the page's primary layout element",
+    ],
+    [
+      "data-motion-primitive",
+      referenceDna.motion?.primitive,
+      "the element that owns the reference interaction",
+    ],
   ]
     .filter(([, value]) => typeof value === "string" && value.trim())
-    .map(([attribute, value, target]) =>
-      `- Put ${attribute}=${JSON.stringify(value)} on ${target}. Copy the Reference DNA value verbatim.`,
+    .map(
+      ([attribute, value, target]) =>
+        `- Put ${attribute}=${JSON.stringify(value)} on ${target}. Copy the Reference DNA value verbatim.`,
     );
   return [
     'REQUIRED LITERAL SECTION IDS: put id="services", id="faqs", and id="contact" on the actual matching content sections. These must be literal JSX string attributes, not variables, expressions, aliases, or empty anchor elements.',
     navigationRequirement,
-    ...(viewportTopology ? ["VIEWPORT-SPECIFIC HERO TOPOLOGY (HARD REQUIREMENT):", viewportTopology] : []),
+    ...(viewportTopology
+      ? [
+          "VIEWPORT-SPECIFIC HERO TOPOLOGY (HARD REQUIREMENT):",
+          viewportTopology,
+        ]
+      : []),
     "REQUIRED REFERENCE-DNA MARKERS: use these exact values on their matching visible elements:",
     ...referenceMarkers,
     "These are machine-readable verification markers, not visual substitutions. The rendered DOM and screenshots must still visibly realize the assigned geometry, service presentation, CTA placement, mobile recomposition, and interaction.",
@@ -183,11 +216,11 @@ export function referenceImplementationChecklist(referenceDna) {
           "Treat these as rendered acceptance criteria, not descriptive prose. Verify them against the visible page before returning source.",
         ]
       : []),
-    'REFERENCE SECTION ORDER: put each data-reference-section value on its corresponding visible <section> element, in this exact DOM order:',
+    "REFERENCE SECTION ORDER: put each data-reference-section value on its corresponding visible <section> element, in this exact DOM order:",
     ...sectionIds.map(
       (id, index) => `${index + 1}. data-reference-section="${id}"`,
     ),
-    'Before returning Experience.jsx, check that all three required IDs exist literally and that every reference section marker appears once, on the semantically matching section, in this order.',
+    "Before returning Experience.jsx, check that all three required IDs exist literally and that every reference section marker appears once, on the semantically matching section, in this order.",
   ].join("\n");
 }
 

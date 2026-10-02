@@ -18,7 +18,7 @@
      still exposes the legacy page variables on body, so explicitly inherit
      the candidate ink here instead of allowing dark legacy --ink values to
      make helper text unreadable on a candidate's dark form. */
-  color: var(--ll-creative-ink, currentColor);
+  color: var(--ll-text, var(--ll-creative-ink, currentColor));
 }
 
 .launchloom-lead-form label {
@@ -57,7 +57,7 @@
 }
 
 [data-creative-host="true"] .launchloom-lead-form small {
-  color: var(--ll-creative-muted, currentColor);
+  color: var(--ll-muted-text, var(--ll-creative-muted, currentColor));
   font-size: 0.75rem;
   line-height: 1.45;
 }

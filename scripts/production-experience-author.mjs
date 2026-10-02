@@ -1,3 +1,4 @@
+import { resolvePalette } from "./palette-policy.mjs";
 import crypto from "node:crypto";
 import { redactPromptValue } from "./author-prompt-budget.mjs";
 import postcss from "postcss";
@@ -279,7 +280,7 @@ function digest(value) {
 export { redactPromptValue };
 
 function visualBrief(site) {
-  const style = site.style || {};
+  const style = { ...(site.style || {}), ...resolvePalette(site.style || {}) };
   return {
     palette: {
       primaryColor: String(style.primaryColor || ""),
@@ -292,6 +293,7 @@ function visualBrief(site) {
       inkColor: String(style.inkColor || ""),
       mutedColor: String(style.mutedColor || ""),
       lineColor: String(style.lineColor || ""),
+      surfaces: style.surfaces,
     },
     tone: String(style.tone || ""),
     preference: String(style.preference || ""),
@@ -522,7 +524,11 @@ function functionUsesUnboundIdentifier(node, identifierName) {
 function scopeErrorFor(
   source,
   route,
-  { fileName = "Experience.jsx", rootComponent = "Experience", identifiers = ["content"] } = {},
+  {
+    fileName = "Experience.jsx",
+    rootComponent = "Experience",
+    identifiers = ["content"],
+  } = {},
 ) {
   const file = ts.createSourceFile(
     fileName,
@@ -1105,10 +1111,7 @@ function expressionPath(expression, file) {
   if (ts.isParenthesizedExpression(expression))
     return expressionPath(expression.expression, file);
   if (ts.isPropertyAccessExpression(expression))
-    return expression
-      .getText(file)
-      .replace(/\s+/gu, "")
-      .replace(/\?\./gu, ".");
+    return expression.getText(file).replace(/\s+/gu, "").replace(/\?\./gu, ".");
   return "";
 }
 
@@ -1131,18 +1134,30 @@ function isSealedImageExpression(expression, file) {
 
 function isSafeSealedImageUrl(value) {
   const url = String(value || "").trim();
-  if (/^\/(?:images|assets|_astro)\/[A-Za-z0-9._~!$&'()*+,;=@%-]+(?:\/[A-Za-z0-9._~!$&'()*+,;=@%-]+)*(?:\?[^\s#]*)?(?:#[^\s]*)?$/u.test(url)) {
+  if (
+    /^\/(?:images|assets|_astro)\/[A-Za-z0-9._~!$&'()*+,;=@%-]+(?:\/[A-Za-z0-9._~!$&'()*+,;=@%-]+)*(?:\?[^\s#]*)?(?:#[^\s]*)?$/u.test(
+      url,
+    )
+  ) {
     const pathname = url.split(/[?#]/u, 1)[0];
     try {
       return pathname.split("/").every((segment) => {
         const decoded = decodeURIComponent(segment);
-        return decoded !== "." && decoded !== ".." && !/[\\/\u0000-\u001f]/u.test(decoded);
+        return (
+          decoded !== "." &&
+          decoded !== ".." &&
+          !/[\\/\u0000-\u001f]/u.test(decoded)
+        );
       });
     } catch {
       return false;
     }
   }
-  if (/^data:image\/(?:png|jpeg|webp|avif);base64,[A-Za-z0-9+/]+={0,2}$/iu.test(url))
+  if (
+    /^data:image\/(?:png|jpeg|webp|avif);base64,[A-Za-z0-9+/]+={0,2}$/iu.test(
+      url,
+    )
+  )
     return true;
   try {
     const parsed = new URL(url);
@@ -1308,9 +1323,10 @@ function bindingPathForName(bindingName, name, prefix = []) {
   for (const element of bindingName.elements) {
     if (element.dotDotDotToken || ts.isOmittedExpression(element)) continue;
     const property = element.propertyName || element.name;
-    const propertyName = ts.isIdentifier(property) || ts.isStringLiteral(property)
-      ? property.text
-      : null;
+    const propertyName =
+      ts.isIdentifier(property) || ts.isStringLiteral(property)
+        ? property.text
+        : null;
     if (!propertyName) continue;
     const result = bindingPathForName(element.name, name, [
       ...prefix,
@@ -1361,7 +1377,8 @@ function visibleBinding(name, use) {
       ts.forEachChild(node, visit);
     };
     visit(scope);
-    if (declarations.length) return declarations.length === 1 ? declarations[0] : null;
+    if (declarations.length)
+      return declarations.length === 1 ? declarations[0] : null;
   }
   return null;
 }
@@ -1429,7 +1446,11 @@ function isSealedContactValueExpression(
   );
 }
 
-function isSealedServiceCollectionExpression(expression, file, seen = new Set()) {
+function isSealedServiceCollectionExpression(
+  expression,
+  file,
+  seen = new Set(),
+) {
   if (!expression) return false;
   const node = unwrapUrlExpression(expression);
   const directPath = expressionPath(node, file);
@@ -1486,10 +1507,7 @@ function isSealedServiceSlug(expression, file) {
           call.arguments.some(
             (argument) => unwrapUrlExpression(argument) === current,
           ) &&
-          isSealedServiceCollectionExpression(
-            call.expression.expression,
-            file,
-          )
+          isSealedServiceCollectionExpression(call.expression.expression, file)
         )
           return true;
       }
@@ -1520,11 +1538,7 @@ function isServiceRouteExpression(expression, file) {
       node.left.left.text === "/services/" &&
       ts.isStringLiteral(node.right) &&
       node.right.text === "/";
-  if (
-    valid &&
-    ts.isBinaryExpression(node) &&
-    ts.isBinaryExpression(node.left)
-  )
+  if (valid && ts.isBinaryExpression(node) && ts.isBinaryExpression(node.left))
     slugExpression = node.left.right;
   return valid && isSealedServiceSlug(slugExpression, file);
 }
@@ -1647,7 +1661,9 @@ function validateImageRoleReuse(source, route, content) {
   const { elements } = collectJsxElements(source);
   const primaryImageUses = elements.filter(({ opening }) => {
     if (jsxOpeningName(opening).toLowerCase() !== "img") return false;
-    return resolvedImageValue(jsxAttribute(opening, "src"), content) === heroImage;
+    return (
+      resolvedImageValue(jsxAttribute(opening, "src"), content) === heroImage
+    );
   }).length;
 
   const missingSupportingFallbacks = ["secondaryImage", "tertiaryImage"].filter(
@@ -2540,7 +2556,9 @@ function validateInnerPageSource({
       `Candidate ${route.id} ${file} must render exactly one H1 heading.`,
     );
   if (
-    !elements.some(({ opening }) => jsxOpeningName(opening).toLowerCase() === "main")
+    !elements.some(
+      ({ opening }) => jsxOpeningName(opening).toLowerCase() === "main",
+    )
   )
     throw new Error(
       `Candidate ${route.id} ${file} must render a main landmark.`,
@@ -2829,7 +2847,11 @@ export function namespaceCreativeCss(source) {
   });
   if (!declared.size) return source;
   return source.replace(/--[A-Za-z][\w-]*/gu, (token) =>
-    declared.has(token) && !token.startsWith("--ll-creative-")
+    declared.has(token) &&
+    !token.startsWith("--ll-creative-") &&
+    !/^--ll-(?:surface|text|muted-text|link|action|on-action|border|focus)$/.test(
+      token,
+    )
       ? `--ll-creative-${token.slice(2)}`
       : token,
   );
@@ -2910,7 +2932,9 @@ export function validateProductionCandidateFiles({
   const styles = normalizeAuthoredSource(String(files?.styles || ""));
   const motion = normalizeAuthoredSource(String(files?.motion || ""));
   const servicePage = normalizeAuthoredSource(String(files?.servicePage || ""));
-  const locationPage = normalizeAuthoredSource(String(files?.locationPage || ""));
+  const locationPage = normalizeAuthoredSource(
+    String(files?.locationPage || ""),
+  );
   const servicesIndexPage = normalizeAuthoredSource(
     String(files?.servicesIndexPage || ""),
   );
@@ -2964,7 +2988,7 @@ function authorRules() {
     REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
     "Every content-bound @launchloom/runtime helper must receive the sealed object exactly as content={content}: render FAQList, ContactLinks, LocationMap, and SocialProof with content={content}; pass runtime={runtime} to SocialProof when rendering signed live reviews.",
     "Use one H1, semantic landmarks, keyboard-visible controls, responsive recomposition, and a reduced-motion equivalent.",
-    "Phone and email links must use their sealed tokens. Telephone links may prefix content.brand.phone with tel: and may normalize it only with replace(/[^\\d+]/g, \"\") or replace(/[^0-9+]/g, \"\"); a local const href is allowed only when its initializer is that exact safe expression. Do not compute URLs from any other data.",
+    'Phone and email links must use their sealed tokens. Telephone links may prefix content.brand.phone with tel: and may normalize it only with replace(/[^\\d+]/g, "") or replace(/[^0-9+]/g, ""); a local const href is allowed only when its initializer is that exact safe expression. Do not compute URLs from any other data.',
     "The sealed hero image tokens may be empty. Render each optional image only inside a direct truthiness guard for that same token, such as {content.hero.secondaryImage && <img src={content.hero.secondaryImage} ... />}; do not emit an img with a blank src, remote URL, or a fallback that reuses the hero for a missing supporting image.",
     'Give every <img> a usable alt attribute. Use concise descriptive text for informative images. Use alt="" only for purely decorative images or when adjacent text fully conveys the image\'s relevant information. Preserve supplied or reviewed descriptions for known informative assets; do not replace them with generic filler.',
     "Do not silently reuse the primary hero image to fill missing secondary or tertiary image roles. When supporting image tokens are unavailable, keep the hero unique and adapt that chapter to a non-duplicative text-led or graphic treatment that still preserves the assigned reference mechanics.",
@@ -3197,11 +3221,11 @@ export async function authorExperienceCandidates({
           );
           experience = normalizeAuthoredSource(repairedExperience.value);
           validateExperience(
-          experience,
-          route,
-          content,
-          routeContentManifest.visualBrief,
-        );
+            experience,
+            route,
+            content,
+            routeContentManifest.visualBrief,
+          );
         } catch (repairError) {
           const repairMessage =
             repairError instanceof Error
@@ -3221,11 +3245,11 @@ export async function authorExperienceCandidates({
           );
           experience = normalizeAuthoredSource(finalRepair.value);
           validateExperience(
-          experience,
-          route,
-          content,
-          routeContentManifest.visualBrief,
-        );
+            experience,
+            route,
+            content,
+            routeContentManifest.visualBrief,
+          );
         }
       }
       let referenceRepairCycles = 0;
@@ -3259,11 +3283,11 @@ export async function authorExperienceCandidates({
           experience = normalizeAuthoredSource(repaired.value);
           complianceRepaired = true;
           validateExperience(
-          experience,
-          route,
-          content,
-          routeContentManifest.visualBrief,
-        );
+            experience,
+            route,
+            content,
+            routeContentManifest.visualBrief,
+          );
           fidelity = validateReferenceCandidate({
             referenceDna: route.referenceDna,
             experienceSource: experience,

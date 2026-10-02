@@ -375,9 +375,15 @@ async function readCandidate(candidateDir) {
     fs.readFile(path.join(candidateDir, "Experience.jsx"), "utf8"),
     fs.readFile(path.join(candidateDir, "styles.css"), "utf8"),
     fs.readFile(path.join(candidateDir, "motion.js"), "utf8"),
-    fs.readFile(path.join(candidateDir, "ServicePage.jsx"), "utf8").catch(() => ""),
-    fs.readFile(path.join(candidateDir, "LocationPage.jsx"), "utf8").catch(() => ""),
-    fs.readFile(path.join(candidateDir, "ServicesIndexPage.jsx"), "utf8").catch(() => ""),
+    fs
+      .readFile(path.join(candidateDir, "ServicePage.jsx"), "utf8")
+      .catch(() => ""),
+    fs
+      .readFile(path.join(candidateDir, "LocationPage.jsx"), "utf8")
+      .catch(() => ""),
+    fs
+      .readFile(path.join(candidateDir, "ServicesIndexPage.jsx"), "utf8")
+      .catch(() => ""),
   ]);
   return {
     metadata,
@@ -1095,6 +1101,7 @@ export async function runRenderedCreativeRepair({
         promote: false,
         deferPromotion: true,
         requireDiversity,
+        allowContrastRepair: !humanFeedback,
         excludedCandidateIds: [...excludedCandidateIds].sort(),
       });
     } catch (error) {
