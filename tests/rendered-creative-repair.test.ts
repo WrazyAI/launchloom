@@ -331,6 +331,20 @@ describe("rendered creative repair orchestration", () => {
     ).toBe(false);
     expect(
       findingsRequirePaletteChange([
+        {
+          category: "imagery",
+          message:
+            "The pale, low-contrast background image loses the hero hierarchy.",
+        },
+      ]),
+    ).toBe(false);
+    expect(
+      findingsRequirePaletteChange([
+        { category: "palette-adherence", message: "The page floods the brand surface." },
+      ]),
+    ).toBe(true);
+    expect(
+      findingsRequirePaletteChange([
         "rendered-reference dimension paletteAdherence scored 32 and must reach 80.",
       ]),
     ).toBe(true);

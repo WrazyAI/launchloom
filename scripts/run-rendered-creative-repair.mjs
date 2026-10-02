@@ -746,9 +746,6 @@ async function validateCandidateReasoningBindings(
   return candidateCount;
 }
 
-const PALETTE_FINDING_PATTERN =
-  /\bpalette|\bcolou?r|\bsurface|\bcontrast|\bbrand[-\s]?band/iu;
-
 function repairFindingText(finding) {
   if (typeof finding === "string") return finding;
   return [
@@ -763,15 +760,25 @@ function repairFindingText(finding) {
 
 /**
  * A repair may only repaint the candidate when a finding actually asks for a
- * palette, color, surface, or contrast change. The non-regression instruction
- * names passing measurements (including paletteAdherence) and must not count
- * as such an ask.
+ * palette, color, surface, or contrast change. Only explicit palette signals
+ * count: a palette-adherence category, a failing paletteAdherence dimension
+ * line, or a finding category that names the palette concern itself.
+ * Incidental words such as "low-contrast" inside an imagery finding must not
+ * unlock color changes. The non-regression instruction names passing
+ * measurements (including paletteAdherence) and must not count as an ask.
  */
 export function findingsRequirePaletteChange(findings) {
   return (findings || []).some((finding) => {
+    const category =
+      finding && typeof finding === "object"
+        ? String(finding.category || "")
+        : "";
+    if (/palette-adherence|^palette$|^colou?r$|^contrast$/iu.test(category))
+      return true;
     const text = repairFindingText(finding);
-    if (/already at their thresholds must not regress/iu.test(text)) return false;
-    return PALETTE_FINDING_PATTERN.test(text);
+    if (/already at their thresholds must not regress/iu.test(text))
+      return false;
+    return /dimension paletteAdherence scored|palette-adherence/iu.test(text);
   });
 }
 
