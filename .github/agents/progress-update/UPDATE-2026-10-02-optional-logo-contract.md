@@ -48,3 +48,8 @@
 - CI37021005988 passed at bfe9d764:1,107 application tests,91 Worker tests, Astro/TypeScript0errors/0warnings, production build passed. CodeRabbit commit status SUCCESS; zero unresolved threads. Merged PR126 at07abbcc01e3c1c383c523de97b33586f02acdd50.
 - Deployment37023100078 succeeded at that exact merge SHA. Platform https://b35f71d6.launchloom-bhl.pages.dev/ and onboarding https://35999105.launchloom-onboarding.pages.dev/onboard/ returned HTTP200. Worker version1fafa579-c64c-492e-bb75-fef82b14d6d5. This proves scoped patch deployment, not full creative E2E success.
 - Read actual estate-law creative-run manifest: one authored candidate, route01; route02 and route03 failed safe-image-source validation. Its cloud run remains in rendering/repair. Do not describe all three as successful or port that branch's permissive service-binding check without adversarial tests. Next controlled current-main canary should rerun painting intake92, preview_only=true, reuse_authored_candidates=false.
+
+## 14:58 UTC - Scoped tracking closed; broader pipeline goal remains open
+
+- Nifty r35o472LSr completed and read back completed=true, archived=false. Completion receipt appended in clean release worktree at b49ea43; the receipt was uncommitted at that point and is included with this ledger update. Parent generation/library tasks remain open.
+- Release worktree was created from deployed main07abbcc and cherry-picked only the verified ledger commit8d6d756. No source or unrelated dirty shared-checkout changes entered the documentation release. Preserve the original task worktree while follow-up is active.
