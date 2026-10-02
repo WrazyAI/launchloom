@@ -456,7 +456,9 @@ ${JSON.stringify(stableReferenceDna, null, 2)}
 EVIDENCE COORDINATES
 The desktop reference is a ${referenceSize} capture. It may cover multiple page sections; its capture height is not the browser viewport height. Do not convert fractions of its full image height into CSS vh, or infer candidate hero size from a scaled full-page overview.
 Compare corresponding design mechanics and visual language rather than total page length. A client site must include real services, FAQs, and contact sections even when the reference capture ends earlier. Do not penalize their existence; judge how they are composed and paced. If no mobile reference exists, judge mobile recomposition against Reference DNA and the candidate mobile viewport without inventing a reference mobile layout.
-Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding. A technically clean but visually generic page must not pass.`;
+Evaluate geometry, typography scale and role, spacing rhythm, image occupancy and crops, service presentation, navigation, CTA location, mobile recomposition, and visible interaction evidence. Acceptance checks are binding. A technically clean but visually generic page must not pass.
+
+INTERACTION EVIDENCE: judge visible interaction evidence against the assigned Reference DNA. When the DNA defines its interaction as native disclosure, direct anchors, or a calm static ledger, then working in-page anchors, visible affordances, and native FAQ disclosure satisfy the requirement. Do not require elaborate state changes, always-open disclosure, or novelty motion in a static capture, and do not penalize a candidate for keeping sensitive information calm. Reward direct anchors, clear affordances, and accessible disclosure states instead of animation.`;
   const content = [
     { type: "text", text: reusableReferencePrefix },
     { type: "text", text: `Reference desktop capture (${referenceSize}):` },

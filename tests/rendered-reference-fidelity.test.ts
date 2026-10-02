@@ -641,6 +641,10 @@ describe("rendered reference fidelity", () => {
     expect(textBlocks).toContain(
       "never report them as candidate findings",
     );
+    expect(textBlocks).toContain("INTERACTION EVIDENCE");
+    expect(textBlocks).toContain(
+      "native FAQ disclosure satisfy the requirement",
+    );
     expect(textBlocks).toContain(
       "Keep overallScore limited to the assigned reference mechanics",
     );
