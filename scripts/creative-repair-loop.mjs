@@ -653,8 +653,8 @@ export async function runCreativeRepairLoop({
   };
 }
 
-async function imagePart(file) {
-  return promptImagePart(file);
+async function imagePart(file, options) {
+  return promptImagePart(file, options);
 }
 
 async function imageSizeLabel(file) {
@@ -820,7 +820,7 @@ Use these helpers instead of inventing network calls or duplicating platform beh
         type: "text",
         text: `Assigned reference evidence (${dimensions}). Its capture height may span multiple page sections and is not a browser viewport height. Reference DNA section-height fractions must not be used directly as CSS vh. The desktop header and complete hero must fit within 1536x864.`,
       });
-      referenceContext.push(await imagePart(resolved));
+      referenceContext.push(await imagePart(resolved, { detail: "high" }));
     } catch (cause) {
       throw new ReferenceEvidenceError(
         `Creative repair cannot load required reference evidence: ${record.path || record.absolutePath}`,
@@ -847,7 +847,10 @@ Use these helpers instead of inventing network calls or duplicating platform beh
         ? `Current candidate first browser viewport (${dimensions}). Judge hero geometry, typography, and mobile recomposition at this scale.`
         : `Current candidate full-page overview (${dimensions}). Use it for section rhythm, not to infer browser-scale typography or hero height.`,
     });
-    candidateEvidence.push(await imagePart(screenshot));
+    candidateEvidence.push(await imagePart(screenshot, {
+      detail: viewportCapture ? "high" : "low",
+      ...(viewportCapture ? {} : { fit: "page" }),
+    }));
   }
 
   for (const comparison of comparisonScreenshots.slice(0, 2)) {
@@ -873,7 +876,7 @@ Use these helpers instead of inventing network calls or duplicating platform beh
       type: "text",
       text: `Sibling candidate ${comparison.candidateId} ${comparison.viewport} first viewport (${dimensions}). Comparison-only visual evidence. Do not copy its layout or style; preserve this candidate's assigned Reference DNA and use the comparison only to avoid visual convergence.`,
     });
-    candidateEvidence.push(await imagePart(comparison.path));
+    candidateEvidence.push(await imagePart(comparison.path, { detail: "high" }));
   }
 
   const sourcePrompt = (currentFiles, { editsOnly = false, targetFile = null } = {}) => {

@@ -453,7 +453,11 @@ async function requestStage(request) {
     for (const screenshotPath of evidencePaths) {
       if (userContent.length >= 3) break;
       try {
-        userContent.push(await promptImagePart(path.resolve(screenshotPath)));
+        userContent.push(
+          await promptImagePart(path.resolve(screenshotPath), {
+            detail: "high",
+          }),
+        );
       } catch (error) {
         throw new Error(
           `Reference evidence could not be loaded for ${request.route.id}: ${screenshotPath}`,
