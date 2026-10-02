@@ -56,6 +56,70 @@ location enrichment. The workflow also calls Google Geocoding to resolve
 nearby service communities. Enable Geocoding API on that key. A lookup failure
 retains the confirmed primary city and records a warning.
 
+## Confirmed service coverage
+
+The step 2 form resolves the client's main service city, enumerates nearby
+municipalities inside the selected travel radius and asks the client to confirm
+the places they truly serve. `POST /api/coverage-areas` (same onboarding origin
+and private-invite authorization as `/api/places`) performs the lookup and never
+consumes the invitation, creates an intake issue, dispatches generation or sends
+email.
+
+- Provider: Google Places API (New) Nearby Search with
+  `includedTypes: ["locality"]` and `rankPreference: DISTANCE` (canonical city
+  or town political entities, at most 20 results per call, no pagination token),
+  plus Google Geocoding API for the unambiguous primary city, state and country.
+  Both APIs must be enabled on `GOOGLE_PLACES_API_KEY`.
+- Distance rule: straight-line statute miles from the resolved primary-city
+  center to each municipality's representative coordinate. Driving distance,
+  counties, ZIP codes, businesses and state names are never substituted.
+- Radii: the existing 10/20/30/50/50+ options are preserved. 10/20/30 miles use
+  one exact-radius search. 50 and the bounded 50+ interpretation use the primary
+  circle plus eight overlapping 50 km satellite circles that provably cover the
+  full 50-mile disc; "more than 50 miles" is never presented as unlimited.
+- Honesty: a call that returns the provider maximum of 20 results sets
+  `truncated`, a failed satellite circle sets `partial`, and both are shown in
+  the form and recorded in the intake. Lookup failures are visible with retry
+  and an explicitly confirmed primary-city-only fallback.
+- Cost control: 600 ms debounce, in-memory and session caches keyed by city and
+  radius, stale-response discard via `AbortController`, 12-second provider
+  timeouts and a best-effort 40-lookups-per-10-minutes limit per invitation.
+
+The lookup response contains `primary`, `radius`, `candidates`, `truncated`,
+`partial`, `warnings` and a signed `reference`. The reference is an HMAC token
+over the resolved primary city, radius and candidate ids, bound to the
+invitation id and signed with `ONBOARDING_INVITE_SIGNING_SECRET`. The client
+returns it with the ids it confirmed; the Worker verifies the signature and
+rebuilds the confirmed coverage from the reference. Client-supplied labels,
+coordinates and verification flags are never trusted.
+
+### Intake coverage contract (v2)
+
+New v2 submissions include three hidden fields:
+
+- `primaryCity`: the resolved label (for example `Cookeville, TN`).
+- `coverageAreas`: the confirmed labels, primary city first, in provider
+  distance order.
+- `coverageSelection`: JSON with `status: "confirmed"`, the signed `reference`
+  and the selected `selectedIds`; or `status: "primary_city_only"` with a
+  `reason` for the explicitly confirmed fallback.
+
+The Worker replaces the submitted `coverageAreas` with server-derived labels
+and persists a `coverageConfirmation` record in the intake issue containing the
+status, source, primary city, radius, candidate/selected counts, selected ids,
+truncation/partial flags, a short reference hash and the reference issue time.
+The raw signed reference is never written to the issue. Stale or mismatched
+selections are rejected instead of silently downgraded.
+
+Backward compatibility: an older v2 intake with no `coverageSelection` remains
+accepted. Its `coverageAreas` defaults to the primary city only and
+`coverageConfirmation.status` is `legacy_unconfirmed` with source `unavailable`.
+Integrators must not treat `legacy_unconfirmed` or `primary_city_only` coverage
+as client-confirmed nearby coverage, and must not add cities the client
+excluded. SEO enrichment that merges its own discovered areas over
+`coverageAreas` must be updated before that path can be trusted for confirmed
+coverage.
+
 ## Deployment variables and checks
 
 The platform deployment workflow requires:

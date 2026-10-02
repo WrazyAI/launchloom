@@ -1,3 +1,8 @@
+import type {
+  CoverageConfirmation,
+  CoverageSelection,
+} from "./coverage-contract.mjs";
+
 export type ServiceRadius = 10 | 20 | 30 | 50 | "50+";
 
 export type NormalizedClientIntake = Record<string, unknown> & {
@@ -14,6 +19,16 @@ export type NormalizedClientIntake = Record<string, unknown> & {
   primaryCity: string;
   serviceRadius: ServiceRadius | null;
   coverageAreas: string[];
+  /**
+   * Parsed client confirmation input. Null for legacy v1 and for v2 intakes
+   * that predate the coverage-confirmation form contract.
+   */
+  coverageSelection: CoverageSelection | null;
+  /**
+   * Server-derived provenance. Null only for a v2 confirmed selection before
+   * the Worker verifies the signed coverage reference.
+   */
+  coverageConfirmation: CoverageConfirmation | null;
   confirmation: { businessFactsAndAssetRights: true };
 };
 
