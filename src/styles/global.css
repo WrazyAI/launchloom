@@ -1679,3 +1679,7 @@ button {
     animation: none;
   }
 }
+
+/* Editable coverage uses the same removable chips as core services. */
+.coverage-pill.service-chip { cursor: default; }
+.coverage-pill.service-chip > span { min-width: 0; overflow-wrap: anywhere; }

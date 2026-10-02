@@ -36,7 +36,7 @@ export type CoverageReferencePayload = {
 };
 
 export type CoverageSelection =
-  | { status: "confirmed"; reference: string; selectedIds: string[]; reason: "" }
+  | { status: "confirmed"; reference: string; selectedIds: string[]; manualAreas?: string[]; reason: "" }
   | {
       status: "primary_city_only";
       reference: "";
@@ -54,6 +54,7 @@ export type CoverageConfirmation = {
   candidateCount: number;
   selectedCount: number;
   selectedIds: string[];
+  manualAreas?: string[];
   truncated: boolean;
   partial: boolean;
   referenceHash?: string;
@@ -66,6 +67,8 @@ export declare const COVERAGE_REFERENCE_VERSION: number;
 export declare const COVERAGE_REFERENCE_PURPOSE: string;
 export declare const COVERAGE_REFERENCE_MAX_LENGTH: number;
 export declare const MAX_COVERAGE_CANDIDATES: number;
+export declare const MAX_ADDITIONAL_PLACES: number;
+export declare function coverageLabelKey(value: string): string;
 export declare const EARTH_RADIUS_MILES: number;
 export declare const SERVICE_RADIUS_OPTIONS: readonly string[];
 export declare const BOUNDED_50_PLUS_WARNING: string;

@@ -14,7 +14,8 @@
  * lookup. The client returns the opaque token together with the ids the client
  * confirmed; the Worker verifies the signature and rebuilds the confirmed
  * coverage from the reference. Client-supplied coordinates, labels and
- * verification flags are never trusted.
+ * verification flags for fetched places are never trusted. Explicit typed
+ * manualAreas are separate client assertions, never provider observations.
  */
 
 export const COVERAGE_SOURCE = "google_places_locality";
@@ -23,6 +24,12 @@ export const COVERAGE_REFERENCE_VERSION = 1;
 export const COVERAGE_REFERENCE_PURPOSE = "launchloom-coverage";
 export const COVERAGE_REFERENCE_MAX_LENGTH = 100_000;
 export const MAX_COVERAGE_CANDIDATES = 250;
+export const MAX_ADDITIONAL_PLACES = 5;
+
+/** Compare client city labels without treating comma/space differences as new places. */
+export function coverageLabelKey(value) {
+  return String(value).trim().replace(/\s*,\s*/gu, ",").replace(/\s+/gu, " ").toLocaleLowerCase();
+}
 const MAX_DISTANCE_TOLERANCE_MILES = 1e-9;
 export const EARTH_RADIUS_MILES = 3958.7613;
 const METERS_PER_MILE = 1609.344;
@@ -454,7 +461,7 @@ export function parseCoverageSelection(value) {
         "coverage_reference_invalid",
         "Your nearby city list expired. Refresh it and confirm your coverage again.",
       );
-    if (!Array.isArray(parsed.selectedIds) || parsed.selectedIds.length > MAX_COVERAGE_CANDIDATES)
+    if (!Array.isArray(parsed.selectedIds) || parsed.selectedIds.length > MAX_ADDITIONAL_PLACES)
       throw new CoverageContractError(
         "coverage_selection_invalid",
         "Review and confirm your service coverage again.",
@@ -469,7 +476,12 @@ export function parseCoverageSelection(value) {
         );
       if (!selectedIds.includes(id)) selectedIds.push(id);
     }
-    return { status: "confirmed", reference, selectedIds, reason: "" };
+    const manualAreas = parsed.manualAreas ?? [];
+    if (!Array.isArray(manualAreas) || selectedIds.length + manualAreas.length > MAX_ADDITIONAL_PLACES ||
+        manualAreas.some(area => typeof area !== "string" || area.length > 160 || /[\x00-\x1f\x7f]/u.test(area) || !/^[^,]+,\s*[^,]+$/u.test(area.trim())) ||
+        new Set(manualAreas.map(coverageLabelKey)).size !== manualAreas.length)
+      throw new CoverageContractError("coverage_selection_invalid", "Add up to five additional places using City, State or Country.");
+    return { status: "confirmed", reference, selectedIds, reason: "", ...(manualAreas.length ? { manualAreas: manualAreas.map(area => area.trim()) } : {}) };
   }
   if (status === "primary_city_only") {
     const reason = clean(parsed.reason, 40);
@@ -502,7 +514,7 @@ function candidateFromReferenceEntry(entry) {
  * Rebuild the authoritative confirmed coverage from a verified reference.
  *
  * @param {{
- *   selection: { status: string, reference: string, selectedIds: string[], reason?: string },
+ *   selection: { status: string, reference: string, selectedIds: string[], manualAreas?: string[], reason?: string },
  *   reference: Record<string, any>,
  *   primaryCity: string,
  *   serviceRadius: string,
@@ -606,7 +618,11 @@ export function deriveCoverageConfirmation({
       };
     selected.push(candidate);
   }
-  const derivedAreas = [primary, ...selected.map((candidate) => candidate.label)];
+  const manualAreas = selection.manualAreas || [];
+  const derivedAreas = [primary, ...selected.map((candidate) => candidate.label), ...manualAreas];
+  if (selected.length + manualAreas.length > MAX_ADDITIONAL_PLACES ||
+      new Set(derivedAreas.map(coverageLabelKey)).size !== derivedAreas.length)
+    return { ok: false, code: "coverage_selection_invalid", message: "Choose up to five distinct additional places." };
   const matches =
     submittedAreas.length === derivedAreas.length &&
     submittedAreas.every(
@@ -624,12 +640,13 @@ export function deriveCoverageConfirmation({
     coverageAreas: derivedAreas,
     confirmation: {
       status: "confirmed",
-      source: COVERAGE_SOURCE,
+      source: manualAreas.length ? "client_confirmed_mixed_coverage" : COVERAGE_SOURCE,
+      ...(manualAreas.length ? { manualAreas } : {}),
       primaryCity: primary,
       radiusSelection,
       radiusMiles,
       candidateCount: byId.size,
-      selectedCount: selected.length,
+      selectedCount: selected.length + manualAreas.length,
       selectedIds: selected.map((candidate) => candidate.id),
       truncated: reference.tr === 1,
       partial: reference.pa === 1,

@@ -402,3 +402,20 @@ it("keeps the resolved country fallback in signed primary-city labels without a 
   const reference = createCoverageReferencePayload({inviteId:"invite-test",primary:{name:"Singapore",state:"",country:"SG",placeId:"singapore"},radiusSelection:"10",radiusMiles:10,candidates:[],truncated:false,partial:false,issuedAt:100000});
   expect(reference.pc).toBe("Singapore, SG");
 });
+
+describe('editable additional places', () => {
+  it('rejects more than five additional cities including typed entries', () => {
+    expect(() => parseCoverageSelection(JSON.stringify({status:'confirmed',reference:'signed',selectedIds:['1','2','3','4','5','6']}))).toThrow();
+    expect(() => parseCoverageSelection(JSON.stringify({status:'confirmed',reference:'signed',selectedIds:['1','2','3','4','5'],manualAreas:['Sparta, TN']}))).toThrow();
+  });
+  it('preserves typed places as client assertions while deriving fetched labels from the signed reference', () => {
+    const selection = parseCoverageSelection(JSON.stringify({status:'confirmed',reference:'signed',selectedIds:['algood'],manualAreas:['Sparta, TN']}));
+    const reference = createCoverageReferencePayload({inviteId:'test',primary:{name:'Cookeville',state:'TN',country:'US',placeId:'cookeville'},radiusSelection:'10',radiusMiles:10,candidates:[{id:'algood',name:'Algood',state:'TN'}],truncated:false,partial:false,issuedAt:1700000000000});
+    const result = deriveCoverageConfirmation({selection:selection!,reference,primaryCity:'Cookeville, TN',serviceRadius:'10',coverageAreas:['Cookeville, TN','Algood, TN','Sparta, TN'],referenceHash:'hash'});
+    expect(result.ok).toBe(true);
+    if(result.ok) {expect(result.coverageAreas).toEqual(['Cookeville, TN','Algood, TN','Sparta, TN']);expect(result.confirmation).toMatchObject({selectedCount:2,manualAreas:['Sparta, TN'],source:'client_confirmed_mixed_coverage'});}
+  });
+  it('rejects duplicate manual cities, missing region and control characters', () => {
+    for(const manualAreas of [['Sparta'],['Sparta, TN','sparta, tn'],['Sparta, TN',' Sparta ,TN '],['Sparta, TN\nBaxter, TN']]) expect(()=>parseCoverageSelection(JSON.stringify({status:'confirmed',reference:'signed',selectedIds:[],manualAreas}))).toThrow();
+  });
+});

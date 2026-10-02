@@ -197,7 +197,7 @@ export function normalizeClientIntake(raw) {
       // confirmed nearby selections in provider order; the Worker re-derives
       // these labels from the signed lookup reference before persisting.
       if (
-        submittedAreas.length !== coverageSelection.selectedIds.length + 1 ||
+        submittedAreas.length !== coverageSelection.selectedIds.length + (coverageSelection.manualAreas?.length || 0) + 1 ||
         submittedAreas[0].toLocaleLowerCase() !== primaryCity.toLocaleLowerCase()
       )
         throw new Error(

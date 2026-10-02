@@ -578,6 +578,23 @@ describe("confirmed coverage intake persistence", () => {
     expect(persisted.coverageSelection).toBeUndefined();
   });
 
+  it("persists edited cities as client-provided coverage and enforces the combined five-place cap", async () => {
+    resetCoverageLookupRateLimit();
+    const inviteToken = await createInvite("invite-coverage-editable", "sam@example.test");
+    network.use(mockGeocoding(cookevilleGeocode()), mockNearby(() => HttpResponse.json({ places: [algood, baxter] })));
+    const lookupPayload = await lookupConfirmedCoverage(inviteToken);
+    const delivery = mockIntakeDelivery();
+    const rejected = await submit(intakePayload(inviteToken, {coverageAreas:"Cookeville, TN\nAlgood, TN\nBaxter, TN\nSparta, TN\nMonterey, TN\nLivingston, TN\nNashville, TN",coverageSelection:JSON.stringify({status:"confirmed",reference:lookupPayload.reference,selectedIds:["algood-place","baxter-place"],manualAreas:["Sparta, TN","Monterey, TN","Livingston, TN","Nashville, TN"]})}));
+    expect(rejected.status).toBe(400);
+    expect(delivery.issueCreates()).toBe(0);
+    const accepted = await submit(intakePayload(inviteToken, {coverageAreas:"Cookeville, TN\nAlgood, TN\nSparta, TN",coverageSelection:JSON.stringify({status:"confirmed",reference:lookupPayload.reference,selectedIds:["algood-place"],manualAreas:["Sparta, TN"]})}));
+    expect(accepted.status).toBe(200);
+    const persisted = delivery.persistedIssue();
+    expect(persisted.coverageAreas).toEqual(["Cookeville, TN","Algood, TN","Sparta, TN"]);
+    expect(persisted.coverageConfirmation).toMatchObject({source:"client_confirmed_mixed_coverage",manualAreas:["Sparta, TN"],selectedCount:2});
+    expect(persisted.coverageAreas).not.toContain("Baxter, TN");
+  });
+
   it("rejects stale references whose primary city or radius changed", async () => {
     resetCoverageLookupRateLimit();
     const inviteToken = await createInvite("invite-coverage-stale-001");

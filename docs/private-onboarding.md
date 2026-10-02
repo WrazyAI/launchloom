@@ -139,3 +139,9 @@ reader. Enrichment cannot re-add unselected cities. Per-city SEO results share
 the configured research budget. Existing primary-city approval rules remain in
 place, and pending secondary-city research is disclosed in the review banner. See
 `docs/seo-research-mvp.md` for the integrated evidence and readiness contract.
+
+### Editable additional places served
+
+The form prefills at most five nearby municipalities as removable pills, separate from the primary city. Clients can remove suggestions and type replacements using `City, State or Country`, then explicitly reconfirm the edited list. The combined number of fetched and typed additional places is limited to five in both form and intake validation. Existing stored dossiers with larger historical coverage are retained.
+
+Fetched selections still use the invitation-bound signed lookup reference; relabelled or invented provider IDs are rejected. Typed places are explicit client assertions and can override the suggested radius. They are validated as bounded labels, recorded in `coverageConfirmation.manualAreas` with source `client_confirmed_mixed_coverage`, and never claimed as provider-verified municipalities or physical offices. The client-submitted ordered coverage list must exactly match the signed selections followed by those manual assertions. Duplicates, primary-city duplication, control characters and over-limit submissions are rejected. Both kinds flow through the existing confirmed-coverage SEO budget and pending-city policy.
