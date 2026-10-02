@@ -467,7 +467,7 @@ jobs:
             --out .launchloom/creative-repair \
             --mode "$CREATIVE_EXPERIENCE_MODE" \
             "${SESSION_ARGS[@]}" \
-            --max-cycles 2 \
+            --max-cycles 3 \
             --visual-gate-script "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs"
           cp .launchloom/creative-repair/final/creative-bakeoff.json .launchloom/creative-bakeoff.json
           rm -rf .launchloom/generated-experiences

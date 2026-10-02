@@ -47,7 +47,9 @@ function cliArgs(argv) {
 function boundedCycles(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 2;
-  return Math.max(0, Math.min(2, Math.trunc(parsed)));
+  // Applied repairs are hill-climbed: a regressing cycle restores the best
+  // measured state, so the extra budget can only cost model spend.
+  return Math.max(0, Math.min(3, Math.trunc(parsed)));
 }
 
 function unique(values) {
