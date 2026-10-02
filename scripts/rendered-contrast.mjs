@@ -35,6 +35,7 @@ export function collectContrastTargets({
     "outlineStyle",
     "outlineWidth",
     "outlineColor",
+    "outlineOffset",
     "webkitTextFillColor",
     "content",
     ...["Top", "Bottom", "Left", "Right"].flatMap((side) =>
@@ -378,7 +379,7 @@ export function collectContrastTargets({
     }
   }
   for (const el of document.querySelectorAll(
-    'input,textarea,select,button,[role="button"],a[href],svg[role="img"]',
+    'input,textarea,select,button,summary,[tabindex]:not([tabindex="-1"]),[role="button"],a[href],svg[role="img"]',
   )) {
     const rect = rectFor(el);
     if (!visible(el, rect) || el.disabled) continue;
@@ -464,7 +465,21 @@ export function collectContrastTargets({
       }
     }
     if (el.matches(":focus-visible")) {
-      const bg = parentBg;
+      const offset = parseFloat(s.outlineOffset) || 0;
+      const width = parseFloat(s.outlineWidth) || 0;
+      const localBg = offset < 0 ? backdrop(el, rect) : null;
+      // An inset outline paints over the control, while a partially inset
+      // outline touches both surfaces. Prove contrast against both in that case.
+      const bg =
+        offset <= -width && width > 0
+          ? localBg
+          : offset < 0
+            ? {
+                backgrounds: [...parentBg.backgrounds, ...localBg.backgrounds],
+                issues: [...parentBg.issues, ...localBg.issues],
+                variable: parentBg.variable || localBg.variable,
+              }
+            : parentBg;
       if (s.outlineStyle === "none" || parseFloat(s.outlineWidth) === 0)
         bg.issues.push("focus indicator absent or uses unmeasured shadow");
       add(el, "focus", label, s.outlineColor, bg, 3, rect);
@@ -602,54 +617,81 @@ export async function inspectContrastPage(
     });
   await collect("default");
   if (states) {
-    const controls = page.locator(
-      'a[href],button,input,textarea,select,[role="button"]',
-    );
-    const count = await controls.count();
-    await page.keyboard.press("Tab");
-    for (let i = 0; i < count; i++) {
-      const control = controls.nth(i);
-      if (!(await control.isVisible()) || !(await control.isEnabled()))
-        continue;
-      if (!(await isPainted(control))) continue;
-      await control.focus();
-      await collect("focus");
-      if (!(await isPainted(control))) continue;
-      await control
-        .hover({ timeout: 1500 })
-        .then(() => collect("hover"))
-        .catch((error) => {
-          targets.push({
-            route,
-            state: "hover",
-            kind: "control",
-            selector: "control index " + i,
-            text: "Hover target inaccessible",
-            issues: [error.message],
-            minimum: 3,
-            status: "unresolved",
-            ratio: null,
-            repairEligible: false,
+    const controlSelector =
+      'a[href],button,input,textarea,select,summary,[tabindex]:not([tabindex="-1"]),[role="button"]';
+    const exerciseControls = async (scope = null) => {
+      // Menu clicks switch to pointer modality. Re-enter keyboard modality so
+      // programmatic focus still exercises the authored :focus-visible paint.
+      await page.keyboard.press("Tab");
+      const controls = scope
+        ? await scope.$$(controlSelector)
+        : await page.locator(controlSelector).elementHandles();
+      for (const control of controls) {
+        if (!(await control.isVisible()) || !(await control.isEnabled()))
+          continue;
+        if (!(await isPainted(control))) continue;
+        await control.focus();
+        await collect("focus");
+        if (!(await isPainted(control))) continue;
+        await control
+          .hover({ timeout: 1500 })
+          .then(() => collect("hover"))
+          .catch((error) => {
+            targets.push({
+              route,
+              state: "hover",
+              kind: "control",
+              selector: "control",
+              text: "Hover target inaccessible",
+              issues: [error.message],
+              minimum: 3,
+              status: "unresolved",
+              ratio: null,
+              repairEligible: false,
+            });
           });
-        });
-      await control.evaluate((el) => el.blur());
-    }
+        await control.evaluate((el) => el.blur());
+      }
+      await page.mouse.move(0, 0);
+    };
+    await exerciseControls();
     await page.mouse.move(0, 0);
-    const details = await page.evaluate(() =>
-      [...document.querySelectorAll("details")].map((el) => {
-        const was = el.open;
-        el.open = true;
-        return was;
-      }),
+    const details = await page.locator("details").elementHandles();
+    const initialOpen = await Promise.all(
+      details.map((el) => el.evaluate((node) => node.open)),
     );
-    await collect("open");
-    await page.evaluate(
-      (values) =>
-        [...document.querySelectorAll("details")].forEach(
-          (el, i) => (el.open = values[i]),
-        ),
-      details,
-    );
+    try {
+      // Snapshot before mutation: named disclosure groups close their peers.
+      await page.evaluate(() => {
+        for (const el of document.querySelectorAll("details")) {
+          if (!el.name) el.open = true;
+        }
+      });
+      await collect("open");
+      for (const detail of details) {
+        if (await detail.evaluate((el) => !el.name && el.open))
+          await exerciseControls(detail);
+      }
+      for (const detail of details) {
+        if (!(await detail.evaluate((el) => Boolean(el.name)))) continue;
+        await detail.evaluate((el) => {
+          el.open = true;
+        });
+        await collect("open");
+        await exerciseControls(detail);
+      }
+    } finally {
+      for (const detail of details)
+        await detail.evaluate((el) => {
+          el.open = false;
+        });
+      for (let i = 0; i < details.length; i++) {
+        if (initialOpen[i])
+          await details[i].evaluate((el) => {
+            el.open = true;
+          });
+      }
+    }
     await page.evaluate(() => window.scrollTo(0, 0));
     await settle();
     const toggles = await page
@@ -682,6 +724,15 @@ export async function inspectContrastPage(
       await toggle.click({ timeout: 1500 });
       try {
         await collect("menu-open");
+        const menu = await page.evaluateHandle(
+          (id) => document.getElementById(id),
+          id,
+        );
+        try {
+          if (menu.asElement()) await exerciseControls(menu.asElement());
+        } finally {
+          await menu.dispose();
+        }
       } finally {
         await toggle.click({ timeout: 1500 });
       }

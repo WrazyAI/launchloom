@@ -28,6 +28,90 @@ async function scan(html: string, width = 1440, options = {}) {
 }
 
 describe("rendered contrast independent of authored classes", () => {
+  it("uses keyboard focus modality after clicking a menu toggle", async () => {
+    const report = await scan(
+      `<style>body{background:white;color:black}a{color:black}a:focus-visible{color:#eee;outline:2px solid black}button:focus-visible{outline:2px solid black}</style><button type="button" aria-expanded="false" aria-controls="menu" onclick="document.getElementById('menu').hidden=!document.getElementById('menu').hidden;this.setAttribute('aria-expanded',String(!document.getElementById('menu').hidden))">Menu</button><div id="menu" hidden><a href="#answer">Keyboard menu action</a></div>`,
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Keyboard menu action",
+          state: "focus",
+          status: "fail",
+        }),
+      ]),
+    );
+  });
+
+  it.each(["hover", "focus-visible"])(
+    "exercises native summary %s paint",
+    async (state) => {
+      const report = await scan(
+        `<style>body{background:white;color:black}summary{outline:2px solid black}summary.target:${state}{color:#eee}</style><details><summary>First question</summary><p>First answer</p></details><details><summary class="target">Question</summary><p>Answer</p></details>`,
+      );
+      expect(report.findings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ text: "Question", status: "fail" }),
+        ]),
+      );
+    },
+  );
+  it.each(["details", "menu"])(
+    "exercises controls revealed by %s",
+    async (kind) => {
+      const content = '<a href="#answer" id="answer">Revealed action</a>';
+      const disclosure =
+        kind === "details"
+          ? `<details><summary>Question</summary>${content}</details>`
+          : `<button type="button" aria-expanded="false" aria-controls="menu" onclick="document.getElementById('menu').hidden=!document.getElementById('menu').hidden;this.setAttribute('aria-expanded',String(!document.getElementById('menu').hidden))">Menu</button><div id="menu" hidden>${content}</div>`;
+      const report = await scan(
+        `<style>body{background:white;color:black}a{color:black}a:hover{color:#eee}a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid black}</style>${disclosure}`,
+      );
+      expect(report.findings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            text: "Revealed action",
+            state: "hover",
+            status: "fail",
+          }),
+        ]),
+      );
+    },
+  );
+
+  it("audits each exclusive native disclosure and restores its initial state", async () => {
+    const page = await browser.newPage();
+    try {
+      await page.setContent(
+        '<style>body{background:white;color:black}summary:focus-visible{outline:2px solid black}</style><details name="faq"><summary>First question</summary><p style="color:#eee">Unreadable first answer</p></details><details name="faq"><summary>Second question</summary><p>Readable second answer</p></details>',
+      );
+      const report = await (
+        await auditModule
+      ).inspectContrastPage(page, { route: "/" });
+      expect(report.findings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            text: "Unreadable first answer",
+            status: "fail",
+          }),
+        ]),
+      );
+      expect(await page.locator("details[open]").count()).toBe(0);
+    } finally {
+      await page.close();
+    }
+  });
+  it("measures an inset focus outline against the filled control", async () => {
+    const report = await scan(
+      "<style>body{background:white}button{background:black;color:white;border:0;padding:20px}button:focus-visible{outline:2px solid black;outline-offset:-4px}</style><button>Continue</button>",
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "focus", status: "fail", ratio: 1 }),
+      ]),
+    );
+  });
+
   it.each(["#e8d590", "#ffffff"])(
     "catches pale navbar text on %s",
     async (background) => {
