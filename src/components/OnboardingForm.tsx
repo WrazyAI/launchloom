@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
-import { MAX_ADDITIONAL_PLACES } from "../lib/coverage-contract.mjs";
+import { coverageLabelKey, MAX_ADDITIONAL_PLACES } from "../lib/coverage-contract.mjs";
 import { compressImage } from "../lib/compress-image";
 import { createClientIntakeV2Submission } from "../lib/client-intake-v2.mjs";
 import {
@@ -368,10 +368,12 @@ export default function OnboardingForm() {
           response.candidates.some((candidate) => candidate.id === id),
         )
       : response.candidates.slice(0, MAX_ADDITIONAL_PLACES).map((candidate) => candidate.id);
-    const manual = (stored?.manualAreas || []).slice(0, MAX_ADDITIONAL_PLACES);
+    const manual = (Array.isArray(stored?.manualAreas) ? stored.manualAreas : [])
+      .filter((area): area is string => typeof area === "string" && area.length <= 160 && !/[\x00-\x1f\x7f]/u.test(area) && /^[^,]+,\s*[^,]+$/u.test(area.trim()))
+      .slice(0, MAX_ADDITIONAL_PLACES);
     setCoverageManualAreas(manual);
     setCoverageSelectedIds(selectedIds.slice(0, MAX_ADDITIONAL_PLACES - manual.length));
-    setCoverageConfirmed(Boolean(stored?.confirmed) && selectedIds.length + manual.length <= MAX_ADDITIONAL_PLACES);
+    setCoverageConfirmed(Boolean(stored?.confirmed) && selectedIds.length + manual.length <= MAX_ADDITIONAL_PLACES && manual.length === (stored?.manualAreas?.length || 0));
     setCoverageFallback(false);
   }
 
@@ -454,9 +456,9 @@ export default function OnboardingForm() {
   function addCoveragePlace() {
     if (coverageState.status !== "ready" || !coverageEntry.trim()) return;
     const label = coverageEntry.trim();
-    const candidate = coverageState.response.candidates.find(item => item.label.toLocaleLowerCase() === label.toLocaleLowerCase());
+    const candidate = coverageState.response.candidates.find(item => coverageLabelKey(item.label) === coverageLabelKey(label));
     const existing = [coverageState.response.primary.label, ...coverageState.response.candidates.filter(item => coverageSelectedIds.includes(item.id)).map(item => item.label), ...coverageManualAreas];
-    if (existing.some(area => area.toLocaleLowerCase() === label.toLocaleLowerCase())) {
+    if (existing.some(area => coverageLabelKey(area) === coverageLabelKey(label))) {
       setCoverageEditMessage("That place is already included."); return;
     }
     if (coverageSelectedIds.length + coverageManualAreas.length >= MAX_ADDITIONAL_PLACES) {

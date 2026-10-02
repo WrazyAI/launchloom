@@ -316,7 +316,7 @@ try {
   await summmerville.focus();
   await page.keyboard.press("Space");
   if ((await coveragePills.count()) !== 2) failures.push("Keyboard did not remove the focused city pill.");
-  await entry.fill("Mount Pleasant, SC");
+  await entry.fill("Mount Pleasant ,SC");
   await entry.press("Enter");
   if ((await coveragePills.count()) !== 2) failures.push("Duplicate city was added to the selection.");
   await entry.fill("Sparta, TN");

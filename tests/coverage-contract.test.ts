@@ -416,6 +416,6 @@ describe('editable additional places', () => {
     if(result.ok) {expect(result.coverageAreas).toEqual(['Cookeville, TN','Algood, TN','Sparta, TN']);expect(result.confirmation).toMatchObject({selectedCount:2,manualAreas:['Sparta, TN'],source:'client_confirmed_mixed_coverage'});}
   });
   it('rejects duplicate manual cities, missing region and control characters', () => {
-    for(const manualAreas of [['Sparta'],['Sparta, TN','sparta, tn'],['Sparta, TN\nBaxter, TN']]) expect(()=>parseCoverageSelection(JSON.stringify({status:'confirmed',reference:'signed',selectedIds:[],manualAreas}))).toThrow();
+    for(const manualAreas of [['Sparta'],['Sparta, TN','sparta, tn'],['Sparta, TN',' Sparta ,TN '],['Sparta, TN\nBaxter, TN']]) expect(()=>parseCoverageSelection(JSON.stringify({status:'confirmed',reference:'signed',selectedIds:[],manualAreas}))).toThrow();
   });
 });

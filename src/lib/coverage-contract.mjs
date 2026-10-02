@@ -25,6 +25,11 @@ export const COVERAGE_REFERENCE_PURPOSE = "launchloom-coverage";
 export const COVERAGE_REFERENCE_MAX_LENGTH = 100_000;
 export const MAX_COVERAGE_CANDIDATES = 250;
 export const MAX_ADDITIONAL_PLACES = 5;
+
+/** Compare client city labels without treating comma/space differences as new places. */
+export function coverageLabelKey(value) {
+  return String(value).trim().replace(/\s*,\s*/gu, ",").replace(/\s+/gu, " ").toLocaleLowerCase();
+}
 const MAX_DISTANCE_TOLERANCE_MILES = 1e-9;
 export const EARTH_RADIUS_MILES = 3958.7613;
 const METERS_PER_MILE = 1609.344;
@@ -474,7 +479,7 @@ export function parseCoverageSelection(value) {
     const manualAreas = parsed.manualAreas ?? [];
     if (!Array.isArray(manualAreas) || selectedIds.length + manualAreas.length > MAX_ADDITIONAL_PLACES ||
         manualAreas.some(area => typeof area !== "string" || area.length > 160 || /[\x00-\x1f\x7f]/u.test(area) || !/^[^,]+,\s*[^,]+$/u.test(area.trim())) ||
-        new Set(manualAreas.map(area => area.trim().toLocaleLowerCase())).size !== manualAreas.length)
+        new Set(manualAreas.map(coverageLabelKey)).size !== manualAreas.length)
       throw new CoverageContractError("coverage_selection_invalid", "Add up to five additional places using City, State or Country.");
     return { status: "confirmed", reference, selectedIds, reason: "", ...(manualAreas.length ? { manualAreas: manualAreas.map(area => area.trim()) } : {}) };
   }
@@ -616,7 +621,7 @@ export function deriveCoverageConfirmation({
   const manualAreas = selection.manualAreas || [];
   const derivedAreas = [primary, ...selected.map((candidate) => candidate.label), ...manualAreas];
   if (selected.length + manualAreas.length > MAX_ADDITIONAL_PLACES ||
-      new Set(derivedAreas.map(area => area.toLocaleLowerCase())).size !== derivedAreas.length)
+      new Set(derivedAreas.map(coverageLabelKey)).size !== derivedAreas.length)
     return { ok: false, code: "coverage_selection_invalid", message: "Choose up to five distinct additional places." };
   const matches =
     submittedAreas.length === derivedAreas.length &&
