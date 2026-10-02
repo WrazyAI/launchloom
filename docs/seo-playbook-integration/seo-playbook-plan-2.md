@@ -1,6 +1,6 @@
 # Stage 2 of 4: Approved route inventory and page admission
 
-Status: approved and implemented locally on 2026-10-02. See [the route contract](../route-inventory-contract.md) and daily progress ledger for schema, migration and verification evidence. Local acceptance: 343 focused tests, 110 Worker tests and 72 desktop/mobile route views passed; Astro/types/build checks passed. The broad run had one stale-module failure, with the complete authoring file green on the frozen-source rerun; no clean final full CI pass is claimed. TestSprite service results were passed but trace coverage was inconclusive. Merge, deployment and domain activation remain outside this stage. Depends on [Stage 1](seo-playbook-plan-1.md). Next: [Stage 3](seo-playbook-plan-3.md).
+Status: implemented, reviewed by the user, merged and deployed on 2026-10-02 through PR #130 at source `e7849c1022a17d85ead3a5d7a5a746498194c109`. Clean release CI passed 1193 application tests, 110 Worker tests, Astro/types and production build. Post-merge fixture checks passed 72 desktop/mobile route views; live platform/onboarding/API smoke checks passed. See [the route contract](../route-inventory-contract.md) and daily progress ledger. Historical TestSprite trace coverage remains inconclusive. Custom-domain and redirect activation remain deferred. Depends on [Stage 1](seo-playbook-plan-1.md). Next: [Stage 3](seo-playbook-plan-3.md).
 
 ## Intended outcome
 

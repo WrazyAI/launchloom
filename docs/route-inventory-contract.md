@@ -122,3 +122,18 @@ Shared Worker/developer readiness blocks unresolved requested approval before me
 or publication dispatch. Existing primary-city research and pending additional-city
 policy remain unchanged. No paid research, live domain action or real submissions
 are part of this stage's verification.
+
+## Release evidence
+
+Stage 2 shipped with user authorization through PR #130 at source commit
+`e7849c1022a17d85ead3a5d7a5a746498194c109`. Clean CI `37050870788` passed
+1193 application tests, 110 Worker tests, Astro/Worker types and production build.
+Deployment `37052768800` succeeded for that exact SHA. The post-merge six-fixture
+matrix passed 72 route/viewports. Live platform/onboarding returned HTTP 200;
+desktop/mobile invitation gating and preference controls passed; invalid invite
+and approval tokens returned HTTP 403 without any real submission. These live
+checks cover the platform/API; generated client routes were tested through local
+production/review fixture builds. Existing client sites were not regenerated.
+Historical TestSprite runs returned passed but their assertion traces remain
+inconclusive; the deterministic matrix provides route acceptance evidence.
+Custom-domain/redirect activation and Stage 3 remain outside this release.
