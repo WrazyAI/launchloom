@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
 import { parseModelJson } from "./model-json.mjs";
 import {
   assertModelPromptTextBudget,
@@ -754,6 +755,18 @@ async function writeResult(result) {
 }
 
 async function writeFailure(error) {
+  // Never turn an input/configuration failure into deletion of its workspace.
+  for (const protectedPath of [process.cwd(), configPath, inspirationPath]) {
+    const relative = path.relative(outputPath, protectedPath);
+    if (!relative || (relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)))
+      throw new Error("Failure evidence output may not contain the workspace or input files.");
+  }
+  const destination = await fs.lstat(outputPath).catch((error) => {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  });
+  if (destination?.isSymbolicLink())
+    throw new Error("Failure evidence output may not be a symbolic link.");
   await fs.rm(outputPath, { recursive: true, force: true });
   await fs.mkdir(outputPath, { recursive: true });
   await fs.writeFile(
@@ -777,7 +790,8 @@ async function writeFailure(error) {
         model,
         creativeSession,
         reasoningEffort,
-        error: error instanceof Error ? error.message : String(error),
+        error: safeAuthorFailureText(error),
+        failures: error?.failures || [],
         usage,
         cacheSummary: aggregateCacheUsage(usage),
       },
@@ -834,9 +848,14 @@ try {
     );
 } catch (error) {
   sharedAbortController.abort();
-  if (failureMode !== "record") throw error;
   await writeFailure(error);
+  if (failureMode !== "record") {
+    const failure = new Error(safeAuthorFailureText(error));
+    if (typeof error?.stack === "string")
+      failure.stack = safeAuthorFailureText(error.stack, 6000);
+    throw failure;
+  }
   console.error(
-    `production_experience_status=failed ${error instanceof Error ? error.message : String(error)}`,
+    `production_experience_status=failed ${safeAuthorFailureText(error)}`,
   );
 }
