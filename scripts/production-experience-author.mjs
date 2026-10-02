@@ -1,6 +1,7 @@
 import { resolvePalette } from "./palette-policy.mjs";
 import crypto from "node:crypto";
 import { redactPromptValue } from "./author-prompt-budget.mjs";
+import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
 import postcss from "postcss";
 import ts from "typescript";
 import {
@@ -3505,19 +3506,19 @@ export async function authorExperienceCandidates({
     const failure = {
       routeId: routes[index].id,
       candidateId: `candidate-${String.fromCharCode(97 + index)}`,
-      error:
-        result.reason instanceof Error
-          ? result.reason.message
-          : String(result.reason),
+      error: safeAuthorFailureText(result.reason, 2000),
     };
     const stack = safeAuthorFailureStack(result.reason);
-    if (stack) failure.stack = stack;
+    if (stack) failure.stack = safeAuthorFailureText(stack, 2400);
     failures.push(failure);
   }
-  if (!candidates.length)
-    throw new Error(
+  if (!candidates.length) {
+    const error = new Error(safeAuthorFailureText(
       `All creative candidates failed: ${failures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
-    );
+    ));
+    error.failures = failures;
+    throw error;
+  }
 
   return {
     version: 1,
