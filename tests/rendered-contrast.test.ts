@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { chromium, type Browser } from "playwright";
 import { semanticColorCss } from "../scripts/palette-policy.mjs";
@@ -28,6 +29,152 @@ async function scan(html: string, width = 1440, options = {}) {
 }
 
 describe("rendered contrast independent of authored classes", () => {
+  it("proves fully inset focus on a rounded opaque floating action", async () => {
+    const report = await scan(
+      '<style>body{background:white}.under{position:absolute;inset:0;background:black}a{position:fixed;top:50px;left:50px;z-index:2;background:black;color:white;padding:14px 18px;border-radius:999px}a:focus-visible{outline:2px solid white;outline-offset:-4px}</style><div class="under"></div><a href="#">Call us</a>',
+    );
+    expect(report.pass, JSON.stringify(report.findings)).toBe(true);
+  });
+
+  it.each(["#f8f6f0", "#17251f"])(
+    "keeps the template floating action focus readable over %s",
+    async (background) => {
+      const css = readFileSync(
+        new URL(
+          "../templates/client-site/src/styles/site.css",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      const page = await browser.newPage({
+        viewport: { width: 390, height: 844 },
+      });
+      try {
+        await page.setContent(
+          `<style>${css}:root{--brand:#205d51;--on-brand:#fff}body{background:${background}}</style><a class="mobile-call" href="#">Call us</a>`,
+        );
+        await page.keyboard.press("Tab");
+        const paint = await page.locator("a").evaluate((el) => {
+          const s = getComputedStyle(el);
+          return {
+            outline: s.outlineColor,
+            offset: parseFloat(s.outlineOffset),
+            width: parseFloat(s.outlineWidth),
+            surface: s.backgroundColor,
+          };
+        });
+        expect(
+          contrast(
+            paint.outline,
+            paint.offset + paint.width <= 0 ? paint.surface : background,
+          ),
+        ).toBeGreaterThanOrEqual(3);
+      } finally {
+        await page.close();
+      }
+    },
+  );
+  it("does not use the fill beneath an inset outline painted on a border", async () => {
+    const report = await scan(
+      "<style>body{background:white}button{background:black;color:white;border:10px solid white;padding:20px}button:focus-visible{outline:2px solid white;outline-offset:-4px}</style><button>Border focus</button>",
+    );
+    expect(report.pass).toBe(false);
+  });
+
+  it("centers reachable focused controls clear of a fixed edge overlay", async () => {
+    const report = await scan(
+      '<style>body{margin:0;background:white;color:black}.space{height:1400px}input{display:block;width:100%;height:80px;background:white;color:black;border:2px solid black}input:focus-visible{outline:2px solid black;outline-offset:2px}.edge{position:fixed;bottom:0;right:0;width:100px;height:80px;background:black;z-index:2}</style><div class="space"></div><input value="First field"><div style="height:280px"></div><input value="Reachable field"><div style="height:500px"></div><div class="edge"></div>',
+      390,
+    );
+    expect(report.findings.filter((f) => f.text === "Reachable field")).toEqual(
+      [],
+    );
+  });
+
+  it("uses keyboard focus modality after clicking a menu toggle", async () => {
+    const report = await scan(
+      `<style>body{background:white;color:black}a{color:black}a:focus-visible{color:#eee;outline:2px solid black}button:focus-visible{outline:2px solid black}</style><button type="button" aria-expanded="false" aria-controls="menu" onclick="document.getElementById('menu').hidden=!document.getElementById('menu').hidden;this.setAttribute('aria-expanded',String(!document.getElementById('menu').hidden))">Menu</button><div id="menu" hidden><a href="#answer">Keyboard menu action</a></div>`,
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          text: "Keyboard menu action",
+          state: "focus",
+          status: "fail",
+        }),
+      ]),
+    );
+  });
+
+  it.each(["hover", "focus-visible"])(
+    "exercises native summary %s paint",
+    async (state) => {
+      const report = await scan(
+        `<style>body{background:white;color:black}summary{outline:2px solid black}summary.target:${state}{color:#eee}</style><details><summary>First question</summary><p>First answer</p></details><details><summary class="target">Question</summary><p>Answer</p></details>`,
+      );
+      expect(report.findings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ text: "Question", status: "fail" }),
+        ]),
+      );
+    },
+  );
+  it.each(["details", "menu"])(
+    "exercises controls revealed by %s",
+    async (kind) => {
+      const content = '<a href="#answer" id="answer">Revealed action</a>';
+      const disclosure =
+        kind === "details"
+          ? `<details><summary>Question</summary>${content}</details>`
+          : `<button type="button" aria-expanded="false" aria-controls="menu" onclick="document.getElementById('menu').hidden=!document.getElementById('menu').hidden;this.setAttribute('aria-expanded',String(!document.getElementById('menu').hidden))">Menu</button><div id="menu" hidden>${content}</div>`;
+      const report = await scan(
+        `<style>body{background:white;color:black}a{color:black}a:hover{color:#eee}a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid black}</style>${disclosure}`,
+      );
+      expect(report.findings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            text: "Revealed action",
+            state: "hover",
+            status: "fail",
+          }),
+        ]),
+      );
+    },
+  );
+
+  it("audits each exclusive native disclosure and restores its initial state", async () => {
+    const page = await browser.newPage();
+    try {
+      await page.setContent(
+        '<style>body{background:white;color:black}summary:focus-visible{outline:2px solid black}</style><details name="faq"><summary>First question</summary><p style="color:#eee">Unreadable first answer</p></details><details name="faq"><summary>Second question</summary><p>Readable second answer</p></details>',
+      );
+      const report = await (
+        await auditModule
+      ).inspectContrastPage(page, { route: "/" });
+      expect(report.findings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            text: "Unreadable first answer",
+            status: "fail",
+          }),
+        ]),
+      );
+      expect(await page.locator("details[open]").count()).toBe(0);
+    } finally {
+      await page.close();
+    }
+  });
+  it("measures an inset focus outline against the filled control", async () => {
+    const report = await scan(
+      "<style>body{background:white}button{background:black;color:white;border:0;padding:20px}button:focus-visible{outline:2px solid black;outline-offset:-4px}</style><button>Continue</button>",
+    );
+    expect(report.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "focus", status: "fail", ratio: 1 }),
+      ]),
+    );
+  });
+
   it.each(["#e8d590", "#ffffff"])(
     "catches pale navbar text on %s",
     async (background) => {
