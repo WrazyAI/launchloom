@@ -1,4 +1,5 @@
 import { confirmedCoverageFromIntake } from "./confirmed-coverage.mjs";
+import { fontFamilyById } from "./font-catalog.mjs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -140,6 +141,12 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
   const brandColor = text(intake.brandColor || intake.primaryColor, 80);
   const primaryColor = /^#[0-9a-f]{6}$/iu.test(brandColor) ? brandColor : "";
   const brandNote = [brandNotes, brandColor && !primaryColor ? `Client-supplied existing brand colour: ${brandColor}` : ""].filter(Boolean).join("\n");
+  const headingFont = fontFamilyById(text(intake.headingFont, 60))?.id || "";
+  const bodyFont = fontFamilyById(text(intake.bodyFont, 60))?.id || "";
+  const accentValue = text(intake.accentColor, 20);
+  const accentColor = /^#[0-9a-f]{6}$/iu.test(accentValue)
+    ? accentValue.toLowerCase()
+    : "";
   const demoNotice = fictionalPipelineDemoNotice(intake);
 
   return {
@@ -171,6 +178,13 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
       primaryColor: primaryColor || null,
       colorProvenance: primaryColor ? "client_supplied_existing_color" : null,
     },
+    typography: {
+      headingFont: headingFont || null,
+      bodyFont: bodyFont || null,
+      accentColor: accentColor || null,
+      source:
+        headingFont || bodyFont || accentColor ? "client_selected" : null,
+    },
     // The flattened fields below keep the current generator's business-truth lane compatible.
     businessName: businessTruth.name,
     contactName: businessTruth.contactName,
@@ -194,6 +208,9 @@ export function compileCanonicalSiteBrief({ intake = {}, enrichment = {}, resear
     leadEmail: businessTruth.leadEmail,
     brandNotes: brandNote,
     primaryColor: primaryColor || "",
+    headingFont,
+    bodyFont,
+    accentColor,
     assets: Object.fromEntries(Object.entries(assets).filter(([, value]) => typeof value === "string")),
     seoResearch,
     conversionAiChat: "",

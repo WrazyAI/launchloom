@@ -115,6 +115,38 @@ For a controlled initial-generation sweep, explicitly supply `--repair true
 --styles src/generated-experiences/selected/styles.css`. A failing/unresolved
 report exits nonzero and never authorizes publication.
 
+## Client typography and accent contract
+
+Clients choose a heading and body family from the self-hosted catalog in
+`templates/client-site/src/lib/font-catalog.mjs` (twelve OFL families; latin
+subset woff2 vendored by `scripts/vendor-brand-fonts.mjs` into both public
+directories). Runtime pages never load remote font URLs. Leaving one side
+automatic pairs an explicit choice with a curated partner through
+`resolveFontPairing`; leaving both automatic keeps the recipe typography.
+
+`SiteLayout.astro` emits the catalog `@font-face` rules and
+`--font-heading` / `--font-body` from the resolved pairing. Deterministic CSS
+and the folio, guide, and service experience packs must read those variables
+with their original stack as the fallback (`var(--font-heading, <stack>)`), so
+an unchosen site renders exactly as before while a chosen family wins on every
+level and every page, including inner pages that carry the resolved
+`type-<treatment>` class.
+
+The creative lane receives `visualBrief.typography` (family ids, names, local
+stacks) and must bind authored display roles to `var(--font-heading, <palette
+stack>)` and body roles to `var(--font-body, <palette stack>)`, never
+redeclaring host variables. Styles validation fails candidate promotion when a
+named family is not bound, and the rendered reference judge scores visible
+headings and body text against the chosen families.
+
+An optional second accent color is contrast-repaired by `resolvePalette`
+(`accentTextColor` readable on the page surface, `accentContrastColor`
+readable on the fill) and is limited to secondary marks such as kickers,
+underlines, and small highlights; it never replaces the primary action or
+carries a large surface. Revisions may add, change, or explicitly clear the
+accent (`role: "accent"` in structured colors); unrelated palette revisions
+preserve a configured accent, and font choices survive palette-only revisions.
+
 ## Conversion tools
 
 New sites receive a guided qualifier, a scripted quick-answer assistant, and,
