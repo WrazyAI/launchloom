@@ -1,4 +1,10 @@
-import { pageBriefReadiness, pageBriefFor, pageBriefExpectedContent } from "../templates/client-site/src/lib/page-briefs.mjs";
+import { sanitizeVerificationReport } from "./route-verification-handoff.mjs";
+import { auditRouteContent } from "./route-content-audit.mjs";
+import {
+  pageBriefReadiness,
+  pageBriefFor,
+  pageBriefExpectedContent,
+} from "../templates/client-site/src/lib/page-briefs.mjs";
 import {
   compileRouteInventory,
   approvedRoutes,
@@ -60,7 +66,7 @@ const textWords = (html) =>
     .split(/\s+/u)
     .filter(Boolean).length;
 
-export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
+export async function inspectSeoRelease({ mode, config, dist, origin = "" }) {
   const failures = [];
   const pages = pageBriefReadiness(config);
   if (mode === "production" && !pages.allowed) failures.push(pages.error);
@@ -78,12 +84,25 @@ export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
       "Private location fields remain in the public site configuration.",
     );
   if (!["review", "production"].includes(mode))
-    return ["SEO release mode must be review or production."];
+    return {
+      version: 1,
+      scope: "technical-content",
+      status: "fail",
+      routes: [],
+      diagnostics: [],
+      failures: ["SEO release mode must be review or production."],
+    };
   const originUrl = mode === "production" ? new URL(origin) : null;
   if (
     originUrl &&
     (originUrl.protocol !== "https:" ||
-      !originUrl.hostname.endsWith(".pages.dev"))
+      !originUrl.hostname.endsWith(".pages.dev") ||
+      originUrl.username ||
+      originUrl.password ||
+      originUrl.search ||
+      originUrl.hash ||
+      originUrl.port ||
+      originUrl.pathname !== "/")
   )
     failures.push(
       "Production origin must be the approved HTTPS Pages hostname.",
@@ -152,12 +171,40 @@ export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
     }
     if (html.includes("—"))
       failures.push(`${route}: rendered page contains a prohibited em dash.`);
-    const brief = pageBriefFor(config, records.find(record=>record.path===route)?.id);
+    const brief = pageBriefFor(
+      config,
+      records.find((record) => record.path === route)?.id,
+    );
     if (brief?.mode === "supported") {
-      const bodyText = decodeHtmlText(html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/giu," ").replace(/<[^>]*>/gu," ")).replace(/\s+/gu," ");
-      for(const value of pageBriefExpectedContent(brief))if(!bodyText.includes(value.replace(/\s+/gu," ")))failures.push(`${route}: supported page brief content is missing from initial HTML.`);
-      for(const media of brief.media)if(!tags(html,"img").some(tag=>attribute(tag,"src")===media.src&&decodeHtmlText(attribute(tag,"alt"))===media.alt))failures.push(`${route}: supported page media is missing from initial HTML.`);
-      if(decodeHtmlText(attribute(meta(html,"description")||"","content"))!==brief.metadata.description)failures.push(`${route}: supported page metadata differs from the brief.`);
+      const bodyText = decodeHtmlText(
+        html
+          .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/giu, " ")
+          .replace(/<[^>]*>/gu, " "),
+      ).replace(/\s+/gu, " ");
+      for (const value of pageBriefExpectedContent(brief))
+        if (!bodyText.includes(value.replace(/\s+/gu, " ")))
+          failures.push(
+            `${route}: supported page brief content is missing from initial HTML.`,
+          );
+      for (const media of brief.media)
+        if (
+          !tags(html, "img").some(
+            (tag) =>
+              attribute(tag, "src") === media.src &&
+              decodeHtmlText(attribute(tag, "alt")) === media.alt,
+          )
+        )
+          failures.push(
+            `${route}: supported page media is missing from initial HTML.`,
+          );
+      if (
+        decodeHtmlText(
+          attribute(meta(html, "description") || "", "content"),
+        ) !== brief.metadata.description
+      )
+        failures.push(
+          `${route}: supported page metadata differs from the brief.`,
+        );
     }
     const title = decodeHtmlText(
       html.match(/<title>([^<]+)<\/title>/iu)?.[1],
@@ -305,7 +352,42 @@ export async function checkSeoRelease({ mode, config, dist, origin = "" }) {
       if (!incoming.has(route))
         failures.push(`${route}: rendered route is orphaned.`);
   }
-  return [...new Set(failures)];
+  const htmlPages = {};
+  for (const record of records)
+    htmlPages[record.path] = await fs
+      .readFile(path.join(dist, record.path.slice(1), "index.html"), "utf8")
+      .catch(() => "");
+  const audit = await auditRouteContent({
+    config,
+    records,
+    htmlPages,
+    dist,
+    origin,
+    mode,
+  });
+  failures.push(...audit.failures);
+  for (const route of audit.routes) {
+    const prior = failures.filter((failure) =>
+      failure.startsWith(route.path + ":"),
+    );
+    if (prior.length) route.status = "fail";
+  }
+  return sanitizeVerificationReport(
+    {
+      version: 1,
+      scope: "technical-content",
+      mode,
+      origin: origin || null,
+      status: failures.length ? "fail" : "pass",
+      routes: audit.routes,
+      diagnostics: audit.diagnostics,
+      failures: [...new Set(failures)],
+    },
+    config,
+  );
+}
+export async function checkSeoRelease(options) {
+  return (await inspectSeoRelease(options)).failures;
 }
 
 if (
@@ -335,12 +417,22 @@ if (
   const config = JSON.parse(
     await fs.readFile(path.resolve(args.config), "utf8"),
   );
-  const failures = await checkSeoRelease({
+  const report = await inspectSeoRelease({
     mode: args.mode,
     config,
     dist: path.resolve(args.dist),
     origin: args.origin,
   });
+  if (args.report) {
+    await fs.mkdir(path.dirname(path.resolve(args.report)), {
+      recursive: true,
+    });
+    await fs.writeFile(
+      path.resolve(args.report),
+      JSON.stringify(report, null, 2),
+    );
+  }
+  const failures = report.failures;
   if (failures.length) {
     failures.forEach((failure) =>
       console.error(`SEO release blocked: ${failure}`),

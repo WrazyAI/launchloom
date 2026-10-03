@@ -1,0 +1,57 @@
+{
+  "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
+  "type": "frontend",
+  "name": "Native and React forms retain failed requests and reset after synthetic success",
+  "description": "Owned fictional Stage 4 QA server only. All delivery is local synthetic handling, no customer/provider delivery. Verify actual failure and success lifecycle on native Contact and authored Drain cleaning pages.",
+  "priority": "p1",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Open /contact/. Use only these synthetic values: Your name Stage 4 Synthetic; Phone number 555-0101; Email address stage4@example.test; How can we help? Stage 4 synthetic request. Submit Discuss your request."
+    },
+    {
+      "type": "assertion",
+      "description": "The form displays Synthetic delivery failed. No lead was sent. All four input values remain; there is no Thank you message."
+    },
+    {
+      "type": "action",
+      "description": "Submit the same retained form again without changing its fields."
+    },
+    {
+      "type": "assertion",
+      "description": "The form displays Thank you. We will be in touch shortly. Name, phone, email and message are now empty."
+    },
+    {
+      "type": "action",
+      "description": "Open /services/drain-cleaning/ directly. The H1 is Drain cleaning. Expand What should I describe in my first enquiry?"
+    },
+    {
+      "type": "assertion",
+      "description": "The answer says Explain which concern prompted your enquiry and when you first noticed it. The page-specific introduction mentions fixtures that drain slowly."
+    },
+    {
+      "type": "action",
+      "description": "At the contact form fill the same four synthetic values and submit Discuss your request."
+    },
+    {
+      "type": "assertion",
+      "description": "The React form displays Synthetic delivery failed. No lead was sent. All four input values remain unchanged."
+    },
+    {
+      "type": "action",
+      "description": "Submit the same retained React form again."
+    },
+    {
+      "type": "assertion",
+      "description": "The form displays Thank you. We will be in touch shortly. All four input fields are empty."
+    },
+    {
+      "type": "action",
+      "description": "Open /locations/testville/ and expand What access detail should I confirm? Do not submit further forms or follow external email/phone links."
+    },
+    {
+      "type": "assertion",
+      "description": "The route shows Testville and the supported answer about asking the property owner whether side gate access can be made available. A contextual image appears."
+    }
+  ]
+}

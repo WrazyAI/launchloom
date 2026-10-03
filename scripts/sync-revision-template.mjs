@@ -90,6 +90,24 @@ const knownBaselines = JSON.parse(
     "utf8",
   ),
 );
+// Legacy repositories may adopt this metadata update only from exact known
+// generated layout bytes. Custom layouts retain their narrow canonical patch.
+if (!files.includes("src/layouts/SiteLayout.astro")) {
+  const legacy = await fs
+    .readFile(path.join(client, "src/layouts/SiteLayout.astro"))
+    .catch((error) => {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    });
+  if (
+    legacy &&
+    (digest(legacy) === baseline.files["src/layouts/SiteLayout.astro"] ||
+      knownBaselines.files["src/layouts/SiteLayout.astro"]?.includes(
+        digest(legacy),
+      ))
+  )
+    files.push("src/layouts/SiteLayout.astro");
+}
 const nextBaselineFiles = { ...baseline.files };
 const copyPlan = [];
 const removalPlan = [];

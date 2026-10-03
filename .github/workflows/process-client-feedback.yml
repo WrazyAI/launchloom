@@ -164,14 +164,14 @@ jobs:
           npm ci
           PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
           node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --dist dist
-          node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
-          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
+          PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
+          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
           node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode plan --config src/site.config.json --screenshots "$RUNNER_TEMP/revision-screenshots" --report "$RUNNER_TEMP/revision-screenshots/visual-gate-plan.json"
           if jq -e '.changed == true' "$RUNNER_TEMP/revision-screenshots/visual-gate-plan.json" >/dev/null; then
             PUBLIC_REVIEW_MODE=true PUBLIC_LAUNCHLOOM_API_URL=https://api.launchloom.wrazyos.com npm run build
             node "$GITHUB_WORKSPACE/scripts/verify-revision.mjs" --config src/site.config.json --dist dist
-            node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
-            node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
+            PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/revision-screenshots"
+            node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
             node "$GITHUB_WORKSPACE/scripts/visual-quality-gate.mjs" --mode verify --config src/site.config.json --screenshots "$RUNNER_TEMP/revision-screenshots" --report "$RUNNER_TEMP/revision-screenshots/visual-gate-final.json"
           fi
           # Scan rendered text assets only. Binary generated imagery can contain
