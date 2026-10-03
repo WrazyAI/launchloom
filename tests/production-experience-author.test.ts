@@ -2780,14 +2780,14 @@ describe("client typography and accent conformance", () => {
       heading: { id: "fraunces", name: "Fraunces" },
       body: { id: "inter", name: "Inter" },
     });
-    expect(String(manifest.visualBrief.typography.heading.stack)).toContain(
+    expect(String(manifest.visualBrief.typography.heading?.stack)).toContain(
       "Fraunces",
     );
-    expect(String(manifest.visualBrief.typography.body.stack)).toContain(
+    expect(String(manifest.visualBrief.typography.body?.stack)).toContain(
       "Inter",
     );
     expect(manifest.visualBrief.accent).toMatchObject({ color: "#b45309" });
-    expect(String(manifest.visualBrief.accent.contrastColor)).toMatch(
+    expect(String(manifest.visualBrief.accent?.contrastColor)).toMatch(
       /^#[a-f0-9]{6}$/u,
     );
   });

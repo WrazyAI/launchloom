@@ -1,8 +1,17 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import type { SyntheticEvent } from "react";
+import type { CSSProperties, SyntheticEvent } from "react";
 import { coverageLabelKey, MAX_ADDITIONAL_PLACES } from "../lib/coverage-contract.mjs";
 import { compressImage } from "../lib/compress-image";
 import { createClientIntakeV2Submission } from "../lib/client-intake-v2.mjs";
+import {
+  FONT_FAMILIES,
+  RECOMMENDED_PAIRINGS,
+  fontFaceCss,
+  fontFamilyById,
+  fontStackFor,
+  resolveFontPairing,
+} from "../lib/font-catalog.mjs";
+import { resolvePalette, suggestAccentColors } from "../lib/color-policy.mjs";
 import {
   addIntakeService,
   MAX_INTAKE_SERVICES,
@@ -113,6 +122,27 @@ function decodeInviteId(token: string) {
     return "unknown";
   }
 }
+
+const FONT_CATEGORY_LABELS: Record<string, string> = {
+  serif: "Serif",
+  "display-serif": "Display serif",
+  sans: "Sans serif",
+  "display-sans": "Display sans",
+  mono: "Monospace",
+};
+
+function fontOptionsByCategory() {
+  const groups = new Map<string, { id: string; name: string }[]>();
+  for (const family of FONT_FAMILIES) {
+    const list = groups.get(family.category) || [];
+    list.push({ id: family.id, name: family.name });
+    groups.set(family.category, list);
+  }
+  return [...groups.entries()];
+}
+
+const DEFAULT_PREVIEW_HEADING = "fraunces";
+const DEFAULT_PREVIEW_BODY = "inter";
 
 type ImagePreview = {
   url: string;
@@ -272,6 +302,12 @@ export default function OnboardingForm() {
   const [suggestionMessage, setSuggestionMessage] = useState("");
   const [brandColorPicker, setBrandColorPicker] = useState("#245d51");
   const [hasExistingBrandColor, setHasExistingBrandColor] = useState(false);
+  const [headingFont, setHeadingFont] = useState("");
+  const [bodyFont, setBodyFont] = useState("");
+  const [accentEnabled, setAccentEnabled] = useState(false);
+  const [accentColor, setAccentColor] = useState("#b45309");
+  const [specimenDark, setSpecimenDark] = useState(false);
+  const [specimenNarrow, setSpecimenNarrow] = useState(false);
   const [submissionId, setSubmissionId] = useState<string>(
     () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
   );
@@ -299,6 +335,40 @@ export default function OnboardingForm() {
     () => `${((step + 1) / steps.length) * 100}%`,
     [step],
   );
+  const fontOptions = useMemo(fontOptionsByCategory, []);
+  const previewPairing = useMemo(() => {
+    const resolved = resolveFontPairing({ headingFont, bodyFont });
+    return {
+      heading: resolved.headingStack || fontStackFor(DEFAULT_PREVIEW_HEADING),
+      body: resolved.bodyStack || fontStackFor(DEFAULT_PREVIEW_BODY),
+      suggested: !headingFont && !bodyFont,
+    };
+  }, [headingFont, bodyFont]);
+  const accentSuggestions = useMemo(
+    () =>
+      suggestAccentColors(hasExistingBrandColor ? brandColorPicker : "#245d51"),
+    [brandColorPicker, hasExistingBrandColor],
+  );
+  const specimenBrand = hasExistingBrandColor ? brandColorPicker : "#245d51";
+  const specimenPalette = useMemo(
+    () =>
+      resolvePalette({
+        primaryColor: specimenBrand,
+        ...(accentEnabled ? { accentColor } : {}),
+      }),
+    [specimenBrand, accentColor, accentEnabled],
+  );
+  const specimenAccentInk = specimenDark
+    ? specimenPalette.accentColor || specimenBrand
+    : specimenPalette.accentTextColor || specimenPalette.brandTextColor;
+  const specimenStyle = {
+    "--specimen-heading": previewPairing.heading,
+    "--specimen-body": previewPairing.body,
+    "--specimen-primary": specimenPalette.primaryColor,
+    "--specimen-on-primary": specimenPalette.contrastColor || "#ffffff",
+    "--specimen-accent": specimenPalette.accentColor || specimenBrand,
+    "--specimen-accent-ink": specimenAccentInk,
+  } as CSSProperties;
   const selectedServices = useMemo(
     () => normalizeIntakeServices(servicesValue),
     [servicesValue],
@@ -624,6 +694,15 @@ export default function OnboardingForm() {
             setBrandColorPicker(savedBrandColor);
             setHasExistingBrandColor(true);
           }
+          const savedHeadingFont = String(pending.headingFont || "");
+          if (fontFamilyById(savedHeadingFont)) setHeadingFont(savedHeadingFont);
+          const savedBodyFont = String(pending.bodyFont || "");
+          if (fontFamilyById(savedBodyFont)) setBodyFont(savedBodyFont);
+          const savedAccentColor = String(pending.accentColor || "");
+          if (/^#[0-9a-f]{6}$/iu.test(savedAccentColor)) {
+            setAccentColor(savedAccentColor);
+            setAccentEnabled(true);
+          }
         }
         if (result.accepted) {
           if (savedPayload) {
@@ -708,6 +787,12 @@ export default function OnboardingForm() {
       if (field.name === "brandColor" && /^#[0-9a-f]{6}$/iu.test(value)) {
         setBrandColorPicker(value);
         setHasExistingBrandColor(true);
+      }
+      if (field.name === "headingFont" && fontFamilyById(value)) setHeadingFont(value);
+      if (field.name === "bodyFont" && fontFamilyById(value)) setBodyFont(value);
+      if (field.name === "accentColor" && /^#[0-9a-f]{6}$/iu.test(value)) {
+        setAccentColor(value);
+        setAccentEnabled(true);
       }
       if (field.name === "serviceAreas") setCoverageCity(value);
       if (field.name === "serviceRadius") setCoverageRadius(value);
@@ -1546,6 +1631,244 @@ export default function OnboardingForm() {
               Leave the swatch untouched if you do not have a brand colour you want us to keep.
             </small>
           </div>
+          <div className="field full typography-choice">
+            <span className="field-group-label">Heading and body fonts</span>
+            <p className="field-hint">
+              Choose the two families your website will use on every page. Each
+              family ships with your site, so it loads fast without third-party
+              font services.
+            </p>
+            <div
+              className="pairing-row"
+              role="group"
+              aria-label="Suggested pairings"
+            >
+              {RECOMMENDED_PAIRINGS.slice(0, 4).map((pair) => (
+                <button
+                  key={pair.id}
+                  type="button"
+                  className="pairing-chip"
+                  data-selected={
+                    headingFont === pair.heading && bodyFont === pair.body
+                      ? "true"
+                      : undefined
+                  }
+                  onClick={() => {
+                    setHeadingFont(pair.heading);
+                    setBodyFont(pair.body);
+                    draftRef.current.headingFont = pair.heading;
+                    draftRef.current.bodyFont = pair.body;
+                  }}
+                >
+                  {pair.label}
+                </button>
+              ))}
+              {(headingFont || bodyFont) && (
+                <button
+                  type="button"
+                  className="pairing-chip subtle"
+                  onClick={() => {
+                    setHeadingFont("");
+                    setBodyFont("");
+                    draftRef.current.headingFont = "";
+                    draftRef.current.bodyFont = "";
+                  }}
+                >
+                  Reset to automatic
+                </button>
+              )}
+            </div>
+            <div className="font-select-grid">
+              <label className="font-select">
+                Heading font
+                <select
+                  name="headingFont"
+                  value={headingFont}
+                  onChange={(event) => {
+                    setHeadingFont(event.currentTarget.value);
+                    draftRef.current.headingFont = event.currentTarget.value;
+                  }}
+                >
+                  <option value="">Automatic (recommended)</option>
+                  {fontOptions.map(([category, families]) => (
+                    <optgroup
+                      key={category}
+                      label={FONT_CATEGORY_LABELS[category] || category}
+                    >
+                      {families.map((family) => (
+                        <option key={family.id} value={family.id}>
+                          {family.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+              <label className="font-select">
+                Body font
+                <select
+                  name="bodyFont"
+                  value={bodyFont}
+                  onChange={(event) => {
+                    setBodyFont(event.currentTarget.value);
+                    draftRef.current.bodyFont = event.currentTarget.value;
+                  }}
+                >
+                  <option value="">
+                    {headingFont
+                      ? `Automatic: pairs with ${fontFamilyById(headingFont)?.name || "your heading"}`
+                      : "Automatic (recommended)"}
+                  </option>
+                  {fontOptions.map(([category, families]) => (
+                    <optgroup
+                      key={category}
+                      label={FONT_CATEGORY_LABELS[category] || category}
+                    >
+                      {families.map((family) => (
+                        <option key={family.id} value={family.id}>
+                          {family.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+          <div className="field full accent-choice">
+            <label className="accent-toggle">
+              <input
+                type="checkbox"
+                checked={accentEnabled}
+                onChange={(event) => {
+                  const enabled = event.currentTarget.checked;
+                  setAccentEnabled(enabled);
+                  draftRef.current.accentColor = enabled ? accentColor : "";
+                }}
+              />
+              <span>
+                Add a second accent colour
+                <small>
+                  Used for small highlights, underlines, and labels. The main
+                  action stays your brand colour.
+                </small>
+              </span>
+            </label>
+            {accentEnabled && (
+              <div className="accent-controls">
+                <div
+                  className="accent-swatches"
+                  role="group"
+                  aria-label="Suggested accent colours"
+                >
+                  {accentSuggestions.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className="accent-swatch"
+                      data-selected={
+                        accentColor.toLowerCase() === color ? "true" : undefined
+                      }
+                      style={{ background: color }}
+                      aria-label={`Use accent colour ${color}`}
+                      aria-pressed={accentColor.toLowerCase() === color}
+                      onClick={() => {
+                        setAccentColor(color);
+                        draftRef.current.accentColor = color;
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="brand-color-control">
+                  <input
+                    id="accent-brand-color"
+                    type="color"
+                    value={accentColor}
+                    aria-label="Custom accent colour"
+                    onChange={(event) => {
+                      setAccentColor(event.currentTarget.value);
+                      draftRef.current.accentColor = event.currentTarget.value;
+                    }}
+                  />
+                  <div className="brand-color-value" aria-live="polite">
+                    <strong>{accentColor.toUpperCase()}</strong>
+                    <small>Contrast is checked automatically.</small>
+                  </div>
+                </div>
+              </div>
+            )}
+            <input
+              type="hidden"
+              name="accentColor"
+              value={accentEnabled ? accentColor : ""}
+            />
+          </div>
+          <div className="field full specimen-field">
+            <div
+              className="specimen"
+              data-theme={specimenDark ? "dark" : "light"}
+              data-narrow={specimenNarrow ? "true" : undefined}
+              aria-label="Live type preview"
+            >
+              <style dangerouslySetInnerHTML={{ __html: fontFaceCss() }} />
+              <div className="specimen-toolbar">
+                <span className="specimen-title">
+                  Live preview
+                  {previewPairing.suggested ? " (suggested pairing)" : ""}
+                </span>
+                <div className="specimen-toggles">
+                  <button
+                    type="button"
+                    aria-pressed={!specimenDark}
+                    onClick={() => setSpecimenDark(false)}
+                  >
+                    Light
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={specimenDark}
+                    onClick={() => setSpecimenDark(true)}
+                  >
+                    Dark
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={!specimenNarrow}
+                    onClick={() => setSpecimenNarrow(false)}
+                  >
+                    Desktop
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={specimenNarrow}
+                    onClick={() => setSpecimenNarrow(true)}
+                  >
+                    Mobile
+                  </button>
+                </div>
+              </div>
+              <div className="specimen-canvas" style={specimenStyle}>
+                <span className="specimen-kicker">
+                  {accentEnabled ? "Accent highlight" : "Brand highlight"}
+                </span>
+                <p className="specimen-h1">
+                  Clear, careful work for local homes.
+                </p>
+                <p className="specimen-h2">
+                  What happens when you get in touch
+                </p>
+                <p className="specimen-body">
+                  Everyday text shows how your body font reads in a normal
+                  sentence, with <em>emphasis in italics</em> when a point
+                  needs it.
+                </p>
+                <div className="specimen-actions">
+                  <span className="specimen-cta">Primary action</span>
+                  <span className="specimen-link">Secondary link</span>
+                </div>
+              </div>
+            </div>
+          </div>
           <ImageUploadField name="logo" label="Logo" optional />
           <ImageUploadField name="photoOne" label="Business photo 1" optional />
           <ImageUploadField name="photoTwo" label="Business photo 2" optional />
@@ -1604,6 +1927,22 @@ export default function OnboardingForm() {
           <div>
             <dt>Existing brand colour</dt>
             <dd>{draftValue("brandColor")}</dd>
+          </div>
+          <div>
+            <dt>Heading font</dt>
+            <dd>
+              {fontFamilyById(draftValue("headingFont"))?.name || "Automatic"}
+            </dd>
+          </div>
+          <div>
+            <dt>Body font</dt>
+            <dd>
+              {fontFamilyById(draftValue("bodyFont"))?.name || "Automatic"}
+            </dd>
+          </div>
+          <div>
+            <dt>Accent colour</dt>
+            <dd>{draftValue("accentColor") || "Single brand colour"}</dd>
           </div>
         </dl>
         <input type="hidden" name="confirmSeoResearch" value="yes" />
