@@ -184,6 +184,9 @@ try {
     failures.push("The invitation email was not prefilled.");
   await page.locator('[name="phone"]').fill("(555) 555-0100");
   await page.locator('[name="address"]').fill("100 Test Street");
+  await page.locator('[name="addressVisibility"]').selectOption("private");
+  await page.locator('[name="hours"]').fill("Monday to Friday, 9 to 5");
+  await page.locator('[name="researchLanguageCode"]').selectOption("es");
   await page.getByRole("button", { name: "Continue" }).click();
 
   const stepText = await page.locator(".stepper").innerText();
@@ -598,6 +601,8 @@ try {
     failures.push("The accepted screen does not confirm that intake processing has started.");
   if (acceptedIntake?.intakeVersion !== "2" || acceptedIntake?.inviteToken !== inviteToken)
     failures.push("The accepted v2 intake did not include its invite proof and contract version.");
+  if (acceptedIntake?.addressVisibility !== "private" || acceptedIntake?.researchLanguageCode !== "es" || acceptedIntake?.hours !== "Monday to Friday, 9 to 5")
+    failures.push("Address visibility, business hours, or search language did not survive navigation and submission.");
   const acceptedFields = Object.keys(acceptedIntake || {}).sort();
   if (JSON.stringify(acceptedFields) !== JSON.stringify([...CLIENT_INTAKE_V2_SUBMISSION_FIELDS].sort()))
     failures.push(`The accepted v2 intake field set differs from the shared form contract: ${acceptedFields.join(", ")}.`);

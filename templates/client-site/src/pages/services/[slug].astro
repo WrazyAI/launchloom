@@ -3,8 +3,9 @@ import SiteLayout from "../../layouts/SiteLayout.astro";
 import Header from "../../components/Header.astro";
 import LeadForm from "../../components/LeadForm.astro";
 import Footer from "../../components/Footer.astro";
+import PageBriefSections from "../../components/PageBriefSections";
 import ServiceCandidateHost from "../../components/ServiceCandidateHost";
-import site, { phoneHref, type Service } from "../../lib/site";
+import site, { phoneHref, serviceHref, pageHref, homeSectionHref, approvedServices, routePageBrief, type Service } from "../../lib/site";
 import { resolvePageRecipe } from "../../lib/page-recipe";
 import { compileExperiencePack } from "../../lib/experience-pack";
 import "../../styles/experience-packs.css";
@@ -12,7 +13,7 @@ import "../../styles/creative-runtime.css";
 import "../../generated-experiences/selected/styles.css";
 
 export function getStaticPaths() {
-  return site.services.map((service) => ({ params: { slug: service.slug }, props: { service } }));
+  return approvedServices.map((service) => ({ params: { slug: service.slug }, props: { service } }));
 }
 const { service } = Astro.props as { service: Service };
 const { recipe, treatment } = resolvePageRecipe(site);
@@ -26,11 +27,15 @@ const experience = site.design?.experience?.packId || creativeServicePage
   : null;
 const trades = recipe === "local-trades";
 const care = recipe === "care-editorial";
-const serviceImage = site.assets?.photoTwo || site.assets?.photoOne || site.images.secondary || site.images.hero;
-const related = site.services.filter((item) => item.slug !== service.slug).slice(0, 3);
-const process = site.conversion?.process?.slice(0, 4) || [];
-const faqs = site.conversion?.faqs?.slice(0, 4) || [];
-const support = service.decisionSupport;
+const brief = routePageBrief(`service:${service.name.trim().toLowerCase()}`);
+const supported = brief?.mode === "supported";
+const introduction = supported ? brief.introduction : service.description;
+const fieldText = (kind: string) => brief?.sections.find(section => section.kind === kind)?.items.map(item => item.text).join(" ") || "";
+const serviceImage = supported ? brief.media[0]?.src || "" : site.assets?.photoTwo || site.assets?.photoOne || site.images.secondary || site.images.hero;
+const related = supported ? approvedServices.filter(item => brief.related.some(related => related.path === `/services/${item.slug}/`)) : approvedServices.filter((item) => item.slug !== service.slug).slice(0, 3);
+const process = supported ? brief.process : site.conversion?.process?.slice(0, 4) || [];
+const faqs = supported ? brief.faqs : site.conversion?.faqs?.slice(0, 4) || [];
+const support = supported ? {scope:fieldText("scope"),preparation:fieldText("preparation"),nextStep:fieldText("nextStep")} : service.decisionSupport;
 const diagnostic = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
 const creativeRuntime = {
   candidateId: site.design?.experience?.candidateId || "selected",
@@ -48,25 +53,26 @@ const creativeService = creativeServicePage
   ? {
       name: service.name,
       slug: service.slug,
-      description: service.description,
+      description: introduction,
+      brief: supported ? brief : null,
       support: {
-        scope: support?.scope || service.description,
+        scope: support?.scope || (supported ? "" : service.description),
         preparation:
           support?.preparation ||
-          site.business.offer ||
-          `Contact ${site.business.name} for details that apply to your needs.`,
+          (supported ? "" : site.business.offer ||
+          `Contact ${site.business.name} for details that apply to your needs.`),
         nextStep:
           support?.nextStep ||
-          (trades
+          (supported ? "" : trades
             ? "Describe the issue, share your location, and the team will confirm the appropriate next step before scheduling."
             : care
               ? "Share what support you are considering. The team will listen, answer questions, and help you decide whether this option is suitable."
               : "Share your goal and contact details so the team can recommend a next step."),
       },
-      related: related.map(({ name, slug, description }) => ({ name, slug, description })),
+      related: related.map(({ name, slug, description }) => ({ name, slug, description: supported ? brief.related.find(item=>item.path===`/services/${slug}/`)?.reason || description : description })),
       process,
       faqs,
-      images: { context: serviceImage || "" },
+      images: { context: serviceImage || "", alt: brief?.media[0]?.alt || service.name },
     }
   : null;
 const serviceStructuredData = {
@@ -83,7 +89,7 @@ const serviceStructuredData = {
 };
 ---
 
-<SiteLayout title={`${service.name} | ${site.business.name}`} description={service.description} schemas={[serviceStructuredData]}>
+<SiteLayout title={supported ? brief.metadata.title : `${service.name} | ${site.business.name}`} description={supported ? brief.metadata.description : service.description} schemas={[serviceStructuredData]}>
   {creativeService && experience ? (
     <div
       data-authored-page-host="true"
@@ -98,13 +104,19 @@ const serviceStructuredData = {
     <>
       <Header />
       <main class:list={["inner-page", `recipe-${recipe}`, `type-${treatment.typography}`, experience && `inner-experience-${experience.program.packId}`]} data-experience-pack={experience?.program.packId}>
-        <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home</a> / <a class="breadcrumb" href="/services/">All services</a><span class="kicker">{care ? "Care option" : "Service details"}</span><h1>{service.name}</h1><p>{service.description}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{serviceImage && <img src={serviceImage} alt={`${site.business.name} ${site.assets?.photoOne || site.assets?.photoTwo ? "client-provided service photo" : "service context"}`} />}</div></section>
+        <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home</a> / <a class="breadcrumb" href={pageHref("/services/", homeSectionHref("services"))}>All services</a><span class="kicker">{care ? "Care option" : "Service details"}</span><h1>{service.name}</h1><p>{introduction}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{serviceImage && <img src={serviceImage} alt={brief?.media[0]?.alt || `${site.business.name} ${site.assets?.photoOne || site.assets?.photoTwo ? "client-provided service photo" : "service context"}`} />}</div></section>
 
+        {supported ? <>
+          {brief.sections.filter(section => ["scope","preparation","nextStep"].includes(section.kind)).map(section => <section data-ll-surface="light" class="section wrap" data-page-field={section.kind}><div class="section-heading"><h2>{section.heading}</h2></div>{section.items.map(item => <p>{item.text}</p>)}</section>)}
+          <PageBriefSections brief={brief} />
+        </> : <>
         <section class="section wrap service-decision"><div class="section-heading"><span class="kicker">A useful place to start</span><h2>{trades ? "Understand the problem, then choose the right service." : care ? "Talk through the support that fits your situation." : "A few useful details before you choose."}</h2></div><div class="decision-grid"><div><h3>What to ask about</h3><p>{support?.scope || service.description}</p></div><div><h3>What happens next</h3><p>{support?.nextStep || (trades ? "Describe the issue, share your location, and the team will confirm the appropriate next step before scheduling." : care ? "Share what support you are considering. The team will listen, answer questions, and help you decide whether this option is suitable." : "Share your goal and contact details so the team can recommend a next step.")}</p></div><div><h3>What to prepare</h3><p>{support?.preparation || site.business.offer || `Contact ${site.business.name} for details that apply to your needs.`}</p></div></div></section>
+        </>}
+
 
         {process.length > 0 && <section class="inner-band"><div class="wrap"><div class="section-heading"><span class="kicker">The process</span><h2>Clear steps from first contact.</h2></div><ol class="process-grid">{process.map((step, index) => <li><span>0{index + 1}</span><p>{step}</p></li>)}</ol></div></section>}
 
-        {related.length > 0 && <section class="section wrap related-services"><div class="section-heading"><span class="kicker">Other ways we can help</span><h2>Explore related services.</h2></div><div class="service-grid">{related.map((item) => <a class="service-card" href={`/services/${item.slug}/`}><h3>{item.name}</h3><p>{item.description}</p><b>View service details <i aria-hidden="true">↗</i></b></a>)}</div></section>}
+        {related.length > 0 && <section class="section wrap related-services"><div class="section-heading"><span class="kicker">Other ways we can help</span><h2>Explore related services.</h2></div><div class="service-grid">{related.map((item) => <a class="service-card" href={serviceHref(item.slug)}><h3>{item.name}</h3><p>{supported ? brief.related.find(related=>related.path===`/services/${item.slug}/`)?.reason : item.description}</p><b>View service details <i aria-hidden="true">↗</i></b></a>)}</div></section>}
 
         {faqs.length > 0 && <section class="section wrap faq-section"><div class="section-heading"><span class="kicker">Before you reach out</span><h2>Practical questions, answered.</h2></div><div class="faq-list">{faqs.map((faq) => <details><summary>{faq.question}<span aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div></section>}
 

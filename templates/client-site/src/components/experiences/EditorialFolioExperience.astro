@@ -1,4 +1,5 @@
 ---
+import { serviceHref } from "../../lib/site";
 import { phoneHref, primaryCtaHref } from "../../lib/site";
 import type { ExperienceBlueprintV2, ExperienceContent } from "../../lib/experience-pack";
 import LeadForm from "../LeadForm.astro";
@@ -44,7 +45,7 @@ const secondary = hero.secondaryImage;
     <section class="xp-folio__services" id="services">
       <header><p>Selected services</p><h2>{copy.servicesHeading || "Work shaped around the real brief."}</h2></header>
       <div class="xp-folio__service-index">
-        {services.map((service) => <a href={`/services/${service.slug}/`}><h3>{service.name}</h3><p>{service.description}</p><span>View service ↗</span></a>)}
+        {services.map((service) => <a href={serviceHref(service.slug)}><h3>{service.name}</h3><p>{service.description}</p><span>View service ↗</span></a>)}
       </div>
     </section>
 

@@ -333,6 +333,7 @@ SEALED SERVICE PAGE SHAPE
 ${JSON.stringify(creativeServicePageShape(), null, 2)}
 
 SERVICE PAGE RULES
+- Import PageBriefSections from @launchloom/runtime and render <PageBriefSections brief={service.brief} /> within the main landmark after decision support and before contact. It emits only supported optional content, preserving the page recipe. Do not hide it or restate its paragraphs. Missing optional fields are omitted, never invented.
 - Render exactly one <h1> bound to service.name and the opening summary bound to service.description.
 - Render the three decision-support blocks bound to service.support.scope, service.support.preparation, and service.support.nextStep.
 - Render related services from service.related as real links with a trailing slash, for example href={\`/services/\${item.slug}/\`}. Never express a service link as a homepage fragment.
@@ -360,6 +361,7 @@ SEALED LOCATION PAGE SHAPE
 ${JSON.stringify(creativeLocationPageShape(), null, 2)}
 
 LOCATION PAGE RULES
+- Import PageBriefSections from @launchloom/runtime and render <PageBriefSections brief={location.brief} /> within the main landmark before contact. This shared primitive renders supported local detail/questions/process using the current design tokens. Do not hide it or restate its paragraphs; missing information must not be filled with invented local claims.
 - Render exactly one <h1> bound to location.name and the opening summary bound to location.description.
 - Render the coverage note bound to location.localNote and keep it as availability language, never a promise about arrival, pricing, or a physical office.
 - Render the confirmed services from location.services as real links with a trailing slash, for example href={\`/services/\${item.slug}/\`}. Never express a service link as a homepage fragment.

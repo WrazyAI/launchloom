@@ -1,3 +1,4 @@
+export { default as PageBriefSections } from "../components/PageBriefSections";
 import { useEffect, useMemo, useState } from "react";
 
 export type CreativeRuntime = {
@@ -57,6 +58,7 @@ export type CreativeContent = {
 };
 
 export type CreativeServicePage = {
+  brief?: import("./page-briefs.mjs").PageBrief | null;
   name: string;
   slug: string;
   description: string;
@@ -72,10 +74,11 @@ export type CreativeServicePage = {
   }[];
   process: readonly string[];
   faqs: readonly { question: string; answer: string }[];
-  images: { context?: string };
+  images: { context?: string; alt?: string };
 };
 
 export type CreativeLocationPage = {
+  brief?: import("./page-briefs.mjs").PageBrief | null;
   name: string;
   slug: string;
   description: string;
@@ -86,7 +89,7 @@ export type CreativeLocationPage = {
     description: string;
   }[];
   otherAreas: readonly { name: string; slug: string }[];
-  images: { context?: string };
+  images: { context?: string; alt?: string };
 };
 
 export function useReducedMotion(runtime?: CreativeRuntime) {

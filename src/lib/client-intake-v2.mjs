@@ -1,3 +1,4 @@
+import { addressVisibility, factText, normalizeResearchLanguageCode } from "../../templates/client-site/src/lib/business-facts.mjs";
 /** @typedef {10 | 20 | 30 | 50 | "50+"} ServiceRadius */
 
 import {
@@ -25,9 +26,13 @@ export const CLIENT_INTAKE_V2_FORM_FIELDS = Object.freeze([
   "email",
   "phone",
   "address",
+  "addressVisibility",
+  "hours",
+  "researchLanguageCode",
   "website",
   "domain",
   "services",
+  "excludedServices",
   "industry",
   "serviceAreas",
   "serviceRadius",
@@ -74,11 +79,15 @@ export const CLIENT_INTAKE_V2_ISSUE_FIELDS = Object.freeze([
   "email",
   "phone",
   "address",
+  "addressVisibility",
+  "hours",
+  "researchLanguageCode",
   "website",
   "domain",
   "desiredDomain",
   "industry",
   "services",
+  "excludedServices",
   "confirmedServices",
   "serviceAreas",
   "primaryCity",
@@ -159,10 +168,11 @@ export function normalizeClientIntake(raw) {
   const contactName = clean(raw.contactName, 120);
   const email = clean(raw.email, 240).toLowerCase();
   const phone = clean(raw.phone, 80);
-  const address = clean(raw.address, 300);
+  const address = factText(raw.address, 300);
+  const visibility = addressVisibility(raw.addressVisibility);
   if (!/^[a-z0-9-]{12,100}$/iu.test(submissionId))
     throw new Error("A valid submission reference is required.");
-  if (!businessName || !contactName || !email || !phone || !address)
+  if (!businessName || !contactName || !email || !phone || (legacy && !address))
     throw new Error("Complete the required business details before submitting.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email))
     throw new Error("Enter a valid preview email.");
@@ -287,6 +297,10 @@ export function normalizeClientIntake(raw) {
     email,
     phone,
     address,
+    addressVisibility: visibility,
+    hours: factText(raw.hours, 240),
+    researchLanguageCode: normalizeResearchLanguageCode(raw.researchLanguageCode),
+    excludedServices: list(raw.excludedServices, 20),
     website: clean(raw.website, 500),
     domain: clean(raw.domain, 253),
     desiredDomain: clean(raw.desiredDomain, 253),

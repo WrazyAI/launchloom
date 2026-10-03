@@ -1,3 +1,11 @@
+import {
+  applyPageContentRevision,
+  pageBriefFor,
+  compilePageBriefs,
+  publicPageEvidence,
+} from "../templates/client-site/src/lib/page-briefs.mjs";
+import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
+import { factText } from "../templates/client-site/src/lib/business-facts.mjs";
 import { parseModelJson } from "./model-json.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import {
@@ -153,6 +161,7 @@ const IMAGE_TARGET_FIELDS = {
 };
 const FEEDBACK_IMAGE_PATH = /^\/images\/feedback\/[a-z0-9-]+\.webp$/u;
 const MODEL_OPERATION_KINDS = new Set([
+  "set_page_content",
   "set_copy",
   "set_service_copy",
   "set_process",
@@ -269,7 +278,7 @@ const scopedLayoutRequest =
 const layoutRequest =
   /\b(layout|reorder|move|above|below|before|after|hide|remove|show|add|section|spacing|spacious|compact|density|typography|font|modern|editorial|bold|immersive|center(?:ed)?)\b/i;
 const contentRequest =
-  /\b(copy|wording|text|headline|heading|kicker|description|intro|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten|simplify|condense).{0,50}\b(faq|question|answer|process|step|hero|opening)\b|\b(faq|question|answer|process|step|hero|opening)\b.{0,50}(?:say|read|explain|mention|shorter|simpler|concise|bloated|too long)\b/i;
+  /\b(copy|wording|text|headline|heading|kicker|description|intro|introduction|metadata|service card|form intro)\b|(?:rewrite|revise|edit|change|update|clarify|expand|shorten|simplify|condense).{0,50}\b(faq|question|answer|process|step|hero|opening)\b|\b(faq|question|answer|process|step|hero|opening)\b.{0,50}(?:say|read|explain|mention|shorter|simpler|concise|bloated|too long)\b/i;
 const COPY_FIELD_TARGETS = [
   [
     "heroHeading",
@@ -1045,6 +1054,13 @@ function intentsFor(item, config) {
     intents.push("layout");
   if (contentRequest.test(feedback.replace(/^\s*\[[^\]]+\]\s*/, "")))
     intents.push("content");
+  if (
+    explicitContentTargets(feedback, config).some(
+      (target) => target.kind === "page-content",
+    ) &&
+    /\b(?:local (?:detail|context)|image|photo|media)\b/iu.test(feedback)
+  )
+    intents.push("content");
   if (conversionFeatureRequest.test(feedback))
     intents.push("conversion-feature");
   if (config.design?.experience?.renderer === "creative-candidate") {
@@ -1063,16 +1079,36 @@ function intentsFor(item, config) {
     (item?.assets?.length || item?.colors?.length) &&
     feedback.trim() &&
     intents.every((intent) => intent === "image" || intent === "color") &&
-    feedback.split(/[.!?;,]|\band\b/iu).some((clause) =>
-      /\b(?:change|revise|rewrite|update|make|add|remove|hide|move|adjust|enable|disable)\b/iu.test(clause) &&
-      !requestsColorChange(clause),
-    )
+    feedback
+      .split(/[.!?;,]|\band\b/iu)
+      .some(
+        (clause) =>
+          /\b(?:change|revise|rewrite|update|make|add|remove|hide|move|adjust|enable|disable)\b/iu.test(
+            clause,
+          ) && !requestsColorChange(clause),
+      )
   )
     intents.push("unknown");
   return intents.length ? [...new Set(intents)] : ["unknown"];
 }
 function explicitContentTargets(feedback, config) {
-  const text = feedback.replace(/^\s*\[[^\]]+\]\s*/, "");
+  const normalizedText = String(feedback || "").toLowerCase();
+  const pathTokens = new Set(
+    (normalizedText.match(/\/[a-z0-9/-]*/gu) || []).map((path) =>
+      path.endsWith("/") ? path : `${path}/`,
+    ),
+  );
+  const namedRoutes = compileRouteInventory(config).records.filter(
+    (route) =>
+      route.approval.status === "approved" &&
+      config.pageContent?.[route.id] &&
+      (pathTokens.has(route.path.toLowerCase()) ||
+        wholePhraseContains(normalizedText, route.id)),
+  );
+
+  const text = feedback
+    .replace(/^\s*\[[^\]]+\]\s*/, "")
+    .replace(/\/[a-z0-9/-]*/giu, " ");
   const namedServices = (config.services || []).filter(
     (service) =>
       service &&
@@ -1088,8 +1124,37 @@ function explicitContentTargets(feedback, config) {
       pattern.test(text) &&
       !(field === "servicesIntro" && specificServiceDescription),
   ).map(([field]) => field);
-  const targets = exactFields.map((field) => ({ kind: "copy-field", field }));
-  for (const service of namedServices)
+  const requestedPageFields = [
+    ["introduction", /\b(?:intro|introduction|page copy|page wording)\b/iu],
+    ["metadataDescription", /\b(?:metadata|meta description)\b/iu],
+    ["faqs", /\b(?:faqs?|questions?|answers?)\b/iu],
+    ["localContext", /\blocal (?:detail|context|information)\b/iu],
+    ["media", /\b(?:images?|photos?|media)\b/iu],
+  ]
+    .filter(([, pattern]) => pattern.test(text))
+    .map(([field]) => field);
+  const targets = [
+    ...namedRoutes.flatMap((route) =>
+      (requestedPageFields.length ? requestedPageFields : [null]).map(
+        (field) => ({
+          kind: "page-content",
+          routeId: route.id,
+          field,
+        }),
+      ),
+    ),
+    ...exactFields.map((field) => ({ kind: "copy-field", field })),
+  ];
+  for (const service of namedServices.filter(
+    (service) =>
+      specificServiceDescription ||
+      !namedRoutes.some(
+        (route) =>
+          route.pageType === "service" &&
+          route.target.trim().toLowerCase() ===
+            service.name.trim().toLowerCase(),
+      ),
+  ))
     targets.push({
       kind: "service",
       slug: service.slug,
@@ -1099,8 +1164,10 @@ function explicitContentTargets(feedback, config) {
     (field) => field === "faqHeading" || field === "faqKicker",
   );
   if (
-    /\banswers?\b|\bfaq (?:questions|entries|content)\b/i.test(text) ||
+    (!namedRoutes.length &&
+      /\banswers?\b|\bfaq (?:questions|entries|content)\b/i.test(text)) ||
     (/\b(?:faqs?|frequently asked questions?)\b/i.test(text) &&
+      !namedRoutes.length &&
       !exactFaqCopyField)
   )
     targets.push({ kind: "operation", operation: "set_faqs" });
@@ -1132,6 +1199,12 @@ function explicitContentTargets(feedback, config) {
   return targets;
 }
 function contentOperationMatchesTarget(operation, target) {
+  if (target.kind === "page-content")
+    return (
+      operation.kind === "set_page_content" &&
+      operation.routeId === target.routeId &&
+      (!target.field || operation.field === target.field)
+    );
   if (target.kind === "copy-field")
     return operation.kind === "set_copy" && operation.field === target.field;
   if (target.kind === "copy-section")
@@ -1185,11 +1258,11 @@ export async function modelOperations(
         messages: [
           {
             role: "system",
-            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. When feedback names specific section(s), only edit those sections; never use page-wide design treatment or edit another section to satisfy a section-specific request. If the allowed operations cannot express the requested scope, return no operation. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
+            content: `Return JSON only: {plans:[{feedbackIndex,operations:[...]}]}. Plan every feedback item independently. Preserve approved facts, assets, stable section IDs, and unrelated content. Allowed operations: {kind:'set_page_content',routeId,field:'introduction'|'metadataDescription'|'faqs'|'localContext'|'media',value}; existing page evidence and its exact supported wording must be reused, never grant new confirmation or create evidence. A route-specific FAQ, image, local detail, introduction or metadata request must use the exact approved route ID and may not edit company-wide content. {kind:'set_copy',field,value}; {kind:'set_service_copy',serviceSlug,description}; {kind:'set_process',steps:[...]}; {kind:'set_faqs',faqs:[{question,answer}]}; {kind:'set_section_enabled',sectionType,enabled}; {kind:'reorder_section',sectionType,relativeTo,position:'before'|'after'}; {kind:'set_section_variant',sectionType,variant}; {kind:'set_design_treatment',density:'compact'|'balanced'|'spacious',typography:'editorial'|'sans'|'strong'}; {kind:'set_conversion_feature',feature:'guidedQualifier'|'quickAnswers'|'aiChat'|'exitOffer',enabled:boolean}. Allowed set_copy fields are heroKicker (small label above the heading), heroHeading (main H1), heroBody (intro paragraph), servicesHeading, servicesIntro, aboutKicker, aboutHeading, aboutBody, contactKicker, contactHeading, processKicker, processHeading, faqKicker, faqHeading, formIntro. Keep hero headings to 4-10 memorable words, hero bodies to one sentence under 28 words, and service-card descriptions to one sentence under 22 words. A request to shorten or simplify the hero should normally revise heroHeading and/or heroBody while preserving verified meaning. Use only the supplied allowlisted fields, existing service slugs, section types and variants. Only enable an exit offer when the approved business context contains a real offer. When feedback names specific section(s), only edit those sections; never use page-wide design treatment or edit another section to satisfy a section-specific request. If the allowed operations cannot express the requested scope, return no operation. Broader layout changes are allowed only when explicitly requested. Never invent reviews, credentials, prices, guarantees, locations, timelines, staff, outcomes, or business facts. Never change contact details, service names, recipe, or assets. Do not use em dashes. Return no operation for an unsafe or unsupported request.`,
           },
           {
             role: "user",
-            content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
+            content: `Feedback items:\n${JSON.stringify(items.map((feedback, feedbackIndex) => ({ feedbackIndex, feedback })))}\n\nApproved context:\n${JSON.stringify({ recipe: recipeFor(config), industry: config.industry, businessKind: config.businessKind, business: config.business, differentiators: config.differentiators, services: config.services, pageBriefs: compilePageBriefs(config).briefs, pageEvidence: publicPageEvidence(config), copy: config.copy, process: config.conversion?.process, faqs: config.conversion?.faqs, sections: currentSections(config), allowedVariants: allowedVariants(config) })}`,
           },
         ],
       },
@@ -1257,6 +1330,8 @@ function conciseRevisionContent(value, field) {
 }
 export function applyOperation(config, operation) {
   if (!operation || typeof operation !== "object") return false;
+  if (operation.kind === "set_page_content")
+    return applyPageContentRevision(config, operation);
   if (operation.kind === "set_social_proof") {
     config.socialProof = {
       source:
@@ -1639,7 +1714,11 @@ function intentSatisfied(intent, operations) {
       (operation) => operation.kind === "set_color_palette",
     );
   if (intent === "image")
-    return operations.some((operation) => operation.kind === "set_image");
+    return operations.some(
+      (operation) =>
+        operation.kind === "set_image" ||
+        (operation.kind === "set_page_content" && operation.field === "media"),
+    );
   if (intent === "brand-name")
     return operations.some((operation) => operation.kind === "show_brand_name");
   if (intent === "layout")
@@ -1653,9 +1732,13 @@ function intentSatisfied(intent, operations) {
     );
   if (intent === "content")
     return operations.some((operation) =>
-      ["set_copy", "set_service_copy", "set_process", "set_faqs"].includes(
-        operation.kind,
-      ),
+      [
+        "set_copy",
+        "set_service_copy",
+        "set_process",
+        "set_faqs",
+        "set_page_content",
+      ].includes(operation.kind),
     );
   if (intent === "conversion-feature")
     return operations.some(
@@ -1677,8 +1760,8 @@ export async function planRevision(
         assets: Array.isArray(item?.assets) ? item.assets : [],
         colors: Array.isArray(item?.colors) ? item.colors : [],
       };
-  })
-  .filter((item) => item.text || item.assets.length || item.colors.length);
+    })
+    .filter((item) => item.text || item.assets.length || item.colors.length);
   const textItems = items.map((item) => item.text);
   const creativeCandidate =
     config.design?.experience?.renderer === "creative-candidate";
@@ -1880,8 +1963,7 @@ export async function planRevision(
       ? unresolved.filter(
           (intent) =>
             (intent === "layout" && !unsupportedCreativeStructure) ||
-            (intent === "color" &&
-              sectionScopedCreativeColor[feedbackIndex]),
+            (intent === "color" && sectionScopedCreativeColor[feedbackIndex]),
         )
       : [];
     const hardUnresolved = unresolved.filter(
@@ -1898,7 +1980,8 @@ export async function planRevision(
     return {
       feedbackIndex,
       feedback: item.text,
-      structuredColorOnly: item.colors.length > 0 &&
+      structuredColorOnly:
+        item.colors.length > 0 &&
         !requestsColorChange(item.text.replace(/^\s*\[[^\]]+\]\s*/u, "")),
       ...(status === "creative" && item.assets.length
         ? { sourceFeedback: residualVisualRequest(item.text).trim() }
@@ -2114,6 +2197,41 @@ export function expectedArtifacts(operations, config) {
           target: operation.target,
         },
       ];
+    if (operation.kind === "set_page_content") {
+      const brief = pageBriefFor(config, operation.routeId);
+      if (!brief)
+        throw new Error("Route-specific revision has no approved page brief.");
+      if (operation.field === "metadataDescription")
+        return [
+          {
+            type: "page-meta",
+            route: brief.path,
+            requirePageMap: true,
+            value: factText(operation.value.text, 1500),
+          },
+        ];
+      if (operation.field === "media")
+        return operation.value.map((media) => ({
+          type: "asset",
+          route: brief.path,
+          requirePageMap: true,
+          url: media.src,
+          placement: "page-context",
+        }));
+      const values =
+        operation.field === "introduction"
+          ? [operation.value.text]
+          : operation.field === "faqs"
+            ? operation.value.flatMap((faq) => [faq.question, faq.answer.text])
+            : operation.value.map((item) => item.text);
+      return values.map((value) => ({
+        type: "text",
+        route: brief.path,
+        requirePageMap: true,
+        value: factText(value, 1500),
+        path: `pageContent.${operation.routeId}.${operation.field}`,
+      }));
+    }
     if (operation.kind === "set_service_copy")
       return [{ type: "text", value: clean(operation.description) }];
     if (operation.kind === "set_process")
@@ -2503,13 +2621,27 @@ export function verifyRevision(
       if (id && new RegExp(`<section[^>]+id=["']${id}["']`).test(html))
         failures.push(`Section should be absent: ${artifact.sectionType}`);
     }
-    const renderedPage = artifact.route
-      ? htmlPages
-        ? htmlPages[artifact.route] || ""
-        : artifact.route === "/"
-          ? html
-          : allHtml
-      : allHtml;
+    const renderedPage =
+      artifact.requirePageMap && !htmlPages
+        ? ""
+        : artifact.route
+          ? htmlPages
+            ? htmlPages[artifact.route] || ""
+            : artifact.route === "/"
+              ? html
+              : allHtml
+          : allHtml;
+    if (
+      artifact.type === "page-meta" &&
+      ![...renderedPage.matchAll(/<meta\b[^>]*>/giu)].some(
+        (match) =>
+          htmlAttributeValue(match[0], "name") === "description" &&
+          renderedTextVariants(artifact.value).includes(
+            htmlAttributeValue(match[0], "content"),
+          ),
+      )
+    )
+      failures.push(`Missing route-specific metadata at ${artifact.route}.`);
     if (
       artifact.type === "text" &&
       !containsArtifactText(renderedPage, artifact, config)
@@ -2528,7 +2660,10 @@ export function verifyRevision(
       failures.push(
         `Missing rendered color: ${artifact.field}=${artifact.value}`,
       );
-    if (artifact.type === "image" && !containsRequestedImage(html, artifact, config))
+    if (
+      artifact.type === "image" &&
+      !containsRequestedImage(renderedPage, artifact, config)
+    )
       failures.push(`Missing rendered image: ${artifact.path}`);
     if (
       artifact.type === "variant" &&

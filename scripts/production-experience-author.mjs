@@ -1,3 +1,5 @@
+import { compilePageBriefs } from "../templates/client-site/src/lib/page-briefs.mjs";
+import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
 import { fontFamilyById, resolveFontPairing } from "./font-catalog.mjs";
 import crypto from "node:crypto";
@@ -172,6 +174,7 @@ export function creativeServicePageShape() {
       name: "string",
       slug: "string",
       description: "string",
+      brief: { version: "number", routeId: "string", mode: "string", sections: [{kind:"string",heading:"string",items:[{text:"string",evidenceIds:["string"]}]}] },
       support: {
         scope: "string",
         preparation: "string",
@@ -180,7 +183,7 @@ export function creativeServicePageShape() {
       related: [{ name: "string", slug: "string", description: "string" }],
       process: ["string"],
       faqs: [{ question: "string", answer: "string" }],
-      images: { context: "string?" },
+      images: { context: "string?", alt: "string" },
     },
   };
 }
@@ -208,10 +211,11 @@ export function creativeLocationPageShape() {
       name: "string",
       slug: "string",
       description: "string",
+      brief: { version: "number", routeId: "string", mode: "string", sections: [{kind:"string",heading:"string",items:[{text:"string",evidenceIds:["string"]}]}], faqs:[{question:"string",answer:"string"}], process:["string"] },
       localNote: "string",
       services: [{ name: "string", slug: "string", description: "string" }],
       otherAreas: [{ name: "string", slug: "string" }],
-      images: { context: "string?" },
+      images: { context: "string?", alt: "string" },
     },
   };
 }
@@ -333,6 +337,7 @@ function visualBrief(site) {
 }
 
 function contentShape(site, route) {
+  site = routeLinkedContent(site);
   const business = site.business || {};
   const copy = site.copy || {};
   const assets = site.assets || {};
@@ -376,6 +381,7 @@ function contentShape(site, route) {
         assets.photoThree || routeImages.tertiary || images.tertiary || "",
       offer: String(business.offer || ""),
     },
+    pageBriefContractVersion: compilePageBriefs(site).briefs.some(brief => brief.mode === "supported") ? 1 : null,
     services: site.services || [],
     proof: (site.differentiators || []).slice(0, 3).map(String),
     process: (site.conversion?.process || []).slice(0, 4).map(String),
@@ -2648,7 +2654,16 @@ function validateInnerPageSource({
  * shared router, conversion, and design-system contracts for the rendered
  * identity checks in the creative bakeoff.
  */
+function assertPageBriefBinding(source, root, route, content) {
+  if (content?.pageBriefContractVersion !== 1) return;
+  const { file, elements } = collectJsxElements(source);
+  const bound = elements.some(({opening}) => jsxOpeningName(opening) === "PageBriefSections" && jsxAttributeValue(jsxAttribute(opening,"brief"),file) === `${root}.brief`);
+  const imported = file.statements.some(statement => ts.isImportDeclaration(statement) && statement.moduleSpecifier.text === "@launchloom/runtime" && statement.importClause?.namedBindings && ts.isNamedImports(statement.importClause.namedBindings) && statement.importClause.namedBindings.elements.some(binding => binding.name.text === "PageBriefSections" && (!binding.propertyName || binding.propertyName.text === "PageBriefSections")));
+  if (!bound || !imported) throw new Error(`Candidate ${route.id} must render shared PageBriefSections bound to ${root}.brief.`);
+}
+
 export function validateServicePage(source, route, content) {
+  assertPageBriefBinding(source,"service",route,content);
   validateInnerPageSource({
     source,
     route,
@@ -2676,6 +2691,7 @@ export function validateServicePage(source, route, content) {
  * coverage language truthful for the listed service area.
  */
 export function validateLocationPage(source, route, content) {
+  assertPageBriefBinding(source,"location",route,content);
   validateInnerPageSource({
     source,
     route,
@@ -3365,7 +3381,7 @@ export async function authorExperienceCandidates({
       });
       const servicePage = servicePageOutput.source;
       complianceRepaired ||= servicePageOutput.repaired;
-      const locations = Array.isArray(site.locations) ? site.locations : [];
+      const locations = content.locations || [];
       const authorLocationPage =
         site.industry === "home-services" && locations.length > 0;
       let locationPage = "";
@@ -3563,9 +3579,11 @@ export async function authorExperienceCandidates({
     failures.push(failure);
   }
   if (!candidates.length) {
-    const error = new Error(safeAuthorFailureText(
-      `All creative candidates failed: ${failures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
-    ));
+    const error = new Error(
+      safeAuthorFailureText(
+        `All creative candidates failed: ${failures.map((failure) => `${failure.routeId}: ${failure.error}`).join(" | ")}`,
+      ),
+    );
     error.failures = failures;
     throw error;
   }

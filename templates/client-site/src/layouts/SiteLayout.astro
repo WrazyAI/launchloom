@@ -1,7 +1,7 @@
 ---
 import { resolvePalette, semanticColorCss } from "../lib/color-policy.mjs";
 import { fontFaceCss, resolveFontPairing } from "../lib/font-catalog.mjs";
-import site from "../lib/site";
+import site, { routeInventory } from "../lib/site";
 import ReviewBanner from "../components/ReviewBanner.astro";
 import QuickAnswers from "../components/QuickAnswers.astro";
 import ExitOffer from "../components/ExitOffer.astro";
@@ -37,10 +37,11 @@ const colorRoles = semanticColorCss(palette) + `
 .split-section :is(a,button):focus-visible {outline:2px solid ${palette.surfaces.brand.focus};outline-offset:3px;}
 `;
 const diagnosticPreview = import.meta.env.PUBLIC_CREATIVE_DIAGNOSTIC === "true";
-const noIndex = import.meta.env.PUBLIC_REVIEW_MODE === "true" || diagnosticPreview;
+const route = routeInventory.records.find(record => record.path === Astro.url.pathname);
+const noIndex = import.meta.env.PUBLIC_REVIEW_MODE === "true" || diagnosticPreview || route?.discovery.indexable === false;
 // The approved deployment origin is supplied at build time. A domain in the
 // intake is not necessarily connected to Pages and must not become canonical.
-const canonical = noIndex ? undefined : new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
+const canonical = import.meta.env.PUBLIC_REVIEW_MODE === "true" || diagnosticPreview ? undefined : new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
 const openGraphImage = site.images.hero
   ? new URL(site.images.hero, Astro.site ?? Astro.url).href
   : undefined;

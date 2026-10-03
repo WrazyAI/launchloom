@@ -1,0 +1,25 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import PageBriefSections from "../components/PageBriefSections";
+import site, { renderedRoutes, routePageBrief } from "../lib/site";
+export function getStaticPaths() {
+  return renderedRoutes.filter(route => ["faq", "privacy", "terms"].includes(route.pageType)).map(route => ({params: {support: route.pageType}, props: {kind: route.pageType}}));
+}
+const { kind } = Astro.props;
+const content = site.supportingPages?.[kind];
+const brief = routePageBrief(`${kind}:`);
+const supported = brief?.mode === "supported";
+if (!content) throw new Error("Approved supporting route has no supplied content.");
+const title = content.title || ({faq:"FAQs",privacy:"Privacy",terms:"Terms"} as Record<string,string>)[kind];
+const paragraphs = content.body.split(/\n\s*\n/u).map(value => value.trim()).filter(Boolean);
+---
+<SiteLayout title={supported ? brief.metadata.title : `${title} | ${site.business.name}`} description={supported ? brief.metadata.description : content.body.replace(/\s+/gu," ").slice(0,240)}>
+  <Header />
+  <main class="inner-page"><section class="inner-hero"><div class="wrap"><a class="breadcrumb" href="/">Home</a><h1>{title}</h1>{supported && <p>{brief.introduction}</p>}</div></section>
+    {supported && <PageBriefSections brief={brief} />}
+    <section class="section wrap">{paragraphs.map(paragraph => <p>{paragraph}</p>)}</section>
+  </main>
+  <Footer />
+</SiteLayout>

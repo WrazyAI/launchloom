@@ -1,3 +1,11 @@
+import { compilePageBriefs } from "./page-briefs.mjs";
+import { resolvePageRecipe } from "./page-recipe";
+import {
+  compileRouteInventory,
+  approvedRoutes,
+  productionRouteMode,
+} from "./route-inventory.mjs";
+import { publicBusiness } from "./business-facts.mjs";
 import config from "../site.config.json";
 
 export type Service = {
@@ -112,6 +120,17 @@ export type ExperiencePackId =
   | "guided-conversation"
   | "service-led";
 export type SiteConfig = {
+  pageContent?: Record<string, any>;
+  pageEvidence?: Array<Record<string, any>>;
+  pageBriefs?: ReturnType<typeof compilePageBriefs>;
+  routePolicy?: import("./route-inventory.mjs").RoutePolicy;
+  routeInventory?: import("./route-inventory.mjs").RouteInventory;
+  supportingPages?: Record<
+    string,
+    { title?: string; body: string; reviewed: boolean; source: string }
+  >;
+  excludedServices?: string[];
+  factReadiness?: import("./business-facts.mjs").FactReadiness;
   preset: "wellness" | "home-services";
   industry?: string;
   businessKind?: string;
@@ -123,6 +142,7 @@ export type SiteConfig = {
     phone: string;
     email: string;
     address: string;
+    addressVisibility?: "public" | "private";
     serviceAreas: string[];
     primaryCity?: string;
     serviceRadiusMiles?: number | "50+" | null;
@@ -374,8 +394,47 @@ export type SiteConfig = {
   lead?: { apiUrl: string; token: string };
 };
 
-const site = config as SiteConfig;
+const site = {
+  ...config,
+  business: publicBusiness(config.business),
+} as SiteConfig;
 
+// Always compile from current content/policy; stored reports cannot authorize routes.
+export const routeInventory = compileRouteInventory(site);
+export const pageBriefs = compilePageBriefs(site);
+export const routePageBrief = (routeId: string) => pageBriefs.briefs.find(brief => brief.routeId === routeId.trim().toLowerCase().replace(/\s+/gu, " ")) || null;
+export const renderedRoutes = approvedRoutes(routeInventory, {
+  production: productionRouteMode(import.meta.env),
+});
+export const routeIsRendered = (path: string) =>
+  renderedRoutes.some((route) => route.path === path);
+export const pageHref = (path: string, fallback = "/") =>
+  routeIsRendered(path) ? path : fallback;
+export const homeSectionHref = (type: string) => {
+  const section = resolvePageRecipe(site).sections.find(
+    (section) => section.type === type,
+  );
+  const id = site.design?.experience?.packId
+    ? type === "faq"
+      ? "faqs"
+      : type
+    : section?.id;
+  return id ? `/#${id}` : "/";
+};
+export const serviceHref = (slug: string) =>
+  pageHref(`/services/${slug}/`, homeSectionHref("services"));
+export const approvedServices = site.services.filter((service) =>
+  routeIsRendered(`/services/${service.slug}/`),
+);
+site.locations = site.locations.filter((location) =>
+  routeIsRendered(`/locations/${location.slug}/`),
+);
+export const footerRoutes = renderedRoutes.filter(
+  (route) => route.discovery.navigation === "footer",
+);
+export const headerRoutes = renderedRoutes.filter(
+  (route) => route.discovery.navigation === "header",
+);
 export default site;
 
 export const phoneHref = (phone: string) =>
