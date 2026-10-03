@@ -268,3 +268,94 @@ it("redacts known private fields from observations as well as failures", async (
   });
   expect(JSON.stringify(report)).not.toContain("99 Secret Lane");
 });
+
+it("blocks stale nested publisher identity and fabricated nested ratings", async () => {
+  const dist = await fixture();
+  await change(dist, "/", (html) =>
+    html.replace(
+      "</head>",
+      '<script type="application/ld+json">' +
+        JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          publisher: {
+            "@type": "LocalBusiness",
+            name: "Previous client",
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: 5,
+              ratingCount: 999,
+            },
+          },
+        }) +
+        "</script></head>",
+    ),
+  );
+  const failures = await checkSeoRelease({
+    mode: "production",
+    config,
+    dist,
+    origin,
+  });
+  expect(failures.join(" ")).toContain("schema-business");
+  expect(failures.join(" ")).toContain("schema-claims");
+});
+it("blocks unsupported standalone rating schema", async () => {
+  const dist = await fixture();
+  await change(dist, "/", (html) =>
+    html.replace(
+      "</head>",
+      '<script type="application/ld+json">' +
+        JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "AggregateRating",
+          ratingValue: 5,
+          ratingCount: 999,
+        }) +
+        "</script></head>",
+    ),
+  );
+  expect(
+    (await checkSeoRelease({ mode: "production", config, dist, origin })).join(
+      " ",
+    ),
+  ).toContain("schema");
+});
+
+it("accepts current business definitions in a schema graph with partial provider references", async () => {
+  const dist = await fixture();
+  await change(dist, "/services/drain-cleaning/", (html) =>
+    html.replace(
+      /<script type="application\/ld\+json">(.*?)<\/script>/u,
+      (_, json) => {
+        const business = JSON.parse(json);
+        return (
+          '<script type="application/ld+json">' +
+          JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              business,
+              {
+                "@type": "Service",
+                name: "Drain cleaning",
+                serviceType: "Drain cleaning",
+                provider: {
+                  "@type": "LocalBusiness",
+                  "@id": origin + "/#business",
+                  name: config.business.name,
+                  telephone: config.business.phone,
+                },
+              },
+            ],
+          }) +
+          "</script>"
+        );
+      },
+    ),
+  );
+  expect(
+    await checkSeoRelease({ mode: "production", config, dist, origin }),
+  ).toEqual([]);
+});
+
+it('blocks unsupported claims nested in an untyped schema publisher',async()=>{const dist=await fixture();await change(dist,'/',html=>html.replace('</head>','<script type="application/ld+json">'+JSON.stringify({'@context':'https://schema.org','@type':'WebPage',publisher:{name:config.business.name,aggregateRating:{ratingValue:5,ratingCount:999}}})+'</script></head>'));expect((await checkSeoRelease({mode:'production',config,dist,origin})).join(' ')).toContain('schema-claims');});

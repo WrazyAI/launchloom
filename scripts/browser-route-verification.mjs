@@ -53,8 +53,17 @@ export async function serveBuiltSite(dist) {
       );
       res.end(body);
     } catch {
-      res.statusCode = 404;
-      res.end("Not found");
+      const notFound = await fs
+        .readFile(path.join(root, "404.html"))
+        .catch(() => null);
+      res.statusCode = notFound ? 404 : 200;
+      res.setHeader("Content-Type", "text/html");
+      res.end(
+        notFound ||
+          (await fs
+            .readFile(path.join(root, "index.html"))
+            .catch(() => Buffer.from("Not found"))),
+      );
     }
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -212,7 +221,9 @@ async function verifyForm(page, form, config, phase, requests, timeout) {
   return result;
 }
 
-/** Approved route browser evidence. Mutating requests are always intercepted. */
+/** Approved route browser evidence. Mutating requests are always intercepted.
+ * @param {{config: any, origin: string, formMode?: string, mode?: string, viewports?: Array<{name:string,width:number,height:number}>, representativeViewports?: Array<{name:string,width:number,height:number}>, screenshotsDir?: string, timeout?: number, browser?: import("playwright").Browser}} options
+ */
 export async function verifyApprovedRoutes({
   config,
   origin,
@@ -453,8 +464,10 @@ export async function verifyApprovedRoutes({
             });
           add(
             "conversion",
-            forms.every((form) => form.failures.length === 0),
-            "Declared form lifecycles must have terminal synthetic evidence.",
+            (!["contact", "service", "location"].includes(record.pageType) ||
+              forms.length > 0) &&
+              forms.every((form) => form.failures.length === 0),
+            "Required service/location/contact forms must render and have terminal synthetic lifecycle evidence.",
           );
           const reload = await page.reload({ waitUntil: "networkidle" });
           add(

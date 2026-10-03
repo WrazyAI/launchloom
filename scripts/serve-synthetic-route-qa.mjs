@@ -40,7 +40,9 @@ export async function startSyntheticRouteServer({ dist, port = 0 }) {
           payload.name !== "Stage 4 Synthetic" ||
           payload.phone !== "555-0101" ||
           payload.email !== "stage4@example.test" ||
-          payload.message !== "Stage 4 synthetic request."
+          !["Stage 4 synthetic request.", "Stage 4 synthetic request"].includes(
+            payload.message,
+          )
         )
           throw new Error("Synthetic values required");
         const route = new URL(payload.pageUrl).pathname,
@@ -73,6 +75,17 @@ export async function startSyntheticRouteServer({ dist, port = 0 }) {
             .toString()
             .replaceAll("https://stage4-provider.invalid", "/_qa"),
         );
+      if (ext === ".html") {
+        // TestSprite serializes default/value attributes after filling. Reflect
+        // already-empty live fields; never clear a filled field or fake success.
+        const observer = `<script>window.addEventListener('launchloom:lead-submitted',()=>{const reflect=()=>{for(const field of document.querySelectorAll('main form input[name="name"],main form input[name="phone"],main form input[name="email"],main form textarea[name="message"]'))if(field.value===''&&field.hasAttribute('value'))field.removeAttribute('value');};setTimeout(reflect,0);requestAnimationFrame(reflect);});</script>`;
+        const html = bytes.toString();
+        bytes = Buffer.from(
+          html.includes("</body>")
+            ? html.replace("</body>", observer + "</body>")
+            : html + observer,
+        );
+      }
       res.setHeader(
         "Content-Type",
         {

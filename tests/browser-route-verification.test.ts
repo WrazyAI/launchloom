@@ -42,6 +42,7 @@ async function server(
     broken?: boolean;
     asset?: boolean;
     fakeSuccess?: boolean;
+    noForms?: boolean;
   } = {},
 ) {
   let mutations = 0;
@@ -57,6 +58,14 @@ async function server(
       return;
     }
     res.setHeader("Content-Type", "text/html");
+    if (options.noForms) {
+      res.end(
+        html(route, options.broken)
+          .replace(/<form[\s\S]*?<\/form>/u, "")
+          .replace(/<script>[\s\S]*?<\/script>/u, ""),
+      );
+      return;
+    }
     res.end(
       (options.fakeSuccess
         ? html(route, options.broken).replace(
@@ -161,4 +170,44 @@ it("rejects a success message without the actual success lifecycle event", async
   });
   expect(report.status).toBe("fail");
   expect(report.failures.join(" ")).toContain("Form lifecycle");
+});
+
+it("emulates Pages SPA fallback until a top-level 404 artifact exists", async () => {
+  const fs = await import("node:fs/promises"),
+    os = await import("node:os"),
+    path = await import("node:path");
+  const { serveBuiltSite } =
+    await import("../scripts/browser-route-verification.mjs");
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), "ll-pages-host-"));
+  await fs.writeFile(
+    path.join(dir, "index.html"),
+    "<main>Owned fixture homepage</main>",
+  );
+  const server = await serveBuiltSite(dir);
+  try {
+    expect((await fetch(server.origin + "/unknown/")).status).toBe(200);
+    await fs.writeFile(
+      path.join(dir, "404.html"),
+      "<main>Page not found</main>",
+    );
+    const response = await fetch(server.origin + "/unknown/");
+    expect(response.status).toBe(404);
+    expect(await response.text()).toContain("Page not found");
+  } finally {
+    await server.close();
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
+it("blocks a missing required contact form on a service route", async () => {
+  const s = await server({ noForms: true });
+  const report: any = await verifyApprovedRoutes({
+    config,
+    origin: s.origin,
+    formMode: "mocked",
+    viewports: [{ name: "mobile", width: 390, height: 844 }],
+    timeout: 1500,
+  });
+  expect(report.status).toBe("fail");
+  expect(report.failures.join(" ")).toContain("conversion");
 });

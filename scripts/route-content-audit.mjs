@@ -43,17 +43,24 @@ export const htmlText = (html = "") =>
     .trim();
 const normalized = (value) => htmlText(String(value || "")).toLowerCase();
 const escape = (value) => value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-const graphNodes = (value, context) =>
-  Array.isArray(value)
-    ? value.flatMap((item) => graphNodes(item, context))
-    : value && typeof value === "object"
-      ? [
-          ...(value["@type"]
-            ? [{ ...value, "@context": value["@context"] || context }]
-            : []),
-          ...graphNodes(value["@graph"], value["@context"] || context),
-        ]
-      : [];
+const graphNodes = (value, context, relation = "", depth = 0) => {
+  if (depth > 30)
+    throw new Error("Schema nesting exceeds the bounded validator.");
+  if (Array.isArray(value))
+    return value.flatMap((item) =>
+      graphNodes(item, context, relation, depth + 1),
+    );
+  if (!value || typeof value !== "object") return [];
+  const inherited = value["@context"] || context;
+  return [
+    { ...value, "@context": inherited, __relation: relation },
+    ...Object.entries(value)
+      .filter(([key]) => key !== "@context")
+      .flatMap(([key, nested]) =>
+        graphNodes(nested, inherited, key, depth + 1),
+      ),
+  ];
+};
 const types = (node) =>
   Array.isArray(node["@type"]) ? node["@type"] : [node["@type"]];
 const businessTypes = new Set([
@@ -283,43 +290,90 @@ export async function auditRouteContent({
     }
     add(
       "json-ld",
-      parsed && nodes.length > 0,
+      parsed && nodes.some((node) => node["@type"]),
       "Every JSON-LD block must parse and contain structured nodes.",
     );
+    const permittedTypes = new Set([
+      ...businessTypes,
+      "WebPage",
+      "WebSite",
+      "Service",
+      "FAQPage",
+      "Question",
+      "Answer",
+      "BreadcrumbList",
+      "ListItem",
+      "PostalAddress",
+      "GeoCoordinates",
+      "ImageObject",
+      "Organization",
+    ]);
+    const partialProvider = (node) =>
+      node.__relation === "provider" &&
+      Object.keys(node).every((key) =>
+        [
+          "@type",
+          "@context",
+          "@id",
+          "name",
+          "telephone",
+          "email",
+          "address",
+          "areaServed",
+          "__relation",
+        ].includes(key),
+      );
     const businesses = nodes.filter((node) =>
       types(node).some((type) => businessTypes.has(type)),
     );
     add(
       "schema-business",
-      businesses.length > 0 &&
-        businesses.every(
-          (node) =>
-            node["@context"] === "https://schema.org" &&
-            node.name === config.business?.name &&
-            node.telephone === (config.business?.phone || undefined) &&
-            node.email === (config.business?.email || undefined) &&
-            JSON.stringify(node.address) ===
-              (config.business?.address
-                ? JSON.stringify(config.business.address)
-                : undefined) &&
-            JSON.stringify(node.areaServed || []) ===
-              JSON.stringify(config.business?.serviceAreas || []) &&
-            (!node["@id"] || !businessId || node["@id"] === businessId) &&
-            (!origin ||
-              mode !== "production" ||
-              node.url === new URL(record.path, origin).href),
+      businesses.some((node) => !partialProvider(node)) &&
+        businesses.every((node) =>
+          partialProvider(node)
+            ? node["@context"] === "https://schema.org" &&
+              node.name === config.business?.name &&
+              (!node["@id"] || node["@id"] === businessId) &&
+              ["telephone", "email", "address", "areaServed"].every(
+                (key) =>
+                  node[key] === undefined ||
+                  JSON.stringify(node[key]) ===
+                    JSON.stringify(
+                      {
+                        telephone: config.business?.phone,
+                        email: config.business?.email,
+                        address: config.business?.address,
+                        areaServed: config.business?.serviceAreas,
+                      }[key],
+                    ),
+              )
+            : node["@context"] === "https://schema.org" &&
+              node.name === config.business?.name &&
+              node.telephone === (config.business?.phone || undefined) &&
+              node.email === (config.business?.email || undefined) &&
+              JSON.stringify(node.address) ===
+                (config.business?.address
+                  ? JSON.stringify(config.business.address)
+                  : undefined) &&
+              JSON.stringify(node.areaServed || []) ===
+                JSON.stringify(config.business?.serviceAreas || []) &&
+              (!node["@id"] || !businessId || node["@id"] === businessId) &&
+              (!origin ||
+                mode !== "production" ||
+                node.url === new URL(record.path, origin).href),
         ),
-      "All schema business nodes must use current factual identity and a stable business identifier.",
+      "All structured business facts must match the approved identity and a stable business identifier.",
     );
     add(
       "schema-context",
-      nodes.every(
-        (node) =>
-          node["@context"] === "https://schema.org" &&
-          types(node).every(
-            (type) => typeof type === "string" && type.length > 0,
-          ),
-      ),
+      nodes
+        .filter((node) => node["@type"] !== undefined)
+        .every(
+          (node) =>
+            node["@context"] === "https://schema.org" &&
+            types(node).length > 0 &&
+            types(node).every((type) => permittedTypes.has(type)),
+        ),
       "Schema context and types must be suitable structured records.",
     );
     for (const node of nodes.filter((node) => types(node).includes("Service")))
@@ -328,7 +382,8 @@ export async function auditRouteContent({
         record.pageType === "service" &&
           node.name === record.target &&
           node.serviceType === record.target &&
-          node.provider?.name === config.business?.name,
+          (node.provider?.name === config.business?.name ||
+            (businessId && node.provider?.["@id"] === businessId)),
         "Service schema must identify the requested route and current provider.",
       );
     for (const node of nodes.filter((node) =>
@@ -344,6 +399,7 @@ export async function auditRouteContent({
           node.mainEntity.every(
             (question) =>
               question["@type"] === "Question" &&
+              question.acceptedAnswer?.["@type"] === "Answer" &&
               faqs.some(
                 (faq) =>
                   faq.question === question.name &&

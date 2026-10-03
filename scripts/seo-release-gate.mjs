@@ -247,30 +247,6 @@ export async function inspectSeoRelease({ mode, config, dist, origin = "" }) {
           `${route}: canonical URL does not match the approved production origin.`,
         );
     }
-    const json = html.match(
-      /<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/iu,
-    )?.[1];
-    let data;
-    try {
-      data = JSON.parse(json);
-    } catch {
-      failures.push(`${route}: LocalBusiness JSON-LD is missing or invalid.`);
-    }
-    if (data) {
-      if (
-        data.name !== config.business?.name ||
-        data.telephone !== (config.business?.phone || undefined) ||
-        data.email !== (config.business?.email || undefined) ||
-        data.address !== (config.business?.address || undefined) ||
-        JSON.stringify(data.areaServed || []) !==
-          JSON.stringify(config.business?.serviceAreas || [])
-      )
-        failures.push(
-          `${route}: structured business facts differ from the approved configuration.`,
-        );
-      if (mode === "production" && data.url !== new URL(route, originUrl).href)
-        failures.push(`${route}: structured-data URL differs from canonical.`);
-    }
   }
   // An explicit inventory must describe the complete public build, including omissions.
   if (inventory.mode === "explicit") {
@@ -386,6 +362,7 @@ export async function inspectSeoRelease({ mode, config, dist, origin = "" }) {
     config,
   );
 }
+/** @returns {Promise<string[]>} */
 export async function checkSeoRelease(options) {
   return (await inspectSeoRelease(options)).failures;
 }

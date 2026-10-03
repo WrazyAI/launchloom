@@ -31,7 +31,7 @@ export function buildRouteHandoff({
   technical,
   browser,
   contrast,
-  destination,
+  destination = undefined,
 }) {
   const briefs = compilePageBriefs(config);
   const blockers = [

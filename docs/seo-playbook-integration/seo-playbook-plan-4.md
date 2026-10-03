@@ -1,6 +1,6 @@
 # Stage 4 of 4: Route verification and production handoff
 
-Status: user approved; local implementation and final verification in progress. Shipping is not authorized. Depends on [Stage 3](seo-playbook-plan-3.md).
+Status: locally implemented and verified on the isolated Stage 4 branch. Shipping is not authorized. Depends on [Stage 3](seo-playbook-plan-3.md).
 
 ## Intended outcome
 

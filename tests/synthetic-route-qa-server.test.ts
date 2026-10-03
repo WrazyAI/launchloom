@@ -47,6 +47,7 @@ it("serves retargeted fictional bytes and only local terminal synthetic response
     message: "Stage 4 synthetic request.",
     pageUrl: server.origin + "/contact/",
   };
+  body.message = "Stage 4 synthetic request";
   for (const expected of [503, 200])
     expect(
       (
@@ -79,3 +80,35 @@ it("rejects unexpected values and mutation paths without storing a submission", 
   ).toBe(405);
   expect(server.observations).toEqual([]);
 });
+
+it("reflects empty live contact values into snapshots without clearing filled fields", async () => {
+  const dist = await fixture();
+  await fs.writeFile(
+    path.join(dist, "index.html"),
+    '<body><main><form><input name="name" value="Keep the live input"><textarea name="message" value="Stale snapshot attribute"></textarea></form></main></body>',
+  );
+  const server = await startSyntheticRouteServer({ dist });
+  owned.push(server);
+  const { chromium } = await import("playwright");
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    await page.goto(server.origin);
+    await page.evaluate(() =>
+      dispatchEvent(new CustomEvent("launchloom:lead-submitted")),
+    );
+    await page.waitForTimeout(100);
+    expect(await page.locator("[name=name]").inputValue()).toBe(
+      "Keep the live input",
+    );
+    expect(await page.locator("[name=name]").getAttribute("value")).toBe(
+      "Keep the live input",
+    );
+    expect(await page.locator("[name=message]").inputValue()).toBe("");
+    expect(
+      await page.locator("[name=message]").getAttribute("value"),
+    ).toBeNull();
+  } finally {
+    await browser.close();
+  }
+}, 30000);

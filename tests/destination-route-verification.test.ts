@@ -1,5 +1,8 @@
 import { it, expect } from "vitest";
-import { verifyDestinationArtifact } from "../scripts/destination-route-verification.mjs";
+import {
+  verifyDestinationArtifact,
+  createReleaseManifest,
+} from "../scripts/destination-route-verification.mjs";
 import { createHash } from "node:crypto";
 const html = "<main>Approved synthetic HTML</main>";
 const digest = createHash("sha256").update(html).digest("hex");
@@ -15,7 +18,7 @@ const fetcher =
     const p = new URL(url).pathname;
     if (p === "/.launchloom-release.json")
       return new Response(JSON.stringify(manifest));
-    if (p === "/index.html")
+    if (p === "/index.html" || p === "/")
       return new Response(changed ? "Old content" : html);
     return new Response("Not found", { status: soft404 ? 200 : 404 });
   };
@@ -58,4 +61,60 @@ it("rejects credential-bearing or unapproved origins", async () => {
       fetchImpl: fetcher(),
     }),
   ).rejects.toThrow("origin");
+});
+
+it("reads canonical HTML routes instead of rejecting Pages index.html redirects", async () => {
+  const fixture = fetcher();
+  const host = async (url: any, options?: any) => {
+    const p = new URL(url).pathname;
+    if (p === "/index.html")
+      return new Response(null, { status: 308, headers: { Location: "/" } });
+    return fixture(url);
+  };
+  expect(
+    (
+      await verifyDestinationArtifact({
+        origin: "https://fixture.pages.dev",
+        manifest,
+        fetchImpl: host,
+      })
+    ).status,
+  ).toBe("pass");
+});
+it("requires a top-level 404 artifact before preparing a Pages release", async () => {
+  const fs = await import("node:fs/promises"),
+    os = await import("node:os"),
+    path = await import("node:path");
+  const dist = await fs.mkdtemp(path.join(os.tmpdir(), "ll-pages-manifest-"));
+  try {
+    await fs.writeFile(path.join(dist, "index.html"), html);
+    await expect(
+      createReleaseManifest({
+        dist,
+        sourceCommit: manifest.sourceCommit,
+        configDigest: manifest.configDigest,
+      }),
+    ).rejects.toThrow("404");
+  } finally {
+    await fs.rm(dist, { recursive: true, force: true });
+  }
+});
+it("excludes Pages host configuration files from public artifact readback", async () => {
+  const fs = await import("node:fs/promises"),
+    os = await import("node:os"),
+    path = await import("node:path");
+  const dist = await fs.mkdtemp(path.join(os.tmpdir(), "ll-pages-manifest-"));
+  try {
+    for (const name of ["index.html", "404.html", "_headers", "_redirects"])
+      await fs.writeFile(path.join(dist, name), html);
+    const release = await createReleaseManifest({
+      dist,
+      sourceCommit: manifest.sourceCommit,
+      configDigest: manifest.configDigest,
+    });
+    expect(release.files).not.toHaveProperty("/_headers");
+    expect(release.files).not.toHaveProperty("/_redirects");
+  } finally {
+    await fs.rm(dist, { recursive: true, force: true });
+  }
 });

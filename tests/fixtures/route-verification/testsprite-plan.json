@@ -2,7 +2,7 @@
   "projectId": "5499ee40-5117-4ba8-ac00-684bce48fe81",
   "type": "frontend",
   "name": "Native and React forms retain failed requests and reset after synthetic success",
-  "description": "Owned fictional Stage 4 QA server only. All delivery is local synthetic handling, no customer/provider delivery. Verify actual failure and success lifecycle on native Contact and authored Drain cleaning pages.",
+  "description": "Owned fictional Stage 4 QA server only. No customer/provider delivery. Follow every step including input reset. Determine clearing from live input.value or actual visible editable text, not stale serialized value/defaultValue attributes. Do not clear inputs manually or assume reset from the message. Verify native Contact and React Drain cleaning failure, success and reset, plus supported FAQ/media.",
   "priority": "p1",
   "planSteps": [
     {

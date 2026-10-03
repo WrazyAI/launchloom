@@ -37,7 +37,16 @@ export async function createReleaseManifest({
     })) {
       const name = path.join(relative, entry.name);
       if (entry.isDirectory()) await visit(name);
-      else if (entry.isFile() && name !== ".launchloom-release.json") {
+      else if (
+        entry.isFile() &&
+        ![
+          ".launchloom-release.json",
+          "_headers",
+          "_redirects",
+          "_worker.js",
+          "_routes.json",
+        ].includes(name)
+      ) {
         files["/" + name.split(path.sep).join("/")] = contentDigest(
           await fs.readFile(path.join(dist, name)),
         );
@@ -45,6 +54,10 @@ export async function createReleaseManifest({
     }
   }
   await visit();
+  if (!files["/404.html"])
+    throw new Error(
+      "Pages release requires a top-level 404.html artifact to prevent SPA soft 404s.",
+    );
   if (!files["/index.html"])
     throw new Error("Release artifact has no homepage.");
   return { version: 1, sourceCommit, configDigest, files };
@@ -99,9 +112,17 @@ export async function verifyDestinationArtifact({
               route.includes("#")
             )
               throw new Error("Unsafe manifest artifact path.");
-            const response = await read(route);
+            const publicPath =
+              route === "/404.html"
+                ? "/launchloom-nonexistent/"
+                : route.endsWith("/index.html")
+                  ? route.slice(0, -10)
+                  : route.endsWith(".html")
+                    ? route.slice(0, -5)
+                    : route;
+            const response = await read(publicPath);
             if (
-              response.status !== 200 ||
+              response.status !== (route === "/404.html" ? 404 : 200) ||
               contentDigest(Buffer.from(await response.arrayBuffer())) !==
                 digest
             )
