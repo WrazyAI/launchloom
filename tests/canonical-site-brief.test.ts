@@ -166,6 +166,57 @@ describe("canonical site brief compilation", () => {
     ).toBe(false);
   });
 
+  it("carries client font and accent choices into the canonical brief and config", () => {
+    const brief = compileCanonicalSiteBrief({
+      intake: {
+        intakeVersion: "2",
+        submissionId: "submission-typography-001",
+        businessName: "Harbor Plumbing",
+        services: ["Drain cleaning"],
+        serviceAreas: "Tacoma, WA",
+        confirmAccuracy: "yes",
+        headingFont: "fraunces",
+        bodyFont: "inter",
+        accentColor: "#B45309",
+      },
+      research: { pageMap: [] },
+    });
+
+    expect(brief.typography).toEqual({
+      headingFont: "fraunces",
+      bodyFont: "inter",
+      accentColor: "#b45309",
+      source: "client_selected",
+    });
+    expect(brief.headingFont).toBe("fraunces");
+    expect(brief.bodyFont).toBe("inter");
+    expect(brief.accentColor).toBe("#b45309");
+    expect(normalise({}, brief).style).toMatchObject({
+      headingFont: "fraunces",
+      bodyFont: "inter",
+      accentColor: "#b45309",
+    });
+
+    const plain = compileCanonicalSiteBrief({
+      intake: {
+        intakeVersion: "2",
+        submissionId: "submission-typography-002",
+        businessName: "Harbor Plumbing",
+        services: ["Drain cleaning"],
+        serviceAreas: "Tacoma, WA",
+        confirmAccuracy: "yes",
+      },
+      research: { pageMap: [] },
+    });
+    expect(plain.typography).toEqual({
+      headingFont: null,
+      bodyFont: null,
+      accentColor: null,
+      source: null,
+    });
+    expect(normalise({}, plain).style).not.toHaveProperty("accentColor");
+  });
+
   it("retains legacy intake shape while safely falling back to only its confirmed city", () => {
     const brief = compileCanonicalSiteBrief({
       intake: {

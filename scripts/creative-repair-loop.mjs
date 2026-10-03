@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   CLIENT_PALETTE_ROLE_CONTRACT,
+  CLIENT_TYPOGRAPHY_CONTRACT,
   CREATIVE_REPAIR_MAX_COMPLETION_TOKENS,
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
@@ -792,6 +793,8 @@ ${JSON.stringify(visualBrief, null, 2)}
 Preserve this client art direction during repair. Do not repair toward a generic LaunchLoom house style or overwrite an explicit light/dark, palette, composition, or named-reference request unless a measured finding requires that exact change.
 
 ${CLIENT_PALETTE_ROLE_CONTRACT}
+
+${CLIENT_TYPOGRAPHY_CONTRACT}
 
 ${REFERENCE_PROVENANCE_OUTPUT_CONTRACT}
 

@@ -4,11 +4,14 @@ import Header from "../components/Header.astro";
 import LeadForm from "../components/LeadForm.astro";
 import Footer from "../components/Footer.astro";
 import site, { directionsHref, hasExactBusinessLocation, phoneHref } from "../lib/site";
+import { resolvePageRecipe } from "../lib/page-recipe";
+
+const { treatment } = resolvePageRecipe(site);
 ---
 
 <SiteLayout title={`Contact ${site.business.name}`} description={`Contact ${site.business.name} about ${site.services.slice(0, 2).map((service) => service.name.toLowerCase()).join(" or ") || "your service needs"}.`}>
   <Header />
-  <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`]}>
+  <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`, `type-${treatment.typography}`]}>
     <section class="inner-hero"><div class="wrap inner-hero-grid"><div>
       <a class="breadcrumb" href="/">Home</a>
       <span class="kicker">{site.copy?.contactKicker || "Contact"}</span>

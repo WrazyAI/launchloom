@@ -41,6 +41,18 @@ export const CLIENT_PALETTE_ROLE_CONTRACT = [
   "A brand color used as the dominant page surface, or an inverted light/dark direction, fails the palette-adherence gate.",
 ].join("\n");
 
+export const CLIENT_TYPOGRAPHY_CONTRACT = [
+  "CLIENT TYPOGRAPHY CONTRACT",
+  "The client may have chosen a heading and body family from the self-hosted catalog. visualBrief.typography names them (id, name, stack) or is null when no choice was made.",
+  "When a heading family is named, every display, heading, and wordmark font-family in authored CSS must bind the shared variable with your chosen palette stack as the fallback: font-family: var(--font-heading, <your palette stack>);",
+  "When a body family is named, every body, navigation, and UI font-family must bind: font-family: var(--font-body, <your palette stack>);",
+  "Keep the reference's scale, weight contrast, tracking, line-height, and display/body relationship; the client choice changes the family, never the hierarchy.",
+  "Never bind both roles to one variable, never stack both variables in one declaration, never declare the host variables --font-heading, --font-body, --accent, --accent-ink, or --on-accent yourself, and never invent a remote font URL. When no family is named, use the palette stacks directly with no variable binding.",
+  "CLIENT ACCENT CONTRACT",
+  "When visualBrief.accent is present, use it only for secondary marks: underlines, small labels, icon strokes, and hover borders. Use var(--accent-ink, <readable fallback>) for accent text on the page surface and var(--accent, <fallback>) for fills and borders.",
+  "Never use the accent for the primary action, navigation background, or a large surface, and never let it replace the client primary as brand identity.",
+].join("\n");
+
 export function completionLimitRequestField(tokens) {
   if (!Number.isSafeInteger(tokens) || tokens < 1)
     throw new Error(

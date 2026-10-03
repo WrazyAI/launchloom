@@ -12,7 +12,14 @@ export type FeedbackSubmitResult = {
 type ImagePartId = "logo" | "hero" | "secondary" | "tertiary" | "team";
 type TextPartId = "navigation" | "wording" | "services" | "phone" | "faq";
 type PartId = ImagePartId | TextPartId | "colors";
-type ColorRole = "primary" | "surface" | "hero" | "ink" | "muted" | "line";
+type ColorRole =
+  | "primary"
+  | "accent"
+  | "surface"
+  | "hero"
+  | "ink"
+  | "muted"
+  | "line";
 
 const IMAGE_PARTS: Array<{
   id: ImagePartId;
@@ -81,6 +88,11 @@ const COLOR_ROLES: Array<{
   advanced?: boolean;
 }> = [
   { id: "primary", label: "Main brand color", defaultHex: "#1f3a5f" },
+  {
+    id: "accent",
+    label: "Second accent color",
+    defaultHex: "#b45309",
+  },
   { id: "surface", label: "Page background", defaultHex: "#faf7f2" },
   {
     id: "hero",

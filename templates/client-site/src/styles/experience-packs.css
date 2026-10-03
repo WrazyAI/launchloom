@@ -69,7 +69,7 @@
   --folio-brass: #e0b35e;
   background: var(--folio-black);
   color: var(--folio-paper);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body, Arial, sans-serif);
 }
 
 .xp-folio__header {
@@ -84,7 +84,7 @@
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  font-family: Georgia, serif;
+  font-family: var(--font-heading, Georgia, serif);
 }
 
 .xp-folio__mark > span {
@@ -354,7 +354,7 @@
   justify-content: space-between;
   gap: 1rem;
   cursor: pointer;
-  font-family: Georgia, serif;
+  font-family: var(--font-heading, Georgia, serif);
   font-size: 1.35rem;
 }
 
@@ -406,7 +406,7 @@
   --brand-ink: var(--guide-accent);
   background: var(--guide-canvas);
   color: var(--guide-ink);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body, Arial, sans-serif);
 }
 
 .xp-guide__header {
@@ -426,7 +426,7 @@
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  font-family: Georgia, serif;
+  font-family: var(--font-heading, Georgia, serif);
   font-weight: 700;
 }
 
@@ -676,7 +676,7 @@
   justify-content: space-between;
   gap: 1rem;
   cursor: pointer;
-  font-family: Georgia, serif;
+  font-family: var(--font-heading, Georgia, serif);
   font-size: 1.25rem;
 }
 
@@ -730,7 +730,7 @@
   --brand-ink: color-mix(in srgb, var(--brand) 55%, #101b19);
   background: #f6f3eb;
   color: var(--service-dark);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body, Arial, sans-serif);
 }
 
 .xp-service__header {
@@ -1048,7 +1048,7 @@
 
 .inner-experience-cinematic-narrative .inner-hero h1,
 .inner-experience-cinematic-narrative .section-heading h2 {
-  font-family: Georgia, serif;
+  font-family: var(--font-heading, Georgia, serif);
   font-weight: 400;
   letter-spacing: -0.055em;
 }
@@ -1104,7 +1104,7 @@
 
 .inner-experience-kinetic-poster .inner-hero h1,
 .inner-experience-kinetic-poster .section-heading h2 {
-  font-family: Arial, sans-serif;
+  font-family: var(--font-heading, Arial, sans-serif);
   font-weight: 900;
   letter-spacing: -0.07em;
 }
@@ -1519,4 +1519,10 @@
   .xp-service[data-experience-variant="full-bleed"] .xp-service__services > div {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Client font conformance: chosen heading/body families replace pack defaults
+   on every level. Unset variables keep each pack's original stacks. */
+:is(.xp-folio, .xp-guide, .xp-service) :is(h1, h2, h3) {
+  font-family: var(--font-heading, Arial, sans-serif);
 }

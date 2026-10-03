@@ -16,7 +16,7 @@ export function getStaticPaths() {
   return approvedServices.map((service) => ({ params: { slug: service.slug }, props: { service } }));
 }
 const { service } = Astro.props as { service: Service };
-const { recipe } = resolvePageRecipe(site);
+const { recipe, treatment } = resolvePageRecipe(site);
 const creativeServicePage = Boolean(
   site.design?.experience?.renderer === "creative-candidate" &&
     site.design?.experience?.candidateId &&
@@ -103,7 +103,7 @@ const serviceStructuredData = {
   ) : (
     <>
       <Header />
-      <main class:list={["inner-page", `recipe-${recipe}`, experience && `inner-experience-${experience.program.packId}`]} data-experience-pack={experience?.program.packId}>
+      <main class:list={["inner-page", `recipe-${recipe}`, `type-${treatment.typography}`, experience && `inner-experience-${experience.program.packId}`]} data-experience-pack={experience?.program.packId}>
         <section class="inner-hero service-hero"><div class="wrap inner-hero-grid"><div><a class="breadcrumb" href="/">Home</a> / <a class="breadcrumb" href={pageHref("/services/", homeSectionHref("services"))}>All services</a><span class="kicker">{care ? "Care option" : "Service details"}</span><h1>{service.name}</h1><p>{introduction}</p><div class="hero-actions"><a class="cta" href="#contact">{site.business.primaryCta}</a>{site.business.phone && <a class="call-link" href={phoneHref(site.business.phone)}>Call {site.business.phone}</a>}</div></div>{serviceImage && <img src={serviceImage} alt={brief?.media[0]?.alt || `${site.business.name} ${site.assets?.photoOne || site.assets?.photoTwo ? "client-provided service photo" : "service context"}`} />}</div></section>
 
         {supported ? <>
