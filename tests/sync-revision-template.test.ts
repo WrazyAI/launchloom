@@ -16,6 +16,88 @@ afterEach(async () => {
   );
 });
 
+it("migrates the layout with its self-hosted font module and every emitted font asset", async () => {
+  const client = await fs.mkdtemp(
+    path.join(os.tmpdir(), "launchloom-font-migration-"),
+  );
+  dirs.push(client);
+  await fs.mkdir(path.join(client, "src"));
+  await fs.writeFile(
+    path.join(client, "src/site.config.json"),
+    JSON.stringify({
+      business: { primaryCta: "Contact us" },
+      routePolicy: { version: 1, decisions: [] },
+    }),
+  );
+  await exec("node", [
+    path.resolve("scripts/sync-revision-template.mjs"),
+    "--client",
+    client,
+  ]);
+  const expected = await fs.readFile(
+    "templates/client-site/src/lib/font-catalog.mjs",
+  );
+  expect(
+    await fs
+      .readFile(path.join(client, "src/lib/font-catalog.mjs"))
+      .catch(() => null),
+  ).toEqual(expected);
+  const { fontFaceCss } =
+    await import("../templates/client-site/src/lib/font-catalog.mjs");
+  for (const match of fontFaceCss().matchAll(/url\("([^"]+)"\)/gu)) {
+    expect(
+      await fs
+        .readFile(path.join(client, "public", match[1]!))
+        .catch(() => null),
+    ).toEqual(
+      await fs.readFile(path.join("templates/client-site/public", match[1]!)),
+    );
+  }
+  expect(
+    await fs
+      .readFile(path.join(client, "public/fonts/LICENSES.md"), "utf8")
+      .catch(() => null),
+  ).toEqual(
+    await fs.readFile("templates/client-site/public/fonts/LICENSES.md", "utf8"),
+  );
+  await exec("node", [
+    path.resolve("scripts/sync-revision-template.mjs"),
+    "--client",
+    client,
+  ]);
+});
+
+it("preserves a customized font and refuses all migration writes before changing shared source", async () => {
+  const client = await fs.mkdtemp(
+    path.join(os.tmpdir(), "launchloom-font-custom-"),
+  );
+  dirs.push(client);
+  await fs.mkdir(path.join(client, "src"));
+  await fs.mkdir(path.join(client, "public/fonts/inter"), { recursive: true });
+  await fs.writeFile(
+    path.join(client, "src/site.config.json"),
+    JSON.stringify({
+      business: { primaryCta: "Contact us" },
+      routePolicy: { version: 1, decisions: [] },
+    }),
+  );
+  const font = path.join(client, "public/fonts/inter/inter-400.woff2");
+  await fs.writeFile(font, "client-custom-font");
+  await expect(
+    exec("node", [
+      path.resolve("scripts/sync-revision-template.mjs"),
+      "--client",
+      client,
+    ]),
+  ).rejects.toThrow(/Manual attention/);
+  expect(await fs.readFile(font, "utf8")).toBe("client-custom-font");
+  expect(
+    await fs
+      .readFile(path.join(client, "src/components/LeadForm.astro"))
+      .catch(() => null),
+  ).toBeNull();
+});
+
 it("refreshes shared SEO files without overwriting client Astro config", async () => {
   const client = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-sync-"));
   dirs.push(client);
@@ -448,12 +530,40 @@ it("preserves an edited retired route and refuses the complete migration before 
   ).rejects.toThrow();
 });
 
-it("migrates exact shipped Stage 2 bytes and brings the rich page runtime dependencies",async()=>{
- const client=await fs.mkdtemp(path.join(os.tmpdir(),"launchloom-stage3-sync-"));dirs.push(client);await fs.mkdir(path.join(client,"src/lib"),{recursive:true});
- await fs.writeFile(path.join(client,"src/site.config.json"),JSON.stringify({business:{primaryCta:"Contact us"}}));
- const previous=await fs.readFile(path.resolve("tests/fixtures/page-briefs/stage-2-site.ts.txt"),"utf8");await fs.writeFile(path.join(client,"src/lib/site.ts"),previous);
- await exec("node",[path.resolve("scripts/sync-revision-template.mjs"),"--client",client]);
- for(const relative of ["lib/site.ts","lib/page-briefs.mjs","lib/creative-runtime.tsx","components/PageBriefSections.tsx","styles/site.css"]){expect(await fs.readFile(path.join(client,"src",relative),"utf8")).toBe(await fs.readFile(path.resolve("templates/client-site/src",relative),"utf8"));}
+it("migrates exact shipped Stage 2 bytes and brings the rich page runtime dependencies", async () => {
+  const client = await fs.mkdtemp(
+    path.join(os.tmpdir(), "launchloom-stage3-sync-"),
+  );
+  dirs.push(client);
+  await fs.mkdir(path.join(client, "src/lib"), { recursive: true });
+  await fs.writeFile(
+    path.join(client, "src/site.config.json"),
+    JSON.stringify({ business: { primaryCta: "Contact us" } }),
+  );
+  const previous = await fs.readFile(
+    path.resolve("tests/fixtures/page-briefs/stage-2-site.ts.txt"),
+    "utf8",
+  );
+  await fs.writeFile(path.join(client, "src/lib/site.ts"), previous);
+  await exec("node", [
+    path.resolve("scripts/sync-revision-template.mjs"),
+    "--client",
+    client,
+  ]);
+  for (const relative of [
+    "lib/site.ts",
+    "lib/page-briefs.mjs",
+    "lib/creative-runtime.tsx",
+    "components/PageBriefSections.tsx",
+    "styles/site.css",
+  ]) {
+    expect(await fs.readFile(path.join(client, "src", relative), "utf8")).toBe(
+      await fs.readFile(
+        path.resolve("templates/client-site/src", relative),
+        "utf8",
+      ),
+    );
+  }
 });
 
 it("migrates exact Stage 4 static template bytes to readable homepage roles", async () => {
@@ -502,7 +612,10 @@ it.each(["styles/site.css", "layouts/SiteLayout.astro"])(
     await fs.mkdir(path.join(client, "src/layouts"), { recursive: true });
     await fs.writeFile(
       path.join(client, "src/site.config.json"),
-      JSON.stringify({ business: { primaryCta: "Contact us" }, routePolicy: { version: 1 } }),
+      JSON.stringify({
+        business: { primaryCta: "Contact us" },
+        routePolicy: { version: 1 },
+      }),
     );
     const originals = new Map<string, string>();
     for (const file of ["styles/site.css", "layouts/SiteLayout.astro"]) {

@@ -18,6 +18,25 @@ const options = {
   reuseCandidates: false,
   recipient: "owner@example.com",
 };
+const reusedCandidate = {
+  config: {
+    demoNotice: "Fictional pipeline demo",
+    business: {
+      name: intake.businessName,
+      email: options.recipient,
+      leadEmail: options.recipient,
+    },
+  },
+  brief: {
+    demoNotice: "Fictional pipeline demo",
+    submissionId: intake.submissionId,
+    businessTruth: {
+      name: intake.businessName,
+      previewEmail: options.recipient,
+      leadEmail: options.recipient,
+    },
+  },
+};
 
 describe("internal QA intake routing", () => {
   it("leaves normal intake bytes unchanged", () => {
@@ -33,6 +52,33 @@ describe("internal QA intake routing", () => {
     });
     expect(result.startsWith("Private QA intake\n\n")).toBe(true);
   });
+  it("recovers the same frozen fictional QA site without retargeting its saved recipient", () => {
+    expect(() =>
+      prepareInternalQaIntake(body, {
+        ...options,
+        reuseCandidates: true,
+        reusedCandidate,
+      }),
+    ).not.toThrow();
+  });
+  it.each(["recipient", "identity", "submission", "fictional"])(
+    "rejects mismatched frozen QA %s before recovery",
+    (kind) => {
+      const wrong = structuredClone(reusedCandidate);
+      if (kind === "recipient")
+        wrong.config.business.leadEmail = "other@example.com";
+      if (kind === "identity") wrong.config.business.name = "Another business";
+      if (kind === "submission") wrong.brief.submissionId = "demo-other";
+      if (kind === "fictional") wrong.config.demoNotice = "";
+      expect(() =>
+        prepareInternalQaIntake(body, {
+          ...options,
+          reuseCandidates: true,
+          reusedCandidate: wrong,
+        }),
+      ).toThrow();
+    },
+  );
   it.each([
     { previewOnly: false },
     { reuseCandidates: true },

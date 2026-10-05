@@ -4,6 +4,16 @@ import {
   revisionTemplateWritePaths,
 } from "../scripts/revision-template-paths.mjs";
 
+it("authorizes exact self-hosted font assets required by the migrated layout", async () => {
+  const { fontFaceCss } =
+    await import("../templates/client-site/src/lib/font-catalog.mjs");
+  const allowed = revisionTemplateWritePaths({});
+  for (const match of fontFaceCss().matchAll(/url\("([^"]+)"\)/gu))
+    expect(allowed).toContain("public" + match[1]);
+  expect(allowed).toContain("public/fonts/LICENSES.md");
+  expect(allowed).not.toContain("public/fonts/**");
+});
+
 it("includes every shared template write destination without granting directory scopes", () => {
   const paths = revisionTemplatePaths({});
 

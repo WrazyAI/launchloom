@@ -6,6 +6,7 @@ import { ensureLegacySocialProofMarkup } from "./revision-engine.mjs";
 import {
   REVISION_TEMPLATE_BASELINE_PATH,
   revisionTemplatePaths,
+  revisionFontAssetPaths,
   retiredRouteTemplatePaths,
 } from "./revision-template-paths.mjs";
 
@@ -29,7 +30,9 @@ const operations = config.revisionReport?.operations || [];
 const kinds = new Set(operations.map((operation) => operation.kind));
 const repository = path.resolve(new URL("..", import.meta.url).pathname);
 const template = path.join(repository, "templates/client-site/src");
-const files = revisionTemplatePaths(config);
+const fontPaths = revisionFontAssetPaths();
+const fontPathSet = new Set(fontPaths);
+const files = [...revisionTemplatePaths(config), ...fontPaths];
 
 function hasSocialProofInsertionPoint(source) {
   if (/<(?:PageSections|SocialProof)\b/u.test(source)) return true;
@@ -46,7 +49,7 @@ function digest(value) {
 function validTemplatePath(value) {
   return (
     typeof value === "string" &&
-    value.startsWith("src/") &&
+    (value.startsWith("src/") || fontPathSet.has(value)) &&
     !value.includes("\\") &&
     value.split("/").every((part) => part && part !== "." && part !== "..")
   );
