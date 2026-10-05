@@ -65,7 +65,9 @@ it("migrates the layout with its self-hosted font module and every emitted font 
     "--client",
     client,
   ]);
-});
+// This integration test launches two complete migration subprocesses and
+// compares every font byte. Keep its deadline bounded under concurrent builds.
+}, 20_000);
 
 it("preserves a customized font and refuses all migration writes before changing shared source", async () => {
   const client = await fs.mkdtemp(
