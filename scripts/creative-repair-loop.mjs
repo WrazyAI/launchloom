@@ -1,3 +1,4 @@
+import { buildRepairSpanCatalog, compileRepairSpanEdits } from "./creative-repair-spans.mjs";
 import {
   REPAIR_FILE_ORDER, REPAIR_INNER_PAGE_KEYS, REPAIR_EDITABLE_FILE_NAMES,
   MAX_REPAIR_EDITS, MAX_REPAIR_EDIT_FRAGMENT_CHARS,
@@ -792,6 +793,8 @@ export async function requestRepair({
   creativeSession = null,
   creativeRepairScope = null,
   logger = console.log,
+  automaticSpanRepair = false,
+  fetchImpl = fetch,
 }) {
   const humanReview = (findings || []).some(
     (finding) =>
@@ -1033,9 +1036,11 @@ Every motion sequence must respect reduced-motion preferences: check runtime?.re
 }
 
 ${
-  scopedHumanRepair || editsOnly
+  scopedHumanRepair
     ? `Return JSON with an "edits" array only, never complete files. Each edit must name one of ${editableNames.join(", ")}; its exact "find" fragment must occur once; its "replace" is the smallest correction that addresses a supplied finding. Return 1-12 edits, each fragment at most 6000 characters, total find-plus-replace text at most 24000 characters. Change only files and source regions needed for the measured findings. An empty edit list means the request cannot be safely fulfilled and must fail closed.`
-    : targetFile
+    : editsOnly
+      ? "Return the trusted span-edit response defined below; never complete files or generated find fragments."
+      : targetFile
       ? `Return JSON with file="${targetFile}" and source containing the complete replacement for that file only. Keep every other candidate file unchanged and preserve all source-safety, sealed-content, and Reference DNA contracts.`
       : "Return complete files required by the response schema and no unrelated explanation. Return the complete corrected source for any authored page named in the findings in its matching response field, and return an empty string for authored pages that should stay unchanged."
 
@@ -1058,7 +1063,7 @@ ${
       requestContent.push({
         type: "text",
         text: `LARGE-CANDIDATE REPAIR MODE
-Return only the bounded literal edit set described above. Use exact, unique source fragments from the CURRENT authored sources shown above, including the additional authored pages when present. Do not re-emit complete files. Keep each edit in the file it names, preserve unaffected source byte-for-byte, and make focused changes for the supplied findings while preserving the assigned reference, sealed content bindings, required markers, and safety contract.`,
+Return only trusted span IDs and replacements described below. Select the exact source window rather than reproducing find text, including the additional authored pages when present. Do not re-emit complete files. Keep each edit in the file it names, preserve unaffected source byte-for-byte, and make focused changes for the supplied findings while preserving the assigned reference, sealed content bindings, required markers, and safety contract.`,
 
       });
     if (targetFile)
@@ -1096,10 +1101,18 @@ Return a complete replacement for only this requested file. Keep source non-empt
     currentFiles,
     { targetFile = null, editsOnly = false } = {},
   ) => {
+    const spanCatalog = !scopedHumanRepair && editsOnly ? buildRepairSpanCatalog(currentFiles) : null;
+    if (spanCatalog && !spanCatalog.spans.length) throw repairOutputRejection("No trusted bounded source spans are available.");
     const requestContent = buildRepairContent(currentFiles, { targetFile, editsOnly });
+    if (spanCatalog) {
+      requestContent.push({ type: "text", text: "TRUSTED SOURCE SPANS\n" + JSON.stringify(spanCatalog) +
+        "\nReturn edits with spanId and replace only. Do not generate find text or file names. Select an ID from this exact source snapshot and supply the entire replacement for its shown span. Keep 1-12 edits, each non-empty replacement at most6000 characters, total original-span-plus-replacement at most24000. Preserve all unrelated source and bindings." });
+      assertModelPromptTextBudget(requestContent);
+    }
     const sendRepairRequest = (maxCompletionTokens) =>
       openRouterChatCompletion({
         title: "LaunchLoom creative repair",
+        fetchImpl,
         sessionId,
         body: {
           model,
@@ -1112,10 +1125,15 @@ Return a complete replacement for only this requested file. Keep source non-empt
           response_format: {
             type: "json_schema",
             json_schema:
-              scopedHumanRepair || editsOnly
-                ? repairEditSchemaFor(currentFiles, {
-                    includeInnerPages: !scopedHumanRepair,
-                  })
+              spanCatalog ? {
+                name: "launchloom_creative_repair_spans", strict: true,
+                schema: { type: "object", additionalProperties: false, required: ["edits"],
+                  properties: { edits: { type: "array", items: { type: "object", additionalProperties: false,
+                    required: ["spanId", "replace"], properties: {
+                      spanId: { type: "string", enum: spanCatalog.spans.map(span => span.id) }, replace: { type: "string" },
+                    } } } } },
+              } : scopedHumanRepair || editsOnly
+                ? repairEditSchemaFor(currentFiles, { includeInnerPages: !scopedHumanRepair })
                 : targetFile ? REPAIR_FILE_SCHEMA : repairSchemaFor(currentFiles),
 
           },
@@ -1180,6 +1198,10 @@ Return a complete replacement for only this requested file. Keep source non-empt
           new Error("Model JSON parsing failed."),
         );
       }
+      if (spanCatalog) {
+        const edits = compileRepairSpanEdits(currentFiles, spanCatalog, parsed?.edits);
+        return rememberPrivateRepairOutput({ edits }, responseContent);
+      }
       if (scopedHumanRepair || editsOnly) {
         if (!isRepairEditSet(parsed))
           throw repairOutputRejection(
@@ -1208,6 +1230,10 @@ Return a complete replacement for only this requested file. Keep source non-empt
     0,
   );
   if (scopedHumanRepair) return requestModelRepair(files);
+  if (automaticSpanRepair) {
+    const repair = await requestModelRepair(files, { editsOnly: true });
+    return inheritRepairRejectionEvidence(applyCreativeRepairEdits(files, repair.edits), repair);
+  }
   if (sourceChars <= REPAIR_SOURCE_EDIT_THRESHOLD_CHARS)
     return requestModelRepair(files);
   // Preserve bounded candidate-specific edits for authored inner pages.

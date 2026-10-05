@@ -1,3 +1,4 @@
+import { createQaRepairCallBudget } from "./creative-repair-experiment.mjs";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -820,6 +821,8 @@ export async function defaultRepairCandidate({
   comparisonScreenshots = [],
   model,
   creativeSession = null,
+  automaticSpanRepair = false,
+  fetchImpl = fetch,
 } = {}) {
   const { metadata, contentManifest, content, files } =
     await readCandidate(candidateDir);
@@ -852,6 +855,7 @@ export async function defaultRepairCandidate({
     contentManifest,
     creativeSession,
     creativeRepairScope,
+    automaticSpanRepair, fetchImpl,
   });
   let validated;
   try {
@@ -1062,6 +1066,8 @@ export async function runRenderedCreativeRepair({
   model,
   creativeSession = null,
   maxCycles = 2,
+  qaRepairExperiment = false,
+  fetchImpl = fetch,
   requireDiversity = true,
   requestedFindings = [],
   visualGateScript,
@@ -1079,6 +1085,9 @@ export async function runRenderedCreativeRepair({
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
   const evidenceRoot = path.resolve(root, outDir);
+  if (qaRepairExperiment && (mode !== "preview" || Number(maxCycles) !== 1 || requestedFindings.length))
+    throw new Error("QA repair experiment requires one preview cycle without human feedback.");
+  const providerBudget = qaRepairExperiment ? createQaRepairCallBudget({ fetchImpl }) : null;
   const cycleLimit = boundedCycles(maxCycles);
   const cycleUse = new Map();
   // Contract rejections (an unapplicable edit, a broken marker, an invalid
@@ -1179,8 +1188,10 @@ export async function runRenderedCreativeRepair({
           creativeSession: frozenCreativeSession,
           cycle: applied + 1,
           maxCycles: cycleLimit,
+          ...(providerBudget ? { automaticSpanRepair: true, fetchImpl: providerBudget.forCandidate(candidateId) } : {}),
         });
         cycleUse.set(candidateId, applied + 1);
+        if (providerBudget) await fs.writeFile(path.join(evidenceRoot, "qa-provider-calls.json"), JSON.stringify(providerBudget.snapshot(), null, 2) + "\n");
         await persistRepairEvidence({
           outDir: evidenceRoot,
           round,
@@ -1194,6 +1205,10 @@ export async function runRenderedCreativeRepair({
       } catch (error) {
         await persistPrivateRepairRejection({ outDir: evidenceRoot, round, candidateId,
           attempt: rejections + attempts.length + 1, error });
+        if (providerBudget) {
+          await fs.writeFile(path.join(evidenceRoot, "qa-provider-calls.json"), JSON.stringify(providerBudget.snapshot(), null, 2) + "\n");
+          throw error;
+        }
         const mayRetryRepairOutputRejection =
           requestedMode === "preview" &&
           !humanFeedback &&
@@ -1771,6 +1786,7 @@ async function main() {
       "openai/gpt-6-luna",
     creativeSession,
     maxCycles: args["max-cycles"] || 2,
+    qaRepairExperiment: args["qa-repair-experiment"] === "true",
     requireDiversity: args["require-diversity"] !== "false",
     requestedFindings,
     visualGateScript: args["visual-gate-script"],

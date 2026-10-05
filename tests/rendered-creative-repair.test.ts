@@ -1,3 +1,4 @@
+import { buildRepairSpanCatalog } from "../scripts/creative-repair-spans.mjs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs/promises";
 import { readFileSync } from "node:fs";
@@ -179,7 +180,8 @@ describe("rendered creative repair orchestration", () => {
     };
     const fetchMock = vi.fn(async (_url: string, _options: RequestInit) => Response.json({
       choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
-        edits: [{ file: "styles", find: "font-size: 4rem;", replace: "font-size: 3rem;" }],
+        edits: [{ spanId: buildRepairSpanCatalog(files).spans.find(span => span.file === "styles" && span.find.includes("font-size: 4rem;"))!.id,
+          replace: buildRepairSpanCatalog(files).spans.find(span => span.file === "styles" && span.find.includes("font-size: 4rem;"))!.find.replace("font-size: 4rem;", "font-size: 3rem;") }],
       }) } }],
     }));
     vi.stubGlobal("fetch", fetchMock);
@@ -196,7 +198,7 @@ describe("rendered creative repair orchestration", () => {
       logger: () => {},
     });
     const request = JSON.parse(fetchMock.mock.calls[0][1].body as string);
-    expect(request.response_format.json_schema.name).toBe("launchloom_creative_repair_edits");
+    expect(request.response_format.json_schema.name).toBe("launchloom_creative_repair_spans");
     const repaired = normalizeRepair(response, files);
     expect(repaired.styles).toBe(files.styles.replace("font-size: 4rem;", "font-size: 3rem;"));
     for (const key of ["experience", "motion", "servicePage"] as const)
@@ -2758,4 +2760,17 @@ it("keeps rejected source-validation details and provider source out of public e
   expect(inspect(error)).not.toContain("private@example.test");
   expect(privateRepairRejectionEvidence(error)).toEqual(expect.objectContaining({ validationMessage: expect.any(String), payload: JSON.stringify(output) }));
   expect(await fs.readFile(path.join(dir, "Experience.jsx"), "utf8")).toBe(original);
+});
+
+
+it("stops the QA experiment immediately on a contract rejection without retrying", async () => {
+  const { root, candidates } = await fixture();
+  const rejection = Object.assign(new Error("bounded contract rejected"), { code: "CREATIVE_REPAIR_OUTPUT_REJECTED" });
+  const repair = vi.fn(async () => { throw rejection; });
+  await expect(runRenderedCreativeRepair({ siteDir: root, candidatesDir: candidates, outDir: "repair", qaRepairExperiment: true, maxCycles: 1,
+    runBakeoffImpl: async options => writeBakeoffEvidence(options, report({ selectedCandidateId: null, candidates: [candidate("candidate-a", { valid: false, eligible: false, failures: ["contrast"] }), candidate("candidate-b", { valid: false, eligible: false, failures: ["contrast"] })] })),
+    repairCandidateImpl: repair,
+  } as any)).rejects.toThrow("bounded contract rejected");
+  expect(repair).toHaveBeenCalledTimes(1);
+  expect(repair.mock.calls[0][0]).toEqual(expect.objectContaining({ automaticSpanRepair: true, fetchImpl: expect.any(Function) }));
 });

@@ -1,3 +1,4 @@
+import { buildRepairSpanCatalog } from "../scripts/creative-repair-spans.mjs";
 import * as renderedRepair from "../scripts/run-rendered-creative-repair.mjs";
 import * as repairModule from "../scripts/creative-repair-loop.mjs";
 import { CLIENT_PALETTE_ROLE_CONTRACT } from "../scripts/creative-authoring-output.mjs";
@@ -1789,9 +1790,10 @@ describe("creative repair loop", () => {
       motion: "export function mountExperienceMotion() { return () => {}; }",
       servicePage: '<main data-service-page><h1 className="service-old">Service</h1></main>',
     };
+    const pageSpan = buildRepairSpanCatalog(files).spans.find(span => span.file === "servicePage")!;
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({
       choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
-        edits: [{ file: "servicePage", find: 'className="service-old"', replace: 'className="service-new"' }],
+        edits: [{ spanId: pageSpan.id, replace: pageSpan.find.replace('className="service-old"', 'className="service-new"') }],
       }) } }],
     })));
     const referenceDna = {
@@ -2082,4 +2084,37 @@ it("does not expose malformed provider output through a parsing cause", async ()
   let error: any; try { await requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files: { experience: "old", styles: "old", motion: "old" }, findings: [], screenshots: [], logger: () => {} }); } catch (value) { error = value; }
   expect(inspect(error)).not.toContain("PRIVATE_RE");
   expect((repairModule as any).privateRepairRejectionEvidence?.(error)?.payload).toBe("PRIVATE_REPAIR_SENTINEL");
+});
+
+
+it("automatic span repair binds current sources without model-generated find text", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-span-request-")); roots.push(root);
+  const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+  const files = { experience: "export default () => null;\n", styles: ".hero{color:navy;}\n", motion: "export function mountExperienceMotion(){return ()=>{};}\n" };
+  const spanMod = await import("../scripts/creative-repair-spans.mjs");
+  const catalog = spanMod.buildRepairSpanCatalog(files); const style = catalog.spans.find(s => s.file === "styles")!;
+  const fetchImpl = vi.fn(async (_url: any, options: any) => {
+    const body = JSON.parse(options.body); const schema = body.response_format.json_schema;
+    expect(schema.name).toBe("launchloom_creative_repair_spans");
+    expect(schema.schema.properties.edits.items.required).toEqual(["spanId", "replace"]);
+    expect(schema.schema.properties.edits.items.properties.spanId.enum).toContain(style.id);
+    const text = body.messages[1].content.filter((x: any) => x.type === "text").map((x: any) => x.text).join("\n");
+    expect(text).toContain(files.experience); expect(text).toContain(files.styles); expect(text).toContain(files.motion);
+    expect(text).toContain("TRUSTED SOURCE SPANS"); expect(text).toContain("Do not generate find text");
+    return Response.json({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ edits: [{ spanId: style.id, replace: ".hero{color:white;}\n" }] }) } }] });
+  });
+  vi.stubGlobal("fetch", vi.fn(() => { throw Error("unexpected global provider call"); }));
+  const result = await requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files, findings: ["contrast: hero"], screenshots: [], automaticSpanRepair: true, fetchImpl, logger: () => {} } as any);
+  expect(result).toEqual({ ...files, styles: ".hero{color:white;}\n" }); expect(fetchImpl).toHaveBeenCalledTimes(1);
+});
+
+
+it("an affordability retry cannot exceed the actual-fetch experiment ceiling", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "ll-affordability-budget-")); roots.push(root);
+  const desktop = path.join(root, "desktop.png"); await fs.writeFile(desktop, "evidence");
+  const { createQaRepairCallBudget } = await import("../scripts/creative-repair-experiment.mjs");
+  const actual = vi.fn(async () => Response.json({ error: { message: "This request requires more credits, or fewer max_tokens. You requested up to 48000 tokens, but can only afford 14652." } }, { status: 402 }));
+  const budget = createQaRepairCallBudget({ fetchImpl: actual });
+  await expect(requestRepair({ model: "test/model", referenceDna: { sectionSequence: repairSectionSequence, evidence: { desktopScreenshot: { path: desktop } } }, files: { experience: "old", styles: ".hero{color:navy}", motion: "old" }, findings: ["contrast"], screenshots: [], logger: () => {}, automaticSpanRepair: true, fetchImpl: budget.forCandidate("candidate-a") } as any)).rejects.toMatchObject({ code: "QA_REPAIR_CALL_BUDGET_EXHAUSTED" });
+  expect(actual).toHaveBeenCalledTimes(1); expect(budget.snapshot().total).toBe(1);
 });
