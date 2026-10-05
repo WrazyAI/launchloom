@@ -188,7 +188,7 @@ export function renderAdminDashboardHtml() {
         var img = document.createElement('img');
         img.loading = 'lazy';
         img.alt = 'Latest hero preview for ' + (item.businessName || item.siteId || 'client site');
-        img.src = '/api/admin/generation-hero?id=' + encodeURIComponent(item.generationId) + '&v=' + encodeURIComponent(item.heroUpdatedAt);
+        img.src = '/api/admin/onboarding-invites/generation-hero?id=' + encodeURIComponent(item.generationId) + '&v=' + encodeURIComponent(item.heroUpdatedAt);
         img.addEventListener('error', function () { hero.replaceChildren(elem('span', 'hero-note', 'Hero preview unavailable')); });
         hero.appendChild(img);
       } else {
@@ -235,7 +235,7 @@ export function renderAdminDashboardHtml() {
           return;
         }
         timeline.replaceChildren(elem('p', 'event-note', 'Loading events…'));
-        fetch('/api/admin/generations?id=' + encodeURIComponent(item.generationId), { credentials: 'same-origin', cache: 'no-store' })
+        fetch('/api/admin/onboarding-invites/generations?id=' + encodeURIComponent(item.generationId), { credentials: 'same-origin', cache: 'no-store' })
           .then(function (response) { return response.json().catch(function () { return {}; }).then(function (body) { if (!response.ok) throw new Error(body.error || 'Events are unavailable.'); return body; }); })
           .then(function (body) {
             state.details[item.generationId] = (body.events || []);
@@ -251,7 +251,7 @@ export function renderAdminDashboardHtml() {
   }
   function loadGenerations() {
     byId('generations-status').textContent = 'Loading generations…';
-    fetch('/api/admin/generations', { credentials: 'same-origin', cache: 'no-store' })
+    fetch('/api/admin/onboarding-invites/generations', { credentials: 'same-origin', cache: 'no-store' })
       .then(function (response) { return response.json().catch(function () { return {}; }).then(function (body) { if (!response.ok) throw new Error(body.error || 'Generation tracking is unavailable (' + response.status + ').'); return body; }); })
       .then(function (body) {
         state.items = body.generations || [];
@@ -260,7 +260,7 @@ export function renderAdminDashboardHtml() {
         byId('generations-status').textContent = state.items.length ? 'Tracking ' + state.items.length + ' generation(s).' : 'No tracked generations yet. New runs appear after the tracking secret and Access paths are configured.';
       })
       .catch(function (error) {
-        byId('generations-status').textContent = error.message + ' If this is an Access 403, add /api/admin/* to the admin Access application.';
+        byId('generations-status').textContent = error.message + ' If this is an Access 403, confirm the admin Access application still covers /api/admin/onboarding-invites*.';
       });
   }
   document.querySelectorAll('.tab').forEach(function (tab) {

@@ -3332,6 +3332,13 @@ export default {
       return adminGenerations(request, env, ctx);
     if (path === "/api/admin/generation-hero")
       return adminGenerationHero(request, env, ctx);
+    // The dashboard reads through the already Access-protected invite path so
+    // no Access application change is needed. The clean paths above remain for
+    // when the Access policy covers /api/admin/* directly.
+    if (path === "/api/admin/onboarding-invites/generations")
+      return adminGenerations(request, env, ctx);
+    if (path === "/api/admin/onboarding-invites/generation-hero")
+      return adminGenerationHero(request, env, ctx);
     if (path === "/api/approval") return approval(request, env);
     if (path === "/api/lead") return lead(request, env);
     if (path === "/api/chat") return aiChat(request, env);
