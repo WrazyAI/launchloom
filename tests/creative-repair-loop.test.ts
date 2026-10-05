@@ -168,6 +168,7 @@ describe("creative repair loop", () => {
       .join("\n");
     expect(body.response_format.json_schema.name).toContain("repair_edits");
     expect(body.provider?.require_parameters).not.toBe(true);
+    expect(body.temperature).toBe(0.35);
     expect(body.response_format.json_schema.schema.properties.edits.maxItems).toBeUndefined();
     expect(prompt).toContain('"sectionIds": [\n    "hero"');
     expect(prompt).toContain("never complete files");
@@ -1795,7 +1796,7 @@ describe("creative repair loop", () => {
     const pageSpan = buildRepairSpanCatalog(files).spans.find(span => span.file === "servicePage")!;
     vi.stubGlobal("fetch", vi.fn(async (_url, options: any) => {
       const body=JSON.parse(options.body); const schema=body.response_format.json_schema.schema.properties.edits;
-      expect(body.provider?.require_parameters).not.toBe(true); expect(schema.maxItems).toBeUndefined();
+      expect(body.provider?.require_parameters).not.toBe(true); expect(body.temperature).toBe(0.35); expect(schema.maxItems).toBeUndefined();
       expect(schema.items.properties.replace.maxLength).toBeUndefined();
       return Response.json({
       choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
@@ -2103,6 +2104,7 @@ it("automatic span repair binds current sources without model-generated find tex
     const body = JSON.parse(options.body); const schema = body.response_format.json_schema;
     expect(schema.name).toBe("launchloom_creative_repair_spans");
     expect(body.provider).toEqual(expect.objectContaining({ require_parameters: true }));
+    expect(body.temperature).toBeUndefined();
     expect(schema.schema.properties.edits.minItems).toBe(1);
     expect(schema.schema.properties.edits.maxItems).toBe(3);
     expect(schema.schema.properties.edits.items.properties.replace).toEqual(expect.objectContaining({ pattern: "^[\\s\\S]{1,6000}$" }));
