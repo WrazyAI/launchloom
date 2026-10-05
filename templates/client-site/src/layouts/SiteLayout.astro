@@ -1,5 +1,6 @@
 ---
 import { resolvePalette, semanticColorCss } from "../lib/color-policy.mjs";
+import { fontFaceCss, resolveFontPairing } from "../lib/font-catalog.mjs";
 import site, { routeInventory, routePageBrief } from "../lib/site";
 import ReviewBanner from "../components/ReviewBanner.astro";
 import QuickAnswers from "../components/QuickAnswers.astro";
@@ -8,6 +9,28 @@ import "../styles/site.css";
 
 const { title = site.business.name, description = site.business.description, schemas = [] } = Astro.props;
 const palette = resolvePalette(site.style);
+const pairing = resolveFontPairing(site.style);
+const bodyVars = [
+  `--brand:${palette.primaryColor}`,
+  `--on-brand:${palette.contrastColor || "#ffffff"}`,
+  `--brand-ink:${palette.brandTextColor || palette.primaryColor}`,
+  `--brand-surface:${palette.brandSurfaceColor || palette.primaryColor}`,
+  `--on-brand-surface:${palette.brandSurfaceTextColor || palette.contrastColor || "#ffffff"}`,
+  `--cream:${palette.surfaceColor || "#f8f6f0"}`,
+  `--hero-surface:${palette.heroColor || "#e8eee5"}`,
+  `--ink:${palette.inkColor || "#14201d"}`,
+  `--muted:${palette.mutedColor || "#5e6b66"}`,
+  `--line:${palette.lineColor || "#d8ded7"}`,
+  ...(pairing.headingStack ? [`--font-heading:${pairing.headingStack}`] : []),
+  ...(pairing.bodyStack ? [`--font-body:${pairing.bodyStack}`] : []),
+  ...(palette.accentColor
+    ? [
+        `--accent:${palette.accentColor}`,
+        `--accent-ink:${palette.accentTextColor || palette.accentColor}`,
+        `--on-accent:${palette.accentContrastColor || "#ffffff"}`,
+      ]
+    : []),
+].join(";");
 const colorRoles = semanticColorCss(palette) + `
 .recipe-care-editorial {--care-hero-muted:${palette.surfaces.hero.mutedText};}
 .service-card:hover p { color: ${palette.surfaces.cardHover.mutedText}; }
@@ -59,9 +82,10 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
     <script is:inline type="application/ld+json" set:html={structuredDataJson} />
     {schemaBlocks.map((schema) => <script is:inline type="application/ld+json" set:html={schema} />)}
     <style is:inline set:html={colorRoles} />
+    <style is:inline set:html={fontFaceCss()} />
     <title>{title}</title>
   </head>
-  <body data-ll-route={Astro.url.pathname} style={`--brand:${palette.primaryColor};--on-brand:${palette.contrastColor || "#ffffff"};--brand-ink:${palette.brandTextColor || palette.primaryColor};--brand-surface:${palette.brandSurfaceColor || palette.primaryColor};--on-brand-surface:${palette.brandSurfaceTextColor || palette.contrastColor || "#ffffff"};--cream:${palette.surfaceColor || "#f8f6f0"};--hero-surface:${palette.heroColor || "#e8eee5"};--ink:${palette.inkColor || "#14201d"};--muted:${palette.mutedColor || "#5e6b66"};--line:${palette.lineColor || "#d8ded7"}`}>
+  <body data-ll-route={Astro.url.pathname} style={bodyVars}>
     {site.demoNotice && (
       <aside class="ll-demo-notice" data-demo-notice role="note" aria-label={site.demoNotice}>
         <strong>{site.demoNotice}</strong>

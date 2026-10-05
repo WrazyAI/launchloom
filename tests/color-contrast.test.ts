@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { contrast, parseCssColor } from "../scripts/color-contrast.mjs";
-import { resolvePalette } from "../scripts/palette-policy.mjs";
+import {
+  resolvePalette,
+  rotateHue,
+  suggestAccentColors,
+} from "../scripts/palette-policy.mjs";
 
 describe("rendered CSS color contrast", () => {
   it("parses Chromium color(srgb) channels as normalized values", () => {
@@ -95,5 +99,53 @@ describe("complete semantic contrast policy", () => {
       );
       expect(contrast(roles.focus, roles.surface)).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+describe("optional accent color", () => {
+  it("keeps accent tokens absent so existing sites keep their palette shape", () => {
+    const palette = resolvePalette({ primaryColor: "#205d51" });
+    expect(palette).not.toHaveProperty("accentColor");
+    expect(palette).not.toHaveProperty("accentTextColor");
+    expect(palette).not.toHaveProperty("accentContrastColor");
+  });
+
+  it("derives readable accent text and fill pairs", () => {
+    const palette = resolvePalette({
+      primaryColor: "#205d51",
+      accentColor: "#C86D51",
+    });
+    expect(palette.accentColor).toBe("#c86d51");
+    expect(
+      contrast(palette.accentTextColor, palette.surfaceColor),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrast(palette.accentContrastColor, palette.accentColor),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(resolvePalette(palette)).toEqual(palette);
+  });
+
+  it("repairs a light accent used as text on a light surface", () => {
+    const palette = resolvePalette({
+      primaryColor: "#205d51",
+      accentColor: "#f4e2a1",
+    });
+    expect(palette.accentColor).toBe("#f4e2a1");
+    expect(
+      contrast(palette.accentTextColor, palette.surfaceColor),
+    ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("suggests deterministic complementary accents", () => {
+    const suggestions = suggestAccentColors("#205d51");
+    expect(suggestions).toHaveLength(3);
+    expect(new Set(suggestions).size).toBe(3);
+    for (const color of suggestions)
+      expect(color).toMatch(/^#[0-9a-f]{6}$/u);
+    expect(suggestAccentColors("#205d51")).toEqual(suggestions);
+    expect(suggestAccentColors("#c86d51")).not.toEqual(suggestions);
+    expect(() => rotateHue("not-a-color", 180)).toThrow(
+      /parseable color/iu,
+    );
   });
 });

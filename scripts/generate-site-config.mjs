@@ -16,6 +16,7 @@ import {
   promptCacheRequestFields,
 } from "./openrouter-client.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
+import { fontFamilyById } from "./font-catalog.mjs";
 import { fictionalPipelineDemoNotice } from "./synthetic-demo-notice.mjs";
 import {
   defaultHistoryPath,
@@ -512,11 +513,23 @@ function paletteHintsFromIntake(intake, primaryColor) {
   const ink = notes.match(
     /(?:text|typography|copy)\s*(?:color)?\s*[:=(]?\s*(#[0-9a-f]{6})/i,
   )?.[1];
+  const accent = text(intake.accentColor, 20);
   return resolvePalette({
     primaryColor,
     ...(background ? { surfaceColor: background } : {}),
     ...(ink ? { inkColor: ink } : {}),
+    ...(/^#[0-9a-f]{6}$/i.test(accent) ? { accentColor: accent } : {}),
   });
+}
+
+/** Client font picks that resolve to known catalog families. */
+function fontChoicesFromIntake(intake) {
+  const headingFont = fontFamilyById(text(intake.headingFont, 60))?.id;
+  const bodyFont = fontFamilyById(text(intake.bodyFont, 60))?.id;
+  return {
+    ...(headingFont ? { headingFont } : {}),
+    ...(bodyFont ? { bodyFont } : {}),
+  };
 }
 
 function usefulServiceDescription(value, serviceName) {
@@ -1476,6 +1489,7 @@ function fallback(intake) {
     },
     style: {
       ...paletteHintsFromIntake(intake, primaryColor),
+      ...fontChoicesFromIntake(intake),
       tone: intake.tone || "confident",
       ...(stylePreference ? { preference: stylePreference } : {}),
       ...(visualDirection ? { visualDirection } : {}),
@@ -1904,6 +1918,10 @@ export function normalise(candidate, intake) {
     seoPageMap: seoResearch?.pageMap || [],
     style: {
       ...resolvePalette({ ...(value.style || {}), ...base.style }),
+      ...(base.style.headingFont
+        ? { headingFont: base.style.headingFont }
+        : {}),
+      ...(base.style.bodyFont ? { bodyFont: base.style.bodyFont } : {}),
       tone: base.style.tone,
       ...(base.style.preference ? { preference: base.style.preference } : {}),
       ...(base.style.visualDirection

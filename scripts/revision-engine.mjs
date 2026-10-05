@@ -147,6 +147,7 @@ const COLOR_ROLE_KEYS = {
   ink: "inkColor",
   muted: "mutedColor",
   line: "lineColor",
+  accent: "accentColor",
 };
 // Replacement images are materialized into the client repository by the
 // revision workflow. The engine only accepts local feedback asset paths so a
@@ -550,6 +551,24 @@ function colorForRole(feedback, rolePattern) {
 function paletteFor(config, feedback = "") {
   const requested = requestedColors(feedback);
   if (requested.length) {
+    const current = config.style || {};
+    // A note that names the accent role changes or adds the optional second
+    // color while leaving the established palette in place.
+    const accentRequest = colorForRole(feedback, "accent|highlight");
+    if (accentRequest && /\b(?:accent|highlight)\b/i.test(feedback)) {
+      const base = paletteFor(config, "");
+      const primaryRequest = colorForRole(feedback, "primary|brand");
+      return {
+        ...Object.fromEntries(
+          PALETTE_KEYS.map((key) => [
+            key,
+            validPaletteValue(current[key]) || base[key],
+          ]),
+        ),
+        ...(primaryRequest ? { primaryColor: primaryRequest } : {}),
+        accentColor: accentRequest,
+      };
+    }
     const primary =
       colorForRole(feedback, "primary|brand|accent") ||
       requested.find(
@@ -1337,22 +1356,41 @@ export function applyOperation(config, operation) {
   }
   if (operation.kind === "set_color_palette") {
     const palette = operation.palette;
+    const requestedAccent = palette?.accentColor;
     if (
       !palette ||
       typeof palette !== "object" ||
       PALETTE_KEYS.some(
         (key) => !/^#[0-9a-f]{6}$/i.test(String(palette[key] || "")),
-      )
+      ) ||
+      (requestedAccent !== undefined &&
+        requestedAccent !== null &&
+        requestedAccent !== "" &&
+        !/^#[0-9a-f]{6}$/i.test(String(requestedAccent)))
     )
       return false;
-    config.style = {
-      ...(config.style || {}),
-      ...resolvePalette(
-        Object.fromEntries(
-          PALETTE_KEYS.map((key) => [key, palette[key].toLowerCase()]),
-        ),
+    const preservedAccent =
+      requestedAccent === undefined &&
+      /^#[0-9a-f]{6}$/i.test(String(config.style?.accentColor || ""))
+        ? String(config.style.accentColor).toLowerCase()
+        : undefined;
+    const accentForResolve = requestedAccent
+      ? String(requestedAccent).toLowerCase()
+      : preservedAccent;
+    const resolved = resolvePalette({
+      ...Object.fromEntries(
+        PALETTE_KEYS.map((key) => [key, palette[key].toLowerCase()]),
       ),
-    };
+      ...(accentForResolve ? { accentColor: accentForResolve } : {}),
+    });
+    const nextStyle = { ...(config.style || {}), ...resolved };
+    if (requestedAccent === null || requestedAccent === "") {
+      // An explicit clear removes the optional accent instead of replacing it.
+      delete nextStyle.accentColor;
+      delete nextStyle.accentTextColor;
+      delete nextStyle.accentContrastColor;
+    }
+    config.style = nextStyle;
     return true;
   }
   if (operation.kind === "set_image") {
@@ -2120,12 +2158,20 @@ export function expectedArtifacts(operations, config) {
       ];
     if (operation.kind === "show_brand_name")
       return [{ type: "html", marker: 'class="wordmark__name"' }];
-    if (operation.kind === "set_color_palette")
-      return PALETTE_KEYS.map((field) => ({
+    if (operation.kind === "set_color_palette") {
+      const artifacts = PALETTE_KEYS.map((field) => ({
         type: "style",
         field,
         value: operation.palette[field].toLowerCase(),
       }));
+      if (/^#[0-9a-f]{6}$/i.test(String(operation.palette.accentColor || "")))
+        artifacts.push({
+          type: "style",
+          field: "accentColor",
+          value: String(operation.palette.accentColor).toLowerCase(),
+        });
+      return artifacts;
+    }
     if (operation.kind === "set_copy") {
       const target = COPY_RENDER_TARGETS[operation.field];
       if (!COPY_FIELDS.has(operation.field) || !target)
