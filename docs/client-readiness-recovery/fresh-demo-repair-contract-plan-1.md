@@ -32,11 +32,11 @@
 
 **Interface:** Export `repairRejectionSummary(edit, index, occurrences)` from the repair module. Return only bounded codes, logical file name, index, find/replace types and lengths, and occurrence count. No literal text. Preserve the existing rejection code and fail-closed result.
 
-- [ ] Add RED tests for explicit read-only instructions and distinct diagnostics for nonstring, empty, over-6,000, missing and repeated find fragments. Retain the real validator tests proving all eight role reads pass and declarations/registrations fail.
-- [ ] Run `npx vitest run tests/creative-repair-loop.test.ts tests/reference-fidelity.test.ts tests/rendered-creative-repair.test.ts`; verify the new expectations fail before code changes.
-- [ ] State explicitly that runtime roles must never be declared, assigned or registered. Preserve rejected provider payloads only in the existing private repair artifact path, with a 256,000-character storage ceiling, digest and truncation flag; public output uses the summary interface only. No acceptance guard changes.
-- [ ] Run the same tests; expect all passing, including redaction, bounded retention and unchanged write isolation.
-- [ ] Commit this independently reviewable correction with its append-only progress evidence.
+- [x] Add RED tests for explicit read-only instructions and distinct diagnostics for nonstring, empty, over-6,000, missing and repeated find fragments. Retain the real validator tests proving all eight role reads pass and declarations/registrations fail.
+- [x] Run `npx vitest run tests/creative-repair-loop.test.ts tests/reference-fidelity.test.ts tests/rendered-creative-repair.test.ts`; verify the new expectations fail before code changes.
+- [x] State explicitly that runtime roles must never be declared, assigned or registered. Preserve rejected provider payloads only in the existing private repair artifact path, with a 256,000-character storage ceiling, digest and truncation flag; public output uses the summary interface only. No acceptance guard changes.
+- [x] Run the same tests; expect all passing, including redaction, bounded retention and unchanged write isolation.
+- [x] Commit this independently reviewable correction with its append-only progress evidence.
 
 ## Task 2: Trusted bounded span catalog
 
@@ -44,11 +44,11 @@
 
 **Interfaces:** `buildRepairSpanCatalog(files, {allowedFiles})` returns `{version:1, spans:[{id,file,sourceDigest,find}]}`. `compileRepairSpanEdits(files, catalog, edits)` accepts `{spanId,replace}[]` and returns existing `{file,find,replace}[]`. Allowed logical files are `experience`, `styles`, `motion`, `servicePage`, `locationPage`, `servicesIndexPage`, narrowed by the caller.
 
-- [ ] Add RED tests for deterministic IDs, stale source, unknown IDs, duplicate/nonunique spans, overlapping edits, empty/nonstring replacements, 6,001-character input, 13 edits and 24,001 total characters. Assert failures leave original file bytes unchanged.
-- [ ] Run `npx vitest run tests/creative-repair-spans.test.ts`; expect failures before implementation.
-- [ ] Build nonoverlapping newline-bounded windows at most 6,000 characters; omit individually oversized lines and nonunique windows rather than granting wider edits. Hash IDs from file, full source digest and window offset/text. Compile only catalog members matching the current full source digest; enforce the same limits before returning literal edits. Feed results into `applyCreativeRepairEdits`, never bypass it.
-- [ ] Run the new suite plus `tests/creative-repair-loop.test.ts`; expect pass with existing literal-edit semantics unchanged. Verify an actual frozen candidate offline with zero provider calls, preserving unrelated regions and all sealed bindings.
-- [ ] Commit catalog/compiler and the exact boundary evidence.
+- [x] Add RED tests for deterministic IDs, stale source, unknown IDs, duplicate/nonunique spans, overlapping edits, empty/nonstring replacements, 6,001-character input, 13 edits and 24,001 total characters. Assert failures leave original file bytes unchanged.
+- [x] Run `npx vitest run tests/creative-repair-spans.test.ts`; expect failures before implementation.
+- [x] Build nonoverlapping windows at most 6,000 characters: newline-bounded for formatted source, parser-bounded exact CSS ranges for valid minified styles. Omit unsupported oversized lines/nodes and nonunique windows rather than granting wider edits. Hash IDs from file, full source digest and window offset/text. Compile only catalog members matching the current full source digest; enforce the same limits before returning literal edits. Feed results into `applyCreativeRepairEdits`, never bypass it.
+- [x] Run the new suite plus `tests/creative-repair-loop.test.ts`; expect pass with existing literal-edit semantics unchanged. Verify an actual frozen candidate offline with zero provider calls, preserving unrelated regions and all sealed bindings.
+- [x] Commit catalog/compiler and the exact boundary evidence.
 
 ## Task 3: Automatic repair integration and offline source proof
 
@@ -78,4 +78,4 @@
 
 Review Tasks 1–3 as the concrete repair-interface change, then authorize the single capped experiment in Task 4. Implementation estimate: 60–90 minutes plus approximately 20 minutes for full CI. Provider runtime is bounded by the existing workflow timeout and the stricter experiment ceiling, not promised as a short run.
 
-No further implementation or model calls have been made for this plan.
+User approved execution. Tasks 1–2 are implemented and locally verified; Tasks 3–4 remain pending. No provider experiment has run.

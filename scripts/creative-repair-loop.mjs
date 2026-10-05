@@ -1,3 +1,8 @@
+import {
+  REPAIR_FILE_ORDER, REPAIR_INNER_PAGE_KEYS, REPAIR_EDITABLE_FILE_NAMES,
+  MAX_REPAIR_EDITS, MAX_REPAIR_EDIT_FRAGMENT_CHARS,
+  MAX_REPAIR_PATCH_TEXT_CHARS, MAX_REPAIR_FILE_SOURCE_CHARS,
+} from "./creative-repair-contract.mjs";
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -32,12 +37,6 @@ import {
 import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 import { validateCreativeSessionConfig } from "./reasoning-preflight-lib.mjs";
 
-const REPAIR_FILE_ORDER = ["experience", "styles", "motion"];
-const REPAIR_INNER_PAGE_KEYS = [
-  "servicePage",
-  "locationPage",
-  "servicesIndexPage",
-];
 
 /**
  * Build the complete-file repair schema for the candidate's current files.
@@ -144,14 +143,7 @@ function repairEditSchemaFor(files = {}, { includeInnerPages = true } = {}) {
 const REPAIR_SOURCE_EDIT_THRESHOLD_CHARS = 20_000;
 const REPAIR_AFFORDABILITY_RETRY_MIN_TOKENS = 8_000;
 const REPAIR_AFFORDABILITY_RETRY_HEADROOM_TOKENS = 1_024;
-const REPAIR_EDITABLE_FILES = new Set([
-  ...REPAIR_FILE_ORDER,
-  ...REPAIR_INNER_PAGE_KEYS,
-]);
-const MAX_REPAIR_EDITS = 12;
-const MAX_REPAIR_EDIT_FRAGMENT_CHARS = 6_000;
-const MAX_REPAIR_PATCH_TEXT_CHARS = 24_000;
-const MAX_REPAIR_FILE_SOURCE_CHARS = 80_000;
+const REPAIR_EDITABLE_FILES = new Set(REPAIR_EDITABLE_FILE_NAMES);
 const MOTION_FINDING_PATTERN =
   /\b(?:motion|animation|animated|scrolltrigger|scroll-linked|parallax)\b/iu;
 const REFERENCE_MISMATCH_PATTERN =
