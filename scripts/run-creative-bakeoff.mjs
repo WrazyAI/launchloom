@@ -776,6 +776,7 @@ export async function runCreativeBakeoff({
             `${candidate.manifest.candidateId}-contrast.json`,
           ),
           repair: allowContrastRepair,
+          plates: allowContrastRepair,
           build: () => run("npm", ["run", "build"], root),
         });
         if (!candidateResult.contrast.pass)

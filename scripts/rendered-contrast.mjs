@@ -544,6 +544,26 @@ export function collectContrastTargets({
     };
   };
   const targets = [];
+  // Client palette contract role colors are custom properties, which the
+  // cached computed-style map does not carry. Read them directly and cache
+  // per element so a repair can reuse the local surface/text pair.
+  const roleCache = new Map();
+  const roleHex = (el, name) => {
+    for (let p = el; p; p = p.parentElement) {
+      if (!roleCache.has(p)) {
+        const computed = getComputedStyle(p);
+        roleCache.set(p, {
+          "--ll-surface": String(
+            computed.getPropertyValue("--ll-surface") || "",
+          ).trim(),
+          "--ll-text": String(computed.getPropertyValue("--ll-text") || "").trim(),
+        });
+      }
+      const value = roleCache.get(p)[name];
+      if (value && /^#[0-9a-f]{6}$/iu.test(value)) return value.toLowerCase();
+    }
+    return null;
+  };
   const add = (
     el,
     kind,
@@ -558,6 +578,30 @@ export function collectContrastTargets({
     const s = styleFor(el);
     const rgba = color(foreground);
     if (rgba) rgba[3] *= alpha;
+    // A deterministic plate repair may only paint inside the element's own
+    // box, so it is safe only when no own effect would move, clip or blend
+    // that paint.
+    const plate =
+      kind === "text"
+        ? {
+            plateSurface: roleHex(el, "--ll-surface"),
+            plateText: roleHex(el, "--ll-text"),
+            plateSafe:
+              Number(s.opacity) === 1 &&
+              s.mixBlendMode === "normal" &&
+              [
+                s.transform,
+                s.translate,
+                s.rotate,
+                s.scale,
+                s.perspective,
+                s.filter,
+                s.backdropFilter,
+                s.clipPath,
+                s.maskImage,
+              ].every((value) => !value || value === "none"),
+          }
+        : {};
     targets.push({
       paintProperty,
       route,
@@ -568,6 +612,7 @@ export function collectContrastTargets({
       foreground: rgba,
       ...bg,
       minimum,
+      ...plate,
       rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
       fontSize: parseFloat(s.fontSize),
       fontWeight: s.fontWeight,

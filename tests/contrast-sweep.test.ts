@@ -159,4 +159,127 @@ describe("persisted bounded contrast sweep", () => {
       await rm(root, { recursive: true, force: true });
     }
   }, 60000);
+  it("plans a bounded plate repair for unresolved text with local role colors", async () => {
+    const module = await modulePromise;
+    const target = {
+      selector:
+        "body > main:nth-of-type(1) > section:nth-of-type(1) > p:nth-of-type(1)",
+      kind: "text",
+      state: "default",
+      status: "unresolved",
+      repairEligible: false,
+      color: "#71652f",
+      background: null,
+      foreground: [113, 101, 47, 1],
+      backgrounds: [[29, 49, 67, 1]],
+      minimum: 4.5,
+      issues: ["pseudo-element backdrop requires rendered review"],
+      plateSafe: true,
+      plateSurface: "#1d3143",
+      plateText: "#f4f1ea",
+      text: "Estate law, explained plainly",
+    };
+    const pages = [
+      {
+        route: "/",
+        viewport: module.CONTRAST_VIEWPORTS[0],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets: [target],
+        findings: [target],
+      },
+    ];
+    // Without plate repairs the unresolved target stays untouched.
+    expect(module.planContrastRepairs({ pages })).toEqual([]);
+    const plates = module.planContrastRepairs({ pages }, { plates: true });
+    expect(plates).toHaveLength(1);
+    expect(plates[0]).toMatchObject({
+      kind: "plate",
+      surface: "#1d3143",
+      minimum: 4.5,
+      selector: target.selector,
+    });
+    expect(plates[0].color).toMatch(/^#[0-9a-f]{6}$/u);
+    const css = module.contrastRepairCss(plates);
+    expect(css).toContain("background-color:#1d3143!important");
+    expect(css).toContain("background-image:none!important");
+    expect(css).toContain("z-index:3!important");
+    expect(css).toContain("content:none!important");
+    expect(css).toContain('body[data-ll-route="/"] > main:nth-of-type(1)');
+  });
+  it("adds plate repairs beside unrelated color sweeps and refuses unsafe plates", async () => {
+    const module = await modulePromise;
+    const colorTarget = {
+      selector: "body > nav:nth-of-type(1) > a:nth-of-type(1)",
+      kind: "text",
+      state: "default",
+      status: "fail",
+      repairEligible: true,
+      color: "#f8f6f0",
+      background: "#ffffff",
+      foreground: [248, 246, 240, 1],
+      backgrounds: [[255, 255, 255, 1]],
+      minimum: 4.5,
+      ratio: 1.1,
+      text: "Services",
+    };
+    const plateTarget = {
+      selector: "body > main:nth-of-type(1) > p:nth-of-type(1)",
+      kind: "text",
+      state: "default",
+      status: "unresolved",
+      repairEligible: false,
+      color: "#71652f",
+      background: null,
+      foreground: [113, 101, 47, 1],
+      backgrounds: [[29, 49, 67, 1]],
+      minimum: 4.5,
+      issues: ["overlapping non-ancestor paint requires rendered review"],
+      plateSafe: true,
+      plateSurface: "#1d3143",
+      plateText: "#f4f1ea",
+      text: "Over authored paint",
+    };
+    const pages = [
+      {
+        route: "/",
+        viewport: module.CONTRAST_VIEWPORTS[0],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets: [colorTarget, plateTarget],
+        findings: [colorTarget, plateTarget],
+      },
+    ];
+    const repairs = module.planContrastRepairs({ pages }, { plates: true });
+    expect(repairs.map((r: any) => r.kind || "color").sort()).toEqual([
+      "color",
+      "plate",
+    ]);
+    const unsafe = module.planContrastRepairs(
+      {
+        pages: [
+          {
+            ...pages[0],
+            targets: [{ ...plateTarget, plateSafe: false }],
+            findings: [{ ...plateTarget, plateSafe: false }],
+          },
+        ],
+      },
+      { plates: true },
+    );
+    expect(unsafe).toEqual([]);
+    const noRoles = module.planContrastRepairs(
+      {
+        pages: [
+          {
+            ...pages[0],
+            targets: [{ ...plateTarget, plateSurface: null, plateText: null }],
+            findings: [{ ...plateTarget, plateSurface: null, plateText: null }],
+          },
+        ],
+      },
+      { plates: true },
+    );
+    expect(noRoles).toEqual([]);
+  });
 });

@@ -199,8 +199,14 @@ export async function auditBuiltContrast({
 
 /** Restrict changes to known solid local text, consistent across measured states.
  * Ambiguous selectors/routes/effects are not repairable. All repairs must pass
- * the rebuilt audit and the caller's existing source/fidelity/visual gates. */
-export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
+ * the rebuilt audit and the caller's existing source/fidelity/visual gates.
+ * Plate repairs paint a provable local opaque surface from the client palette
+ * contract for text that no color sweep can prove, such as text over authored
+ * pseudo-element or overlapping paint. */
+export function planContrastRepairs(
+  report,
+  { maxRepairs = 32, plates = false } = {},
+) {
   const groups = new Map();
   for (const page of report.pages) {
     if (!page.repairScopeVerified) continue;
@@ -251,25 +257,105 @@ export function planContrastRepairs(report, { maxRepairs = 32 } = {}) {
     }
   }
   const repairs = [...groups.values()];
+  const plateRepairs = [];
+  if (plates) {
+    const grouped = new Map();
+    for (const page of report.pages || []) {
+      if (!page.repairScopeVerified) continue;
+      for (const target of page.targets || []) {
+        if (target.kind !== "text" || target.state !== "default") continue;
+        if (target.status !== "unresolved" && target.status !== "fail") continue;
+        if (!target.plateSafe) continue;
+        if (
+          !/^body(?: > [a-z][a-z0-9-]*:nth-of-type\(\d+\))*$/.test(
+            target.selector,
+          )
+        )
+          continue;
+        const surface = /^#[0-9a-f]{6}$/u.test(String(target.plateSurface || ""))
+          ? String(target.plateSurface)
+          : null;
+        const base = /^#[0-9a-f]{6}$/u.test(String(target.plateText || ""))
+          ? String(target.plateText)
+          : /^#[0-9a-f]{6}$/u.test(String(target.color || ""))
+            ? String(target.color)
+            : null;
+        if (!surface || !base) continue;
+        const peers = page.targets.filter(
+          (t) => t.selector === target.selector && t.kind === "text",
+        );
+        if (
+          peers.some(
+            (t) =>
+              t.plateSafe === false ||
+              (t.plateSurface && t.plateSurface !== surface),
+          )
+        )
+          continue;
+        const key = JSON.stringify([
+          page.route,
+          page.viewport.name,
+          target.selector,
+        ]);
+        const previous = grouped.get(key);
+        const minimum = Math.max(
+          target.minimum,
+          ...peers.map((t) => t.minimum),
+          previous?.minimum || 0,
+        );
+        grouped.set(key, {
+          kind: "plate",
+          route: page.route,
+          viewport: page.viewport,
+          mediaConditions: page.mediaConditions,
+          selector: target.selector,
+          minimum,
+          surface,
+          original: target.color || null,
+          color: ensureContrast(base, surface, minimum),
+          text: target.text,
+        });
+      }
+    }
+    const plateKeys = new Set(
+      [...grouped.values()].map((r) =>
+        JSON.stringify([r.route, r.viewport.name, r.selector]),
+      ),
+    );
+    for (const repair of repairs) {
+      // A plate already paints and re-colors the same element; drop the color
+      // sweep for that selector so the bounded overlay stays minimal.
+      if (
+        plateKeys.has(
+          JSON.stringify([repair.route, repair.viewport.name, repair.selector]),
+        )
+      )
+        continue;
+      plateRepairs.push(repair);
+    }
+    plateRepairs.push(...grouped.values());
+  }
+  const all = plates ? plateRepairs : repairs;
   // A bounded sweep never fixes an arbitrary prefix and hides the rest.
   const correctionGroups = new Set(
-    repairs.map((r) =>
+    all.map((r) =>
       JSON.stringify([
         r.mediaConditions ?? r.viewport,
-        r.paintProperty,
+        r.kind === "plate" ? "plate" : r.paintProperty,
         r.color,
       ]),
     ),
   );
   if (
     correctionGroups.size > maxRepairs ||
-    contrastRepairCss(repairs).length > 16384
+    contrastRepairCss(all).length > 16384
   )
     return [];
-  return repairs;
+  return all;
 }
 export function contrastRepairCss(repairs) {
   const groups = new Map();
+  const plateGroups = new Map();
   for (const r of repairs) {
     const conditions = r.mediaConditions ?? [
       [
@@ -279,6 +365,22 @@ export function contrastRepairCss(repairs) {
         .filter(Boolean)
         .join(" and "),
     ];
+    const scopedSelector = r.selector.replace(
+      /^body/,
+      `body[data-ll-route=${JSON.stringify(r.route)}]`,
+    );
+    if (r.kind === "plate") {
+      const key = JSON.stringify([conditions, r.surface, r.color]);
+      if (!plateGroups.has(key))
+        plateGroups.set(key, {
+          conditions,
+          surface: r.surface,
+          color: r.color,
+          selectors: new Set(),
+        });
+      plateGroups.get(key).selectors.add(scopedSelector);
+      continue;
+    }
     const property = r.paintProperty || "color";
     const key = JSON.stringify([conditions, property, r.color]);
     if (!groups.has(key))
@@ -288,29 +390,42 @@ export function contrastRepairCss(repairs) {
         color: r.color,
         selectors: new Set(),
       });
-    groups
-      .get(key)
-      .selectors.add(
-        r.selector.replace(
-          /^body/,
-          `body[data-ll-route=${JSON.stringify(r.route)}]`,
-        ),
-      );
+    groups.get(key).selectors.add(scopedSelector);
   }
+  const colorRules = [...groups.values()].map((g) => {
+    let rule = `${[...g.selectors].join(",")}{--ll-creative-auto-text:${g.color};${g.property}:var(--ll-creative-auto-text)!important;}`;
+    for (const condition of g.conditions)
+      rule = `@media ${condition}{${rule}}`;
+    return rule;
+  });
+  // A plate is an opaque local surface from the client palette contract. Its
+  // background paints inside the element's own box and its neutralized
+  // pseudo-elements keep the glyph backdrop provable; the bounded repair is
+  // only emitted for elements without own transforms, filters or clipping.
+  const plateRules = [...plateGroups.values()].map((g) => {
+    const scoped = [...g.selectors];
+    const fill = scoped
+      .map(
+        (selector) =>
+          `${selector}{position:relative!important;z-index:3!important;background-color:${g.surface}!important;background-image:none!important;color:${g.color}!important;padding:.1em .35em!important;box-sizing:border-box;box-decoration-break:clone;isolation:isolate;}`,
+      )
+      .join("");
+    const pseudos = scoped
+      .flatMap((selector) => [`${selector}::before`, `${selector}::after`])
+      .map((selector) => `${selector}{content:none!important;}`)
+      .join("");
+    let rule = fill + pseudos;
+    for (const condition of g.conditions)
+      rule = `@media ${condition}{${rule}}`;
+    return rule;
+  });
   return (
     "\n/* launchloom: bounded rendered contrast corrections */\n" +
-    [...groups.values()]
-      .map((g) => {
-        let rule = `${[...g.selectors].join(",")}{--ll-creative-auto-text:${g.color};${g.property}:var(--ll-creative-auto-text)!important;}`;
-        for (const condition of g.conditions)
-          rule = `@media ${condition}{${rule}}`;
-        return rule;
-      })
-      .join("\n") +
+    [...colorRules, ...plateRules].join("\n") +
     "\n"
   );
 }
-/** @param {{dist: string, stylesPath?: string, deployedStylesPath?: string, build?: () => unknown, reportPath?: string, browser?: import("playwright").Browser, screenshotsDir?: string, repair?: boolean}} options */
+/** @param {{dist: string, stylesPath?: string, deployedStylesPath?: string, build?: () => unknown, reportPath?: string, browser?: import("playwright").Browser, screenshotsDir?: string, repair?: boolean, plates?: boolean}} options */
 export async function enforceBuiltContrast({
   dist,
   stylesPath,
@@ -320,10 +435,13 @@ export async function enforceBuiltContrast({
   browser,
   screenshotsDir,
   repair = true,
+  plates = false,
 }) {
   const before = await auditBuiltContrast({ dist, browser, screenshotsDir: repair ? undefined : screenshotsDir });
   const repairs =
-    repair && !before.pass && stylesPath ? planContrastRepairs(before) : [];
+    repair && !before.pass && stylesPath
+      ? planContrastRepairs(before, { plates })
+      : [];
   let after = before;
   if (repairs.length) {
     if (typeof build !== "function")

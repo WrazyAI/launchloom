@@ -109,3 +109,61 @@ describe("rendered contrast backdrop geometry", () => {
     expect(report.findings[0].repairEligible).toBe(false);
   });
 });
+
+describe("bounded deterministic plate repairs", () => {
+  const plateCss = (selector: string, surface: string, color: string) =>
+    `${selector}{position:relative!important;z-index:3!important;background-color:${surface}!important;background-image:none!important;color:${color}!important;padding:.1em .35em!important;box-sizing:border-box;box-decoration-break:clone;isolation:isolate}${selector}::before,${selector}::after{content:none!important}`;
+
+  it("clears an own pseudo backdrop only with the plate, and reports the local role pair", async () => {
+    const html = (plate: string) =>
+      `<style>body{margin:0;background:#fff}[data-ll-surface="hero"]{--ll-surface:#1d3143;--ll-text:#f4f1ea;background-color:#1d3143;color:#f4f1ea;padding:40px}.kicker{color:#71652f;font-size:12px;margin:0}.kicker::before{content:"";display:block;width:60px;height:1px;margin-bottom:8px;background:#8a7d48}${plate}</style><div data-ll-surface="hero"><p class="kicker">Estate law, explained plainly</p></div>`;
+    const without = await scan(html(""), 1440, { states: false });
+    expect(without.pass).toBe(false);
+    const finding = without.findings.find(
+      (f: any) => f.text === "Estate law, explained plainly",
+    );
+    expect(finding).toMatchObject({
+      status: "unresolved",
+      plateSurface: "#1d3143",
+      plateText: "#f4f1ea",
+      plateSafe: true,
+    });
+    expect(finding.issues).toEqual(
+      expect.arrayContaining([
+        "pseudo-element backdrop requires rendered review",
+      ]),
+    );
+    const withPlate = await scan(
+      html(plateCss(".kicker", "#1d3143", "#f4f1ea")),
+      1440,
+      { states: false },
+    );
+    expect(withPlate.pass, JSON.stringify(withPlate.findings)).toBe(true);
+  });
+
+  it("clears a wrapper pseudo backdrop with a plate on the inner text", async () => {
+    const html = (plate: string) =>
+      `<style>body{margin:0;background:#fff}[data-ll-surface="hero"]{--ll-surface:#1d3143;--ll-text:#f4f1ea;background-color:#1d3143;color:#f4f1ea;padding:40px}.copy::before{content:"";display:block;width:60px;height:1px;margin-bottom:8px;background:#8a7d48}.text{color:#f4f1ea;margin:0;font-size:14px}${plate}</style><div data-ll-surface="hero"><div class="copy"><p class="text">Wrapper pseudo backdrop</p></div></div>`;
+    const without = await scan(html(""), 1440, { states: false });
+    expect(without.pass).toBe(false);
+    const withPlate = await scan(
+      html(plateCss(".text", "#1d3143", "#f4f1ea")),
+      1440,
+      { states: false },
+    );
+    expect(withPlate.pass, JSON.stringify(withPlate.findings)).toBe(true);
+  });
+
+  it("proves an in-flow plate against overlapping rear paint", async () => {
+    const html = (plate: string) =>
+      `<style>body{margin:0;background:#fff}.panel{position:relative;width:320px;height:110px}.paint{position:absolute;inset:0;background:#000}.text{margin:0;color:#f4f1ea;font-size:14px}${plate}</style><div class="shell"><astro-island><div class="host"><div class="panel"><div class="paint"></div><p class="text">Overlapping rear paint</p></div></div></astro-island></div>`;
+    const without = await scan(html(""), 1440, { states: false });
+    expect(without.pass).toBe(false);
+    const withPlate = await scan(
+      html(plateCss(".text", "#1d3143", "#f4f1ea")),
+      1440,
+      { states: false },
+    );
+    expect(withPlate.pass, JSON.stringify(withPlate.findings)).toBe(true);
+  });
+});
