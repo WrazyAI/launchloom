@@ -31,6 +31,20 @@ import {
   selectExperienceVariantId,
 } from "../templates/client-site/src/lib/experience-pack.ts";
 
+// Bounded per-process usage evidence so the generation workflow can report
+// provider cost without parsing runner logs. Never changes the generated
+// config or its validation.
+const modelUsageRecords = [];
+
+function recordModelUsage(label, model, usage) {
+  if (!usage || typeof usage !== "object") return;
+  modelUsageRecords.push({ label, model, usage });
+}
+
+export function getSiteConfigUsageRecords() {
+  return modelUsageRecords.slice();
+}
+
 const referenceCoverage = JSON.parse(
   readFileSync(
     new URL("../data/reference-library/core-collection.json", import.meta.url),
@@ -2045,6 +2059,7 @@ async function askModel(intake, effort, model = MODEL) {
     );
   const result = await response.json();
   logOpenRouterCacheUsage("site-copy", result.usage);
+  recordModelUsage("site-copy", model, result.usage);
   const content = result.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenRouter returned no content.");
   return parseModelJson(content);
@@ -2093,6 +2108,7 @@ async function refineDraft(intake, draft, report, model = MODEL) {
     );
   const result = await response.json();
   logOpenRouterCacheUsage("site-refinement", result.usage);
+  recordModelUsage("site-refinement", model, result.usage);
   const content = result.choices?.[0]?.message?.content;
   if (!content) throw new Error("OpenRouter refinement returned no content.");
   return parseModelJson(content);
@@ -2187,6 +2203,7 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   const briefFile = argumentValue(process.argv, "--brief");
   const destination = argumentValue(process.argv, "--out");
   const researchFile = argumentValue(process.argv, "--research");
+  const usageOut = argumentValue(process.argv, "--usage-out");
   if ((!source && !briefFile) || !destination)
     throw new Error(
       "Usage: node generate-site-config.mjs (--brief canonical-site-brief.json | --source intake.md) --out site.config.json",
@@ -2200,4 +2217,9 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
     destination,
     `${JSON.stringify(await generateSiteConfig(intake), null, 2)}\n`,
   );
+  if (usageOut)
+    await fs.writeFile(
+      usageOut,
+      `${JSON.stringify({ version: 1, records: getSiteConfigUsageRecords() }, null, 2)}\n`,
+    );
 }

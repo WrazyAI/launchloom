@@ -14,6 +14,19 @@ import { promptImageDimensions, promptImagePart } from "./prompt-evidence.mjs";
 
 const model = process.env.CREATIVE_REFERENCE_ANALYZER_MODEL || "openai/gpt-6-luna";
 
+// Bounded per-process usage evidence for the generation cost ledger. The
+// enriched inspiration pack output is unchanged.
+const modelUsageRecords = [];
+
+function recordModelUsage(label, usage) {
+  if (!usage || typeof usage !== "object") return;
+  modelUsageRecords.push({ label, model, usage });
+}
+
+export function getReferenceDnaUsageRecords() {
+  return modelUsageRecords.slice();
+}
+
 const schema = {
   name: "launchloom_reference_dna_analysis",
   strict: true,
@@ -338,6 +351,7 @@ Rules:
     if (!response.ok)
       throw new Error(`Reference analyzer failed for ${route.id} (${response.status}): ${payload?.error?.message || "unknown error"}`);
     logOpenRouterCacheUsage("reference-dna", payload.usage);
+    recordModelUsage("reference-dna", payload.usage);
     return parseChoice(payload);
   };
   try {
@@ -422,6 +436,11 @@ async function main() {
   const pack = JSON.parse(await fs.readFile(input, "utf8"));
   const enriched = await enrichInspirationPack(pack);
   await fs.writeFile(output, `${JSON.stringify(enriched, null, 2)}\n`);
+  if (args["usage-out"])
+    await fs.writeFile(
+      path.resolve(args["usage-out"]),
+      `${JSON.stringify({ version: 1, records: getReferenceDnaUsageRecords() }, null, 2)}\n`,
+    );
   console.log(JSON.stringify({ routes: enriched.routes.length, model, output }));
 }
 

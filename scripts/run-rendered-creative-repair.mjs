@@ -823,6 +823,7 @@ export async function defaultRepairCandidate({
   creativeSession = null,
   automaticSpanRepair = false,
   fetchImpl = fetch,
+  onUsage = null,
 } = {}) {
   const { metadata, contentManifest, content, files } =
     await readCandidate(candidateDir);
@@ -856,6 +857,7 @@ export async function defaultRepairCandidate({
     creativeSession,
     creativeRepairScope,
     automaticSpanRepair, fetchImpl,
+    onUsage,
   });
   let validated;
   try {
@@ -1091,6 +1093,20 @@ export async function runRenderedCreativeRepair({
   if (qaRepairExperiment && (mode !== "preview" || Number(maxCycles) !== 1 || requestedFindings.length))
     throw new Error("QA repair experiment requires one preview cycle without human feedback.");
   const providerBudget = qaRepairExperiment ? createQaRepairCallBudget({ fetchImpl }) : null;
+  // Bounded per-run usage evidence for the generation cost ledger. Written
+  // next to the repair evidence; never changes repair behavior.
+  const repairUsage = [];
+  const persistRepairUsage = async () => {
+    if (!repairUsage.length) return;
+    await fs.writeFile(
+      path.join(evidenceRoot, "repair-usage.json"),
+      `${JSON.stringify(
+        { version: 1, model: resolvedModel, records: repairUsage },
+        null,
+        2,
+      )}\n`,
+    );
+  };
   const cycleLimit = boundedCycles(maxCycles);
   const cycleUse = new Map();
   // Contract rejections (an unapplicable edit, a broken marker, an invalid
@@ -1194,7 +1210,9 @@ export async function runRenderedCreativeRepair({
           cycle: applied + 1,
           maxCycles: cycleLimit,
           ...(providerBudget ? { automaticSpanRepair: true, fetchImpl: providerBudget.forCandidate(candidateId) } : {}),
+          onUsage: (record) => repairUsage.push(record),
         });
+        await persistRepairUsage();
         cycleUse.set(candidateId, applied + 1);
         if (providerBudget) await fs.writeFile(path.join(evidenceRoot, "qa-provider-calls.json"), JSON.stringify(providerBudget.snapshot(), null, 2) + "\n");
         await persistRepairEvidence({
@@ -1210,6 +1228,7 @@ export async function runRenderedCreativeRepair({
       } catch (error) {
         await persistPrivateRepairRejection({ outDir: evidenceRoot, round, candidateId,
           attempt: rejections + attempts.length + 1, error });
+        await persistRepairUsage();
         if (providerBudget) {
           await fs.writeFile(path.join(evidenceRoot, "qa-provider-calls.json"), JSON.stringify(providerBudget.snapshot(), null, 2) + "\n");
           throw error;

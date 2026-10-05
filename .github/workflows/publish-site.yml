@@ -18,6 +18,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       REVIEW_SIGNING_SECRET: ${{ secrets.REVIEW_SIGNING_SECRET }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
     steps:
@@ -31,6 +32,7 @@ jobs:
       - name: Install contrast verifier browser
         run: npx playwright install --with-deps chromium
       - name: Build and direct-upload approved client site
+        id: publish
         env:
           CLIENT_REPO: ${{ github.event.client_payload.repo }}
           CLIENT_PR: ${{ github.event.client_payload.pr }}
@@ -99,3 +101,65 @@ jobs:
             ${{ runner.temp }}/destination-route-screenshots
           if-no-files-found: ignore
           retention-days: 7
+      - name: Record published generation
+        if: always()
+        continue-on-error: true
+        env:
+          CLIENT_REPO: ${{ github.event.client_payload.repo }}
+          APPROVED_SHA: ${{ github.event.client_payload.approvedSha }}
+          CLIENT_PR: ${{ github.event.client_payload.pr }}
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+        run: |
+          case "$CLIENT_REPO" in
+            WrazyAI/launchloom-[0-9]*-*) ;;
+            *) echo "generation_tracking=skipped reason=non-standard-repo"; exit 0 ;;
+          esac
+          ISSUE=$(printf '%s' "$CLIENT_REPO" | sed -E 's#^WrazyAI/launchloom-([0-9]+)-.*#\1#')
+          PROJECT=""
+          if [ -f "$RUNNER_TEMP/client/.launchloom-deployment.json" ]; then
+            PROJECT=$(node -e "console.log(require(process.env.RUNNER_TEMP + '/client/.launchloom-deployment.json').project)")
+          fi
+          PRODUCTION=""
+          if [ -n "$PROJECT" ]; then PRODUCTION="https://$PROJECT.pages.dev"; fi
+          STATUS=attention
+          EVENT_STATUS=failed
+          FAILURE="Publish workflow $WORKFLOW_RUN_ID did not complete. Inspect the Actions run before telling the client the site is live."
+          if [ "$PUBLISH_OUTCOME" = "success" ]; then
+            STATUS=published
+            EVENT_STATUS=completed
+            FAILURE=""
+          fi
+          EVENT_STATUS="$EVENT_STATUS" PRODUCTION="$PRODUCTION" APPROVED_SHA="$APPROVED_SHA" CLIENT_PR="$CLIENT_PR" node -e '
+            const fs = require("node:fs");
+            fs.writeFileSync("/tmp/publish-event.json", JSON.stringify([{
+              eventKey: "publish:" + String(process.env.APPROVED_SHA || "unknown").slice(0, 40),
+              stage: "publish",
+              status: process.env.EVENT_STATUS,
+              provider: "cloudflare-pages",
+              model: null,
+              costUsd: null,
+              costKind: "unreported",
+              detail: {
+                approvedSha: process.env.APPROVED_SHA || null,
+                pr: Number(process.env.CLIENT_PR || 0) || null,
+                productionUrl: process.env.PRODUCTION || null,
+                notes: process.env.EVENT_STATUS === "completed"
+                  ? "Production deploy, route verification, and client delivery email finished."
+                  : "Publishing stopped before the client delivery completed.",
+              },
+            }]));
+          '
+          ARGS=(
+            --action complete
+            --issue "$ISSUE"
+            --repo "$CLIENT_REPO"
+            --pr "$CLIENT_PR"
+            --sha "$APPROVED_SHA"
+            --status "$STATUS"
+            --events /tmp/publish-event.json
+            --completed-at "$(date +%s%3N)"
+          )
+          if [ -n "$PRODUCTION" ]; then ARGS+=(--production-url "$PRODUCTION"); fi
+          if [ -n "$FAILURE" ]; then ARGS+=(--failure "$FAILURE"); fi
+          node scripts/record-generation-event.mjs "${ARGS[@]}"

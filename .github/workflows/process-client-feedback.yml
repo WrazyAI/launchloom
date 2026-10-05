@@ -30,6 +30,7 @@ jobs:
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
       ASSET_BASE_URL: https://assets.launchloom.wrazyos.com
       REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
+      GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
       REVISION_REQUEST_ID: ${{ github.event.client_payload.requestId }}
       FEEDBACK_COMMENT_ID: ${{ github.event.client_payload.feedbackComment }}
       CLIENT_REPO: ${{ github.event.client_payload.repo }}
@@ -240,6 +241,63 @@ jobs:
           DETAILS=$(test -f "$RUNNER_TEMP/revision-outcome.txt" && tr '\n' ' ' < "$RUNNER_TEMP/revision-outcome.txt" || printf '%s' 'No validated revision outcome was produced.')
           export REVISION_FAILURE_REASON="Client revision workflow failed. $DETAILS Inspect GitHub Actions run ${{ github.run_id }}."
           node scripts/revision-queue-client.mjs
+      - name: Record revision tracking
+        if: always() && steps.claim.outputs.run == 'true'
+        continue-on-error: true
+        env:
+          REVISION_PR: ${{ steps.revision.outputs.pr }}
+          REVISION_PREVIEW: ${{ steps.deploy.outputs.preview }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+        run: |
+          case "$CLIENT_REPO" in
+            WrazyAI/launchloom-[0-9]*-*) ;;
+            *) echo "generation_tracking=skipped reason=non-standard-repo"; exit 0 ;;
+          esac
+          ISSUE=$(printf '%s' "$CLIENT_REPO" | sed -E 's#^WrazyAI/launchloom-([0-9]+)-.*#\1#')
+          STATUS=attention
+          EVENT_STATUS=failed
+          FAILURE="Client revision workflow $WORKFLOW_RUN_ID stopped before a reviewable developer preview. Inspect the preserved feedback."
+          if [ "${{ steps.complete.outcome }}" = "success" ]; then
+            STATUS=revision
+            EVENT_STATUS=completed
+            FAILURE=""
+          fi
+          node scripts/generation-cost-summary.mjs \
+            --revision-dir "$RUNNER_TEMP/revision-screenshots" \
+            --output /tmp/revision-cost.json
+          EVENT_STATUS="$EVENT_STATUS" REVISION_REQUEST_ID="$REVISION_REQUEST_ID" REVISION_PR="$REVISION_PR" REVISION_PREVIEW="$REVISION_PREVIEW" node -e '
+            const fs = require("node:fs");
+            fs.writeFileSync("/tmp/revision-event.json", JSON.stringify([{
+              eventKey: "revision:" + String(process.env.REVISION_REQUEST_ID || "unknown").slice(0, 60),
+              stage: "revision",
+              status: process.env.EVENT_STATUS,
+              provider: "openrouter",
+              model: null,
+              costUsd: null,
+              costKind: "unreported",
+              detail: {
+                requestId: process.env.REVISION_REQUEST_ID || null,
+                pr: Number(process.env.REVISION_PR || 0) || null,
+                previewUrl: process.env.REVISION_PREVIEW || null,
+                notes: process.env.EVENT_STATUS === "completed"
+                  ? "Client feedback was applied to a developer preview awaiting approval."
+                  : "The revision stopped short of a reviewable developer preview.",
+              },
+            }]));
+          '
+          ARGS=(
+            --action complete
+            --issue "$ISSUE"
+            --repo "$CLIENT_REPO"
+            --pr "$REVISION_PR"
+            --status "$STATUS"
+            --events /tmp/revision-event.json
+            --cost-summary /tmp/revision-cost.json
+            --completed-at "$(date +%s%3N)"
+          )
+          if [ -n "$REVISION_PREVIEW" ]; then ARGS+=(--preview-url "$REVISION_PREVIEW"); fi
+          if [ -n "$FAILURE" ]; then ARGS+=(--failure "$FAILURE"); fi
+          node scripts/record-generation-event.mjs "${ARGS[@]}"
       - name: Preserve failed revision evidence
         if: failure() && steps.claim.outputs.run == 'true'
         continue-on-error: true

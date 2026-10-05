@@ -24,6 +24,7 @@ jobs:
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
       LAUNCHLOOM_FEEDBACK_EMAIL: ${{ secrets.LAUNCHLOOM_FEEDBACK_EMAIL }}
       REVISION_COORDINATOR_SECRET: ${{ secrets.REVISION_COORDINATOR_SECRET }}
+      GENERATION_TRACKING_SECRET: ${{ secrets.GENERATION_TRACKING_SECRET }}
       ONBOARDING_INVITE_SIGNING_SECRET: ${{ secrets.ONBOARDING_INVITE_SIGNING_SECRET }}
       ONBOARDING_ORIGIN: ${{ vars.ONBOARDING_ORIGIN }}
       ONBOARDING_ADMIN_EMAILS: ${{ vars.ONBOARDING_ADMIN_EMAILS }}
@@ -46,6 +47,12 @@ jobs:
           for key in GITHUB_ORG_TOKEN REVIEW_SIGNING_SECRET LEAD_SIGNING_SECRET OPENROUTER_API_KEY GOOGLE_PLACES_API_KEY RESEND_API_KEY LAUNCHLOOM_FROM_EMAIL LAUNCHLOOM_FEEDBACK_EMAIL REVISION_COORDINATOR_SECRET ONBOARDING_INVITE_SIGNING_SECRET; do
             printf '%s' "${!key}" | npx wrangler secret put "$key"
           done
+          # Optional generation tracking. Keep it out of the required list so a
+          # missing repository secret cannot break platform deployment; the
+          # tracking API reports itself unconfigured until this is set.
+          if [ -n "${GENERATION_TRACKING_SECRET:-}" ]; then
+            printf '%s' "$GENERATION_TRACKING_SECRET" | npx wrangler secret put GENERATION_TRACKING_SECRET
+          fi
           # Optional: enables review-time image generation. Reviewers can still
           # upload their own replacement images without it.
           if [ -n "${FAL_KEY:-}" ]; then

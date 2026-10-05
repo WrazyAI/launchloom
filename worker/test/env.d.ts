@@ -10,6 +10,8 @@ declare module "cloudflare:workers" {
     ONBOARDING_ADMIN_EMAILS: string;
     ONBOARDING_ACCESS_AUD: string;
     ONBOARDING_INVITES: DurableObjectNamespace;
+    GENERATION_LEDGER: DurableObjectNamespace;
+    GENERATION_TRACKING_SECRET: string;
     GOOGLE_PLACES_API_KEY: string;
   }
 }
