@@ -392,6 +392,9 @@ jobs:
             git config user.email "automation@launchloom.app"
             git remote set-url origin "$REMOTE"
           fi
+          if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+            node --input-type=module -e 'const { initializeQaRepairReceipt } = await import(process.env.GITHUB_WORKSPACE + "/scripts/creative-repair-experiment.mjs"); await initializeQaRepairReceipt(".launchloom/creative-repair");'
+          fi
           cp /tmp/site.config.json src/site.config.json
           mkdir -p .launchloom
           cp /tmp/seo-research.json .launchloom/seo-research.json

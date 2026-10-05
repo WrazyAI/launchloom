@@ -2797,3 +2797,20 @@ it.each([false,true])("retains the exact actual-fetch receipt when repaired cand
  expect(network).toBe(1);
  expect(JSON.parse(await fs.readFile(path.join(root,"repair/qa-provider-calls.json"),"utf8"))).toEqual({total:1,limit:2,candidates:{"candidate-a":1}});
 });
+
+it("replaces a stale experiment receipt before a zero-call reasoning preflight failure", async () => {
+ const {root,candidates}=await fixture();
+ const evidence=path.join(root,"repair"); await fs.mkdir(evidence);
+ const previous={total:1,limit:2,candidates:{"candidate-a":1}};
+ await fs.writeFile(path.join(evidence,"qa-provider-calls.json"),JSON.stringify(previous));
+ const metadataPath=path.join(candidates,"candidate-a","metadata.json");
+ const metadata=JSON.parse(await fs.readFile(metadataPath,"utf8"));
+ metadata.reasoning={effort:"xhigh",policyVersion:"adaptive-reasoning-v1",selectorModelVersion:"jev-1.13.0"};
+ await fs.writeFile(metadataPath,JSON.stringify(metadata));
+ const network=vi.fn();
+ await expect(runRenderedCreativeRepair({siteDir:root,candidatesDir:candidates,outDir:"repair",qaRepairExperiment:true,maxCycles:1,fetchImpl:network})).rejects.toThrow(/incomplete adaptive reasoning metadata/iu);
+ expect(network).not.toHaveBeenCalled();
+ expect(JSON.parse(await fs.readFile(path.join(evidence,"qa-provider-calls.json"),"utf8"))).toEqual({total:0,limit:2,candidates:{}});
+ const archives=await fs.readdir(evidence+"-prior"); expect(archives).toHaveLength(1);
+ expect(JSON.parse(await fs.readFile(path.join(evidence+"-prior",archives[0],"qa-provider-calls.json"),"utf8"))).toEqual(previous);
+});
