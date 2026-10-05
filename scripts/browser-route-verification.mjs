@@ -481,7 +481,7 @@ export async function verifyApprovedRoutes({
             const href = await link.getAttribute("href");
             let url;
             try {
-              url = new URL(href, origin);
+              url = new URL(href, page.url());
             } catch {
               continue;
             }
