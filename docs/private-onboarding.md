@@ -49,6 +49,29 @@ The receipt confirms that the details were received and processing has started;
 it is not the website preview. The developer reviews the generated preview
 before anything is published.
 
+## Business facts pickers
+
+The private form uses guided pickers for the facts that are easiest to get
+wrong:
+
+- **Street address**: the client selects their state, then types a street
+  address. Suggestions come from Google Places Autocomplete through the Worker
+  (`POST /api/places` with `action: "autocomplete"`, US-only, top five) and a
+  selected suggestion is resolved with `action: "resolve"` into a formatted
+  address plus city, state, and postal code. Typing without selecting a
+  suggestion is accepted as manual entry. Selecting an address prefills the
+  main service city (`City, ST`) unless the client already typed their own.
+- **Business hours**: a structured picker with a US time zone select, day
+  toggles, and half-hour opening and closing times. Consecutive days with the
+  same times are grouped into one canonical string such as
+  `Mon-Fri: 9:00 AM - 5:00 PM ET`. Days are closed until the client opens them,
+  a time zone is required once any day is open, and the form never invents
+  hours. A manual-entry mode is available for unusual schedules.
+- **Suggested services**: suggestions are unconfirmed model output, rendered as
+  selectable chips. Selecting one only adds it after the client checks it. At
+  five services, unselected suggestions are disabled with a clear note so the
+  limit is visible instead of silently rejecting input.
+
 ## Service suggestions and coverage lookup
 
 Generation cost and status tracking for the admin dashboard is documented in

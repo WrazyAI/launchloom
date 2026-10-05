@@ -18,6 +18,14 @@ import {
   normalizeIntakeServices,
   removeIntakeService,
 } from "../lib/intake-service-list";
+import {
+  buildHoursValue,
+  stateName,
+  timeZoneForState,
+  TIME_OPTIONS,
+  US_STATES,
+  US_TIME_ZONES,
+} from "../lib/us-locations.mjs";
 
 type Place = {
   id: string;
@@ -30,7 +38,23 @@ type Place = {
   ratingCount?: number;
   primaryType?: string;
   types?: string[];
+  city?: string;
+  state?: string;
+  postalCode?: string;
   location?: { latitude: number; longitude: number } | null;
+};
+type AddressSuggestion = {
+  placeId: string;
+  main: string;
+  secondary: string;
+  description: string;
+};
+type DayHours = {
+  key: string;
+  label: string;
+  closed: boolean;
+  open: string;
+  close: string;
 };
 type CoverageCandidate = {
   id: string;
@@ -80,6 +104,22 @@ type StoredCoverage = {
 };
 type InviteState = "loading" | "valid" | "invalid" | "accepted";
 const steps = ["Business", "Services", "Brand"];
+const DAY_DEFS = [
+  ["mon", "Monday"],
+  ["tue", "Tuesday"],
+  ["wed", "Wednesday"],
+  ["thu", "Thursday"],
+  ["fri", "Friday"],
+  ["sat", "Saturday"],
+  ["sun", "Sunday"],
+] as const;
+const DEFAULT_DAY_HOURS: DayHours[] = DAY_DEFS.map(([key, label]) => ({
+  key,
+  label,
+  closed: true,
+  open: "09:00",
+  close: "17:00",
+}));
 const apiBase = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || "").replace(
   /\/$/,
   "",
@@ -292,6 +332,23 @@ export default function OnboardingForm() {
   const [step, setStep] = useState(0);
   const [place, setPlace] = useState<Place | null>(null);
   const [showLookup, setShowLookup] = useState(true);
+  const [addressQuery, setAddressQuery] = useState("");
+  const [addressState, setAddressState] = useState("");
+  const [addressSuggestions, setAddressSuggestions] = useState<
+    AddressSuggestion[]
+  >([]);
+  const [addressOpen, setAddressOpen] = useState(false);
+  const [addressActive, setAddressActive] = useState(-1);
+  const [addressMessage, setAddressMessage] = useState("");
+  const [hoursDays, setHoursDays] = useState<DayHours[]>(DEFAULT_DAY_HOURS);
+  const [hoursTimeZone, setHoursTimeZone] = useState("");
+  const [hoursManualMode, setHoursManualMode] = useState(false);
+  const [hoursManual, setHoursManual] = useState("");
+  const addressBoxRef = useRef<HTMLDivElement | null>(null);
+  const addressInputRef = useRef<HTMLInputElement | null>(null);
+  const addressRequestRef = useRef(0);
+  const cityTouchedRef = useRef(false);
+  const timeZoneTouchedRef = useRef(false);
   const [inviteToken, setInviteToken] = useState("");
   const [inviteState, setInviteState] = useState<InviteState>("loading");
   const [invitedEmail, setInvitedEmail] = useState("");
@@ -373,6 +430,13 @@ export default function OnboardingForm() {
     () => normalizeIntakeServices(servicesValue),
     [servicesValue],
   );
+  const hoursValue = useMemo(
+    () =>
+      hoursManualMode
+        ? hoursManual.trim().slice(0, 240)
+        : buildHoursValue(hoursDays, hoursTimeZone),
+    [hoursManualMode, hoursManual, hoursDays, hoursTimeZone],
+  );
   const coverageStorageKey = useMemo(
     () =>
       inviteToken
@@ -425,6 +489,175 @@ export default function OnboardingForm() {
     });
   }, [coverageConfirmed, coverageFallback, coverageState, coverageSelectedIds, coverageManualAreas]);
   const draftValue = (name: string) => draftRef.current[name] || "Not provided";
+
+  function setNamedField(name: string, value: string) {
+    const field = formRef.current?.elements.namedItem(name) as
+      | HTMLInputElement
+      | null;
+    if (field) field.value = value;
+    draftRef.current[name] = value;
+  }
+
+  function setMainCityFromAddress(city: string, state: string) {
+    if (cityTouchedRef.current || !city || !state) return;
+    const label = `${city}, ${state}`;
+    const field = formRef.current?.elements.namedItem("serviceAreas") as
+      | HTMLInputElement
+      | null;
+    if (field) field.value = label;
+    draftRef.current.serviceAreas = label;
+    setCoverageCity(label);
+    setAddressMessage(
+      `Main service city set to ${label} from your address. You can change it.`,
+    );
+  }
+
+  function applyResolvedPlace(resolved: {
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+  }) {
+    if (resolved.address) {
+      setAddressQuery(resolved.address);
+      setNamedField("address", resolved.address);
+    }
+    if (!timeZoneTouchedRef.current) {
+      const zone = timeZoneForState(resolved.state || "");
+      if (zone) setHoursTimeZone(zone);
+    }
+    if (resolved.city && resolved.state)
+      setMainCityFromAddress(resolved.city, resolved.state);
+  }
+
+  function selectAddressSuggestion(suggestion: AddressSuggestion) {
+    setAddressOpen(false);
+    setAddressActive(-1);
+    setAddressMessage("Checking that address…");
+    void (async () => {
+      try {
+        if (!apiBase)
+          throw new Error("The LaunchLoom service is not configured yet.");
+        const response = await fetch(`${apiBase}/api/places`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "resolve",
+            placeId: suggestion.placeId,
+            inviteToken,
+          }),
+        });
+        const result = (await response.json().catch(() => ({}))) as {
+          place?: {
+            address?: string;
+            city?: string;
+            state?: string;
+            postalCode?: string;
+          };
+          error?: string;
+        };
+        if (!response.ok || !result.place)
+          throw new Error(
+            result.error ||
+              "That address could not be verified. You can type it manually.",
+          );
+        applyResolvedPlace(result.place);
+        setAddressMessage("");
+      } catch (cause) {
+        setAddressQuery(suggestion.description);
+        setNamedField("address", suggestion.description);
+        setAddressMessage(
+          cause instanceof Error
+            ? cause.message
+            : "That address could not be verified. You can type it manually.",
+        );
+      }
+    })();
+  }
+
+  function updateHoursDay(index: number, patch: Partial<DayHours>) {
+    setHoursDays((current) =>
+      current.map((day, position) =>
+        position === index ? { ...day, ...patch } : day,
+      ),
+    );
+    setError("");
+  }
+
+  function applyHoursPreset(keys: string[], open: string, close: string) {
+    setHoursDays((current) =>
+      current.map((day) => ({
+        ...day,
+        closed: !keys.includes(day.key),
+        open,
+        close,
+      })),
+    );
+    setError("");
+  }
+
+  function clearHours() {
+    setHoursDays(DEFAULT_DAY_HOURS.map((day) => ({ ...day })));
+    setError("");
+  }
+
+  // Address suggestions follow the typed input with a short debounce. Stale
+  // responses are discarded so fast typing cannot show an older list.
+  useEffect(() => {
+    if (inviteState !== "valid" || step !== 0) return;
+    const query = addressQuery.trim();
+    if (query.length < 3) {
+      setAddressSuggestions([]);
+      setAddressOpen(false);
+      return;
+    }
+    const requestId = ++addressRequestRef.current;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const response = await fetch(`${apiBase}/api/places`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "autocomplete",
+              query,
+              state: addressState,
+              inviteToken,
+            }),
+          });
+          if (requestId !== addressRequestRef.current) return;
+          if (!response.ok) throw new Error("Address suggestions are unavailable.");
+          const result = (await response.json().catch(() => ({}))) as {
+            suggestions?: AddressSuggestion[];
+          };
+          const suggestions = Array.isArray(result.suggestions)
+            ? result.suggestions.slice(0, 5)
+            : [];
+          setAddressSuggestions(suggestions);
+          setAddressOpen(
+            suggestions.length > 0 &&
+              document.activeElement === addressInputRef.current,
+          );
+          setAddressActive(-1);
+        } catch {
+          if (requestId !== addressRequestRef.current) return;
+          setAddressSuggestions([]);
+          setAddressOpen(false);
+        }
+      })();
+    }, 300);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addressQuery, addressState, inviteState, step]);
+
+  useEffect(() => {
+    function onPointerDown(event: MouseEvent) {
+      if (!addressBoxRef.current?.contains(event.target as Node))
+        setAddressOpen(false);
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, []);
 
   function applyCoverageResponse(
     response: CoverageSuccess,
@@ -817,6 +1050,22 @@ export default function OnboardingForm() {
   }, [step, inviteState]);
 
   function advance() {
+    if (step === 0 && !hoursManualMode) {
+      const reversed = hoursDays.find(
+        (day) => !day.closed && day.close <= day.open,
+      );
+      if (reversed) {
+        setError(
+          `${reversed.label} closing time must be after its opening time. Fix it or mark the day closed.`,
+        );
+        return;
+      }
+      if (hoursValue && !hoursTimeZone) {
+        setError("Choose the time zone for your business hours.");
+        document.querySelector<HTMLElement>("#hours-time-zone")?.focus();
+        return;
+      }
+    }
     let normalizedServices: string | undefined;
     if (step === 1) {
       let nextServices = selectedServices;
@@ -859,6 +1108,7 @@ export default function OnboardingForm() {
     captureDraft(
       normalizedServices === undefined ? {} : { services: normalizedServices },
     );
+    setError("");
     setStep((value) => Math.min(value + 1, steps.length - 1));
   }
 
@@ -968,7 +1218,7 @@ export default function OnboardingForm() {
         }
       };
       set("businessName", result.place.name);
-      set("address", result.place.address);
+      applyResolvedPlace(result.place);
       set("phone", result.place.phone);
       set("website", result.place.website);
       set("placeId", result.place.id);
@@ -1243,13 +1493,108 @@ export default function OnboardingForm() {
             Phone
             <input required name="phone" placeholder="(555) 555-5555" />
           </label>
-          <label className="field full">
-            Street address, if applicable
-            <input
-              name="address"
-              placeholder="123 Main Street, City, ST 00000"
-            />
-          </label>
+          <div className="field full address-picker" ref={addressBoxRef}>
+            <label htmlFor="address-query">Street address, if applicable</label>
+            <div className="address-state-row">
+              <label className="address-state">
+                State
+                <select
+                  aria-label="State"
+                  value={addressState}
+                  onChange={(event) => setAddressState(event.currentTarget.value)}
+                >
+                  <option value="">Select state</option>
+                  {US_STATES.map((state) => (
+                    <option key={state.code} value={state.code}>
+                      {state.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="address-search">
+                <input
+                  id="address-query"
+                  ref={addressInputRef}
+                  role="combobox"
+                  aria-expanded={addressOpen}
+                  aria-controls="address-suggestions"
+                  aria-autocomplete="list"
+                  autoComplete="off"
+                  placeholder="Start typing a street address"
+                  value={addressQuery}
+                  onChange={(event) => {
+                    setAddressQuery(event.currentTarget.value);
+                    setNamedField("address", event.currentTarget.value);
+                    setAddressMessage("");
+                    if (!event.currentTarget.value.trim()) {
+                      setAddressSuggestions([]);
+                      setAddressOpen(false);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowDown") {
+                      event.preventDefault();
+                      if (addressSuggestions.length) {
+                        setAddressOpen(true);
+                        setAddressActive((value) =>
+                          Math.min(value + 1, addressSuggestions.length - 1),
+                        );
+                      }
+                    } else if (event.key === "ArrowUp") {
+                      event.preventDefault();
+                      setAddressActive((value) => Math.max(value - 1, 0));
+                    } else if (event.key === "Enter") {
+                      if (
+                        addressOpen &&
+                        addressActive >= 0 &&
+                        addressSuggestions[addressActive]
+                      ) {
+                        event.preventDefault();
+                        selectAddressSuggestion(addressSuggestions[addressActive]);
+                      }
+                    } else if (event.key === "Escape") {
+                      setAddressOpen(false);
+                      setAddressActive(-1);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (addressSuggestions.length) setAddressOpen(true);
+                  }}
+                />
+                {addressOpen && addressSuggestions.length > 0 && (
+                  <ul
+                    className="address-suggestions"
+                    id="address-suggestions"
+                    role="listbox"
+                  >
+                    {addressSuggestions.map((suggestion, index) => (
+                      <li
+                        key={suggestion.placeId}
+                        role="option"
+                        aria-selected={index === addressActive}
+                        className={index === addressActive ? "is-active" : ""}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => selectAddressSuggestion(suggestion)}
+                      >
+                        <span>{suggestion.main}</span>
+                        <small>{suggestion.secondary}</small>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+            <input type="hidden" name="address" />
+            <small>
+              Pick a suggestion for a verified address, or keep typing to enter
+              it manually. A selected address prefills your main service city.
+            </small>
+            {addressMessage && (
+              <p className="field-note" role="status">
+                {addressMessage}
+              </p>
+            )}
+          </div>
           <label className="field full">
             Address visibility on your website
             <select name="addressVisibility" defaultValue="public">
@@ -1258,10 +1603,154 @@ export default function OnboardingForm() {
             </select>
             <small>A private address stays in your brief and is omitted from website text, maps, and search data.</small>
           </label>
-          <label className="field">
-            Business hours, if confirmed
-            <input name="hours" placeholder="Leave blank if not confirmed" />
-          </label>
+          <div className="field full hours-picker">
+            <span className="field-label">Business hours, if confirmed</span>
+            <p className="form-note">
+              Set the days and times customers can visit or call. Leave every
+              day closed if your hours are not confirmed yet; we never guess
+              hours.
+            </p>
+            <label className="hours-manual-toggle">
+              <input
+                type="checkbox"
+                checked={hoursManualMode}
+                onChange={(event) =>
+                  setHoursManualMode(event.currentTarget.checked)
+                }
+              />
+              Type hours manually instead
+            </label>
+            {hoursManualMode ? (
+              <input
+                name="hours"
+                value={hoursManual}
+                placeholder="e.g. Monday to Friday, 9 to 5 Eastern"
+                onChange={(event) => setHoursManual(event.currentTarget.value)}
+              />
+            ) : (
+              <>
+                <div className="hours-toolbar">
+                  <label className="hours-zone">
+                    Time zone
+                    <select
+                      id="hours-time-zone"
+                      value={hoursTimeZone}
+                      onChange={(event) => {
+                        timeZoneTouchedRef.current = true;
+                        setHoursTimeZone(event.currentTarget.value);
+                      }}
+                    >
+                      <option value="">Select time zone</option>
+                      {US_TIME_ZONES.map((zone) => (
+                        <option key={zone.id} value={zone.id}>
+                          {zone.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="hours-presets">
+                    <button
+                      type="button"
+                      className="button secondary small"
+                      onClick={() =>
+                        applyHoursPreset(
+                          ["mon", "tue", "wed", "thu", "fri"],
+                          "09:00",
+                          "17:00",
+                        )
+                      }
+                    >
+                      Weekdays 9-5
+                    </button>
+                    <button
+                      type="button"
+                      className="button secondary small"
+                      onClick={() =>
+                        applyHoursPreset(
+                          ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
+                          "09:00",
+                          "17:00",
+                        )
+                      }
+                    >
+                      Every day 9-5
+                    </button>
+                    <button
+                      type="button"
+                      className="text-button"
+                      onClick={clearHours}
+                    >
+                      Clear hours
+                    </button>
+                  </div>
+                </div>
+                <div
+                  className="hours-grid"
+                  role="group"
+                  aria-label="Business hours by day"
+                >
+                  {hoursDays.map((day, index) => (
+                    <div
+                      className={`hours-row${day.closed ? " is-closed" : ""}`}
+                      key={day.key}
+                    >
+                      <label className="hours-closed">
+                        <input
+                          type="checkbox"
+                          checked={!day.closed}
+                          onChange={(event) =>
+                            updateHoursDay(index, {
+                              closed: !event.currentTarget.checked,
+                            })
+                          }
+                        />
+                        <span>{day.label}</span>
+                      </label>
+                      <select
+                        aria-label={`${day.label} opening time`}
+                        value={day.open}
+                        disabled={day.closed}
+                        onChange={(event) =>
+                          updateHoursDay(index, {
+                            open: event.currentTarget.value,
+                          })
+                        }
+                      >
+                        {TIME_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="hours-sep">to</span>
+                      <select
+                        aria-label={`${day.label} closing time`}
+                        value={day.close}
+                        disabled={day.closed}
+                        onChange={(event) =>
+                          updateHoursDay(index, {
+                            close: event.currentTarget.value,
+                          })
+                        }
+                      >
+                        {TIME_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+                <input type="hidden" name="hours" value={hoursValue} readOnly />
+                {hoursValue && (
+                  <p className="field-note" role="status">
+                    Saved hours: {hoursValue}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
           <label className="field">
             Customer search language
             <select name="researchLanguageCode" defaultValue="en">
@@ -1358,16 +1847,46 @@ export default function OnboardingForm() {
             {suggestedServices.length > 0 && (
               <fieldset className="suggested-services">
                 <legend>Choose any suggested services you offer</legend>
-                {suggestedServices.map((service) => (
-                  <label className="suggested-service" key={service}>
-                    <input
-                      type="checkbox"
-                      checked={selectedServices.some((item) => item.toLowerCase() === service.toLowerCase())}
-                      onChange={(event) => toggleSuggestedService(service, event.currentTarget.checked)}
-                    />
-                    <span>{service}</span>
-                  </label>
-                ))}
+                {selectedServices.length >= MAX_INTAKE_SERVICES && (
+                  <p className="suggested-limit" role="status">
+                    You already have five services. Remove one above to add a
+                    suggestion.
+                  </p>
+                )}
+                <div className="suggested-grid">
+                  {suggestedServices.map((service) => {
+                    const checked = selectedServices.some(
+                      (item) => item.toLowerCase() === service.toLowerCase(),
+                    );
+                    const disabled =
+                      !checked &&
+                      selectedServices.length >= MAX_INTAKE_SERVICES;
+                    return (
+                      <label
+                        className={`suggested-service${checked ? " is-selected" : ""}`}
+                        key={service}
+                        title={
+                          disabled
+                            ? "Remove a service first to add this suggestion"
+                            : undefined
+                        }
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            toggleSuggestedService(
+                              service,
+                              event.currentTarget.checked,
+                            )
+                          }
+                        />
+                        <span>{service}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </fieldset>
             )}
           </div>
@@ -1400,10 +1919,15 @@ export default function OnboardingForm() {
               name="serviceAreas"
               placeholder="e.g. Charleston, SC"
               onInput={(event) => {
+                cityTouchedRef.current = true;
                 setCoverageCity(event.currentTarget.value);
                 setError("");
               }}
             />
+            <small>
+              Prefilled from a selected street address. Change it if you serve
+              somewhere else.
+            </small>
           </label>
           <label className="field">
             How far do you normally travel?

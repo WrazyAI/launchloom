@@ -98,7 +98,41 @@ try {
     });
   });
   await page.route("**/api/places", async (route) => {
-    await route.fulfill({
+    const body = route.request().postDataJSON();
+    if (body?.action === "autocomplete") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          suggestions: [
+            {
+              placeId: "place-street-1",
+              main: "100 Test Street",
+              secondary: "Charleston, SC 29401, USA",
+              description: "100 Test Street, Charleston, SC 29401, USA",
+            },
+          ],
+        }),
+      });
+    }
+    if (body?.action === "resolve") {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          place: {
+            id: "place-street-1",
+            address: "100 Test Street, Charleston, SC 29401, USA",
+            city: "Charleston",
+            state: "SC",
+            postalCode: "29401",
+            country: "US",
+            location: { latitude: 32.78, longitude: -79.93 },
+          },
+        }),
+      });
+    }
+    return route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify({ place: {
@@ -110,6 +144,9 @@ try {
         mapsUrl: "https://maps.google.com/?cid=fixture",
         primaryType: "painter",
         types: ["painter", "home_services"],
+        city: "Charleston",
+        state: "SC",
+        postalCode: "29401",
         location: { latitude: 32.7765, longitude: -79.9311 },
       } }),
     });
@@ -183,15 +220,53 @@ try {
   if ((await page.locator('[name="email"]').inputValue()) !== "david@example.com")
     failures.push("The invitation email was not prefilled.");
   await page.locator('[name="phone"]').fill("(555) 555-0100");
-  await page.locator('[name="address"]').fill("100 Test Street");
+  // Address picker: state, suggestions, manual fallback, and city prefill.
+  await page.getByLabel("State", { exact: true }).selectOption("SC");
+  const addressQuery = page.locator("#address-query");
+  await addressQuery.fill("100 Test Street");
+  await page.getByRole("option", { name: /100 Test Street/ }).click();
+  if ((await page.locator('[name="address"]').inputValue()) !== "100 Test Street, Charleston, SC 29401, USA")
+    failures.push("Selecting an address suggestion did not store the verified formatted address.");
+  if ((await page.locator('[name="serviceAreas"]').inputValue()) !== "Charleston, SC")
+    failures.push("The main service city was not prefilled from the selected street address.");
+  await addressQuery.fill("42 Manual Entry Road, Nowhere");
+  if ((await page.locator('[name="address"]').inputValue()) !== "42 Manual Entry Road, Nowhere")
+    failures.push("Manual address entry was not preserved when no suggestion was selected.");
   await page.locator('[name="addressVisibility"]').selectOption("private");
-  await page.locator('[name="hours"]').fill("Monday to Friday, 9 to 5");
+
+  // Hours picker: preset, reversed-time validation, time zone, grouped value.
+  await page.getByRole("button", { name: "Weekdays 9-5" }).click();
+  await page.getByLabel("Monday opening time").selectOption("17:00");
+  await page.getByLabel("Monday closing time").selectOption("09:00");
+  await page.getByRole("button", { name: "Continue" }).click();
+  if (!(await page.locator(".form-message.error").isVisible()))
+    failures.push("Reversed business hours did not show a clear validation error.");
+  await page.getByLabel("Monday opening time").selectOption("09:00");
+  await page.getByLabel("Monday closing time").selectOption("17:00");
+  await page.locator("#hours-time-zone").selectOption("ET");
+  if ((await page.locator('[name="hours"]').inputValue()) !== "Mon-Fri: 9:00 AM - 5:00 PM ET")
+    failures.push("The hours picker did not build the expected grouped hours string.");
   await page.locator('[name="researchLanguageCode"]').selectOption("es");
+  await page.screenshot({
+    path: path.join(screenshotDir, "simplified-business-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const businessMobileOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  if (businessMobileOverflow > 1)
+    failures.push(`Business facts step causes ${businessMobileOverflow}px of horizontal overflow on mobile.`);
+  await page.screenshot({
+    path: path.join(screenshotDir, "simplified-business-mobile.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole("button", { name: "Continue" }).click();
 
   const stepText = await page.locator(".stepper").innerText();
   if (!stepText.includes("Step 2 of 3"))
     failures.push("Simplified onboarding is not a three-step flow.");
+  if (await page.locator(".form-message.error").count())
+    failures.push("A resolved step 1 validation error stayed visible on the services step.");
 
   const services = page.locator('[name="services"]');
   const serviceEntry = page.getByRole("textbox", { name: "Add a core service" });
@@ -245,6 +320,10 @@ try {
   await serviceEntry.press("Enter");
   if ((await services.inputValue()).split("\n").length !== 5 || !(await serviceEntry.isDisabled()))
     failures.push("The service picker does not stop at five services.");
+  if (!(await page.locator(".suggested-limit").isVisible()))
+    failures.push("The five-service suggestion limit lacks an explanatory message.");
+  if (!(await page.getByLabel("Surface prep, priming and coating", { exact: true }).isDisabled()))
+    failures.push("Suggestions stay selectable at the five-service limit.");
   await page.getByRole("button", { name: "Remove Deck staining" }).click();
   await serviceEntry.fill("Surface prep, priming and coating");
   await serviceEntry.press("Enter");
@@ -601,7 +680,7 @@ try {
     failures.push("The accepted screen does not confirm that intake processing has started.");
   if (acceptedIntake?.intakeVersion !== "2" || acceptedIntake?.inviteToken !== inviteToken)
     failures.push("The accepted v2 intake did not include its invite proof and contract version.");
-  if (acceptedIntake?.addressVisibility !== "private" || acceptedIntake?.researchLanguageCode !== "es" || acceptedIntake?.hours !== "Monday to Friday, 9 to 5")
+  if (acceptedIntake?.addressVisibility !== "private" || acceptedIntake?.researchLanguageCode !== "es" || acceptedIntake?.hours !== "Mon-Fri: 9:00 AM - 5:00 PM ET")
     failures.push("Address visibility, business hours, or search language did not survive navigation and submission.");
   const acceptedFields = Object.keys(acceptedIntake || {}).sort();
   if (JSON.stringify(acceptedFields) !== JSON.stringify([...CLIENT_INTAKE_V2_SUBMISSION_FIELDS].sort()))
@@ -682,7 +761,7 @@ try {
   await retryPage.locator('[name="businessName"]').fill("Retry Plumbing");
   await retryPage.locator('[name="contactName"]').fill("Taylor Owner");
   await retryPage.locator('[name="phone"]').fill("(555) 555-0102");
-  await retryPage.locator('[name="address"]').fill("2 Test Street, Tacoma, WA");
+  await retryPage.locator("#address-query").fill("2 Test Street, Tacoma, WA");
   await retryPage.getByRole("button", { name: "Continue" }).click();
   const retryServiceEntry = retryPage.getByRole("textbox", { name: "Add a core service" });
   await retryServiceEntry.fill("Drain cleaning");
@@ -734,7 +813,7 @@ try {
   await fallbackPage.locator('[name="businessName"]').fill("Offline Services");
   await fallbackPage.locator('[name="contactName"]').fill("Alex Owner");
   await fallbackPage.locator('[name="phone"]').fill("(555) 555-0103");
-  await fallbackPage.locator('[name="address"]').fill("9 Main Street, Columbia, SC");
+  await fallbackPage.locator("#address-query").fill("9 Main Street, Columbia, SC");
   await fallbackPage.getByRole("button", { name: "Continue" }).click();
   const fallbackServiceEntry = fallbackPage.getByRole("textbox", { name: "Add a core service" });
   await fallbackServiceEntry.fill("Drain cleaning");
