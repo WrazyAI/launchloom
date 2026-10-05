@@ -346,7 +346,7 @@ jobs:
             CHAT_TOKEN=$(node scripts/create-ai-chat-token.mjs --project "$PROJECT" --file /tmp/site.config.json --origins "$ORIGINS")
             CHAT_ARGS=(--chatToken "$CHAT_TOKEN")
           fi
-          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
+          node scripts/enrich-site-config.mjs --file /tmp/site.config.json --assets '${{ steps.intake.outputs.assets }}' --preserve-assets "$REUSE_AUTHORED_CANDIDATES" --api "$LAUNCHLOOM_API_URL" --leadToken "$LEAD_TOKEN" "${REVIEW_ARGS[@]}" "${CHAT_ARGS[@]}"
           REMOTE="https://x-access-token:${GITHUB_ORG_TOKEN}@github.com/$CLIENT_REPO.git"
           # A newly-created private repository can be available through the
           # REST API several seconds before GitHub's Smart HTTP endpoint. Use

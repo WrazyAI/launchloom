@@ -15,7 +15,9 @@ const path = args.file;
 if (!path) throw new Error("--file is required.");
 const config = JSON.parse(await fs.readFile(path, "utf8"));
 const assets = args.assets ? JSON.parse(args.assets) : undefined;
-if (assets && typeof assets === "object") {
+// Reused candidates already bind their approved imagery in sealed manifests.
+// Refresh transport tokens without remapping those bindings from intake fields.
+if (args["preserve-assets"] !== "true" && assets && typeof assets === "object") {
   config.assets = assets;
   if (typeof assets.photoOne === "string") config.images.hero = assets.photoOne;
   if (typeof assets.photoTwo === "string")
