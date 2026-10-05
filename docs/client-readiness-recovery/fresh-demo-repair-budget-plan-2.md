@@ -1,6 +1,6 @@
 # Budget-feasible span repair implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement inline. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement inline. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Make the opt-in frozen-QA repair request express feasible numeric budgets, then test the same sites once without relaxing acceptance.
 
@@ -41,20 +41,23 @@
 
 **Files:** Modify `scripts/run-rendered-creative-repair.mjs`, `.github/workflows/generate-client.yml`; extend `tests/rendered-creative-repair.test.ts`, `tests/internal-qa-intake.test.ts`, `tests/generation-workflow-preview.test.ts`; append daily ledger.
 
-- [ ] Add RED tests for experiment zero-call receipt initialization, updated actual fetch counts on failure/success, and committing only private QA count evidence on the successful client path.
-- [ ] Initialize private `qa-provider-calls.json` at0 before rendering. Keep existing per-fetch updates. Successful experiment commits this file alongside private candidate evidence; failure preservation stays private. No payload/public artifact upload.
-- [ ] Run `npx vitest run tests/creative-repair-request-budget.test.ts tests/creative-repair-loop.test.ts tests/creative-repair-spans.test.ts tests/rendered-creative-repair.test.ts tests/internal-qa-intake.test.ts tests/generation-workflow-preview.test.ts`; expect GREEN.
-- [ ] Replay all4 actual admitted catalogs offline through the request adapter, real compiler/literal/source guards and complete enrichment/reuse validation. Retain both rejected raw responses privately; demonstrate they violate new request shape, without applying/truncating them. Test a feasible mocked response with original guards and unchanged unrelated bytes. Zero provider calls.
-- [ ] Run full CI/three rendered matrices, Astro/Worker/build, relevant TestSprite and independent review. Commit/review/merge/deploy only after passing; read back exact Pages/Worker source/version. Scope this receipt to shipped implementation.
+- [x] Add RED tests for experiment zero-call receipt initialization, updated actual fetch counts on failure/success, and committing only private QA count evidence on the successful client path.
+- [x] Initialize private `qa-provider-calls.json` at0 before rendering. Keep existing per-fetch updates. Successful experiment commits this file alongside private candidate evidence; failure preservation stays private. No payload/public artifact upload.
+- [x] Run `npx vitest run tests/creative-repair-request-budget.test.ts tests/creative-repair-loop.test.ts tests/creative-repair-spans.test.ts tests/rendered-creative-repair.test.ts tests/internal-qa-intake.test.ts tests/generation-workflow-preview.test.ts`; expect GREEN.
+- [x] Replay all4 actual admitted catalogs offline through the request adapter, real compiler/literal/source guards and complete enrichment/reuse validation. Retain both rejected raw responses privately; demonstrate they violate new request shape, without applying/truncating them. Test a feasible mocked response with original guards and unchanged unrelated bytes. Zero provider calls.
+- [x] Run full CI/three rendered matrices, Astro/Worker/build, relevant TestSprite and independent review. Commit/review/merge/deploy only after passing; read back exact Pages/Worker source/version. Scope this receipt to shipped implementation.
 
 ## Task 3: One newly approved recovery and actual delivery
 
 **Files:** Private client/evidence artifacts and append-only progress; use existing delivery workflow.
 
-- [ ] Re-read Nifty, current private heads, frozen source/image/reference hashes, hero bindings and recipient identity. No retarget or new initial authoring.
-- [ ] Dispatch exactly one new opt-in preview-only frozen-QA run per site, with existing one-cycle/per-candidate1/per-run2 ceilings. No retries after contract rejection. Read exact private count receipts, source and terminal gates.
+- [x] Re-read Nifty, current private heads, frozen source/image/reference hashes, hero bindings and recipient identity. No retarget or new initial authoring.
+- [x] Dispatch exactly one new opt-in preview-only frozen-QA run per site, with existing one-cycle/per-candidate1/per-run2 ceilings. No retries after contract rejection. Read exact private count receipts, source and terminal gates.
 - [ ] For passing sites only, verify deployed source and inspect actual desktop/mobile identity, imagery, readability, overflow, em dashes, calls/forms and configured routes.
 - [ ] Use the owned browser driver:fake503 with retention first, then at most one labelled actual enquiry/site with exclusive duplicate-prevention receipt and reset proof. Run `verify-internal-qa-delivery.yml` read-only on exact correlations; distinguish receiving-provider delivery from inbox placement.
-- [ ] Record concrete outcomes; close only verified Nifty scopes. If blocked, preserve evidence and name the failed assumption. No completion claim for unverified client delivery.
+- [x] Record concrete outcomes; close only verified Nifty scopes. If blocked, preserve evidence and name the failed assumption. No completion claim for unverified client delivery.
 
 Self-review: spec constraints map to all3 stages; helper/interface names agree; all5 review inputs have tests or explicit rendered/provider verification. Math bounds are conditional on the unchanged real string checks, not a claim every provider enforces every keyword. Narrower capacity is an explicit tradeoff. User approved implementation and the single capped experiment. Task1 is locally verified; Task2 offline changes are verified, full review/CI/shipping pending. No actual provider call or new experiment dispatch yet.
+
+
+Execution status: Tasks1–2 shipped and verified through PR141/91ca615. Task3's single approved pair terminated on strict provider routing HTTP404,1actual repair fetch/site,2total and0model responses. No candidate promoted; real delivery remains blocked. The optional unsupported temperature setting is corrected offline in the same authorized implementation scope, with no new experiment restart. See the execution document for exact evidence and remaining gates.

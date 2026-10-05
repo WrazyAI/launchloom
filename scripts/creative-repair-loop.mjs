@@ -1123,7 +1123,8 @@ Return a complete replacement for only this requested file. Keep source non-empt
           model,
           ...(requestBudget ? { provider: { require_parameters: true } } : {}),
           ...promptCacheRequestFields(model, promptCacheKey),
-          temperature: 0.35,
+          // Frozen QA reasoning endpoints do not advertise temperature support.
+          ...(requestBudget ? {} : { temperature: 0.35 }),
           reasoning: {
             effort: reasoningEffort,
             exclude: true,

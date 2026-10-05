@@ -47,3 +47,16 @@ Original hard limits remain1–12 edits,6,000 per find/replacement,24,000 total,
 ## Remaining scope
 
 Gate-passing client previews, desktop/mobile client acceptance, one real enquiry per site and correlated receiving-provider verification remain unfinished. The two stopped experiment pairs remain distinct; the newly approved budget experiment may proceed once the implementation is verified deployed. Historical-client migration blockers remain separately recorded in `docs/seo-playbook-integration/existing-client-migration-readiness.md`. Nifty parent/delivery/migration stay open.
+
+
+## Approved budget experiment terminal result and routing correction
+
+Budget implementation PR141 shipped as91ca6155ce9e0dc3ff8bfbecc447ebaa814f27aa. Final CI37308549834 passed1407 application tests,111 Worker tests,three rendered recipe matrices,Astro/check/build. Deployment37310536533 passed; both production Pages report91ca615 and Worker03d5cf26-dbc4-442a-a9e9-325839d65208 is100%. Live1440/390 platform/onboarding passed; API GETlead405. TestSprite10fd6198 passed20/20 synthetic native/authored503→200 and Testville FAQ checks with0realDeliveries.
+
+The single newly approved pair ran once:134run37311100809,135run37311108980. Both stopped before any model response with OpenRouter HTTP404, `failed_routing_step: Filter by Parameters`. Exact private receipts each report1candidate-b fetch,2total across both runs. Both512-character raw error payloads are retained privately, untruncated and SHA256verified. No new dispatch, retry or actual enquiry. Unused capacity is not a fresh experiment allowance.
+
+Live [Luna endpoint metadata](https://openrouter.ai/api/v1/models/openai/gpt-6-luna/endpoints) advertises7endpoints and no temperature support. The existing request still supplied temperature0.35 alongside the new required parameter-support filter, which excludes every advertised endpoint. [Primary routing guidance](https://openrouter.ai/docs/guides/routing/provider-selection) confirms unsupported parameters are excluded under require_parameters. This is a request compatibility defect, not evidence the numeric schema failed.
+
+The bounded correction omits optional temperature only for the opt-in budget request; ordinary automatic and scoped-human requests retain0.35. Frozen reasoning, full source/dossier/measurement context, cache hints, token limits, provider.require_parameters, structured-output bounds and every local/rendered/promotion gate stay present. The new routing behavior is verified offline; actual provider acceptance requires a separately approved new experiment. No live provider success is claimed by the correction.
+
+Client promotion, actual desktop/mobile client acceptance, labelled real enquiries and correlated receiving-provider delivery remain unfinished. Nifty parent/delivery remain open; historical-client migration remains separate. No gate passing client proof can be inferred from platform or synthetic tests.
