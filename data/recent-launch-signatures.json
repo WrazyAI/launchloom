@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-10-02T15:07:41.529Z",
+  "updatedAt": "2026-10-05T18:09:06.904Z",
   "launches": [
     {
       "id": "2026-09-18-pulse-athletic-club",
@@ -472,6 +472,41 @@
         "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
         "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
       ]
+    },
+    {
+      "id": "2026-10-05-coastal-brush-painting-co-attempt-146-run-37352839901-attempt-1",
+      "launchedAt": "2026-10-05T18:09:06.902Z",
+      "stage": "attempt",
+      "reservationKey": "146-run-37352839901-attempt-1",
+      "businessName": "Coastal Brush Painting Co.",
+      "businessKind": "painting",
+      "recipe": "local-trades",
+      "packId": "bold-utility",
+      "variantId": "portrait",
+      "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+      "creativeFamilyId": "",
+      "referenceFamilyId": "",
+      "routeFamilyIds": [
+        "archive-rail",
+        "editorial-monument",
+        "web-painting-av",
+        "web-painting-house-doctor",
+        "web-painting-novak"
+      ],
+      "heroArchetypes": [
+        "image-overlay",
+        "split-form"
+      ],
+      "referenceIds": [
+        "web-painting-av",
+        "web-painting-house-doctor",
+        "web-painting-novak"
+      ],
+      "routeSignatures": [
+        "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+        "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri",
+        "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
+      ]
     }
   ],
   "launchesByBusinessKind": {
@@ -686,6 +721,41 @@
           "minimal charcoal service links and light estimate controls|a low-light exterior-home photograph anchors a dark charcoal layout with a float|compact dark service cards followed by a visual before-and-after comparison|clean geometric sans with large centered statements and compact utility labels|dark image and form hero -> horizontal service strip -> four service cards -> be|darkened finished-home scenes, before-and-after slider, interior projects, and s",
           "navy utility row with location and phone controls, then a service menu|a full-width painted-house lifestyle scene with a navy estimate form floating at|vertical service menu that changes the featured room image and explanation|firm sans service headings with white-over-photo hero copy|painted-house estimate hero -> intro and location action -> service selection ov|finished homes, room interiors, paint swatches, and homeowner scenes",
           "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri"
+        ]
+      },
+      {
+        "id": "2026-10-05-coastal-brush-painting-co-attempt-146-run-37352839901-attempt-1",
+        "launchedAt": "2026-10-05T18:09:06.902Z",
+        "stage": "attempt",
+        "reservationKey": "146-run-37352839901-attempt-1",
+        "businessName": "Coastal Brush Painting Co.",
+        "businessKind": "painting",
+        "recipe": "local-trades",
+        "packId": "bold-utility",
+        "variantId": "portrait",
+        "layoutFingerprint": "bold-utility|portrait|utility-pill|guided-portrait|embedded-qualifier|service-grid|quiet-ledger|conversation-handoff|humanist-calm|human-context|conversational|restrained|css|0|guided-stack|hero/conversion/services/about/trust/social-proof/faq/location-map/contact",
+        "creativeFamilyId": "",
+        "referenceFamilyId": "",
+        "routeFamilyIds": [
+          "archive-rail",
+          "editorial-monument",
+          "web-painting-av",
+          "web-painting-house-doctor",
+          "web-painting-novak"
+        ],
+        "heroArchetypes": [
+          "image-overlay",
+          "split-form"
+        ],
+        "referenceIds": [
+          "web-painting-av",
+          "web-painting-house-doctor",
+          "web-painting-novak"
+        ],
+        "routeSignatures": [
+          "cream logo strip over dark horizontal service navigation with a green appointmen|a wide dusk house photograph carries centered white service copy and a green est|photo-led service selector with vertical tabs for exterior, interior, and cabine|clear sans headings with warm gold accents and measured body copy|house-photo hero -> split local-company introduction -> tabbed exterior and inte|finished residential exteriors, preparation close-ups, and lived-in rooms",
+          "thin black and gold utility navigation with a small estimate control|a warm-ivory editorial column with serif-style promise and embedded form is pair|quiet bordered service cards after a color-layer preparation explanation|high-contrast serif display paired with restrained readable sans|split interior and estimate hero -> layered finish-method chapter -> dark compan|calm residential interiors, project thumbnails, and paint sample-like color stri",
+          "very thin dark utility strip over an airy white service-navigation row|a darkened exterior-home photograph supports a large white editorial service pro|four image cards covering interior, exterior, commercial, and deck or fence proj|confident editorial serif headings with restrained sans labels and body|exterior-home hero -> red proof strip -> four painting service cards -> dark pre|real painted homes, rooms, workplaces, and a process video poster"
         ]
       }
     ],
