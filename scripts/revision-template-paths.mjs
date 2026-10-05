@@ -1,4 +1,18 @@
 // One source of truth for files the revision synchronizer copies from templates.
+import {
+  FONT_FAMILIES,
+  fontFilesFor,
+} from "../templates/client-site/src/lib/font-catalog.mjs";
+
+export function revisionFontAssetPaths() {
+  return [
+    "public/fonts/LICENSES.md",
+    ...FONT_FAMILIES.flatMap((family) =>
+      fontFilesFor(family).map((file) => "public" + file.path),
+    ),
+  ];
+}
+
 export function revisionTemplatePaths(config) {
   const operations = config.revisionReport?.operations || [];
   const kinds = new Set(operations.map((operation) => operation.kind));
@@ -11,6 +25,8 @@ export function revisionTemplatePaths(config) {
     "lib/business-facts.d.mts",
     "lib/page-briefs.mjs",
     "lib/page-briefs.d.mts",
+    "lib/font-catalog.mjs",
+    "lib/font-catalog.d.mts",
     "components/PageBriefSections.tsx",
     "lib/creative-runtime.tsx",
     "styles/site.css",
@@ -185,6 +201,7 @@ export const retiredRouteTemplatePaths = [
 
 export function revisionTemplateWritePaths(config) {
   const files = new Set(revisionTemplatePaths(config));
+  for (const relative of revisionFontAssetPaths()) files.add(relative);
   for (const relative of retiredRouteTemplatePaths) files.add(relative);
   files.add(REVISION_TEMPLATE_BASELINE_PATH);
   files.add("src/layouts/SiteLayout.astro");

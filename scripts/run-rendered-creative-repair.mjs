@@ -1,3 +1,5 @@
+import { createQaRepairCallBudget, initializeQaRepairReceipt } from "./creative-repair-experiment.mjs";
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
@@ -5,6 +7,8 @@ import { runCreativeBakeoff } from "./run-creative-bakeoff.mjs";
 import {
   applyCreativeRepairEdits,
   requestRepair,
+  privateRepairRejectionEvidence,
+  inheritRepairRejectionEvidence,
 } from "./creative-repair-loop.mjs";
 import {
   assertCreativeRevisionScope,
@@ -830,6 +834,8 @@ export async function defaultRepairCandidate({
   comparisonScreenshots = [],
   model,
   creativeSession = null,
+  automaticSpanRepair = false,
+  fetchImpl = fetch,
 } = {}) {
   const { metadata, contentManifest, content, files } =
     await readCandidate(candidateDir);
@@ -862,6 +868,7 @@ export async function defaultRepairCandidate({
     contentManifest,
     creativeSession,
     creativeRepairScope,
+    automaticSpanRepair, fetchImpl,
   });
   let validated;
   try {
@@ -911,7 +918,7 @@ export async function defaultRepairCandidate({
     if (humanReview)
       assertCreativeRevisionScope(files, validated.files, creativeRepairScope);
   } catch (error) {
-    throw repairOutputRejected(error);
+    throw inheritRepairRejectionEvidence(repairOutputRejected(error), repairResponse, error?.message || String(error));
   }
   await writeCandidate(candidateDir, validated.files);
   return validated.files;
@@ -1009,11 +1016,24 @@ async function persistRepairEvidence({
   );
 }
 
-function repairOutputRejected(error) {
-  const rejected = new Error(
-    `Creative repair output rejected by source validation: ${error?.message || String(error)}`,
-    { cause: error instanceof Error ? error : undefined },
-  );
+/** Persist raw rejection evidence only in the private client repair directory. */
+export async function persistPrivateRepairRejection({ outDir, round, candidateId, attempt, error }) {
+  const evidence = privateRepairRejectionEvidence(error);
+  if (!evidence) return null;
+  if (!/^candidate-[abc]$/.test(candidateId) || !Number.isSafeInteger(round) || round < 0 ||
+      !Number.isSafeInteger(attempt) || attempt < 1) throw new Error("Invalid private repair evidence identity.");
+  const directory = path.join(outDir, `round-${String(round).padStart(2, "0")}`, "repairs", "rejected");
+  await fs.mkdir(directory, { recursive: true });
+  const file = path.join(directory, `${candidateId}-attempt-${attempt}-${randomUUID()}.json`);
+  await fs.writeFile(file, JSON.stringify({ ...evidence, candidateId, attempt,
+    summary: error?.repairRejectionSummary || null }, null, 2) + "\n", { flag: "wx", mode: 0o600 });
+  return file;
+}
+
+function repairOutputRejected(_error) {
+  // Details may contain untrusted authored source. Only the private evidence
+  // map carries them; neither the message nor an enumerable cause may leak it.
+  const rejected = new Error("Creative repair output rejected by source validation.");
   rejected.code = "CREATIVE_REPAIR_OUTPUT_REJECTED";
   return rejected;
 }
@@ -1041,6 +1061,8 @@ function safeRepairRejectionMessage(error) {
  *   model?: string,
  *   creativeSession?: Record<string, any> | null,
  *   maxCycles?: number,
+ *   qaRepairExperiment?: boolean,
+ *   fetchImpl?: typeof fetch,
  *   requireDiversity?: boolean,
  *   requestedFindings?: unknown[],
  *   visualGateScript?: string,
@@ -1059,6 +1081,8 @@ export async function runRenderedCreativeRepair({
   model,
   creativeSession = null,
   maxCycles = 2,
+  qaRepairExperiment = false,
+  fetchImpl = fetch,
   requireDiversity = true,
   requestedFindings = [],
   visualGateScript,
@@ -1076,6 +1100,10 @@ export async function runRenderedCreativeRepair({
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
   const evidenceRoot = path.resolve(root, outDir);
+  if (qaRepairExperiment) await initializeQaRepairReceipt(evidenceRoot);
+  if (qaRepairExperiment && (mode !== "preview" || Number(maxCycles) !== 1 || requestedFindings.length))
+    throw new Error("QA repair experiment requires one preview cycle without human feedback.");
+  const providerBudget = qaRepairExperiment ? createQaRepairCallBudget({ fetchImpl }) : null;
   const cycleLimit = boundedCycles(maxCycles);
   const cycleUse = new Map();
   // Contract rejections (an unapplicable edit, a broken marker, an invalid
@@ -1119,8 +1147,10 @@ export async function runRenderedCreativeRepair({
   const excludedCandidateIds = new Set();
   /** @type {Record<string, string>} */
   const rejectedCandidates = {};
-  await fs.rm(evidenceRoot, { recursive: true, force: true });
-  await fs.mkdir(evidenceRoot, { recursive: true });
+  if (!providerBudget) {
+    await fs.rm(evidenceRoot, { recursive: true, force: true });
+    await fs.mkdir(evidenceRoot, { recursive: true });
+  }
 
   async function repair(
     candidateId,
@@ -1181,9 +1211,11 @@ export async function runRenderedCreativeRepair({
           creativeSession: frozenCreativeSession,
           cycle: appliedSoFar + 1,
           maxCycles: appliedLimit,
+          ...(providerBudget ? { automaticSpanRepair: true, fetchImpl: providerBudget.forCandidate(candidateId) } : {}),
         });
         if (gate) gateUse.set(candidateId, appliedSoFar + 1);
         else cycleUse.set(candidateId, appliedSoFar + 1);
+        if (providerBudget) await fs.writeFile(path.join(evidenceRoot, "qa-provider-calls.json"), JSON.stringify(providerBudget.snapshot(), null, 2) + "\n");
         await persistRepairEvidence({
           outDir: evidenceRoot,
           round,
@@ -1195,6 +1227,12 @@ export async function runRenderedCreativeRepair({
         });
         return { status: "repaired", attempts };
       } catch (error) {
+        await persistPrivateRepairRejection({ outDir: evidenceRoot, round, candidateId,
+          attempt: rejections + attempts.length + 1, error });
+        if (providerBudget) {
+          await fs.writeFile(path.join(evidenceRoot, "qa-provider-calls.json"), JSON.stringify(providerBudget.snapshot(), null, 2) + "\n");
+          throw error;
+        }
         const mayRetryRepairOutputRejection =
           requestedMode === "preview" &&
           !humanFeedback &&
@@ -1780,6 +1818,7 @@ async function main() {
       "openai/gpt-6-luna",
     creativeSession,
     maxCycles: args["max-cycles"] || 2,
+    qaRepairExperiment: args["qa-repair-experiment"] === "true",
     requireDiversity: args["require-diversity"] !== "false",
     requestedFindings,
     visualGateScript: args["visual-gate-script"],
