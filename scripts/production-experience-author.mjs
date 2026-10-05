@@ -1,6 +1,7 @@
 import { compilePageBriefs } from "../templates/client-site/src/lib/page-briefs.mjs";
 import { routeLinkedContent } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { resolvePalette } from "./palette-policy.mjs";
+import { fontFamilyById, resolveFontPairing } from "./font-catalog.mjs";
 import crypto from "node:crypto";
 import { redactPromptValue } from "./author-prompt-budget.mjs";
 import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
@@ -13,6 +14,7 @@ import {
 import {
   EARLY_CONVERSION_OUTPUT_CONTRACT,
   REFERENCE_PROVENANCE_OUTPUT_CONTRACT,
+  CLIENT_TYPOGRAPHY_CONTRACT,
 } from "./creative-authoring-output.mjs";
 import {
   assertCreativeInnerPageSource,
@@ -286,6 +288,16 @@ export { redactPromptValue };
 
 function visualBrief(site) {
   const style = { ...(site.style || {}), ...resolvePalette(site.style || {}) };
+  const pairing = resolveFontPairing(site.style || {});
+  const hex = (value) =>
+    /^#[a-f0-9]{6}$/iu.test(value || "") ? String(value) : "";
+  const accent = hex(style.accentColor)
+    ? {
+        color: style.accentColor,
+        textColor: hex(style.accentTextColor),
+        contrastColor: hex(style.accentContrastColor),
+      }
+    : null;
   return {
     palette: {
       primaryColor: String(style.primaryColor || ""),
@@ -300,6 +312,23 @@ function visualBrief(site) {
       lineColor: String(style.lineColor || ""),
       surfaces: style.surfaces,
     },
+    typography: {
+      heading: pairing.heading
+        ? {
+            id: pairing.heading,
+            name: fontFamilyById(pairing.heading)?.name || "",
+            stack: pairing.headingStack,
+          }
+        : null,
+      body: pairing.body
+        ? {
+            id: pairing.body,
+            name: fontFamilyById(pairing.body)?.name || "",
+            stack: pairing.bodyStack,
+          }
+        : null,
+    },
+    accent,
     tone: String(style.tone || ""),
     preference: String(style.preference || ""),
     visualDirection: String(style.visualDirection || ""),
@@ -2897,7 +2926,7 @@ function validateExperience(source, route, content, visualBrief = {}) {
   }
 }
 
-function validateStyles(source, route) {
+function validateStyles(source, route, visualBrief = {}) {
   if (
     /<!doctype\s+html|<html\b|<head\b|<body\b|<script\b|<style\b/iu.test(source)
   )
@@ -2913,6 +2942,23 @@ function validateStyles(source, route) {
   if (/(?:^|\n)\s*["']\s*\n?\}\s*$/u.test(source))
     throw new Error(
       `Candidate ${route.id} CSS contains a malformed trailing wrapper.`,
+    );
+  const typography = visualBrief.typography || {};
+  if (typography.heading && !/var\(\s*--font-heading\b/u.test(source))
+    throw new Error(
+      `Candidate ${route.id} CSS must bind the chosen heading family through var(--font-heading, <palette stack>) so the client font choice applies.`,
+    );
+  if (typography.body && !/var\(\s*--font-body\b/u.test(source))
+    throw new Error(
+      `Candidate ${route.id} CSS must bind the chosen body family through var(--font-body, <palette stack>) so the client font choice applies.`,
+    );
+  if (
+    /(?:^|[{};\s])\s*--(?:font-heading|font-body|accent|accent-ink|on-accent)\s*:/u.test(
+      source,
+    )
+  )
+    throw new Error(
+      `Candidate ${route.id} CSS must not redeclare host typography or accent variables (--font-heading, --font-body, --accent).`,
     );
 }
 
@@ -3029,7 +3075,7 @@ export function validateProductionCandidateFiles({
     ? validateReferenceDna(route.referenceDna, { requireEvidence: true })
     : null;
   validateExperience(experience, route, content, visualBrief);
-  validateStyles(styles, route);
+  validateStyles(styles, route, visualBrief);
   validateMotion(motion, route);
   if (servicePage) validateServicePage(servicePage, route, content);
   if (locationPage) validateLocationPage(locationPage, route, content);
@@ -3148,7 +3194,7 @@ async function generateValidatedSource({ generate, request, stage, validate }) {
     source = normalizeAuthoredSource(result.value);
     repaired ||= result.repaired || cycle > 0;
     try {
-      validate(source, request.route);
+      validate(source, request.route, request.visualBrief);
       return {
         source: stage === "styles" ? namespaceCreativeCss(source) : source,
         repaired,

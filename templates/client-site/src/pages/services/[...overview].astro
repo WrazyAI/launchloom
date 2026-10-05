@@ -14,7 +14,7 @@ export function getStaticPaths() { return routeIsRendered("/services/") ? [{ par
 
 const brief = routePageBrief("services-hub:");
 const supported = brief?.mode === "supported";
-const { recipe } = resolvePageRecipe(site);
+const { recipe, treatment } = resolvePageRecipe(site);
 const creativeServicesIndex = Boolean(
   site.design?.experience?.renderer === "creative-candidate" &&
     site.design?.experience?.candidateId &&
@@ -53,7 +53,7 @@ const creativeRuntime = {
   ) : (
     <>
       <Header />
-      <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`]}>
+      <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`, `type-${treatment.typography}`]}>
         <section class="inner-hero">
           <div class="wrap inner-hero-grid">
             <div>

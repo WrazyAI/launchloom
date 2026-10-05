@@ -25,6 +25,7 @@ const contentTypes = {
   ".js": "text/javascript",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".woff2": "font/woff2",
   ".html": "text/html",
 };
 
@@ -373,6 +374,81 @@ try {
   await brandPicker.fill("#245a46");
   await page.locator('[name="leadEmail"]').fill("leads@example.com");
 
+  // Client typography and optional accent with the live specimen canvas.
+  const headingSelect = page.locator('[name="headingFont"]');
+  const bodySelect = page.locator('[name="bodyFont"]');
+  const accentHidden = page.locator('[name="accentColor"]');
+  if ((await headingSelect.count()) !== 1 || (await bodySelect.count()) !== 1)
+    failures.push("The Brand step does not offer heading and body font pickers.");
+  if ((await headingSelect.inputValue()) !== "" || (await bodySelect.inputValue()) !== "")
+    failures.push("Font pickers should default to automatic.");
+  const specimen = page.locator(".specimen-canvas");
+  if (!(await specimen.isVisible()))
+    failures.push("The live type specimen is not visible on the Brand step.");
+  if (await accentHidden.inputValue())
+    failures.push("An accent colour is submitted before the client opts in.");
+
+  await page.getByRole("button", { name: "Editorial contrast" }).click();
+  if (
+    (await headingSelect.inputValue()) !== "fraunces" ||
+    (await bodySelect.inputValue()) !== "inter"
+  )
+    failures.push("Choosing a suggested pairing did not set both font families.");
+  if (
+    !(await specimen.evaluate((element) =>
+      element.style.getPropertyValue("--specimen-heading"),
+    )).includes("Fraunces")
+  )
+    failures.push("The specimen did not adopt the chosen heading family.");
+  if (
+    !(await specimen.evaluate((element) =>
+      element.style.getPropertyValue("--specimen-body"),
+    )).includes("Inter")
+  )
+    failures.push("The specimen did not adopt the chosen body family.");
+
+  await headingSelect.selectOption("space-grotesk");
+  if (
+    !(await specimen.evaluate((element) =>
+      element.style.getPropertyValue("--specimen-heading"),
+    )).includes("Space Grotesk")
+  )
+    failures.push("Changing the heading font did not update the specimen.");
+
+  await page.evaluate(() => document.fonts.ready);
+  await page
+    .waitForFunction(() => document.fonts.check('700 16px "Space Grotesk"'), null, {
+      timeout: 10_000,
+    })
+    .catch(() => {});
+  if (
+    !(await page.evaluate(() => document.fonts.check('700 16px "Space Grotesk"')))
+  )
+    failures.push("The chosen self-hosted heading font did not load.");
+
+  const accentToggle = page.getByRole("checkbox", {
+    name: /Add a second accent colour/,
+  });
+  await accentToggle.check();
+  const accentSwatches = page.locator(".accent-swatch");
+  if ((await accentSwatches.count()) < 3)
+    failures.push("Accent suggestions did not render three swatches.");
+  await accentSwatches.first().click();
+  const chosenAccent = await accentHidden.inputValue();
+  if (!/^#[0-9a-f]{6}$/u.test(chosenAccent))
+    failures.push("Choosing an accent suggestion did not set the submitted accent colour.");
+
+  await page.getByRole("button", { name: "Dark" }).click();
+  if ((await page.locator(".specimen").getAttribute("data-theme")) !== "dark")
+    failures.push("The specimen dark toggle did not switch the canvas theme.");
+  await page.getByRole("button", { name: "Mobile" }).click();
+  if ((await page.locator(".specimen").getAttribute("data-narrow")) !== "true")
+    failures.push("The specimen mobile toggle did not narrow the canvas.");
+  await page.getByRole("button", { name: "Light" }).click();
+  await page.getByRole("button", { name: "Desktop" }).click();
+  if ((await page.locator(".specimen").getAttribute("data-narrow")) !== null)
+    failures.push("The specimen desktop toggle did not restore the wide canvas.");
+
   const logoInput = page.locator('input[name="logo"]');
   await logoInput.setInputFiles(uploadFixture);
   const preview = page.locator(".image-preview-card").first();
@@ -421,6 +497,34 @@ try {
   if (
     !(await page
       .locator("dl > div")
+      .filter({ has: page.getByText("Heading font", { exact: true }) })
+      .getByRole("definition")
+      .getByText("Space Grotesk", { exact: true })
+      .isVisible())
+  )
+    failures.push("Confirmation does not show the chosen heading font.");
+  if (
+    !(await page
+      .locator("dl > div")
+      .filter({ has: page.getByText("Body font", { exact: true }) })
+      .getByRole("definition")
+      .getByText("Inter", { exact: true })
+      .isVisible())
+  )
+    failures.push("Confirmation does not show the chosen body font.");
+  if (
+    !(await page
+      .locator("dl > div")
+      .filter({ has: page.getByText("Accent colour", { exact: true }) })
+      .getByRole("definition")
+      .getByText(chosenAccent, { exact: true })
+      .isVisible())
+  )
+    failures.push("Confirmation does not show the chosen accent colour.");
+
+  if (
+    !(await page
+      .locator("dl > div")
       .filter({ has: page.getByText("Main customer action", { exact: true }) })
       .getByRole("definition")
       .getByText("Call now", { exact: true })
@@ -436,6 +540,10 @@ try {
     failures.push("Service choices were lost after backward navigation.");
   if ((await page.locator('[name="serviceRadius"]').inputValue()) !== "30")
     failures.push("Service radius was lost after backward navigation.");
+  if ((await page.locator('[name="headingFont"]').inputValue()) !== "space-grotesk")
+    failures.push("Font choices were lost after backward navigation.");
+  if ((await page.locator('[name="accentColor"]').inputValue()) !== chosenAccent)
+    failures.push("The accent colour was lost after backward navigation.");
   if (!(await page.locator("#coverage-confirmation").isChecked()))
     failures.push("Coverage confirmation was lost after backward navigation.");
   if (await page.getByRole("button", { name: "Remove Summerville, SC", exact: true }).count())
@@ -502,6 +610,10 @@ try {
     failures.push("Only the client-selected core services should be submitted.");
   if (acceptedIntake?.brandColor !== "#245a46")
     failures.push("The client-supplied existing brand colour was not included in the intake.");
+  if (acceptedIntake?.headingFont !== "space-grotesk" || acceptedIntake?.bodyFont !== "inter")
+    failures.push("The intake did not carry the chosen heading and body fonts.");
+  if (acceptedIntake?.accentColor !== chosenAccent)
+    failures.push("The intake did not carry the chosen accent colour.");
   if (acceptedIntake?.serviceAreas !== "Charleston, SC" || acceptedIntake?.serviceRadius !== "30")
     failures.push("The intake did not preserve the client-confirmed city and travel radius.");
   if (acceptedIntake?.primaryCity !== "Charleston, SC")
