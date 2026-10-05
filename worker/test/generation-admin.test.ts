@@ -89,10 +89,15 @@ describe("Access-protected generation tracking administration", () => {
     );
     expect(page.status).toBe(200);
     const html = await page.text();
-    expect(html).toContain("Client generations");
+    expect(html).toContain("Invites and client generations");
     expect(html).toContain("Create private link");
     expect(html).toContain("Recent invitations");
     expect(html).toContain("/api/admin/onboarding-invites/generations");
+    expect(html).toContain('class="tab is-active" id="tab-invites"');
+    expect(html).toContain(
+      'id="panel-generations" role="tabpanel" aria-labelledby="tab-generations" hidden',
+    );
+    expect(html).toContain('id="gen-drawer"');
     expect(page.headers.get("Cache-Control")).toBe("no-store");
     expect(page.headers.get("Content-Security-Policy")).toContain("img-src 'self'");
     expect(page.headers.get("Content-Security-Policy")).toContain(
@@ -190,6 +195,87 @@ describe("Access-protected generation tracking administration", () => {
     );
     expect(aliasHero.status).toBe(200);
     expect(aliasHero.headers.get("Content-Type")).toBe("image/png");
+  });
+
+  it("exposes invite issue and submission references for the detail panel", async () => {
+    const context = accessContext("admin@example.test");
+    const created = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
+        method: "POST",
+        headers: { Origin: apiOrigin, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          clientEmail: "linked@example.test",
+        }),
+      }),
+      testEnv,
+      context,
+    );
+    expect(created.status).toBe(201);
+    const createdBody = (await created.json()) as {
+      inviteId: string;
+      expiresAt: number;
+      url: string;
+    };
+    const token = new URL(createdBody.url).hash.slice("#invite=".length);
+    const tokenHash = Array.from(
+      new Uint8Array(
+        await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)),
+      ),
+    )
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+    const submissionId = "submission-linked-invite-001";
+    const submissionHash = "submission-hash-linked";
+    const coordinator = env.ONBOARDING_INVITES.getByName(
+      "launchloom-onboarding-invites",
+    );
+    await expect(
+      coordinator.reserveSubmission(
+        createdBody.inviteId,
+        tokenHash,
+        createdBody.expiresAt,
+        "https://onboard.example.test",
+        submissionId,
+        submissionHash,
+        "linked@example.test",
+      ),
+    ).resolves.toMatchObject({ accepted: true });
+    await expect(
+      coordinator.claimIssueCreation(
+        createdBody.inviteId,
+        submissionId,
+        submissionHash,
+      ),
+    ).resolves.toBe(true);
+    await expect(
+      coordinator.recordIssue(
+        createdBody.inviteId,
+        submissionId,
+        submissionHash,
+        778,
+      ),
+    ).resolves.toBe(true);
+
+    const listing = await worker.fetch(
+      new Request(`${apiOrigin}/api/admin/onboarding-invites`, {
+        headers: { Origin: apiOrigin },
+      }),
+      testEnv,
+      context,
+    );
+    expect(listing.status).toBe(200);
+    const body = (await listing.json()) as {
+      invites: Array<Record<string, unknown>>;
+    };
+    expect(
+      body.invites.find((item) => item.inviteId === createdBody.inviteId),
+    ).toMatchObject({
+      clientEmail: "linked@example.test",
+      status: "consumed",
+      submissionId,
+      issueNumber: 778,
+    });
   });
 
   it("keeps generation administration same-origin for writes and rejects cross-origin reads", async () => {

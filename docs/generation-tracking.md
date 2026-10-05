@@ -1,11 +1,15 @@
 # Generation tracking
 
-The admin dashboard at `/admin/onboarding-invites` has two tabs:
+The admin dashboard at `/admin/onboarding-invites` opens on the **Invitations**
+tab and has two tabs:
 
+- **Invitations** creates and revokes private invite links. Each row shows the
+  client email and, once the invite is consumed, the linked intake issue.
 - **Generations** tracks each client generation run: business, client email,
   status, preview and production links, hero screenshot, per-stage provider
-  cost, and an event timeline.
-- **Invitations** keeps the original private invite create and revoke flows.
+  cost, and an event timeline. Selecting a client email or a generation card
+  opens a per-client detail panel with the hero preview, site links, cost by
+  stage, and the full timeline.
 
 Data is stored in the `GenerationLedger` Durable Object
 (`worker/src/generation-ledger.ts`). Generation records are keyed by
