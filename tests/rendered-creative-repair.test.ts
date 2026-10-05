@@ -2774,3 +2774,43 @@ it("stops the QA experiment immediately on a contract rejection without retrying
   expect(repair).toHaveBeenCalledTimes(1);
   expect(repair.mock.calls[0][0]).toEqual(expect.objectContaining({ automaticSpanRepair: true, fetchImpl: expect.any(Function) }));
 });
+
+it("records zero actual experiment calls before any rendering and keeps the zero-call success receipt", async () => {
+ const {root,candidates}=await fixture();
+ const result=await runRenderedCreativeRepair({siteDir:root,candidatesDir:candidates,outDir:"repair",qaRepairExperiment:true,maxCycles:1,
+  runBakeoffImpl:async(options:any)=>{
+   expect(JSON.parse(await fs.readFile(path.join(root,"repair/qa-provider-calls.json"),"utf8"))).toEqual({total:0,limit:2,candidates:{}});
+   return writeBakeoffEvidence(options,report());
+  },runVisualGateImpl:(options:any)=>visualGate(options,"pass"),promoteImpl:async()=>({candidateId:"candidate-a"})} as any);
+ expect(result.status).toBe("passed");
+ expect(JSON.parse(await fs.readFile(path.join(root,"repair/qa-provider-calls.json"),"utf8"))).toEqual({total:0,limit:2,candidates:{}});
+});
+it.each([false,true])("retains the exact actual-fetch receipt when repaired candidate failure=%s", async failure => {
+ const {root,candidates}=await fixture();let renders=0,network=0;
+ const options={siteDir:root,candidatesDir:candidates,outDir:"repair",qaRepairExperiment:true,maxCycles:1,
+  fetchImpl:async()=>{network++; if(failure)throw Error("synthetic network failure");return Response.json({});},
+  runBakeoffImpl:async(opts:any)=>writeBakeoffEvidence(opts,++renders===1?report({selectedCandidateId:null,promotionReady:false,candidates:[candidate("candidate-a",{valid:false,eligible:false,failures:["contrast"]})]}):report()),
+  repairCandidateImpl:async({fetchImpl}:any)=>{await fetchImpl("https://openrouter.ai/api/v1/chat/completions",{method:"POST"});},
+  runVisualGateImpl:(opts:any)=>visualGate(opts,"pass"),promoteImpl:async()=>({candidateId:"candidate-a"})};
+ if(failure)await expect(runRenderedCreativeRepair(options as any)).rejects.toThrow("synthetic network failure");
+ else expect((await runRenderedCreativeRepair(options as any)).status).toBe("passed");
+ expect(network).toBe(1);
+ expect(JSON.parse(await fs.readFile(path.join(root,"repair/qa-provider-calls.json"),"utf8"))).toEqual({total:1,limit:2,candidates:{"candidate-a":1}});
+});
+
+it("replaces a stale experiment receipt before a zero-call reasoning preflight failure", async () => {
+ const {root,candidates}=await fixture();
+ const evidence=path.join(root,"repair"); await fs.mkdir(evidence);
+ const previous={total:1,limit:2,candidates:{"candidate-a":1}};
+ await fs.writeFile(path.join(evidence,"qa-provider-calls.json"),JSON.stringify(previous));
+ const metadataPath=path.join(candidates,"candidate-a","metadata.json");
+ const metadata=JSON.parse(await fs.readFile(metadataPath,"utf8"));
+ metadata.reasoning={effort:"xhigh",policyVersion:"adaptive-reasoning-v1",selectorModelVersion:"jev-1.13.0"};
+ await fs.writeFile(metadataPath,JSON.stringify(metadata));
+ const network=vi.fn();
+ await expect(runRenderedCreativeRepair({siteDir:root,candidatesDir:candidates,outDir:"repair",qaRepairExperiment:true,maxCycles:1,fetchImpl:network})).rejects.toThrow(/incomplete adaptive reasoning metadata/iu);
+ expect(network).not.toHaveBeenCalled();
+ expect(JSON.parse(await fs.readFile(path.join(evidence,"qa-provider-calls.json"),"utf8"))).toEqual({total:0,limit:2,candidates:{}});
+ const archives=await fs.readdir(evidence+"-prior"); expect(archives).toHaveLength(1);
+ expect(JSON.parse(await fs.readFile(path.join(evidence+"-prior",archives[0],"qa-provider-calls.json"),"utf8"))).toEqual(previous);
+});

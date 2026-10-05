@@ -26,18 +26,18 @@
 4. Narrower request capacity can leave findings unresolved; require actual rendered gates rather than accepting a merely valid patch.
 5. Zero-call and successful runs need exact private call receipts, not only failure preservation.
 
-## Stage 1: Trusted request budget and schema
+## Task 1: Trusted request budget and schema
 
 **Files:** Modify `scripts/creative-repair-contract.mjs`, `scripts/creative-repair-loop.mjs`; create `tests/creative-repair-request-budget.test.ts`; extend `tests/creative-repair-loop.test.ts`.
 
 **Interface:** `buildSpanRequestBudget(catalog)` returns `{maxFindChars,maxReplacementChars:6000,maxEdits,maxPatchChars:24000,unit:"utf16-code-units"}`. F=max trusted find length; K=min(12,floor(24000/(F+6000))). Reject empty/malformed/oversized windows. Input is the existing trusted version1 catalog.
 
-- [ ] Add RED tests for F1,999→K3/worst23,997;F3,491→K2/worst18,982;F2,000→K3/worst24,000;F6,000→K2/worst24,000; empty/nonstring/6,001 find rejects. Add compiler regression showing a schema-sized astral string still rejects when actual UTF16 length exceeds6,000.
-- [ ] Run `npx vitest run tests/creative-repair-request-budget.test.ts tests/creative-repair-loop.test.ts tests/creative-repair-spans.test.ts`; observe RED.
-- [ ] Implement the pure budget function. Only opt-in automatic span requests use schema `edits.minItems=1/maxItems=K` and `replace.minLength=1/maxLength=6000`, plus explicit UTF16/cost guidance. Preserve unchanged existing per-fragment/compiler/literal checks. Confirm native endpoint support for these keywords from current primary provider documentation before shipping; unsupported capability is a blocker, never a schema waiver. Set `provider.require_parameters=true` for the opt-in request and retain the one-fetch wrapper. Keep all source/dossier/measurement context.
-- [ ] Extend real adapter tests: exact new schema/routing fields for opt-in; normal automatic/human schemas unchanged;402/schema rejection attempts do not obtain a second fetch. Run the same suites GREEN and commit.
+- [x] Add RED tests for F1,999→K3/worst23,997;F3,491→K2/worst18,982;F2,000→K3/worst24,000;F6,000→K2/worst24,000; empty/nonstring/6,001 find rejects. Add compiler regression showing a schema-sized astral string still rejects when actual UTF16 length exceeds6,000.
+- [x] Run `npx vitest run tests/creative-repair-request-budget.test.ts tests/creative-repair-loop.test.ts tests/creative-repair-spans.test.ts`; observe RED.
+- [x] Implement the pure budget function. Only opt-in automatic span requests use schema `edits.minItems=1/maxItems=K` and `replace.pattern="^[\\s\\S]{1,6000}$"` (documented equivalent string bound), plus explicit UTF16/cost guidance. Preserve unchanged existing per-fragment/compiler/literal checks. Confirm native endpoint support for these keywords from current primary provider documentation before shipping; unsupported capability is a blocker, never a schema waiver. Set `provider.require_parameters=true` for the opt-in request and retain the one-fetch wrapper. Keep all source/dossier/measurement context.
+- [x] Extend real adapter tests: exact new schema/routing fields for opt-in; normal automatic/human schemas unchanged;402/schema rejection attempts do not obtain a second fetch. Run the same suites GREEN and commit.
 
-## Stage 2: Offline archive replay, private receipts and shipping
+## Task 2: Offline archive replay, private receipts and shipping
 
 **Files:** Modify `scripts/run-rendered-creative-repair.mjs`, `.github/workflows/generate-client.yml`; extend `tests/rendered-creative-repair.test.ts`, `tests/internal-qa-intake.test.ts`, `tests/generation-workflow-preview.test.ts`; append daily ledger.
 
@@ -47,7 +47,7 @@
 - [ ] Replay all4 actual admitted catalogs offline through the request adapter, real compiler/literal/source guards and complete enrichment/reuse validation. Retain both rejected raw responses privately; demonstrate they violate new request shape, without applying/truncating them. Test a feasible mocked response with original guards and unchanged unrelated bytes. Zero provider calls.
 - [ ] Run full CI/three rendered matrices, Astro/Worker/build, relevant TestSprite and independent review. Commit/review/merge/deploy only after passing; read back exact Pages/Worker source/version. Scope this receipt to shipped implementation.
 
-## Stage 3: One newly approved recovery and actual delivery
+## Task 3: One newly approved recovery and actual delivery
 
 **Files:** Private client/evidence artifacts and append-only progress; use existing delivery workflow.
 
@@ -57,4 +57,4 @@
 - [ ] Use the owned browser driver:fake503 with retention first, then at most one labelled actual enquiry/site with exclusive duplicate-prevention receipt and reset proof. Run `verify-internal-qa-delivery.yml` read-only on exact correlations; distinguish receiving-provider delivery from inbox placement.
 - [ ] Record concrete outcomes; close only verified Nifty scopes. If blocked, preserve evidence and name the failed assumption. No completion claim for unverified client delivery.
 
-Self-review: spec constraints map to all3 stages; helper/interface names agree; all5 review inputs have tests or explicit rendered/provider verification. Math bounds are conditional on the unchanged real string checks, not a claim every provider enforces every keyword. Narrower capacity is an explicit tradeoff. No budget implementation, new dispatch or provider call has been authorized or performed under this plan.
+Self-review: spec constraints map to all3 stages; helper/interface names agree; all5 review inputs have tests or explicit rendered/provider verification. Math bounds are conditional on the unchanged real string checks, not a claim every provider enforces every keyword. Narrower capacity is an explicit tradeoff. User approved implementation and the single capped experiment. Task1 is locally verified; Task2 offline changes are verified, full review/CI/shipping pending. No actual provider call or new experiment dispatch yet.

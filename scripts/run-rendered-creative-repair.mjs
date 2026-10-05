@@ -1,4 +1,4 @@
-import { createQaRepairCallBudget } from "./creative-repair-experiment.mjs";
+import { createQaRepairCallBudget, initializeQaRepairReceipt } from "./creative-repair-experiment.mjs";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -1048,6 +1048,8 @@ function safeRepairRejectionMessage(error) {
  *   model?: string,
  *   creativeSession?: Record<string, any> | null,
  *   maxCycles?: number,
+ *   qaRepairExperiment?: boolean,
+ *   fetchImpl?: typeof fetch,
  *   requireDiversity?: boolean,
  *   requestedFindings?: unknown[],
  *   visualGateScript?: string,
@@ -1085,6 +1087,7 @@ export async function runRenderedCreativeRepair({
   const root = path.resolve(siteDir);
   const candidateRoot = path.resolve(root, candidatesDir);
   const evidenceRoot = path.resolve(root, outDir);
+  if (qaRepairExperiment) await initializeQaRepairReceipt(evidenceRoot);
   if (qaRepairExperiment && (mode !== "preview" || Number(maxCycles) !== 1 || requestedFindings.length))
     throw new Error("QA repair experiment requires one preview cycle without human feedback.");
   const providerBudget = qaRepairExperiment ? createQaRepairCallBudget({ fetchImpl }) : null;
@@ -1130,8 +1133,10 @@ export async function runRenderedCreativeRepair({
   const excludedCandidateIds = new Set();
   /** @type {Record<string, string>} */
   const rejectedCandidates = {};
-  await fs.rm(evidenceRoot, { recursive: true, force: true });
-  await fs.mkdir(evidenceRoot, { recursive: true });
+  if (!providerBudget) {
+    await fs.rm(evidenceRoot, { recursive: true, force: true });
+    await fs.mkdir(evidenceRoot, { recursive: true });
+  }
 
   async function repair(
     candidateId,

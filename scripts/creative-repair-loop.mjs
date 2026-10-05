@@ -3,6 +3,7 @@ import {
   REPAIR_FILE_ORDER, REPAIR_INNER_PAGE_KEYS, REPAIR_EDITABLE_FILE_NAMES,
   MAX_REPAIR_EDITS, MAX_REPAIR_EDIT_FRAGMENT_CHARS,
   MAX_REPAIR_PATCH_TEXT_CHARS, MAX_REPAIR_FILE_SOURCE_CHARS,
+  buildSpanRequestBudget,
 } from "./creative-repair-contract.mjs";
 import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
@@ -1103,10 +1104,14 @@ Return a complete replacement for only this requested file. Keep source non-empt
   ) => {
     const spanCatalog = !scopedHumanRepair && editsOnly ? buildRepairSpanCatalog(currentFiles) : null;
     if (spanCatalog && !spanCatalog.spans.length) throw repairOutputRejection("No trusted bounded source spans are available.");
+    const requestBudget = spanCatalog && automaticSpanRepair ? buildSpanRequestBudget(spanCatalog) : null;
     const requestContent = buildRepairContent(currentFiles, { targetFile, editsOnly });
     if (spanCatalog) {
       requestContent.push({ type: "text", text: "TRUSTED SOURCE SPANS\n" + JSON.stringify(spanCatalog) +
         "\nReturn edits with spanId and replace only. Do not generate find text or file names. Select an ID from this exact source snapshot and supply the entire replacement for its shown span. Keep 1-12 edits, each non-empty replacement at most6000 characters, total original-span-plus-replacement at most24000. Preserve all unrelated source and bindings." });
+      if (requestBudget) requestContent.push({ type: "text", text:
+        "REQUEST CHARACTER BUDGET\n" + JSON.stringify(requestBudget) +
+        `\nFor this request return 1-${requestBudget.maxEdits} edits only, each replacement at most${requestBudget.maxReplacementChars} UTF16 code units. Each edit costs its shown original find length plus replacement length. Prioritize the most consequential findings within these reservations; do not copy additional unrelated windows into a replacement. JavaScript counts astral characters as two code units; schema string length alone does not replace the local checks. All existing source and rendered gates still apply.` });
       assertModelPromptTextBudget(requestContent);
     }
     const sendRepairRequest = (maxCompletionTokens) =>
@@ -1116,6 +1121,7 @@ Return a complete replacement for only this requested file. Keep source non-empt
         sessionId,
         body: {
           model,
+          ...(requestBudget ? { provider: { require_parameters: true } } : {}),
           ...promptCacheRequestFields(model, promptCacheKey),
           temperature: 0.35,
           reasoning: {
@@ -1128,9 +1134,9 @@ Return a complete replacement for only this requested file. Keep source non-empt
               spanCatalog ? {
                 name: "launchloom_creative_repair_spans", strict: true,
                 schema: { type: "object", additionalProperties: false, required: ["edits"],
-                  properties: { edits: { type: "array", items: { type: "object", additionalProperties: false,
+                  properties: { edits: { type: "array", ...(requestBudget ? { minItems: 1, maxItems: requestBudget.maxEdits } : {}), items: { type: "object", additionalProperties: false,
                     required: ["spanId", "replace"], properties: {
-                      spanId: { type: "string", enum: spanCatalog.spans.map(span => span.id) }, replace: { type: "string" },
+                      spanId: { type: "string", enum: spanCatalog.spans.map(span => span.id) }, replace: { type: "string", ...(requestBudget ? { pattern: `^[\\s\\S]{1,${requestBudget.maxReplacementChars}}$` } : {}) },
                     } } } } },
               } : scopedHumanRepair || editsOnly
                 ? repairEditSchemaFor(currentFiles, { includeInnerPages: !scopedHumanRepair })
@@ -1200,6 +1206,8 @@ Return a complete replacement for only this requested file. Keep source non-empt
         );
       }
       if (spanCatalog) {
+        if (requestBudget && Array.isArray(parsed?.edits) && parsed.edits.length > requestBudget.maxEdits)
+          throw repairOutputRejection(`Span repair exceeds the request ${requestBudget.maxEdits}-edit ceiling.`);
         const edits = compileRepairSpanEdits(currentFiles, spanCatalog, parsed?.edits);
         return rememberPrivateRepairOutput({ edits }, responseContent);
       }
