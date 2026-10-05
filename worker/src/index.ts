@@ -1631,6 +1631,18 @@ async function coverageAreas(request: Request, env: Env) {
   }
 }
 
+function placeComponent(
+  components: unknown,
+  type: string,
+  key: "shortText" | "longText",
+) {
+  if (!Array.isArray(components)) return "";
+  const found = components.find(
+    (item: any) => Array.isArray(item?.types) && item.types.includes(type),
+  );
+  return String(found?.[key] || "").trim();
+}
+
 async function places(request: Request, env: Env) {
   const onboardingOrigin = env.ONBOARDING_ORIGIN?.replace(/\/$/u, "");
   const allowed = onboardingOrigin ? [...platformOrigins(env), onboardingOrigin] : platformOrigins(env);
@@ -1642,7 +1654,10 @@ async function places(request: Request, env: Env) {
   try {
     assertOrigin(request, allowed);
     const body = (await request.json().catch(() => ({}))) as {
+      action?: unknown;
       query?: unknown;
+      state?: unknown;
+      placeId?: unknown;
       inviteToken?: unknown;
     };
     try {
@@ -1652,6 +1667,142 @@ async function places(request: Request, env: Env) {
     }
     if (!env.GOOGLE_PLACES_API_KEY)
       return json({ error: "Places lookup is not configured." }, 503, headers);
+    const action =
+      body.action === "autocomplete" || body.action === "resolve"
+        ? body.action
+        : "lookup";
+
+    if (action === "autocomplete") {
+      const query = clean(body.query, 200);
+      if (query.length < 3) return json({ suggestions: [] }, 200, headers);
+      const state = /^[a-z]{2}$/iu.test(clean(body.state, 2))
+        ? clean(body.state, 2).toUpperCase()
+        : "";
+      const trimmed = query.trim();
+      const input =
+        state && !new RegExp(`(^|[ ,])${state}$`, "iu").test(trimmed)
+          ? `${trimmed}, ${state}`
+          : trimmed;
+      const response = await fetch(
+        "https://places.googleapis.com/v1/places:autocomplete",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": env.GOOGLE_PLACES_API_KEY,
+          },
+          body: JSON.stringify({
+            input,
+            includedRegionCodes: ["us"],
+            languageCode: "en",
+          }),
+        },
+      );
+      if (!response.ok) return json({ suggestions: [] }, 200, headers);
+      const { suggestions = [] } = (await response.json()) as {
+        suggestions?: Array<any>;
+      };
+      return json(
+        {
+          suggestions: suggestions
+            .map((suggestion) => suggestion?.placePrediction)
+            .filter(Boolean)
+            .slice(0, 5)
+            .map((prediction) => ({
+              placeId: String(prediction.placeId || ""),
+              main:
+                prediction.structuredFormat?.mainText?.text ||
+                prediction.text?.text ||
+                "",
+              secondary: prediction.structuredFormat?.secondaryText?.text || "",
+              description: prediction.text?.text || "",
+            }))
+            .filter((suggestion) => suggestion.placeId && suggestion.description),
+        },
+        200,
+        headers,
+      );
+    }
+
+    if (action === "resolve") {
+      const placeId = clean(body.placeId, 200);
+      if (!/^[A-Za-z0-9_-]{5,200}$/u.test(placeId))
+        return json({ error: "Choose an address suggestion." }, 400, headers);
+      const response = await fetch(
+        `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?languageCode=en`,
+        {
+          headers: {
+            "X-Goog-Api-Key": env.GOOGLE_PLACES_API_KEY,
+            "X-Goog-FieldMask":
+              "id,displayName,formattedAddress,addressComponents,location",
+          },
+        },
+      );
+      if (!response.ok)
+        return json(
+          {
+            error:
+              "That address could not be verified. You can type it manually.",
+          },
+          502,
+          headers,
+        );
+      const place = (await response.json()) as Record<string, any>;
+      const address = String(place.formattedAddress || "").trim();
+      if (!address)
+        return json(
+          {
+            error:
+              "That address could not be verified. You can type it manually.",
+          },
+          404,
+          headers,
+        );
+      return json(
+        {
+          place: {
+            id: String(place.id || placeId),
+            address,
+            city:
+              placeComponent(place.addressComponents, "locality", "longText") ||
+              placeComponent(place.addressComponents, "postal_town", "longText") ||
+              placeComponent(place.addressComponents, "sublocality", "longText") ||
+              placeComponent(
+                place.addressComponents,
+                "administrative_area_level_2",
+                "longText",
+              ),
+            state: placeComponent(
+              place.addressComponents,
+              "administrative_area_level_1",
+              "shortText",
+            ),
+            postalCode: placeComponent(
+              place.addressComponents,
+              "postal_code",
+              "shortText",
+            ),
+            country: placeComponent(
+              place.addressComponents,
+              "country",
+              "shortText",
+            ),
+            location:
+              place.location &&
+              Number.isFinite(place.location.latitude) &&
+              Number.isFinite(place.location.longitude)
+                ? {
+                    latitude: place.location.latitude,
+                    longitude: place.location.longitude,
+                  }
+                : null,
+          },
+        },
+        200,
+        headers,
+      );
+    }
+
     const { query } = body;
     if (typeof query !== "string" || query.trim().length < 3)
       return json(
@@ -1667,7 +1818,7 @@ async function places(request: Request, env: Env) {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": env.GOOGLE_PLACES_API_KEY,
           "X-Goog-FieldMask":
-            "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.rating,places.userRatingCount,places.regularOpeningHours,places.primaryType,places.types,places.location",
+            "places.id,places.displayName,places.formattedAddress,places.addressComponents,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.rating,places.userRatingCount,places.regularOpeningHours,places.primaryType,places.types,places.location",
         },
         body: JSON.stringify({ textQuery: query.trim(), maxResultCount: 1 }),
       },
@@ -1707,6 +1858,24 @@ async function places(request: Request, env: Env) {
           hours: place.regularOpeningHours?.weekdayDescriptions || [],
           primaryType: place.primaryType || "",
           types: Array.isArray(place.types) ? place.types.slice(0, 12) : [],
+          city:
+            placeComponent(place.addressComponents, "locality", "longText") ||
+            placeComponent(place.addressComponents, "sublocality", "longText") ||
+            placeComponent(
+              place.addressComponents,
+              "administrative_area_level_2",
+              "longText",
+            ),
+          state: placeComponent(
+            place.addressComponents,
+            "administrative_area_level_1",
+            "shortText",
+          ),
+          postalCode: placeComponent(
+            place.addressComponents,
+            "postal_code",
+            "shortText",
+          ),
           location: place.location && Number.isFinite(place.location.latitude) && Number.isFinite(place.location.longitude)
             ? { latitude: place.location.latitude, longitude: place.location.longitude }
             : null,

@@ -101,4 +101,135 @@ describe("business enrichment", () => {
       provenance: "model_suggestion_unconfirmed",
     });
   });
+
+  it("proxies US street-address autocomplete for an invited client", async () => {
+    const inviteToken = await createInvite("invite-place-autocomplete-001");
+    let requestBody: Record<string, unknown> = {};
+    network.use(
+      http.post(
+        "https://places.googleapis.com/v1/places:autocomplete",
+        async ({ request }) => {
+          requestBody = (await request.json()) as Record<string, unknown>;
+          return HttpResponse.json({
+            suggestions: [
+              {
+                placePrediction: {
+                  placeId: "place-street-1",
+                  text: { text: "812 Meeting St, Charleston, SC 29403, USA" },
+                  structuredFormat: {
+                    mainText: { text: "812 Meeting St" },
+                    secondaryText: { text: "Charleston, SC 29403, USA" },
+                  },
+                  types: ["street_address"],
+                },
+              },
+              { placePrediction: { placeId: "", text: { text: "incomplete" } } },
+            ],
+          });
+        },
+      ),
+    );
+    const response = await SELF.fetch(
+      "https://api.launchloom.test/api/places",
+      {
+        method: "POST",
+        headers: { Origin: inviteOrigin, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "autocomplete",
+          query: "812 Meeting St",
+          state: "SC",
+          inviteToken,
+        }),
+      },
+    );
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      suggestions: [
+        {
+          placeId: "place-street-1",
+          main: "812 Meeting St",
+          secondary: "Charleston, SC 29403, USA",
+          description: "812 Meeting St, Charleston, SC 29403, USA",
+        },
+      ],
+    });
+    expect(String(requestBody.input)).toBe("812 Meeting St, SC");
+    expect(requestBody.includedRegionCodes).toEqual(["us"]);
+  });
+
+  it("resolves a selected suggestion into address, city, and state", async () => {
+    const inviteToken = await createInvite("invite-place-resolve-001");
+    network.use(
+      http.get(
+        "https://places.googleapis.com/v1/places/place-street-1",
+        () =>
+          HttpResponse.json({
+            id: "place-street-1",
+            formattedAddress: "812 Meeting St, Charleston, SC 29403, USA",
+            addressComponents: [
+              { shortText: "812", longText: "812", types: ["street_number"] },
+              { shortText: "Meeting St", longText: "Meeting Street", types: ["route"] },
+              { shortText: "Charleston", longText: "Charleston", types: ["locality"] },
+              { shortText: "SC", longText: "South Carolina", types: ["administrative_area_level_1"] },
+              { shortText: "29403", longText: "29403", types: ["postal_code"] },
+              { shortText: "US", longText: "United States", types: ["country"] },
+            ],
+            location: { latitude: 32.79, longitude: -79.94 },
+          }),
+      ),
+    );
+    const response = await SELF.fetch(
+      "https://api.launchloom.test/api/places",
+      {
+        method: "POST",
+        headers: { Origin: inviteOrigin, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "resolve",
+          placeId: "place-street-1",
+          inviteToken,
+        }),
+      },
+    );
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      place: {
+        address: "812 Meeting St, Charleston, SC 29403, USA",
+        city: "Charleston",
+        state: "SC",
+        postalCode: "29403",
+        country: "US",
+      },
+    });
+  });
+
+  it("does not call Google for short queries or invalid place ids", async () => {
+    const inviteToken = await createInvite("invite-place-guards-001");
+    let calls = 0;
+    network.use(
+      http.post(
+        "https://places.googleapis.com/v1/places:autocomplete",
+        () => {
+          calls += 1;
+          return HttpResponse.json({});
+        },
+      ),
+    );
+    const short = await SELF.fetch("https://api.launchloom.test/api/places", {
+      method: "POST",
+      headers: { Origin: inviteOrigin, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "autocomplete", query: "12", inviteToken }),
+    });
+    expect(short.status).toBe(200);
+    await expect(short.json()).resolves.toEqual({ suggestions: [] });
+    const invalid = await SELF.fetch(
+      "https://api.launchloom.test/api/places",
+      {
+        method: "POST",
+        headers: { Origin: inviteOrigin, "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "resolve", placeId: "x", inviteToken }),
+      },
+    );
+    expect(invalid.status).toBe(400);
+    expect(calls).toBe(0);
+  });
 });
