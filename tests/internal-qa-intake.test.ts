@@ -134,3 +134,13 @@ it("experiment reuses frozen assets without any contextual asset regeneration", 
   const step = source.slice(source.indexOf('- name: Generate or reuse contextual imagery'), source.indexOf('- name: Author independent experience candidates'));
   expect(step.indexOf('Frozen QA contextual assets retained')).toBeLessThan(step.indexOf('generate-contextual-assets.mjs'));
 });
+
+it("stages and restores contextual assets from the same frozen source as candidate validation", () => {
+  const source = fs.readFileSync(".github/workflows/generate-client.yml", "utf8");
+  const setup = source.slice(source.indexOf('if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then'), source.indexOf('- name: Reserve inspiration routes'));
+  expect(setup).toContain('cp "$CANDIDATE_SOURCE/.launchloom/generated-assets.json" "$RUNNER_TEMP/frozen-qa-assets/manifest.json"');
+  expect(setup).toContain('cp -R "$CANDIDATE_SOURCE/public/images/generated/." "$RUNNER_TEMP/frozen-qa-assets/images/"');
+  const step = source.slice(source.indexOf('- name: Generate or reuse contextual imagery'), source.indexOf('- name: Author independent experience candidates'));
+  expect(step).toContain('cp "$RUNNER_TEMP/frozen-qa-assets/manifest.json" .launchloom/generated-assets.json');
+  expect(step).toContain('cp -R "$RUNNER_TEMP/frozen-qa-assets/images/." public/images/generated/');
+});
