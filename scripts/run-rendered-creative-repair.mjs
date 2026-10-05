@@ -1132,6 +1132,8 @@ export async function runRenderedCreativeRepair({
   const rejectedCandidates = {};
   await fs.rm(evidenceRoot, { recursive: true, force: true });
   await fs.mkdir(evidenceRoot, { recursive: true });
+  if (providerBudget)
+    await fs.writeFile(path.join(evidenceRoot, "qa-provider-calls.json"), JSON.stringify(providerBudget.snapshot(), null, 2) + "\n");
 
   async function repair(
     candidateId,

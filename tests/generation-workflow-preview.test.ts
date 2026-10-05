@@ -68,3 +68,13 @@ it("selects branch-preview canaries against latest main history without recordin
     "if: github.event_name == 'repository_dispatch' || github.ref == 'refs/heads/main'",
   );
 });
+
+it("commits exact successful QA call counts only to the private client evidence path", async () => {
+ const source=await fs.readFile(".github/workflows/generate-client.yml","utf8");
+ const step=source.split("- name: Render and repair creative candidates in the production shell")[1].split("- name: Prepare private creative-recovery report")[0];
+ const receipt=step.indexOf('test -f .launchloom/creative-repair/qa-provider-calls.json');
+ expect(receipt).toBeGreaterThan(step.indexOf('if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then',step.indexOf('cp .launchloom/creative-repair/final')));
+ expect(step).toContain('git add .launchloom/creative-repair/qa-provider-calls.json');
+ expect(receipt).toBeLessThan(step.indexOf('git commit -m "Render and repair creative experience candidates"'));
+ expect(source).not.toContain('uses: actions/upload-artifact');
+});

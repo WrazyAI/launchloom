@@ -510,6 +510,10 @@ jobs:
           rm -rf .launchloom/generated-experiences
           cp -R /tmp/generated-experiences .launchloom/generated-experiences
           git add .launchloom/generated-experiences .launchloom/creative-bakeoff.json src/generated-experiences/selected src/site.config.json
+          if [ "$QA_REPAIR_EXPERIMENT" = "true" ]; then
+            test -f .launchloom/creative-repair/qa-provider-calls.json || { echo "Private QA call receipt missing"; exit 1; }
+            git add .launchloom/creative-repair/qa-provider-calls.json
+          fi
           if ! git diff --cached --quiet; then
             git commit -m "Render and repair creative experience candidates"
             node "$GITHUB_WORKSPACE/scripts/push-client-review-branch.mjs" --branch review/initial

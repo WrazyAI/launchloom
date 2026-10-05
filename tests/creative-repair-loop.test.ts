@@ -2105,7 +2105,9 @@ it("automatic span repair binds current sources without model-generated find tex
     expect(body.provider).toEqual(expect.objectContaining({ require_parameters: true }));
     expect(schema.schema.properties.edits.minItems).toBe(1);
     expect(schema.schema.properties.edits.maxItems).toBe(3);
-    expect(schema.schema.properties.edits.items.properties.replace).toEqual(expect.objectContaining({ minLength: 1, maxLength: 6000 }));
+    expect(schema.schema.properties.edits.items.properties.replace).toEqual(expect.objectContaining({ pattern: "^[\\s\\S]{1,6000}$" }));
+    const pattern=new RegExp(schema.schema.properties.edits.items.properties.replace.pattern,"u");
+    expect(pattern.test("x\n".repeat(3000))).toBe(true); expect(pattern.test("")).toBe(false); expect(pattern.test("x".repeat(6001))).toBe(false);
     expect(schema.schema.properties.edits.items.required).toEqual(["spanId", "replace"]);
     expect(schema.schema.properties.edits.items.properties.spanId.enum).toContain(style.id);
     const text = body.messages[1].content.filter((x: any) => x.type === "text").map((x: any) => x.text).join("\n");

@@ -1136,7 +1136,7 @@ Return a complete replacement for only this requested file. Keep source non-empt
                 schema: { type: "object", additionalProperties: false, required: ["edits"],
                   properties: { edits: { type: "array", ...(requestBudget ? { minItems: 1, maxItems: requestBudget.maxEdits } : {}), items: { type: "object", additionalProperties: false,
                     required: ["spanId", "replace"], properties: {
-                      spanId: { type: "string", enum: spanCatalog.spans.map(span => span.id) }, replace: { type: "string", ...(requestBudget ? { minLength: 1, maxLength: requestBudget.maxReplacementChars } : {}) },
+                      spanId: { type: "string", enum: spanCatalog.spans.map(span => span.id) }, replace: { type: "string", ...(requestBudget ? { pattern: `^[\\s\\S]{1,${requestBudget.maxReplacementChars}}$` } : {}) },
                     } } } } },
               } : scopedHumanRepair || editsOnly
                 ? repairEditSchemaFor(currentFiles, { includeInnerPages: !scopedHumanRepair })
