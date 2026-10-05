@@ -212,7 +212,6 @@ export function planContrastRepairs(
     if (!page.repairScopeVerified) continue;
     for (const f of page.findings) {
       if (
-        !f.repairEligible ||
         f.status !== "fail" ||
         !/^body(?: > [a-z][a-z0-9-]*:nth-of-type\(\d+\))*$/.test(f.selector)
       )
@@ -263,7 +262,7 @@ export function planContrastRepairs(
     for (const page of report.pages || []) {
       if (!page.repairScopeVerified) continue;
       for (const target of page.targets || []) {
-        if (target.kind !== "text" || target.state !== "default") continue;
+        if (target.kind !== "text") continue;
         if (target.status !== "unresolved" && target.status !== "fail") continue;
         if (!target.plateSafe) continue;
         if (
@@ -313,7 +312,7 @@ export function planContrastRepairs(
           surface,
           original: target.color || null,
           color: ensureContrast(base, surface, minimum),
-          pseudo: target.platePseudo === true,
+          pseudo: previous?.pseudo === true || target.platePseudo === true,
           text: target.text,
         });
       }

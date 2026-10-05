@@ -298,7 +298,7 @@ export function collectContrastTargets({
         (color(ps.backgroundColor)?.[3] > 0 || ps.backgroundImage !== "none")
       );
     });
-  const opaqueRootPlate = (plate) => {
+  const opaquePlateSurface = (plate) => {
     const s = styleFor(plate);
     return (
       color(s.backgroundColor)?.[3] === 1 &&
@@ -318,13 +318,22 @@ export function collectContrastTargets({
         s.backdropFilter,
       ].every((value) => value === "none") &&
       stackZ(plate) > 0 &&
-      rootContext(plate) === plate &&
       !hasPaintPseudo(plate) &&
       !animationsFor(plate).some(
         (animation) =>
           animation.playState !== "finished" && animation.playState !== "idle",
       )
     );
+  };
+  const opaqueRootPlate = (plate) =>
+    opaquePlateSurface(plate) && rootContext(plate) === plate;
+  // Context creators strictly between an element and a shared ancestor context
+  // govern how that element's paint is ordered inside the ancestor, so paint
+  // order may only be compared directly when neither side has one.
+  const interveningContexts = (el, root) => {
+    for (let p = el.parentElement; p && p !== root; p = p.parentElement)
+      if (createsContext(p)) return true;
+    return false;
   };
   const roundedFillCovers = (plate, rect) => {
     const box = rectFor(plate),
@@ -416,11 +425,24 @@ export function collectContrastTargets({
       plate && plate !== document.documentElement;
       plate = plate.parentElement
     ) {
-      if (!opaqueRootPlate(plate)) continue;
+      if (!opaquePlateSurface(plate)) continue;
       if (
-        ((ownRoundedContour && plate === el) ||
-          roundedFillCovers(plate, rect)) &&
-        stackZ(layerContext) < stackZ(plate)
+        !((ownRoundedContour && plate === el) || roundedFillCovers(plate, rect))
+      )
+        continue;
+      if (stackZ(layerContext) < stackZ(plate) && rootContext(plate) === plate)
+        return true;
+      // A plate and layer that share the same outermost context, with no
+      // intervening context creators, keep a valid z-order comparison inside
+      // that context even when an ancestor filter, isolation or transform
+      // created it.
+      const plateContext = rootContext(plate);
+      if (
+        plateContext &&
+        plateContext === layerContext &&
+        !interveningContexts(plate, plateContext) &&
+        !interveningContexts(layer, layerContext) &&
+        stackZ(layer) < stackZ(plate)
       )
         return true;
     }

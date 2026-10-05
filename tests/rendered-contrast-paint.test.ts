@@ -167,4 +167,30 @@ describe("bounded deterministic plate repairs", () => {
     );
     expect(withPlate.pass, JSON.stringify(withPlate.findings)).toBe(true);
   });
+
+  it("proves a plate inside a context-creating ancestor", async () => {
+    const html = (plate: string) =>
+      `<style>body{margin:0;background:#fff}.context{isolation:isolate;position:relative;width:320px;height:110px}.paint{position:absolute;inset:0;background:#000}.text{margin:0;color:#f4f1ea;font-size:14px}${plate}</style><div class="context"><div class="paint"></div><p class="text">Rear paint inside an isolated context</p></div>`;
+    const without = await scan(html(""), 1440, { states: false });
+    expect(without.pass).toBe(false);
+    const withPlate = await scan(
+      html(plateCss(".text", "#1d3143", "#f4f1ea")),
+      1440,
+      { states: false },
+    );
+    expect(withPlate.pass, JSON.stringify(withPlate.findings)).toBe(true);
+  });
+
+  it("still refuses a plate when an intervening context orders the layer", async () => {
+    const html = (plate: string) =>
+      `<style>body{margin:0;background:#fff}.context{isolation:isolate;position:relative;width:320px;height:110px}.inner{position:absolute;inset:0;z-index:1}.paint{position:absolute;inset:0;background:#000}.text{margin:0;color:#f4f1ea;font-size:14px}${plate}</style><div class="context"><div class="inner"><div class="paint"></div></div><p class="text">Layer under its own context</p></div>`;
+    // The layer sits inside .inner, which creates its own ordered context, so
+    // z-index comparison against the plate is not valid evidence.
+    const withPlate = await scan(
+      html(plateCss(".text", "#1d3143", "#f4f1ea")),
+      1440,
+      { states: false },
+    );
+    expect(withPlate.pass).toBe(false);
+  });
 });

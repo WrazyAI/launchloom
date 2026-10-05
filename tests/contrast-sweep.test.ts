@@ -269,6 +269,81 @@ describe("persisted bounded contrast sweep", () => {
     expect(second.every((r: any) => r.kind === "plate")).toBe(true);
     expect(second.every((r: any) => !firstKeys.has(r.selector))).toBe(true);
   });
+  it("repairs consistent interaction-state failures", async () => {
+    const module = await modulePromise;
+    const base = {
+      selector: "body > p:nth-of-type(1)",
+      kind: "text",
+      status: "fail",
+      repairEligible: false,
+      color: "#ffffff",
+      background: "#f8f6f0",
+      foreground: [255, 255, 255, 1],
+      backgrounds: [[248, 246, 240, 1]],
+      minimum: 4.5,
+      plateSafe: true,
+      plateSurface: "#1d3143",
+      plateText: "#f4f1ea",
+      platePseudo: false,
+      text: "Focus target",
+    };
+    const page = (targets: any[]) => [
+      {
+        route: "/",
+        viewport: module.CONTRAST_VIEWPORTS[0],
+        repairScopeVerified: true,
+        mediaConditions: null,
+        targets,
+        findings: targets,
+      },
+    ];
+    const focusOnly = module.planContrastRepairs(
+      { pages: page([{ ...base, state: "focus" }]) },
+      { plates: true },
+    );
+    expect(focusOnly.some((r: any) => r.kind === "plate")).toBe(true);
+    const unsafePeer = module.planContrastRepairs(
+      {
+        pages: page([
+          { ...base, state: "focus" },
+          { ...base, state: "default", plateSafe: false },
+        ]),
+      },
+      { plates: true },
+    );
+    // An unsafe state blocks only the plate; consistent failing states remain
+    // eligible for the color sweep.
+    expect(unsafePeer.every((r: any) => r.kind !== "plate")).toBe(true);
+    const color = module.planContrastRepairs({
+      pages: page([
+        { ...base, state: "focus" },
+        { ...base, state: "default" },
+      ]),
+    });
+    expect(color.length).toBeGreaterThan(0);
+    expect(color.every((r: any) => r.kind !== "plate")).toBe(true);
+    const mixed = module.planContrastRepairs(
+      {
+        pages: page([
+          { ...base, state: "focus" },
+          {
+            ...base,
+            state: "default",
+            status: "pass",
+            color: "#111111",
+            background: "#ffffff",
+            foreground: [17, 17, 17, 1],
+            backgrounds: [[255, 255, 255, 1]],
+          },
+        ]),
+      },
+      { plates: true },
+    );
+    // A passing default with another backdrop blocks the color sweep, but a
+    // plate is self-sufficient and still repairs the focus-only fail.
+    expect(mixed.length).toBeGreaterThan(0);
+    expect(mixed.every((r: any) => r.kind === "plate")).toBe(true);
+  });
   it("adds plate repairs beside unrelated color sweeps and refuses unsafe plates", async () => {
     const module = await modulePromise;
     const colorTarget = {
