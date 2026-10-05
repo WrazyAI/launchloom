@@ -127,6 +127,7 @@ describe("bounded deterministic plate repairs", () => {
       plateSurface: "#1d3143",
       plateText: "#f4f1ea",
       plateSafe: true,
+      platePseudo: true,
     });
     expect(finding.issues).toEqual(
       expect.arrayContaining([

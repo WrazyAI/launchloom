@@ -586,6 +586,18 @@ export function collectContrastTargets({
         ? {
             plateSurface: roleHex(el, "--ll-surface"),
             plateText: roleHex(el, "--ll-text"),
+            platePseudo: ["::before", "::after"].some((pseudo) => {
+              const ps = styleFor(el, pseudo);
+              return (
+                ps.content !== "none" &&
+                ps.content !== "normal" &&
+                ps.display !== "none" &&
+                ps.visibility === "visible" &&
+                Number(ps.opacity) > 0 &&
+                (ps.backgroundImage !== "none" ||
+                  (color(ps.backgroundColor)?.[3] ?? 0) > 0)
+              );
+            }),
             plateSafe:
               Number(s.opacity) === 1 &&
               s.mixBlendMode === "normal" &&

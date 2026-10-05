@@ -177,6 +177,7 @@ describe("persisted bounded contrast sweep", () => {
       plateSafe: true,
       plateSurface: "#1d3143",
       plateText: "#f4f1ea",
+      platePseudo: true,
       text: "Estate law, explained plainly",
     };
     const pages = [
@@ -206,6 +207,67 @@ describe("persisted bounded contrast sweep", () => {
     expect(css).toContain("z-index:3!important");
     expect(css).toContain("content:none!important");
     expect(css).toContain('body[data-ll-route="/"] > main:nth-of-type(1)');
+    // A plate without an own paint pseudo trims the neutralization rules.
+    const trimmed = module.planContrastRepairs(
+      {
+        pages: [
+          { ...pages[0], targets: [{ ...target, platePseudo: false }], findings: [{ ...target, platePseudo: false }] },
+        ],
+      },
+      { plates: true },
+    );
+    expect(module.contrastRepairCss(trimmed)).not.toContain("content:none");
+  });
+  it("bounds large plate plans into convergent subsets", async () => {
+    const module = await modulePromise;
+    const makeTarget = (depth: number) => ({
+      selector: `body${" > main:nth-of-type(1)".repeat(depth)} > p:nth-of-type(1)`,
+      kind: "text",
+      state: "default",
+      status: "unresolved",
+      repairEligible: false,
+      color: "#71652f",
+      background: null,
+      foreground: [113, 101, 47, 1],
+      backgrounds: [[29, 49, 67, 1]],
+      minimum: 4.5,
+      issues: ["overlapping non-ancestor paint requires rendered review"],
+      plateSafe: true,
+      plateSurface: "#1d3143",
+      plateText: "#f4f1ea",
+      platePseudo: false,
+      text: `Target ${depth}`,
+    });
+    const targets = Array.from({ length: 44 }, (_, i) => makeTarget(14 + i));
+    const page = {
+      route: "/",
+      viewport: module.CONTRAST_VIEWPORTS[0],
+      repairScopeVerified: true,
+      mediaConditions: null,
+      targets,
+      findings: targets,
+    };
+    const first = module.planContrastRepairs({ pages: [page] }, { plates: true });
+    expect(first.length).toBeGreaterThan(0);
+    expect(first.length).toBeLessThan(targets.length);
+    expect(first.every((r: any) => r.kind === "plate")).toBe(true);
+    expect(module.contrastRepairCss(first).length).toBeLessThanOrEqual(16384);
+    const firstKeys = new Set(first.map((r: any) => r.selector));
+    const second = module.planContrastRepairs(
+      {
+        pages: [
+          {
+            ...page,
+            targets: targets.filter((t) => !firstKeys.has(t.selector)),
+            findings: targets.filter((t) => !firstKeys.has(t.selector)),
+          },
+        ],
+      },
+      { plates: true },
+    );
+    expect(second.length).toBeGreaterThan(0);
+    expect(second.every((r: any) => r.kind === "plate")).toBe(true);
+    expect(second.every((r: any) => !firstKeys.has(r.selector))).toBe(true);
   });
   it("adds plate repairs beside unrelated color sweeps and refuses unsafe plates", async () => {
     const module = await modulePromise;
