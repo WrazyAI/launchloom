@@ -3,6 +3,10 @@ import {
   validateRequests,
   verifyDelivery,
 } from "../scripts/verify-internal-qa-delivery.mjs";
+
+it("accepts the owned review alias used by fresh preview-only QA sites", () => {
+  expect(() => validateRequests([{ ...request, origin: `https://review-initial.${request.project}.pages.dev` }], now)).not.toThrow();
+});
 const now = Date.parse("2026-10-05T12:00:00.000Z");
 const request = {
   project: "launchloom-101-qa-trades",

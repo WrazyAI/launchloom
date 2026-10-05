@@ -58,7 +58,10 @@ export function validateRequests(input, now = Date.now()) {
       throw new Error("invalid_commit");
     if (
       row.origin !== undefined &&
-      row.origin !== `https://${row.project}.pages.dev`
+      ![
+        `https://${row.project}.pages.dev`,
+        `https://review-initial.${row.project}.pages.dev`,
+      ].includes(row.origin)
     )
       throw new Error("invalid_origin");
     if (projects.has(row.project) || names.has(row.testName))

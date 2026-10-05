@@ -867,9 +867,6 @@ h2 {
   position: relative;
   z-index: 2;
 }
-.recipe-care-editorial .hero-copy p {
-  color: var(--care-hero-muted, var(--muted));
-}
 .recipe-care-editorial .hero-copy h1 {
   max-width: 660px;
 }
@@ -931,8 +928,6 @@ h2 {
 }
 .hero-phone-card {
   position: absolute;
-  /* Paint above the filtered image while retaining the floating call plate. */
-  z-index: 1;
   left: -28px;
   bottom: 30px;
   display: flex;
@@ -2220,18 +2215,4 @@ h2 {
 .recipe-local-trades .inner-hero :is(a,button):focus-visible {
   outline: 2px solid #d4dfdc;
   outline-offset: 3px;
-}
-
-/* Dark static trades surfaces need visible keyboard focus. The craftsman
-   direction owns a light hero and retains its native dark indicator. */
-.recipe-local-trades:not(.design-trades-craftsman) .recipe-hero :where(a,button):focus-visible,
-.recipe-local-trades :is(.coverage-section,.locality-band) :is(a,button):focus-visible {
-  outline: 2px solid #d4dfdc;
-  outline-offset: 3px;
-}
-/* Keep the card indicator wholly inside its opaque white plate, independently
-   of the adjacent photograph or dark hero. */
-.recipe-local-trades .recipe-hero .hero-phone-card:focus-visible {
-  outline: 2px solid #14201d;
-  outline-offset: -5px;
 }

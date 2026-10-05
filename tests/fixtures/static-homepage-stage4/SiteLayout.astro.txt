@@ -9,7 +9,6 @@ import "../styles/site.css";
 const { title = site.business.name, description = site.business.description, schemas = [] } = Astro.props;
 const palette = resolvePalette(site.style);
 const colorRoles = semanticColorCss(palette) + `
-.recipe-care-editorial {--care-hero-muted:${palette.surfaces.hero.mutedText};}
 .service-card:hover p { color: ${palette.surfaces.cardHover.mutedText}; }
 .lead-form :is(input,textarea,select) {border-color:var(--ll-border,${palette.surfaces.light.border});}
 .split-section :is(a,button):focus-visible {outline:2px solid ${palette.surfaces.brand.focus};outline-offset:3px;}

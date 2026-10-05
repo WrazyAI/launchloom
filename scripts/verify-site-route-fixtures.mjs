@@ -142,24 +142,12 @@ for (const scenario of scenarios) {
         2,
       ),
     );
-  if (
-    scenario === "trades-authored" &&
-    evidence.readiness.local.status !== "pass"
-  )
+  if (evidence.readiness.local.status !== "pass")
     throw new Error(
-      "Positive authored fixture blocked: " +
+      "Positive " +
+        scenario +
+        " fixture blocked: " +
         JSON.stringify(evidence.readiness.local.blockers),
-    );
-  const contrastBlockers = evidence.contrast.findings.filter((item) =>
-    ["fail", "unresolved"].includes(item.status),
-  );
-  if (
-    scenario !== "trades-authored" &&
-    contrastBlockers.some((item) => item.route !== "/")
-  )
-    throw new Error(
-      "Unexpected non-homepage contrast regression: " +
-        JSON.stringify(contrastBlockers),
     );
   console.log(
     JSON.stringify({

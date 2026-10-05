@@ -3,6 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
+    "types": ["node", "astro/client"],
     "baseUrl": ".",
     "paths": {
       "@launchloom/runtime": ["src/lib/creative-runtime.tsx"]

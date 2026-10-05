@@ -455,3 +455,79 @@ it("migrates exact shipped Stage 2 bytes and brings the rich page runtime depend
  await exec("node",[path.resolve("scripts/sync-revision-template.mjs"),"--client",client]);
  for(const relative of ["lib/site.ts","lib/page-briefs.mjs","lib/creative-runtime.tsx","components/PageBriefSections.tsx","styles/site.css"]){expect(await fs.readFile(path.join(client,"src",relative),"utf8")).toBe(await fs.readFile(path.resolve("templates/client-site/src",relative),"utf8"));}
 });
+
+it("migrates exact Stage 4 static template bytes to readable homepage roles", async () => {
+  const client = await fs.mkdtemp(
+    path.join(os.tmpdir(), "launchloom-static-contrast-sync-"),
+  );
+  dirs.push(client);
+  await fs.mkdir(path.join(client, "src/styles"), { recursive: true });
+  await fs.mkdir(path.join(client, "src/layouts"), { recursive: true });
+  await fs.writeFile(
+    path.join(client, "src/site.config.json"),
+    JSON.stringify({ business: { primaryCta: "Contact us" } }),
+  );
+  for (const [relative, fixture] of [
+    ["styles/site.css", "site.css.txt"],
+    ["layouts/SiteLayout.astro", "SiteLayout.astro.txt"],
+  ]) {
+    await fs.copyFile(
+      path.resolve("tests/fixtures/static-homepage-stage4", fixture),
+      path.join(client, "src", relative),
+    );
+  }
+  await exec("node", [
+    path.resolve("scripts/sync-revision-template.mjs"),
+    "--client",
+    client,
+  ]);
+  for (const relative of ["styles/site.css", "layouts/SiteLayout.astro"]) {
+    expect(await fs.readFile(path.join(client, "src", relative), "utf8")).toBe(
+      await fs.readFile(
+        path.resolve("templates/client-site/src", relative),
+        "utf8",
+      ),
+    );
+  }
+});
+
+it.each(["styles/site.css", "layouts/SiteLayout.astro"])(
+  "preserves customized Stage 4 %s and refuses migration before writes",
+  async (relative) => {
+    const client = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-static-custom-sync-"),
+    );
+    dirs.push(client);
+    await fs.mkdir(path.join(client, "src/styles"), { recursive: true });
+    await fs.mkdir(path.join(client, "src/layouts"), { recursive: true });
+    await fs.writeFile(
+      path.join(client, "src/site.config.json"),
+      JSON.stringify({ business: { primaryCta: "Contact us" }, routePolicy: { version: 1 } }),
+    );
+    const originals = new Map<string, string>();
+    for (const file of ["styles/site.css", "layouts/SiteLayout.astro"]) {
+      const previous = await fs.readFile(
+        path.resolve(
+          "tests/fixtures/static-homepage-stage4",
+          path.basename(file) + ".txt",
+        ),
+        "utf8",
+      );
+      const source =
+        previous + (relative === file ? "\n/* Client customization */\n" : "");
+      originals.set(file, source);
+      await fs.writeFile(path.join(client, "src", file), source);
+    }
+    await expect(
+      exec("node", [
+        path.resolve("scripts/sync-revision-template.mjs"),
+        "--client",
+        client,
+      ]),
+    ).rejects.toThrow("Manual attention required");
+    for (const [file, source] of originals)
+      expect(await fs.readFile(path.join(client, "src", file), "utf8")).toBe(
+        source,
+      );
+  },
+);
