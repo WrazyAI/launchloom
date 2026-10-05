@@ -21,6 +21,20 @@ export type LeadEmailInput = {
   project: string;
   pageUrl?: string;
   qualification?: ReadonlyArray<readonly [string, string]>;
+  consent?: string;
+  submittedAt?: string;
+  businessPhone?: string;
+};
+
+export type LeadConfirmationEmailInput = {
+  name: string;
+  phone: string;
+  email: string;
+  message: string;
+  project: string;
+  pageUrl?: string;
+  qualification?: ReadonlyArray<readonly [string, string]>;
+  businessPhone?: string;
 };
 
 export type IntakeReceivedEmailInput = {
@@ -36,6 +50,11 @@ export function renderLifecycleEmail(input: LifecycleEmailInput): {
   text: string;
 };
 export function renderLeadEmail(input: LeadEmailInput): {
+  subject: string;
+  html: string;
+  text: string;
+};
+export function renderLeadConfirmationEmail(input: LeadConfirmationEmailInput): {
   subject: string;
   html: string;
   text: string;

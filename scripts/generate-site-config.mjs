@@ -1433,6 +1433,75 @@ export function evaluateDraft(config) {
   return { score: Math.max(0, 100 - issues.length * 12), issues };
 }
 
+const DEFAULT_LEAD_CONSENT =
+  "By submitting, you agree to be contacted about your request.";
+const DEFAULT_LEAD_SUCCESS = "Thank you. We will be in touch shortly.";
+const DEFAULT_LEAD_ERROR = "We could not send your request. Please try again.";
+
+/**
+ * Consolidated lead-form configuration for generated sites.
+ *
+ * Delivery, consent, form copy, and the visitor-confirmation switch live here
+ * so the template, the lead token, and the notification renderer read one
+ * source. Qualifier questions remain owned by `conversion.qualification`
+ * (and `conversion.guidedQualifier`); the form block mirrors the validated
+ * shape for rendering and for the published config contract.
+ */
+export function leadFormFor(config = {}, intake = {}) {
+  const business = config.business || {};
+  const copy = config.copy || {};
+  const conversion = config.conversion || {};
+  const leadEmail = text(business.leadEmail, 240);
+  const phone = text(business.phone, 80);
+  const primaryCta = text(business.primaryCta, 120) || "Send request";
+  const submitLabel =
+    primaryCta.toLowerCase() === "get directions" ? "Send request" : primaryCta;
+  const qualification = (Array.isArray(conversion.qualification)
+    ? conversion.qualification
+    : []
+  )
+    .filter((question) => question && typeof question === "object")
+    .map((question) => ({
+      name: text(question.name, 60),
+      label: text(question.label, 160),
+      placeholder: text(question.placeholder, 120),
+      options: (Array.isArray(question.options) ? question.options : [])
+        .map((option) => text(option, 120))
+        .filter(Boolean)
+        .slice(0, 8),
+    }))
+    .filter((question) => question.name && question.options.length)
+    .slice(0, 4);
+  const guided =
+    conversion.guidedQualifier && typeof conversion.guidedQualifier === "object"
+      ? conversion.guidedQualifier
+      : {};
+  const qualifier = {
+    enabled: guided.enabled !== false && qualification.length > 0,
+    heading: text(guided.heading, 120) || "A few quick questions",
+    intro:
+      text(guided.intro, 240) ||
+      "Choose the closest options so we can understand what you need.",
+  };
+  const privacyHref = text(intake.privacyHref, 120);
+  return {
+    enabled: Boolean(leadEmail),
+    recipient: leadEmail,
+    submitLabel,
+    consent: text(copy.formIntro, 400) || DEFAULT_LEAD_CONSENT,
+    ...(/^\/[A-Za-z0-9/_-]+$/u.test(privacyHref) ? { privacyHref } : {}),
+    successMessage: DEFAULT_LEAD_SUCCESS,
+    errorMessage: DEFAULT_LEAD_ERROR,
+    unconfiguredMessage: phone
+      ? `This inquiry form is not connected yet. Please call ${phone}.`
+      : "This inquiry form is not connected yet.",
+    confirmVisitor:
+      String(intake.leadConfirmVisitor || "").toLowerCase() !== "no",
+    qualification,
+    qualifier,
+  };
+}
+
 function fallback(intake) {
   const industry = industryFor(intake);
   const preset =
@@ -1464,7 +1533,7 @@ function fallback(intake) {
   const visualDirection = text(intake.imageDirection, 600);
   const artDirection = text(intake.brandNotes, 1200);
   const suppressUnverifiedLocation = hasConflictingUnverifiedAddress(intake);
-  return {
+  const config = {
     preset,
     business: {
       name: businessName,
@@ -1548,6 +1617,8 @@ function fallback(intake) {
       skipped: [],
     },
   };
+  config.leadForm = leadFormFor(config, intake);
+  return config;
 }
 
 export function normalise(candidate, intake) {
@@ -2001,6 +2072,7 @@ export function normalise(candidate, intake) {
       ? { lead: intake.lead }
       : {}),
   });
+  normalized.leadForm = leadFormFor(normalized, intake);
   normalized.routeInventory = compileRouteInventory(normalized);
   normalized.pageBriefs = compilePageBriefs(normalized);
   return normalized;

@@ -155,6 +155,28 @@ carries a large surface. Revisions may add, change, or explicitly clear the
 accent (`role: "accent"` in structured colors); unrelated palette revisions
 preserve a configured accent, and font choices survive palette-only revisions.
 
+## Lead forms and delivery
+
+Generated sites render their lead form in the initial server HTML; never
+lazy-load it, and keep it working after internal navigation, refreshes,
+resizes, and back/forward navigation. The form's configuration lives in one
+consolidated `leadForm` block in the site config: `recipient`, `submitLabel`,
+`consent`, optional `privacyHref`, success/error/unconfigured messages,
+`confirmVisitor`, and the validated qualifier mirror. Qualifier questions
+remain owned by `conversion.qualification` and `conversion.guidedQualifier`
+so there is one source for the question set.
+
+Submissions carry a signed lead token bound to the project, the client
+recipient, and the allowed preview/production origins. The client
+notification is structured: received time in UTC, visitor name/phone/email,
+qualifier answers, message, submitted page, and the consent text shown at
+submission, with the visitor's address as reply-to. When the token enables
+`confirmVisitor`, the visitor also receives a structured confirmation with
+what they sent, what happens next, and the business phone when available; a
+confirmation failure is logged and never turns a delivered lead into an
+error. New tokens default confirmations on and older tokens stay
+notification-only until the site is regenerated or its token is re-minted.
+
 ## Conversion tools
 
 New sites receive a guided qualifier, a scripted quick-answer assistant, and,

@@ -12,7 +12,7 @@ it.each([false, true])(
     const handler = source.match(
       /<script is:inline[\s\S]*?>([\s\S]*?)<\/script>/u,
     )![1];
-    const html = `<main><form class="lead-form" data-guided="false" data-qualification="[]"><input type="hidden" name="lead-token" value="synthetic"><div class="lead-contact-fields"><label>Name<input name="name" required></label><label>Phone<input name="phone" required></label><label>Email<input name="email" type="email" required></label><label>Message<textarea name="message" required></textarea></label></div><button type="submit">Send</button><small class="lead-status" role="status"></small></form></main><script>const apiUrl='https://stage4-provider.invalid';const unconfiguredMessage='Not configured';${handler}</script>`;
+    const html = `<main><form class="lead-form" data-guided="false" data-qualification="[]"><input type="hidden" name="lead-token" value="synthetic"><div class="lead-contact-fields"><label>Name<input name="name" required></label><label>Phone<input name="phone" required></label><label>Email<input name="email" type="email" required></label><label>Message<textarea name="message" required></textarea></label></div><button type="submit">Send</button><small class="lead-status" role="status"></small></form></main><script>const apiUrl='https://stage4-provider.invalid';const unconfiguredMessage='Not configured';const successMessage='Thank you. We will be in touch shortly.';const errorMessage='We could not send your request. Please try again.';${handler}</script>`;
     const server = http.createServer((req, res) => {
       res.setHeader("Content-Type", "text/html");
       res.end(html);

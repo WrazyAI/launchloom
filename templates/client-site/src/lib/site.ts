@@ -222,6 +222,24 @@ export type SiteConfig = {
     faqHeading?: string;
     formIntro?: string;
   };
+  leadForm?: {
+    enabled: boolean;
+    recipient: string;
+    submitLabel: string;
+    consent: string;
+    privacyHref?: string;
+    successMessage: string;
+    errorMessage: string;
+    unconfiguredMessage: string;
+    confirmVisitor: boolean;
+    qualification: Array<{
+      name: string;
+      label: string;
+      placeholder: string;
+      options: string[];
+    }>;
+    qualifier: { enabled: boolean; heading: string; intro: string };
+  };
   conversion?: {
     layout: "editorial-authority" | "local-proof" | "product-clarity";
     qualification?: Array<{

@@ -543,6 +543,13 @@ h2 {
   font-size: 0.7rem;
   line-height: 1.4;
 }
+.lead-consent a {
+  color: var(--muted);
+  text-decoration: underline;
+}
+.lead-status:empty {
+  display: none;
+}
 .honeypot {
   position: absolute;
   left: -9999px;
