@@ -43,6 +43,8 @@ async function server(
     asset?: boolean;
     fakeSuccess?: boolean;
     noForms?: boolean;
+    fragmentLink?: boolean;
+    relativeNavigation?: boolean;
   } = {},
 ) {
   let mutations = 0;
@@ -50,7 +52,11 @@ async function server(
     if (req.method === "POST") mutations++;
     const route = new URL(req.url!, "http://localhost").pathname;
     if (
-      !["/", "/services/drain-cleaning/"].includes(route) &&
+      ![
+        "/",
+        "/services/drain-cleaning/",
+        ...(options.relativeNavigation ? ["/services/pipe-repair/"] : []),
+      ].includes(route) &&
       !options.soft404
     ) {
       res.statusCode = 404;
@@ -58,6 +64,23 @@ async function server(
       return;
     }
     res.setHeader("Content-Type", "text/html");
+    if (options.fragmentLink || options.relativeNavigation) {
+      let body = html(route, options.broken);
+      if (route !== "/" && options.relativeNavigation) {
+        body = body.replace(
+          '<a href="/">Other page</a>',
+          `<a href="../${route.includes("pipe-repair") ? "drain-cleaning" : "pipe-repair"}/">Other page</a>`,
+        );
+      }
+      if (options.fragmentLink) {
+        body = body.replace(
+          "</h1>",
+          '</h1><a href="#contact">Contact on this page</a><div id="contact">Contact details</div>',
+        );
+      }
+      res.end(body);
+      return;
+    }
     if (options.noForms) {
       res.end(
         html(route, options.broken)
@@ -108,6 +131,42 @@ it("records every admitted route and synthetic success/failure delivery without 
       ),
     ),
   ).toBe(true);
+  expect(s.mutations()).toBe(0);
+});
+
+it("keeps fragment-only links on the current route before verifying cross-route navigation", async () => {
+  const s = await server({ fragmentLink: true });
+  const report: any = await verifyApprovedRoutes({
+    config,
+    origin: s.origin,
+    formMode: "mocked",
+    viewports: [{ name: "mobile", width: 390, height: 844 }],
+    representativeViewports: [],
+    timeout: 1500,
+  });
+  expect(report.failures).toEqual([]);
+  expect(report.status).toBe("pass");
+  expect(s.mutations()).toBe(0);
+});
+
+it("resolves relative sibling links from the current service route", async () => {
+  const s = await server({ relativeNavigation: true });
+  const report: any = await verifyApprovedRoutes({
+    config: {
+      ...config,
+      services: [
+        ...config.services,
+        { name: "Pipe repair", slug: "pipe-repair", description: "Describe the pipe problem." },
+      ],
+    },
+    origin: s.origin,
+    formMode: "mocked",
+    viewports: [{ name: "mobile", width: 390, height: 844 }],
+    representativeViewports: [],
+    timeout: 1500,
+  });
+  expect(report.failures).toEqual([]);
+  expect(report.status).toBe("pass");
   expect(s.mutations()).toBe(0);
 });
 it("rejects a soft 404 even when unknown slugs return a homepage", async () => {

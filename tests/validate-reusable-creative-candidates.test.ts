@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -9,6 +10,7 @@ import { buildInspirationPack } from "../scripts/inspiration-registry.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 import { validateAndCopyReusableCandidates } from "../scripts/validate-reusable-creative-candidates.mjs";
 import {
+  assertReusableContentManifest,
   assertReusableCandidateSet,
   assertReusableCandidateDossierBinding,
   assertReusableInspirationPack,
@@ -31,6 +33,51 @@ async function writeJson(file: string, value: unknown) {
 }
 
 describe("reusable creative candidate validation", () => {
+  function manifestDigest(manifest: any) {
+    const stable = (value: any): string => Array.isArray(value)
+      ? `[${value.map(stable).join(",")}]`
+      : value && typeof value === "object"
+        ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stable(value[key])}`).join(",")}}`
+        : JSON.stringify(value);
+    return crypto.createHash("sha256").update(stable(manifest)).digest("hex");
+  }
+
+  function legacyManifest(config: any, route?: any) {
+    const manifest: any = structuredClone(buildCreativeContentManifest(config, route));
+    delete manifest.digest;
+    delete manifest.visualBrief.typography;
+    delete manifest.visualBrief.accent;
+    return { ...manifest, digest: manifestDigest(manifest) };
+  }
+
+  it("accepts exact frozen root and route manifests predating optional empty branding fields", () => {
+    const config = { business: { name: "Frozen QA" }, images: { hero: "/root.webp" }, creativeAssets: { "route-02": { hero: "/route.webp" } } };
+    for (const route of [undefined, { id: "route-02" }]) {
+      const frozen = legacyManifest(config, route);
+      const snapshot = JSON.stringify(frozen);
+      expect(assertReusableContentManifest(frozen, config, route)).toEqual(frozen);
+      expect(JSON.stringify(frozen)).toBe(snapshot);
+      const current = buildCreativeContentManifest(config, route);
+      expect(assertReusableContentManifest(current, config, route)).toEqual(current);
+    }
+    expect(() => assertReusableContentManifest(legacyManifest(config), config, { id: "route-02" })).toThrow(/content manifest/iu);
+  });
+
+  it("refuses legacy compatibility for explicit fonts, accent, or any other sealed mismatch", () => {
+    const config = { business: { name: "Frozen QA" } };
+    const frozen: any = legacyManifest(config);
+    for (const style of [{ headingFont: "playfair-display" }, { bodyFont: "inter" }, { accentColor: "#abcdef" }, { headingFont: "unsupported-explicit-font" }]) {
+      expect(() => assertReusableContentManifest(frozen, { ...config, style })).toThrow(/content manifest/iu);
+    }
+    expect(() => assertReusableContentManifest(frozen, { business: { name: "Changed" } })).toThrow(/content manifest/iu);
+    for (const mutation of [
+      { ...frozen, digest: "stale" },
+      { ...frozen, tokens: [] },
+      { ...frozen, visualBrief: { ...frozen.visualBrief, preference: "Changed" } },
+      { ...frozen, visualBrief: { ...frozen.visualBrief, typography: { heading: null, body: { id: "tampered" } } } },
+    ]) expect(() => assertReusableContentManifest(mutation, config)).toThrow(/content manifest/iu);
+  });
+
   function architecturePack() {
     const registry = JSON.parse(readFileSync("data/inspiration-registry.json", "utf8"));
     const pack: any = buildInspirationPack(

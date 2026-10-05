@@ -6,6 +6,7 @@ import {
   applyCreativeRepairEdits,
   applyCreativeVisualSafetyRepairs,
   requestRepair,
+  modelBoundRepairFindings,
   resolveReferenceEvidencePath,
   runCreativeRepairLoop,
 } from "../scripts/creative-repair-loop.mjs";
@@ -164,6 +165,102 @@ describe("creative repair loop", () => {
     expect(prompt).toContain("never complete files");
     expect(prompt).toContain("Improve the hero layout.");
     expect(result).toEqual(edits);
+  });
+
+  it("keeps distinct contrast ratios, unresolved causes, and non-contrast findings intact", () => {
+    const findings = [
+      'contrast fail: / desktop default h1 text "Heading" (2.100; required 4.5); foreground gray, background white;',
+      'contrast fail: / mobile focus h1 text "Heading" (2.900; required 4.5); foreground gray, background white;',
+      'contrast unresolved: / mobile default h1 text "Heading" (unresolved; required 4.5); image backdrop',
+      'contrast unresolved: / future-viewport default h1 text "Heading" (unresolved; required 4.5); unsupported viewport',
+      { category: "reference", evidence: "Preserve unique geometry", severity: "major" },
+    ];
+    const packed = modelBoundRepairFindings(findings);
+    expect(packed.slice(0, 3).map((item: any) => item.diagnostic)).toEqual([
+      'h1 text "Heading" (2.100; required 4.5); foreground gray, background white;',
+      'h1 text "Heading" (2.900; required 4.5); foreground gray, background white;',
+      'h1 text "Heading" (unresolved; required 4.5); image backdrop',
+    ]);
+    expect(packed.slice(3)).toEqual(findings.slice(3));
+  });
+
+  it("factors repeated contrast diagnostics without dropping measured route, viewport, or state blockers", async () => {
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), "launchloom-repair-budget-"),
+    );
+    roots.push(root);
+    const desktop = path.join(root, "desktop.png");
+    await fs.writeFile(desktop, "desktop-evidence");
+    const files = {
+      experience:
+        '<section data-reference-section="hero"><h1>{content.heroTitle}</h1></section>',
+      styles: "section { color: inherit; }",
+      motion: "export function mountExperienceMotion() { return () => {}; }",
+    };
+    const selector = `body > ${"div:nth-of-type(1) > ".repeat(18)}h1:nth-of-type(1)`;
+    const findings = Array.from(
+      { length: 1200 },
+      (_, index) =>
+        `contrast unresolved: /services/service-${index}/ ${index % 2 ? "mobile" : "desktop"} ${index % 3 ? "default" : "focus"} ${selector} text "Sealed heading" (unresolved; required 4.5); foreground rgb(100, 100, 100), background variable; image backdrop; use a provable local opaque plate or sufficiently strong scrim and rerun`,
+    );
+    findings.push(
+      "major reference mobile: Preserve the assigned image treatment.",
+    );
+    const original = [...findings];
+    let prompt = "";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, options: RequestInit) => {
+        const body = JSON.parse(options.body as string);
+        prompt = body.messages[1].content
+          .filter((part: any) => part.type === "text")
+          .map((part: any) => part.text)
+          .join("\n");
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                finish_reason: "stop",
+                message: { content: JSON.stringify(files) },
+              },
+            ],
+          }),
+        );
+      }),
+    );
+    await requestRepair({
+      model: "test/model",
+      referenceDna: {
+        familyId: "editorial",
+        sectionSequence: repairSectionSequence,
+        evidence: { desktopScreenshot: { path: desktop } },
+      },
+      findings,
+      files,
+      screenshots: [],
+    });
+    expect(prompt.length).toBeLessThan(400000);
+    expect(prompt).toContain(selector);
+    expect(prompt).toContain("required 4.5");
+    expect(prompt).toContain("image backdrop");
+    expect(prompt).toContain(
+      "major reference mobile: Preserve the assigned image treatment.",
+    );
+    const packed = JSON.parse(
+      prompt.split("FINDINGS\n")[1].split("\nContrast objects losslessly")[0],
+    );
+    const restored = packed.flatMap((finding: any) =>
+      typeof finding === "string"
+        ? [finding]
+        : finding.measurements.map(
+            ([route, viewport, state]: string[]) =>
+              `contrast ${finding.status}: ${route} ${viewport} ${state} ${finding.diagnostic}`,
+          ),
+    );
+    expect(restored.sort()).toEqual([...original].sort());
+    expect(findings).toEqual(original);
+    expect(prompt).toContain("SOURCE SAFETY CONTRACT");
+    expect(prompt).toContain("SEALED CONTENT BINDING CONTRACT");
   });
 
   it("fails closed when a human repair has no resolved section scope", async () => {

@@ -56,6 +56,37 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+/**
+ * Preserve frozen pre-branding manifests when the only schema additions are
+ * unrequested, empty font/accent defaults. Compare the entire historical shape
+ * and its recomputed digest; never rewrite saved manifests or their bindings.
+ */
+export function assertReusableContentManifest(manifest, config, route) {
+  const expected = buildCreativeContentManifest(config, route);
+  if (same(manifest, expected)) return expected;
+
+  const style = config?.style || {};
+  const explicitBranding = [style.headingFont, style.bodyFont, style.accentColor]
+    .some(value => String(value ?? "").trim().length > 0);
+  const missingFields = ["typography", "accent"].filter(
+    field => manifest?.visualBrief && !Object.hasOwn(manifest.visualBrief, field),
+  );
+  if (
+    !explicitBranding && missingFields.length > 0 &&
+    expected.visualBrief.typography.heading === null &&
+    expected.visualBrief.typography.body === null &&
+    expected.visualBrief.accent === null
+  ) {
+    const historical = structuredClone(expected);
+    delete historical.digest;
+    for (const field of missingFields) delete historical.visualBrief[field];
+    historical.digest = crypto.createHash("sha256")
+      .update(stableJson(historical)).digest("hex");
+    if (same(manifest, historical)) return historical;
+  }
+  throw new Error("Reusable content manifest does not match the supplied configuration.");
+}
+
 function dossierBinding(dossier) {
   if (!dossier || typeof dossier !== "object") return null;
   return {
@@ -479,10 +510,7 @@ export async function validateAndCopyReusableCandidates({
       await readJson(path.join(staging, "prompt-evidence.json")),
       { model, creativeSession, inspiration, candidateNames },
     );
-    const expectedRootManifest = buildCreativeContentManifest(
-      config,
-      inspiration.routes[0],
-    );
+    const expectedRootManifest = assertReusableContentManifest(rootManifest, config);
     assert(
       same(rootManifest, expectedRootManifest) &&
         run.contentManifestDigest === expectedRootManifest.digest,
@@ -520,7 +548,7 @@ export async function validateAndCopyReusableCandidates({
           .catch(() => ""),
       ]);
       const route = inspiration.routes[index];
-      const expectedManifest = buildCreativeContentManifest(config, route);
+      const expectedManifest = assertReusableContentManifest(contentManifest, config, route);
       const expectedDna = withoutAnalysisTime(route.referenceDna);
       const candidateDna = withoutAnalysisTime(
         metadata.creativeManifest?.referenceDna || metadata.referenceDna,

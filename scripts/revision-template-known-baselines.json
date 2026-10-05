@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source": "LaunchLoom main 849ca939cef734fc19114dba1746669470cdb1f3; exact generated template bytes before creative palette bindings; also exact Stage 2 template bytes at 7e3992cc5a745d8465193023596a25ddaa72df46; exact Stage 3 main template bytes at 0ad1400 for Stage 4 metadata migration",
+  "source": "LaunchLoom main 849ca939cef734fc19114dba1746669470cdb1f3; exact generated template bytes before creative palette bindings; also exact Stage 2 template bytes at 7e3992cc5a745d8465193023596a25ddaa72df46; exact Stage 3 main template bytes at 0ad1400 for Stage 4 metadata migration; exact Stage 4 main template bytes at 0c3ed90 before static homepage contrast repairs",
   "files": {
     "src/lib/site.ts": [
       "5ef2cba26110bbc8ca3c0d2e6ee49d33751dfa2ce7a62622392b11d4ba4775a1",
@@ -14,7 +14,8 @@
     "src/layouts/SiteLayout.astro": [
       "ebc4d007ef8dfcbd8edbdd6004755a65336fe8a07f73f1b85b56396a4d673c28",
       "0d2f4f5bb7ecfad886fa52ab6541c5c676a48463037fa0923d23442cb5422cfe",
-      "67fc0c1096e0a4066a4dbc2cc18688b33f4ab2805df9f2c957ba4e30f4ee2ced"
+      "67fc0c1096e0a4066a4dbc2cc18688b33f4ab2805df9f2c957ba4e30f4ee2ced",
+      "f4215c6042047e7ba9edae120c93135fabe9b69b4b8320166f7fc5dac3305b03"
     ],
     "src/styles/creative-runtime.css": [
       "fb2085fb02a589464e35f6a12d94c5d2737b65dc32a588a4a08c98d6b52e7ce7"
@@ -53,7 +54,8 @@
     ],
     "src/styles/site.css": [
       "2f1f4d5e8f4a74d2849ed6110041261771e5864b5aeb35d66dd3491c03589810",
-      "73815783054281ba9964b9b2a4fd76e39d78392fc6fd860c1f89150774eadf27"
+      "73815783054281ba9964b9b2a4fd76e39d78392fc6fd860c1f89150774eadf27",
+      "bfff9dc6a1a716de94f945f661fe17874e385a7986082f2694dae5139f86989e"
     ],
     "src/lib/seo-readiness.mjs": [
       "a23d9ab8359a20c7b0218064297c755e8719968e87e04da408f19e6c8ef6b4a9",

@@ -23,6 +23,11 @@ on:
         required: false
         type: boolean
         default: false
+      internal_qa_delivery:
+        description: Route fresh fictional preview-only canary notifications and leads to the internal QA recipient secret
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -92,7 +97,9 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       LAUNCHLOOM_FROM_EMAIL: ${{ vars.LAUNCHLOOM_FROM_EMAIL }}
-      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ vars.LAUNCHLOOM_DEVELOPER_EMAIL }}
+      LAUNCHLOOM_DEVELOPER_EMAIL: ${{ (github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery && secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT) || (!(github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery) && vars.LAUNCHLOOM_DEVELOPER_EMAIL) || '' }}
+      LAUNCHLOOM_INTERNAL_QA_RECIPIENT: ${{ secrets.LAUNCHLOOM_INTERNAL_QA_RECIPIENT }}
+      INTERNAL_QA_DELIVERY: ${{ github.event_name == 'workflow_dispatch' && inputs.internal_qa_delivery || false }}
       LAUNCHLOOM_API_URL: https://api.launchloom.wrazyos.com
       REUSE_AUTHORED_CANDIDATES: ${{ github.event_name == 'workflow_dispatch' && inputs.reuse_authored_candidates || false }}
       REUSABLE_CANDIDATE_REPO: ${{ inputs.candidate_repository || '' }}
@@ -118,6 +125,9 @@ jobs:
           LAUNCHLOOM_INTAKE_ID: ${{ github.event.client_payload.issue || inputs.issue }}
         run: |
           gh api "repos/WrazyAI/launchloom/issues/$ISSUE" --jq .body > /tmp/intake.md
+          if [ "$REUSE_AUTHORED_CANDIDATES" != "true" ]; then
+            node scripts/internal-qa-intake.mjs /tmp/intake.md
+          fi
           if [ "$REUSE_AUTHORED_CANDIDATES" = "true" ]; then
             case "$REUSABLE_CANDIDATE_REPO" in
               "WrazyAI/launchloom-$ISSUE-"*) ;;
@@ -125,6 +135,7 @@ jobs:
             esac
             CANDIDATE_SOURCE="$RUNNER_TEMP/launchloom-candidate-source"
             gh repo clone "$REUSABLE_CANDIDATE_REPO" "$CANDIDATE_SOURCE" -- --branch review/initial --depth 1
+            node scripts/internal-qa-intake.mjs /tmp/intake.md "$CANDIDATE_SOURCE"
             for file in \
               src/site.config.json \
               .launchloom/seo-research.json \
