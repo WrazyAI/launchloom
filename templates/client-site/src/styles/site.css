@@ -11,7 +11,7 @@
   --cream: #f8f6f0;
   --muted: #5e6b66;
   --line: #d8ded7;
-  font-family: Inter, Arial, sans-serif;
+  font-family: var(--font-body, Inter, Arial, sans-serif);
   color: var(--ink);
   background: var(--cream);
 }
@@ -49,7 +49,7 @@ a {
   background: var(--cream);
 }
 .wordmark {
-  font-family: Georgia, serif;
+  font-family: var(--font-heading, Georgia, serif);
   font-weight: 700;
   font-size: 1.2rem;
   letter-spacing: -0.04em;
@@ -103,7 +103,7 @@ a {
   letter-spacing: 0.14em;
   font-size: 0.7rem;
   font-weight: 800;
-  color: var(--brand-ink, var(--brand));
+  color: var(--accent-ink, var(--brand-ink, var(--brand)));
 }
 h1,
 h2,
@@ -113,15 +113,13 @@ p {
 }
 h1 {
   font:
-    500 clamp(3.4rem, 6vw, 6.2rem)/0.94 Georgia,
-    serif;
+    500 clamp(3.4rem, 6vw, 6.2rem)/0.94 var(--font-heading, Georgia, serif);
   letter-spacing: -0.065em;
   margin: 17px 0 24px;
 }
 h2 {
   font:
-    500 clamp(2.6rem, 4.4vw, 4.6rem)/0.98 Georgia,
-    serif;
+    500 clamp(2.6rem, 4.4vw, 4.6rem)/0.98 var(--font-heading, Georgia, serif);
   letter-spacing: -0.06em;
   margin: 14px 0 24px;
 }
@@ -554,7 +552,7 @@ h2 {
   left: 24px;
   bottom: 24px;
   z-index: 16;
-  font-family: Inter, Arial, sans-serif;
+  font-family: var(--font-body, Inter, Arial, sans-serif);
   transition:
     opacity 160ms ease,
     transform 160ms ease;
@@ -886,7 +884,7 @@ h2 {
 .recipe-local-trades h2,
 .recipe-local-trades h3,
 .header-local-trades .wordmark {
-  font-family: Arial, sans-serif;
+  font-family: var(--font-heading, Arial, sans-serif);
   font-weight: 850;
   letter-spacing: -0.055em;
 }
@@ -1050,7 +1048,7 @@ h2 {
   display: inline-flex;
   gap: 15px;
   padding-bottom: 5px;
-  border-bottom: 1px solid currentColor;
+  border-bottom: 1px solid var(--accent, currentColor);
   font-weight: 800;
 }
 .recipe-local-trades .process-section {
@@ -1065,7 +1063,7 @@ h2 {
   border-bottom: 4px solid var(--brand);
 }
 .recipe-local-trades .process-grid p {
-  font-family: Arial, sans-serif;
+  font-family: var(--font-body, Arial, sans-serif);
   font-weight: 800;
   letter-spacing: -0.04em;
 }
@@ -1345,7 +1343,7 @@ h2 {
 .type-strong h1,
 .type-strong h2,
 .type-strong h3 {
-  font-family: Arial, sans-serif;
+  font-family: var(--font-heading, Arial, sans-serif);
 }
 .type-strong h1,
 .type-strong h2,
@@ -1356,37 +1354,37 @@ h2 {
 .type-editorial h1,
 .type-editorial h2,
 .type-editorial h3 {
-  font-family: Georgia, serif;
+  font-family: var(--font-heading, Georgia, serif);
 }
 .type-refined-serif h1,
 .type-refined-serif h2,
 .type-refined-serif h3 {
-  font-family: Didot, "Bodoni MT", Georgia, serif;
+  font-family: var(--font-heading, Didot, "Bodoni MT", Georgia, serif);
   font-weight: 500;
 }
 .type-humanist h1,
 .type-humanist h2,
 .type-humanist h3 {
-  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-family: var(--font-heading, "Trebuchet MS", "Segoe UI", sans-serif);
   letter-spacing: -0.045em;
 }
 .type-geometric h1,
 .type-geometric h2,
 .type-geometric h3 {
-  font-family: Futura, "Century Gothic", Arial, sans-serif;
+  font-family: var(--font-heading, Futura, "Century Gothic", Arial, sans-serif);
   font-weight: 700;
 }
 .type-heritage h1,
 .type-heritage h2,
 .type-heritage h3 {
-  font-family: Garamond, "Palatino Linotype", Georgia, serif;
+  font-family: var(--font-heading, Garamond, "Palatino Linotype", Georgia, serif);
   font-weight: 500;
   letter-spacing: -0.045em;
 }
 .type-modern-serif h1,
 .type-modern-serif h2,
 .type-modern-serif h3 {
-  font-family: Charter, Cambria, Georgia, serif;
+  font-family: var(--font-heading, Charter, Cambria, Georgia, serif);
 }
 .type-industrial h1,
 .type-industrial h2,
@@ -1394,14 +1392,14 @@ h2 {
 .type-condensed h1,
 .type-condensed h2,
 .type-condensed h3 {
-  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  font-family: var(--font-heading, Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif);
   font-weight: 500;
   letter-spacing: -0.02em;
 }
 .type-soft-sans h1,
 .type-soft-sans h2,
 .type-soft-sans h3 {
-  font-family: Avenir, "Segoe UI", Arial, sans-serif;
+  font-family: var(--font-heading, Avenir, "Segoe UI", Arial, sans-serif);
   font-weight: 650;
   letter-spacing: -0.045em;
 }

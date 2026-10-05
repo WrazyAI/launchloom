@@ -4,15 +4,17 @@ import PageBriefSections from "../../components/PageBriefSections";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
 import site, { routePageBrief, routeIsRendered, pageHref, homeSectionHref, phoneHref } from "../../lib/site";
+import { resolvePageRecipe } from "../../lib/page-recipe";
 const brief = routePageBrief("about:");
 const supported = brief?.mode === "supported";
+const { treatment } = resolvePageRecipe(site);
 export function getStaticPaths() { return routeIsRendered("/about/") ? [{ params: { page: undefined } }] : []; }
 
 ---
 
 <SiteLayout title={supported ? brief.metadata.title : `About ${site.business.name}`} description={supported ? brief.metadata.description : `About ${site.business.name}. ${site.copy?.aboutBody || site.business.description}`}>
   <Header />
-  <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`]}>
+  <main class:list={["inner-page", `recipe-${site.design?.recipe || "general-editorial"}`, `type-${treatment.typography}`]}>
     <section class="inner-hero">
       <div class="wrap inner-hero-grid">
         <div>

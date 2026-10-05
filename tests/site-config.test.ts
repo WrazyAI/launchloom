@@ -870,6 +870,47 @@ describe("site configuration", () => {
     expect(config.design.variantId).toMatch(/^general-/);
   });
 
+  it("carries client font picks and an optional accent into the style", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Lumiere Artisan Bakery and Cafe",
+        services: "Artisan bread",
+        primaryCta: "Request a quote",
+        primaryColor: "#c86d51",
+        industry: "hospitality",
+        preset: "home-services",
+        headingFont: "fraunces",
+        bodyFont: "inter",
+        accentColor: "#1f3a5f",
+      },
+    );
+
+    expect(config.style).toMatchObject({
+      headingFont: "fraunces",
+      bodyFont: "inter",
+      accentColor: "#1f3a5f",
+    });
+    expect(config.style.accentTextColor).toMatch(/^#[0-9a-f]{6}$/u);
+    expect(config.style.accentContrastColor).toMatch(/^#[0-9a-f]{6}$/u);
+
+    const withoutChoices = normalise(
+      {},
+      {
+        businessName: "Lumiere Artisan Bakery and Cafe",
+        services: "Artisan bread",
+        primaryCta: "Request a quote",
+        primaryColor: "#c86d51",
+        industry: "hospitality",
+        preset: "home-services",
+        headingFont: "not-a-font",
+        accentColor: "not-a-color",
+      },
+    );
+    expect(withoutChoices.style).not.toHaveProperty("headingFont");
+    expect(withoutChoices.style).not.toHaveProperty("accentColor");
+  });
+
   it("selects a stable but intake-specific complete design variant", () => {
     const previous = process.env.LAUNCHLOOM_INTAKE_ID;
     process.env.LAUNCHLOOM_INTAKE_ID = "20";

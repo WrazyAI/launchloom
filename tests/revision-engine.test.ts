@@ -609,6 +609,79 @@ describe("revision operations", () => {
     expect(draft.style.contrastColor).toBe("#000000");
   });
 
+  it("changes only the accent when a note names the accent color", () => {
+    const draft = config();
+    draft.style = { primaryColor: "#205d51", accentColor: "#b45309" };
+    const operation = deterministicOperations(
+      "Make the accent color teal.",
+      draft,
+    ).find((item) => item.kind === "set_color_palette") as any;
+    expect(operation).toMatchObject({ kind: "set_color_palette" });
+    expect(operation.palette.accentColor).toBe("#24636b");
+    expect(operation.palette.primaryColor).toBe("#205d51");
+    expect(applyOperation(draft, operation)).toBe(true);
+    expect(draft.style).toMatchObject({
+      primaryColor: "#205d51",
+      accentColor: "#24636b",
+    });
+    expect(draft.style.accentTextColor).toMatch(/^#[0-9a-f]{6}$/u);
+    expect(draft.style.accentContrastColor).toMatch(/^#[0-9a-f]{6}$/u);
+  });
+
+  it("preserves a configured accent through an unrelated palette revision", () => {
+    const draft = config();
+    draft.style = { primaryColor: "#205d51", accentColor: "#b45309" };
+    const [operation] = deterministicOperations(
+      "Use navy as the primary brand color.",
+      draft,
+    );
+    expect(applyOperation(draft, operation)).toBe(true);
+    expect(draft.style.primaryColor).toBe("#17324d");
+    expect(draft.style.accentColor).toBe("#b45309");
+    expect(draft.style.accentTextColor).toMatch(/^#[0-9a-f]{6}$/u);
+  });
+
+  it("accepts a structured accent color role", () => {
+    const draft = config();
+    draft.style = { primaryColor: "#205d51" };
+    const operation = structuredOperations(
+      { colors: [{ role: "accent", hex: "#5B456F" }] },
+      draft,
+    ).find((item) => item.kind === "set_color_palette") as any;
+    expect(operation.palette.accentColor).toBe("#5b456f");
+    expect(applyOperation(draft, operation)).toBe(true);
+    expect(draft.style.accentColor).toBe("#5b456f");
+    expect(draft.style.primaryColor).toBe("#205d51");
+    expect(draft.style.accentTextColor).toMatch(/^#[0-9a-f]{6}$/u);
+  });
+
+  it("clears the accent when a palette revision explicitly removes it", () => {
+    const draft = config();
+    draft.style = {
+      primaryColor: "#205d51",
+      accentColor: "#b45309",
+      accentTextColor: "#8f3509",
+      accentContrastColor: "#ffffff",
+    };
+    expect(
+      applyOperation(draft, {
+        kind: "set_color_palette",
+        palette: {
+          primaryColor: "#205d51",
+          surfaceColor: "#f8f6f0",
+          heroColor: "#e8eee5",
+          inkColor: "#14201d",
+          mutedColor: "#5e6b66",
+          lineColor: "#d8ded7",
+          accentColor: "",
+        },
+      }),
+    ).toBe(true);
+    expect(draft.style).not.toHaveProperty("accentColor");
+    expect(draft.style).not.toHaveProperty("accentTextColor");
+    expect(draft.style).not.toHaveProperty("accentContrastColor");
+  });
+
   it("reorders existing sections while preserving their stable IDs", () => {
     const draft = {
       ...config(),

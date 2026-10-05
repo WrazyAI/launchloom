@@ -1,4 +1,9 @@
-import { contrast, ensureContrast } from "./color-contrast.mjs";
+import {
+  contrast,
+  ensureContrast,
+  parseRgba,
+  rgbHex,
+} from "./color-contrast.mjs";
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
@@ -25,6 +30,67 @@ function mix(first, second, secondWeight) {
         .padStart(2, "0"),
     )
     .join("")}`;
+}
+
+function rgbToHsl([red, green, blue]) {
+  const r = red / 255;
+  const g = green / 255;
+  const b = blue / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const lightness = (max + min) / 2;
+  if (max === min) return [0, 0, lightness];
+  const delta = max - min;
+  const saturation =
+    lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+  let hue;
+  if (max === r) hue = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+  else if (max === g) hue = ((b - r) / delta + 2) / 6;
+  else hue = ((r - g) / delta + 4) / 6;
+  return [hue, saturation, lightness];
+}
+
+function hslToRgb([hue, saturation, lightness]) {
+  if (saturation === 0) {
+    const channel = Math.round(lightness * 255);
+    return [channel, channel, channel];
+  }
+  const q =
+    lightness < 0.5
+      ? lightness * (1 + saturation)
+      : lightness + saturation - lightness * saturation;
+  const p = 2 * lightness - q;
+  const channel = (offset) => {
+    let t = offset;
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  return [channel(hue + 1 / 3), channel(hue), channel(hue - 1 / 3)].map(
+    (value) => Math.round(value * 255),
+  );
+}
+
+/** Rotate a color's hue while keeping its saturation and lightness. */
+export function rotateHue(color, degrees) {
+  const parsed = parseRgba(color);
+  if (!parsed) throw new Error("rotateHue requires a parseable color");
+  const [hue, saturation, lightness] = rgbToHsl(parsed);
+  const rotated = (((hue + degrees / 360) % 1) + 1) % 1;
+  return rgbHex(hslToRgb([rotated, saturation, lightness]));
+}
+
+/**
+ * Deterministic complementary choices for the onboarding accent picker. The
+ * client can adopt one or pick a custom color; every adopted color is then
+ * contrast-repaired by resolvePalette.
+ */
+export function suggestAccentColors(primaryColor) {
+  const base = safeHex(primaryColor, "#205d51");
+  return [180, 150, 30].map((degrees) => rotateHue(base, degrees));
 }
 
 export function readableOn(color) {
@@ -80,6 +146,17 @@ export function resolvePalette(input = {}) {
     exceptionallyBright ? mix(primaryColor, "#111315", 0.84) : primaryColor,
   );
   const brandSurface = readableSurface(requestedBrandSurfaceColor);
+  const accentColor = safeHex(input.accentColor, "");
+  // The accent is optional: absent it, sites keep exactly the palette shape
+  // they had before. When a client adopts one, text on the accent fill and
+  // accent-colored text on the page surface are both contrast-repaired.
+  const accent = accentColor
+    ? {
+        accentColor,
+        accentTextColor: ensureContrast(accentColor, surfaceColor),
+        accentContrastColor: readableOn(accentColor),
+      }
+    : {};
 
   const palette = {
     primaryColor,
@@ -92,6 +169,7 @@ export function resolvePalette(input = {}) {
     inkColor,
     mutedColor,
     lineColor,
+    ...accent,
   };
   /** @type {Record<string, {surface:string,text:string,mutedText:string,link:string,action:string,onAction:string,border:string,focus:string}>} */
   const surfaces = {};
