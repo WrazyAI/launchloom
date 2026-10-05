@@ -45,8 +45,13 @@ if (outputEntries.length) {
 
 const onboardingPage = path.join(buildRoot, "onboard", "index.html");
 const assetDirectory = path.join(buildRoot, "_astro");
+const fontDirectory = path.join(buildRoot, "fonts");
 await access(onboardingPage);
 await access(assetDirectory);
+// The onboarding specimen canvas loads the self-hosted client font catalog
+// from /fonts, so the invite-only bundle must serve the same files as the
+// generated sites.
+await access(fontDirectory);
 
 const html = await readFile(onboardingPage, "utf8");
 if (!/<meta\s+name="robots"\s+content="noindex, nofollow"/iu.test(html)) {
@@ -63,6 +68,7 @@ await cp(path.join(buildRoot, "onboard"), path.join(outputRoot, "onboard"), {
   recursive: true,
 });
 await cp(assetDirectory, path.join(outputRoot, "_astro"), { recursive: true });
+await cp(fontDirectory, path.join(outputRoot, "fonts"), { recursive: true });
 await copyFile(
   path.join(buildRoot, "favicon.svg"),
   path.join(outputRoot, "favicon.svg"),
@@ -76,6 +82,12 @@ const deployedRoot = await readdir(outputRoot);
 if (deployedRoot.includes("index.html")) {
   throw new Error("The onboarding Pages root must not contain a homepage.");
 }
+const bundledFonts = await readdir(path.join(outputRoot, "fonts"));
+for (const family of ["fraunces", "inter"])
+  if (!bundledFonts.includes(family))
+    throw new Error(
+      `The onboarding bundle must include the self-hosted ${family} font family.`,
+    );
 
 console.log(
   JSON.stringify({
@@ -83,5 +95,6 @@ console.log(
     routes: ["/onboard/"],
     rootHomepage: false,
     robots: "noindex, nofollow",
+    fontFamilies: bundledFonts.length,
   }),
 );
