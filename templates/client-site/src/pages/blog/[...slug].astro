@@ -2,19 +2,19 @@
 import SiteLayout from "../../layouts/SiteLayout.astro";
 import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
-import site, { type BlogArticle } from "../../lib/site";
+import site, { routeIsRendered, type BlogArticle } from "../../lib/site";
 
 export function getStaticPaths() {
-  const articles = site.blogArticles || [];
+  const articles = (site.blogArticles || []).filter(article => routeIsRendered(`/blog/${article.slug}/`));
   if (!articles.length) return [];
   return [
-    { params: { slug: undefined }, props: { article: null } },
+    ...(routeIsRendered("/blog/") ? [{ params: { slug: undefined }, props: { article: null } }] : []),
     ...articles.map((article) => ({ params: { slug: article.slug }, props: { article } })),
   ];
 }
 const { article } = Astro.props as { article: BlogArticle | null };
-const articles = site.blogArticles || [];
-const title = article?.title || `Guides | ${site.business.name}`;
+const articles = (site.blogArticles || []).filter(article => routeIsRendered(`/blog/${article.slug}/`));
+const title = `${article?.title || "Guides"} | ${site.business.name}`;
 const description = article?.description || `Practical information from ${site.business.name}.`;
 const paragraphs = article?.body.split(/\n\s*\n/u).map((paragraph) => paragraph.trim()).filter(Boolean) || [];
 ---

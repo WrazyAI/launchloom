@@ -672,26 +672,44 @@ export async function runVisualGateProcess({
     throw new Error(
       `Creative visual gate produced no report (exit ${result.code}): ${result.stderr.slice(-1200)}`,
     );
-  if (report.status === "error")
+  // Exit 2 is reserved for a successfully completed, blocked quality audit.
+  // It never denotes a pass; the caller must consume findings and rerender.
+  const audit = report.audit;
+  const findings = audit?.findings;
+  const blockers = report.blockers;
+  const blockedQualityReport =
+    result.code === 2 &&
+    report.version === 1 &&
+    report.mode === "verify" &&
+    report.status === "quality-blocked" &&
+    !report.error &&
+    report.changed === false &&
+    Array.isArray(report.appliedOperations) &&
+    report.appliedOperations.length === 0 &&
+    ["revise", "block"].includes(audit?.verdict) &&
+    Array.isArray(findings) &&
+    Array.isArray(audit?.operations) &&
+    findings.every(
+      (finding) =>
+        finding &&
+        ["critical", "major", "minor"].includes(finding.severity) &&
+        ["desktop", "compact", "mobile", "both"].includes(finding.viewport) &&
+        typeof finding.category === "string" &&
+        typeof finding.evidence === "string" &&
+        typeof finding.recommendation === "string",
+    ) &&
+    Array.isArray(blockers) &&
+    JSON.stringify(blockers) ===
+      JSON.stringify(
+        findings.filter((finding) =>
+          ["critical", "major"].includes(finding.severity),
+        ),
+      ) &&
+    (blockers.length > 0 || audit.verdict === "block");
+  if ((result.code !== 0 && !blockedQualityReport) || report.status === "error")
     throw new Error(
       `Creative visual gate could not run: ${report.error || result.stderr.slice(-1200) || `process exited ${result.code}`}`,
     );
-  if (result.code !== 0) {
-    const audit = report.audit || {};
-    const blockingReport =
-      (Array.isArray(report.blockers) ? report.blockers.length : 0) > 0 ||
-      audit.verdict !== "pass" ||
-      (audit.findings || []).some((finding) =>
-        ["critical", "major"].includes(finding?.severity),
-      );
-    if (!blockingReport)
-      throw new Error(
-        `Creative visual gate could not run: process exited ${result.code} with a passing report. That combination is inconsistent and fails closed.`,
-      );
-  }
-  // A nonzero exit with a blocking report is expected when the gate finds
-  // blockers. The repair loop acts on the report's gate findings instead of
-  // failing the run.
   return { ...report, processExitCode: result.code };
 }
 
@@ -766,9 +784,16 @@ function repairFindingText(finding) {
  * Incidental words such as "low-contrast" inside an imagery finding must not
  * unlock color changes. The non-regression instruction names passing
  * measurements (including paletteAdherence) and must not count as an ask.
+ * Human feedback is already constrained by the resolved section scope, and a
+ * rejected response's diagnostic wording is not a new design request.
  */
 export function findingsRequirePaletteChange(findings) {
   return (findings || []).some((finding) => {
+    // Human repairs are already constrained by the resolved section scope.
+    // Do not make requested design changes depend on palette keywords.
+    if (finding?.category === "human-review-feedback") return true;
+    // A rejected response's diagnostic wording is not a new design request.
+    if (finding?.category === "repair-output-rejected") return false;
     const category =
       finding && typeof finding === "object"
         ? String(finding.category || "")
@@ -1194,7 +1219,7 @@ export async function runRenderedCreativeRepair({
             candidateId,
             reason,
             findings: activeFindings,
-            cyclesUsed: appliedSoFar + 1,
+            cyclesUsed: appliedSoFar,
             status: "rejected",
             error: message,
             attempts,
@@ -1292,6 +1317,7 @@ export async function runRenderedCreativeRepair({
         promote: false,
         deferPromotion: true,
         requireDiversity,
+        allowContrastRepair: !humanFeedback,
         excludedCandidateIds: [...excludedCandidateIds].sort(),
       });
     } catch (error) {

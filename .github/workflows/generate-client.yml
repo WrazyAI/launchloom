@@ -627,7 +627,7 @@ jobs:
           grep -I -F -q "data-creative-candidate=\"$CANDIDATE_ID\"" dist/index.html || { echo "Fresh build does not contain selected creative candidate $CANDIDATE_ID"; exit 1; }
           if grep -I -E -q 'data-experience-pack|legacy-design-family' dist/index.html; then echo "Legacy renderer marker found in creative preview"; exit 1; fi
           PUBLIC_REVIEW_MODE=true node "$GITHUB_WORKSPACE/scripts/verify-rendered-revision.mjs" --config src/site.config.json --dist dist --screenshots "$RUNNER_TEMP/initial-screenshots"
-          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist
+          node "$GITHUB_WORKSPACE/scripts/seo-release-gate.mjs" --mode review --config src/site.config.json --dist dist --report "$RUNNER_TEMP/route-technical-report.json"
           CANDIDATE_ID=$(jq -r '.design.experience.candidateId' src/site.config.json)
           FINAL_REPAIR_GATE=.launchloom/creative-repair/final/visual-gate.json
           jq -e '.status != "error" and .audit.verdict == "pass" and ((.blockers // []) | length == 0) and (((.audit.findings // []) | map(select(.severity == "critical" or .severity == "major")) | length) == 0)' "$FINAL_REPAIR_GATE" >/dev/null || { echo "Rendered creative repair did not finish with a passing visual gate"; exit 1; }

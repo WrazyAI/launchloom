@@ -1,11 +1,28 @@
 ---
-import site from "../lib/site";
+import site, { pageBriefs } from "../lib/site";
 import { seoResearchReadiness } from "../lib/seo-readiness.mjs";
 
 const launchloomUrl = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || import.meta.env.PUBLIC_LAUNCHLOOM_URL || "").replace(/\/$/, "");
 const research = seoResearchReadiness(site);
 const publishReady = research.allowed;
+const pageDraftCount = pageBriefs.deferred.length;
+const pageBlocked = !research.allowed && research.code === "page_content_required";
+const pageNotice = pageBlocked ? research.error : "";
+const routeBlocked = !research.allowed && research.code === "route_approval_required";
+const routeNotice = routeBlocked ? research.error : "";
+const factBlocked = !research.allowed && research.code === "business_facts_required";
+const factReport = site.factReadiness;
+const deferredFactCount = factReport?.facts.filter((fact) => fact.state === "missing-deferrable").length || 0;
+const factNotice = factReport ? [
+  ...(factReport.addressVisibility === "private" ? ["Business address is private and omitted from public pages and maps."] : []),
+  ...factReport.facts.filter((fact) => ["contradictory", "launch-blocking"].includes(fact.state)).map((fact) => fact.reason),
+  ...(deferredFactCount > 0 ? [`${deferredFactCount} optional business facts are deferred.`] : []),
+].join(" ") : "";
 const webResearchComplete = research.allowed && research.mode === "context-only";
+const cityResearch = site.seoResearch?.coverageResearch;
+const pendingCoverage = cityResearch && cityResearch.complete !== true;
+const completedCityCount = cityResearch?.cities?.filter((city) => city.status === "complete").length || 0;
+const confirmedCityCount = cityResearch?.areas?.length || 0;
 const palette = {
   primary: site.style?.primaryColor || "",
   surface: site.style?.surfaceColor || "",
@@ -21,6 +38,8 @@ const { diagnosticPreview = false } = Astro.props;
   <div class="ll-review__bar">
     <p class="ll-review__summary"><span aria-hidden="true">▣</span> Review this website</p>
     <p class="ll-review__research-notice" role="status" hidden></p>
+    <p class="ll-review__page-notice" hidden></p>
+  <p class="ll-review__fact-notice" role="status" hidden></p>
     <p class="ll-review__field-notice" role="status" hidden></p>
     <div class="ll-review__actions">
       <button class="ll-approve" type="button" hidden>✓ Approve &amp; send to client</button>
@@ -31,7 +50,7 @@ const { diagnosticPreview = false } = Astro.props;
   <dialog class="ll-override-dialog" aria-labelledby="ll-override-title">
     <div class="ll-override-dialog__content">
       <h2 id="ll-override-title">Send this field preview to the client?</h2>
-      <p>This version did not pass the automated visual quality checks. You are choosing to send this exact version anyway. Build, content-integrity, and SEO release checks still apply.</p>
+      <p>This version did not pass the automated visual quality checks. You are choosing to send this exact version anyway. Build, content-integrity, readability, and SEO release checks still apply.</p>
       <p class="ll-override-status" role="status"></p>
       <div class="ll-modal-actions">
         <button class="ll-override-cancel" type="button">Keep reviewing</button>
@@ -605,7 +624,7 @@ const { diagnosticPreview = false } = Astro.props;
 
 </style>
 
-<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, palette }}>
+<script is:inline define:vars={{ launchloomUrl, publishReady, webResearchComplete, pendingCoverage, completedCityCount, confirmedCityCount, factNotice, factBlocked, routeBlocked, routeNotice, pageBlocked, pageNotice, pageDraftCount, palette }}>
   const root = document.querySelector("#ll-review");
   const diagnosticPreview = root?.getAttribute("data-diagnostic-preview") === "true";
   const token = new URLSearchParams(window.location.search).get("review");
@@ -1607,11 +1626,27 @@ const { diagnosticPreview = false } = Astro.props;
         ? 'Quote the exact text and replacement, for example: Replace text "Same day service" with "Prompt scheduling".'
         : "Tell us what you would like changed. Bigger redesigns are handled separately.";
     approve.toggleAttribute("hidden", !developer);
+    const pageNoticeElement = root.querySelector(".ll-review__page-notice");
+    if (developer && pageDraftCount && pageNoticeElement) {
+      pageNoticeElement.textContent = `${pageDraftCount} draft page briefs are excluded because their routes are not approved.`;
+      pageNoticeElement.hidden = false;
+    }
+    const factNoticeElement = root.querySelector(".ll-review__fact-notice");
+    if (developer && factNotice && factNoticeElement) {
+      factNoticeElement.textContent = factNotice;
+      factNoticeElement.hidden = false;
+    }
     if (developer && webResearchComplete) {
       const researchNotice = root.querySelector(".ll-review__research-notice");
       researchNotice.hidden = false;
       researchNotice.textContent = "Web research complete. Measured SEO data unavailable. Developer approval is available.";
       root.dataset.researchMode = "web-researched";
+    }
+    if (developer && pendingCoverage) {
+      const researchNotice = root.querySelector(".ll-review__research-notice");
+      researchNotice.hidden = false;
+      researchNotice.textContent = `${completedCityCount} of ${confirmedCityCount} confirmed cities have completed research. Remaining city research is pending within the shared budget. ${publishReady ? "Primary-city research passed the approval checks." : "Required primary-city research is incomplete; publishing is blocked."}`;
+      root.dataset.coverageResearch = "partial";
     }
     if (diagnosticReview) {
       approve.setAttribute("hidden", "");
@@ -1619,7 +1654,7 @@ const { diagnosticPreview = false } = Astro.props;
       sendAnyway.removeAttribute("hidden");
       if (!publishReady) {
         sendAnyway.disabled = true;
-        sendAnyway.title = "SEO research is incomplete. Publishing remains blocked.";
+        sendAnyway.title = "Business facts or SEO research are incomplete. Publishing remains blocked.";
       }
       fetch(`${launchloomUrl}/api/creative-repair`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, action: "status", pageUrl: window.location.href }) })
         .then(async (response) => {
@@ -1629,8 +1664,8 @@ const { diagnosticPreview = false } = Astro.props;
           root.removeAttribute("hidden");
           if (!publishReady) {
             sendAnyway.disabled = true;
-            sendAnyway.title = "SEO research is incomplete. Publishing remains blocked.";
-            fieldNotice.textContent = "This preview missed the visual checks. SEO research is incomplete, so client release remains blocked.";
+            sendAnyway.title = "Business facts or SEO research are incomplete. Publishing remains blocked.";
+            fieldNotice.textContent = "This preview missed the visual checks. Business facts or SEO research are incomplete, so client release remains blocked.";
           } else if (["dispatching", "queued", "running"].includes(result.status) || (result.reviewQueue && result.reviewQueue !== "clear")) {
             open.disabled = true;
             sendAnyway.disabled = true;
@@ -1647,11 +1682,12 @@ const { diagnosticPreview = false } = Astro.props;
         })
         .catch(() => root.setAttribute("hidden", ""));
     } else if (developer && !publishReady) {
-      root.querySelector(".ll-review__summary").innerHTML =
-        "<span aria-hidden=\"true\">▣</span> Internal review. SEO research is incomplete, so publishing is blocked.";
+      root.querySelector(".ll-review__summary").textContent = pageBlocked ? pageNotice : routeBlocked ? routeNotice : factBlocked
+        ? "Internal review. Business facts need confirmation, so publishing is blocked."
+        : "Internal review. SEO research is incomplete, so publishing is blocked.";
       approve.disabled = true;
-      approve.textContent = "SEO research required";
-      approve.title = "Rerun the intake after SEO research succeeds.";
+      approve.textContent = pageBlocked ? "Page content required" : routeBlocked ? "Route approvals required" : factBlocked ? "Business facts required" : "SEO research required";
+      approve.title = pageBlocked ? pageNotice : routeBlocked ? routeNotice : factBlocked ? "Resolve the missing or contradictory facts in the client brief." : "Rerun the intake after SEO research succeeds.";
     }
     const setModal = (visible) => {
       modal.toggleAttribute("hidden", !visible);

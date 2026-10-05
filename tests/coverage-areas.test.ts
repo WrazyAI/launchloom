@@ -1,3 +1,4 @@
+import { confirmedCoverageFromIntake, applyCoverageEnrichment } from "../scripts/confirmed-coverage.mjs";
 import { describe, expect, it } from "vitest";
 import {
   discoverCoverageAreas,
@@ -79,4 +80,15 @@ describe("service coverage area discovery", () => {
     expect(result.coverageEvidence.source).toBe("unavailable");
     expect(result.warnings).toContain("Coverage discovery was unavailable; the confirmed primary city is retained.");
   });
+});
+
+
+it("preserves confirmed coverage instead of discovery suggestions, including primary-only fallback", () => {
+  const intake = { primaryCity: "Cookeville, TN", serviceRadius: "10", coverageAreas: ["Cookeville, TN", "Algood, TN"], coverageConfirmation: { status: "confirmed", primaryCity: "Cookeville, TN", radiusSelection: "10", selectedCount: 1 } };
+  const enrichment = { coverageAreas: ["Cookeville, TN", "Baxter, TN"], coverageEvidence: {source:"google_geocoding"} };
+  expect(applyCoverageEnrichment(intake, enrichment).coverageAreas).toEqual(intake.coverageAreas);
+  expect(confirmedCoverageFromIntake(intake)!.coverageEvidence.source).toBe("client_confirmed_coverage");
+  const only = { ...intake, coverageAreas: [intake.primaryCity], coverageConfirmation: { ...intake.coverageConfirmation, status: "primary_city_only", selectedCount: 0 } };
+  expect(applyCoverageEnrichment(only, enrichment).coverageAreas).toEqual([intake.primaryCity]);
+  expect(() => confirmedCoverageFromIntake({...intake,serviceRadius:"20"})).toThrow(/confirmed city, radius/);
 });

@@ -1,5 +1,5 @@
 ---
-import site, { phoneHref } from "../lib/site";
+import site, { phoneHref, headerRoutes } from "../lib/site";
 import type { DesignFamily } from "../lib/site";
 import { resolvePageRecipe } from "../lib/page-recipe";
 const page = resolvePageRecipe(site);
@@ -13,12 +13,12 @@ const contactId = sectionId("contact", "contact");
 const { family = page.family } = Astro.props as { family?: DesignFamily };
 ---
 
-<header class:list={["header-shell", `header-${recipe}`, `header-family-${family}`]}><div class="header wrap">
+<header data-ll-surface="nav" class:list={["header-shell", `header-${recipe}`, `header-family-${family}`]}><div class="header wrap">
   <a class:list={["wordmark", { "wordmark--logo": Boolean(site.assets?.logo) }]} href="/">
     {site.assets?.logo
       ? <img src={site.assets.logo} alt={site.business.name} />
       : <span class="wordmark__name">{site.business.name}</span>}
   </a>
-  <nav aria-label="Main navigation"><a href={`/#${servicesId}`}>Services</a><a href={`/#${faqId}`}>FAQs</a><a href={`/#${contactId}`}>Contact</a></nav>
+  <nav aria-label="Main navigation"><a href={`/#${servicesId}`}>Services</a><a href={`/#${faqId}`}>FAQs</a><a href={`/#${contactId}`}>Contact</a>{headerRoutes.map(route => <a href={route.path}>{route.title}</a>)}</nav>
   {site.business.phone && <a class="header-call" href={phoneHref(site.business.phone)}><span>{recipe === "local-trades" ? "Call for service" : "Call us"}</span>{site.business.phone}</a>}
 </div></header>

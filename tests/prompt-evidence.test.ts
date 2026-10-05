@@ -56,6 +56,27 @@ describe("prompt evidence", () => {
     expect(pageMetadata.width).toBeLessThan(1200);
   });
 
+  it("keeps tall mobile evidence readable and whole-page overviews available without changing originals", async () => {
+    const directory = await fs.mkdtemp(path.join(os.tmpdir(), "launchloom-mobile-evidence-"));
+    try {
+      const source = path.join(directory, "mobile.png");
+      const original = await sharp({ create: { width: 390, height: 13667, channels: 3, background: "#123456" } }).png().toBuffer();
+      await fs.writeFile(source, original);
+      const opening = await promptImagePart(source, { detail: "high" });
+      const openingSize = await sharp(Buffer.from(opening.image_url.url.split(",")[1], "base64")).metadata();
+      expect(opening.image_url.detail).toBe("high");
+      expect(openingSize.width).toBe(390);
+      expect(openingSize.height).toBe(1800);
+      const overview = await promptImagePart(source, { fit: "page" });
+      const overviewSize = await sharp(Buffer.from(overview.image_url.url.split(",")[1], "base64")).metadata();
+      expect(overviewSize.height).toBe(1800);
+      expect(overviewSize.width).toBeLessThan(openingSize.width!);
+      expect(await fs.readFile(source)).toEqual(original);
+    } finally {
+      await fs.rm(directory, { recursive: true, force: true });
+    }
+  });
+
   it("transcodes A1 AVIF reference screenshots into actual JPEG evidence", async () => {
     const source = path.resolve(
       "data/reference-library/dossiers/a1-craft-collage-field/screenshots/gallery-preview.avif",

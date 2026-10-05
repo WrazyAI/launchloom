@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import { safeAuthorFailureText } from "./author-failure-evidence.mjs";
 import { parseModelJson } from "./model-json.mjs";
 import {
   assertModelPromptTextBudget,
@@ -329,6 +330,7 @@ SEALED SERVICE PAGE SHAPE
 ${JSON.stringify(creativeServicePageShape(), null, 2)}
 
 SERVICE PAGE RULES
+- Import PageBriefSections from @launchloom/runtime and render <PageBriefSections brief={service.brief} /> within the main landmark after decision support and before contact. It emits only supported optional content, preserving the page recipe. Do not hide it or restate its paragraphs. Missing optional fields are omitted, never invented.
 - Render exactly one <h1> bound to service.name and the opening summary bound to service.description.
 - Render the three decision-support blocks bound to service.support.scope, service.support.preparation, and service.support.nextStep.
 - Render related services from service.related as real links with a trailing slash, for example href={\`/services/\${item.slug}/\`}. Never express a service link as a homepage fragment.
@@ -356,6 +358,7 @@ SEALED LOCATION PAGE SHAPE
 ${JSON.stringify(creativeLocationPageShape(), null, 2)}
 
 LOCATION PAGE RULES
+- Import PageBriefSections from @launchloom/runtime and render <PageBriefSections brief={location.brief} /> within the main landmark before contact. This shared primitive renders supported local detail/questions/process using the current design tokens. Do not hide it or restate its paragraphs; missing information must not be filled with invented local claims.
 - Render exactly one <h1> bound to location.name and the opening summary bound to location.description.
 - Render the coverage note bound to location.localNote and keep it as availability language, never a promise about arrival, pricing, or a physical office.
 - Render the confirmed services from location.services as real links with a trailing slash, for example href={\`/services/\${item.slug}/\`}. Never express a service link as a homepage fragment.
@@ -754,6 +757,18 @@ async function writeResult(result) {
 }
 
 async function writeFailure(error) {
+  // Never turn an input/configuration failure into deletion of its workspace.
+  for (const protectedPath of [process.cwd(), configPath, inspirationPath]) {
+    const relative = path.relative(outputPath, protectedPath);
+    if (!relative || (relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)))
+      throw new Error("Failure evidence output may not contain the workspace or input files.");
+  }
+  const destination = await fs.lstat(outputPath).catch((error) => {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  });
+  if (destination?.isSymbolicLink())
+    throw new Error("Failure evidence output may not be a symbolic link.");
   await fs.rm(outputPath, { recursive: true, force: true });
   await fs.mkdir(outputPath, { recursive: true });
   await fs.writeFile(
@@ -777,7 +792,8 @@ async function writeFailure(error) {
         model,
         creativeSession,
         reasoningEffort,
-        error: error instanceof Error ? error.message : String(error),
+        error: safeAuthorFailureText(error),
+        failures: error?.failures || [],
         usage,
         cacheSummary: aggregateCacheUsage(usage),
       },
@@ -834,9 +850,14 @@ try {
     );
 } catch (error) {
   sharedAbortController.abort();
-  if (failureMode !== "record") throw error;
   await writeFailure(error);
+  if (failureMode !== "record") {
+    const failure = new Error(safeAuthorFailureText(error));
+    if (typeof error?.stack === "string")
+      failure.stack = safeAuthorFailureText(error.stack, 6000);
+    throw failure;
+  }
   console.error(
-    `production_experience_status=failed ${error instanceof Error ? error.message : String(error)}`,
+    `production_experience_status=failed ${safeAuthorFailureText(error)}`,
   );
 }

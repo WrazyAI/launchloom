@@ -257,6 +257,10 @@ if (appliedOperations.length)
 const report = {
   version: 1,
   mode,
+  status:
+    mode === "verify" && (blockers.length || result.audit.verdict === "block")
+      ? "quality-blocked"
+      : "ok",
   model,
   durationMs: Date.now() - startedAt,
   changed: appliedOperations.length > 0,
@@ -284,9 +288,12 @@ if (
   mode === "verify" &&
   (blockers.length || result.audit.verdict === "block")
 ) {
-  throw new Error(
-    `GLM visual gate blocked deployment with ${blockers.length} critical finding(s). See ${reportPath}.`,
+  console.error(
+    `GLM visual gate blocked deployment with ${blockers.length} blocking finding(s). See ${reportPath}.`,
   );
+  // Distinguish completed quality rejection from provider/process failures.
+  // Workflow steps still fail closed; only authored repair consumes this code.
+  process.exitCode = 2;
 }
 if (mode === "plan" && shouldFailVisualPlan({
   rendererType: manifest.design?.renderer?.type,

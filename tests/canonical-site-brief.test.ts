@@ -11,7 +11,8 @@ describe("canonical site brief compilation", () => {
         industry: "automotive",
         services: "Digital vehicle inspections\nBrake service",
         confirmAccuracy: "synthetic demo brief; not a real client attestation",
-        additionalNotes: "FICTIONAL DEMO ONLY. Never publish this as a real client site.",
+        additionalNotes:
+          "FICTIONAL DEMO ONLY. Never publish this as a real client site.",
       },
       research: { pageMap: [] },
     });
@@ -28,7 +29,8 @@ describe("canonical site brief compilation", () => {
         industry: "automotive",
         services: "Brake service",
         confirmAccuracy: "yes",
-        additionalNotes: "We use demo vehicles when explaining our inspection process.",
+        additionalNotes:
+          "We use demo vehicles when explaining our inspection process.",
       },
       research: { pageMap: [] },
     });
@@ -54,7 +56,9 @@ describe("canonical site brief compilation", () => {
         confirmAccuracy: "yes",
         brandNotes: "Forest green and straightforward",
         brandColor: "#245a46",
-        assets: { logo: "https://assets.launchloom.wrazyos.com/submission/logo.png" },
+        assets: {
+          logo: "https://assets.launchloom.wrazyos.com/submission/logo.png",
+        },
         leadEmail: "leads@example.test",
       },
       enrichment: {
@@ -69,10 +73,71 @@ describe("canonical site brief compilation", () => {
         mode: "researched",
         publishReady: true,
         pageMap: [
-          { id: "service:drain", pageType: "service", title: "Drain Cleaning", slug: "/services/drain-cleaning/", service: "Drain Cleaning", primaryKeyword: { keyword: "drain cleaning Tacoma", volume: 90, kd: 41, cpc: 12.5, competition: 0.7, intent: "commercial", provenance: "dataforseo" }, supportingKeywords: [], fanOutQuestions: [], priority: "high", evidence: [{ type: "keyword_overview" }] },
-          { id: "service:roof", pageType: "service", title: "Roof Repair", slug: "/services/roof-repair/", service: "Roof Repair", supportingKeywords: [], fanOutQuestions: [], priority: "high", evidence: [{ type: "keyword_overview" }] },
-          { id: "location:lakewood", pageType: "location", title: "Plumbing in Lakewood", slug: "/locations/lakewood/", location: "Lakewood", localFacts: [{ value: "Client confirmed service coverage in Lakewood", provenance: "client_confirmed_coverage" }], supportingKeywords: [], fanOutQuestions: [], priority: "medium", evidence: [{ type: "local_serp" }] },
-          { id: "location:seattle", pageType: "location", title: "Plumbing in Seattle", slug: "/locations/seattle/", location: "Seattle", localFacts: [{ value: "A local claim", provenance: "client_confirmed_coverage" }], supportingKeywords: [], fanOutQuestions: [], priority: "high", evidence: [{ type: "local_serp" }] },
+          {
+            id: "service:drain",
+            pageType: "service",
+            title: "Drain Cleaning",
+            slug: "/services/drain-cleaning/",
+            service: "Drain Cleaning",
+            primaryKeyword: {
+              keyword: "drain cleaning Tacoma",
+              volume: 90,
+              kd: 41,
+              cpc: 12.5,
+              competition: 0.7,
+              intent: "commercial",
+              provenance: "dataforseo",
+            },
+            supportingKeywords: [],
+            fanOutQuestions: [],
+            priority: "high",
+            evidence: [{ type: "keyword_overview" }],
+          },
+          {
+            id: "service:roof",
+            pageType: "service",
+            title: "Roof Repair",
+            slug: "/services/roof-repair/",
+            service: "Roof Repair",
+            supportingKeywords: [],
+            fanOutQuestions: [],
+            priority: "high",
+            evidence: [{ type: "keyword_overview" }],
+          },
+          {
+            id: "location:lakewood",
+            pageType: "location",
+            title: "Plumbing in Lakewood",
+            slug: "/locations/lakewood/",
+            location: "Lakewood",
+            localFacts: [
+              {
+                value: "Client confirmed service coverage in Lakewood",
+                provenance: "client_confirmed_coverage",
+              },
+            ],
+            supportingKeywords: [],
+            fanOutQuestions: [],
+            priority: "medium",
+            evidence: [{ type: "local_serp" }],
+          },
+          {
+            id: "location:seattle",
+            pageType: "location",
+            title: "Plumbing in Seattle",
+            slug: "/locations/seattle/",
+            location: "Seattle",
+            localFacts: [
+              {
+                value: "A local claim",
+                provenance: "client_confirmed_coverage",
+              },
+            ],
+            supportingKeywords: [],
+            fanOutQuestions: [],
+            priority: "high",
+            evidence: [{ type: "local_serp" }],
+          },
         ],
       },
     });
@@ -80,13 +145,25 @@ describe("canonical site brief compilation", () => {
     expect(brief.type).toBe("CanonicalSiteBrief");
     expect(brief.services).toEqual(["Drain cleaning", "Water heater repair"]);
     expect(brief.serviceAreas).toBe("Tacoma, WA\nLakewood\nPuyallup");
-    expect(brief.pageMap.map((page) => page.id)).toEqual(["service:drain", "location:lakewood"]);
+    expect(brief.pageMap.map((page) => page.id)).toEqual([
+      "service:drain",
+      "location:lakewood",
+    ]);
     expect(brief.pageMap[0].service).toBe("Drain cleaning");
-    expect(brief.businessTruth.services.map((service) => service.provenance)).toEqual(["client_confirmed", "client_confirmed"]);
+    expect(
+      brief.businessTruth.services.map((service) => service.provenance),
+    ).toEqual(["client_confirmed", "client_confirmed"]);
     expect(brief.brand.primaryColor).toBe("#245a46");
-    expect(brief.verifiedAssets.logo).toMatchObject({ url: "https://assets.launchloom.wrazyos.com/submission/logo.png", provenance: "client_supplied_asset" });
-    expect(brief.assets.logo).toBe("https://assets.launchloom.wrazyos.com/submission/logo.png");
-    expect(brief.seoResearch.pageMap.some((page) => page.service === "Roof Repair")).toBe(false);
+    expect(brief.verifiedAssets.logo).toMatchObject({
+      url: "https://assets.launchloom.wrazyos.com/submission/logo.png",
+      provenance: "client_supplied_asset",
+    });
+    expect(brief.assets.logo).toBe(
+      "https://assets.launchloom.wrazyos.com/submission/logo.png",
+    );
+    expect(
+      brief.seoResearch.pageMap.some((page) => page.service === "Roof Repair"),
+    ).toBe(false);
   });
 
   it("retains legacy intake shape while safely falling back to only its confirmed city", () => {
@@ -104,7 +181,12 @@ describe("canonical site brief compilation", () => {
         confirmRights: "yes",
         confirmSeoResearch: "yes",
       },
-      research: { version: 2, mode: "context-only", publishReady: false, pageMap: [] },
+      research: {
+        version: 2,
+        mode: "context-only",
+        publishReady: false,
+        pageMap: [],
+      },
     });
 
     expect(brief.legacy).toBe(true);
@@ -209,14 +291,16 @@ describe("canonical site brief compilation", () => {
         industry: "home-services",
       },
       research: {
-        pageMap: [{
-          id: "service:heating-ventilation-ac",
-          pageType: "service",
-          title: "Heating, ventilation and AC",
-          service: "Heating, ventilation and AC",
-          slug: "/services/heating-ventilation-ac/",
-          evidence: [{ type: "keyword_overview" }],
-        }],
+        pageMap: [
+          {
+            id: "service:heating-ventilation-ac",
+            pageType: "service",
+            title: "Heating, ventilation and AC",
+            service: "Heating, ventilation and AC",
+            slug: "/services/heating-ventilation-ac/",
+            evidence: [{ type: "keyword_overview" }],
+          },
+        ],
       },
     });
 
@@ -243,10 +327,122 @@ describe("canonical site brief compilation", () => {
     });
 
     expect(brief.services).toEqual(services.slice(0, 5));
-    expect(brief.pageMap.map((page) => page.service)).toEqual(services.slice(0, 5));
-    expect(brief.seoResearch.warnings).toEqual(expect.arrayContaining([
-      "Existing research warning.",
-      "Only the first 5 client-confirmed services were included in the canonical site brief.",
-    ]));
+    expect(brief.pageMap.map((page) => page.service)).toEqual(
+      services.slice(0, 5),
+    );
+    expect(brief.seoResearch.warnings).toEqual(
+      expect.arrayContaining([
+        "Existing research warning.",
+        "Only the first 5 client-confirmed services were included in the canonical site brief.",
+      ]),
+    );
   });
+});
+
+it("does not re-add excluded cities to a confirmed coverage list or location pages", () => {
+  const brief = compileCanonicalSiteBrief({
+    intake: {
+      intakeVersion: "2",
+      services: "Drain cleaning",
+      primaryCity: "Cookeville, TN",
+      serviceRadius: "10",
+      coverageAreas: ["Cookeville, TN", "Algood, TN"],
+      coverageConfirmation: {
+        status: "confirmed",
+        primaryCity: "Cookeville, TN",
+        radiusSelection: "10",
+        selectedCount: 1,
+      },
+    },
+    enrichment: { coverageAreas: ["Cookeville, TN", "Baxter, TN"] },
+    research: {
+      pageMap: [
+        {
+          id: "location:baxter",
+          pageType: "location",
+          location: "Baxter, TN",
+          evidence: [{ type: "serp" }],
+          localFacts: [
+            {
+              value: "Client serves Baxter",
+              provenance: "client_confirmed_coverage",
+            },
+          ],
+        },
+      ],
+    },
+  });
+  expect(brief.coverageAreas).toEqual(["Cookeville, TN", "Algood, TN"]);
+  expect(brief.pageMap).toEqual([]);
+  expect(brief.businessTruth.coverageAreas[1].provenance).toBe(
+    "client_confirmed_coverage",
+  );
+});
+
+it("carries explicit route decisions and migration URLs through canonical and config generation", () => {
+  const routePolicy = {
+    version: 1,
+    decisions: [
+      {
+        pageType: "location",
+        target: "Lakewood",
+        status: "approved",
+        evidence: ["operator review"],
+        admission: {
+          services: ["Drain cleaning"],
+          visitorNeed: "Prepare property access.",
+          distinctValue: "Client access instructions.",
+          localFacts: [
+            {
+              value:
+                "Ask the property owner to open the side gate before a visit.",
+              source: "client notes",
+              provenance: "client_supplied_local_information",
+            },
+          ],
+        },
+      },
+    ],
+    existingUrls: [
+      { url: "https://old.example/drain/", routeId: "service:drain cleaning" },
+    ],
+  };
+  const brief = compileCanonicalSiteBrief({
+    intake: {
+      businessName: "Fixture Plumbing",
+      industry: "home-services",
+      services: "Drain cleaning",
+      primaryCity: "Lakewood",
+      serviceAreas: "Lakewood",
+      phone: "555-555-0100",
+      email: "fixture@example.com",
+      leadEmail: "fixture@example.com",
+      routePolicy,
+    },
+    research: { version: 2, pageMap: [] },
+  });
+  expect(brief.routePolicy).toEqual(routePolicy);
+  const config = normalise({}, brief);
+  expect(config.routePolicy).toEqual(routePolicy);
+  expect(
+    config.locations.map((location: { name: string }) => location.name),
+  ).toEqual(["Lakewood"]);
+  expect(config.locations[0].localNote).toContain("side gate");
+  expect(
+    config.routeInventory.records.find(
+      (
+        route: import("../templates/client-site/src/lib/route-inventory.mjs").RouteRecord,
+      ) => route.pageType === "location",
+    )?.approval.status,
+  ).toBe("approved");
+  expect(config.routeInventory.redirectProposal[0]).toMatchObject({
+    to: "/services/drain-cleaning/",
+    active: false,
+  });
+});
+
+it('carries approved page inputs through canonical generation and rejects model replacement',()=>{
+ const routeId='service:drain cleaning';const introduction='Describe which drain is affected before discussing the requested service scope.';const metadata='Discuss drainage symptoms and preparation before making a drain cleaning enquiry.';const pageEvidence=[{id:'intro',value:introduction},{id:'meta',value:metadata}].map(record=>({...record,source:'synthetic client confirmation',kind:'client_supplied',confirmed:true,public:true,routeIds:[routeId]}));const pageContent={[routeId]:{introduction:{text:introduction,evidenceIds:['intro']},metadata:{description:{text:metadata,evidenceIds:['meta']}}}};
+ const brief=compileCanonicalSiteBrief({intake:{businessName:'Fixture Plumbing',industry:'home-services',services:'Drain cleaning',businessDescription:'Fictional plumbing fixture.',pageContent,pageEvidence},research:{pageMap:[]}});expect(brief.pageContent).toEqual(pageContent);expect(brief.pageEvidence).toEqual(pageEvidence);
+ const result=normalise({pageContent:{[routeId]:{introduction:'Invented model claim.'}},pageEvidence:[]},brief);expect(result.pageContent).toEqual(pageContent);expect(result.pageEvidence).toEqual(pageEvidence);expect(result.pageBriefs.briefs.find((page:any)=>page.routeId===routeId)).toMatchObject({mode:'supported',ready:true,introduction});
 });

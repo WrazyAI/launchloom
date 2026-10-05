@@ -14,6 +14,7 @@ import {
   writeCandidate,
 } from "../scripts/run-rendered-creative-repair.mjs";
 import { requestRepair } from "../scripts/creative-repair-loop.mjs";
+import { RENDERED_REFERENCE_THRESHOLDS } from "../scripts/rendered-reference-fidelity.mjs";
 import { validateProductionCandidateFiles } from "../scripts/production-experience-author.mjs";
 import { loadReferenceDossier } from "../scripts/reference-dossier.mjs";
 
@@ -324,6 +325,12 @@ describe("rendered creative repair orchestration", () => {
   });
 
   it("scopes palette changes to findings that ask for them", () => {
+    expect(findingsRequirePaletteChange([
+      { category: "repair-output-rejected", evidence: "Restore the passing palette color values and fix source validation." },
+    ])).toBe(false);
+    expect(findingsRequirePaletteChange([
+      { category: "human-review-feedback", message: "Make this warmer." },
+    ])).toBe(true);
     expect(
       findingsRequirePaletteChange([
         { category: "imagery", message: "The later image is generic." },
@@ -509,6 +516,34 @@ export default function Experience({ content, runtime }) { return <main><section
     expect(excludedCandidates).toEqual([[], []]);
   });
 
+  it.each([3, 99])("caps an exhausted requested %i-cycle repair budget at three applied repairs", async (requested) => {
+    const { root, candidates } = await fixture(["candidate-a"]);
+    let repairCalls = 0;
+    let bakeoffCalls = 0;
+    await expect(runRenderedCreativeRepair({
+      siteDir: root,
+      candidatesDir: candidates,
+      outDir: path.join(root, "evidence"),
+      mode: "preview",
+      maxCycles: requested,
+      runBakeoffImpl: async (options: any) => {
+        bakeoffCalls += 1;
+        expect(options.allowContrastRepair).toBe(true);
+        return writeBakeoffEvidence(options, report({
+          selectedCandidateId: null,
+          candidates: [candidate("candidate-a", {
+            valid: false, eligible: false,
+            failures: ["Rendered candidate needs repair."],
+          })],
+        }));
+      },
+      repairCandidateImpl: async () => { repairCalls += 1; },
+      promoteImpl: async () => { throw new Error("Must not promote an exhausted candidate"); },
+    })).rejects.toThrow("3-cycle repair budget is exhausted");
+    expect(repairCalls).toBe(3);
+    expect(bakeoffCalls).toBe(4);
+  });
+
   it("keeps unspent applied-repair cycles after a contract rejection", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
     let bakeoffCalls = 0;
@@ -612,47 +647,6 @@ export default function Experience({ content, runtime }) { return <main><section
     ).toBe(true);
   });
 
-  it("returns a blocking visual-gate report instead of failing the run", async () => {
-    const root = await fs.mkdtemp(
-      path.join(os.tmpdir(), "launchloom-gate-report-"),
-    );
-    roots.push(root);
-    const script = path.join(root, "gate.mjs");
-    await fs.writeFile(
-      script,
-      `import fs from "node:fs";
-const reportPath = process.argv[process.argv.indexOf("--report") + 1];
-fs.writeFileSync(reportPath, JSON.stringify({
-  status: "ok",
-  audit: {
-    verdict: "revise",
-    findings: [
-      {
-        severity: "major",
-        category: "content-integrity",
-        evidence: "The process section appears twice.",
-        recommendation: "Remove the duplicate process section.",
-      },
-    ],
-  },
-  blockers: 1,
-}));
-console.error("gate blocked");
-process.exit(1);
-`,
-    );
-
-    const report = await runVisualGateProcess({
-      siteDir: root,
-      screenshotsDir: path.join(root, "screenshots"),
-      reportPath: path.join(root, "visual-gate.json"),
-      visualGateScript: script,
-    });
-
-    expect(report.processExitCode).toBe(1);
-    expect(report.audit.verdict).toBe("revise");
-    expect(report.audit.findings[0].category).toBe("content-integrity");
-  });
 
   it("repairs a regressed candidate from its best measured state", async () => {
     const { root, candidates } = await fixture(["candidate-a"]);
@@ -697,7 +691,7 @@ process.exit(1);
         return writeBakeoffEvidence(
           options,
           bakeoffCalls === 1
-            ? failing(78)
+            ? failing(RENDERED_REFERENCE_THRESHOLDS.overall)
             : bakeoffCalls === 2
               ? failing(60)
               : report({
@@ -722,7 +716,7 @@ process.exit(1);
     expect(seenAtRepair).toHaveLength(2);
     expect(seenAtRepair[1]).toBe(originalSource);
     expect(repairFindings[1]).toContain("must not regress");
-    expect(repairFindings[1]).toContain("overall 78");
+    expect(repairFindings[1]).toContain(`overall ${RENDERED_REFERENCE_THRESHOLDS.overall}`);
     expect(repairFindings[1]).not.toContain("scored 60");
   });
 
@@ -870,13 +864,13 @@ process.exit(1);
 
     const findings = repairFindings[0].join("\n");
     expect(findings).toContain(
-      "rendered-reference overall fidelity scored 74 and must reach 78",
+      `rendered-reference overall fidelity scored 74 and must reach ${RENDERED_REFERENCE_THRESHOLDS.overall}`,
     );
     expect(findings).toContain(
       "rendered-reference dimension paletteAdherence scored 56 and must reach 80",
     );
     expect(findings).toContain(
-      "rendered-reference dimension servicePresentation scored 72 and must reach 75",
+      `rendered-reference dimension servicePresentation scored 72 and must reach ${RENDERED_REFERENCE_THRESHOLDS.servicePresentation}`,
     );
     expect(findings).not.toContain("dimension heroGeometry scored");
     expect(findings).toContain(
@@ -1125,6 +1119,7 @@ export default function Experience({ content, runtime }) {
       ),
     ).toMatchObject({
       status: "rejected",
+      cycle: 0,
       error: expect.stringMatching(/FAQList.*content=\{content\}/iu),
     });
   });
@@ -1472,9 +1467,33 @@ export default function Experience({ content, runtime }) {
       },
       runVisualGateImpl: async (options: any) => {
         gateCalls += 1;
-        return visualGate(options, gateCalls === 1 ? "revise" : "pass");
+        const audit = {
+          summary: "Controlled rendered QA observation",
+          verdict: gateCalls === 1 ? "revise" : "pass",
+          findings: gateCalls === 1 ? [{
+            category: "content-integrity",
+            severity: "major",
+            viewport: "both",
+            evidence: "Process content appears twice",
+            recommendation: "Keep one process section",
+          }] : [],
+          operations: [],
+        };
+        const script = path.join(root, "qa-process.mjs");
+        await fs.writeFile(script, `import fs from 'node:fs';
+const i=process.argv.indexOf('--report');
+fs.writeFileSync(process.argv[i+1], ${JSON.stringify(JSON.stringify({
+          version: 1, mode: "verify", status: gateCalls === 1 ? "quality-blocked" : "ok",
+          changed: false, appliedOperations: [], blockers: audit.findings, audit,
+        }))});
+process.exit(${gateCalls === 1 ? 2 : 0});`);
+        return runVisualGateProcess({...options, visualGateScript: script});
       },
-      repairCandidateImpl: async ({ candidateId }: any) => {
+      repairCandidateImpl: async ({ candidateId, findings }: any) => {
+        expect(promotions).toHaveLength(0);
+        expect(findings).toEqual(expect.arrayContaining([
+          expect.objectContaining({category: "content-integrity", severity: "major"}),
+        ]));
         repairs.push(candidateId);
       },
       promoteImpl: async (options: any) => {

@@ -729,3 +729,43 @@ describe("experience-pack compiler", () => {
     );
   });
 });
+
+it("retains preview-only service cards in review and diagnostic builds but excludes them from production", async () => {
+  const { vi } = await import("vitest");
+  const config = site("Fixture mode");
+  config.routePolicy = {
+    version: 1,
+    decisions: [
+      {
+        pageType: "service",
+        target: config.services[0].name,
+        status: "approved",
+        previewOnly: true,
+      },
+    ],
+  };
+  try {
+    vi.stubEnv("PUBLIC_REVIEW_MODE", "false");
+    vi.stubEnv("PUBLIC_CREATIVE_DIAGNOSTIC", "false");
+    expect(
+      compileExperiencePack(config, "care-editorial").content.services.map(
+        (service) => service.slug,
+      ),
+    ).not.toContain(config.services[0].slug);
+    vi.stubEnv("PUBLIC_REVIEW_MODE", "true");
+    expect(
+      compileExperiencePack(config, "care-editorial").content.services.map(
+        (service) => service.slug,
+      ),
+    ).toContain(config.services[0].slug);
+    vi.stubEnv("PUBLIC_REVIEW_MODE", "false");
+    vi.stubEnv("PUBLIC_CREATIVE_DIAGNOSTIC", "true");
+    expect(
+      compileExperiencePack(config, "care-editorial").content.services.map(
+        (service) => service.slug,
+      ),
+    ).toContain(config.services[0].slug);
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});

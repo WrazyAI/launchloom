@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
+import { coverageLabelKey, MAX_ADDITIONAL_PLACES } from "../lib/coverage-contract.mjs";
 import { compressImage } from "../lib/compress-image";
 import { createClientIntakeV2Submission } from "../lib/client-intake-v2.mjs";
 import {
@@ -22,12 +23,87 @@ type Place = {
   types?: string[];
   location?: { latitude: number; longitude: number } | null;
 };
+type CoverageCandidate = {
+  id: string;
+  name: string;
+  state?: string;
+  label: string;
+  distanceMiles: number;
+};
+type CoveragePrimaryCity = {
+  label: string;
+  city: string;
+  state?: string;
+  country?: string;
+  placeId?: string;
+  latitude?: number;
+  longitude?: number;
+};
+type CoverageSuccess = {
+  ok: true;
+  primary: CoveragePrimaryCity;
+  radius: { selection: string; miles: number; label: string };
+  candidates: CoverageCandidate[];
+  reference: string;
+  source: string;
+  truncated: boolean;
+  partial: boolean;
+  warnings: string[];
+};
+type CoverageFailure = {
+  ok: false;
+  code: string;
+  message: string;
+  retryable: boolean;
+  primary?: { label: string };
+};
+type CoverageState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ready"; response: CoverageSuccess }
+  | { status: "failed"; failure: CoverageFailure };
+type StoredCoverage = {
+  inputs: { city: string; radius: string };
+  response: CoverageSuccess;
+  selectedIds: string[];
+  manualAreas?: string[];
+  confirmed: boolean;
+};
 type InviteState = "loading" | "valid" | "invalid" | "accepted";
 const steps = ["Business", "Services", "Brand"];
 const apiBase = (import.meta.env.PUBLIC_LAUNCHLOOM_API_URL || "").replace(
   /\/$/,
   "",
 );
+const coverageStateFieldNames = new Set([
+  "primaryCity",
+  "coverageAreas",
+  "coverageSelection",
+]);
+const COVERAGE_STORAGE_PREFIX = "launchloom-onboarding-coverage:";
+
+function coverageKey(city: string, radius: string) {
+  return `${city.trim().toLocaleLowerCase()}|${radius}`;
+}
+
+function readStoredCoverage(storageKey: string): StoredCoverage | null {
+  if (!storageKey) return null;
+  try {
+    const raw = sessionStorage.getItem(storageKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredCoverage;
+    if (!parsed?.response?.ok || !Array.isArray(parsed.response.candidates))
+      return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function coverageFallbackReason(code: string) {
+  if (code === "ambiguous_city" || code === "unresolved_city") return code;
+  return "provider_failure";
+}
 
 function decodeInviteId(token: string) {
   try {
@@ -203,6 +279,22 @@ export default function OnboardingForm() {
   const [status, setStatus] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [error, setError] = useState("");
+  const [coverageCity, setCoverageCity] = useState("");
+  const [coverageRadius, setCoverageRadius] = useState("");
+  const [coverageState, setCoverageState] = useState<CoverageState>({
+    status: "idle",
+  });
+  const [coverageSelectedIds, setCoverageSelectedIds] = useState<string[]>([]);
+  const [coverageManualAreas, setCoverageManualAreas] = useState<string[]>([]);
+  const [coverageEntry, setCoverageEntry] = useState("");
+  const [coverageEditMessage, setCoverageEditMessage] = useState("");
+  const [coverageConfirmed, setCoverageConfirmed] = useState(false);
+  const [coverageFallback, setCoverageFallback] = useState(false);
+  const [coverageRetryNonce, setCoverageRetryNonce] = useState(0);
+  const coverageAbortRef = useRef<AbortController | null>(null);
+  const coverageRequestRef = useRef(0);
+  const coverageCacheRef = useRef(new Map<string, CoverageSuccess>());
+  const coverageAppliedKeyRef = useRef("");
   const progress = useMemo(
     () => `${((step + 1) / steps.length) * 100}%`,
     [step],
@@ -211,7 +303,264 @@ export default function OnboardingForm() {
     () => normalizeIntakeServices(servicesValue),
     [servicesValue],
   );
+  const coverageStorageKey = useMemo(
+    () =>
+      inviteToken
+        ? `${COVERAGE_STORAGE_PREFIX}${decodeInviteId(inviteToken)}`
+        : "",
+    [inviteToken],
+  );
+  const resolvedPrimaryCity =
+    coverageState.status === "ready"
+      ? coverageState.response.primary.label
+      : coverageState.status === "failed"
+        ? coverageState.failure.primary?.label || ""
+        : "";
+  const confirmedCoverageAreas = useMemo(() => {
+    if (!coverageConfirmed) return [];
+    if (coverageState.status === "ready" && !coverageFallback) {
+      const primary = coverageState.response.primary.label;
+      const selected = coverageState.response.candidates
+        .filter((candidate) => coverageSelectedIds.includes(candidate.id))
+        .map((candidate) => candidate.label);
+      return [primary, ...selected, ...coverageManualAreas];
+    }
+    return [resolvedPrimaryCity || coverageCity.trim()];
+  }, [
+    coverageConfirmed,
+    coverageFallback,
+    coverageState,
+    coverageSelectedIds,
+    coverageManualAreas,
+    resolvedPrimaryCity,
+    coverageCity,
+  ]);
+  const coverageSelectionValue = useMemo(() => {
+    if (!coverageConfirmed) return "";
+    if (coverageState.status === "ready" && !coverageFallback)
+      return JSON.stringify({
+        status: "confirmed",
+        reference: coverageState.response.reference,
+        ...(coverageManualAreas.length ? { manualAreas: coverageManualAreas } : {}),
+        selectedIds: coverageState.response.candidates
+          .filter((candidate) => coverageSelectedIds.includes(candidate.id))
+          .map((candidate) => candidate.id),
+      });
+    return JSON.stringify({
+      status: "primary_city_only",
+      reason:
+        coverageState.status === "failed"
+          ? coverageFallbackReason(coverageState.failure.code)
+          : "provider_failure",
+    });
+  }, [coverageConfirmed, coverageFallback, coverageState, coverageSelectedIds, coverageManualAreas]);
   const draftValue = (name: string) => draftRef.current[name] || "Not provided";
+
+  function applyCoverageResponse(
+    response: CoverageSuccess,
+    stored?: StoredCoverage | null,
+  ) {
+    setCoverageState({ status: "ready", response });
+    // An explicitly empty saved selection stays empty; only a missing stored
+    // draft falls back to selecting every suggestion for review.
+    const selectedIds = stored
+      ? stored.selectedIds.filter((id) =>
+          response.candidates.some((candidate) => candidate.id === id),
+        )
+      : response.candidates.slice(0, MAX_ADDITIONAL_PLACES).map((candidate) => candidate.id);
+    const manual = (Array.isArray(stored?.manualAreas) ? stored.manualAreas : [])
+      .filter((area): area is string => typeof area === "string" && area.length <= 160 && !/[\x00-\x1f\x7f]/u.test(area) && /^[^,]+,\s*[^,]+$/u.test(area.trim()))
+      .slice(0, MAX_ADDITIONAL_PLACES);
+    setCoverageManualAreas(manual);
+    setCoverageSelectedIds(selectedIds.slice(0, MAX_ADDITIONAL_PLACES - manual.length));
+    setCoverageConfirmed(Boolean(stored?.confirmed) && selectedIds.length + manual.length <= MAX_ADDITIONAL_PLACES && manual.length === (stored?.manualAreas?.length || 0));
+    setCoverageFallback(false);
+  }
+
+  async function fetchCoverage(city: string, radius: string, key: string) {
+    const requestId = ++coverageRequestRef.current;
+    coverageAbortRef.current?.abort();
+    const controller = new AbortController();
+    coverageAbortRef.current = controller;
+    try {
+      const response = await fetch(`${apiBase}/api/coverage-areas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inviteToken,
+          primaryCity: city,
+          serviceRadius: radius,
+        }),
+        signal: controller.signal,
+      });
+      const result = (await response.json().catch(() => ({}))) as
+        | CoverageSuccess
+        | CoverageFailure;
+      if (requestId !== coverageRequestRef.current) return;
+      if (result && (result as CoverageSuccess).ok) {
+        const success = result as CoverageSuccess;
+        coverageCacheRef.current.set(key, success);
+        if (coverageCacheRef.current.size > 20) {
+          const oldest = coverageCacheRef.current.keys().next().value;
+          if (oldest) coverageCacheRef.current.delete(oldest);
+        }
+        applyCoverageResponse(success, null);
+        setError("");
+        return;
+      }
+      const failure = (result || {}) as CoverageFailure;
+      setCoverageState({
+        status: "failed",
+        failure: {
+          ok: false,
+          code: failure.code || "provider_failure",
+          message:
+            failure.message ||
+            "We could not check nearby cities right now. Retry or confirm only your main city.",
+          retryable: failure.retryable !== false,
+          ...(failure.primary ? { primary: failure.primary } : {}),
+        },
+      });
+    } catch {
+      if (controller.signal.aborted || requestId !== coverageRequestRef.current)
+        return;
+      setCoverageState({
+        status: "failed",
+        failure: {
+          ok: false,
+          code: "provider_failure",
+          message:
+            "We could not check nearby cities right now. Retry or confirm only your main city.",
+          retryable: true,
+        },
+      });
+    }
+  }
+
+  function retryCoverage() {
+    const key = coverageKey(coverageCity, coverageRadius);
+    if (!key) return;
+    coverageCacheRef.current.delete(key);
+    coverageAppliedKeyRef.current = "";
+    setCoverageRetryNonce((value) => value + 1);
+  }
+
+  function removeCoveragePlace(id: string, manual = false) {
+    if (manual) setCoverageManualAreas(current => current.filter(area => area !== id));
+    else setCoverageSelectedIds(current => current.filter(value => value !== id));
+    setCoverageConfirmed(false);
+    setCoverageEditMessage("");
+    setError("");
+  }
+
+  function addCoveragePlace() {
+    if (coverageState.status !== "ready" || !coverageEntry.trim()) return;
+    const label = coverageEntry.trim();
+    const candidate = coverageState.response.candidates.find(item => coverageLabelKey(item.label) === coverageLabelKey(label));
+    const existing = [coverageState.response.primary.label, ...coverageState.response.candidates.filter(item => coverageSelectedIds.includes(item.id)).map(item => item.label), ...coverageManualAreas];
+    if (existing.some(area => coverageLabelKey(area) === coverageLabelKey(label))) {
+      setCoverageEditMessage("That place is already included."); return;
+    }
+    if (coverageSelectedIds.length + coverageManualAreas.length >= MAX_ADDITIONAL_PLACES) {
+      setCoverageEditMessage("Remove a place before adding another. You can choose five additional places."); return;
+    }
+    if (label.length > 160 || /[\x00-\x1f\x7f]/u.test(label) || !/^[^,]+,\s*[^,]+$/u.test(label)) {
+      setCoverageEditMessage("Include the city and state or country, for example Algood, TN."); return;
+    }
+    if (candidate) setCoverageSelectedIds(current => [...current, candidate.id]);
+    else setCoverageManualAreas(current => [...current, label]);
+    setCoverageConfirmed(false);
+    setCoverageEntry("");
+    setCoverageEditMessage("");
+    setError("");
+  }
+
+  // Debounced discovery. Changing city or radius invalidates the previous
+  // confirmation and refreshes suggestions; stale responses are discarded.
+  useEffect(() => {
+    if (inviteState !== "valid" || step !== 1) return;
+    const city = coverageCity.trim();
+    const radius = coverageRadius;
+    if (!city || !radius) {
+      coverageAppliedKeyRef.current = "";
+      setCoverageState({ status: "idle" });
+      setCoverageSelectedIds([]);
+      setCoverageManualAreas([]);
+      setCoverageEntry("");
+      setCoverageEditMessage("");
+      setCoverageConfirmed(false);
+      setCoverageFallback(false);
+      return;
+    }
+    const key = coverageKey(city, radius);
+    if (coverageAppliedKeyRef.current === key) return;
+    coverageAppliedKeyRef.current = key;
+    setCoverageConfirmed(false);
+    setCoverageFallback(false);
+    setCoverageSelectedIds([]);
+    setCoverageManualAreas([]);
+    setCoverageEntry("");
+    setCoverageEditMessage("");
+    const stored = readStoredCoverage(coverageStorageKey);
+    if (
+      stored &&
+      stored.inputs.city.trim().toLocaleLowerCase() === city.toLocaleLowerCase() &&
+      stored.inputs.radius === radius
+    ) {
+      applyCoverageResponse(stored.response, stored);
+      return;
+    }
+    const cached = coverageCacheRef.current.get(key);
+    if (cached) {
+      applyCoverageResponse(cached, null);
+      return;
+    }
+    setCoverageState({ status: "loading" });
+    const timer = window.setTimeout(() => {
+      void fetchCoverage(city, radius, key);
+    }, 600);
+    return () => {
+      window.clearTimeout(timer);
+      coverageAbortRef.current?.abort();
+      coverageRequestRef.current += 1;
+      if (!coverageCacheRef.current.has(key) && coverageAppliedKeyRef.current === key)
+        coverageAppliedKeyRef.current = "";
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    inviteState,
+    step,
+    coverageCity,
+    coverageRadius,
+    coverageRetryNonce,
+    coverageStorageKey,
+  ]);
+
+  // Persist the fetched candidates and client selection so a reload with the
+  // same city and radius can restore the reviewed list instead of refetching.
+  useEffect(() => {
+    if (!coverageStorageKey || coverageState.status !== "ready") return;
+    try {
+      const stored: StoredCoverage = {
+        inputs: { city: coverageCity.trim(), radius: coverageRadius },
+        response: coverageState.response,
+        selectedIds: coverageSelectedIds,
+        manualAreas: coverageManualAreas,
+        confirmed: coverageConfirmed && !coverageFallback,
+      };
+      sessionStorage.setItem(coverageStorageKey, JSON.stringify(stored));
+    } catch {
+      // Persisting the draft is best effort.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    coverageStorageKey,
+    coverageState,
+    coverageSelectedIds,
+    coverageManualAreas,
+    coverageConfirmed,
+    coverageFallback,
+  ]);
 
   useEffect(() => {
     const tokenKey = "launchloom-onboarding-invite";
@@ -326,6 +675,7 @@ export default function OnboardingForm() {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >("input, select, textarea")) {
       if (!field.name || field.type === "file") continue;
+      if (coverageStateFieldNames.has(field.name)) continue;
       if (field instanceof HTMLInputElement && field.type === "radio") {
         if (field.checked) next[field.name] = field.value;
         continue;
@@ -349,6 +699,7 @@ export default function OnboardingForm() {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >("input, select, textarea")) {
       if (!field.name || field.type === "file") continue;
+      if (coverageStateFieldNames.has(field.name)) continue;
       const value = draftRef.current[field.name];
       if (value === undefined) continue;
       if (field.name === "brandColorPicker" && field instanceof HTMLInputElement) {
@@ -358,6 +709,8 @@ export default function OnboardingForm() {
         setBrandColorPicker(value);
         setHasExistingBrandColor(true);
       }
+      if (field.name === "serviceAreas") setCoverageCity(value);
+      if (field.name === "serviceRadius") setCoverageRadius(value);
       if (field instanceof HTMLInputElement && field.type === "radio") {
         field.checked = field.value === value;
       } else if (
@@ -407,6 +760,17 @@ export default function OnboardingForm() {
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >("input, select, textarea") || [])
       if (!field.disabled && !field.reportValidity()) return;
+    if (step === 1 && coverageEntry.trim()) {
+      setError("Add your typed place using Add place, or clear the input before continuing.");
+      return;
+    }
+    if (step === 1 && !coverageConfirmed) {
+      setError(
+        "Review and confirm the cities and towns you serve before continuing.",
+      );
+      document.querySelector<HTMLElement>("#coverage-confirmation")?.focus();
+      return;
+    }
     captureDraft(
       normalizedServices === undefined ? {} : { services: normalizedServices },
     );
@@ -658,6 +1022,17 @@ export default function OnboardingForm() {
       <input type="hidden" name="inviteToken" value={inviteToken} />
       <input type="hidden" name="placeId" />
       <input type="hidden" name="googleMapsUrl" />
+      <input type="hidden" name="primaryCity" value={resolvedPrimaryCity} />
+      <input
+        type="hidden"
+        name="coverageAreas"
+        value={confirmedCoverageAreas.join("\n")}
+      />
+      <input
+        type="hidden"
+        name="coverageSelection"
+        value={coverageSelectionValue}
+      />
       <input
         type="hidden"
         name="gmbSkipped"
@@ -784,12 +1159,33 @@ export default function OnboardingForm() {
             <input required name="phone" placeholder="(555) 555-5555" />
           </label>
           <label className="field full">
-            Street address
+            Street address, if applicable
             <input
-              required
               name="address"
               placeholder="123 Main Street, City, ST 00000"
             />
+          </label>
+          <label className="field full">
+            Address visibility on your website
+            <select name="addressVisibility" defaultValue="public">
+              <option value="public">Show my business address</option>
+              <option value="private">Keep my address private</option>
+            </select>
+            <small>A private address stays in your brief and is omitted from website text, maps, and search data.</small>
+          </label>
+          <label className="field">
+            Business hours, if confirmed
+            <input name="hours" placeholder="Leave blank if not confirmed" />
+          </label>
+          <label className="field">
+            Customer search language
+            <select name="researchLanguageCode" defaultValue="en">
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="pt">Portuguese</option>
+            </select>
           </label>
           <label className="field">
             Current website, if replacing
@@ -890,6 +1286,10 @@ export default function OnboardingForm() {
               </fieldset>
             )}
           </div>
+          <label className="field full">
+            Services you do not offer, if any
+            <textarea name="excludedServices" placeholder="One service per line" />
+          </label>
           <label className="field">
             What kind of business is this?
             <select required name="industry" defaultValue="">
@@ -914,11 +1314,23 @@ export default function OnboardingForm() {
               required
               name="serviceAreas"
               placeholder="e.g. Charleston, SC"
+              onInput={(event) => {
+                setCoverageCity(event.currentTarget.value);
+                setError("");
+              }}
             />
           </label>
           <label className="field">
             How far do you normally travel?
-            <select required name="serviceRadius" defaultValue="">
+            <select
+              required
+              name="serviceRadius"
+              defaultValue=""
+              onChange={(event) => {
+                setCoverageRadius(event.currentTarget.value);
+                setError("");
+              }}
+            >
               <option value="" disabled>Select your usual travel distance</option>
               <option value="10">Up to 10 miles</option>
               <option value="20">Up to 20 miles</option>
@@ -927,6 +1339,128 @@ export default function OnboardingForm() {
               <option value="50+">More than 50 miles</option>
             </select>
           </label>
+          <fieldset
+            className="field full coverage-review"
+            aria-describedby="coverage-help"
+          >
+            <legend>Additional places served</legend>
+            <p className="coverage-help" id="coverage-help">
+              We prefill up to five nearby places from your travel radius. Remove
+              any place you do not serve, or type a replacement. Your main city
+              is always included and does not count toward the five-place limit.
+            </p>
+            {coverageState.status === "idle" && (
+              <p className="coverage-status" role="status">
+                Add your main service city and travel radius to see nearby
+                places.
+              </p>
+            )}
+            {coverageState.status === "loading" && (
+              <p className="coverage-status" role="status">
+                Looking for cities and towns within {coverageRadius} miles…
+              </p>
+            )}
+            {coverageState.status === "ready" && (
+              <>
+                <div className="coverage-primary">
+                  <span>Main city</span>
+                  <strong>{coverageState.response.primary.label}</strong>
+                  <small>
+                    Always included · {coverageState.response.radius.label}
+                  </small>
+                </div>
+                <div className="service-chips coverage-pills" role="list" aria-label="Additional places served">
+                  {coverageState.response.candidates.filter(candidate => coverageSelectedIds.includes(candidate.id)).map(candidate => (
+                    <span className="service-chip coverage-pill" role="listitem" key={candidate.id}>
+                      <span>{candidate.label}</span>
+                      <button type="button" aria-label={`Remove ${candidate.label}`} onClick={() => removeCoveragePlace(candidate.id)}><span aria-hidden="true">×</span></button>
+                    </span>
+                  ))}
+                  {coverageManualAreas.map(area => (
+                    <span className="service-chip coverage-pill" role="listitem" key={area}>
+                      <span>{area}</span>
+                      <button type="button" aria-label={`Remove ${area}`} onClick={() => removeCoveragePlace(area, true)}><span aria-hidden="true">×</span></button>
+                    </span>
+                  ))}
+                  {coverageSelectedIds.length + coverageManualAreas.length === 0 && <span className="service-chips-empty">Add places you serve, or confirm your main city only.</span>}
+                </div>
+                <div className="service-entry-row">
+                  <input id="coverage-entry" aria-label="Add an additional place served" aria-describedby="coverage-picker-help" type="text" maxLength={160} value={coverageEntry}
+                    disabled={coverageSelectedIds.length + coverageManualAreas.length >= MAX_ADDITIONAL_PLACES}
+                    placeholder={coverageSelectedIds.length + coverageManualAreas.length >= MAX_ADDITIONAL_PLACES ? "Remove a place to add another" : "City, State or Country"}
+                    list="coverage-city-suggestions" onChange={event => setCoverageEntry(event.currentTarget.value)}
+                    onKeyDown={event => { if(event.key === "Enter") {event.preventDefault(); addCoveragePlace();} }} />
+                  <button className="button secondary service-add-button" type="button" onClick={addCoveragePlace} disabled={!coverageEntry.trim() || coverageSelectedIds.length + coverageManualAreas.length >= MAX_ADDITIONAL_PLACES}>Add place</button>
+                </div>
+                <datalist id="coverage-city-suggestions">
+                  {coverageState.response.candidates.filter(candidate => !coverageSelectedIds.includes(candidate.id)).map(candidate => <option key={candidate.id} value={candidate.label} />)}
+                </datalist>
+                <small id="coverage-picker-help">{coverageSelectedIds.length + coverageManualAreas.length} of {MAX_ADDITIONAL_PLACES} additional places selected. Typed places are supplied by you and may be outside the suggested radius.</small>
+                {coverageEditMessage && <p role="status">{coverageEditMessage}</p>}
+                {coverageState.response.warnings.map((warning) => (
+                  <p className="coverage-warning" role="status" key={warning}>
+                    {warning}
+                  </p>
+                ))}
+                <label className="consent coverage-confirm">
+                  <input
+                    id="coverage-confirmation"
+                    type="checkbox"
+                    checked={coverageConfirmed}
+                    onChange={(event) => {
+                      setCoverageConfirmed(event.currentTarget.checked);
+                      setCoverageFallback(false);
+                      setError("");
+                    }}
+                  />
+                  <span>
+                    I confirm these are the cities and towns we serve
+                    {coverageSelectedIds.length + coverageManualAreas.length === 0
+                      ? " (my main city only)"
+                      : ""}
+                    .
+                  </span>
+                </label>
+              </>
+            )}
+            {coverageState.status === "failed" && (
+              <>
+                <p className="coverage-status coverage-error" role="alert">
+                  {coverageState.failure.message}
+                </p>
+                <div className="coverage-actions">
+                  {coverageState.failure.retryable && (
+                    <button
+                      type="button"
+                      className="text-button"
+                      onClick={retryCoverage}
+                    >
+                      Retry nearby places
+                    </button>
+                  )}
+                </div>
+                <label className="consent coverage-confirm">
+                  <input
+                    id="coverage-confirmation"
+                    type="checkbox"
+                    checked={coverageConfirmed}
+                    onChange={(event) => {
+                      setCoverageConfirmed(event.currentTarget.checked);
+                      setCoverageFallback(true);
+                      setError("");
+                    }}
+                  />
+                  <span>
+                    I confirm{" "}
+                    {coverageState.failure.primary?.label ||
+                      coverageCity.trim() ||
+                      "my main city"}{" "}
+                    for now. I understand nearby towns were not checked.
+                  </span>
+                </label>
+              </>
+            )}
+          </fieldset>
           <label className="field full">
             Why do customers choose you?
             <textarea
@@ -969,9 +1503,8 @@ export default function OnboardingForm() {
           </label>
         </fieldset>
         <p className="form-note">
-          We&apos;ll use your main city and travel radius to research nearby
-          coverage areas. That does not automatically create a page for every
-          nearby town.
+          We&apos;ll use the places you confirm to plan your website&apos;s local
+          coverage. That does not automatically create a page for every town.
         </p>
       </section>
       <section
@@ -1070,6 +1603,10 @@ export default function OnboardingForm() {
             <dd>{draftValue("businessName")}</dd>
           </div>
           <div>
+            <dt>Address visibility</dt>
+            <dd>{draftRef.current.addressVisibility === "private" ? "Private: omitted from the website and maps" : "Public: shown on the website"}</dd>
+          </div>
+          <div>
             <dt>Core services</dt>
             <dd>{draftValue("services")}</dd>
           </div>
@@ -1080,6 +1617,14 @@ export default function OnboardingForm() {
           <div>
             <dt>Travel radius</dt>
             <dd>{draftValue("serviceRadius")} miles</dd>
+          </div>
+          <div>
+            <dt>Confirmed coverage</dt>
+            <dd>
+              {confirmedCoverageAreas.length
+                ? confirmedCoverageAreas.join(", ")
+                : "Not confirmed yet"}
+            </dd>
           </div>
           <div>
             <dt>Main customer action</dt>

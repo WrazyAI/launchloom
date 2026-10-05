@@ -1,4 +1,5 @@
 ---
+import { serviceHref } from "../../lib/site";
 import { phoneHref, primaryCtaHref } from "../../lib/site";
 import type { ExperienceBlueprintV2, ExperienceContent } from "../../lib/experience-pack";
 import LeadForm from "../LeadForm.astro";
@@ -31,7 +32,7 @@ const { brand, hero, services, proof, faqs, copy } = content;
 
     <section class="xp-guide__services" id="services">
       <header><p class="xp-guide__eyebrow">Ways we can help</p><h2>{copy.servicesHeading || "Choose the support that fits today."}</h2></header>
-      <div>{services.map((service) => <article><div class="xp-guide__dot" aria-hidden="true"></div><h3>{service.name}</h3><p>{service.description}</p><a href={`/services/${service.slug}/`}>Explore this service</a></article>)}</div>
+      <div>{services.map((service) => <article><div class="xp-guide__dot" aria-hidden="true"></div><h3>{service.name}</h3><p>{service.description}</p><a href={serviceHref(service.slug)}>Explore this service</a></article>)}</div>
     </section>
 
     {brand.serviceAreas.length > 0 && <section class="xp-guide__coverage" aria-labelledby="xp-guide-coverage-title">

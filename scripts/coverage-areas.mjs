@@ -1,3 +1,4 @@
+import { confirmedCoverageFromIntake } from "./confirmed-coverage.mjs";
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { firstServiceArea } from "./service-area-input.mjs";
@@ -204,8 +205,8 @@ async function main() {
     throw new Error("Usage: node coverage-areas.mjs --source intake.md --out business-enrichment.json");
   const intake = extractIntake(await fs.readFile(source, "utf8"));
   const primaryCity = primaryCityFromIntake(intake);
-  let discovery;
-  try {
+  let discovery = confirmedCoverageFromIntake(intake);
+  if (!discovery) try {
     const client = createGoogleGeocodingClient({ apiKey: process.env.GOOGLE_PLACES_API_KEY });
     discovery = await discoverCoverageAreas({
       primaryCity,

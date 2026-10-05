@@ -1,4 +1,13 @@
+import { addressVisibility, factText, normalizeResearchLanguageCode } from "../../templates/client-site/src/lib/business-facts.mjs";
 /** @typedef {10 | 20 | 30 | 50 | "50+"} ServiceRadius */
+
+import {
+  COVERAGE_FALLBACK_SOURCE,
+  MAX_COVERAGE_CANDIDATES,
+  boundedRadiusMiles,
+  boundedRadiusSelection,
+  parseCoverageSelection,
+} from "./coverage-contract.mjs";
 
 /**
  * String controls serialized by the current three-step online intake form.
@@ -16,12 +25,19 @@ export const CLIENT_INTAKE_V2_FORM_FIELDS = Object.freeze([
   "email",
   "phone",
   "address",
+  "addressVisibility",
+  "hours",
+  "researchLanguageCode",
   "website",
   "domain",
   "services",
+  "excludedServices",
   "industry",
   "serviceAreas",
   "serviceRadius",
+  "primaryCity",
+  "coverageAreas",
+  "coverageSelection",
   "differentiators",
   "primaryCta",
   "brandNotes",
@@ -59,16 +75,21 @@ export const CLIENT_INTAKE_V2_ISSUE_FIELDS = Object.freeze([
   "email",
   "phone",
   "address",
+  "addressVisibility",
+  "hours",
+  "researchLanguageCode",
   "website",
   "domain",
   "desiredDomain",
   "industry",
   "services",
+  "excludedServices",
   "confirmedServices",
   "serviceAreas",
   "primaryCity",
   "serviceRadius",
   "coverageAreas",
+  "coverageConfirmation",
   "differentiators",
   "primaryCta",
   "brandNotes",
@@ -140,10 +161,11 @@ export function normalizeClientIntake(raw) {
   const contactName = clean(raw.contactName, 120);
   const email = clean(raw.email, 240).toLowerCase();
   const phone = clean(raw.phone, 80);
-  const address = clean(raw.address, 300);
+  const address = factText(raw.address, 300);
+  const visibility = addressVisibility(raw.addressVisibility);
   if (!/^[a-z0-9-]{12,100}$/iu.test(submissionId))
     throw new Error("A valid submission reference is required.");
-  if (!businessName || !contactName || !email || !phone || !address)
+  if (!businessName || !contactName || !email || !phone || (legacy && !address))
     throw new Error("Complete the required business details before submitting.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email))
     throw new Error("Enter a valid preview email.");
@@ -156,6 +178,10 @@ export function normalizeClientIntake(raw) {
   let primaryCity = "";
   let serviceRadius = null;
   let coverageAreas;
+  /** @type {import("./coverage-contract.mjs").CoverageSelection | null} */
+  let coverageSelection = null;
+  /** @type {Record<string, unknown> | null} */
+  let coverageConfirmation = null;
   if (legacy) {
     coverageAreas = list(raw.coverageAreas || raw.serviceAreas, 20);
     primaryCity = clean(raw.primaryCity, 160) || coverageAreas[0] || "";
@@ -174,7 +200,54 @@ export function normalizeClientIntake(raw) {
     if (!clean(raw.industry, 80)) throw new Error("Choose the closest business category.");
     if (!affirmative(raw.confirmAccuracy))
       throw new Error("Confirm the business details and files before submitting.");
-    coverageAreas = [primaryCity];
+    coverageSelection = parseCoverageSelection(raw.coverageSelection);
+    const submittedAreas = list(typeof raw.coverageAreas === "string" ? raw.coverageAreas.split(/\r?\n/u) : raw.coverageAreas, MAX_COVERAGE_CANDIDATES + 1);
+    if (coverageSelection?.status === "confirmed") {
+      // The client must submit the primary city followed by exactly the
+      // confirmed nearby selections in provider order; the Worker re-derives
+      // these labels from the signed lookup reference before persisting.
+      if (
+        submittedAreas.length !== coverageSelection.selectedIds.length + (coverageSelection.manualAreas?.length || 0) + 1 ||
+        submittedAreas[0].toLocaleLowerCase() !== primaryCity.toLocaleLowerCase()
+      )
+        throw new Error(
+          "Your confirmed coverage list changed. Review and confirm the cities and towns you serve again.",
+        );
+      coverageAreas = submittedAreas;
+    } else if (coverageSelection?.status === "primary_city_only") {
+      if (
+        submittedAreas.length !== 1 ||
+        submittedAreas[0].toLocaleLowerCase() !== primaryCity.toLocaleLowerCase()
+      )
+        throw new Error(
+          "Your confirmed coverage list changed. Review and confirm the cities and towns you serve again.",
+        );
+      coverageAreas = [primaryCity];
+    } else {
+      // Backward-compatible contract: a v2 intake with no coverageSelection is
+      // an older form submission. It is recorded as primary-city-only and
+      // explicitly marked as not client-confirmed nearby coverage.
+      coverageAreas = [primaryCity];
+      coverageSelection = null;
+    }
+    const radiusSelection = boundedRadiusSelection(raw.serviceRadius);
+    const radiusMiles = boundedRadiusMiles(raw.serviceRadius);
+    coverageConfirmation =
+      coverageSelection?.status === "confirmed"
+        ? null
+        : {
+            status: coverageSelection ? "primary_city_only" : "legacy_unconfirmed",
+            source: coverageSelection ? COVERAGE_FALLBACK_SOURCE : "unavailable",
+            ...(coverageSelection ? { reason: coverageSelection.reason } : {}),
+            primaryCity,
+            radiusSelection,
+            radiusMiles,
+            candidateCount: 0,
+            selectedCount: 0,
+            selectedIds: [],
+            truncated: false,
+            partial: false,
+          };
   }
 
   const legacyConfirmed =
@@ -183,6 +256,19 @@ export function normalizeClientIntake(raw) {
     affirmative(raw.confirmSeoResearch);
   if (legacy && !legacyConfirmed)
     throw new Error("Confirm the submitted business details before submitting.");
+  if (legacy)
+    coverageConfirmation = {
+      status: "legacy_unconfirmed",
+      source: "unavailable",
+      primaryCity: primaryCity || "",
+      radiusSelection: boundedRadiusSelection(raw.serviceRadius),
+      radiusMiles: boundedRadiusMiles(raw.serviceRadius),
+      candidateCount: 0,
+      selectedCount: 0,
+      selectedIds: [],
+      truncated: false,
+      partial: false,
+    };
 
   const leadEmail = clean(raw.leadEmail, 240).toLowerCase();
   if (leadEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(leadEmail))
@@ -203,6 +289,10 @@ export function normalizeClientIntake(raw) {
     email,
     phone,
     address,
+    addressVisibility: visibility,
+    hours: factText(raw.hours, 240),
+    researchLanguageCode: normalizeResearchLanguageCode(raw.researchLanguageCode),
+    excludedServices: list(raw.excludedServices, 20),
     website: clean(raw.website, 500),
     domain: clean(raw.domain, 253),
     desiredDomain: clean(raw.desiredDomain, 253),
@@ -224,6 +314,8 @@ export function normalizeClientIntake(raw) {
     primaryCity,
     serviceRadius,
     coverageAreas,
+    coverageSelection,
+    coverageConfirmation,
     serviceAreas: legacy ? coverageAreas.join("\n") : primaryCity,
     confirmation: { businessFactsAndAssetRights: true },
   };

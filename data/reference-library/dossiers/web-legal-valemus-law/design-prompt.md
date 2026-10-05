@@ -8,6 +8,8 @@ The observed page flows through 1. firm navigation; 2. cityscape introduction; 3
 
 # Responsive translation
 
+The retained mobile opening preserves the headline over the full-width image field. Keep that copy-over-media relationship, using a client-owned or approved contextual image with a responsive focal crop. Do not replace the opening with a text-only statement or move its hero image into an adjacent column. Keep the background area behind the headline quiet and legible; the source cityscape is evidence of composition, not an asset to transfer.
+
 At a 390 by 844 viewport, Stack the three value columns, move image above its linked copy, and keep legal resources separate from the actual consultation path. Recheck the opening at 1440 by 1000 so the main promise, first action and focal image are legible at normal zoom. On both sizes, use real links, an accessible menu, readable contrast, reachable form controls, and no horizontal overflow. Honor reduced-motion preference by presenting equivalent static information; a video or reveal may never be required to discover the next action.
 
 # Signature elements

@@ -19,6 +19,14 @@ stay outside deployed public assets. Visual review remains mandatory.
 
 ## Shared standard
 
+The canonical brief records fact status and provenance. Missing optional facts
+are omitted; unresolved contradictions and missing required contact/service
+facts block publication while a review preview remains available. A private
+business address stays in the protected operational brief and must not enter
+public copy, configuration, hydrated props, JSON-LD, maps, or directions links.
+Client confirmation records testimony, not independent credential verification.
+See `business-facts-contract.md` for the versioned contract and legacy migration.
+
 Every site should make four things clear near the top of the page: who the
 business helps, what it provides, where it operates when location matters, and
 what the visitor should do next. Use one primary action and one useful
@@ -74,6 +82,46 @@ Treat the opening as a hook, not an inventory. Keep the hero heading to roughly
 descriptions to one distinct sentence. Put supporting detail on the service
 page. Do not add decorative ordinal numbers to service or proof cards. Reserve
 numbering for a sequence where the order communicates a real process.
+
+## Programmatic color and contrast contract
+
+Keep the chosen brand color as identity and derive readable variants by local
+role before authorship. `palette.surfaces` pairs page, hero, navigation, light,
+dark and bounded brand surfaces with body/muted text, links, actions, action
+text, required control borders and focus indicators. Authored surfaces use
+`data-ll-surface` and the scoped `--ll-*` role variables; a section changing
+surface must use its own foreground pair. Typography and composition remain
+authored. Decorative separators do not need control-boundary contrast.
+
+Rendered contrast is a deterministic promotion gate on every built HTML route
+at desktop, compact desktop and mobile, including hover, keyboard focus,
+native disclosures and explicitly controlled navigation menus. Ordinary text
+requires 4.5:1, large text 3:1, and necessary control/focus indicators 3:1.
+Composited alpha is measured; unsupported effects and ambiguous image backdrops
+are unresolved, not presumed readable. Image overlays may use a local opaque
+plate or a scrim whose worst-case backdrop passes. Text shadows alone do not
+prove contrast. Existing visual, source and reference-fidelity gates still run.
+Interaction audits include summary controls and links revealed by disclosures
+and menus. Inset focus indicators use their local paint and block unmeasured
+border overlap. Unrelated paint remains unresolved unless bounded geometry
+and stacking prove an opaque plate or opaque occlusion. Obstruction remains
+subject to the visual gate.
+
+Initial candidates may receive one bounded local text-color sweep. Corrections
+are scoped to a verified route, actual stylesheet media conditions and exact rendered element;
+only deterministic solid-surface pairs with consistent measured interaction
+states are eligible. Persist CSS, rebuild, audit again, then rerun visual and
+reference gates. More than 32 unique correction groups, over 16 KiB of local correction CSS, or ambiguous backdrops go to
+the existing bounded author repair path. Human revisions run the complete
+audit without automatic unrelated recoloring. Preserve before/after ratios,
+selectors, viewports and correction reports with private workflow evidence.
+
+Publication runs the same read-only audit before upload, including developer visual overrides; approved source is never silently rewritten during publication.
+
+Run `npm run quality:contrast -- --site <client-directory>` after a client build.
+For a controlled initial-generation sweep, explicitly supply `--repair true
+--styles src/generated-experiences/selected/styles.css`. A failing/unresolved
+report exits nonzero and never authorizes publication.
 
 ## Conversion tools
 
