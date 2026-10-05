@@ -690,6 +690,38 @@ export async function resolveReferenceEvidencePath(record) {
 }
 
 /**
+ * Factor identical contrast diagnostic payloads across measured contexts.
+ * Every route/viewport/state tuple and the exact remaining diagnostic are
+ * retained, including ratios, selectors, text, colors, and unresolved causes.
+ * Unknown findings stay verbatim. The authoritative findings are not mutated.
+ */
+export function modelBoundRepairFindings(findings = []) {
+  const result = [];
+  const groups = new Map();
+  for (const finding of findings) {
+    const match =
+      typeof finding === "string" &&
+      finding.match(
+        /^contrast (\w+): (\S+) (desktop|compact|mobile) (\S+) (.+)$/u,
+      );
+    if (!match) {
+      result.push(finding);
+      continue;
+    }
+    const [, status, route, viewport, state, diagnostic] = match;
+    const key = JSON.stringify([status, diagnostic]);
+    let group = groups.get(key);
+    if (!group) {
+      group = { status, diagnostic, measurements: [] };
+      groups.set(key, group);
+      result.push(group);
+    }
+    group.measurements.push([route, viewport, state]);
+  }
+  return result;
+}
+
+/**
  * @param {{
  *   model?: string,
  *   referenceDna?: Record<string, any>,
@@ -898,7 +930,8 @@ Use these helpers instead of inventing network calls or duplicating platform beh
 ${scopedHumanRepair ? `RESOLVED SECTION SCOPE\n${JSON.stringify(creativeRepairScope, null, 2)}\nOnly these section IDs may change.` : ""}
 
 FINDINGS
-${JSON.stringify(findings, null, 2)}
+${JSON.stringify(modelBoundRepairFindings(findings))}
+Contrast objects losslessly group an identical diagnostic across measurements. Each measurements tuple is [route, viewport, interaction state]; every tuple is a measured blocker and must be addressed. The diagnostic retains its exact selector, text, ratio/required minimum, paint and unresolved causes. Full authoritative check reports remain in the private candidate evidence.
 
 CURRENT EXPERIENCE.JSX
 ${currentFiles.experience}
