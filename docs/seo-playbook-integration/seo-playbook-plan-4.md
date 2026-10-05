@@ -1,6 +1,6 @@
 # Stage 4 of 4: Route verification and production handoff
 
-Status: proposed, awaiting user approval. Depends on [Stage 3](seo-playbook-plan-3.md).
+Status: implemented, merged in PR #133 and deployed on 2026-10-05 at `1e8d31c3a6cc0fb5466d8c13990d6163752a2c60`. Platform/onboarding Pages source, Worker traffic and live desktop/mobile behavior verified. Existing-client publication and real provider delivery remain separate scopes. Depends on [Stage 3](seo-playbook-plan-3.md).
 
 ## Intended outcome
 

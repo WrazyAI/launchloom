@@ -1,3 +1,5 @@
+import { verifyApprovedRoutes } from "./browser-route-verification.mjs";
+import { sanitizeVerificationReport } from "./route-verification-handoff.mjs";
 import { compileRouteInventory } from "../templates/client-site/src/lib/route-inventory.mjs";
 import { contrastFailureMessages } from "./rendered-contrast.mjs";
 import fs from "node:fs/promises";
@@ -96,8 +98,11 @@ if (
   failures.push("seo: configured public domain is missing a canonical URL.");
 if (!sitemapXml.includes("<urlset"))
   failures.push("seo: sitemap.xml is missing or invalid.");
-for (const route of compileRouteInventory(config).records.filter(route=>route.discovery.sitemap && !reviewMode))
-  if (!sitemapXml.includes(route.path)) failures.push(`seo: sitemap omits approved route ${route.path}.`);
+for (const route of compileRouteInventory(config).records.filter(
+  (route) => route.discovery.sitemap && !reviewMode,
+))
+  if (!sitemapXml.includes(route.path))
+    failures.push(`seo: sitemap omits approved route ${route.path}.`);
 if (!/^User-agent: \*/mu.test(robotsTxt))
   failures.push("seo: robots.txt is missing or invalid.");
 
@@ -110,6 +115,20 @@ try {
   );
   if (!contrastReport.pass)
     failures.push(...contrastFailureMessages(contrastReport));
+  const routeReport = await verifyApprovedRoutes({
+    config,
+    origin: url,
+    mode: reviewMode ? "review" : "production",
+    browser,
+    formMode: "mocked",
+    screenshotsDir: path.join(screenshotDir, "approved-routes"),
+  });
+  await fs.writeFile(
+    path.join(screenshotDir, "route-browser-report.json"),
+    JSON.stringify(sanitizeVerificationReport(routeReport, config), null, 2) +
+      "\n",
+  );
+  failures.push(...routeReport.failures);
   // The mocked review-image responses point at these files so the attachment
   // thumbnails render with real bytes during the browser flow.
   const mockedThumbnail = await sharp({
@@ -131,24 +150,78 @@ try {
     await fs.mkdir(path.dirname(file), { recursive: true });
     await fs.writeFile(file, mockedThumbnail);
   }
-  const scopedArtifacts = (config.revisionReport?.expectedArtifacts || []).filter(artifact => artifact.route && artifact.route !== "/");
-  for (const route of [...new Set(scopedArtifacts.map(artifact=>artifact.route))]) {
-    for (const width of [1440,390]) {
-      const page=await browser.newPage({viewport:{width,height:900}});
-      await page.goto(new URL(route,url).href,{waitUntil:"networkidle"});
-      await page.locator("details").evaluateAll(nodes=>nodes.forEach(node=>node.open=true));
-      const body=await page.locator("body").innerText();
-      for (const artifact of scopedArtifacts.filter(artifact=>artifact.route===route)) {
-        if(artifact.type==="text" && (!body.includes(artifact.value) || !(await page.getByText(artifact.value,{exact:true}).first().isVisible().catch(()=>false)))) failures.push(`${route} ${width}: route-targeted text is not visible.`);
-        if(artifact.type==="page-meta" && await page.locator('meta[name="description"]').getAttribute("content")!==artifact.value) failures.push(`${route} ${width}: route-targeted metadata is missing.`);
-        if(artifact.type==="asset") {
-          const image=page.locator("img");
-          const images=await image.evaluateAll(nodes=>nodes.map(node=>({src:node.getAttribute("src"),loaded:node.complete&&node.naturalWidth>0&&node.getBoundingClientRect().width>0&&node.getBoundingClientRect().height>0&&getComputedStyle(node).visibility!=="hidden"&&getComputedStyle(node).opacity!=="0"})));
-          if(!images.some(image=>image.src===artifact.url&&image.loaded))failures.push(`${route} ${width}: route-targeted image is not visible/loaded.`);
+  const scopedArtifacts = (
+    config.revisionReport?.expectedArtifacts || []
+  ).filter((artifact) => artifact.route && artifact.route !== "/");
+  for (const route of [
+    ...new Set(scopedArtifacts.map((artifact) => artifact.route)),
+  ]) {
+    for (const width of [1440, 390]) {
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      await page.goto(new URL(route, url).href, { waitUntil: "networkidle" });
+      await page
+        .locator("details")
+        .evaluateAll((nodes) => nodes.forEach((node) => (node.open = true)));
+      const body = await page.locator("body").innerText();
+      for (const artifact of scopedArtifacts.filter(
+        (artifact) => artifact.route === route,
+      )) {
+        if (
+          artifact.type === "text" &&
+          (!body.includes(artifact.value) ||
+            !(await page
+              .getByText(artifact.value, { exact: true })
+              .first()
+              .isVisible()
+              .catch(() => false)))
+        )
+          failures.push(
+            `${route} ${width}: route-targeted text is not visible.`,
+          );
+        if (
+          artifact.type === "page-meta" &&
+          (await page
+            .locator('meta[name="description"]')
+            .getAttribute("content")) !== artifact.value
+        )
+          failures.push(
+            `${route} ${width}: route-targeted metadata is missing.`,
+          );
+        if (artifact.type === "asset") {
+          const image = page.locator("img");
+          const images = await image.evaluateAll((nodes) =>
+            nodes.map((node) => ({
+              src: node.getAttribute("src"),
+              loaded:
+                node.complete &&
+                node.naturalWidth > 0 &&
+                node.getBoundingClientRect().width > 0 &&
+                node.getBoundingClientRect().height > 0 &&
+                getComputedStyle(node).visibility !== "hidden" &&
+                getComputedStyle(node).opacity !== "0",
+            })),
+          );
+          if (
+            !images.some((image) => image.src === artifact.url && image.loaded)
+          )
+            failures.push(
+              `${route} ${width}: route-targeted image is not visible/loaded.`,
+            );
         }
       }
-      if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))failures.push(`${route} ${width}: route-targeted revision overflows.`);
-      await page.screenshot({path:path.join(screenshotDir,`route-${route.replace(/[^a-z0-9]/giu,"-")}-${width}.png`),fullPage:true});
+      if (
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth + 1,
+        )
+      )
+        failures.push(`${route} ${width}: route-targeted revision overflows.`);
+      await page.screenshot({
+        path: path.join(
+          screenshotDir,
+          `route-${route.replace(/[^a-z0-9]/giu, "-")}-${width}.png`,
+        ),
+        fullPage: true,
+      });
       await page.close();
     }
   }

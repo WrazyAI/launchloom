@@ -1,7 +1,7 @@
 ---
 import { resolvePalette, semanticColorCss } from "../lib/color-policy.mjs";
 import { fontFaceCss, resolveFontPairing } from "../lib/font-catalog.mjs";
-import site, { routeInventory } from "../lib/site";
+import site, { routeInventory, routePageBrief } from "../lib/site";
 import ReviewBanner from "../components/ReviewBanner.astro";
 import QuickAnswers from "../components/QuickAnswers.astro";
 import ExitOffer from "../components/ExitOffer.astro";
@@ -42,12 +42,14 @@ const noIndex = import.meta.env.PUBLIC_REVIEW_MODE === "true" || diagnosticPrevi
 // The approved deployment origin is supplied at build time. A domain in the
 // intake is not necessarily connected to Pages and must not become canonical.
 const canonical = import.meta.env.PUBLIC_REVIEW_MODE === "true" || diagnosticPreview ? undefined : new URL(Astro.url.pathname, Astro.site ?? Astro.url).href;
-const openGraphImage = site.images.hero
-  ? new URL(site.images.hero, Astro.site ?? Astro.url).href
-  : undefined;
+const brief = route ? routePageBrief(route.id) : null;
+const pageImage = brief?.mode === "supported" ? brief.media[0]?.src : site.images.hero;
+const openGraphImage = pageImage ? new URL(pageImage, Astro.site ?? Astro.url).href : undefined;
+const businessIdentity = new URL("/#business", Astro.site ?? Astro.url).href;
 const structuredData = {
   "@context": "https://schema.org",
   "@type": site.industry === "home-services" ? "HomeAndConstructionBusiness" : "LocalBusiness",
+  "@id": businessIdentity,
   name: site.business.name,
   description,
   telephone: site.business.phone || undefined,
@@ -72,6 +74,7 @@ const schemaBlocks = (Array.isArray(schemas) ? schemas : []).map((schema) =>
     <meta name="theme-color" content={site.style.primaryColor} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
+    {canonical && <meta property="og:url" content={canonical} />}
     <meta property="og:type" content="website" />
     {openGraphImage && <meta property="og:image" content={openGraphImage} />}
     {canonical && <link rel="canonical" href={canonical} />}

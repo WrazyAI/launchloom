@@ -109,7 +109,15 @@ async function fixture(review = false) {
     const pageData = review
       ? data
       : { ...data, url: new URL(route, origin).href };
-    const html = `<html><head><title>Consultation | Fixture Clinic</title><meta name="description" content="Fixture Clinic provides practical consultation support for local customers in Testville.">${review ? '<meta name="robots" content="noindex, nofollow">' : `<link rel="canonical" href="${new URL(route, origin).href}">`}<script type="application/ld+json">${JSON.stringify(pageData)}</script></head><body>${"Useful local consultation guidance and decision support. ".repeat(12)}</body></html>`;
+    const label =
+      route === "/services/consultation/"
+        ? "Consultation"
+        : route === "/"
+          ? "Home"
+          : route.split("/").filter(Boolean).join(" ");
+    const title = `${label} | Fixture Clinic`;
+    const description = `Fixture Clinic provides practical ${label.toLowerCase()} information and decision support for local customers in Testville.`;
+    const html = `<html><head><title>${title}</title><meta name="description" content="${description}"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}">${review ? '<meta name="robots" content="noindex, nofollow">' : `<meta property="og:url" content="${new URL(route, origin).href}"><link rel="canonical" href="${new URL(route, origin).href}">`}<script type="application/ld+json">${JSON.stringify(pageData)}</script></head><body><main><h1>${label}</h1>${"Useful local consultation guidance and decision support. ".repeat(12)}</main></body></html>`;
     await fs.writeFile(path.join(dir, "index.html"), html);
   }
   await fs.writeFile(
@@ -604,12 +612,50 @@ it("reports malformed internal anchor encoding instead of crashing the release g
   expect(failures.join(" ")).toContain("unresolved internal anchor /#bad%ZZ");
 });
 
-
-it("compares entity-escaped supported metadata as decoded text", async()=>{
- const dist=await fixture();const description='Discuss scope & preparation with Fixture Clinic before making a consultation enquiry.';const introduction='Explain your consultation concern and ask what information would help a focused discussion.';
- const routeId='service:consultation';const pageEvidence=[{id:'intro',value:introduction},{id:'meta',value:description}].map(record=>({...record,source:'synthetic client notes',kind:'client_supplied',confirmed:true,public:true,routeIds:[routeId]}));
- const file=path.join(dist,'services/consultation/index.html');let html=await fs.readFile(file,'utf8');html=html.replace(/(<meta name="description" content=")[^"]+/, '$1'+description.replace('&','&amp;')).replace('</body>',`<p>${introduction}</p></body>`);await fs.writeFile(file,html);
- const supportedConfig={...config,pageEvidence,pageContent:{[routeId]:{introduction:{text:introduction,evidenceIds:['intro']},metadata:{description:{text:description,evidenceIds:['meta']}}}}};
- const failures=await checkSeoRelease({mode:'production',origin,dist,config:supportedConfig});
- expect(failures.some(failure=>failure.includes('metadata differs'))).toBe(false);
+it("compares entity-escaped supported metadata as decoded text", async () => {
+  const dist = await fixture();
+  const description =
+    "Discuss scope & preparation with Fixture Clinic before making a consultation enquiry.";
+  const introduction =
+    "Explain your consultation concern and ask what information would help a focused discussion.";
+  const routeId = "service:consultation";
+  const pageEvidence = [
+    { id: "intro", value: introduction },
+    { id: "meta", value: description },
+  ].map((record) => ({
+    ...record,
+    source: "synthetic client notes",
+    kind: "client_supplied",
+    confirmed: true,
+    public: true,
+    routeIds: [routeId],
+  }));
+  const file = path.join(dist, "services/consultation/index.html");
+  let html = await fs.readFile(file, "utf8");
+  html = html
+    .replace(
+      /(<meta name="description" content=")[^"]+/,
+      "$1" + description.replace("&", "&amp;"),
+    )
+    .replace("</body>", `<p>${introduction}</p></body>`);
+  await fs.writeFile(file, html);
+  const supportedConfig = {
+    ...config,
+    pageEvidence,
+    pageContent: {
+      [routeId]: {
+        introduction: { text: introduction, evidenceIds: ["intro"] },
+        metadata: { description: { text: description, evidenceIds: ["meta"] } },
+      },
+    },
+  };
+  const failures = await checkSeoRelease({
+    mode: "production",
+    origin,
+    dist,
+    config: supportedConfig,
+  });
+  expect(failures.some((failure) => failure.includes("metadata differs"))).toBe(
+    false,
+  );
 });
