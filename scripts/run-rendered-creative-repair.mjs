@@ -1048,6 +1048,8 @@ function safeRepairRejectionMessage(error) {
  *   model?: string,
  *   creativeSession?: Record<string, any> | null,
  *   maxCycles?: number,
+ *   qaRepairExperiment?: boolean,
+ *   fetchImpl?: typeof fetch,
  *   requireDiversity?: boolean,
  *   requestedFindings?: unknown[],
  *   visualGateScript?: string,
