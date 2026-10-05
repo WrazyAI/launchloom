@@ -1,4 +1,5 @@
 import {
+  renderLeadConfirmationEmail,
   renderLeadEmail,
 } from "../../emails/render-email.mjs";
 import { sendEmail } from "./transactional-email";
@@ -108,6 +109,8 @@ type LeadClaims = {
   project: string;
   recipient: string;
   allowedOrigins: string[];
+  confirmVisitor?: boolean;
+  businessPhone?: string;
   issuedAt: number;
 };
 type GoogleReviewsClaims = {
@@ -3290,7 +3293,9 @@ async function lead(request: Request, env: Env) {
     const phone = clean(body.phone, 80);
     const email = clean(body.email, 240);
     const message = clean(body.message, 4000);
+    const consent = clean(body.consent, 400);
     const qualification = cleanQualification(body.qualification);
+    const submittedAt = new Date().toISOString();
     if (!name || !phone || !email || !message)
       return json(
         { error: "Please complete every required field." },
@@ -3305,6 +3310,9 @@ async function lead(request: Request, env: Env) {
       project: claims.project,
       pageUrl: clean(body.pageUrl, 4_000),
       qualification,
+      consent,
+      submittedAt,
+      businessPhone: String(claims.businessPhone || ""),
     });
     try {
       await sendEmail(env, {
@@ -3329,6 +3337,37 @@ async function lead(request: Request, env: Env) {
         503,
         cors(request, claims.allowedOrigins),
       );
+    }
+    if (
+      claims.confirmVisitor === true &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)
+    ) {
+      try {
+        await sendEmail(env, {
+          to: email,
+          replyTo: claims.recipient,
+          ...renderLeadConfirmationEmail({
+            name,
+            phone,
+            email,
+            message,
+            project: claims.project,
+            pageUrl: clean(body.pageUrl, 4_000),
+            qualification,
+            businessPhone: String(claims.businessPhone || ""),
+          }),
+          tag: "lead-confirmation",
+        });
+      } catch {
+        // The business notification already succeeded; a missing visitor
+        // confirmation must not fail the lead.
+        console.error(
+          JSON.stringify({
+            event: "lead.confirmation_delivery_failed",
+            project: clean(claims.project, 100),
+          }),
+        );
+      }
     }
     return json({ ok: true }, 200, cors(request, claims.allowedOrigins));
   } catch (error) {

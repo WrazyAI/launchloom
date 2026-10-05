@@ -748,6 +748,67 @@ describe("site configuration", () => {
     );
   });
 
+  it("consolidates the lead form into one config block", () => {
+    const config = normalise(
+      {},
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning",
+        primaryCta: "Request a quote",
+        primaryColor: "#245a46",
+        industry: "home-services",
+        leadEmail: "leads@example.test",
+        phone: "555-0100",
+      },
+    );
+
+    expect(config.leadForm).toMatchObject({
+      enabled: true,
+      recipient: "leads@example.test",
+      submitLabel: "Request a quote",
+      confirmVisitor: true,
+      successMessage: "Thank you. We will be in touch shortly.",
+      errorMessage: "We could not send your request. Please try again.",
+      unconfiguredMessage:
+        "This inquiry form is not connected yet. Please call 555-0100.",
+    });
+    expect(config.leadForm.consent).toBe(config.copy.formIntro);
+    expect(config.leadForm.qualification).toEqual(
+      config.conversion.qualification,
+    );
+    expect(config.leadForm.qualifier).toMatchObject({ enabled: true });
+
+    const fallbackOnly = normalise(
+      {},
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning",
+        primaryCta: "Get directions",
+        primaryColor: "#245a46",
+        industry: "home-services",
+      },
+    );
+    expect(fallbackOnly.leadForm.submitLabel).toBe("Send request");
+    expect(fallbackOnly.leadForm.enabled).toBe(false);
+    expect(fallbackOnly.leadForm.confirmVisitor).toBe(true);
+
+    const optedOut = normalise(
+      {},
+      {
+        businessName: "Harbor Plumbing",
+        services: "Drain cleaning",
+        primaryCta: "Request a quote",
+        primaryColor: "#245a46",
+        industry: "home-services",
+        leadEmail: "leads@example.test",
+        leadConfirmVisitor: "no",
+        privacyHref: "/privacy/",
+      },
+    );
+    expect(optedOut.leadForm.confirmVisitor).toBe(false);
+    expect(optedOut.leadForm.privacyHref).toBe("/privacy/");
+  });
+
   it("keeps the accounting reference niche while using its reviewed advisory image", () => {
     const config = normalise(
       {},

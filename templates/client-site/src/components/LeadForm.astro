@@ -1,13 +1,33 @@
 ---
 import site from "../lib/site";
 const { id = "lead-form" } = Astro.props;
-const questions = site.conversion?.qualification || [];
-const qualifier = site.conversion?.guidedQualifier;
+type LeadFormConfig = NonNullable<typeof site.leadForm>;
+const config = (site.leadForm || {}) as LeadFormConfig;
+const questions = config.qualification?.length
+  ? config.qualification
+  : site.conversion?.qualification || [];
+const qualifier = config.qualifier || site.conversion?.guidedQualifier;
 const guided = questions.length > 0 && qualifier?.enabled !== false;
 const stepCount = guided ? questions.length + 1 : 1;
-const unconfiguredMessage = site.business.phone
-  ? `This inquiry form is not connected yet. Please call ${site.business.phone}.`
-  : "This inquiry form is not connected yet.";
+const consent =
+  config.consent ||
+  site.copy?.formIntro ||
+  "By submitting, you agree to be contacted about your request.";
+const successMessage =
+  config.successMessage || "Thank you. We will be in touch shortly.";
+const errorMessage =
+  config.errorMessage || "We could not send your request. Please try again.";
+const unconfiguredMessage =
+  config.unconfiguredMessage ||
+  (site.business.phone
+    ? `This inquiry form is not connected yet. Please call ${site.business.phone}.`
+    : "This inquiry form is not connected yet.");
+const submitLabel =
+  config.submitLabel ||
+  (site.business.primaryCta.trim().toLowerCase() === "get directions"
+    ? "Send request"
+    : site.business.primaryCta);
+const privacyHref = config.privacyHref || "";
 ---
 
 <form
@@ -19,6 +39,7 @@ const unconfiguredMessage = site.business.phone
   data-qualification={JSON.stringify(questions.map((question) => question.name))}
 >
   <input type="hidden" name="lead-token" value={site.lead?.token || ""} />
+  <input type="hidden" name="consent" value={consent} />
   <p class="honeypot"><label>Do not fill this out <input name="bot-field" tabindex="-1" autocomplete="off" /></label></p>
   <input type="hidden" name="lead-email" value={site.business.leadEmail} />
 
@@ -58,13 +79,17 @@ const unconfiguredMessage = site.business.phone
     </div>
     <div class="qualifier-actions">
       {guided && <button class="qualifier-back" type="button" data-back>Back</button>}
-      <button class="lead-submit" type="submit">{site.business.primaryCta.trim().toLowerCase() === "get directions" ? "Send request" : site.business.primaryCta}</button>
+      <button class="lead-submit" type="submit">{submitLabel}</button>
     </div>
   </fieldset>
-  <small class="lead-status" role="status">{site.copy?.formIntro || "By submitting, you agree to be contacted about your request."}</small>
+  <small class="lead-consent">
+    {consent}
+    {privacyHref && <> <a href={privacyHref}>Read our privacy policy</a>.</>}
+  </small>
+  <small class="lead-status" role="status"></small>
 </form>
 
-<script is:inline define:vars={{ apiUrl: site.lead?.apiUrl || "", unconfiguredMessage }}>
+<script is:inline define:vars={{ apiUrl: site.lead?.apiUrl || "", unconfiguredMessage, successMessage, errorMessage }}>
   for (const form of document.querySelectorAll(".lead-form")) {
     const guided = form.dataset.guided === "true";
     const steps = [...form.querySelectorAll("[data-lead-step]")];
@@ -107,7 +132,7 @@ const unconfiguredMessage = site.business.phone
         const qualification = Object.fromEntries(qualificationNames.map((name) => [name, data.get(name)]).filter(([, value]) => value));
         const response = await fetch(`${apiUrl.replace(/\/$/, "")}/api/lead`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
           token: data.get("lead-token"), name: data.get("name"), phone: data.get("phone"), email: data.get("email"),
-          message: data.get("message"), qualification, "bot-field": data.get("bot-field"), pageUrl: window.location.href,
+          message: data.get("message"), qualification, consent: data.get("consent"), "bot-field": data.get("bot-field"), pageUrl: window.location.href,
         }) });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.error || "We could not send your request.");
@@ -124,10 +149,10 @@ const unconfiguredMessage = site.business.phone
         }
         started = false;
         if (guided) showStep(0, false);
-        status.textContent = "Thank you. We will be in touch shortly.";
+        status.textContent = successMessage;
         window.dispatchEvent(new CustomEvent("launchloom:lead-submitted"));
       } catch (error) {
-        status.textContent = error instanceof Error ? error.message : "We could not send your request. Please try again.";
+        status.textContent = error instanceof Error ? error.message : errorMessage;
       }
     });
   }

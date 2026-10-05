@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  renderLeadConfirmationEmail,
   renderLeadEmail,
   renderLifecycleEmail,
 } from "../emails/render-email.mjs";
@@ -219,6 +220,8 @@ describe("LaunchLoom lead emails", () => {
         ["Support <type>", "Daily & overnight"],
         ["Start", "Within <2 weeks"],
       ],
+      consent: "By submitting, you agree to be contacted.",
+      submittedAt: "2026-10-05T12:34:56.000Z",
     });
 
     expect(email.html).toContain("Ada &lt;Admin&gt;");
@@ -226,9 +229,39 @@ describe("LaunchLoom lead emails", () => {
     expect(email.html).toContain("Daily &amp; overnight");
     expect(email.html).toContain(">the website enquiry page</a>");
     expect(email.html).not.toContain("<script>alert");
+    expect(email.html).toContain("2026-10-05 12:34 UTC");
+    expect(email.html).toContain(
+      "The visitor submitted this request with the consent: &quot;By submitting, you agree to be contacted.&quot;",
+    );
     expect(email.text).toContain(
       "Website enquiry page: https://harbor.example/services?from=form&kind=care",
     );
     expect(email.text).toContain("Reply directly to this email");
+    expect(email.text).toContain(
+      "Consent shown at submission: By submitting, you agree to be contacted.",
+    );
+  });
+
+  it("renders a structured visitor confirmation without em dashes", () => {
+    const email = renderLeadConfirmationEmail({
+      name: "Ada Lovelace",
+      phone: "555-0100",
+      email: "ada@example.test",
+      message: "Please call me about <repairs>.",
+      project: "Harbor & Pine",
+      qualification: [["Support type", "Repair & maintenance"]],
+      businessPhone: "(555) 555-0199",
+    });
+
+    expect(email.subject).toBe("We received your request - Harbor & Pine");
+    expect(email.html).toContain("Thanks, Ada. Your request is with Harbor &amp; Pine.");
+    expect(email.html).toContain("Repair &amp; maintenance");
+    expect(email.html).toContain("&lt;repairs&gt;");
+    expect(email.html).toContain("If you need help sooner, call (555) 555-0199.");
+    expect(email.html).toContain("What happens next");
+    expect(email.html).not.toContain("—");
+    expect(email.text).toContain("REQUEST RECEIVED");
+    expect(email.text).toContain("Thanks, Ada.");
+    expect(email.text).toContain("If you need help sooner, call (555) 555-0199.");
   });
 });

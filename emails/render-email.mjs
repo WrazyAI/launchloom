@@ -279,13 +279,13 @@ export function renderIntakeReceivedEmail(input) {
   };
 }
 
-export function renderLeadEmail(input) {
-  const name = cleanEmailLine(input.name, 160);
-  const phone = cleanEmailLine(input.phone, 80);
-  const email = cleanEmailLine(input.email, 240);
-  const message = cleanEmailText(input.message, 4_000);
-  const project = cleanEmailLine(input.project, 160) || "Website enquiry";
-  const pageUrl = cleanEmailText(input.pageUrl, 4_000);
+function formatSubmittedAt(value) {
+  const date = new Date(String(value || ""));
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.toISOString().replace("T", " ").slice(0, 16)} UTC`;
+}
+
+function leadDetailRows(input) {
   const qualification = Array.isArray(input.qualification)
     ? input.qualification
         .slice(0, 6)
@@ -295,24 +295,41 @@ export function renderLeadEmail(input) {
         ])
         .filter(([key, answer]) => key && answer)
     : [];
-  const detailRows = [
-    ["Name", name],
-    ["Phone", phone],
-    ["Email", email],
+  const received = formatSubmittedAt(input.submittedAt);
+  const rows = [
+    ...(received ? [["Received", received]] : []),
+    ["Name", cleanEmailLine(input.name, 160)],
+    ["Phone", cleanEmailLine(input.phone, 80)],
+    ["Email", cleanEmailLine(input.email, 240)],
     ...qualification,
-  ]
+  ];
+  const detailRows = rows
     .map(
       ([label, value]) =>
         `<tr><td valign="top" style="padding:8px 12px 8px 0;color:${COLORS.muted};font-size:13px;font-weight:700;width:120px">${escapeEmailHtml(label)}</td><td valign="top" style="padding:8px 0;color:${COLORS.ink};font-size:15px;line-height:1.5;word-break:break-word">${escapeEmailHtml(value)}</td></tr>`,
     )
     .join("");
+  return { qualification, detailRows };
+}
+
+export function renderLeadEmail(input) {
+  const name = cleanEmailLine(input.name, 160);
+  const phone = cleanEmailLine(input.phone, 80);
+  const email = cleanEmailLine(input.email, 240);
+  const message = cleanEmailText(input.message, 4_000);
+  const project = cleanEmailLine(input.project, 160) || "Website enquiry";
+  const pageUrl = cleanEmailText(input.pageUrl, 4_000);
+  const consent = cleanEmailText(input.consent, 400);
+  const { qualification, detailRows } = leadDetailRows(input);
   let rows = `<tr><td style="padding:0 32px 24px" class="mobile-pad"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${detailRows}</table></td></tr>${textBlock("Message", message)}`;
   if (pageUrl)
     rows += `<tr><td style="padding:0 32px 28px" class="mobile-pad"><p style="margin:0;color:${COLORS.muted};font-size:14px;line-height:1.5">Submitted from ${labelledLink(pageUrl, "the website enquiry page")}.</p></td></tr>`;
+  if (consent)
+    rows += `<tr><td style="padding:0 32px 28px" class="mobile-pad"><p style="margin:0;color:${COLORS.muted};font-size:13px;line-height:1.55">The visitor submitted this request with the consent: &quot;${escapeEmailHtml(consent)}&quot;</p></td></tr>`;
   const qualificationText = qualification
     .map(([key, answer]) => `${key}: ${answer}`)
     .join("\n");
-  const text = `NEW WEBSITE ENQUIRY\n\nNew enquiry for ${project}\n\nName: ${name}\nPhone: ${phone}\nEmail: ${email}${qualificationText ? `\n${qualificationText}` : ""}\n\nMESSAGE\n${message}${pageUrl ? `\n\nWebsite enquiry page: ${pageUrl}` : ""}\n\nReply directly to this email to contact ${name}.`;
+  const text = `NEW WEBSITE ENQUIRY\n\nNew enquiry for ${project}\n\nName: ${name}\nPhone: ${phone}\nEmail: ${email}${qualificationText ? `\n${qualificationText}` : ""}\n\nMESSAGE\n${message}${pageUrl ? `\n\nWebsite enquiry page: ${pageUrl}` : ""}${consent ? `\n\nConsent shown at submission: ${consent}` : ""}\n\nReply directly to this email to contact ${name}.`;
   return {
     subject: `New website lead: ${name}`,
     html: shell({
@@ -323,6 +340,37 @@ export function renderLeadEmail(input) {
       rows,
       footer:
         "This transactional notification was sent from the website enquiry form.",
+    }),
+    text,
+  };
+}
+
+export function renderLeadConfirmationEmail(input) {
+  const name = cleanEmailLine(input.name, 160);
+  const project = cleanEmailLine(input.project, 160) || "the team";
+  const businessPhone = cleanEmailLine(input.businessPhone, 80);
+  const message = cleanEmailText(input.message, 4_000);
+  const { qualification, detailRows } = leadDetailRows({
+    ...input,
+    submittedAt: "",
+  });
+  const firstName = name.split(/\s+/u).filter(Boolean)[0] || "there";
+  const nextStep = `A member of the ${project} team will review your request and contact you using the details you provided.${businessPhone ? ` If you need help sooner, call ${businessPhone}.` : ""}`;
+  const rows = `<tr><td style="padding:0 32px 24px" class="mobile-pad"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${detailRows}</table></td></tr>${textBlock("What you sent", message)}${textBlock("What happens next", nextStep)}`;
+  const qualificationText = qualification
+    .map(([key, answer]) => `${key}: ${answer}`)
+    .join("\n");
+  const text = `REQUEST RECEIVED\n\nThanks, ${firstName}. ${project} received your website request.\n\n${qualificationText ? `${qualificationText}\n` : ""}Phone: ${cleanEmailLine(input.phone, 80)}\nEmail: ${cleanEmailLine(input.email, 240)}\n\nWHAT YOU SENT\n${message}\n\nWHAT HAPPENS NEXT\n${nextStep}\n\nYou can reply directly to this email to add anything to your request.`;
+  return {
+    subject: `We received your request - ${project}`,
+    html: shell({
+      preheader: `Thanks, ${firstName}. ${project} received your message.`,
+      eyebrow: "Request received",
+      title: `Thanks, ${firstName}. Your request is with ${project}.`,
+      intro:
+        "This is a confirmation that your message reached the team. Keep it for your records.",
+      rows,
+      footer: `This confirmation was sent because you submitted the website enquiry form for ${project}.`,
     }),
     text,
   };

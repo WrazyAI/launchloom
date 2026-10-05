@@ -14,7 +14,7 @@ function base64url(bytes: Uint8Array) {
     .replace(/=+$/u, "");
 }
 
-async function signedLeadToken() {
+async function signedLeadToken(extra = {}) {
   const encoded = base64url(
     new TextEncoder().encode(
       JSON.stringify({
@@ -22,6 +22,7 @@ async function signedLeadToken() {
         recipient,
         allowedOrigins: [origin],
         issuedAt: Date.now(),
+        ...extra,
       }),
     ),
   );
@@ -50,6 +51,7 @@ function leadRequest(token: string) {
       email: "taylor@example.test",
       message: "I would like to ask about a service.",
       qualification: { service: "Repair" },
+      consent: "By submitting, you agree to be contacted about your request.",
       "bot-field": "",
       "lead-email": "attacker@example.test",
       pageUrl: `${origin}/contact/`,
@@ -86,7 +88,76 @@ describe("generated-site lead email delivery", () => {
       reply_to: "taylor@example.test",
       tags: [{ name: "launchloom_kind", value: "client-lead" }],
     });
+    expect(String(providerRequest?.text)).toContain(
+      "Consent shown at submission: By submitting, you agree to be contacted about your request.",
+    );
+    expect(String(providerRequest?.text)).toContain("NEW WEBSITE ENQUIRY");
     expect(providerRequest).not.toMatchObject({ to: ["attacker@example.test"] });
+  });
+
+  it("sends the visitor a confirmation when the token enables it", async () => {
+    const providerRequests: Array<Record<string, unknown>> = [];
+    network.use(
+      http.post("https://api.resend.com/emails", async ({ request }) => {
+        providerRequests.push((await request.json()) as Record<string, unknown>);
+        return HttpResponse.json({ id: `email_test_${providerRequests.length}` });
+      }),
+    );
+
+    const response = await worker.fetch(
+      leadRequest(
+        await signedLeadToken({
+          confirmVisitor: true,
+          businessPhone: "(555) 555-0199",
+        }),
+      ),
+      testEnv({
+        RESEND_API_KEY: "test-resend-key",
+        LAUNCHLOOM_FROM_EMAIL: "LaunchLoom <info@example.com>",
+      }),
+      {} as ExecutionContext,
+    );
+
+    expect(response.status).toBe(200);
+    expect(providerRequests).toHaveLength(2);
+    expect(providerRequests[0]).toMatchObject({
+      to: [recipient],
+      tags: [{ name: "launchloom_kind", value: "client-lead" }],
+    });
+    expect(providerRequests[1]).toMatchObject({
+      to: ["taylor@example.test"],
+      reply_to: recipient,
+      tags: [{ name: "launchloom_kind", value: "lead-confirmation" }],
+    });
+    expect(String(providerRequests[1].text)).toContain("REQUEST RECEIVED");
+    expect(String(providerRequests[1].text)).toContain("(555) 555-0199");
+  });
+
+  it("delivers the client notification even when the visitor confirmation fails", async () => {
+    let calls = 0;
+    network.use(
+      http.post("https://api.resend.com/emails", async ({ request }) => {
+        const body = (await request.json()) as {
+          tags?: Array<{ value?: string }>;
+        };
+        calls += 1;
+        if (body.tags?.[0]?.value === "lead-confirmation")
+          return HttpResponse.json({ message: "provider unavailable" }, { status: 503 });
+        return HttpResponse.json({ id: "email_test_123" });
+      }),
+    );
+
+    const response = await worker.fetch(
+      leadRequest(await signedLeadToken({ confirmVisitor: true })),
+      testEnv({
+        RESEND_API_KEY: "test-resend-key",
+        LAUNCHLOOM_FROM_EMAIL: "LaunchLoom <info@example.com>",
+      }),
+      {} as ExecutionContext,
+    );
+
+    expect(response.status).toBe(200);
+    expect(calls).toBe(2);
   });
 
   it("does not acknowledge a lead when the email provider is not configured", async () => {

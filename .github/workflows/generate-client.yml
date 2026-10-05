@@ -367,7 +367,9 @@ jobs:
           PREVIEW="https://review-initial.$PROJECT.pages.dev"
           PRODUCTION="https://$PROJECT.pages.dev"
           ORIGINS="$PREVIEW,$PRODUCTION"
-          LEAD_TOKEN=$(node scripts/create-lead-token.mjs --project "$PROJECT" --recipient "${{ steps.intake.outputs.lead_email }}" --origins "$ORIGINS")
+          LEAD_CONFIRM_VISITOR=$(jq -r '.leadForm.confirmVisitor // false' /tmp/site.config.json 2>/dev/null || echo false)
+          LEAD_BUSINESS_PHONE=$(jq -r '.business.phone // ""' /tmp/site.config.json 2>/dev/null || echo "")
+          LEAD_TOKEN=$(node scripts/create-lead-token.mjs --project "$PROJECT" --recipient "${{ steps.intake.outputs.lead_email }}" --origins "$ORIGINS" --confirm-visitor "$LEAD_CONFIRM_VISITOR" --business-phone "$LEAD_BUSINESS_PHONE")
           PLACE_ID=$(node -e 'const x=require("/tmp/site.config.json"); console.log(x.business.placeId || "")')
           REVIEW_ARGS=()
           if [ -n "$PLACE_ID" ]; then
