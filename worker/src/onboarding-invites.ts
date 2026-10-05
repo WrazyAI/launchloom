@@ -493,8 +493,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
       now,
     );
     return this.ctx.storage.sql
-      .exec<Pick<InviteRow, "invite_id" | "client_email" | "expires_at" | "status" | "created_at" | "updated_at">>(
-        `SELECT invite_id, client_email, expires_at, status, created_at, updated_at
+      .exec<Pick<InviteRow, "invite_id" | "client_email" | "expires_at" | "status" | "created_at" | "updated_at" | "submission_id" | "issue_number">>(
+        `SELECT invite_id, client_email, expires_at, status, created_at, updated_at, submission_id, issue_number
          FROM onboarding_invites ORDER BY created_at DESC LIMIT 100`,
       )
       .toArray()
@@ -505,6 +505,8 @@ export class OnboardingInvites extends DurableObject<OnboardingInvitesEnvironmen
         status: row.status,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
+        submissionId: row.submission_id,
+        issueNumber: row.issue_number,
       }));
   }
 }
