@@ -26,7 +26,7 @@
 4. Narrower request capacity can leave findings unresolved; require actual rendered gates rather than accepting a merely valid patch.
 5. Zero-call and successful runs need exact private call receipts, not only failure preservation.
 
-## Stage 1: Trusted request budget and schema
+## Task 1: Trusted request budget and schema
 
 **Files:** Modify `scripts/creative-repair-contract.mjs`, `scripts/creative-repair-loop.mjs`; create `tests/creative-repair-request-budget.test.ts`; extend `tests/creative-repair-loop.test.ts`.
 
@@ -37,7 +37,7 @@
 - [ ] Implement the pure budget function. Only opt-in automatic span requests use schema `edits.minItems=1/maxItems=K` and `replace.minLength=1/maxLength=6000`, plus explicit UTF16/cost guidance. Preserve unchanged existing per-fragment/compiler/literal checks. Confirm native endpoint support for these keywords from current primary provider documentation before shipping; unsupported capability is a blocker, never a schema waiver. Set `provider.require_parameters=true` for the opt-in request and retain the one-fetch wrapper. Keep all source/dossier/measurement context.
 - [ ] Extend real adapter tests: exact new schema/routing fields for opt-in; normal automatic/human schemas unchanged;402/schema rejection attempts do not obtain a second fetch. Run the same suites GREEN and commit.
 
-## Stage 2: Offline archive replay, private receipts and shipping
+## Task 2: Offline archive replay, private receipts and shipping
 
 **Files:** Modify `scripts/run-rendered-creative-repair.mjs`, `.github/workflows/generate-client.yml`; extend `tests/rendered-creative-repair.test.ts`, `tests/internal-qa-intake.test.ts`, `tests/generation-workflow-preview.test.ts`; append daily ledger.
 
@@ -47,7 +47,7 @@
 - [ ] Replay all4 actual admitted catalogs offline through the request adapter, real compiler/literal/source guards and complete enrichment/reuse validation. Retain both rejected raw responses privately; demonstrate they violate new request shape, without applying/truncating them. Test a feasible mocked response with original guards and unchanged unrelated bytes. Zero provider calls.
 - [ ] Run full CI/three rendered matrices, Astro/Worker/build, relevant TestSprite and independent review. Commit/review/merge/deploy only after passing; read back exact Pages/Worker source/version. Scope this receipt to shipped implementation.
 
-## Stage 3: One newly approved recovery and actual delivery
+## Task 3: One newly approved recovery and actual delivery
 
 **Files:** Private client/evidence artifacts and append-only progress; use existing delivery workflow.
 

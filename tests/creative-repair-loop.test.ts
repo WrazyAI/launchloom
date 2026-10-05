@@ -167,6 +167,8 @@ describe("creative repair loop", () => {
       .map((part: any) => part.text)
       .join("\n");
     expect(body.response_format.json_schema.name).toContain("repair_edits");
+    expect(body.provider?.require_parameters).not.toBe(true);
+    expect(body.response_format.json_schema.schema.properties.edits.maxItems).toBeUndefined();
     expect(prompt).toContain('"sectionIds": [\n    "hero"');
     expect(prompt).toContain("never complete files");
     expect(prompt).toContain("Improve the hero layout.");
@@ -1791,11 +1793,15 @@ describe("creative repair loop", () => {
       servicePage: '<main data-service-page><h1 className="service-old">Service</h1></main>',
     };
     const pageSpan = buildRepairSpanCatalog(files).spans.find(span => span.file === "servicePage")!;
-    vi.stubGlobal("fetch", vi.fn(async () => Response.json({
+    vi.stubGlobal("fetch", vi.fn(async (_url, options: any) => {
+      const body=JSON.parse(options.body); const schema=body.response_format.json_schema.schema.properties.edits;
+      expect(body.provider?.require_parameters).not.toBe(true); expect(schema.maxItems).toBeUndefined();
+      expect(schema.items.properties.replace.maxLength).toBeUndefined();
+      return Response.json({
       choices: [{ finish_reason: "stop", message: { content: JSON.stringify({
         edits: [{ spanId: pageSpan.id, replace: pageSpan.find.replace('className="service-old"', 'className="service-new"') }],
       }) } }],
-    })));
+    }); }));
     const referenceDna = {
       familyId: "test-editorial",
       sectionSequence: repairSectionSequence,
@@ -2096,11 +2102,16 @@ it("automatic span repair binds current sources without model-generated find tex
   const fetchImpl = vi.fn(async (_url: any, options: any) => {
     const body = JSON.parse(options.body); const schema = body.response_format.json_schema;
     expect(schema.name).toBe("launchloom_creative_repair_spans");
+    expect(body.provider).toEqual(expect.objectContaining({ require_parameters: true }));
+    expect(schema.schema.properties.edits.minItems).toBe(1);
+    expect(schema.schema.properties.edits.maxItems).toBe(3);
+    expect(schema.schema.properties.edits.items.properties.replace).toEqual(expect.objectContaining({ minLength: 1, maxLength: 6000 }));
     expect(schema.schema.properties.edits.items.required).toEqual(["spanId", "replace"]);
     expect(schema.schema.properties.edits.items.properties.spanId.enum).toContain(style.id);
     const text = body.messages[1].content.filter((x: any) => x.type === "text").map((x: any) => x.text).join("\n");
     expect(text).toContain(files.experience); expect(text).toContain(files.styles); expect(text).toContain(files.motion);
     expect(text).toContain("TRUSTED SOURCE SPANS"); expect(text).toContain("Do not generate find text");
+    expect(text).toContain("REQUEST CHARACTER BUDGET"); expect(text).toContain("utf16-code-units");
     return Response.json({ choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ edits: [{ spanId: style.id, replace: ".hero{color:white;}\n" }] }) } }] });
   });
   vi.stubGlobal("fetch", vi.fn(() => { throw Error("unexpected global provider call"); }));
@@ -2141,4 +2152,19 @@ it("does not expose an unexpected file name supplied by the provider", async () 
   expect(error?.code).toBe("CREATIVE_REPAIR_OUTPUT_REJECTED");
   expect(inspect(error)).not.toContain("PRIVATE_FILE_SENTINEL");
   expect((repairModule as any).privateRepairRejectionEvidence(error)?.payload).toContain("PRIVATE_FILE_SENTINEL");
+});
+
+it("refuses unsupported opt-in schema without stripping bounds or fetching again", async () => {
+  const root=await fs.mkdtemp(path.join(os.tmpdir(),"ll-schema-refusal-")); roots.push(root); const desktop=path.join(root,"desktop.png"); await fs.writeFile(desktop,"evidence");
+  const budgetModule=await import("../scripts/creative-repair-experiment.mjs"); let actual=0;
+  const budget=budgetModule.createQaRepairCallBudget({fetchImpl:async()=>{actual++; return Response.json({error:{message:"unsupported maxItems"}},{status:400});}});
+  await expect(requestRepair({model:"test/model",referenceDna:{sectionSequence:repairSectionSequence,evidence:{desktopScreenshot:{path:desktop}}},files:{experience:"old",styles:".owned{color:navy}",motion:"old"},findings:[],screenshots:[],automaticSpanRepair:true,fetchImpl:budget.forCandidate("candidate-a"),logger:()=>{}} as any)).rejects.toThrow("OpenRouter creative repair failed (400).");
+  expect(actual).toBe(1); expect(budget.snapshot().total).toBe(1);
+});
+
+it("refuses an opt-in response above its advertised edit ceiling even when global text fits", async () => {
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),"ll-request-count-"));roots.push(root);const desktop=path.join(root,"desktop.png");await fs.writeFile(desktop,"evidence");
+ const files={experience:"x\n",styles:".owned{color:navy}\n",motion:"z\n",servicePage:"a\n"};const index=buildRepairSpanCatalog(files);
+ const fetchImpl=async()=>Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify({edits:index.spans.map(span=>({spanId:span.id,replace:span.find}))})}}]});
+ await expect(requestRepair({model:"test/model",referenceDna:{sectionSequence:repairSectionSequence,evidence:{desktopScreenshot:{path:desktop}}},files,findings:[],screenshots:[],automaticSpanRepair:true,fetchImpl,logger:()=>{}} as any)).rejects.toThrow(/request.*3.*edit|edit.*ceiling/i);
 });
